@@ -192,16 +192,21 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                     ))}
                 </RadioGroup>
 
-                {(paymentData.amount > 0 && (paymentData.method === 'CARD' || paymentData.method === 'TRANSFER')) && (
+                {(paymentData.amount > 0 && paymentData.method) && (
                     <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
-                        <span className="font-semibold uppercase">{paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:</span>
+                        <span className="font-semibold uppercase">
+                            {paymentData.method === 'CASH' ? 'Efectivo' :
+                                paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:
+                        </span>
                         {paymentData.isPending ? (
                             <span className="text-amber-600 font-bold">Pendiente de registro</span>
                         ) : (
                             <>
-                                <span>Tx: {paymentData.transactionNumber || "---"}</span>
+                                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                                    <span>Tx: {paymentData.transactionNumber || "---"} • </span>
+                                )}
                                 {paymentData.treasuryAccountId && (
-                                    <span>• Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
+                                    <span>Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
                                 )}
                             </>
                         )}
@@ -265,7 +270,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                         </div>
 
                         {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
-                            <>
+                            <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="modal-tx" className="flex items-center justify-between">
                                         <span>N° Transacción</span>
@@ -279,23 +284,6 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                                         disabled={tempIsPending}
                                     />
                                 </div>
-
-                                {filteredAccounts.length > 1 && (
-                                    <div className="space-y-2">
-                                        <Label htmlFor="modal-account">Cuenta Origen</Label>
-                                        <select
-                                            id="modal-account"
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            value={tempAccount}
-                                            onChange={(e) => setTempAccount(e.target.value)}
-                                        >
-                                            <option value="">Seleccionar cuenta...</option>
-                                            {filteredAccounts.map((acc) => (
-                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
 
                                 <div className="flex items-center space-x-2 pt-2">
                                     <Checkbox
@@ -311,7 +299,24 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                                         Informar N° de transacción luego
                                     </Label>
                                 </div>
-                            </>
+                            </div>
+                        )}
+
+                        {filteredAccounts.length > 0 && (
+                            <div className="space-y-2">
+                                <Label htmlFor="modal-account">Cuenta Origen / Caja</Label>
+                                <select
+                                    id="modal-account"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={tempAccount}
+                                    onChange={(e) => setTempAccount(e.target.value)}
+                                >
+                                    <option value="">Seleccionar cuenta...</option>
+                                    {filteredAccounts.map((acc) => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         )}
                     </div>
                     <DialogFooter className="sm:justify-end">

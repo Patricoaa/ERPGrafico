@@ -322,29 +322,37 @@ class POSDifferenceService:
         difference.journal_entry = entry
         difference.save()
         
-        # If it was a TRANSFER, also record the physical move in treasury
+        # Record Treasury Movement for visibility and history
+        from_acc = None
+        to_acc = None
+        pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
+        
         if reason == 'TRANSFER' and difference.transfer_target:
-            from .models import TreasuryMovement
-            pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-            
-            from_acc = None
-            to_acc = None
             if amount < 0: # Deficit -> money out to target
                 from_acc = pos_treasury_obj
                 to_acc = difference.transfer_target
             else: # Surplus -> money in from target
                 from_acc = difference.transfer_target
                 to_acc = pos_treasury_obj
-                
-            TreasuryMovement.objects.create(
-                movement_type='TRANSFER',
-                from_account=from_acc,
-                to_account=to_acc,
-                amount=abs_amount,
-                pos_session=session,
-                created_by=approved_by_user,
-                notes=f"Traspaso de ajuste (Aprobada - Sesión #{session.id})",
-                journal_entry=entry
-            )
+        else:
+            if amount < 0: # Loss -> money out from POS (to adjustment account)
+                from_acc = pos_treasury_obj
+                to_acc = None
+            else: # Gain -> money in to POS (from adjustment account)
+                from_acc = None
+                to_acc = pos_treasury_obj
+
+        from .models import TreasuryMovement
+        TreasuryMovement.objects.create(
+            movement_type='TRANSFER' if reason == 'TRANSFER' else 'ADJUSTMENT',
+            from_account=from_acc,
+            to_account=to_acc,
+            amount=abs_amount,
+            pos_session=session,
+            created_by=approved_by_user,
+            notes=f"Diferencia aprobada: {reason} - Sesión #{session.id}",
+            justify_reason=reason,
+            journal_entry=entry
+        )
         
         return difference

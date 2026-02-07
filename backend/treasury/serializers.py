@@ -147,9 +147,12 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return obj.display_id
 
     def get_justify_reason_display(self, obj):
-        # Helper to get display name for justify_reason if generic display method doesn't work automatically
-        # or if we want custom logic. Since it's a CharField with choices, get_FOO_display works.
-        return obj.get_justify_reason_display() if obj.justify_reason else None
+        if not obj.justify_reason:
+            return None
+        # Robust check to avoid AttributeError during migrations/refactors
+        if hasattr(obj, 'get_justify_reason_display'):
+            return obj.get_justify_reason_display()
+        return obj.justify_reason
 
     def get_document_info(self, obj):
         info = {

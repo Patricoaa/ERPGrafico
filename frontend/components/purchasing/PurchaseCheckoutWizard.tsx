@@ -229,8 +229,8 @@ export function PurchaseCheckoutWizard({
                 return false
             }
 
-            if ((paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && !paymentData.treasuryAccountId) {
-                toast.error("Debe seleccionar una cuenta de destino.")
+            if (paymentData.method && !paymentData.treasuryAccountId) {
+                toast.error("Debe seleccionar una cuenta de tesorería / caja origen.")
                 return false
             }
             if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {

@@ -13,7 +13,7 @@ class TreasuryService:
                         date=None, created_by=None,
                         from_account=None, to_account=None,
                         partner=None, invoice=None, sale_order=None, purchase_order=None,
-                        pos_session=None, reference='', notes='', justify_reason=None,
+                        pos_session=None, pos_session_id=None, reference='', notes='', justify_reason=None,
                         transaction_number=None, is_pending_registration=False,
                         card_provider=None, is_reconciled=False):
         """
@@ -45,6 +45,11 @@ class TreasuryService:
                  if movement_type in [TreasuryMovement.Type.TRANSFER, TreasuryMovement.Type.OUTBOUND]:
                       pass # Keeping strict logic might block business. Let's rely on frontend warning, or strict.
                       # raise ValidationError(f"Fondos insuficientes en {from_account.name}.")
+
+        # 1.5 Resolve POS Session
+        if not pos_session and pos_session_id:
+            from .models import POSSession
+            pos_session = POSSession.objects.filter(id=pos_session_id).first()
 
         # 2. Create TreasuryMovement
         movement = TreasuryMovement.objects.create(
@@ -81,6 +86,39 @@ class TreasuryService:
             TreasuryService._create_accounting_entry(movement)
         
         return movement
+
+    @staticmethod
+    @transaction.atomic
+    def create_cash_movement(amount, movement_type, from_account=None, to_account=None,
+                             created_by=None, pos_session=None, notes='', justify_reason=None,
+                             journal_entry_desc=None, **kwargs):
+        """
+        Legacy wrapper for Cash movements (Adjustments, Withdrawals, Deposits).
+        Redirects to unified create_movement.
+        """
+        # Map legacy movement types to unified types
+        mapped_type = movement_type
+        if movement_type == 'WITHDRAWAL':
+            mapped_type = TreasuryMovement.Type.OUTBOUND
+        elif movement_type == 'DEPOSIT':
+            mapped_type = TreasuryMovement.Type.INBOUND
+        elif movement_type == 'ADJUSTMENT' and not (from_account or to_account):
+             # Adjustment without accounts? Logic usually needs one. 
+             # But if it's a gap fillers, might be outbound/inbound depending on gap.
+             pass
+        
+        return TreasuryService.create_movement(
+            amount=amount,
+            movement_type=mapped_type,
+            from_account=from_account,
+            to_account=to_account,
+            created_by=created_by,
+            pos_session=pos_session,
+            notes=notes,
+            justify_reason=justify_reason,
+            reference=journal_entry_desc or notes,
+            **kwargs
+        )
 
     @staticmethod
     def _update_business_documents(movement, invoice, sale_order, purchase_order):

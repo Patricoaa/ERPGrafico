@@ -70,6 +70,21 @@ class TreasuryMovement(models.Model):
         CREDIT = 'CREDIT', _('Crédito')
         OTHER = 'OTHER', _('Otro')
 
+    class JustifyReason(models.TextChoices):
+        COUNTING_ERROR = 'COUNTING_ERROR', _('Error de Conteo')
+        THEFT = 'THEFT', _('Robo/Faltante')
+        ROUNDING = 'ROUNDING', _('Redondeo')
+        TIP = 'TIP', _('Propina')
+        CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
+        SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
+        TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')
+        PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
+        OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
+        OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
+        OPENING_ADJUSTMENT = 'OPENING_ADJUSTMENT', _('Ajuste de Apertura')
+        RETIREMENT = 'RETIREMENT', _('Retiro de Cierre')
+        UNKNOWN = 'UNKNOWN', _('Desconocido')
+
     movement_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
     payment_method = models.CharField(
         _("Método de Pago"), 
@@ -178,6 +193,7 @@ class TreasuryMovement(models.Model):
     justify_reason = models.CharField(
         _("Justificación"),
         max_length=50,
+        choices=JustifyReason.choices,
         blank=True,
         null=True,
         help_text=_("Código de justificación para movimientos manuales")
