@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { formatCurrency } from "@/lib/utils"
 import { CashMovementModal } from "@/components/treasury/CashMovementModal"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
+import api from "@/lib/api"
+import { toast } from "sonner"
 
 // Define the type for our data
 interface CashMovement {
@@ -28,9 +30,28 @@ interface CashMovement {
 }
 
 export default function TreasuryMovementsPage() {
+    const [movements, setMovements] = useState<CashMovement[]>([])
+    const [loading, setLoading] = useState(true)
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | string>(0)
+
+    const fetchMovements = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/treasury/cash-movements/')
+            setMovements(response.data.results || response.data)
+        } catch (error) {
+            console.error("Failed to fetch movements", error)
+            toast.error("Error al cargar los movimientos.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchMovements()
+    }, [])
 
     const handleViewDetails = (id: number) => {
         setSelectedMovementId(id)
@@ -147,7 +168,7 @@ export default function TreasuryMovementsPage() {
             accessorKey: "pos_session",
             header: "Sesión",
             cell: ({ row }) => {
-                const session = row.getValue("pos_session")
+                const session = row.original.pos_session
                 if (!session) return <span className="text-muted-foreground text-[10px]">-</span>
                 return (
                     <Badge variant="outline" className="font-mono text-[10px]">
@@ -206,28 +227,33 @@ export default function TreasuryMovementsPage() {
                 open={openModal}
                 onOpenChange={setOpenModal}
                 onSuccess={() => {
-                    // Refetch data - DataTable handles this via context or ref prop usually, 
-                    // but standard reload works for now or if we had a refresh trigger
-                    window.location.reload()
+                    fetchMovements()
                 }}
             />
 
-            <DataTable
-                columns={columns}
-                fetchUrl="/treasury/cash-movements/"
-                searchColumn="notes" // We removed the column from view, but search might still work if backend supports it. Ideally we search by type or user.
-                facets={[
-                    {
-                        column: "movement_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Depósito", value: "DEPOSIT" },
-                            { label: "Retiro", value: "WITHDRAWAL" },
-                            { label: "Traspaso", value: "TRANSFER" },
-                        ],
-                    },
-                ]}
-            />
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-muted-foreground">Cargando movimientos...</div>
+                </div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={movements}
+                    filterColumn="notes"
+                    searchPlaceholder="Buscar por notas..."
+                    facetedFilters={[
+                        {
+                            column: "movement_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Depósito", value: "DEPOSIT" },
+                                { label: "Retiro", value: "WITHDRAWAL" },
+                                { label: "Traspaso", value: "TRANSFER" },
+                            ],
+                        },
+                    ]}
+                />
+            )}
 
             <TransactionViewModal
                 open={detailsOpen}

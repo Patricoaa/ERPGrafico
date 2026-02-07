@@ -928,10 +928,12 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 <PaymentForm
                     open={!!editingPayment}
                     onOpenChange={(open) => !open && setEditingPayment(null)}
-                    transactionId={editingPayment.transactionId}
-                    transactionType={editingPayment.transactionType}
-                    defaultAmount={editingPayment.amount}
-                    isReceivable={editingPayment.isReceivable}
+                    initialData={{
+                        payment_type: editingPayment.isReceivable ? "INBOUND" : "OUTBOUND",
+                        amount: editingPayment.amount,
+                        invoice_id: editingPayment.transactionId,
+                        reference: `Pago para ${editingPayment.transactionType} #${editingPayment.transactionId}`
+                    }}
                     onSuccess={() => {
                         setEditingPayment(null)
                         fetchData()
