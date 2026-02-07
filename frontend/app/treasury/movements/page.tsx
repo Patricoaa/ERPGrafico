@@ -26,6 +26,7 @@ interface CashMovement {
     to_container_name: string | null
     justify_reason: string | null
     justify_reason_display: string | null
+    involved_accounts: string[]
 }
 
 export default function TreasuryMovementsPage() {
@@ -79,12 +80,12 @@ export default function TreasuryMovementsPage() {
                 const label = row.original.movement_type_display
 
                 let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
-                if (type === 'DEPOSIT') variant = "default" // Greenish in most themes usually primary
-                if (type === 'WITHDRAWAL') variant = "destructive"
-                if (type === 'TRANSFER') variant = "secondary"
+                if (type === 'DEPOSIT' || type === 'SALE') variant = "default"
+                if (type === 'WITHDRAWAL' || type === 'EXPENSE') variant = "destructive"
+                if (type === 'TRANSFER' || type === 'BANK_DEPOSIT') variant = "secondary"
 
                 return (
-                    <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight">
+                    <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight px-2 py-0">
                         {label}
                     </Badge>
                 )
@@ -98,58 +99,57 @@ export default function TreasuryMovementsPage() {
             header: "Flujo / Detalle",
             cell: ({ row }) => {
                 const m = row.original;
-                const isTransfer = m.movement_type === 'TRANSFER';
-                const isDeposit = m.movement_type === 'DEPOSIT';
-                const isWithdrawal = m.movement_type === 'WITHDRAWAL';
+                const isTransfer = m.movement_type === 'TRANSFER' || m.movement_type === 'BANK_DEPOSIT';
+                const isDeposit = m.movement_type === 'DEPOSIT' || m.movement_type === 'SALE';
+                const isWithdrawal = m.movement_type === 'WITHDRAWAL' || m.movement_type === 'EXPENSE';
 
                 // Determine motive label
                 const motive = m.justify_reason_display || (m.notes ? "Ver notas" : null);
 
-                if (isTransfer) {
-                    return (
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        {/* Physical Flow */}
                         <div className="flex items-center gap-2 text-xs">
-                            <span className="font-medium text-muted-foreground truncate max-w-[100px]" title={m.from_container_name || '?'}>
-                                {m.from_container_name || 'Desconocido'}
-                            </span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
-                            <span className="font-medium truncate max-w-[100px]" title={m.to_container_name || '?'}>
-                                {m.to_container_name || 'Desconocido'}
-                            </span>
-                        </div>
-                    );
-                }
-
-                if (isDeposit) {
-                    return (
-                        <div className="flex flex-col justify-center text-xs">
-                            <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
-                                {m.to_container_name || 'Caja'}
-                            </span>
-                            {motive && (
-                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px] italic">
-                                    {motive}
+                            {isTransfer ? (
+                                <>
+                                    <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={m.from_container_name || '?'}>
+                                        {m.from_container_name || 'Origen'}
+                                    </span>
+                                    <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
+                                    <span className="font-bold truncate max-w-[100px]" title={m.to_container_name || '?'}>
+                                        {m.to_container_name || 'Destino'}
+                                    </span>
+                                </>
+                            ) : isDeposit ? (
+                                <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
+                                    {m.to_container_name || 'Entra a Caja'}
+                                </span>
+                            ) : (
+                                <span className="font-bold text-red-700 dark:text-red-400 truncate max-w-[180px]">
+                                    {m.from_container_name || 'Sale de Caja'}
                                 </span>
                             )}
                         </div>
-                    )
-                }
 
-                if (isWithdrawal) {
-                    return (
-                        <div className="flex flex-col justify-center text-xs">
-                            <span className="font-bold text-red-700 dark:text-red-400 truncate max-w-[180px]">
-                                {m.from_container_name || 'Caja'}
-                            </span>
-                            {motive && (
-                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px] italic">
-                                    {motive}
-                                </span>
-                            )}
-                        </div>
-                    )
-                }
+                        {/* Motive / Justification */}
+                        {motive && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] italic">
+                                {motive}
+                            </div>
+                        )}
 
-                return <span className="text-xs text-muted-foreground">-</span>
+                        {/* Accounting Impact */}
+                        {m.involved_accounts && m.involved_accounts.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                                {m.involved_accounts.map((acc, idx) => (
+                                    <span key={idx} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground/80 border border-muted-foreground/10">
+                                        {acc}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
             },
         },
         {
@@ -158,20 +158,27 @@ export default function TreasuryMovementsPage() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const colorClass = type === 'WITHDRAWAL' ? 'text-red-600' : 'text-emerald-600'
+                const isOut = ['WITHDRAWAL', 'EXPENSE', 'BANK_DEPOSIT'].includes(type)
+                const colorClass = isOut ? 'text-red-600' : 'text-emerald-600'
 
                 return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
             },
         },
         {
-            accessorKey: "pos_session",
-            header: "Sesión",
+            id: "origin",
+            header: "Origen",
             cell: ({ row }) => {
                 const session = row.original.pos_session
-                if (!session) return <span className="text-muted-foreground text-[10px]">-</span>
+                if (session) {
+                    return (
+                        <Badge variant="outline" className="font-mono text-[10px] bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
+                            POS #{session}
+                        </Badge>
+                    )
+                }
                 return (
-                    <Badge variant="outline" className="font-mono text-[10px]">
-                        POS #{session}
+                    <Badge variant="secondary" className="text-[10px] dark:bg-slate-800 dark:text-slate-400 opacity-80 uppercase tracking-tighter">
+                        Sistema
                     </Badge>
                 )
             },
@@ -235,8 +242,9 @@ export default function TreasuryMovementsPage() {
                 <DataTable
                     columns={columns}
                     data={movements}
-                    filterColumn="notes"
-                    searchPlaceholder="Buscar por notas..."
+                    globalFilterFields={["notes", "from_container_name", "to_container_name"]}
+                    searchPlaceholder="Buscar movimientos..."
+                    useAdvancedFilter={true}
                     facetedFilters={[
                         {
                             column: "movement_type",
@@ -245,6 +253,9 @@ export default function TreasuryMovementsPage() {
                                 { label: "Depósito", value: "DEPOSIT" },
                                 { label: "Retiro", value: "WITHDRAWAL" },
                                 { label: "Traspaso", value: "TRANSFER" },
+                                { label: "Depósito Bancario", value: "BANK_DEPOSIT" },
+                                { label: "Venta", value: "SALE" },
+                                { label: "Gasto/Compra", value: "EXPENSE" },
                             ],
                         },
                     ]}

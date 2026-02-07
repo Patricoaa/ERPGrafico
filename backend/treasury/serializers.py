@@ -261,6 +261,12 @@ class CashMovementSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    
+    # Aliases for frontend consistency
+    from_container_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
+    to_container_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    
+    involved_accounts = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     
     # Payment linking
@@ -272,6 +278,12 @@ class CashMovementSerializer(serializers.ModelSerializer):
         model = CashMovement
         fields = '__all__'
         read_only_fields = ['created_by', 'created_at', 'updated_at']
+
+    def get_involved_accounts(self, obj):
+        """Returns unique account names involved in the associated journal entry"""
+        if obj.journal_entry:
+            return list(obj.journal_entry.items.values_list('account__name', flat=True).distinct())
+        return []
 
 
 class POSSessionSerializer(serializers.ModelSerializer):
