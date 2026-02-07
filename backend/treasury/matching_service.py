@@ -11,7 +11,7 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, Payment, BankStatement, ReconciliationRule
+from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule
 from .rule_service import RuleService
 
 
@@ -41,7 +41,7 @@ class MatchingService:
             Lista de sugerencias ordenadas por score descendente:
             [
                 {
-                    'payment': Payment instance,
+                    'payment': TreasuryMovement instance,
                     'payment_data': dict serializado,
                     'score': float (0-100),
                     'reasons': ['exact_amount', 'date_match', ...],
@@ -70,7 +70,7 @@ class MatchingService:
             treasury_account=line.statement.treasury_account,
             is_reconciled=False,
             is_pending_registration=False,  # Don't suggest pending payments
-            payment_type='INBOUND' if is_inbound else 'OUTBOUND'
+            movement_type='INBOUND' if is_inbound else 'OUTBOUND'
         )
 
         # Candidatos por proximidad de fecha O por coincidencia exacta de ID/Referencia
@@ -84,7 +84,7 @@ class MatchingService:
             candidate_filters |= Q(transaction_number__iexact=line.reference)
             candidate_filters |= Q(reference__iexact=line.reference)
 
-        payments_query = Payment.objects.filter(
+        payments_query = TreasuryMovement.objects.filter(
             base_filters & candidate_filters
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
@@ -94,9 +94,9 @@ class MatchingService:
         # 1. Aplicar reglas personalizadas primero
         rule_matches = RuleService.apply_rules_to_line(line)
         for match in rule_matches:
-            from .serializers import PaymentSerializer
+            from .serializers import TreasuryMovementSerializer
             suggestions.append({
-                'payment_data': PaymentSerializer(match['payment']).data,
+                'payment_data': TreasuryMovementSerializer(match['payment']).data,
                 'score': match['score'],
                 'reasons': [f"Rule: {match['rule_name']}"],
                 'difference': abs(line.credit - line.debit) - abs(match['payment'].amount),
@@ -129,8 +129,8 @@ class MatchingService:
         Sugiere líneas de cartola para un pago. (Bidireccional)
         """
         try:
-            payment = Payment.objects.get(id=payment_id)
-        except Payment.DoesNotExist:
+            payment = TreasuryMovement.objects.get(id=payment_id)
+        except TreasuryMovement.DoesNotExist:
             return []
             
         if payment.is_reconciled or not payment.treasury_account:
@@ -147,7 +147,7 @@ class MatchingService:
         )
         
         # Sentido
-        if payment.payment_type == 'INBOUND':
+        if payment.movement_type == 'INBOUND':
             filters &= Q(credit__gt=0)
         else:
             filters &= Q(debit__gt=0)
@@ -181,14 +181,14 @@ class MatchingService:
     @staticmethod
     def _calculate_match_score(
         line: BankStatementLine,
-        payment: Payment
+        payment: TreasuryMovement
     ) -> Dict[str, Any]:
         """
         Calcula score de matching entre línea y pago.
         
         Returns:
             {
-                'payment': Payment,
+                'payment': TreasuryMovement,
                 'payment_data': dict,
                 'score': float,
                 'reasons': list,
@@ -270,8 +270,8 @@ class MatchingService:
                     reasons.append('contact_partial_match')
         
         # Serializar payment data
-        from .serializers import PaymentSerializer
-        payment_data = PaymentSerializer(payment).data
+        from .serializers import TreasuryMovementSerializer
+        payment_data = TreasuryMovementSerializer(payment).data
         
         return {
             'payment_data': payment_data,
@@ -284,7 +284,7 @@ class MatchingService:
     @transaction.atomic
     def create_match_group(
         line_ids: List[int],
-        payment_ids: List[int],
+        movement_ids: List[int],
         user,
         difference_reason: Optional[str] = None,
         notes: Optional[str] = None
@@ -295,9 +295,9 @@ class MatchingService:
         from .models import ReconciliationMatch
         
         lines = list(BankStatementLine.objects.filter(id__in=line_ids).select_for_update())
-        payments = list(Payment.objects.filter(id__in=payment_ids).select_for_update())
+        payments = list(TreasuryMovement.objects.filter(id__in=movement_ids).select_for_update())
         
-        if len(lines) != len(line_ids) or len(payments) != len(payment_ids):
+        if len(lines) != len(line_ids) or len(payments) != len(movement_ids):
             raise ValueError("Algunas líneas o pagos no existen")
             
         # Validaciones de estado y consistencia
@@ -307,8 +307,8 @@ class MatchingService:
         if not (is_all_abonos or is_all_cargos):
             raise ValueError("No se pueden mezclar Cargos y Abonos en un mismo grupo de conciliación.")
             
-        is_all_inbound = all(p.payment_type == 'INBOUND' for p in payments)
-        is_all_outbound = all(p.payment_type == 'OUTBOUND' for p in payments)
+        is_all_inbound = all(p.movement_type == 'INBOUND' for p in payments)
+        is_all_outbound = all(p.movement_type == 'OUTBOUND' for p in payments)
         
         if not (is_all_inbound or is_all_outbound):
             raise ValueError("No se pueden mezclar Ingresos y Egresos en un mismo grupo de conciliación.")
@@ -351,7 +351,7 @@ class MatchingService:
             l.save()
             total_lines_amount += abs(l.credit - l.debit)
             
-        # Link Payments
+        # Link TreasuryMovements
         total_payments_amount = Decimal(0)
         for p in payments:
             p.reconciliation_match = group
@@ -437,11 +437,11 @@ class MatchingService:
             ).count()
             l.statement.save()
 
-        # Update All Payments in Group AND Handle Transfer if Accounts Differs
+        # Update All TreasuryMovements in Group AND Handle Transfer if Accounts Differs
         for p in group.payments.all():
             
-            # Check for Account Mismatch (e.g. Card Payment vs Bank Statement)
-            # If Payment was registered in "Transbank Account" but matched to "Bank Statement"
+            # Check for Account Mismatch (e.g. Card TreasuryMovement vs Bank Statement)
+            # If TreasuryMovement was registered in "Transbank Account" but matched to "Bank Statement"
             # We need to transfer funds: Dr Bank / Cr Transbank
             stmt_account = line.statement.treasury_account.account
             if p.account and p.account != stmt_account:
@@ -458,8 +458,8 @@ class MatchingService:
                 JournalItem.objects.create(
                     entry=transfer_entry,
                     account=stmt_account,
-                    debit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
-                    credit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
+                    debit=abs(p.amount) if p.movement_type == 'INBOUND' else 0,
+                    credit=abs(p.amount) if p.movement_type == 'OUTBOUND' else 0,
                     partner=p.contact.name if p.contact else ''
                 )
                 
@@ -467,8 +467,8 @@ class MatchingService:
                 JournalItem.objects.create(
                     entry=transfer_entry,
                     account=p.account,
-                    debit=abs(p.amount) if p.payment_type == 'OUTBOUND' else 0,
-                    credit=abs(p.amount) if p.payment_type == 'INBOUND' else 0,
+                    debit=abs(p.amount) if p.movement_type == 'OUTBOUND' else 0,
+                    credit=abs(p.amount) if p.movement_type == 'INBOUND' else 0,
                     partner=p.contact.name if p.contact else ''
                 )
                 
@@ -480,7 +480,7 @@ class MatchingService:
             p.reconciled_by = user
             p.bank_statement_line = line # Legacy connection primarily to the 'main' line? 
                                          # Or leave null? Better leave null to avoid confusion, 
-                                         # but models.Payment.bank_statement_line exists.
+                                         # but models.TreasuryMovement.bank_statement_line exists.
                                          # Let's link it to the first line if 1:1, or None if N:M?
                                          # For now, let's skip legacy field to encourage 'reconciliation_match' usage.
             p.save()
@@ -525,7 +525,7 @@ class MatchingService:
             return line
 
         # Disband Group (Remove all links)
-        # 1. Payments
+        # 1. TreasuryMovements
         for p in group.payments.all():
             p.is_reconciled = False
             p.reconciled_at = None

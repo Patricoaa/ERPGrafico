@@ -20,10 +20,8 @@ import {
     ArrowDownLeft,
     ArrowUpRight,
     Loader2,
-    AlertCircle,
+    AlertTriangle,
     Banknote,
-    Calculator,
-    AlertTriangle
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -36,10 +34,11 @@ interface CashMovementModalProps {
     onSuccess?: () => void
 }
 
-type MovementType = 'TRANSFER' | 'DEPOSIT' | 'WITHDRAWAL'
+// Maps to UI tabs, but backend expects INBOUND/OUTBOUND/TRANSFER
+type TabType = 'TRANSFER' | 'DEPOSIT' | 'WITHDRAWAL'
 
 export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovementModalProps) {
-    const [type, setType] = useState<MovementType>('TRANSFER')
+    const [tab, setTab] = useState<TabType>('TRANSFER')
     const [amount, setAmount] = useState("")
     const [fromId, setFromId] = useState<string>("")
     const [toId, setToId] = useState<string>("")
@@ -63,13 +62,14 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
 
     // Fetch selected account for transfer/withdrawal validation
     useEffect(() => {
-        if (fromId && (type === 'TRANSFER' || type === 'WITHDRAWAL')) {
+        if (fromId && (tab === 'TRANSFER' || tab === 'WITHDRAWAL')) {
             api.get(`/treasury/accounts/${fromId}/`)
                 .then(res => {
                     setSelectedFromAccount(res.data)
                     // Validate if account has sufficient funds
                     const needed = parseFloat(amount) || 0
                     const available = res.data.current_balance || 0
+                    // Only warn for Cash accounts if we want to be strict, but Balance is generic.
                     setInsufficientFunds(needed > 0 && available < needed)
                 })
                 .catch(err => {
@@ -81,7 +81,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             setSelectedFromAccount(null)
             setInsufficientFunds(false)
         }
-    }, [fromId, type, amount])
+    }, [fromId, tab, amount])
 
     const handleSubmit = async () => {
         if (!amount || parseFloat(amount) <= 0) {
@@ -89,36 +89,42 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             return
         }
 
-        if (type === 'TRANSFER' && (!fromId || !toId)) {
+        if (tab === 'TRANSFER' && (!fromId || !toId)) {
             toast.error("Debe especificar origen y destino para el traspaso")
             return
         }
-        if (type === 'TRANSFER' && fromId === toId) {
+        if (tab === 'TRANSFER' && fromId === toId) {
             toast.error("La cuenta de origen y destino no pueden ser la misma")
             return
         }
-        if (type === 'DEPOSIT' && !toId) {
+        if (tab === 'DEPOSIT' && !toId) {
             toast.error("Debe especificar la cuenta de destino")
             return
         }
-        if (type === 'WITHDRAWAL' && !fromId) {
+        if (tab === 'WITHDRAWAL' && !fromId) {
             toast.error("Debe especificar la cuenta de origen")
             return
         }
-        if ((type === 'DEPOSIT' || type === 'WITHDRAWAL') && !motive) {
+        if ((tab === 'DEPOSIT' || tab === 'WITHDRAWAL') && !motive) {
             toast.error("Debe seleccionar un motivo")
             return
         }
 
+        // Map Tab to Backend Type
+        let movement_type = 'TRANSFER'
+        if (tab === 'DEPOSIT') movement_type = 'INBOUND'
+        if (tab === 'WITHDRAWAL') movement_type = 'OUTBOUND'
+
         setSubmitting(true)
         try {
-            await api.post('/treasury/cash-movements/', {
-                movement_type: type,
+            await api.post('/treasury/movements/', { // Use new endpoint
+                movement_type: movement_type,
                 amount: parseFloat(amount),
                 from_account: fromId || null,
                 to_account: toId || null,
                 notes: notes,
-                justify_reason: motive
+                justify_reason: motive,
+                payment_method: 'CASH', // Default to CASH for manual movements
             })
             toast.success("Movimiento registrado correctamente")
             handleReset()
@@ -126,6 +132,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             onSuccess?.()
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al registrar movimiento")
+            console.error(error)
         } finally {
             setSubmitting(false)
         }
@@ -135,8 +142,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title="Nuevo Movimiento de Efectivo"
-            description="Registre traspasos entre cajas, depósitos externos o retiros manuales."
+            title="Nuevo Movimiento de Tesorería"
+            description="Registre traspasos, depósitos o retiros manuales."
             size="lg"
             footer={
                 <div className="flex w-full gap-2 justify-end">
@@ -151,8 +158,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             }
         >
             <div className="space-y-6 py-2">
-                <Tabs value={type} onValueChange={(v) => {
-                    setType(v as MovementType)
+                <Tabs value={tab} onValueChange={(v) => {
+                    setTab(v as TabType)
                     if (v === 'DEPOSIT') {
                         setFromId("")
                         setMotive("")
@@ -170,10 +177,10 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             <ArrowLeftRight className="h-4 w-4" /> Traspaso
                         </TabsTrigger>
                         <TabsTrigger value="DEPOSIT" className="gap-2">
-                            <ArrowDownLeft className="h-4 w-4" /> Depósito
+                            <ArrowDownLeft className="h-4 w-4" /> Depósito / Ingreso
                         </TabsTrigger>
                         <TabsTrigger value="WITHDRAWAL" className="gap-2">
-                            <ArrowUpRight className="h-4 w-4" /> Retiro
+                            <ArrowUpRight className="h-4 w-4" /> Retiro / Gasto
                         </TabsTrigger>
                     </TabsList>
 
@@ -196,34 +203,36 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                             {/* Origin */}
-                            <div className={cn("space-y-2", type === 'DEPOSIT' && "opacity-40 pointer-events-none")}>
+                            <div className={cn("space-y-2", tab === 'DEPOSIT' && "opacity-40 pointer-events-none")}>
                                 <Label className={FORM_STYLES.label}>
-                                    {type === 'TRANSFER' ? 'Cuenta de Origen (Sale)' : 'Cuenta de Origen'}
+                                    {tab === 'TRANSFER' ? 'Cuenta de Origen (Sale)' : 'Cuenta de Origen'}
                                 </Label>
                                 <CashContainerSelector
                                     value={fromId}
                                     onChange={(val) => setFromId(val || "")}
-                                    placeholder={type === 'DEPOSIT' ? "Exterior / Aporte" : "Seleccione caja..."}
-                                    disabled={type === 'DEPOSIT'}
+                                    placeholder={tab === 'DEPOSIT' ? "Exterior / Aporte" : "Seleccione cuenta..."}
+                                    disabled={tab === 'DEPOSIT'}
+                                    physicalOnly={false} // Allow selecting Banks too!
                                 />
                             </div>
 
                             {/* Destination */}
-                            <div className={cn("space-y-2", type === 'WITHDRAWAL' && "opacity-40 pointer-events-none")}>
+                            <div className={cn("space-y-2", tab === 'WITHDRAWAL' && "opacity-40 pointer-events-none")}>
                                 <Label className={FORM_STYLES.label}>
-                                    {type === 'TRANSFER' ? 'Cuenta de Destino (Entra)' : 'Cuenta de Destino'}
+                                    {tab === 'TRANSFER' ? 'Cuenta de Destino (Entra)' : 'Cuenta de Destino'}
                                 </Label>
                                 <CashContainerSelector
                                     value={toId}
                                     onChange={(val) => setToId(val || "")}
-                                    placeholder={type === 'WITHDRAWAL' ? "Gasto / Retiro" : "Seleccione caja..."}
-                                    disabled={type === 'WITHDRAWAL'}
+                                    placeholder={tab === 'WITHDRAWAL' ? "Gasto / Retiro" : "Seleccione cuenta..."}
+                                    disabled={tab === 'WITHDRAWAL'}
+                                    physicalOnly={false} // Allow selecting Banks too!
                                 />
                             </div>
                         </div>
 
                         {/* Motive Selector (Only for Deposit/Withdrawal) */}
-                        {type !== 'TRANSFER' && (
+                        {tab !== 'TRANSFER' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
                                 <Label className={FORM_STYLES.label}>Motivo</Label>
                                 <Select value={motive} onValueChange={setMotive}>
@@ -231,7 +240,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                         <SelectValue placeholder="Seleccione motivo principal..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {type === 'DEPOSIT' ? (
+                                        {tab === 'DEPOSIT' ? (
                                             <>
                                                 <SelectItem value="TIP">Propina (Ingreso)</SelectItem>
                                                 <SelectItem value="COUNTING_ERROR">Error de Conteo (Sobrante)</SelectItem>
@@ -254,6 +263,16 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         )}
 
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Notas / Observaciones</Label>
+                            <Textarea
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                placeholder="Detalles adicionales..."
+                                className="resize-none"
+                            />
+                        </div>
+
                         {/* Insufficient funds warning */}
                         {insufficientFunds && selectedFromAccount && (
                             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
@@ -270,8 +289,6 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                 </div>
                             </div>
                         )}
-
-
                     </div>
                 </Tabs>
             </div>

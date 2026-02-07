@@ -10,7 +10,7 @@ from django.db.models import Q, QuerySet
 from decimal import Decimal
 from datetime import timedelta, date
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, Payment, ReconciliationRule, BankStatement
+from .models import BankStatementLine, TreasuryMovement, ReconciliationRule, BankStatement
 
 
 class RuleService:
@@ -91,7 +91,7 @@ class RuleService:
         line_amount = abs(line.credit - line.debit)
         is_inbound = line.credit > line.debit
         
-        filters &= Q(payment_type='INBOUND' if is_inbound else 'OUTBOUND')
+        filters &= Q(movement_type='INBOUND' if is_inbound else 'OUTBOUND')
         
         # Filtro por monto exacto
         if 'amount_exact' in criteria:
@@ -122,14 +122,14 @@ class RuleService:
         if 'transaction_id' in criteria and line.transaction_id:
             filters &= Q(transaction_number__icontains=line.transaction_id)
         
-        return Payment.objects.filter(filters).select_related(
+        return TreasuryMovement.objects.filter(filters).select_related(
             'contact', 'invoice', 'sale_order', 'purchase_order'
         )[:20]  # Limitar resultados
     
     @staticmethod
     def _calculate_rule_score(
         line: BankStatementLine,
-        payment: Payment,
+        payment: TreasuryMovement,
         rule: ReconciliationRule
     ) -> float:
         """

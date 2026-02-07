@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine,  
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
                      ReconciliationRule, CardPaymentProvider, DailySettlement, 
-                     CardTransaction, POSTerminal, CashMovement, 
+                     CardTransaction, POSTerminal, 
                      CashDifference, POSSessionAudit)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
@@ -90,12 +90,19 @@ class POSTerminalSerializer(serializers.ModelSerializer):
 
 
 
-class PaymentSerializer(serializers.ModelSerializer):
+class TreasuryMovementSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     account_name = serializers.CharField(source='account.name', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
-    journal_name = serializers.CharField(source='treasury_account.name', read_only=True)
-    treasury_account_type = serializers.CharField(source='treasury_account.account_type', read_only=True)
+    movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
+    
+    # Account Names
+    from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
+    to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    
+    # Legacy/Display fields for frontend compatibility
+    journal_name = serializers.SerializerMethodField()
+
     code = serializers.SerializerMethodField()
     display_id = serializers.CharField(read_only=True)
     document_info = serializers.SerializerMethodField()
@@ -104,14 +111,21 @@ class PaymentSerializer(serializers.ModelSerializer):
     reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
     bank_statement_info = serializers.SerializerMethodField()
     
-    # Cash Movement linking
-    cash_movement_id = serializers.IntegerField(source='cash_movement.id', read_only=True, allow_null=True)
-    cash_movement_type = serializers.CharField(source='cash_movement.get_movement_type_display', read_only=True, allow_null=True)
+    # Additional Context
+    justify_reason_display = serializers.SerializerMethodField()
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
 
     class Meta:
-        model = Payment
+        model = TreasuryMovement
         fields = '__all__'
-        
+        read_only_fields = ['created_by', 'created_at', 'history', 'transaction_number', 'is_pending_registration']
+    
+    def get_journal_name(self, obj):
+        # Return the name of the primary treasury account involved
+        if obj.treasury_account:
+            return obj.treasury_account.name
+        return None
+
     def get_partner_name(self, obj):
         if obj.contact:
             return obj.contact.name
@@ -131,6 +145,11 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def get_code(self, obj):
         return obj.display_id
+
+    def get_justify_reason_display(self, obj):
+        # Helper to get display name for justify_reason if generic display method doesn't work automatically
+        # or if we want custom logic. Since it's a CharField with choices, get_FOO_display works.
+        return obj.get_justify_reason_display() if obj.justify_reason else None
 
     def get_document_info(self, obj):
         info = {
@@ -167,125 +186,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         return None
 
 
-class BankStatementLineSerializer(serializers.ModelSerializer):
-    """Serializer for bank statement lines"""
-    amount = serializers.DecimalField(read_only=True, max_digits=20, decimal_places=2)
-    matched_payment_info = serializers.SerializerMethodField()
-    reconciliation_state_display = serializers.CharField(source='get_reconciliation_state_display', read_only=True)
-    reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
-    
-    class Meta:
-        model = BankStatementLine
-        fields = '__all__'
-    
-    def get_matched_payment_info(self, obj):
-        if obj.matched_payment:
-            return {
-                'id': obj.matched_payment.id,
-                'display_id': obj.matched_payment.display_id,
-                'amount': obj.matched_payment.amount,
-                'date': obj.matched_payment.date,
-            }
-        return None
-
-
-class BankStatementSerializer(serializers.ModelSerializer):
-    """Serializer for bank statements"""
-    display_id = serializers.CharField(read_only=True)
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
-    reconciliation_progress = serializers.DecimalField(read_only=True, max_digits=5, decimal_places=1)
-    state_display = serializers.CharField(source='get_state_display', read_only=True)
-    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
-    
-    # Nested lines (optional, for detail view)
-    lines = BankStatementLineSerializer(many=True, read_only=True, required=False)
-    
-    class Meta:
-        model = BankStatement
-        fields = '__all__'
-
-
-class BankStatementListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list view"""
-    display_id = serializers.CharField(read_only=True)
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
-    reconciliation_progress = serializers.DecimalField(read_only=True, max_digits=5, decimal_places=1)
-    state_display = serializers.CharField(source='get_state_display', read_only=True)
-    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
-    
-    class Meta:
-        model = BankStatement
-        exclude = ['notes']
-
-
-class ReconciliationRuleSerializer(serializers.ModelSerializer):
-    """Serializer for reconciliation rules"""
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
-    
-    class Meta:
-        model = ReconciliationRule
-        fields = '__all__'
-        read_only_fields = ['created_by', 'times_applied', 'success_rate']
-
-
-class CardPaymentProviderSerializer(serializers.ModelSerializer):
-    """Serializer for Card Payment Providers"""
-    
-    class Meta:
-        model = CardPaymentProvider
-        fields = '__all__'
-
-
-class DailySettlementSerializer(serializers.ModelSerializer):
-    """Serializer for Daily Settlements"""
-    provider_name = serializers.CharField(source='provider.name', read_only=True)
-    
-    class Meta:
-        model = DailySettlement
-        fields = '__all__'
-
-
-class CardTransactionSerializer(serializers.ModelSerializer):
-    """Serializer for Card Transactions"""
-    provider_name = serializers.CharField(source='provider.name', read_only=True)
-    
-    class Meta:
-        model = CardTransaction
-        fields = '__all__'
-
-
-class CashMovementSerializer(serializers.ModelSerializer):
-    """Serializer for Cash Movements"""
-    movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
-    justify_reason_display = serializers.CharField(source='get_justify_reason_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
-    to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
-    
-    # Aliases for frontend consistency
-    from_container_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
-    to_container_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
-    
-    involved_accounts = serializers.SerializerMethodField()
-    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
-    
-    # Payment linking
-    payment_id = serializers.IntegerField(source='payment.id', read_only=True, allow_null=True)
-    payment_reference = serializers.CharField(source='payment.reference', read_only=True, allow_null=True)
-    payment_display_id = serializers.CharField(source='payment.display_id', read_only=True, allow_null=True)
-
-    class Meta:
-        model = CashMovement
-        fields = '__all__'
-        read_only_fields = ['created_by', 'created_at', 'updated_at']
-
-    def get_involved_accounts(self, obj):
-        """Returns unique account names involved in the associated journal entry"""
-        if obj.journal_entry:
-            return list(obj.journal_entry.items.values_list('account__name', flat=True).distinct())
-        return []
-
-
 class POSSessionSerializer(serializers.ModelSerializer):
     """Serializer for POS Sessions"""
     from .models import POSSession
@@ -296,7 +196,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
     closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
-    cash_movements = CashMovementSerializer(many=True, read_only=True)
+    cash_movements = TreasuryMovementSerializer(source='movements', many=True, read_only=True)
     
     class Meta:
         from .models import POSSession
@@ -345,3 +245,75 @@ class CashFlowSerializer(serializers.Serializer):
     partner_name = serializers.CharField(allow_null=True)
     reference = serializers.CharField()
     is_internal = serializers.BooleanField()  # True para traspasos
+
+
+class BankStatementLineSerializer(serializers.ModelSerializer):
+    reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
+    amount = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = BankStatementLine
+        fields = '__all__'
+
+
+class BankStatementSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
+    reconciliation_progress = serializers.FloatField(read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    lines = BankStatementLineSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BankStatement
+        fields = '__all__'
+
+
+class BankStatementListSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
+    reconciliation_progress = serializers.FloatField(read_only=True)
+    display_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = BankStatement
+        fields = [
+            'id', 'display_id', 'treasury_account', 'treasury_account_name',
+            'statement_date', 'opening_balance', 'closing_balance',
+            'state', 'total_lines', 'reconciled_lines', 
+            'reconciliation_progress', 'imported_at', 'imported_by_name'
+        ]
+
+
+class ReconciliationRuleSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+
+    class Meta:
+        model = ReconciliationRule
+        fields = '__all__'
+        read_only_fields = ['times_applied', 'success_rate', 'created_by']
+
+
+class CardPaymentProviderSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+
+    class Meta:
+        model = CardPaymentProvider
+        fields = '__all__'
+
+
+class DailySettlementSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    
+    class Meta:
+        model = DailySettlement
+        fields = '__all__'
+
+
+class CardTransactionSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    
+    class Meta:
+        model = CardTransaction
+        fields = '__all__'
+

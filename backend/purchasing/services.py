@@ -2,6 +2,7 @@ from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
+from treasury.models import TreasuryMovement, TreasuryAccount
 from accounting.models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings
 from accounting.services import JournalEntryService, AccountingMapper
 from core.services import SequenceService, BaseNoteService
@@ -940,9 +941,9 @@ class PurchasingService:
                  PurchasingService.annul_receipt(receipt)
         
         # 3. Annul stand-alone Payments
-        for payment in order.payments.all():
-            if payment.journal_entry and payment.journal_entry.state == 'POSTED':
-                 TreasuryService.annul_payment(payment)
+        for movement in order.payments.all():
+            if movement.journal_entry and movement.journal_entry.state == 'POSTED':
+                 TreasuryService.annul_movement(movement)
 
         order.status = PurchaseOrder.Status.CANCELLED
         order.save()
@@ -1019,15 +1020,20 @@ class PurchasingService:
         if payment_method != 'CREDIT':
             payment_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             
-            payment = TreasuryService.register_payment(
+            # Resolve Treasury Account
+            treasury_account = None
+            if treasury_account_id:
+                treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first()
+
+            payment = TreasuryService.create_movement(
                 amount=payment_amount,
-                payment_type='OUTBOUND',
+                movement_type='OUTBOUND',
                 payment_method=payment_method,
                 reference=f"OCS-{order.number}",
                 partner=order.supplier,
                 invoice=invoice,
                 purchase_order=order,
-                treasury_account_id=treasury_account_id,
+                from_account=treasury_account,
                 transaction_number=transaction_number,
                 is_pending_registration=payment_is_pending
             )
@@ -1097,8 +1103,8 @@ class PurchasingService:
                  BillingService.delete_invoice(invoice)
         
         # 2. Delete stand-alone payments linked to order
-        for payment in order.payments.all():
-            TreasuryService.delete_payment(payment)
+        for movement in order.payments.all():
+            TreasuryService.delete_movement(movement)
 
         # 3. Delete receipts (which removes Stock Moves and their JEs)
         for receipt in order.receipts.all():

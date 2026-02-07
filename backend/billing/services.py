@@ -2,6 +2,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Invoice
+from treasury.models import TreasuryMovement, TreasuryAccount
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
 from accounting.services import JournalEntryService, AccountingMapper
 from sales.models import SaleOrder
@@ -441,15 +442,29 @@ class BillingService:
             received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             payment_amount = min(received_amount, order.total)
             
-            TreasuryService.register_payment(
+            # Resolve Treasury Account
+            treasury_account = None
+            if treasury_account_id:
+                treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first()
+
+            from_acc = None
+            to_acc = None
+            
+            if payment_type == TreasuryMovement.Type.INBOUND:
+                to_acc = treasury_account
+            else:
+                from_acc = treasury_account
+
+            TreasuryService.create_movement(
                 amount=payment_amount,
-                payment_type=payment_type,
+                movement_type=payment_type,
                 payment_method=payment_method,
                 reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,
                 sale_order=order,
-                treasury_account_id=treasury_account_id,
+                from_account=from_acc,
+                to_account=to_acc,
                 transaction_number=transaction_number,
                 is_pending_registration=payment_is_pending,
                 pos_session_id=pos_session_id
@@ -525,8 +540,9 @@ class BillingService:
         from treasury.services import TreasuryService
         
         # 1. Delete associated payments
-        for payment in invoice.payments.all():
-            TreasuryService.delete_payment(payment)
+        # 1. Delete associated payments
+        for movement in invoice.payments.all():
+            TreasuryService.delete_movement(movement)
         
         # 2. Delete invoice's own Journal Entry
         if invoice.journal_entry:
@@ -600,8 +616,9 @@ class BillingService:
                  )
              
              # Annul payments in cascade
-             for payment in posted_payments:
-                 TreasuryService.annul_payment(payment)
+             # Annul payments in cascade
+             for movement in posted_payments:
+                 TreasuryService.annul_movement(movement)
 
         # 1. Reverse Accounting Entry
         if invoice.journal_entry:

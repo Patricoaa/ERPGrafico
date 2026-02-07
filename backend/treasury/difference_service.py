@@ -91,12 +91,14 @@ class DifferenceService:
             if provider_id:
                 provider = CardPaymentProvider.objects.filter(id=provider_id).first()
                 
-            if not provider and line.matched_payment and line.matched_payment.card_provider:
-                provider = line.matched_payment.card_provider
+            if not provider and line.reconciliation_match:
+                first_movement = line.reconciliation_match.movements.filter(card_provider__isnull=False).first()
+                if first_movement:
+                    provider = first_movement.card_provider
             elif line.reconciliation_match:
-                first_payment = line.reconciliation_match.payments.filter(card_provider__isnull=False).first()
-                if first_payment:
-                    provider = first_payment.card_provider
+                first_movement = line.reconciliation_match.movements.filter(card_provider__isnull=False).first()
+                if first_movement:
+                    provider = first_movement.card_provider
             
             if provider and provider.commission_bridge_account:
                 difference_account = provider.commission_bridge_account
@@ -189,9 +191,9 @@ class DifferenceService:
         return DifferenceService.OTHER
     
     @staticmethod
-    def calculate_difference(line: BankStatementLine, payment) -> Decimal:
+    def calculate_difference(line: BankStatementLine, movement) -> Decimal:
         line_amount = abs(line.credit - line.debit)
-        payment_amount = abs(payment.amount)
+        payment_amount = abs(movement.amount)
         return line_amount - payment_amount
     
     @staticmethod
@@ -322,7 +324,7 @@ class POSDifferenceService:
         
         # If it was a TRANSFER, also record the physical move in treasury
         if reason == 'TRANSFER' and difference.transfer_target:
-            from .models import CashMovement
+            from .models import TreasuryMovement
             pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
             
             from_acc = None
@@ -334,7 +336,7 @@ class POSDifferenceService:
                 from_acc = difference.transfer_target
                 to_acc = pos_treasury_obj
                 
-            CashMovement.objects.create(
+            TreasuryMovement.objects.create(
                 movement_type='TRANSFER',
                 from_account=from_acc,
                 to_account=to_acc,

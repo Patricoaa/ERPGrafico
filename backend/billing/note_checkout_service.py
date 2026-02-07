@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import List, Dict, Optional
 
 from billing.models import Invoice
+from treasury.models import TreasuryMovement, TreasuryAccount
 from billing.note_workflow import NoteWorkflow
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
 from inventory.models import StockMove, Product, Warehouse, UoM
@@ -781,6 +782,12 @@ class NoteCheckoutService:
         amount = Decimal(str(payment_data.get('amount', 0)))
         is_sale = workflow.sale_order is not None
         
+        # Resolve Treasury Account
+        treasury_account_id = payment_data.get('treasury_account_id')
+        treasury_account = None
+        if treasury_account_id:
+             treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first()
+        
         if method != 'CREDIT' and amount > 0:
             # For Credit Note on Sale -> OUTBOUND (Refund)
             # For Debit Note on Sale -> INBOUND (Payment)
@@ -794,14 +801,15 @@ class NoteCheckoutService:
                 p_type = 'INBOUND' if workflow.is_credit_note else 'OUTBOUND'
                 partner = workflow.purchase_order.supplier
 
-            TreasuryService.register_payment(
+            TreasuryService.create_movement(
                 amount=amount,
-                payment_type=p_type,
+                movement_type=p_type,
                 payment_method=method,
                 reference=f"{workflow.invoice.dte_type[:3]}-{workflow.invoice.number}",
                 partner=partner,
                 invoice=workflow.invoice,
-                treasury_account_id=payment_data.get('treasury_account_id'),
+                from_account=treasury_account if p_type == 'OUTBOUND' else None,
+                to_account=treasury_account if p_type == 'INBOUND' else None,
                 transaction_number=payment_data.get('transaction_number'),
                 is_pending_registration=payment_data.get('is_pending', False)
             )

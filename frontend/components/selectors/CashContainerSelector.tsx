@@ -27,9 +27,10 @@ interface CashContainerSelectorProps {
     type?: string // Filter by account_type (BANK or CASH)
     disabled?: boolean
     excludeId?: number
+    physicalOnly?: boolean
 }
 
-export function CashContainerSelector({ value, onChange, placeholder = "Seleccionar contenedor...", type, disabled, excludeId }: CashContainerSelectorProps) {
+export function CashContainerSelector({ value, onChange, placeholder = "Seleccionar contenedor...", type, disabled, excludeId, physicalOnly = true }: CashContainerSelectorProps) {
     const [open, setOpen] = useState(false)
     const [containers, setContainers] = useState<CashContainer[]>([])
     const [loading, setLoading] = useState(false)
@@ -39,7 +40,11 @@ export function CashContainerSelector({ value, onChange, placeholder = "Seleccio
         const fetchContainers = async () => {
             setLoading(true)
             try {
-                const res = await api.get('/treasury/accounts/?is_physical=true')
+                // Determine query params
+                const params = new URLSearchParams()
+                if (physicalOnly) params.append('is_physical', 'true')
+
+                const res = await api.get(`/treasury/accounts/?${params.toString()}`)
                 let results = res.data.results || res.data
 
                 if (type) {

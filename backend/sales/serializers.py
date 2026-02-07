@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
-from treasury.serializers import PaymentSerializer
+from treasury.serializers import TreasuryMovementSerializer
 from production.serializers import WorkOrderSerializer
 from inventory.models import Product
 from django.db.models import Sum
@@ -126,7 +126,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
-    serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
+    serialized_payments = TreasuryMovementSerializer(source='payments', many=True, read_only=True)
     related_documents = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
@@ -171,7 +171,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             })
 
         for pay in obj.payments.all():
-            prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
+            prefix = 'ING' if pay.movement_type == 'INBOUND' else 'EGR'
             code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
                 'id': pay.id,

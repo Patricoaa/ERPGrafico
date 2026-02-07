@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
-from treasury.serializers import PaymentSerializer
+from treasury.serializers import TreasuryMovementSerializer
 import math
 from decimal import Decimal
 
@@ -64,7 +64,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
-    serialized_payments = PaymentSerializer(source='payments', many=True, read_only=True)
+    serialized_payments = TreasuryMovementSerializer(source='payments', many=True, read_only=True)
     work_order_number = serializers.CharField(source='work_order.number', read_only=True, allow_null=True)
     related_documents = serializers.SerializerMethodField()
 
@@ -187,7 +187,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if pay.invoice and pay.invoice.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
                 continue
 
-            prefix = 'ING' if pay.payment_type == 'INBOUND' else 'EGR'
+            prefix = 'ING' if pay.movement_type == 'INBOUND' else 'EGR'
             code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
                 'id': pay.id,

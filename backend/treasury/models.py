@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
-from sales.models import SaleOrder
-from purchasing.models import PurchaseOrder
+# from sales.models import SaleOrder
+# from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
 from django.conf import settings
 from django.utils import timezone
@@ -55,10 +55,13 @@ class ReconciliationMatch(models.Model):
         return "Confirmado" if self.is_confirmed else "Borrador"
 
 
-class Payment(models.Model):
+class TreasuryMovement(models.Model):
     class Type(models.TextChoices):
-        INBOUND = 'INBOUND', _('Entrante (Cobro)')
-        OUTBOUND = 'OUTBOUND', _('Saliente (Pago)')
+        # Unified Types
+        INBOUND = 'INBOUND', _('Entrante (Cobro/Venta)')
+        OUTBOUND = 'OUTBOUND', _('Saliente (Pago/Gasto)')
+        TRANSFER = 'TRANSFER', _('Traspaso Interno')
+        ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')
 
     class Method(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
@@ -67,7 +70,7 @@ class Payment(models.Model):
         CREDIT = 'CREDIT', _('Crédito')
         OTHER = 'OTHER', _('Otro')
 
-    payment_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
+    movement_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
     payment_method = models.CharField(
         _("Método de Pago"), 
         max_length=20, 
@@ -75,47 +78,57 @@ class Payment(models.Model):
         default=Method.CASH
     )
     
-    # Account chosen by user (Bank/Cash Box)
-    treasury_account = models.ForeignKey(
+    # Unified Source/Destination for Treasury Accounts
+    # If None, it implies "External" (e.g. Customer/Supplier)
+    from_account = models.ForeignKey(
         'TreasuryAccount',
         on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='pay_treasury',
-        verbose_name=_("Cuenta de Tesorería")
+        related_name='movements_from',
+        verbose_name=_("Desde Cuenta (Origen)")
+    )
+    to_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='movements_to',
+        verbose_name=_("Hacia Cuenta (Destino)")
     )
 
-    # Resolved Financial Account (Snapshot or direct link)
+    # Legacy/Convenience access to the "Main" financial account involved (Snapshot)
+    # Usually matches from_account.account (if OUTBOUND) or to_account.account (if INBOUND)
     account = models.ForeignKey(
         Account, 
         on_delete=models.PROTECT, 
-        related_name='pay_account',
+        related_name='treasury_movements',
         null=True, 
         blank=True,
         verbose_name=_("Cuenta Contable (Snapshot)")
     )
 
     amount = models.DecimalField(_("Monto"), max_digits=12, decimal_places=2)
-    date = models.DateField(_("Fecha"), auto_now_add=True)
+    date = models.DateField(_("Fecha"), auto_now_add=True) # Check if we want auto_now_add or editable default? Service usually sets it.
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
+    notes = models.TextField(_("Notas"), blank=True) # Added from CashMovement
     
     # Transfer details
     transaction_number = models.CharField(_("N° de Transacción"), max_length=100, blank=True, null=True)
     is_pending_registration = models.BooleanField(_("Transacción Pendiente de Registro"), default=False)
     
-    # Unified contact field (replaces separate customer/supplier fields)
-    contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    # Unified contact field
+    contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='treasury_movements')
     
     # Allocation
     invoice = models.ForeignKey('billing.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
-    sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
-    purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    sale_order = models.ForeignKey('sales.SaleOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    purchase_order = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
 
     # Link to Accounting
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
         on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='payment'
+        related_name='treasury_movement'
     )
 
     # Bank Reconciliation
@@ -123,14 +136,14 @@ class Payment(models.Model):
         'BankStatementLine',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='payments',
+        related_name='matched_movements',
         verbose_name=_("Línea de Cartola Bancaria"),
     )
     reconciliation_match = models.ForeignKey(
         'ReconciliationMatch',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='payments',
+        related_name='movements',
         verbose_name=_("Grupo de Conciliación")
     )
     is_reconciled = models.BooleanField(_("Reconciliado"), default=False)
@@ -139,50 +152,55 @@ class Payment(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='reconciled_payments',
+        related_name='reconciled_movements',
         verbose_name=_("Reconciliado Por")
     )
     
-    # Card Payment Provider (for specific card reconciliation flow)
+    # Card Payment Provider
     card_provider = models.ForeignKey(
         'CardPaymentProvider',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='payments',
+        related_name='movements',
         verbose_name=_("Proveedor de Tarjeta")
     )
     
-    # POS Session (for cash control)
+    # POS Session
     pos_session = models.ForeignKey(
         'POSSession',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='payments',
+        related_name='movements',
         verbose_name=_("Sesión de Caja")
     )
     
-    # Optional link to physical cash movement
-    cash_movement = models.OneToOneField(
-        'CashMovement',
-        on_delete=models.SET_NULL,
-        null=True,
+    # Justification - from CashMovement
+    justify_reason = models.CharField(
+        _("Justificación"),
+        max_length=50,
         blank=True,
-        related_name='linked_payment',
-        verbose_name=_("Movimiento de Efectivo Asociado"),
-        help_text=_("Vincula este pago a un movimiento físico de efectivo")
+        null=True,
+        help_text=_("Código de justificación para movimientos manuales")
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_movements',
+        verbose_name=_("Creado Por")
+    )
     
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Pago")
-        verbose_name_plural = _("Pagos")
-        ordering = ['-id']
+        verbose_name = _("Movimiento de Tesorería")
+        verbose_name_plural = _("Movimientos de Tesorería")
+        ordering = ['-date', '-id']
         indexes = [
-            models.Index(fields=['treasury_account', 'is_reconciled']),
-            models.Index(fields=['amount', 'date']),
+            models.Index(fields=['from_account', 'date']),
+            models.Index(fields=['to_account', 'date']),
             models.Index(fields=['is_reconciled']),
             models.Index(fields=['transaction_number']),
             models.Index(fields=['reference']),
@@ -193,8 +211,23 @@ class Payment(models.Model):
 
     @property
     def display_id(self):
-        prefix = 'ING' if self.payment_type == 'INBOUND' else 'EGR'
+        prefix = 'MOV'
+        if self.movement_type == self.Type.INBOUND: prefix = 'ING'
+        elif self.movement_type == self.Type.OUTBOUND: prefix = 'EGR'
+        elif self.movement_type == self.Type.TRANSFER: prefix = 'TRF'
         return f"{prefix}-{str(self.id).zfill(6)}"
+
+    @property
+    def treasury_account(self):
+        """Backwards compatibility / Convenience: Main account"""
+        if self.movement_type == self.Type.INBOUND:
+            return self.to_account
+        elif self.movement_type == self.Type.OUTBOUND:
+            return self.from_account
+        elif self.movement_type == self.Type.TRANSFER:
+            # Ambiguous, return from_account by default or None
+            return self.from_account
+        return None
 
 
 class TreasuryAccountManager(models.Manager):
@@ -588,11 +621,11 @@ class BankStatementLine(models.Model):
         default=ReconciliationState.UNRECONCILED
     )
     matched_payment = models.ForeignKey(
-        'Payment',
+        'TreasuryMovement',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='matched_lines',
-        verbose_name=_("Pago Matched"),
+        verbose_name=_("Movimiento Matched"),
         help_text=_("DEPRECATED: Use reconciliation_match instead")
     )
     reconciliation_match = models.ForeignKey(
@@ -882,7 +915,7 @@ class CardTransaction(models.Model):
         related_name='transactions'
     )
     payment = models.OneToOneField(
-        'Payment',
+        'TreasuryMovement',
         on_delete=models.PROTECT,
         related_name='card_transaction'
     )
@@ -1134,140 +1167,7 @@ class POSSessionAudit(models.Model):
 
 
 
-class CashMovement(models.Model):
-    """
-    Records internal cash movements between containers or between container and POS Session.
-    Provides full traceability of cash flow.
-    """
-    class Type(models.TextChoices):
-        DEPOSIT = 'DEPOSIT', _('Depósito')              # POS → Safe / Petty Cash
-        WITHDRAWAL = 'WITHDRAWAL', _('Retiro')          # Safe → POS (Open fund)
-        TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')       # Safe ↔ Petty Cash
-        BANK_DEPOSIT = 'BANK_DEPOSIT', _('Depósito Bancario')  # Safe → Bank
-        ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')          # Manual correction
-        SALE = 'SALE', _('Venta')                       # Cash In from Sales
-        EXPENSE = 'EXPENSE', _('Gasto/Compra')          # Cash Out for Purchases/Expenses
 
-    class Status(models.TextChoices):
-        DRAFT = 'DRAFT', _('Borrador')
-        CONFIRMED = 'CONFIRMED', _('Confirmado')
-        CANCELLED = 'CANCELLED', _('Cancelado')
-
-    class JustifyReason(models.TextChoices):
-        # Deposits
-        TIP = 'TIP', _('Propina')
-        
-        # Withdrawals
-        PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
-        THEFT = 'THEFT', _('Robo / Faltante')
-        
-        # Mixed / Adjustments
-        ROUNDING = 'ROUNDING', _('Redondeo')
-        CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
-        COUNTING_ERROR = 'COUNTING_ERROR', _('Error de Conteo')
-        SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error de Sistema')
-        OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
-        OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
-        UNKNOWN = 'UNKNOWN', _('Desconocido')
-
-    movement_type = models.CharField(
-        _("Tipo"),
-        max_length=20,
-        choices=Type.choices
-    )
-    date = models.DateTimeField(_("Fecha"), default=timezone.now)
-    amount = models.DecimalField(
-        _("Monto"),
-        max_digits=12,
-        decimal_places=2,
-        validators=[MinValueValidator(0)]
-    )
-    status = models.CharField(
-        _("Estado"),
-        max_length=20,
-        choices=Status.choices,
-        default=Status.CONFIRMED
-    )
-
-    justify_reason = models.CharField(
-        _("Razón / Motivo"),
-        max_length=30,
-        choices=JustifyReason.choices,
-        default=JustifyReason.UNKNOWN
-    )
-
-    # Origin and Destination (Now TreasuryAccount)
-    from_account = models.ForeignKey(
-        'TreasuryAccount',
-        on_delete=models.PROTECT,
-        related_name='outgoing_movements',
-        null=True,
-        blank=True,
-        verbose_name=_("Desde Cuenta")
-    )
-    to_account = models.ForeignKey(
-        'TreasuryAccount',
-        on_delete=models.PROTECT,
-        related_name='incoming_movements',
-        null=True,
-        blank=True,
-        verbose_name=_("Hacia Cuenta")
-    )
-
-    # Link to POS Session if applicable
-    pos_session = models.ForeignKey(
-        'POSSession',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='cash_movements',
-        verbose_name=_("Sesión POS Relacionada")
-    )
-
-    # Accounting (optional for purely physical movements, required for bank deposits)
-    journal_entry = models.OneToOneField(
-        'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='cash_movement',
-        verbose_name=_("Asiento Contable")
-    )
-    
-    # Optional link to payment transaction
-    payment = models.OneToOneField(
-        'Payment',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='linked_cash_movement',
-        verbose_name=_("Pago Asociado"),
-        help_text=_("Vincula este movimiento a un pago a terceros")
-    )
-
-    # Audit
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='created_cash_movements',
-        verbose_name=_("Creado Por")
-    )
-    notes = models.TextField(_("Notas"), blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = _("Movimiento de Efectivo")
-        verbose_name_plural = _("Movimientos de Efectivo")
-        ordering = ['-date']
-
-    def __str__(self):
-        from_desc = self.from_account.name if self.from_account else "Exterior/POS"
-        to_desc = self.to_account.name if self.to_account else "Exterior/POS"
-        return f"{from_desc} → {to_desc}: ${self.amount}"
 
 
 class CashDifference(models.Model):

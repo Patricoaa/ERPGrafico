@@ -4,15 +4,15 @@ from rest_framework.response import Response
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .models import (Payment, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, POSTerminal, CashMovement, 
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
+                     ReconciliationRule, POSTerminal, 
                      CashDifference, POSSession, POSSessionAudit)
 from .serializers import (
-    PaymentSerializer, TreasuryAccountSerializer,
+    TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
     POSTerminalSerializer,
-    CashMovementSerializer, CashDifferenceSerializer,
+    CashDifferenceSerializer,
     POSSessionSerializer, POSSessionAuditSerializer
 )
 from .services import TreasuryService
@@ -101,62 +101,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
 
 
 
-class CashMovementViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for tracking cash movements between accounts and POS sessions.
-    """
-    queryset = CashMovement.objects.all().order_by('-date')
-    serializer_class = CashMovementSerializer
-    filterset_fields = ['movement_type', 'status', 'from_account', 'to_account', 'pos_session']
 
-    def perform_create(self, serializer):
-        from .services import TreasuryService
-        
-        # Validar y crear mediante servicio para asegurar contabilidad
-        data = serializer.validated_data
-        movement = TreasuryService.create_cash_movement(
-            movement_type=data.get('movement_type'),
-            amount=data.get('amount'),
-            created_by=self.request.user,
-            from_account=data.get('from_account'),
-            to_account=data.get('to_account'),
-            pos_session=data.get('pos_session'),
-            notes=data.get('notes', ''),
-            justify_reason=data.get('justify_reason', 'UNKNOWN'),
-            date=data.get('date')
-        )
-        return movement
-
-
-    @action(detail=True, methods=['post'])
-    def link_to_payment(self, request, pk=None):
-        """
-        Vincula este movimiento de efectivo a un pago existente.
-        """
-        movement = self.get_object()
-        payment_id = request.data.get('payment_id')
-        
-        if not payment_id:
-            return Response(
-                {'error': 'payment_id es requerido'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            payment, movement = TreasuryService.link_payment_to_cash_movement(
-                payment_id=payment_id,
-                cash_movement_id=movement.id
-            )
-            return Response({
-                'message': 'Vinculación exitosa',
-                'payment': PaymentSerializer(payment).data,
-                'movement': CashMovementSerializer(movement).data
-            })
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
 
 class CashDifferenceViewSet(viewsets.ModelViewSet):
@@ -187,90 +132,70 @@ class CashDifferenceViewSet(viewsets.ModelViewSet):
 
 
 
-class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = Payment.objects.all().order_by('-date', '-created_at')
-    serializer_class = PaymentSerializer
-    filterset_fields = ['is_reconciled', 'treasury_account', 'payment_type', 'contact']
+class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
+    serializer_class = TreasuryMovementSerializer
+    filterset_fields = [
+        'is_reconciled', 
+        'from_account', 'to_account', 
+        'movement_type', 'payment_method',
+        'contact'
+    ]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        TreasuryService.delete_payment(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def create(self, request, *args, **kwargs):
-        # Support generic POST /api/treasury/payments/ from frontend
-        data = request.data.copy()
-        
-        # Extract fields
-        amount = Decimal(str(data.get('amount', '0')))
-        payment_type = data.get('payment_type')
-        payment_method = data.get('payment_method', 'CASH')
-        treasury_account_id = data.get('treasury_account_id') or data.get('treasury_account')  # New field
-        
-        reference = data.get('reference', '')
-        sale_order_id = data.get('sale_order')
-        purchase_order_id = data.get('purchase_order')
-        invoice_id = data.get('invoice')
-        transaction_number = data.get('transaction_number')
-        is_pending_registration = data.get('is_pending_registration', False)
-        if isinstance(is_pending_registration, str):
-            is_pending_registration = is_pending_registration.lower() == 'true'
-        
-        # New Document Registration Fields
-        dte_type = data.get('dte_type')
-        document_reference = data.get('document_reference')
-
-        
-        # Resolve objects
-        sale_order = None
-        if sale_order_id:
-            from sales.models import SaleOrder
-            sale_order = SaleOrder.objects.get(pk=sale_order_id)
-            
-        purchase_order = None
-        if purchase_order_id:
-            from purchasing.models import PurchaseOrder
-            purchase_order =PurchaseOrder.objects.get(pk=purchase_order_id)
-            
-        invoice = None
-        if invoice_id:
-            from billing.models import Invoice
-            invoice = Invoice.objects.get(pk=invoice_id)
-
-        # Determine Partner (Contact)
-        partner = None
-        if sale_order: partner = sale_order.customer
-        elif purchase_order: partner = purchase_order.supplier
+        if instance.journal_entry and instance.journal_entry.state == 'POSTED':
+             # We might allow annulment here via delete if that's the intention,
+             # but strictly delete is for drafts. Annul is for posted.
+             # If user clicks delete, we try delete_movement which checks status.
+             pass
 
         try:
-            payment = TreasuryService.register_payment(
-                amount=amount,
-                payment_type=payment_type,
-                payment_method=payment_method,
-                treasury_account_id=treasury_account_id,
-                reference=reference,
-                partner=partner,
-                invoice=invoice,
-                sale_order=sale_order,
-                purchase_order=purchase_order,
-                transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration,
-                dte_type=dte_type,
-                document_reference=document_reference
-            )
-            if payment:
-                return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
-            return Response({'message': 'Acción de crédito procesada (documento registrado)'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
+            TreasuryService.delete_movement(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'])
-    def register(self, request):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        
         try:
-            amount = Decimal(str(request.data.get('amount')))
-            payment_type = request.data.get('payment_type')
+            instance = TreasuryService.create_movement(
+                movement_type=data.get('movement_type'),
+                amount=data.get('amount'),
+                created_by=self.request.user,
+                date=data.get('date'),
+                from_account=data.get('from_account'),
+                to_account=data.get('to_account'),
+                payment_method=data.get('payment_method', TreasuryMovement.Method.CASH),
+                reference=data.get('reference', ''),
+                notes=data.get('notes', ''),
+                justify_reason=data.get('justify_reason'),
+                partner=data.get('contact'),
+                invoice=data.get('invoice'),
+                sale_order=data.get('sale_order'),
+                purchase_order=data.get('purchase_order'),
+                pos_session=data.get('pos_session'),
+                transaction_number=data.get('transaction_number'),
+                is_pending_registration=data.get('is_pending_registration', False)
+            )
+            return Response(TreasuryMovementSerializer(instance).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'])
+    def register_movement(self, request):
+        try:
+            amount_val = request.data.get('amount')
+            if not amount_val:
+                return Response({'error': 'Amount required'}, status=400)
+            amount = Decimal(str(amount_val))
+            
+            movement_type = request.data.get('movement_type') or request.data.get('payment_type') # INBOUND/OUTBOUND
             payment_method = request.data.get('payment_method', 'CASH')
             treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
             reference = request.data.get('reference', '')
@@ -279,52 +204,59 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             if isinstance(is_pending_registration, str):
                 is_pending_registration = is_pending_registration.lower() == 'true'
             
-            # New Document Registration Fields
-            dte_type = request.data.get('dte_type')
-            document_reference = request.data.get('document_reference')
-
+            # Resolve Treasury Account
+            treasury_account = None
+            if treasury_account_id:
+                treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+                
+            from_account = None
+            to_account = None
             
-            # Contact (unified partner)
+            if movement_type == 'INBOUND':
+                to_account = treasury_account
+            elif movement_type == 'OUTBOUND':
+                from_account = treasury_account
+            elif movement_type == 'TRANSFER':
+                # Should have from/to logic
+                pass
+            
+            # Contact
             contact_id = request.data.get('contact_id')
+            partner = Contact.objects.get(pk=contact_id) if contact_id else None
             
             # Invoices
             invoice_id = request.data.get('invoice_id')
-            
-            partner = None
-            if contact_id:
-                partner = Contact.objects.get(pk=contact_id)
-            
             invoice = None
             if invoice_id:
                 from billing.models import Invoice
                 invoice = Invoice.objects.get(pk=invoice_id)
 
-            payment = TreasuryService.register_payment(
+            movement = TreasuryService.create_movement(
                 amount=amount,
-                payment_type=payment_type,
+                movement_type=movement_type, # Expects 'INBOUND'/'OUTBOUND' match
                 payment_method=payment_method,
-                treasury_account_id=treasury_account_id,
+                from_account=from_account,
+                to_account=to_account,
                 reference=reference,
                 partner=partner,
                 invoice=invoice,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
-                dte_type=dte_type,
-                document_reference=document_reference
+                created_by=request.user
             )
             
-            if payment:
-                return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
-            return Response({'message': 'Acción de crédito procesada (documento registrado)'}, status=status.HTTP_200_OK)
+            return Response(TreasuryMovementSerializer(movement).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
-        payment = self.get_object()
+        movement = self.get_object()
         try:
-            TreasuryService.annul_payment(payment)
-            return Response(PaymentSerializer(payment).data)
+            TreasuryService.annul_movement(movement)
+            # Since annul_movement deletes the object (in current implementation), we can't return it serialized.
+            # Or we return what we had.
+            return Response(TreasuryMovementSerializer(movement).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -359,7 +291,7 @@ class PaymentViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({
                 'message': 'Devolución de pago registrada exitosamente',
                 'return_payment_id': return_payment.id,
-                'return_payment': PaymentSerializer(return_payment).data
+                'return_payment': TreasuryMovementSerializer(return_payment).data
             }, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1173,14 +1105,13 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             import traceback
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         """Get detailed summary of sales in this session (X/Z Report data)"""
         try:
             session = self.get_object()
             from django.db.models import Sum, F
-            from .models import Payment
+
             
             # Basic totals from the session model (denormalized for performance)
             totals = {
@@ -1207,10 +1138,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             
             sales_by_category = {}
             
-            # Get all invoices paid in this session
-            # We filter payments in this session that have an invoice
-            payments = session.payments.filter(invoice__isnull=False).select_related('invoice')
-            invoices = {p.invoice for p in payments}
+            # Get all movements in this session that have an invoice
+            # We filter movements in this session that have an invoice
+            movements_with_invoice = session.movements.filter(invoice__isnull=False).select_related('invoice')
+            invoices = {m.invoice for m in movements_with_invoice}
+
             
             for invoice in invoices:
                 # Get lines for this invoice
@@ -1251,9 +1183,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             category_data.sort(key=lambda x: x['value'], reverse=True)
             
             # Manual Movements
-            from .serializers import CashMovementSerializer
-            manual_movements = session.cash_movements.all().order_by('-created_at')
-            manual_movements_data = CashMovementSerializer(manual_movements, many=True).data
+            manual_movements = session.movements.filter(invoice__isnull=True, sale_order__isnull=True, purchase_order__isnull=True).order_by('-created_at')
+            manual_movements_data = TreasuryMovementSerializer(manual_movements, many=True).data
+
             
             return Response({
                 **totals,
@@ -1482,14 +1414,14 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         """
         Lista consolidada de flujos de efectivo.
         Query params:
-        - flow_type: 'all', 'third_party', 'internal' (default: 'third_party')
+        - flow_type: 'all', 'third_party', 'internal' (default: 'all')
         - date_from, date_to, treasury_account
         """
         from datetime import datetime
         from django.db.models import Q
         from .serializers import CashFlowSerializer
         
-        flow_type = request.query_params.get('flow_type', 'all') # Change default to 'all' for dashboard
+        flow_type = request.query_params.get('flow_type', 'all')
         date_from_str = request.query_params.get('date_from')
         date_to_str = request.query_params.get('date_to')
         treasury_account_id = request.query_params.get('treasury_account')
@@ -1497,83 +1429,73 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         date_from = datetime.fromisoformat(date_from_str).date() if date_from_str else None
         date_to = datetime.fromisoformat(date_to_str).date() if date_to_str else None
         
+        # Build Query
+        query = TreasuryMovement.objects.select_related(
+            'treasury_account', 'from_account', 'to_account', 
+            'contact', 'invoice__contact'
+        ).exclude(state='CANCELLED')
+        
+        if date_from:
+            query = query.filter(date__gte=date_from)
+        if date_to:
+            query = query.filter(date__lte=date_to)
+        
+        if treasury_account_id:
+            query = query.filter(
+                Q(treasury_account_id=treasury_account_id) |
+                Q(from_account_id=treasury_account_id) |
+                Q(to_account_id=treasury_account_id)
+            )
+            
+        if flow_type == 'third_party':
+            # Strictly Inbound/Outbound moves with partners or invoices
+            query = query.filter(movement_type__in=['INBOUND', 'OUTBOUND'])
+        elif flow_type == 'internal':
+            # Transfers, adjustments, etc.
+            query = query.filter(movement_type__in=['TRANSFER', 'ADJUSTMENT'])
+
         results = []
-        
-        # Payments (third-party flows)
-        if flow_type in ['all', 'third_party']:
-            payments_query = Payment.objects.select_related('treasury_account', 'contact', 'invoice__contact')
-            
-            if date_from:
-                payments_query = payments_query.filter(date__gte=date_from)
-            if date_to:
-                payments_query = payments_query.filter(date__lte=date_to)
-            if treasury_account_id:
-                payments_query = payments_query.filter(treasury_account_id=treasury_account_id)
-            
-            for payment in payments_query:
-                partner_name = None
-                if payment.contact:
-                    partner_name = payment.contact.name
-                elif payment.invoice and payment.invoice.contact:
-                    partner_name = payment.invoice.contact.name
-                    
-                results.append({
-                    'id': payment.id,
-                    'source': 'PAYMENT',
-                    'type': payment.get_payment_type_display(),
-                    'date': payment.date,
-                    'amount': payment.amount,
-                    'description': payment.reference or f"Pago {payment.display_id}",
-                    'treasury_account_name': payment.treasury_account.name if payment.treasury_account else 'N/A',
-                    'partner_name': partner_name,
-                    'reference': payment.display_id,
-                    'is_internal': False
-                })
-        
-        # CashMovements (excluding those linked to payments)
-        if flow_type in ['all', 'internal']:
-            movements_query = CashMovement.objects.filter(linked_payment__isnull=True).select_related('from_account', 'to_account')
-            
-            if date_from:
-                movements_query = movements_query.filter(date__gte=date_from)
-            if date_to:
-                movements_query = movements_query.filter(date__lte=date_to)
-            if treasury_account_id:
-                movements_query = movements_query.filter(
-                    Q(from_account_id=treasury_account_id) | Q(to_account_id=treasury_account_id)
-                )
-            
-            if flow_type == 'internal':
-                movements_query = movements_query.filter(movement_type__in=[
-                    CashMovement.Type.TRANSFER, 
-                    CashMovement.Type.BANK_DEPOSIT,
-                    CashMovement.Type.ADJUSTMENT
-                ])
-            
-            for movement in movements_query:
-                is_internal = movement.movement_type in [CashMovement.Type.TRANSFER, CashMovement.Type.BANK_DEPOSIT]
-                treasury_name = (movement.from_account.name if movement.from_account 
-                               else movement.to_account.name if movement.to_account else 'N/A')
+        for mv in query:
+            # Determine partner name
+            partner_name = None
+            if mv.contact:
+                partner_name = mv.contact.name
+            elif mv.invoice and mv.invoice.contact:
+                partner_name = mv.invoice.contact.name
                 
-                results.append({
-                    'id': movement.id,
-                    'source': 'CASH_MOVEMENT',
-                    'type': movement.get_movement_type_display(),
-                    'date': movement.date.date() if hasattr(movement.date, 'date') else movement.date,
-                    'amount': movement.amount,
-                    'description': movement.notes or f"Movimiento {movement.id}",
-                    'treasury_account_name': treasury_name,
-                    'partner_name': None,
-                    'reference': f"MOV-{movement.id}",
-                    'is_internal': is_internal
-                })
-        
+            # Determine account name for display
+            acc_name = 'N/A'
+            if mv.treasury_account:
+                acc_name = mv.treasury_account.name
+            elif mv.from_account and mv.to_account:
+                acc_name = f"{mv.from_account.name} -> {mv.to_account.name}"
+            elif mv.from_account:
+                acc_name = mv.from_account.name
+            elif mv.to_account:
+                acc_name = mv.to_account.name
+
+            # Map source as 'PAYMENT' if it has partner/invoice, else 'CASH_MOVEMENT'
+            source = 'PAYMENT' if (mv.contact or mv.invoice or mv.sale_order or mv.purchase_order) else 'CASH_MOVEMENT'
+            
+            results.append({
+                'id': mv.id,
+                'source': source,
+                'type': mv.get_movement_type_display(),
+                'date': mv.date,
+                'amount': mv.amount,
+                'description': mv.notes or mv.reference or f"Movimiento {mv.display_id}",
+                'treasury_account_name': acc_name,
+                'partner_name': partner_name,
+                'reference': mv.display_id,
+                'is_internal': mv.movement_type in ['TRANSFER', 'ADJUSTMENT']
+            })
+            
         results.sort(key=lambda x: x['date'], reverse=True)
-        # Apply pagination if needed, but for dashboard recent 50 is fine
         results = results[:50]
         
         serializer = CashFlowSerializer(results, many=True)
         return Response(serializer.data)
+
 
     @action(detail=False, methods=['post'])
     def register_transfer(self, request):

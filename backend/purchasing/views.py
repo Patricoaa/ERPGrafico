@@ -215,13 +215,13 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             
             # Serialize response
             from billing.serializers import InvoiceSerializer
-            from treasury.serializers import PaymentSerializer
+            from treasury.serializers import TreasuryMovementSerializer
             from .serializers import PurchaseReceiptSerializer
             
             response_data = {
                 'order': PurchaseOrderSerializer(result['order']).data,
                 'invoice': InvoiceSerializer(result['invoice']).data if result['invoice'] else None,
-                'payment': PaymentSerializer(result['payment']).data if result['payment'] else None,
+                'payment': TreasuryMovementSerializer(result['payment']).data if result['payment'] else None,
                 'receipt': PurchaseReceiptSerializer(result['receipt']).data if result['receipt'] else None
             }
             

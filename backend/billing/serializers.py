@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Invoice
-from treasury.serializers import PaymentSerializer
+from treasury.serializers import TreasuryMovementSerializer
 from sales.serializers import SaleOrderSerializer
 from purchasing.serializers import PurchaseOrderSerializer
 from core.serializers import AttachmentSerializer
@@ -31,7 +31,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_serialized_payments(self, obj):
-        return PaymentSerializer(obj.payments.all(), many=True).data
+        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
 
     def get_pending_amount(self, obj):
         total_paid = sum(p.amount for p in obj.payments.all())

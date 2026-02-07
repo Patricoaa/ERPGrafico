@@ -16,7 +16,7 @@ from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from contacts.models import Contact
 from billing.models import Invoice
-from treasury.models import Payment
+from treasury.models import TreasuryMovement
 from production.models import WorkOrder
 from accounting.models import JournalEntry
 
@@ -173,7 +173,7 @@ class GlobalAuditLogView(APIView):
             (PurchaseOrder, 'purchase_order', 'Orden de Compra'),
             (Contact, 'contact', 'Contacto'),
             (Invoice, 'invoice', 'Factura'),
-            (Payment, 'payment', 'Pago/Transacción'),
+            (TreasuryMovement, 'treasury_movement', 'Movimiento de Tesorería'),
             (WorkOrder, 'work_order', 'Orden de Trabajo'),
             (StockMove, 'stock_move', 'Movimiento Stock'),
             (JournalEntry, 'journal_entry', 'Asiento Contable'),

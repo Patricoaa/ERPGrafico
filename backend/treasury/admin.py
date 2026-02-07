@@ -1,23 +1,23 @@
 from django.contrib import admin
-from .models import Payment, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
+from .models import TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
 
 
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['display_id', 'payment_type', 'payment_method', 'amount', 'date', 'treasury_account', 'is_reconciled']
-    list_filter = ['payment_type', 'payment_method', 'is_reconciled', 'date']
+@admin.register(TreasuryMovement)
+class TreasuryMovementAdmin(admin.ModelAdmin):
+    list_display = ['display_id', 'movement_type', 'payment_method', 'amount', 'date', 'is_reconciled']
+    list_filter = ['movement_type', 'payment_method', 'is_reconciled', 'date']
     search_fields = ['reference', 'transaction_number', 'contact__name']
     readonly_fields = ['created_at', 'reconciled_at', 'reconciled_by']
     
     fieldsets = (
         ('Información Básica', {
-            'fields': ('payment_type', 'payment_method', 'amount', 'date', 'reference')
+            'fields': ('movement_type', 'payment_method', 'amount', 'date', 'reference', 'justify_reason')
         }),
         ('Tesorería y Contabilidad', {
-            'fields': ('treasury_account', 'account', 'transaction_number', 'is_pending_registration')
+            'fields': ('from_account', 'to_account', 'treasury_account', 'journal_entry', 'transaction_number', 'is_pending_registration')
         }),
         ('Asignación', {
-            'fields': ('contact', 'invoice', 'sale_order', 'purchase_order', 'journal_entry')
+            'fields': ('contact', 'invoice', 'sale_order', 'purchase_order')
         }),
         ('Reconciliación Bancaria', {
             'fields': ('is_reconciled', 'bank_statement_line', 'reconciled_at', 'reconciled_by'),

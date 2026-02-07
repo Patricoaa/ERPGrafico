@@ -6,6 +6,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, ArrowRight, Eye, RefreshCw } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+// import { CashMovementModal } from "@/components/treasury/CashMovementModal" // Pending Refactor
 import { CashMovementModal } from "@/components/treasury/CashMovementModal"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
@@ -13,24 +14,36 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 
 // Define the type for our data
-interface CashMovement {
+interface TreasuryMovement {
     id: number
-    movement_type: string
+    movement_type: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     movement_type_display: string
+    payment_method: string
+    payment_method_display: string
     amount: number
     created_at: string
+    date: string
     created_by_name: string
     notes: string
     pos_session: number | null
-    from_container_name: string | null
-    to_container_name: string | null
+
+    // Account info
+    from_account: number | null
+    from_account_name: string | null
+    to_account: number | null
+    to_account_name: string | null
+
     justify_reason: string | null
     justify_reason_display: string | null
-    involved_accounts: string[]
+
+    // Partner info
+    partner_name: string | null
+    reference: string | null
+    involved_accounts?: string[]
 }
 
 export default function TreasuryMovementsPage() {
-    const [movements, setMovements] = useState<CashMovement[]>([])
+    const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -39,7 +52,7 @@ export default function TreasuryMovementsPage() {
     const fetchMovements = async () => {
         try {
             setLoading(true)
-            const response = await api.get('/treasury/cash-movements/')
+            const response = await api.get('/treasury/movements/')
             setMovements(response.data.results || response.data)
         } catch (error) {
             console.error("Failed to fetch movements", error)
@@ -58,16 +71,16 @@ export default function TreasuryMovementsPage() {
         setDetailsOpen(true)
     }
 
-    const columns: ColumnDef<CashMovement>[] = [
+    const columns: ColumnDef<TreasuryMovement>[] = [
         {
-            accessorKey: "created_at",
+            accessorKey: "date", // Use logical date, or created_at
             header: "Fecha",
             cell: ({ row }) => {
-                const date = new Date(row.getValue("created_at"))
+                const date = new Date(row.getValue("date"))
                 return (
                     <div className="flex flex-col">
                         <span className="font-medium text-xs">{date.toLocaleDateString()}</span>
-                        <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {/* <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span> */}
                     </div>
                 )
             },
@@ -80,9 +93,9 @@ export default function TreasuryMovementsPage() {
                 const label = row.original.movement_type_display
 
                 let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
-                if (type === 'DEPOSIT' || type === 'SALE') variant = "default"
-                if (type === 'WITHDRAWAL' || type === 'EXPENSE') variant = "destructive"
-                if (type === 'TRANSFER' || type === 'BANK_DEPOSIT') variant = "secondary"
+                if (type === 'INBOUND') variant = "default" // Greenish usually
+                if (type === 'OUTBOUND') variant = "destructive"
+                if (type === 'TRANSFER') variant = "secondary"
 
                 return (
                     <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight px-2 py-0">
@@ -99,55 +112,43 @@ export default function TreasuryMovementsPage() {
             header: "Flujo / Detalle",
             cell: ({ row }) => {
                 const m = row.original;
-                const isTransfer = m.movement_type === 'TRANSFER' || m.movement_type === 'BANK_DEPOSIT';
-                const isDeposit = m.movement_type === 'DEPOSIT' || m.movement_type === 'SALE';
-                const isWithdrawal = m.movement_type === 'WITHDRAWAL' || m.movement_type === 'EXPENSE';
+                const isTransfer = m.movement_type === 'TRANSFER';
+                const isInbound = m.movement_type === 'INBOUND';
+                const isOutbound = m.movement_type === 'OUTBOUND';
 
-                // Determine motive label
-                const motive = m.justify_reason_display || (m.notes ? "Ver notas" : null);
+                const motive = m.justify_reason_display || m.reference || (m.notes ? "Ver notas" : null);
+                const partner = m.partner_name;
 
                 return (
                     <div className="flex flex-col gap-1 py-1">
-                        {/* Physical Flow */}
+                        {/* Flow */}
                         <div className="flex items-center gap-2 text-xs">
                             {isTransfer ? (
                                 <>
-                                    <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={m.from_container_name || '?'}>
-                                        {m.from_container_name || 'Origen'}
+                                    <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={m.from_account_name || '?'}>
+                                        {m.from_account_name || 'Origen'}
                                     </span>
                                     <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
-                                    <span className="font-bold truncate max-w-[100px]" title={m.to_container_name || '?'}>
-                                        {m.to_container_name || 'Destino'}
+                                    <span className="font-bold truncate max-w-[100px]" title={m.to_account_name || '?'}>
+                                        {m.to_account_name || 'Destino'}
                                     </span>
                                 </>
-                            ) : isDeposit ? (
+                            ) : isInbound ? (
                                 <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
-                                    {m.to_container_name || 'Entra a Caja'}
+                                    {partner ? `${partner} → ${m.to_account_name || 'Caja'}` : (m.to_account_name || 'Entrada')}
                                 </span>
                             ) : (
                                 <span className="font-bold text-red-700 dark:text-red-400 truncate max-w-[180px]">
-                                    {m.from_container_name || 'Sale de Caja'}
+                                    {partner ? `${m.from_account_name || 'Caja'} → ${partner}` : (m.from_account_name || 'Salida')}
                                 </span>
                             )}
                         </div>
 
                         {/* Motive / Justification */}
-                        {motive && (
-                            <div className="text-[10px] text-muted-foreground truncate max-w-[200px] italic">
-                                {motive}
-                            </div>
-                        )}
-
-                        {/* Accounting Impact */}
-                        {m.involved_accounts && m.involved_accounts.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-0.5">
-                                {m.involved_accounts.map((acc, idx) => (
-                                    <span key={idx} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground/80 border border-muted-foreground/10">
-                                        {acc}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+                        <div className="flex gap-2 text-[10px] text-muted-foreground">
+                            {m.payment_method_display && <span className="uppercase border px-1 rounded">{m.payment_method_display}</span>}
+                            {motive && <span className="truncate max-w-[150px] italic">{motive}</span>}
+                        </div>
                     </div>
                 );
             },
@@ -158,7 +159,7 @@ export default function TreasuryMovementsPage() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const isOut = ['WITHDRAWAL', 'EXPENSE', 'BANK_DEPOSIT'].includes(type)
+                const isOut = type === 'OUTBOUND'
                 const colorClass = isOut ? 'text-red-600' : 'text-emerald-600'
 
                 return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
@@ -176,11 +177,10 @@ export default function TreasuryMovementsPage() {
                         </Badge>
                     )
                 }
-                return (
-                    <Badge variant="secondary" className="text-[10px] dark:bg-slate-800 dark:text-slate-400 opacity-80 uppercase tracking-tighter">
-                        Sistema
-                    </Badge>
-                )
+                if (row.original.created_by_name === 'system') { // Example check
+                    return <Badge variant="secondary" className="text-[10px]">SYSTEM</Badge>
+                }
+                return null
             },
         },
         {
@@ -215,7 +215,7 @@ export default function TreasuryMovementsPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Efectivo</h2>
+                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Tesorería</h2>
                 <Button
                     size="icon"
                     className="rounded-full h-8 w-8"
@@ -242,7 +242,7 @@ export default function TreasuryMovementsPage() {
                 <DataTable
                     columns={columns}
                     data={movements}
-                    globalFilterFields={["notes", "from_container_name", "to_container_name"]}
+                    globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
                     searchPlaceholder="Buscar movimientos..."
                     useAdvancedFilter={true}
                     facetedFilters={[
@@ -250,12 +250,10 @@ export default function TreasuryMovementsPage() {
                             column: "movement_type",
                             title: "Tipo",
                             options: [
-                                { label: "Depósito", value: "DEPOSIT" },
-                                { label: "Retiro", value: "WITHDRAWAL" },
+                                { label: "Entrante", value: "INBOUND" },
+                                { label: "Saliente", value: "OUTBOUND" },
                                 { label: "Traspaso", value: "TRANSFER" },
-                                { label: "Depósito Bancario", value: "BANK_DEPOSIT" },
-                                { label: "Venta", value: "SALE" },
-                                { label: "Gasto/Compra", value: "EXPENSE" },
+                                { label: "Ajuste", value: "ADJUSTMENT" },
                             ],
                         },
                     ]}
@@ -265,7 +263,7 @@ export default function TreasuryMovementsPage() {
             <TransactionViewModal
                 open={detailsOpen}
                 onOpenChange={setDetailsOpen}
-                type="cash_movement"
+                type="payment" // Mapped to new Unified Payment View
                 id={selectedMovementId}
                 view="details"
             />

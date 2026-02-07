@@ -633,8 +633,8 @@ class SalesService:
                  BillingService.delete_invoice(invoice)
         
         # 2. Delete stand-alone payments linked to order
-        for payment in order.payments.all():
-            TreasuryService.delete_payment(payment)
+        for movement in order.payments.all():
+            TreasuryService.delete_movement(movement)
 
         # 3. Delete order's own journal entry
         if order.journal_entry:
@@ -713,9 +713,9 @@ class SalesService:
                  SalesService.annul_delivery(delivery)
         
         # 3. Annul stand-alone Payments (if any)
-        for payment in order.payments.all():
-            if payment.journal_entry and payment.journal_entry.state == 'POSTED':
-                 TreasuryService.annul_payment(payment)
+        for movement in order.payments.all():
+            if movement.journal_entry and movement.journal_entry.state == 'POSTED':
+                 TreasuryService.annul_movement(movement)
         
         order.status = SaleOrder.Status.CANCELLED
         order.save()
