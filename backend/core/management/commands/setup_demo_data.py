@@ -20,7 +20,8 @@ from treasury.models import (
     ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
     DailySettlement, CardTransaction,
     CashDifference,
-    POSTerminal, POSSession, POSSessionAudit
+    POSTerminal, POSSession, POSSessionAudit,
+    Bank, PaymentMethod
 )
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
@@ -909,6 +910,12 @@ class Command(BaseCommand):
         self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
         
         manager_user = User.objects.get(username='gerente')
+        
+        # 0. Create Banks
+        b_estado, _ = Bank.objects.get_or_create(code="ESTADO", defaults={'name': "Banco Estado", 'is_active': True})
+        b_chile, _ = Bank.objects.get_or_create(code="CHILE", defaults={'name': "Banco de Chile", 'is_active': True})
+        b_santander, _ = Bank.objects.get_or_create(code="SANTANDER", defaults={'name': "Banco Santander", 'is_active': True})
+        b_bci, _ = Bank.objects.get_or_create(code="BCI", defaults={'name': "Banco BCI", 'is_active': True})
 
         # 1. Create Physical Treasury Accounts with UNIQUE Accounting Accounts
         
@@ -938,8 +945,18 @@ class Command(BaseCommand):
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
                 'is_physical': True,
-                'location': "Oficina Gerencia",
                 'custodian': manager_user
+            }
+        )
+        
+        # Default Payment Method for Safe
+        PaymentMethod.objects.get_or_create(
+            name="Efectivo (Fuerte)",
+            treasury_account=safe,
+            defaults={
+                'method_type': PaymentMethod.Type.CASH,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
             }
         )
 
@@ -953,8 +970,27 @@ class Command(BaseCommand):
                 'account': acc_till1,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
                 'location': "Mostrador 1"
+            }
+        )
+        
+        # Default Payment Method for Till 1
+        PaymentMethod.objects.get_or_create(
+            name="Efectivo POS 01",
+            treasury_account=till1,
+            defaults={
+                'method_type': PaymentMethod.Type.CASH,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
+        PaymentMethod.objects.get_or_create(
+            name="Tarjeta Transbank POS 01",
+            treasury_account=till1,
+            defaults={
+                'method_type': PaymentMethod.Type.DEBIT_CARD,
+                'allow_for_sales': True,
+                'allow_for_purchases': False # POS usually only for sales
             }
         )
 
@@ -968,9 +1004,18 @@ class Command(BaseCommand):
                 'account': acc_petty,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
-                'location': "Administración",
                 'custodian': manager_user
+            }
+        )
+        
+        # Default Payment Method for Petty Cash
+        PaymentMethod.objects.get_or_create(
+            name="Efectivo Caja Chica",
+            treasury_account=petty,
+            defaults={
+                'method_type': PaymentMethod.Type.CASH,
+                'allow_for_sales': False,
+                'allow_for_purchases': True
             }
         )
         
@@ -987,6 +1032,29 @@ class Command(BaseCommand):
                 'allows_transfer': True
             }
         )
+        
+        # Payment Methods for Bank Account (Estado)
+        bco01.bank = b_estado
+        bco01.save()
+        
+        PaymentMethod.objects.get_or_create(
+            name="Transferencia Estado",
+            treasury_account=bco01,
+            defaults={
+                'method_type': PaymentMethod.Type.TRANSFER,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
+        PaymentMethod.objects.get_or_create(
+            name="Tarjeta Débito Estado",
+            treasury_account=bco01,
+            defaults={
+                'method_type': PaymentMethod.Type.DEBIT_CARD,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
 
         # Workshop Till Account
         acc_workshop = get_create_cash_account('1.1.01.14', "Efectivo Caja Taller")
@@ -998,8 +1066,18 @@ class Command(BaseCommand):
                 'account': acc_workshop, 
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
                 'location': "Taller - Piso 2"
+            }
+        )
+        
+        # Payment Method for Workshop
+        PaymentMethod.objects.get_or_create(
+            name="Efectivo Taller",
+            treasury_account=caja01,
+            defaults={
+                'method_type': PaymentMethod.Type.CASH,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
             }
         )
 
@@ -1015,6 +1093,29 @@ class Command(BaseCommand):
                 'allows_transfer': True
             }
         )
+        
+        # Payment Methods for Bank Account (Chile)
+        bank_chile.bank = b_chile
+        bank_chile.save()
+        
+        PaymentMethod.objects.get_or_create(
+            name="Transferencia Bco Chile",
+            treasury_account=bank_chile,
+            defaults={
+                'method_type': PaymentMethod.Type.TRANSFER,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
+        PaymentMethod.objects.get_or_create(
+            name="Cheque Bco Chile",
+            treasury_account=bank_chile,
+            defaults={
+                'method_type': PaymentMethod.Type.CHECK,
+                'allow_for_sales': False,
+                'allow_for_purchases': True
+            }
+        )
 
         # Reception Till Account
         acc_reception = get_create_cash_account('1.1.01.15', "Efectivo Caja Recepción")
@@ -1026,8 +1127,27 @@ class Command(BaseCommand):
                 'account': acc_reception,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
                 'location': "Recepción Principal"
+            }
+        )
+        
+        # Payment Methods for Reception
+        PaymentMethod.objects.get_or_create(
+            name="Efectivo Recepción",
+            treasury_account=recepcion,
+            defaults={
+                'method_type': PaymentMethod.Type.CASH,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
+        PaymentMethod.objects.get_or_create(
+            name="Webpay / Transbank",
+            treasury_account=recepcion,
+            defaults={
+                'method_type': PaymentMethod.Type.CREDIT_CARD,
+                'allow_for_sales': True,
+                'allow_for_purchases': False
             }
         )
         

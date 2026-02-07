@@ -5,7 +5,8 @@ from .views import (
     BankStatementViewSet, BankStatementLineViewSet,
     ReconciliationRuleViewSet, ReconciliationReportsViewSet,
     CardBillingViewSet, POSSessionViewSet, 
-    CashDifferenceViewSet, TreasuryDashboardViewSet
+    CashDifferenceViewSet, TreasuryDashboardViewSet,
+    BankViewSet, PaymentMethodViewSet
 )
 
 
@@ -14,6 +15,8 @@ router.register(r'movements', TreasuryMovementViewSet, basename='treasury-moveme
 router.register(r'payments', TreasuryMovementViewSet, basename='treasury-payment')
 router.register(r'accounts', TreasuryAccountViewSet)
 router.register(r'pos-terminals', POSTerminalViewSet)
+router.register(r'banks', BankViewSet)
+router.register(r'payment-methods', PaymentMethodViewSet)
 
 # router.register(r'cash-movements', CashMovementViewSet) # Removed
 router.register(r'cash-differences', CashDifferenceViewSet)

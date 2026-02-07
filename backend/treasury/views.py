@@ -6,14 +6,15 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationRule, POSTerminal, 
-                     CashDifference, POSSession, POSSessionAudit)
+                     CashDifference, POSSession, POSSessionAudit, Bank, PaymentMethod)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
     POSTerminalSerializer,
     CashDifferenceSerializer,
-    POSSessionSerializer, POSSessionAuditSerializer
+    POSSessionSerializer, POSSessionAuditSerializer,
+    BankSerializer, PaymentMethodSerializer
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
@@ -25,6 +26,32 @@ from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
 from core.views import AuditHistoryMixin
+
+
+class BankViewSet(viewsets.ModelViewSet):
+    queryset = Bank.objects.all().order_by('name')
+    serializer_class = BankSerializer
+
+
+class PaymentMethodViewSet(viewsets.ModelViewSet):
+    queryset = PaymentMethod.objects.all().order_by('name')
+    serializer_class = PaymentMethodSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        treasury_account = self.request.query_params.get('treasury_account')
+        if treasury_account:
+            qs = qs.filter(treasury_account_id=treasury_account)
+            
+        for_sales = self.request.query_params.get('for_sales')
+        if for_sales == 'true':
+            qs = qs.filter(allow_for_sales=True)
+            
+        for_purchases = self.request.query_params.get('for_purchases')
+        if for_purchases == 'true':
+            qs = qs.filter(allow_for_purchases=True)
+            
+        return qs
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
@@ -138,7 +165,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filterset_fields = [
         'is_reconciled', 
         'from_account', 'to_account', 
-        'movement_type', 'payment_method',
+        'movement_type', 'payment_method', 'payment_method_new',
         'contact'
     ]
 
@@ -170,6 +197,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 from_account=data.get('from_account'),
                 to_account=data.get('to_account'),
                 payment_method=data.get('payment_method', TreasuryMovement.Method.CASH),
+                payment_method_new=data.get('payment_method_new'),
                 reference=data.get('reference', ''),
                 notes=data.get('notes', ''),
                 justify_reason=data.get('justify_reason'),

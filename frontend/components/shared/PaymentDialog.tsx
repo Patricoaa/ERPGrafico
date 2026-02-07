@@ -29,6 +29,7 @@ interface PaymentDialogProps {
         transaction_number?: string,
         is_pending_registration?: boolean,
         treasury_account_id?: string | null,
+        payment_method_new?: string | null,
         documentReference?: string,
         documentDate?: string,
         documentAttachment?: File | null
@@ -67,6 +68,8 @@ export function PaymentDialog({
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
+    const [paymentMethodNew, setPaymentMethodNew] = useState<string | null>(null)
+    const [availableMethods, setAvailableMethods] = useState<any[]>([])
 
     const { accounts, loading: loadingAccounts } = useTreasuryAccounts({
         context: 'GENERAL',
@@ -102,10 +105,26 @@ export function PaymentDialog({
         }
     }, [open, pendingAmount, isPurchase, existingInvoice, paymentMethod, filteredAccounts])
 
-    const handleAccountChange = (val: string | null) => {
+    const handleAccountChange = async (val: string | null) => {
         setTreasuryAccount(val)
         if (val) {
             localStorage.setItem(`pref_treasury_${paymentMethod}`, val)
+            try {
+                const response = await api.get(`/treasury/payment-methods/?treasury_account=${val}&${isPurchase ? 'for_purchases=true' : 'for_sales=true'}`)
+                const methods = response.data || []
+                setAvailableMethods(methods)
+                if (methods.length > 0) {
+                    setPaymentMethodNew(methods[0].id.toString())
+                } else {
+                    setPaymentMethodNew(null)
+                }
+            } catch (error) {
+                setAvailableMethods([])
+                setPaymentMethodNew(null)
+            }
+        } else {
+            setAvailableMethods([])
+            setPaymentMethodNew(null)
         }
     }
 
@@ -290,6 +309,26 @@ export function PaymentDialog({
                             </div>
                         ) : null}
 
+                        {availableMethods.length > 0 && (
+                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                                <Label className="text-xs font-bold uppercase text-blue-600 flex items-center gap-1">
+                                    <CreditCard className="h-3 w-3" /> Canal de Pago Específico
+                                </Label>
+                                <Select value={paymentMethodNew || ""} onValueChange={setPaymentMethodNew}>
+                                    <SelectTrigger className="border-blue-200 bg-blue-50/10">
+                                        <SelectValue placeholder="Seleccione método..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableMethods.map((m) => (
+                                            <SelectItem key={m.id} value={m.id.toString()}>
+                                                {m.name} ({m.method_type_display})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         {(paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') && (
                             <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                 <div className="grid gap-2">
@@ -374,7 +413,8 @@ export function PaymentDialog({
                             documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
                             transaction_number: parseFloat(amount) === 0 ? undefined : transactionNumber,
                             is_pending_registration: !!isPending,
-                            treasury_account_id: parseFloat(amount) === 0 ? null : treasuryAccount
+                            treasury_account_id: parseFloat(amount) === 0 ? null : treasuryAccount,
+                            payment_method_new: parseFloat(amount) === 0 ? null : paymentMethodNew
                         })}
                         disabled={
                             (parseFloat(amount) < 0) ||

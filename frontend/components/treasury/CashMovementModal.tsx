@@ -22,6 +22,7 @@ import {
     Loader2,
     AlertTriangle,
     Banknote,
+    CreditCard,
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -45,6 +46,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
     const [notes, setNotes] = useState("")
     const [motive, setMotive] = useState<string>("")
     const [submitting, setSubmitting] = useState(false)
+    const [paymentMethodNew, setPaymentMethodNew] = useState<string>("")
+    const [availableMethods, setAvailableMethods] = useState<any[]>([])
 
     // Fund validation states
     const [selectedFromAccount, setSelectedFromAccount] = useState<any>(null)
@@ -58,6 +61,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
         setMotive("")
         setSelectedFromAccount(null)
         setInsufficientFunds(false)
+        setPaymentMethodNew("")
     }
 
     // Fetch selected account for transfer/withdrawal validation
@@ -82,6 +86,27 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
             setInsufficientFunds(false)
         }
     }, [fromId, tab, amount])
+
+    // Fetch methods for the relevant account
+    useEffect(() => {
+        const targetAccId = tab === 'DEPOSIT' || tab === 'TRANSFER' ? toId : fromId
+        if (targetAccId) {
+            api.get(`/treasury/accounts/${targetAccId}/`)
+                .then(res => {
+                    setAvailableMethods(res.data.payment_methods || [])
+                    // Set default method if only one or if CASH exists
+                    if (res.data.payment_methods?.length > 0) {
+                        const cashMethod = res.data.payment_methods.find((m: any) => m.method_type === 'CASH')
+                        setPaymentMethodNew(cashMethod ? cashMethod.id.toString() : res.data.payment_methods[0].id.toString())
+                    } else {
+                        setPaymentMethodNew("")
+                    }
+                })
+        } else {
+            setAvailableMethods([])
+            setPaymentMethodNew("")
+        }
+    }, [fromId, toId, tab])
 
     const handleSubmit = async () => {
         if (!amount || parseFloat(amount) <= 0) {
@@ -124,7 +149,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                 to_account: toId || null,
                 notes: notes,
                 justify_reason: motive,
-                payment_method: 'CASH', // Default to CASH for manual movements
+                payment_method_new: paymentMethodNew || null,
+                payment_method: 'CASH', // Keep for backward compatibility until fully removed
             })
             toast.success("Movimiento registrado correctamente")
             handleReset()
@@ -258,6 +284,30 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                                 <SelectItem value="OTHER_OUT">Otro Egreso (Gastos Varios)</SelectItem>
                                             </>
                                         )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {/* Payment Method Selector */}
+                        {availableMethods.length > 0 && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                <Label className={FORM_STYLES.label}>
+                                    {tab === 'TRANSFER' ? 'Canal de Traspaso / Método' : 'Método de Pago'}
+                                </Label>
+                                <Select value={paymentMethodNew} onValueChange={setPaymentMethodNew}>
+                                    <SelectTrigger className={cn(FORM_STYLES.input, "border-primary/20 bg-primary/5")}>
+                                        <SelectValue placeholder="Seleccione método..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableMethods.map((m) => (
+                                            <SelectItem key={m.id} value={m.id.toString()}>
+                                                <div className="flex items-center gap-2">
+                                                    <CreditCard className="h-3 w-3" />
+                                                    {m.name}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

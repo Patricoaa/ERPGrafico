@@ -847,6 +847,8 @@ class PaymentMethod(models.Model):
         verbose_name=_("Cuenta de Tesorería")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
+    allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
+    allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
     
     # Optional settings per method
     requires_reference = models.BooleanField(_("Requiere Referencia"), default=False)

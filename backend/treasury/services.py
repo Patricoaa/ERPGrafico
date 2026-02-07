@@ -15,7 +15,7 @@ class TreasuryService:
                         partner=None, invoice=None, sale_order=None, purchase_order=None,
                         pos_session=None, pos_session_id=None, reference='', notes='', justify_reason=None,
                         transaction_number=None, is_pending_registration=False,
-                        card_provider=None, is_reconciled=False):
+                        card_provider=None, payment_method_new=None, is_reconciled=False):
         """
         Unified method to create a TreasuryMovement.
         Handles:
@@ -55,6 +55,7 @@ class TreasuryService:
         movement = TreasuryMovement.objects.create(
             movement_type=movement_type,
             payment_method=payment_method,
+            payment_method_new=payment_method_new,
             amount=amount,
             date=date,
             created_by=created_by,

@@ -26,11 +26,13 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, MapPin, Shield } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, MapPin, Shield, Landmark, CreditCard, List } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { UserSelector } from "@/components/selectors/UserSelector" // Assuming this exists or creates generic selector
+import { UserSelector } from "@/components/selectors/UserSelector"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BankManagement, PaymentMethodManagement } from "@/components/treasury/MasterDataManagement"
 
 interface TreasuryAccount {
     id: number
@@ -43,12 +45,13 @@ interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    // New fields
     location: string
     custodian: number | null
     custodian_name?: string
     is_physical: boolean
     current_balance?: number
+    bank?: number | null
+    bank_name?: string
 }
 
 export default function TreasuryAccountsPage() {
@@ -95,7 +98,6 @@ export default function TreasuryAccountsPage() {
         setDialogOpen(true)
     }
 
-
     const columns: ColumnDef<TreasuryAccount>[] = [
         {
             accessorKey: "name",
@@ -112,6 +114,12 @@ export default function TreasuryAccountsPage() {
                                 <MapPin className="h-3 w-3 mr-1" />
                                 {acc.location || 'Físico sin ubicación'}
                             </Badge>
+                        )}
+                        {acc.bank_name && (
+                            <div className="flex items-center gap-1 text-[10px] text-blue-600 mt-1">
+                                <Landmark className="h-3 w-3" />
+                                {acc.bank_name}
+                            </div>
                         )}
                     </div>
                 )
@@ -152,7 +160,7 @@ export default function TreasuryAccountsPage() {
         },
         {
             id: "methods",
-            header: "Método de Pago",
+            header: "Métodos Permitidos",
             cell: ({ row }) => {
                 const acc = row.original
                 return (
@@ -197,34 +205,54 @@ export default function TreasuryAccountsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-bold tracking-tight">Cuentas de Tesorería</h2>
-                <div className="flex items-center pt-1">
-                    <Button size="icon" className="rounded-full h-8 w-8" onClick={openCreate} title="Nueva Cuenta">
-                        <Plus className="h-4 w-4" />
-                    </Button>
+        <div className="p-8 space-y-6">
+            <div className="flex justify-between items-center mb-2">
+                <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-primary">Tesorería</h1>
+                    <p className="text-muted-foreground">Administración de cuentas, bancos y métodos de pago.</p>
                 </div>
             </div>
 
-            <div className="">
-                <DataTable
-                    columns={columns}
-                    data={accounts}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar por nombre..."
-                    facetedFilters={[
-                        {
-                            column: "account_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Bancos", value: "BANK" },
-                                { label: "Caja", value: "CASH" },
-                            ],
-                        },
-                    ]}
-                />
-            </div>
+            <Tabs defaultValue="accounts" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 max-w-[600px] mb-8 bg-muted/50 p-1 rounded-xl border">
+                    <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <List className="h-4 w-4" /> Cuentas
+                    </TabsTrigger>
+                    <TabsTrigger value="banks" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <Landmark className="h-4 w-4" /> Bancos
+                    </TabsTrigger>
+                    <TabsTrigger value="methods" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <CreditCard className="h-4 w-4" /> Métodos de Pago
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
+                        <div>
+                            <h2 className="text-xl font-bold tracking-tight text-primary">Cuentas y Cajas</h2>
+                            <p className="text-sm text-muted-foreground">Registre y configure sus cuentas bancarias y cajas físicas.</p>
+                        </div>
+                        <Button onClick={openCreate} size="lg" className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                            <Plus className="mr-2 h-5 w-5" /> Nueva Cuenta
+                        </Button>
+                    </div>
+
+                    <DataTable
+                        columns={columns}
+                        data={accounts}
+                        searchPlaceholder="Buscar cuentas..."
+                        filterColumn="name"
+                    />
+                </TabsContent>
+
+                <TabsContent value="banks">
+                    <BankManagement />
+                </TabsContent>
+
+                <TabsContent value="methods">
+                    <PaymentMethodManagement />
+                </TabsContent>
+            </Tabs>
 
             <AccountDialog
                 open={dialogOpen}
@@ -249,10 +277,22 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [allowsCard, setAllowsCard] = useState(false)
     const [allowsTransfer, setAllowsTransfer] = useState(false)
 
-    // New fields
+    // Detailed fields
     const [location, setLocation] = useState("")
-    const [custodian, setCustodian] = useState<string | null>(null)
+    const [custodian, setCustodian] = useState<number | null>(null)
     const [isPhysical, setIsPhysical] = useState(false)
+    const [bank, setBank] = useState<string | null>(null)
+    const [banks, setBanks] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchBanks = async () => {
+            try {
+                const res = await api.get('/treasury/banks/')
+                setBanks(res.data)
+            } catch (err) { }
+        }
+        if (open) fetchBanks()
+    }, [open])
 
     useEffect(() => {
         if (open) {
@@ -264,10 +304,10 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setAllowsCash(account.allows_cash)
                 setAllowsCard(account.allows_card)
                 setAllowsTransfer(account.allows_transfer)
-                // New fields
                 setLocation(account.location || "")
-                setCustodian(account.custodian ? account.custodian.toString() : null)
+                setCustodian(account.custodian || null)
                 setIsPhysical(account.is_physical || false)
+                setBank(account.bank ? account.bank.toString() : null)
             } else {
                 setName("")
                 setType("CASH")
@@ -279,6 +319,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setLocation("")
                 setCustodian(null)
                 setIsPhysical(false)
+                setBank(null)
             }
         }
     }, [open, account])
@@ -297,7 +338,8 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 allows_transfer: allowsTransfer,
                 location,
                 custodian,
-                is_physical: isPhysical
+                is_physical: isPhysical,
+                bank: type === 'BANK' ? bank : null
             }
             if (account) {
                 await api.patch(`/treasury/accounts/${account.id}/`, payload)
@@ -320,7 +362,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 <DialogHeader>
                     <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta de Tesorería"}</DialogTitle>
                     <DialogDescription>
-                        Configure los detalles de la cuenta.
+                        Configure los detalles de la cuenta de tesorería.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -328,7 +370,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                         {/* Column 1: Basic Info */}
                         <div className="space-y-4">
                             <div className="grid gap-2">
-                                <Label>Nombre</Label>
+                                <Label>Nombre de la Cuenta</Label>
                                 <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -357,69 +399,88 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                     </Select>
                                 </div>
                             </div>
+
+                            {type === 'BANK' && (
+                                <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                    <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                        <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
+                                    </Label>
+                                    <Select value={bank || ""} onValueChange={setBank}>
+                                        <SelectTrigger className="border-blue-200 bg-blue-50/30">
+                                            <SelectValue placeholder="Seleccione banco..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {banks.map((b: any) => (
+                                                <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
                             <div className="grid gap-2">
-                                <Label>Cuenta Contable (Activo)</Label>
+                                <Label>Cuenta Contable</Label>
                                 <AccountSelector
                                     value={accountingAccount}
                                     onChange={setAccountingAccount}
                                     accountType="ASSET"
                                     isReconcilable={true}
-                                    placeholder="Seleccione cuenta contable..."
+                                    placeholder="Seleccione cuenta..."
                                 />
-                                <p className="text-[10px] text-muted-foreground">
-                                    Cuenta donde se reflejará el saldo contable.
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    Vínculo con el plan de cuentas.
                                 </p>
                             </div>
                         </div>
 
                         {/* Column 2: Physical & Config */}
                         <div className="space-y-4">
-                            <div className="p-4 border rounded-lg bg-orange-50/50 space-y-3">
+                            <div className="p-4 border rounded-xl bg-orange-50/30 space-y-3 border-orange-100">
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
                                     <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
                                 </div>
                                 {isPhysical && (
-                                    <>
-                                        <div className="grid gap-2">
-                                            <Label className="text-xs">Ubicación</Label>
-                                            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central - Caja Fuerte" className="h-8 text-xs" />
+                                    <div className="space-y-3 pt-2 border-t border-orange-100 animate-in fade-in duration-300">
+                                        <div className="grid gap-1.5">
+                                            <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Ubicación</Label>
+                                            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
                                         </div>
-                                        <div className="grid gap-2">
-                                            <Label className="text-xs">Responsable (Custodio)</Label>
-                                            {/* Assuming UserSelector exists, otherwise basic select or input */}
-                                            {/* Placeholder for user selector - using basic Input for now if UserSelector is not confirmed */}
-                                            <Input value={custodian || ''} onChange={e => setCustodian(e.target.value || null)} placeholder="ID Usuario (Temporal)" className="h-8 text-xs" />
+                                        <div className="grid gap-1.5">
+                                            <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Custodio</Label>
+                                            <UserSelector value={custodian} onChange={setCustodian} />
                                         </div>
-                                    </>
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                                <Label className="text-sm font-bold">Métodos Permitidos</Label>
-                                <div className="space-y-2">
-                                    <div className="flex items-center space-x-2">
+                            <div className="p-4 border rounded-xl bg-muted/30 space-y-3 shadow-inner">
+                                <Label className="text-sm font-bold flex items-center gap-1">
+                                    <CreditCard className="h-4 w-4" /> Métodos de Pago
+                                </Label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
                                         <Checkbox id="check-cash" checked={allowsCash} onCheckedChange={(v) => setAllowsCash(!!v)} />
-                                        <Label htmlFor="check-cash" className="text-xs cursor-pointer">Efectivo</Label>
+                                        <Label htmlFor="check-cash" className="text-xs cursor-pointer flex-1">Permitir Efectivo</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
                                         <Checkbox id="check-card" checked={allowsCard} onCheckedChange={(v) => setAllowsCard(!!v)} />
-                                        <Label htmlFor="check-card" className="text-xs cursor-pointer">Tarjeta</Label>
+                                        <Label htmlFor="check-card" className="text-xs cursor-pointer flex-1">Permitir Tarjeta</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
                                         <Checkbox id="check-transfer" checked={allowsTransfer} onCheckedChange={(v) => setAllowsTransfer(!!v)} />
-                                        <Label htmlFor="check-transfer" className="text-xs cursor-pointer">Transferencia</Label>
+                                        <Label htmlFor="check-transfer" className="text-xs cursor-pointer flex-1">Permitir Transferencia</Label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="pt-4 border-t">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading} className="px-8">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar
+                            {account ? "Actualizar Cuenta" : "Crear Cuenta"}
                         </Button>
                     </DialogFooter>
                 </form>
