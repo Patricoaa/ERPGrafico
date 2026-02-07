@@ -453,7 +453,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <div>
                                                             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Motivo / Causal</h4>
                                                             <Badge variant="secondary" className="font-bold">
-                                                                {data.motive_display || data.motive || 'General'}
+                                                                {data.justify_reason_display || data.justify_reason || 'General'}
                                                             </Badge>
                                                         </div>
                                                         {data.pos_session && (

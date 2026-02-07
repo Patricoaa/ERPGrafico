@@ -257,6 +257,7 @@ class CardTransactionSerializer(serializers.ModelSerializer):
 class CashMovementSerializer(serializers.ModelSerializer):
     """Serializer for Cash Movements"""
     movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
+    justify_reason_display = serializers.CharField(source='get_justify_reason_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)

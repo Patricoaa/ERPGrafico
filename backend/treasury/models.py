@@ -1153,6 +1153,27 @@ class CashMovement(models.Model):
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Cancelado')
 
+    class JustifyReason(models.TextChoices):
+        # Deposits
+        CAPITAL_CONTRIBUTION = 'CAPITAL_CONTRIBUTION', _('Aporte de Capital')
+        PURCHASE_REFUND = 'PURCHASE_REFUND', _('Devolución de Compra')
+        TIP = 'TIP', _('Propina')
+        
+        # Withdrawals
+        EXPENSE = 'EXPENSE', _('Gasto / Caja Chica')
+        PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
+        SUPPLIER_PAYMENT = 'SUPPLIER_PAYMENT', _('Pago a Proveedor')
+        THEFT = 'THEFT', _('Robo / Faltante')
+        
+        # Mixed / Adjustments
+        ROUNDING = 'ROUNDING', _('Redondeo')
+        CASHBACK = 'CASHBACK', _('Vuelto Incorrecto')
+        COUNTING_ERROR = 'COUNTING_ERROR', _('Error de Conteo')
+        SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error de Sistema')
+        OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
+        OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
+        UNKNOWN = 'UNKNOWN', _('Desconocido')
+
     movement_type = models.CharField(
         _("Tipo"),
         max_length=20,
@@ -1170,6 +1191,13 @@ class CashMovement(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.CONFIRMED
+    )
+
+    justify_reason = models.CharField(
+        _("Razón / Motivo"),
+        max_length=30,
+        choices=JustifyReason.choices,
+        default=JustifyReason.UNKNOWN
     )
 
     # Origin and Destination (Now TreasuryAccount)

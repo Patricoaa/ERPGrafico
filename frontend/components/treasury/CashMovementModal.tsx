@@ -118,7 +118,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                 from_account: fromId || null,
                 to_account: toId || null,
                 notes: notes,
-                motive: motive // New field
+                justify_reason: motive
             })
             toast.success("Movimiento registrado correctamente")
             handleReset()
@@ -235,14 +235,22 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                             <>
                                                 <SelectItem value="CAPITAL_CONTRIBUTION">Aporte de Capital</SelectItem>
                                                 <SelectItem value="PURCHASE_REFUND">Devolución de Compra</SelectItem>
-                                                <SelectItem value="OTHER_IN">Otro Depósito</SelectItem>
+                                                <SelectItem value="TIP">Propina (Ingreso)</SelectItem>
+                                                <SelectItem value="COUNTING_ERROR">Error de Conteo (Sobrante)</SelectItem>
+                                                <SelectItem value="SYSTEM_ERROR">Error de Sistema (Ajuste)</SelectItem>
+                                                <SelectItem value="OTHER_IN">Otro Depósito (Varios)</SelectItem>
                                             </>
                                         ) : (
                                             <>
                                                 <SelectItem value="EXPENSE">Gastos Menores / Caja Chica</SelectItem>
                                                 <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>
                                                 <SelectItem value="SUPPLIER_PAYMENT">Pago a Proveedor</SelectItem>
-                                                <SelectItem value="OTHER_OUT">Otro Retiro</SelectItem>
+                                                <SelectItem value="THEFT">Robo / Pérdida</SelectItem>
+                                                <SelectItem value="ROUNDING">Redondeo</SelectItem>
+                                                <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
+                                                <SelectItem value="COUNTING_ERROR">Error de Conteo (Faltante)</SelectItem>
+                                                <SelectItem value="SYSTEM_ERROR">Error de Sistema (Ajuste)</SelectItem>
+                                                <SelectItem value="OTHER_OUT">Otro Egreso (Gastos Varios)</SelectItem>
                                             </>
                                         )}
                                     </SelectContent>

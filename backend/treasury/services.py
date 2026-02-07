@@ -39,7 +39,8 @@ class TreasuryService:
             pos_session=pos_session,
             created_by=created_by,
             notes=notes,
-            date=date
+            date=date,
+            justify_reason=justify_reason
         )
 
         # Link to Payment if requested
@@ -109,6 +110,7 @@ class TreasuryService:
                     (settings.pos_cashback_error_account if justify_reason == 'CASHBACK' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
                     (settings.pos_other_outflow_account if justify_reason == 'OTHER_OUT' else None) or
+                    (settings.default_expense_account if justify_reason == 'EXPENSE' else None) or
                     settings.pos_cash_difference_loss_account
                 )
                 
@@ -125,6 +127,7 @@ class TreasuryService:
                     (settings.pos_counting_error_account if justify_reason == 'COUNTING_ERROR' else None) or
                     (settings.pos_system_error_account if justify_reason == 'SYSTEM_ERROR' else None) or
                     (settings.pos_other_inflow_account if justify_reason == 'OTHER_IN' else None) or
+                    (settings.default_revenue_account if justify_reason == 'CAPITAL_CONTRIBUTION' else None) or
                     settings.pos_cash_difference_gain_account
                 )
 

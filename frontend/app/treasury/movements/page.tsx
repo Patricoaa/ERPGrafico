@@ -24,9 +24,8 @@ interface CashMovement {
     pos_session: number | null
     from_container_name: string | null
     to_container_name: string | null
-    // Assuming backend also returns motive or motive_display now
-    motive: string | null
-    motive_display: string | null
+    justify_reason: string | null
+    justify_reason_display: string | null
 }
 
 export default function TreasuryMovementsPage() {
@@ -104,7 +103,7 @@ export default function TreasuryMovementsPage() {
                 const isWithdrawal = m.movement_type === 'WITHDRAWAL';
 
                 // Determine motive label
-                const motive = m.motive_display || m.motive || (m.notes ? "Ver notas" : null);
+                const motive = m.justify_reason_display || (m.notes ? "Ver notas" : null);
 
                 if (isTransfer) {
                     return (
@@ -207,20 +206,17 @@ export default function TreasuryMovementsPage() {
     ]
 
     return (
-        <div className="h-full flex flex-col p-6 space-y-4">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Movimientos de Tesorería</h2>
-                    <p className="text-muted-foreground">Gestione el flujo de efectivo, depósitos y retiros.</p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => window.location.reload()}>
-                        <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={() => setOpenModal(true)} className="gap-2">
-                        <Plus className="h-4 w-4" /> Nuevo Movimiento
-                    </Button>
-                </div>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center gap-4 space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Tesorería</h2>
+                <Button
+                    size="icon"
+                    className="rounded-full h-8 w-8"
+                    onClick={() => setOpenModal(true)}
+                    title="Nuevo Movimiento"
+                >
+                    <Plus className="h-4 w-4" />
+                </Button>
             </div>
 
             <CashMovementModal

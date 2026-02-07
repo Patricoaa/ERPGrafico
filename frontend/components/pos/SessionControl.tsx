@@ -819,7 +819,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-6">
                             <h3 className="text-lg font-bold">Tipo de Movimiento</h3>
-                            <p className="text-sm text-muted-foreground">¿Es un ingreso o una salida de dinero?</p>
+                            <p className="text-sm text-muted-foreground">¿Es un depósito o un retiro de dinero?</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <Button
@@ -837,7 +837,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
                                     <Banknote className="h-6 w-6" />
                                 </div>
-                                <span className="font-bold">Ingreso</span>
+                                <span className="font-bold">Depósito</span>
                             </Button>
                             <Button
                                 variant="outline"
@@ -854,7 +854,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 <div className="p-3 rounded-full bg-amber-100 text-amber-600">
                                     <LogOut className="h-6 w-6" />
                                 </div>
-                                <span className="font-bold">Salida</span>
+                                <span className="font-bold">Retiro</span>
                             </Button>
                         </div>
                     </div>
@@ -864,7 +864,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 return (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-4">
-                            <h3 className="font-bold">Motivo del {moveImpact === "IN" ? "Ingreso" : "Egreso"}</h3>
+                            <h3 className="font-bold">Motivo del {moveImpact === "IN" ? "Depósito" : "Retiro"}</h3>
                         </div>
                         <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
                             {MOVEMENT_TYPES[moveImpact].map((t) => (

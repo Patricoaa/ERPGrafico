@@ -122,6 +122,7 @@ class CashMovementViewSet(viewsets.ModelViewSet):
             to_account=data.get('to_account'),
             pos_session=data.get('pos_session'),
             notes=data.get('notes', ''),
+            justify_reason=data.get('justify_reason', 'UNKNOWN'),
             date=data.get('date')
         )
         return movement
