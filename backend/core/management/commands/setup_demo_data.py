@@ -1,4 +1,5 @@
 #docker compose exec backend python manage.py setup_demo_data --purge
+# SYNC_TRIGGER_20260207_0251
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -15,10 +16,10 @@ from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
-    TreasuryAccount, Payment, BankStatement, BankStatementLine,
+    TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
     ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
     DailySettlement, CardTransaction,
-    CashMovement, CashDifference,
+    CashDifference,
     POSTerminal, POSSession, POSSessionAudit
 )
 from billing.models import Invoice, NoteWorkflow
@@ -355,7 +356,7 @@ class Command(BaseCommand):
         _safe_delete(Subscription, "Subscription")
 
         # 3. Transactional documents
-        _safe_delete(Payment, "Payment")
+        _safe_delete(TreasuryMovement, "TreasuryMovement")
         _safe_delete(Invoice, "Invoice")
         
         # Purchasing
@@ -401,7 +402,6 @@ class Command(BaseCommand):
         
         # Treasury New Models
         _safe_delete(CashDifference, "CashDifference")
-        _safe_delete(CashMovement, "CashMovement")
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
