@@ -291,7 +291,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None):
+                     line_files=None, pos_session_id=None, user=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -467,7 +467,8 @@ class BillingService:
                 to_account=to_acc,
                 transaction_number=transaction_number,
                 is_pending_registration=payment_is_pending,
-                pos_session_id=pos_session_id
+                pos_session_id=pos_session_id,
+                created_by=user
             )
             
         return invoice

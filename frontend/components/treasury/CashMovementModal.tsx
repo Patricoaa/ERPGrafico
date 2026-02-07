@@ -152,7 +152,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                     </Button>
                     <Button onClick={handleSubmit} disabled={submitting || insufficientFunds}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Registrar Movimiento (Enter)
+                        Registrar Movimiento
                     </Button>
                 </div>
             }
@@ -177,10 +177,10 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             <ArrowLeftRight className="h-4 w-4" /> Traspaso
                         </TabsTrigger>
                         <TabsTrigger value="DEPOSIT" className="gap-2">
-                            <ArrowDownLeft className="h-4 w-4" /> Depósito / Ingreso
+                            <ArrowDownLeft className="h-4 w-4" /> Depósito
                         </TabsTrigger>
                         <TabsTrigger value="WITHDRAWAL" className="gap-2">
-                            <ArrowUpRight className="h-4 w-4" /> Retiro / Gasto
+                            <ArrowUpRight className="h-4 w-4" /> Retiro
                         </TabsTrigger>
                     </TabsList>
 

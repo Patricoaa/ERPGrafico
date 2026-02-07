@@ -36,10 +36,15 @@ interface TreasuryMovement {
     justify_reason: string | null
     justify_reason_display: string | null
 
-    // Partner info
     partner_name: string | null
     reference: string | null
     involved_accounts?: string[]
+    document_info?: {
+        type: string | null
+        id: number | null
+        number: string | null
+        label: string | null
+    } | null
 }
 
 export default function TreasuryMovementsPage() {
@@ -90,12 +95,18 @@ export default function TreasuryMovementsPage() {
             header: "Tipo",
             cell: ({ row }) => {
                 const type = row.getValue("movement_type") as string
-                const label = row.original.movement_type_display
+                let label = row.original.movement_type_display
+
+                // Modernized labels
+                if (type === 'INBOUND') label = "Depósito"
+                if (type === 'OUTBOUND') label = "Retiro"
+                if (type === 'TRANSFER') label = "Traspaso"
+                if (type === 'ADJUSTMENT') label = "Ajuste"
 
                 let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
-                if (type === 'INBOUND') variant = "default" // Greenish usually
+                if (type === 'INBOUND') variant = "default"
                 if (type === 'OUTBOUND') variant = "destructive"
-                if (type === 'TRANSFER') variant = "secondary"
+                if (type === 'TRANSFER' || type === 'ADJUSTMENT') variant = "secondary"
 
                 return (
                     <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight px-2 py-0">
@@ -109,49 +120,74 @@ export default function TreasuryMovementsPage() {
         },
         {
             id: "flow",
-            header: "Flujo / Detalle",
+            header: "Flujo",
             cell: ({ row }) => {
                 const m = row.original;
-                const isTransfer = m.movement_type === 'TRANSFER';
-                const isInbound = m.movement_type === 'INBOUND';
-                const isOutbound = m.movement_type === 'OUTBOUND';
+                const type = m.movement_type;
 
-                const motive = m.justify_reason_display || m.reference || (m.notes ? "Ver notas" : null);
-                const partner = m.partner_name;
+                let source = "Particular";
+                let destination = "Caja";
+
+                // Resolve Source / Destination
+                if (type === 'TRANSFER') {
+                    source = m.from_account_name || 'Origen';
+                    destination = m.to_account_name || 'Destino';
+                } else if (type === 'INBOUND') {
+                    source = m.partner_name || 'Origen Externo';
+                    destination = m.to_account_name || 'Caja';
+                } else if (type === 'OUTBOUND') {
+                    source = m.from_account_name || 'Caja';
+                    destination = m.partner_name || 'Destino Externo';
+                } else if (type === 'ADJUSTMENT') {
+                    source = m.from_account_name || 'Ajuste';
+                    destination = m.to_account_name || 'Ajuste';
+                }
 
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        {/* Flow */}
-                        <div className="flex items-center gap-2 text-xs">
-                            {isTransfer ? (
-                                <>
-                                    <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={m.from_account_name || '?'}>
-                                        {m.from_account_name || 'Origen'}
-                                    </span>
-                                    <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
-                                    <span className="font-bold truncate max-w-[100px]" title={m.to_account_name || '?'}>
-                                        {m.to_account_name || 'Destino'}
-                                    </span>
-                                </>
-                            ) : isInbound ? (
-                                <span className="font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[180px]">
-                                    {partner ? `${partner} → ${m.to_account_name || 'Caja'}` : (m.to_account_name || 'Entrada')}
-                                </span>
-                            ) : (
-                                <span className="font-bold text-red-700 dark:text-red-400 truncate max-w-[180px]">
-                                    {partner ? `${m.from_account_name || 'Caja'} → ${partner}` : (m.from_account_name || 'Salida')}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Motive / Justification */}
-                        <div className="flex gap-2 text-[10px] text-muted-foreground">
-                            {m.payment_method_display && <span className="uppercase border px-1 rounded">{m.payment_method_display}</span>}
-                            {motive && <span className="truncate max-w-[150px] italic">{motive}</span>}
-                        </div>
+                    <div className="flex items-center gap-2 text-xs py-1">
+                        <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={source}>
+                            {source}
+                        </span>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
+                        <span className="font-bold truncate max-w-[100px]" title={destination}>
+                            {destination}
+                        </span>
                     </div>
                 );
             },
+        },
+        {
+            accessorKey: "payment_method",
+            header: "Método",
+            cell: ({ row }) => (
+                <Badge variant="outline" className="text-[10px] h-5 font-mono uppercase bg-slate-50 dark:bg-slate-900">
+                    {row.original.payment_method_display}
+                </Badge>
+            )
+        },
+        {
+            id: "reference",
+            header: "Referencia / Documento",
+            cell: ({ row }) => {
+                const m = row.original;
+                const doc = m.document_info;
+                const motive = m.justify_reason_display;
+
+                if (doc) {
+                    return (
+                        <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-primary/80">{doc.label}</span>
+                            {m.reference && <span className="text-[10px] text-muted-foreground italic">{m.reference}</span>}
+                        </div>
+                    )
+                }
+
+                return (
+                    <span className="text-xs text-muted-foreground italic">
+                        {motive || m.reference || "-"}
+                    </span>
+                )
+            }
         },
         {
             accessorKey: "amount",
@@ -167,20 +203,24 @@ export default function TreasuryMovementsPage() {
         },
         {
             id: "origin",
-            header: "Origen",
+            header: "Origen / Sistema",
             cell: ({ row }) => {
                 const session = row.original.pos_session
                 if (session) {
                     return (
-                        <Badge variant="outline" className="font-mono text-[10px] bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
-                            POS #{session}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className="font-mono text-[10px] w-fit bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
+                                POS #{session}
+                            </Badge>
+                        </div>
                     )
                 }
-                if (row.original.created_by_name === 'system') { // Example check
-                    return <Badge variant="secondary" className="text-[10px]">SYSTEM</Badge>
-                }
-                return null
+
+                return (
+                    <Badge variant="secondary" className="text-[10px] w-fit bg-slate-100 dark:bg-slate-800 text-slate-500">
+                        SISTEMA
+                    </Badge>
+                )
             },
         },
         {
@@ -250,8 +290,8 @@ export default function TreasuryMovementsPage() {
                             column: "movement_type",
                             title: "Tipo",
                             options: [
-                                { label: "Entrante", value: "INBOUND" },
-                                { label: "Saliente", value: "OUTBOUND" },
+                                { label: "Depósito", value: "INBOUND" },
+                                { label: "Retiro", value: "OUTBOUND" },
                                 { label: "Traspaso", value: "TRANSFER" },
                                 { label: "Ajuste", value: "ADJUSTMENT" },
                             ],

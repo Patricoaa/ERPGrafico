@@ -136,8 +136,15 @@ class TreasuryService:
              # The model rename usually keeps related_name or we check model definition.
              # Assuming related_name='payments' or we filter.
              
+             model_to_field = {
+                 'invoice': 'invoice',
+                 'saleorder': 'sale_order',
+                 'purchaseorder': 'purchase_order'
+             }
+             field_name = model_to_field.get(target._meta.model_name, target._meta.model_name)
+             
              total_paid = sum(m.amount for m in TreasuryMovement.objects.filter(
-                 **{f"{target._meta.model_name}": target}
+                 **{field_name: target}
              ))
              
              target_total = getattr(target, 'total', 0)

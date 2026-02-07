@@ -109,6 +109,13 @@ class TreasuryMovement(models.Model):
         related_name='movements_to',
         verbose_name=_("Hacia Cuenta (Destino)")
     )
+    payment_method_new = models.ForeignKey(
+        'PaymentMethod',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='movements',
+        verbose_name=_("Método de Pago (Nuevo)")
+    )
 
     # Legacy/Convenience access to the "Main" financial account involved (Snapshot)
     # Usually matches from_account.account (if OUTBOUND) or to_account.account (if INBOUND)
@@ -309,7 +316,13 @@ class TreasuryAccount(models.Model):
         choices=Type.choices,
         default=Type.CASH
     )
-
+    bank = models.ForeignKey(
+        'Bank',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='treasury_accounts',
+        verbose_name=_("Banco")
+    )
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
@@ -792,6 +805,65 @@ class ReconciliationRule(models.Model):
     def __str__(self):
         scope = self.treasury_account.name if self.treasury_account else "Global"
         return f"{self.name} ({scope})"
+
+
+class Bank(models.Model):
+    """Bancos institucionales"""
+    name = models.CharField(_("Nombre"), max_length=100)
+    code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
+    is_active = models.BooleanField(_("Activo"), default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Banco")
+        verbose_name_plural = _("Bancos")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class PaymentMethod(models.Model):
+    """Métodos de pago específicos asociados a una cuenta de tesorería"""
+    class Type(models.TextChoices):
+        CASH = 'CASH', _('Efectivo')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
+        TRANSFER = 'TRANSFER', _('Transferencia')
+        CHECK = 'CHECK', _('Cheque')
+        CREDIT_LINE = 'CREDIT_LINE', _('Línea de Crédito')
+        OTHER = 'OTHER', _('Otro')
+
+    name = models.CharField(_("Nombre"), max_length=100)
+    method_type = models.CharField(_("Tipo de Método"), max_length=20, choices=Type.choices)
+    treasury_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.CASCADE,
+        related_name='payment_methods',
+        verbose_name=_("Cuenta de Tesorería")
+    )
+    is_active = models.BooleanField(_("Activo"), default=True)
+    
+    # Optional settings per method
+    requires_reference = models.BooleanField(_("Requiere Referencia"), default=False)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Método de Pago")
+        verbose_name_plural = _("Métodos de Pago")
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.treasury_account.name})"
 
 
 class CardPaymentProvider(models.Model):

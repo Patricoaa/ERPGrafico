@@ -2,15 +2,32 @@ from rest_framework import serializers
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
                      ReconciliationRule, CardPaymentProvider, DailySettlement, 
                      CardTransaction, POSTerminal, 
-                     CashDifference, POSSessionAudit)
+                     CashDifference, POSSessionAudit, Bank, PaymentMethod)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
+
+class BankSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bank
+        fields = '__all__'
+
+
+class PaymentMethodSerializer(serializers.ModelSerializer):
+    method_type_display = serializers.CharField(source='get_method_type_display', read_only=True)
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    
+    class Meta:
+        model = PaymentMethod
+        fields = '__all__'
+
 
 class TreasuryAccountSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
     custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
+    bank_name = serializers.CharField(source='bank.name', read_only=True, allow_null=True)
     
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
+    payment_methods = PaymentMethodSerializer(many=True, read_only=True)
 
     class Meta:
         model = TreasuryAccount
@@ -99,6 +116,8 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     # Account Names
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    
+    payment_method_new_name = serializers.CharField(source='payment_method_new.name', read_only=True, allow_null=True)
     
     # Legacy/Display fields for frontend compatibility
     journal_name = serializers.SerializerMethodField()

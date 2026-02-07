@@ -207,7 +207,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 immediate_lines=immediate_lines,
                 payment_type=payment_type,
                 line_files=line_files,
-                pos_session_id=pos_session_id
+                pos_session_id=pos_session_id,
+                user=request.user
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

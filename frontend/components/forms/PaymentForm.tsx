@@ -131,7 +131,7 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                 await api.patch(`/treasury/payments/${initialData.id}/`, payload)
                 toast.success("Pago actualizado correctamente")
             } else {
-                await api.post('/treasury/payments/register/', payload)
+                await api.post('/treasury/payments/register_movement/', payload)
                 toast.success("Pago registrado correctamente")
             }
             form.reset()

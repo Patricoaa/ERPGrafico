@@ -47,9 +47,8 @@ const categoryItems: Record<string, any> = {
     "treasury": [
         { title: "Cuentas de Tesorería", url: "/treasury/accounts" },
 
-        { title: "Trazabilidad Efectivo", url: "/treasury/movements" },
+        { title: "Movimientos de Tesorería", url: "/treasury/movements" },
         { title: "Diferencias POS", url: "/treasury/differences" },
-        { title: "Ingresos y Egresos", url: "/treasury/payments" },
         { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
         { title: "Facturación Tarjetas", url: "/treasury/card-billing" },
     ],

@@ -207,7 +207,10 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             # Resolve Treasury Account
             treasury_account = None
             if treasury_account_id:
-                treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+                try:
+                    treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+                except TreasuryAccount.DoesNotExist:
+                    return Response({'error': f'Cuenta de tesorería {treasury_account_id} no encontrada'}, status=400)
                 
             from_account = None
             to_account = None
@@ -221,25 +224,41 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 pass
             
             # Contact
-            contact_id = request.data.get('contact_id')
+            contact_id = request.data.get('contact_id') or request.data.get('partner')
             partner = Contact.objects.get(pk=contact_id) if contact_id else None
             
-            # Invoices
-            invoice_id = request.data.get('invoice_id')
+            # Documents (Invoices, Purchase Orders, Sale Orders)
+            invoice_id = request.data.get('invoice_id') or request.data.get('invoice')
+            purchase_order_id = request.data.get('purchase_order_id') or request.data.get('purchase_order')
+            sale_order_id = request.data.get('sale_order_id') or request.data.get('sale_order')
+            
             invoice = None
+            purchase_order = None
+            sale_order = None
+
             if invoice_id:
                 from billing.models import Invoice
-                invoice = Invoice.objects.get(pk=invoice_id)
+                invoice = Invoice.objects.filter(pk=invoice_id).first()
+
+            if purchase_order_id:
+                from purchasing.models import PurchaseOrder
+                purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
+
+            if sale_order_id:
+                from sales.models import SaleOrder
+                sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
 
             movement = TreasuryService.create_movement(
                 amount=amount,
                 movement_type=movement_type, # Expects 'INBOUND'/'OUTBOUND' match
-                payment_method=payment_method,
+                payment_method=request.data.get('payment_method') or request.data.get('paymentMethod') or 'CASH',
                 from_account=from_account,
                 to_account=to_account,
                 reference=reference,
                 partner=partner,
                 invoice=invoice,
+                purchase_order=purchase_order,
+                sale_order=sale_order,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
                 created_by=request.user

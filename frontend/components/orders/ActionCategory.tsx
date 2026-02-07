@@ -234,7 +234,7 @@ export const ActionCategory = forwardRef(({
                 (payload as any)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
             }
 
-            await api.post('/treasury/payments/', payload)
+            await api.post('/treasury/payments/register_movement/', payload)
             toast.success("Operación de tesorería registrada")
             closeModal()
             onActionSuccess?.()
