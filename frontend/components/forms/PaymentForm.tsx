@@ -36,7 +36,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { Loader2, CreditCard, Landmark, Wallet } from "lucide-react"
+import { Loader2, CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
@@ -271,7 +271,10 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                                         {availableMethods.map((m) => (
                                                             <SelectItem key={m.id} value={m.id.toString()}>
                                                                 <div className="flex items-center gap-2">
-                                                                    {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> : m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> : <CreditCard className="h-3 w-3" />}
+                                                                    {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
+                                                                        m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
+                                                                            m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
+                                                                                <CreditCard className="h-3 w-3" />}
                                                                     {m.name}
                                                                 </div>
                                                             </SelectItem>

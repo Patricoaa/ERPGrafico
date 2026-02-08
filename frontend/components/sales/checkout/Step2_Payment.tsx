@@ -97,6 +97,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
             if (paymentData.method === 'CASH') return acc.allows_cash
             if (paymentData.method === 'CARD') return acc.allows_card
             if (paymentData.method === 'TRANSFER') return acc.allows_transfer
+            if (paymentData.method === 'CHECK') return acc.allows_check
             return false
         })
     }, [accounts, paymentData.method])
@@ -120,32 +121,54 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         }
     }, [filteredAccounts, paymentData.method, setPaymentData]) // Added paymentData.method to dependencies to re-run on method change
 
-    const methods = [
-        {
-            id: 'CASH',
-            label: 'Efectivo',
-            icon: Banknote,
-            color: 'text-emerald-600',
-            hasAccounts: accounts.some(a => a.allows_cash),
-            isAllowed: isMethodAllowed('CASH')
-        },
-        {
-            id: 'CARD',
-            label: 'Tarjeta',
-            icon: CreditCard,
-            color: 'text-blue-600',
-            hasAccounts: accounts.some(a => a.allows_card),
-            isAllowed: isMethodAllowed('CARD')
-        },
-        {
-            id: 'TRANSFER',
-            label: 'Transferencia',
-            icon: Building2,
-            color: 'text-purple-600',
-            hasAccounts: accounts.some(a => a.allows_transfer),
-            isAllowed: isMethodAllowed('TRANSFER')
-        },
-    ]
+    const terminalHasCardTerminal = useMemo(() => {
+        return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL')
+    }, [allowedMethods])
+
+    const methods = useMemo(() => {
+        const availableMethods = [
+            {
+                id: 'CASH',
+                label: 'Efectivo',
+                icon: Banknote,
+                color: 'text-emerald-600',
+                hasAccounts: accounts.some(a => a.allows_cash),
+                isAllowed: isMethodAllowed('CASH')
+            },
+            {
+                id: 'CARD',
+                label: `Tarjeta${terminalHasCardTerminal ? ' (terminal de cobro)' : ''}`,
+                icon: CreditCard,
+                color: 'text-blue-600',
+                hasAccounts: accounts.some(a => a.allows_card),
+                isAllowed: isMethodAllowed('CARD')
+            },
+            {
+                id: 'TRANSFER',
+                label: 'Transferencia',
+                icon: Building2,
+                color: 'text-purple-600',
+                hasAccounts: accounts.some(a => a.allows_transfer),
+                isAllowed: isMethodAllowed('TRANSFER')
+            },
+            {
+                id: 'CHECK',
+                label: 'Cheque',
+                icon: ClipboardList,
+                color: 'text-amber-600',
+                hasAccounts: accounts.some(a => a.allows_check),
+                isAllowed: isMethodAllowed('CHECK')
+            }
+        ]
+
+        // Only show methods that are either explicitly allowed or have accounts configured
+        // In POS context, we should be stricter if terminalId is present
+        if (terminalId) {
+            return availableMethods.filter(m => m.isAllowed)
+        }
+
+        return availableMethods.filter(m => m.isAllowed || m.hasAccounts)
+    }, [accounts, allowedMethods, terminalHasCardTerminal, isMethodAllowed, terminalId])
 
     return (
         <div className="space-y-4">
@@ -252,12 +275,14 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
 
                                 {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
-                                        {m.id === 'TRANSFER' && (
+                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
                                             <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">N° Operación / Folio</Label>
+                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                    {m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
+                                                </Label>
                                                 <Input
                                                     className="bg-background h-9"
-                                                    placeholder="Ej: 123456"
+                                                    placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
                                                     value={paymentData.transactionNumber || ""}
                                                     onChange={(e) => setPaymentData({ ...paymentData, transactionNumber: e.target.value })}
                                                     disabled={paymentData.isPending}

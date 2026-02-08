@@ -9,6 +9,7 @@ export interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
+    allows_check: boolean
     currency: string
     current_balance?: number
 }
@@ -32,7 +33,7 @@ export interface UseTreasuryAccountsOptions {
      * Optional payment method filter
      * When provided, only accounts that support this method are returned
      */
-    paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER'
+    paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK'
 
     /**
      * Whether to fetch immediately on mount
@@ -109,16 +110,17 @@ export function useTreasuryAccounts(options: UseTreasuryAccountsOptions): UseTre
                 const allAccounts = res.data.results || res.data
 
                 // Filter: accounts with at least one payment method enabled
-                fetchedAccounts = allAccounts.filter((acc: TreasuryAccount) =>
-                    acc.allows_cash || acc.allows_card || acc.allows_transfer
+                fetchedAccounts = allAccounts.filter((acc: TreasuryAccount & { allows_check: boolean }) =>
+                    acc.allows_cash || acc.allows_card || acc.allows_transfer || acc.allows_check
                 )
 
                 // Further filter by payment method if specified
                 if (paymentMethod) {
-                    fetchedAccounts = fetchedAccounts.filter((acc: TreasuryAccount) => {
+                    fetchedAccounts = fetchedAccounts.filter((acc: TreasuryAccount & { allows_check: boolean }) => {
                         if (paymentMethod === 'CASH') return acc.allows_cash
                         if (paymentMethod === 'CARD') return acc.allows_card
                         if (paymentMethod === 'TRANSFER') return acc.allows_transfer
+                        if (paymentMethod === 'CHECK') return acc.allows_check
                         return false
                     })
                 }

@@ -3,7 +3,7 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Banknote, CreditCard, Building2, Wallet, AlertCircle } from "lucide-react"
+import { Banknote, CreditCard, Building2, Wallet, AlertCircle, ClipboardList } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
@@ -108,6 +108,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             if (paymentData.method === 'CASH') return acc.allows_cash
             if (paymentData.method === 'CARD') return acc.allows_card
             if (paymentData.method === 'TRANSFER') return acc.allows_transfer
+            if (paymentData.method === 'CHECK') return acc.allows_check
             return false
         })
     }, [accounts, paymentData.method])
@@ -146,6 +147,14 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             color: 'text-purple-600',
             hasAccounts: accounts.some(a => a.allows_transfer),
             isAllowed: isMethodAllowed('TRANSFER')
+        },
+        {
+            id: 'CHECK',
+            label: 'Cheque',
+            icon: ClipboardList,
+            color: 'text-amber-600',
+            hasAccounts: accounts.some(a => a.allows_check),
+            isAllowed: isMethodAllowed('CHECK')
         }
     ]
 
@@ -188,7 +197,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                 <RadioGroup
                     value={paymentData.method}
                     onValueChange={handleMethodChange}
-                    className="grid grid-cols-3 gap-4"
+                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
                 >
                     {methods.map((m) => (
                         <div key={m.id} className="relative group">
@@ -223,14 +232,15 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                     <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
                         <span className="font-semibold uppercase">
                             {paymentData.method === 'CASH' ? 'Efectivo' :
-                                paymentData.method === 'CARD' ? 'Tarjeta' : 'Transferencia'}:
+                                paymentData.method === 'CARD' ? 'Tarjeta' :
+                                    paymentData.method === 'TRANSFER' ? 'Transferencia' : 'Cheque'}:
                         </span>
                         {paymentData.isPending ? (
                             <span className="text-amber-600 font-bold">Pendiente de registro</span>
                         ) : (
                             <>
-                                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
-                                    <span>Tx: {paymentData.transactionNumber || "---"} • </span>
+                                {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER' || paymentData.method === 'CHECK') && (
+                                    <span>{paymentData.method === 'CHECK' ? 'Chq' : 'Tx'}: {paymentData.transactionNumber || "---"} • </span>
                                 )}
                                 {paymentData.treasuryAccountId && (
                                     <span>Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
@@ -296,18 +306,18 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                             />
                         </div>
 
-                        {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER') && (
+                        {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER' || paymentData.method === 'CHECK') && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="modal-tx" className="flex items-center justify-between">
-                                        <span>N° Transacción</span>
+                                        <span>{paymentData.method === 'CHECK' ? 'N° de Cheque' : 'N° Transacción'}</span>
                                         {!tempIsPending && <span className="text-[10px] text-destructive font-bold">* Requerido</span>}
                                     </Label>
                                     <Input
                                         id="modal-tx"
                                         value={tempTx}
                                         onChange={(e) => setTempTx(e.target.value)}
-                                        placeholder="Ingrese N° de operación..."
+                                        placeholder={paymentData.method === 'CHECK' ? "Ej: 000123" : "Ingrese N° de operación..."}
                                         disabled={tempIsPending}
                                     />
                                 </div>

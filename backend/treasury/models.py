@@ -336,6 +336,7 @@ class TreasuryAccount(models.Model):
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
+    allows_check = models.BooleanField(_("Permite Cheque"), default=False)
 
     # Physical Location Fields (Refactor from CashContainer)
     location = models.CharField(

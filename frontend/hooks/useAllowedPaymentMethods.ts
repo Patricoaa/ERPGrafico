@@ -4,7 +4,7 @@ import api from '@/lib/api'
 export interface PaymentMethod {
     id: number
     name: string
-    method_type: 'CASH' | 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'TRANSFER' | 'CHECK'
+    method_type: 'CASH' | 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CARD_TERMINAL' | 'CHECKBOOK' | 'TRANSFER' | 'CHECK'
     allow_for_sales: boolean
     allow_for_purchases: boolean
     is_active: boolean

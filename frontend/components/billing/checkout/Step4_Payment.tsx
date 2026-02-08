@@ -3,7 +3,7 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Banknote, CreditCard, Building2, Wallet, AlertCircle, ShieldCheck } from "lucide-react"
+import { Banknote, CreditCard, Building2, Wallet, AlertCircle, ShieldCheck, ClipboardList } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
@@ -125,6 +125,7 @@ export function Step4_Payment({
             if (formData.method === 'CASH') return acc.allows_cash
             if (formData.method === 'CARD') return acc.allows_card
             if (formData.method === 'TRANSFER') return acc.allows_transfer
+            if (formData.method === 'CHECK') return acc.allows_check
             return false
         })
     }, [accounts, formData.method])
@@ -161,6 +162,14 @@ export function Step4_Payment({
             color: 'text-purple-600',
             hasAccounts: accounts.some(a => a.allows_transfer),
             isAllowed: isMethodAllowed('TRANSFER')
+        },
+        {
+            id: 'CHECK',
+            label: 'Cheque',
+            icon: ClipboardList,
+            color: 'text-amber-600',
+            hasAccounts: accounts.some(a => a.allows_check),
+            isAllowed: isMethodAllowed('CHECK')
         },
     ]
 
@@ -214,7 +223,7 @@ export function Step4_Payment({
                 <RadioGroup
                     value={formData.method}
                     onValueChange={handleMethodChange}
-                    className="grid grid-cols-3 gap-4"
+                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
                 >
                     {methods.map((m) => (
                         <div key={m.id} className="relative group">
@@ -317,18 +326,18 @@ export function Step4_Payment({
                             </div>
                         </div>
 
-                        {(formData.method === 'CARD' || formData.method === 'TRANSFER') && (
+                        {(formData.method === 'CARD' || formData.method === 'TRANSFER' || formData.method === 'CHECK') && (
                             <div className="space-y-3">
                                 <Label htmlFor="modal-tx" className="flex items-center justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
-                                    <span>N° Transacción</span>
-                                    {formData.method === 'TRANSFER' && !tempIsPending && <span className="text-[10px] text-rose-500 font-black ml-1 uppercase tracking-tighter border-b border-rose-500/20">* Requerido</span>}
+                                    <span>{formData.method === 'CHECK' ? 'N° de Cheque' : 'N° Transacción'}</span>
+                                    {(formData.method === 'TRANSFER' || formData.method === 'CHECK') && !tempIsPending && <span className="text-[10px] text-rose-500 font-black ml-1 uppercase tracking-tighter border-b border-rose-500/20">* Requerido</span>}
                                 </Label>
                                 <Input
                                     id="modal-tx"
                                     className="h-12 font-bold rounded-xl border-2 uppercase"
                                     value={tempTx}
                                     onChange={(e) => setTempTx(e.target.value)}
-                                    placeholder="Ingrese N Operación..."
+                                    placeholder={formData.method === 'CHECK' ? "Ej: 000123" : "Ingrese N Operación..."}
                                     disabled={tempIsPending}
                                 />
                             </div>
