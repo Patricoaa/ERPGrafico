@@ -43,7 +43,7 @@ export function useAllowedPaymentMethods({ terminalId, operation = 'sales', enab
                     // Fetch all active payment methods allowed for the operation
                     // Note: This endpoint might need to be adjusted if there isn't a general 'all methods' endpoint handy
                     // For now we assume we list all active ones
-                    const response = await api.get('/treasury/payment_methods/', {
+                    const response = await api.get('/treasury/payment-methods/', {
                         params: {
                             is_active: true,
                             // We might need to filter by operation client-side if the API doesn't support it directly on list
