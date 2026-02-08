@@ -176,28 +176,17 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-0">
+            <DialogContent className="sm:max-w-[900px] h-[80vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle>{bank ? "Editar Banco" : "Nuevo Banco"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese el nombre y código identificador del banco.
+                        {bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="config" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b">
-                        <TabsList className="h-10 bg-transparent gap-4">
-                            <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1">Configuración</TabsTrigger>
-                            {bank && (
-                                <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 flex items-center gap-1">
-                                    <History className="h-3.5 w-3.5" />
-                                    Historial
-                                </TabsTrigger>
-                            )}
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="config" className="flex-1 overflow-y-auto p-6 mt-0">
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Side: Form */}
+                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                         <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-4">
                                 <div className="grid gap-2">
@@ -221,18 +210,27 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
                                 </div>
                             </div>
                         </form>
-                    </TabsContent>
+                    </div>
 
-                    {bank && (
-                        <TabsContent value="history" className="flex-1 overflow-hidden mt-0">
-                            <div className="h-full overflow-y-auto p-0">
-                                <ActivitySidebar entityType="bank" entityId={bank.id} />
+                    {/* Right Side: Activity Sidebar */}
+                    <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                        {bank ? (
+                            <ActivitySidebar
+                                entityType="bank"
+                                entityId={bank.id}
+                                className="h-full border-none"
+                                title="Historial"
+                            />
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                <History className="h-10 w-10 mb-3 opacity-20" />
+                                <p className="text-sm">El historial estará disponible una vez creado el banco.</p>
                             </div>
-                        </TabsContent>
-                    )}
-                </Tabs>
+                        )}
+                    </div>
+                </div>
 
-                <DialogFooter className="p-6 pt-0 border-t">
+                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="bank-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -486,28 +484,17 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-0">
+            <DialogContent className="sm:max-w-[1000px] h-[85vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle>{method ? "Editar Método de Pago" : "Nuevo Método de Pago"}</DialogTitle>
                     <DialogDescription>
-                        Defina el método de pago vinculado a una cuenta de tesorería.
+                        {method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="config" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b">
-                        <TabsList className="h-10 bg-transparent gap-4">
-                            <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1">Configuración</TabsTrigger>
-                            {method && (
-                                <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 flex items-center gap-1">
-                                    <History className="h-3.5 w-3.5" />
-                                    Historial
-                                </TabsTrigger>
-                            )}
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="config" className="flex-1 overflow-y-auto p-6 mt-0">
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Side: Form */}
+                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                         <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-4">
                                 <div className="grid gap-2">
@@ -594,18 +581,27 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                 </div>
                             )}
                         </form>
-                    </TabsContent>
+                    </div>
 
-                    {method && (
-                        <TabsContent value="history" className="flex-1 overflow-hidden mt-0">
-                            <div className="h-full overflow-y-auto p-0">
-                                <ActivitySidebar entityType="paymentmethod" entityId={method.id} />
+                    {/* Right Side: Activity Sidebar */}
+                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                        {method ? (
+                            <ActivitySidebar
+                                entityType="paymentmethod"
+                                entityId={method.id}
+                                className="h-full border-none"
+                                title="Historial"
+                            />
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                <History className="h-10 w-10 mb-3 opacity-20" />
+                                <p className="text-sm">El historial estará disponible una vez creado el método.</p>
                             </div>
-                        </TabsContent>
-                    )}
-                </Tabs>
+                        )}
+                    </div>
+                </div>
 
-                <DialogFooter className="p-6 pt-0 border-t">
+                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="method-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

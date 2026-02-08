@@ -395,26 +395,17 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[800px] h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-0">
+            <DialogContent className="sm:max-w-[1100px] h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
-                    <DialogDescription>Configuración del terminal y asignación de métodos de pago.</DialogDescription>
+                    <DialogDescription>
+                        {terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}
+                    </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="config" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b">
-                        <TabsList className="h-10 bg-transparent gap-4">
-                            <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1">Configuración</TabsTrigger>
-                            {terminal && (
-                                <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 flex items-center gap-1">
-                                    <History className="h-3.5 w-3.5" />
-                                    Historial
-                                </TabsTrigger>
-                            )}
-                        </TabsList>
-                    </div>
-
-                    <TabsContent value="config" className="flex-1 overflow-y-auto p-6 mt-0">
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Side: Form */}
+                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                         <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -492,18 +483,27 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                 </div>
                             </div>
                         </form>
-                    </TabsContent>
+                    </div>
 
-                    {terminal && (
-                        <TabsContent value="history" className="flex-1 overflow-hidden mt-0">
-                            <div className="h-full overflow-y-auto p-0">
-                                <ActivitySidebar entityType="terminal" entityId={terminal.id} />
+                    {/* Right Side: Activity Sidebar */}
+                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                        {terminal ? (
+                            <ActivitySidebar
+                                entityType="terminal"
+                                entityId={terminal.id}
+                                className="h-full border-none"
+                                title="Historial"
+                            />
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                <History className="h-10 w-10 mb-3 opacity-20" />
+                                <p className="text-sm">El historial estará disponible una vez creado el terminal.</p>
                             </div>
-                        </TabsContent>
-                    )}
-                </Tabs>
+                        )}
+                    </div>
+                </div>
 
-                <DialogFooter className="p-6 pt-0 border-t">
+                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="terminal-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

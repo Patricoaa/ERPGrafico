@@ -258,14 +258,6 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                 {tab === 'WITHDRAWAL' ? (
                                     <PaymentMethodSelector
                                         value={{
-                                            methodType: null, // We don't track type separately in this modal's state, but that's fine, the selector handles it internally if we don't pass it back strictly, or we should updates state to track it.
-                                            // Actually, the selector needs 'methodType' to show the active state.
-                                            // Let's rely on the derived state if possible, or just pass derived.
-                                            // The selector requires `methodType` in value.
-                                            // We can infer it from the selected paymentMethodNew if we had the list, but we don't easily.
-                                            // For now, let's allow the internal state of selector to drive this if we can, 
-                                            // BUT PaymentMethodSelector is controlled.
-                                            // We need to add a state for methodType in the modal.
                                             methodType: (availableMethods.find(m => m.id.toString() === paymentMethodNew)?.method_type as any) || null,
                                             treasuryAccountId: fromId || null,
                                             paymentMethodId: paymentMethodNew || null
