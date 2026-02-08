@@ -15,6 +15,7 @@ import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
+import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
 
 interface PaymentDialogProps {
     open: boolean
@@ -60,42 +61,36 @@ export function PaymentDialog({
     title
 }: PaymentDialogProps) {
     const [dteType, setDteType] = useState("NONE")
-    const [paymentMethod, setPaymentMethod] = useState("CASH")
-    const [amount, setAmount] = useState(pendingAmount.toString())
-    const [transactionNumber, setTransactionNumber] = useState("")
     const [documentReference, setDocumentReference] = useState("")
     const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
-    const [isPending, setIsPending] = useState(false)
-    const [treasuryAccount, setTreasuryAccount] = useState<string | null>(null)
-    const [paymentMethodNew, setPaymentMethodNew] = useState<string | null>(null)
-    const [availableMethods, setAvailableMethods] = useState<any[]>([])
+    const [isDocumentPending, setIsDocumentPending] = useState(false)
 
-    const { accounts, loading: loadingAccounts } = useTreasuryAccounts({
-        context: 'GENERAL',
-        paymentMethod: paymentMethod as any
+    // Payment data managed by PaymentMethodCardSelector
+    const [paymentData, setPaymentData] = useState<PaymentData>({
+        method: null,
+        amount: pendingAmount,
+        treasuryAccountId: null,
+        paymentMethodId: null,
+        transactionNumber: '',
+        isPending: false
     })
 
-    const filteredAccounts = accounts // Hook already filters by paymentMethod if provided
-
+    // Reset payment data when modal opens
     useEffect(() => {
         if (open) {
-            setAmount(pendingAmount.toString())
-            setTransactionNumber("")
+            setPaymentData({
+                method: null,
+                amount: pendingAmount,
+                treasuryAccountId: null,
+                paymentMethodId: null,
+                transactionNumber: '',
+                isPending: false
+            })
             setDocumentReference(existingInvoice?.number || "")
             setDocumentDate(new Date().toISOString().split('T')[0])
             setDocumentAttachment(null)
-            setIsPending(false)
-
-            // Try to load preferred account for this method
-            const preferredId = localStorage.getItem(`pref_treasury_${paymentMethod}`)
-            if (preferredId && filteredAccounts.some(a => a.id.toString() === preferredId)) {
-                setTreasuryAccount(preferredId)
-            } else if (filteredAccounts.length === 1) {
-                setTreasuryAccount(filteredAccounts[0].id.toString())
-            } else {
-                setTreasuryAccount(null)
-            }
+            setIsDocumentPending(false)
 
             if (existingInvoice) {
                 setDteType(existingInvoice.dte_type)
@@ -103,32 +98,7 @@ export function PaymentDialog({
                 setDteType(isPurchase ? "NONE" : "BOLETA")
             }
         }
-    }, [open, pendingAmount, isPurchase, existingInvoice, paymentMethod, filteredAccounts])
-
-    const handleAccountChange = async (val: string | null) => {
-        setTreasuryAccount(val)
-        if (val) {
-            localStorage.setItem(`pref_treasury_${paymentMethod}`, val)
-            try {
-                const response = await api.get(`/treasury/payment-methods/?treasury_account=${val}&${isPurchase ? 'for_purchases=true' : 'for_sales=true'}`)
-                const methods = response.data || []
-                setAvailableMethods(methods)
-                if (methods.length > 0) {
-                    setPaymentMethodNew(methods[0].id.toString())
-                } else {
-                    setPaymentMethodNew(null)
-                }
-            } catch (error) {
-                setAvailableMethods([])
-                setPaymentMethodNew(null)
-            }
-        } else {
-            setAvailableMethods([])
-            setPaymentMethodNew(null)
-        }
-    }
-
-    const change = Math.max(0, parseFloat(amount || "0") - pendingAmount)
+    }, [open, pendingAmount, isPurchase, existingInvoice])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,8 +170,8 @@ export function PaymentDialog({
                                     <div className="flex items-center space-x-2 py-1">
                                         <Checkbox
                                             id="pending-doc-check"
-                                            checked={isPending}
-                                            onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
+                                            checked={isDocumentPending}
+                                            onCheckedChange={(checked: boolean) => setIsDocumentPending(!!checked)}
                                         />
                                         <Label htmlFor="pending-doc-check" className="text-xs font-bold cursor-pointer">
                                             {isPurchase
@@ -212,7 +182,7 @@ export function PaymentDialog({
                                     </div>
                                 )}
 
-                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
                                     <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                         <Calendar className="h-3 w-3" /> Fecha de Emisión
                                     </Label>
@@ -221,11 +191,11 @@ export function PaymentDialog({
                                         className="h-9"
                                         value={documentDate}
                                         onChange={(e) => setDocumentDate(e.target.value)}
-                                        disabled={isPending}
+                                        disabled={isDocumentPending}
                                     />
                                 </div>
 
-                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
                                     <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                         <Hash className="h-3 w-3" /> N° de Folio / Referencia {isPurchase && <span className="text-destructive">*</span>}
                                     </Label>
@@ -233,11 +203,11 @@ export function PaymentDialog({
                                         placeholder="Ej: 12345"
                                         value={documentReference}
                                         onChange={(e) => setDocumentReference(e.target.value)}
-                                        disabled={!!existingInvoice || isPending}
+                                        disabled={!!existingInvoice || isDocumentPending}
                                     />
                                 </div>
 
-                                <div className={`grid gap-2 ${isPending ? 'opacity-50' : ''}`}>
+                                <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
                                     <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                         <FileUp className="h-3 w-3" />
                                         {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Opcional)"}
@@ -248,7 +218,7 @@ export function PaymentDialog({
                                                 type="file"
                                                 onChange={(e) => setDocumentAttachment(e.target.files?.[0] || null)}
                                                 className="text-xs h-9 py-1 cursor-pointer"
-                                                disabled={isPending}
+                                                disabled={isDocumentPending}
                                             />
                                         </div>
                                     ) : (
@@ -266,137 +236,23 @@ export function PaymentDialog({
                             </div>
                         )}
 
-                        <div className="space-y-4">
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground">Método de Pago</Label>
-                            <RadioGroup
-                                value={paymentMethod}
-                                onValueChange={setPaymentMethod}
-                                className="grid grid-cols-3 gap-3"
-                            >
-                                {[
-                                    { id: 'CASH', label: 'Efectivo', icon: Banknote, color: 'text-emerald-600' },
-                                    { id: 'CARD', label: 'Tarjeta', icon: CreditCard, color: 'text-blue-600' },
-                                    { id: 'TRANSFER', label: 'Transf.', icon: Building2, color: 'text-purple-600' },
-                                ].map((m) => (
-                                    <div key={m.id} className="relative group">
-                                        <Label
-                                            htmlFor={`method-${m.id}`}
-                                            className={`flex flex-col items-center gap-2 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all cursor-pointer ${paymentMethod === m.id ? 'border-primary bg-primary/5' : ''}`}
-                                        >
-                                            <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" />
-                                            <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
-                                                <m.icon className="h-5 w-5" />
-                                            </div>
-                                            <span className="text-[10px] font-bold uppercase">{m.label}</span>
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-
-                        {paymentMethod !== 'CASH' || filteredAccounts.length > 0 ? (
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground">
-                                    {isPurchase ? "Cuenta de Origen" : "Cuenta de Destino"}
-                                </Label>
-                                <TreasuryAccountSelector
-                                    context="GENERAL"
-                                    paymentMethod={paymentMethod as any}
-                                    value={treasuryAccount}
-                                    onChange={handleAccountChange}
-                                    placeholder="Seleccione cuenta..."
-                                />
-                            </div>
-                        ) : null}
-
-                        {availableMethods.length > 0 && (
-                            <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                <Label className="text-xs font-bold uppercase text-blue-600 flex items-center gap-1">
-                                    <CreditCard className="h-3 w-3" /> Canal de Pago Específico
-                                </Label>
-                                <Select value={paymentMethodNew || ""} onValueChange={setPaymentMethodNew}>
-                                    <SelectTrigger className="border-blue-200 bg-blue-50/10">
-                                        <SelectValue placeholder="Seleccione método..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableMethods.map((m) => (
-                                            <SelectItem key={m.id} value={m.id.toString()}>
-                                                {m.name} ({m.method_type_display})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-
-                        {(paymentMethod === 'TRANSFER' || paymentMethod === 'CARD') && (
-                            <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                                <div className="grid gap-2">
-                                    <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
-                                        <Hash className="h-3 w-3" /> N° de Transacción ({paymentMethod === 'CARD' ? 'Tarjeta' : 'Transferencia'})
-                                    </Label>
-                                    <Input
-                                        placeholder="Ingrese N° de Folio/Op/Voucher"
-                                        value={transactionNumber}
-                                        onChange={(e) => setTransactionNumber(e.target.value)}
-                                        disabled={isPending}
-                                    />
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="pending"
-                                        checked={isPending}
-                                        onCheckedChange={(checked: boolean) => setIsPending(!!checked)}
-                                    />
-                                    <Label htmlFor="pending" className="text-xs flex items-center gap-1 cursor-pointer">
-                                        <ClipboardCheck className="h-3 w-3" /> N° de transacción pendiente de registro
-                                    </Label>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="grid gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
-                                    {isRefund ? "Monto a Reembolsar" : "Monto Recibido"}
-                                </Label>
-                                <div className="relative group">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-4xl text-muted-foreground group-focus-within:text-primary transition-colors">$</span>
-                                    <Input
-                                        type="number"
-                                        step="1"
-                                        value={amount}
-                                        onChange={(e) => setAmount(Math.round(parseFloat(e.target.value) || 0).toString())}
-                                        className="pl-14 text-4xl font-black h-20 rounded-2xl border-2 focus-visible:ring-offset-0 transition-all bg-background/50 backdrop-blur-sm shadow-sm"
-                                        autoFocus
-                                        onFocus={(e) => e.target.select()}
-                                    />
-                                </div>
-                            </div>
-
-                            {paymentMethod === 'CASH' && change > 0 ? (
-                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex justify-between items-center animate-in slide-in-from-top-2 duration-300">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-2 bg-white dark:bg-zinc-900 rounded-lg shadow-sm">
-                                            <Banknote className="h-5 w-5 text-emerald-600" />
-                                        </div>
-                                        <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                                            {isRefund ? "Diferencia a favor:" : "Vuelto a entregar:"}
-                                        </span>
-                                    </div>
-                                    <span className="font-black text-2xl text-emerald-600 dark:text-emerald-400 tracking-tighter">
-                                        {formatCurrency(change)}
-                                    </span>
-                                </div>
-                            ) : parseFloat(amount) < pendingAmount ? (
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-orange-600">Deuda Pendiente</Label>
-                                    <div className="h-10 flex items-center px-3 rounded-md border border-orange-200 bg-orange-50 text-orange-700 font-bold">
-                                        {formatCurrency(pendingAmount - parseFloat(amount))}
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
+                        {/* Payment Method Card Selector */}
+                        <PaymentMethodCardSelector
+                            operation={isPurchase ? 'purchases' : 'sales'}
+                            total={pendingAmount}
+                            paymentData={paymentData}
+                            onPaymentDataChange={setPaymentData}
+                            labels={{
+                                totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
+                                amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
+                                differencePositiveLabel: isRefund ? 'Diferencia a favor' : 'Vuelto',
+                                differenceNegativeLabel: 'Deuda Pendiente',
+                                amountModalTitle: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
+                                amountModalDescription: isRefund
+                                    ? 'Ingrese el monto a reembolsar.'
+                                    : (isPurchase ? 'Ingrese el monto a pagar.' : 'Ingrese el monto recibido.')
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -405,23 +261,23 @@ export function PaymentDialog({
                     <Button
                         className="flex-[2] bg-emerald-600 hover:bg-emerald-700 h-12 text-lg font-bold"
                         onClick={() => onConfirm({
-                            paymentMethod: parseFloat(amount) === 0 ? 'CREDIT' : paymentMethod,
-                            amount: parseFloat(amount),
+                            paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
+                            amount: paymentData.amount,
                             dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
                             documentReference: (dteType !== 'NONE') ? documentReference : undefined,
                             documentDate: (dteType !== 'NONE') ? documentDate : undefined,
                             documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
-                            transaction_number: parseFloat(amount) === 0 ? undefined : transactionNumber,
-                            is_pending_registration: !!isPending,
-                            treasury_account_id: parseFloat(amount) === 0 ? null : treasuryAccount,
-                            payment_method_new: parseFloat(amount) === 0 ? null : paymentMethodNew
+                            transaction_number: paymentData.amount === 0 ? undefined : paymentData.transactionNumber,
+                            is_pending_registration: paymentData.isPending,
+                            treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
+                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString()
                         })}
                         disabled={
-                            (parseFloat(amount) < 0) ||
-                            (parseFloat(amount) > 0 && !treasuryAccount) ||
+                            (paymentData.amount < 0) ||
+                            (paymentData.amount > 0 && !paymentData.treasuryAccountId) ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference)) ||
-                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
-                            ((paymentMethod === 'TRANSFER') && !isPending && !transactionNumber && parseFloat(amount) > 0)
+                            ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
+                            ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0)
                         }
                     >
                         {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}

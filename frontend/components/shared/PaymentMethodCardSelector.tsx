@@ -100,7 +100,13 @@ export function PaymentMethodCardSelector({
 
     const handleAmountConfirm = () => {
         const parsed = parseFloat(tempAmount)
-        const finalAmount = parsed || 0
+        let finalAmount = parsed || 0
+
+        // For purchases, limit to total (no overpayments)
+        if (operation === 'purchases' && finalAmount > total) {
+            finalAmount = total
+        }
+
         onPaymentDataChange({
             ...paymentData,
             amount: finalAmount
@@ -233,7 +239,10 @@ export function PaymentMethodCardSelector({
                 <RadioGroup
                     value={paymentData.method || ''}
                     onValueChange={handleMethodChange}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                    className="grid gap-4"
+                    style={{
+                        gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))`
+                    }}
                 >
                     {methods.map((m) => (
                         <div key={m.id} className="relative group h-full">
@@ -251,12 +260,12 @@ export function PaymentMethodCardSelector({
                                 }}
                             >
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-4 rounded-xl bg-background border shadow-sm ${m.color}`}>
-                                        <m.icon className="h-8 w-8" />
+                                <div className="flex flex-col items-center justify-center gap-4">
+                                    <div className={`p-6 rounded-2xl bg-background border-2 shadow-sm ${m.color}`}>
+                                        <m.icon className="h-10 w-10" />
                                     </div>
-                                    <div className="flex flex-col flex-1">
-                                        <span className="text-xl font-black uppercase tracking-tighter">{m.label}</span>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className="text-sm font-black uppercase tracking-tight text-center">{m.label}</span>
                                         {!m.isAllowed && (
                                             <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">No Disponible</span>
                                         )}
@@ -358,7 +367,14 @@ export function PaymentMethodCardSelector({
                                             className="text-xs h-10 font-bold"
                                             onClick={() => {
                                                 const current = parseFloat(tempAmount) || 0;
-                                                setTempAmount((current + val).toString());
+                                                let newAmount = current + val;
+
+                                                // For purchases, limit to total
+                                                if (operation === 'purchases' && newAmount > total) {
+                                                    newAmount = total;
+                                                }
+
+                                                setTempAmount(newAmount.toString());
                                             }}
                                         >
                                             +${val.toLocaleString('es-CL')}
