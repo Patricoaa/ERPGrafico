@@ -8,6 +8,8 @@ export interface PaymentMethod {
     allow_for_sales: boolean
     allow_for_purchases: boolean
     is_active: boolean
+    treasury_account: number
+    treasury_account_name: string
 }
 
 export interface UseAllowedPaymentMethodsOptions {

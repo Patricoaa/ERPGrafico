@@ -7,7 +7,7 @@ import { Banknote, CreditCard, Building2, ClipboardList, Wallet, AlertCircle } f
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
-import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
+import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 
 import { useState, useMemo, useEffect } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -101,7 +101,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         })
     }, [accounts, paymentData.method])
 
-    const methodsForType = useMemo(() => {
+    const methodsForType = useMemo<PaymentMethod[]>(() => {
         return allowedMethods.filter(m => {
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
             if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type)

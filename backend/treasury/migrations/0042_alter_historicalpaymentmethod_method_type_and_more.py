@@ -13,11 +13,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicalpaymentmethod',
             name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('CARD_TERMINAL', 'Terminal de Cobros (Transbank/Otros)'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque'), ('CREDIT_LINE', 'Línea de Crédito'), ('OTHER', 'Otro')], max_length=20, verbose_name='Tipo de Método'),
+            field=models.CharField(choices=[('CASH', 'Efectivo'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('CARD_TERMINAL', 'Terminal de Cobros'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque'), ('CREDIT_LINE', 'Línea de Crédito'), ('OTHER', 'Otro')], max_length=20, verbose_name='Tipo de Método'),
         ),
         migrations.AlterField(
             model_name='paymentmethod',
             name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('CARD_TERMINAL', 'Terminal de Cobros (Transbank/Otros)'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque'), ('CREDIT_LINE', 'Línea de Crédito'), ('OTHER', 'Otro')], max_length=20, verbose_name='Tipo de Método'),
+            field=models.CharField(choices=[('CASH', 'Efectivo'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('CARD_TERMINAL', 'Terminal de Cobros'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque'), ('CREDIT_LINE', 'Línea de Crédito'), ('OTHER', 'Otro')], max_length=20, verbose_name='Tipo de Método'),
         ),
     ]

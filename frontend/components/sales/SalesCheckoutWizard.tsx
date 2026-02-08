@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Step1_DTE } from "./checkout/Step1_DTE"
 import { Step2_Payment } from "./checkout/Step2_Payment"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./checkout/Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
@@ -191,10 +192,16 @@ export function SalesCheckoutWizard({
         }
     }, [quickSale, open, totalSteps]);
 
-    // Treasury accounts for validation
+    // Treasury accounts and methods for validation
     const { accounts } = useTreasuryAccounts({
         context: terminalId ? 'POS' : 'GENERAL',
         terminalId
+    })
+
+    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
+        terminalId,
+        operation: 'sales',
+        enabled: open
     })
 
 
@@ -325,20 +332,20 @@ export function SalesCheckoutWizard({
                 return false
             }
 
-            const hasAccountsForMethod = (method: string) => {
-                if (method === 'CASH') return accounts.some(a => a.allows_cash)
-                if (method === 'CARD') return accounts.some(a => a.allows_card)
-                if (method === 'TRANSFER') return accounts.some(a => a.allows_transfer)
+            const isMethodAllowed = (methodId: string) => {
+                if (loadingMethods) return true
+                if (!allowedMethods.length) return false
+
+                if (methodId === 'CASH') return allowedMethods.some(m => m.method_type === 'CASH')
+                if (methodId === 'CARD') return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type))
+                if (methodId === 'TRANSFER') return allowedMethods.some(m => m.method_type === 'TRANSFER')
+                if (methodId === 'CHECK') return allowedMethods.some(m => m.method_type === 'CHECK')
                 return false
             }
 
             if (paymentData.method !== 'CREDIT' && paymentData.amount > 0) {
-                if (accounts.length === 0) {
-                    toast.error("No se puede continuar: No hay cuentas de tesorería configuradas.")
-                    return false
-                }
-                if (!hasAccountsForMethod(paymentData.method)) {
-                    toast.error(`El método ${paymentData.method} no tiene una cuenta de tesorería asociada.`)
+                if (!isMethodAllowed(paymentData.method)) {
+                    toast.error(`El método ${paymentData.method} no está permitido o no tiene configuración válida.`)
                     return false
                 }
 

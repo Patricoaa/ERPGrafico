@@ -902,7 +902,7 @@ class PaymentMethod(models.Model):
         CASH = 'CASH', _('Efectivo')
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        CARD_TERMINAL = 'CARD_TERMINAL', _('Terminal de Cobros (Transbank/Otros)')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Terminal de Cobros')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
 
