@@ -7,6 +7,7 @@ import { Banknote, CreditCard, Building2, Wallet, AlertCircle, ClipboardList } f
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
+import { PaymentMethodSelector } from "@/components/shared/PaymentMethodSelector"
 import { useState, useEffect, useMemo } from "react"
 import api from "@/lib/api"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -28,45 +29,13 @@ interface Step3_PurchasePaymentProps {
 }
 
 export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: Step3_PurchasePaymentProps) {
-    const { accounts } = useTreasuryAccounts({
-        context: 'GENERAL'
-    })
 
-    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
-        operation: 'purchases',
-        enabled: true
-    })
-
-    const isMethodAllowed = (methodId: string) => {
-        if (loadingMethods) return true
-        if (!allowedMethods.length) return false
-
-        switch (methodId) {
-            case 'CASH':
-                return allowedMethods.some(m => m.method_type === 'CASH')
-            case 'CARD':
-                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD'].includes(m.method_type))
-            case 'TRANSFER':
-                return allowedMethods.some(m => m.method_type === 'TRANSFER')
-            default:
-                return false
-        }
-    }
 
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
     const [tempTx, setTempTx] = useState("")
     const [tempAccount, setTempAccount] = useState("")
     const [tempIsPending, setTempIsPending] = useState(false)
-
-    const handleMethodChange = (val: string) => {
-        setPaymentData({ ...paymentData, method: val })
-        setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
-        setTempTx(paymentData.transactionNumber || "")
-        setTempAccount(paymentData.treasuryAccountId || "")
-        setTempIsPending(paymentData.isPending || false)
-        setIsAmountModalOpen(true)
-    }
 
     const handleAmountConfirm = () => {
         // Validation Logic
@@ -82,7 +51,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             ...paymentData,
             amount: cappedAmount,
             transactionNumber: tempTx,
-            treasuryAccountId: tempAccount,
+            // treasuryAccountId: tempAccount, // Preserved from selector
             isPending: tempIsPending
         })
         setIsAmountModalOpen(false)
@@ -103,60 +72,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
         }
     }, [total])
 
-    const filteredAccounts = useMemo(() => {
-        return accounts.filter(acc => {
-            if (paymentData.method === 'CASH') return acc.allows_cash
-            if (paymentData.method === 'CARD') return acc.allows_card
-            if (paymentData.method === 'TRANSFER') return acc.allows_transfer
-            if (paymentData.method === 'CHECK') return acc.allows_check
-            return false
-        })
-    }, [accounts, paymentData.method])
-
-    useEffect(() => {
-        if (filteredAccounts.length === 1 && paymentData.treasuryAccountId !== filteredAccounts[0].id.toString()) {
-            setPaymentData({ ...paymentData, treasuryAccountId: filteredAccounts[0].id.toString() })
-        } else if (filteredAccounts.length === 0 && paymentData.treasuryAccountId) {
-            setPaymentData({ ...paymentData, treasuryAccountId: null })
-        }
-    }, [filteredAccounts, paymentData, setPaymentData])
-
     const pendingDebt = total - (paymentData.amount || 0)
-
-    const methods = [
-        {
-            id: 'CASH',
-            label: 'Efectivo',
-            icon: Banknote,
-            color: 'text-emerald-600',
-            isAllowed: isMethodAllowed('CASH'),
-            hasAccounts: accounts.some(a => a.allows_cash) || isMethodAllowed('CASH')
-        },
-        {
-            id: 'CARD',
-            label: 'Tarjeta',
-            icon: CreditCard,
-            color: 'text-blue-600',
-            isAllowed: isMethodAllowed('CARD'),
-            hasAccounts: accounts.some(a => a.allows_card) || isMethodAllowed('CARD')
-        },
-        {
-            id: 'TRANSFER',
-            label: 'Transferencia',
-            icon: Building2,
-            color: 'text-purple-600',
-            isAllowed: isMethodAllowed('TRANSFER'),
-            hasAccounts: accounts.some(a => a.allows_transfer) || isMethodAllowed('TRANSFER')
-        },
-        {
-            id: 'CHECK',
-            label: 'Cheque',
-            icon: ClipboardList,
-            color: 'text-amber-600',
-            isAllowed: isMethodAllowed('CHECK'),
-            hasAccounts: accounts.some(a => a.allows_check) || isMethodAllowed('CHECK')
-        }
-    ]
 
     return (
         <div className="space-y-4">
@@ -181,62 +97,61 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
 
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
-                <RadioGroup
-                    value={paymentData.method}
-                    onValueChange={handleMethodChange}
-                    className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                >
-                    {methods.map((m) => (
-                        <div key={m.id} className="relative group">
-                            <Label
-                                htmlFor={`method-${m.id}`}
-                                className={`flex items-center gap-3 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary transition-all ${paymentData.method === m.id ? 'border-primary bg-primary/5' : ''} ${(!m.hasAccounts || !m.isAllowed) ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
-                                onClick={(e) => {
-                                    if (!m.hasAccounts || !m.isAllowed) {
-                                        e.preventDefault()
-                                        return
-                                    }
-                                }}
-                            >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.hasAccounts || !m.isAllowed} />
-                                <div className={`p-2 rounded-lg bg-background border ${m.color}`}>
-                                    <m.icon className="h-5 w-5" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">{m.label}</span>
-                                    {!m.isAllowed ? (
-                                        <span className="text-[8px] font-bold text-rose-500 uppercase">No Disponible</span>
-                                    ) : !m.hasAccounts && (
-                                        <span className="text-[8px] font-bold text-destructive uppercase">Sin Configurar</span>
-                                    )}
-                                </div>
-                            </Label>
-                        </div>
-                    ))}
-                </RadioGroup>
+                <PaymentMethodSelector
+                    value={{
+                        methodType: (paymentData.method as any) || null,
+                        treasuryAccountId: paymentData.treasuryAccountId || null,
+                        paymentMethodId: paymentData.paymentMethodId || null
+                    }}
+                    onChange={(val) => {
+                        setPaymentData({
+                            ...paymentData,
+                            method: val.methodType,
+                            treasuryAccountId: val.treasuryAccountId,
+                            paymentMethodId: val.paymentMethodId,
+                            // Reset transaction info if method changes
+                            transactionNumber: val.methodType !== paymentData.method ? "" : paymentData.transactionNumber,
+                            isPending: val.methodType !== paymentData.method ? false : paymentData.isPending
+                        })
+                        // Open amount modal if needed, or just set defaults
+                        if (val.methodType && val.methodType !== paymentData.method) {
+                            setTempAmount(paymentData.amount ? paymentData.amount.toString() : "")
+                            setTempTx("")
+                            setTempIsPending(false)
+                            setIsAmountModalOpen(true)
+                        }
+                    }}
+                    operation="purchases"
+                />
 
                 {(paymentData.amount > 0 && paymentData.method) && (
-                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground border border-dashed">
-                        <span className="font-semibold uppercase">
+                    <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-xl text-xs text-muted-foreground border border-dashed mt-4">
+                        <span className="font-semibold uppercase flex items-center gap-2">
+                            {paymentData.method === 'CASH' && <Banknote className="h-4 w-4 text-emerald-600" />}
+                            {paymentData.method === 'CARD' && <CreditCard className="h-4 w-4 text-blue-600" />}
+                            {paymentData.method === 'TRANSFER' && <Building2 className="h-4 w-4 text-purple-600" />}
+                            {paymentData.method === 'CHECK' && <ClipboardList className="h-4 w-4 text-amber-600" />}
+
                             {paymentData.method === 'CASH' ? 'Efectivo' :
                                 paymentData.method === 'CARD' ? 'Tarjeta' :
-                                    paymentData.method === 'TRANSFER' ? 'Transferencia' : 'Cheque'}:
+                                    paymentData.method === 'TRANSFER' ? 'Transferencia' : 'Cheque'}
                         </span>
+
+                        <div className="h-4 w-px bg-border mx-1" />
+
                         {paymentData.isPending ? (
                             <span className="text-amber-600 font-bold">Pendiente de registro</span>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-2 overflow-hidden">
                                 {(paymentData.method === 'CARD' || paymentData.method === 'TRANSFER' || paymentData.method === 'CHECK') && (
-                                    <span>{paymentData.method === 'CHECK' ? 'Chq' : 'Tx'}: {paymentData.transactionNumber || "---"} • </span>
+                                    <span className="whitespace-nowrap font-mono bg-background px-1.5 py-0.5 rounded border text-[10px]">
+                                        {paymentData.method === 'CHECK' ? 'Chq' : 'Tx'}: {paymentData.transactionNumber || "---"}
+                                    </span>
                                 )}
-                                {paymentData.treasuryAccountId && (
-                                    <span>Cuenta: {filteredAccounts.find(a => a.id.toString() === paymentData.treasuryAccountId)?.name}</span>
-                                )}
-                            </>
+                            </div>
                         )}
-                        <Button variant="ghost" size="sm" className="h-auto p-1 ml-auto text-primary" onClick={openAmountModal}>
-                            Editar
+                        <Button variant="ghost" size="sm" className="h-auto p-1 ml-auto text-primary hover:bg-primary/10" onClick={openAmountModal}>
+                            Editar Monto
                         </Button>
                     </div>
                 )}
@@ -327,22 +242,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                             </div>
                         )}
 
-                        {filteredAccounts.length > 0 && (
-                            <div className="space-y-2">
-                                <Label htmlFor="modal-account">Cuenta Origen / Caja</Label>
-                                <select
-                                    id="modal-account"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={tempAccount}
-                                    onChange={(e) => setTempAccount(e.target.value)}
-                                >
-                                    <option value="">Seleccionar cuenta...</option>
-                                    {filteredAccounts.map((acc) => (
-                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                        {/* Account selection removed - handled in main component */}
                     </div>
                     <DialogFooter className="sm:justify-end">
                         <Button type="button" variant="secondary" onClick={() => setIsAmountModalOpen(false)}>

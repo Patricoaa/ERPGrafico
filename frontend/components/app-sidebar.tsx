@@ -30,7 +30,7 @@ const categoryItems: Record<string, any> = {
     "sales": [
         { title: "Notas de Venta", url: "/sales/orders" },
         { title: "POS", url: "/sales/pos" },
-        { title: "Sesiones", url: "/sales/sessions" },
+        { title: "Terminales", url: "/sales/terminals" },
     ],
 
     "inventory": [

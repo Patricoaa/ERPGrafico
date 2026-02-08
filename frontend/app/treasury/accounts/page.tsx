@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import {
     ColumnDef
 } from "@tanstack/react-table"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
@@ -26,7 +28,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, MapPin, Shield, Landmark, CreditCard, List } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, Building2, Banknote, MapPin, Shield, Landmark, CreditCard, List, History } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -34,6 +36,7 @@ import { UserSelector } from "@/components/selectors/UserSelector"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/components/treasury/MasterDataManagement"
 import { TerminalManagement } from "@/components/treasury/TerminalManagement"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 interface TreasuryAccount {
     id: number
@@ -104,71 +107,60 @@ export default function TreasuryAccountsPage() {
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
+                <DataTableColumnHeader column={column} title="Nombre | Tipo" />
             ),
             cell: ({ row }) => {
                 const acc = row.original
+                const labels: Record<string, string> = {
+                    'CHECKING': 'Cta. Corriente',
+                    'CREDIT_CARD': 'T. Crédito',
+                    'DEBIT_CARD': 'T. Débito',
+                    'CHECKBOOK': 'Chequera',
+                    'CASH': 'Efectivo',
+                }
                 return (
                     <div className="flex flex-col">
-                        <span className="font-medium">{acc.name}</span>
-                        {acc.is_physical && (
-                            <Badge variant="outline" className="w-fit text-[10px] mt-1 border-stone-400 text-stone-600">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {acc.location || 'Físico sin ubicación'}
+                        <span className="font-bold text-primary">{acc.name}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 uppercase bg-muted/50">
+                                {labels[acc.account_type] || acc.account_type}
                             </Badge>
-                        )}
-                        {acc.bank_name && (
-                            <div className="flex items-center gap-1 text-[10px] text-blue-600 mt-1">
-                                <Landmark className="h-3 w-3" />
-                                {acc.bank_name}
-                            </div>
-                        )}
+                            {acc.bank_name && (
+                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                                    <Landmark className="h-2.5 w-2.5" />
+                                    {acc.bank_name}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )
             },
         },
         {
-            accessorKey: "account_type",
-            header: "Tipo",
+            accessorKey: "account_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cuenta Contable" />
+            ),
             cell: ({ row }) => {
-                const type = row.getValue("account_type") as string
-                const labels: Record<string, string> = {
-                    'CHECKING': 'Cuenta Corriente',
-                    'CREDIT_CARD': 'Tarjeta de Crédito',
-                    'DEBIT_CARD': 'Tarjeta de Débito',
-                    'CHECKBOOK': 'Chequera',
-                    'CASH': 'Efectivo',
-                    'BANK': 'Banco' // Legacy support just in case
-                }
-
-                const getIcon = (t: string) => {
-                    switch (t) {
-                        case 'CHECKING': return <Landmark className="h-4 w-4 text-blue-500" />
-                        case 'CREDIT_CARD': return <CreditCard className="h-4 w-4 text-purple-500" />
-                        case 'DEBIT_CARD': return <CreditCard className="h-4 w-4 text-green-500" />
-                        case 'CHECKBOOK': return <List className="h-4 w-4 text-orange-500" />
-                        case 'CASH': return <Banknote className="h-4 w-4 text-emerald-500" />
-                        default: return <Building2 className="h-4 w-4 text-muted-foreground" />
-                    }
-                }
-
+                const name = row.original.account_name
+                if (!name) return <span className="text-muted-foreground italic text-xs">No vinculada</span>
                 return (
-                    <div className="flex items-center gap-2">
-                        {getIcon(type)}
-                        <span>{labels[type] || type}</span>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium">{name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{row.original.account || ''}</span>
                     </div>
                 )
-            },
+            }
         },
         {
             accessorKey: "current_balance",
             header: ({ column }) => (
-                <div className="text-right">Saldo</div>
+                <DataTableColumnHeader column={column} title="Saldo" />
             ),
             cell: ({ row }) => {
                 const balance = parseFloat(row.getValue("current_balance") || "0")
                 return (
-                    <div className={`text-right font-medium ${balance < 0 ? "text-red-500" : ""}`}>
+                    <div className={`font-bold ${balance < 0 ? "text-red-600" : "text-emerald-700"}`}>
                         {new Intl.NumberFormat("es-CL", {
                             style: "currency",
                             currency: row.original.currency
@@ -178,18 +170,20 @@ export default function TreasuryAccountsPage() {
             },
         },
         {
-            id: "methods",
-            header: "Métodos Permitidos",
+            accessorKey: "location",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Ubicación" />
+            ),
             cell: ({ row }) => {
-                const acc = row.original
+                const val = row.original.location
+                if (!val) return <span className="text-muted-foreground">-</span>
                 return (
-                    <div className="flex flex-wrap gap-1">
-                        {acc.allows_cash && <Badge variant="outline" className="text-[10px] uppercase font-bold text-emerald-600 border-emerald-200 bg-emerald-50">Efectivo</Badge>}
-                        {acc.allows_card && <Badge variant="outline" className="text-[10px] uppercase font-bold text-blue-600 border-blue-200 bg-blue-50">Tarjeta</Badge>}
-                        {acc.allows_transfer && <Badge variant="outline" className="text-[10px] uppercase font-bold text-purple-600 border-purple-200 bg-purple-50">Transf.</Badge>}
+                    <div className="flex items-center gap-1.5 text-xs text-stone-600">
+                        <MapPin className="h-3 w-3 text-orange-500" />
+                        {val}
                     </div>
                 )
-            },
+            }
         },
         {
             id: "custodian",
@@ -199,7 +193,7 @@ export default function TreasuryAccountsPage() {
                 if (!acc.custodian_name) return <span className="text-muted-foreground">-</span>
                 return (
                     <div className="flex items-center gap-1 text-sm text-stone-600">
-                        <Shield className="h-3 w-3" />
+                        <Shield className="h-3 w-3 text-blue-500" />
                         {acc.custodian_name}
                     </div>
                 )
@@ -234,10 +228,10 @@ export default function TreasuryAccountsPage() {
 
             <Tabs defaultValue="accounts" className="space-y-4">
                 <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50 rounded-full h-12 p-1 border">
+                    <TabsList className="grid w-full max-w-xl grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
                         <TabsTrigger value="accounts" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
                             <List className="h-4 w-4" />
-                            <span className="max-sm:hidden">Cuentas</span>
+                            <span className="max-sm:hidden">Cuentas de tesorería</span>
                         </TabsTrigger>
                         <TabsTrigger value="banks" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
                             <Landmark className="h-4 w-4" />
@@ -247,18 +241,14 @@ export default function TreasuryAccountsPage() {
                             <CreditCard className="h-4 w-4" />
                             <span className="max-sm:hidden">Métodos</span>
                         </TabsTrigger>
-                        <TabsTrigger value="terminals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Banknote className="h-4 w-4" />
-                            <span className="max-sm:hidden">Terminales</span>
-                        </TabsTrigger>
                     </TabsList>
                 </div>
 
                 <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
                         <div>
-                            <h2 className="text-xl font-bold tracking-tight text-primary">Cuentas y Cajas</h2>
-                            <p className="text-sm text-muted-foreground">Registre y configure sus cuentas bancarias y cajas físicas.</p>
+                            <h2 className="text-xl font-bold tracking-tight text-primary">Cuentas de Tesorería</h2>
+                            <p className="text-sm text-muted-foreground">Registre y configure sus cuentas bancarias de tesorería.</p>
                         </div>
                         <Button onClick={openCreate} size="lg" className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
                             <Plus className="mr-2 h-5 w-5" /> Nueva Cuenta
@@ -268,8 +258,22 @@ export default function TreasuryAccountsPage() {
                     <DataTable
                         columns={columns}
                         data={accounts}
-                        searchPlaceholder="Buscar cuentas..."
+                        searchPlaceholder="Buscar cuentas por nombre..."
                         filterColumn="name"
+                        facetedFilters={[
+                            {
+                                column: "account_type",
+                                title: "Tipo de Cuenta",
+                                options: [
+                                    { label: "Caja (Efectivo)", value: "CASH" },
+                                    { label: "Cta. Corriente", value: "CHECKING" },
+                                    { label: "T. Crédito", value: "CREDIT_CARD" },
+                                    { label: "T. Débito", value: "DEBIT_CARD" },
+                                    { label: "Chequera", value: "CHECKBOOK" },
+                                ]
+                            }
+                        ]}
+                        useAdvancedFilter={true}
                     />
                 </TabsContent>
 
@@ -279,10 +283,6 @@ export default function TreasuryAccountsPage() {
 
                 <TabsContent value="methods">
                     <PaymentMethodManagement />
-                </TabsContent>
-
-                <TabsContent value="terminals">
-                    <TerminalManagement />
                 </TabsContent>
             </Tabs>
 
@@ -404,131 +404,158 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px]">
-                <DialogHeader>
-                    <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta de Tesorería"}</DialogTitle>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0">
+                    <DialogTitle className="flex items-center gap-2">
+                        {account ? "Editar Cuenta" : "Nueva Cuenta de Tesorería"}
+                    </DialogTitle>
                     <DialogDescription>
                         Configure los detalles de la cuenta de tesorería.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Column 1: Basic Info */}
-                        <div className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label>Nombre de la Cuenta</Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label>Tipo</Label>
-                                    <Select value={type} onValueChange={(v: any) => setType(v)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
-                                            <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                            <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                            <SelectItem value="CHECKBOOK">Chequera</SelectItem>
-                                            <SelectItem value="CASH">Efectivo</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label>Moneda</Label>
-                                    <Select value={currency} onValueChange={setCurrency}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                            <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
 
-                            {requiresBank(type) && (
-                                <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                    <Label className="text-blue-600 font-semibold flex items-center gap-1">
-                                        <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
-                                    </Label>
-                                    <Select value={bank || ""} onValueChange={setBank}>
-                                        <SelectTrigger className="border-blue-200 bg-blue-50/30">
-                                            <SelectValue placeholder="Seleccione banco..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {banks.map((b: any) => (
-                                                <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                <Tabs defaultValue="config" className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-6 border-b">
+                        <TabsList className="h-10 bg-transparent gap-4">
+                            <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1">Configuración</TabsTrigger>
+                            {account && (
+                                <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 flex items-center gap-1">
+                                    <History className="h-3.5 w-3.5" />
+                                    Historial
+                                </TabsTrigger>
                             )}
-
-                            {requiresBank(type) && (
-                                <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                    <Label className="text-blue-600 font-semibold flex items-center gap-1">
-                                        <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
-                                    </Label>
-                                    <Input
-                                        value={accountNumber}
-                                        onChange={e => setAccountNumber(e.target.value)}
-                                        placeholder="Ej: 0123456789"
-                                        className="border-blue-200 bg-blue-50/30"
-                                    />
-                                </div>
-                            )}
-
-                            <div className="grid gap-2">
-                                <Label>Cuenta Contable</Label>
-                                <AccountSelector
-                                    value={accountingAccount}
-                                    onChange={setAccountingAccount}
-                                    accountType="ASSET"
-                                    isReconcilable={true}
-                                    placeholder="Seleccione cuenta..."
-                                />
-                                <p className="text-[10px] text-muted-foreground italic">
-                                    Vínculo con el plan de cuentas.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Column 2: Physical & Config */}
-                        <div className="space-y-4">
-                            <div className="p-4 border rounded-xl bg-orange-50/30 space-y-3 border-orange-100">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
-                                    <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
-                                </div>
-                                {isPhysical && (
-                                    <div className="space-y-3 pt-2 border-t border-orange-100 animate-in fade-in duration-300">
-                                        <div className="grid gap-1.5">
-                                            <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Ubicación</Label>
-                                            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
-                                        </div>
-                                        <div className="grid gap-1.5">
-                                            <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Custodio</Label>
-                                            <UserSelector value={custodian} onChange={setCustodian} />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                        </div>
+                        </TabsList>
                     </div>
 
-                    <DialogFooter className="pt-4 border-t">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={loading} className="px-8">
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {account ? "Actualizar Cuenta" : "Crear Cuenta"}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                    <TabsContent value="config" className="flex-1 overflow-y-auto p-6 mt-0">
+                        <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                {/* Column 1: Basic Info */}
+                                <div className="space-y-4">
+                                    <div className="grid gap-2">
+                                        <Label>Nombre de la Cuenta</Label>
+                                        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label>Tipo</Label>
+                                            <Select value={type} onValueChange={(v: any) => setType(v)}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
+                                                    <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                                                    <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                                    <SelectItem value="CHECKBOOK">Chequera</SelectItem>
+                                                    <SelectItem value="CASH">Efectivo</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label>Moneda</Label>
+                                            <Select value={currency} onValueChange={setCurrency}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="CLP">Pesos (CLP)</SelectItem>
+                                                    <SelectItem value="USD">Dólar (USD)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    {requiresBank(type) && (
+                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                            <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                                <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
+                                            </Label>
+                                            <Select value={bank || ""} onValueChange={setBank}>
+                                                <SelectTrigger className="border-blue-200 bg-blue-50/30">
+                                                    <SelectValue placeholder="Seleccione banco..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {banks.map((b: any) => (
+                                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+
+                                    {requiresBank(type) && (
+                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                            <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                                <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
+                                            </Label>
+                                            <Input
+                                                value={accountNumber}
+                                                onChange={e => setAccountNumber(e.target.value)}
+                                                placeholder="Ej: 0123456789"
+                                                className="border-blue-200 bg-blue-50/30"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="grid gap-2">
+                                        <Label>Cuenta Contable</Label>
+                                        <AccountSelector
+                                            value={accountingAccount}
+                                            onChange={setAccountingAccount}
+                                            accountType="ASSET"
+                                            isReconcilable={true}
+                                            placeholder="Seleccione cuenta..."
+                                        />
+                                        <p className="text-[10px] text-muted-foreground italic">
+                                            Vínculo con el plan de cuentas.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Column 2: Physical & Config */}
+                                <div className="space-y-4">
+                                    <div className="p-4 border rounded-xl bg-orange-50/30 space-y-3 border-orange-100">
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
+                                            <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
+                                        </div>
+                                        {isPhysical && (
+                                            <div className="space-y-3 pt-2 border-t border-orange-100 animate-in fade-in duration-300">
+                                                <div className="grid gap-1.5">
+                                                    <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Ubicación</Label>
+                                                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Custodio</Label>
+                                                    <UserSelector value={custodian} onChange={setCustodian} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
+                        </form>
+                    </TabsContent>
+
+                    {account && (
+                        <TabsContent value="history" className="flex-1 overflow-hidden mt-0">
+                            <div className="h-full overflow-y-auto p-0">
+                                <ActivitySidebar entityType="treasuryaccount" entityId={account.id} />
+                            </div>
+                        </TabsContent>
+                    )}
+                </Tabs>
+
+                <DialogFooter className="p-6 pt-0 border-t">
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button type="submit" form="account-form" disabled={loading} className="px-8">
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {account ? "Actualizar Cuenta" : "Crear Cuenta"}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
-        </Dialog >
+        </Dialog>
     )
 }

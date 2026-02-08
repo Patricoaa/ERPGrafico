@@ -17,7 +17,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark } from "lucide-react"
+import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History } from "lucide-react"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Types matching backend
 interface PaymentMethod {
@@ -393,96 +395,121 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[800px] h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
                     <DialogDescription>Configuración del terminal y asignación de métodos de pago.</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Nombre <span className="text-red-500">*</span></Label>
-                            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Código <span className="text-red-500">*</span></Label>
-                            <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className="uppercase" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Ubicación</Label>
-                            <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>IP (Opcional)</Label>
-                            <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" />
-                        </div>
+
+                <Tabs defaultValue="config" className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-6 border-b">
+                        <TabsList className="h-10 bg-transparent gap-4">
+                            <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1">Configuración</TabsTrigger>
+                            {terminal && (
+                                <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 flex items-center gap-1">
+                                    <History className="h-3.5 w-3.5" />
+                                    Historial
+                                </TabsTrigger>
+                            )}
+                        </TabsList>
                     </div>
 
-                    <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
-                        <div className="flex justify-between items-center">
-                            <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
-                            <Badge variant="outline" className="text-[10px] bg-white">
-                                {selectedMethodIds.length} seleccionados
-                            </Badge>
-                        </div>
+                    <TabsContent value="config" className="flex-1 overflow-y-auto p-6 mt-0">
+                        <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Nombre <span className="text-red-500">*</span></Label>
+                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Código <span className="text-red-500">*</span></Label>
+                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className="uppercase" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ubicación</Label>
+                                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>IP (Opcional)</Label>
+                                    <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" />
+                                </div>
+                            </div>
 
-                        <div className="space-y-5">
-                            {typeOrder.map(type => {
-                                const groupMethods = methodsGrouped[type] || []
-                                if (groupMethods.length === 0) return null
+                            <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
+                                    <Badge variant="outline" className="text-[10px] bg-white">
+                                        {selectedMethodIds.length} seleccionados
+                                    </Badge>
+                                </div>
 
-                                return (
-                                    <div key={type} className="space-y-2">
-                                        <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
-                                            {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
-                                            {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                            {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5" />}
-                                            {getTypeLabel(type)}
-                                        </h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {groupMethods.map(method => {
-                                                const isSelected = selectedMethodIds.includes(method.id)
-                                                return (
-                                                    <div
-                                                        key={method.id}
-                                                        onClick={() => toggleMethod(method.id)}
-                                                        className={`
-                                                            flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
-                                                            ${isSelected
-                                                                ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                                                : 'bg-white border-transparent hover:border-gray-200'
-                                                            }
-                                                        `}
-                                                    >
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onCheckedChange={() => toggleMethod(method.id)}
-                                                            className="mt-0.5"
-                                                        />
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-semibold">{method.name}</span>
-                                                            <span className="text-[10px] text-muted-foreground">
-                                                                Cuenta: {method.treasury_account_name}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
+                                <div className="space-y-5">
+                                    {typeOrder.map(type => {
+                                        const groupMethods = methodsGrouped[type] || []
+                                        if (groupMethods.length === 0) return null
 
-                    <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar Terminal
-                        </Button>
-                    </DialogFooter>
-                </form>
+                                        return (
+                                            <div key={type} className="space-y-2">
+                                                <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
+                                                    {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
+                                                    {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
+                                                    {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5" />}
+                                                    {getTypeLabel(type)}
+                                                </h4>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    {groupMethods.map(method => {
+                                                        const isSelected = selectedMethodIds.includes(method.id)
+                                                        return (
+                                                            <div
+                                                                key={method.id}
+                                                                onClick={() => toggleMethod(method.id)}
+                                                                className={`
+                                                                    flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
+                                                                    ${isSelected
+                                                                        ? 'bg-primary/5 border-primary/30 shadow-sm'
+                                                                        : 'bg-white border-transparent hover:border-gray-200'
+                                                                    }
+                                                                `}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={isSelected}
+                                                                    onCheckedChange={() => toggleMethod(method.id)}
+                                                                    className="mt-0.5"
+                                                                />
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-semibold">{method.name}</span>
+                                                                    <span className="text-[10px] text-muted-foreground">
+                                                                        Cuenta: {method.treasury_account_name}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </form>
+                    </TabsContent>
+
+                    {terminal && (
+                        <TabsContent value="history" className="flex-1 overflow-hidden mt-0">
+                            <div className="h-full overflow-y-auto p-0">
+                                <ActivitySidebar entityType="terminal" entityId={terminal.id} />
+                            </div>
+                        </TabsContent>
+                    )}
+                </Tabs>
+
+                <DialogFooter className="p-6 pt-0 border-t">
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button type="submit" form="terminal-form" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Guardar Terminal
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )

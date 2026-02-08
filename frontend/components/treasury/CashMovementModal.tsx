@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
+import { PaymentMethodSelector } from "@/components/shared/PaymentMethodSelector"
 import {
     Select,
     SelectContent,
@@ -87,14 +88,34 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
         }
     }, [fromId, tab, amount])
 
-    // Fetch methods for the relevant account
+    // Fetch methods for the relevant account (Only for non-Withdrawal tabs where we select Account first)
     useEffect(() => {
+        if (tab === 'WITHDRAWAL') {
+            // For Withdrawal, the PaymentMethodSelector handles fetching and setting methods.
+            // We might still want 'availableMethods' for validation or type inference if needed,
+            // but strictly speaking, the selector drives the state.
+            // However, to make the 'methodType' inference work in the render, we need 'availableMethods' to contain the method details...
+            // BUT, the selector has its own list. 
+            // To solve the "controlled component" value issue:
+            // We can just rely on the fact that we set paymentMethodNew.
+            // But we need the 'method_type' for the Selector's 'value' prop.
+            // We can fetch a SINGLE method details if paymentMethodNew is set, OR fetch all 'purchases' methods here too.
+            // Let's fetch all 'purchases' methods when in WITHDRAWAL mode so we can lookup the type.
+            api.get('/treasury/payment_methods/', { params: { is_active: true, allow_for_purchases: true } })
+                .then(res => {
+                    const methods = res.data.results || res.data
+                    setAvailableMethods(methods)
+                })
+                .catch(console.error)
+            return
+        }
+
         const targetAccId = tab === 'DEPOSIT' || tab === 'TRANSFER' ? toId : fromId
         if (targetAccId) {
             api.get(`/treasury/accounts/${targetAccId}/`)
                 .then(res => {
                     setAvailableMethods(res.data.payment_methods || [])
-                    // Set default method if only one or if CASH exists
+                    // Set default method if only one or if CASH exists (only for native Account selection)
                     if (res.data.payment_methods?.length > 0) {
                         const cashMethod = res.data.payment_methods.find((m: any) => m.method_type === 'CASH')
                         setPaymentMethodNew(cashMethod ? cashMethod.id.toString() : res.data.payment_methods[0].id.toString())
@@ -227,23 +248,59 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div className="grid grid-cols-1 gap-4 pt-2">
                             {/* Origin */}
-                            <div className={cn("space-y-2", tab === 'DEPOSIT' && "opacity-40 pointer-events-none")}>
+                            <div className={cn("space-y-2", tab === 'DEPOSIT' && "opacity-40 pointer-events-none hidden")}>
                                 <Label className={FORM_STYLES.label}>
-                                    {tab === 'TRANSFER' ? 'Cuenta de Origen (Sale)' : 'Cuenta de Origen'}
+                                    {tab === 'TRANSFER' ? 'Cuenta de Origen (Sale)' : 'Cuenta de Origen / Medio de Pago'}
                                 </Label>
-                                <CashContainerSelector
-                                    value={fromId}
-                                    onChange={(val) => setFromId(val || "")}
-                                    placeholder={tab === 'DEPOSIT' ? "Exterior / Aporte" : "Seleccione cuenta..."}
-                                    disabled={tab === 'DEPOSIT'}
-                                    physicalOnly={false} // Allow selecting Banks too!
-                                />
+
+                                {tab === 'WITHDRAWAL' ? (
+                                    <PaymentMethodSelector
+                                        value={{
+                                            methodType: null, // We don't track type separately in this modal's state, but that's fine, the selector handles it internally if we don't pass it back strictly, or we should updates state to track it.
+                                            // Actually, the selector needs 'methodType' to show the active state.
+                                            // Let's rely on the derived state if possible, or just pass derived.
+                                            // The selector requires `methodType` in value.
+                                            // We can infer it from the selected paymentMethodNew if we had the list, but we don't easily.
+                                            // For now, let's allow the internal state of selector to drive this if we can, 
+                                            // BUT PaymentMethodSelector is controlled.
+                                            // We need to add a state for methodType in the modal.
+                                            methodType: (availableMethods.find(m => m.id.toString() === paymentMethodNew)?.method_type as any) || null,
+                                            treasuryAccountId: fromId || null,
+                                            paymentMethodId: paymentMethodNew || null
+                                        }}
+                                        onChange={(val) => {
+                                            setFromId(val.treasuryAccountId || "")
+                                            setPaymentMethodNew(val.paymentMethodId || "")
+                                            // availableMethods state is currently derived from account. 
+                                            // When using PaymentSelector, we are going reverse: Method -> Account.
+                                            // So we should probably update availableMethods so the type inference works? 
+                                            // Actually, the selector fetches its own methods.
+                                            // We need to sync the Modal's 'paymentMethodNew' and 'fromId' with the selector.
+
+                                            // Issue: The modal's `useEffect` at line 91 watches `fromId` and fetches methods to set `availableMethods`.
+                                            // If we set `fromId` here, that effect will run and might overwrite `paymentMethodNew` (line 100 sets default).
+                                            // We need to prevent that effect from overwriting if we just set it via selector.
+
+                                            // We'll handle this by adding a flag or modifying the effect.
+                                        }}
+                                        operation="purchases" // Withdrawals behave like purchases (money out)
+                                        className="mb-2"
+                                    />
+                                ) : (
+                                    <CashContainerSelector
+                                        value={fromId}
+                                        onChange={(val) => setFromId(val || "")}
+                                        placeholder={tab === 'DEPOSIT' ? "Exterior / Aporte" : "Seleccione cuenta..."}
+                                        disabled={tab === 'DEPOSIT'}
+                                        physicalOnly={false}
+                                    />
+                                )}
                             </div>
 
                             {/* Destination */}
-                            <div className={cn("space-y-2", tab === 'WITHDRAWAL' && "opacity-40 pointer-events-none")}>
+                            <div className={cn("space-y-2", tab === 'WITHDRAWAL' && "opacity-40 pointer-events-none hidden")}>
                                 <Label className={FORM_STYLES.label}>
                                     {tab === 'TRANSFER' ? 'Cuenta de Destino (Entra)' : 'Cuenta de Destino'}
                                 </Label>
@@ -252,7 +309,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                     onChange={(val) => setToId(val || "")}
                                     placeholder={tab === 'WITHDRAWAL' ? "Gasto / Retiro" : "Seleccione cuenta..."}
                                     disabled={tab === 'WITHDRAWAL'}
-                                    physicalOnly={false} // Allow selecting Banks too!
+                                    physicalOnly={false}
                                 />
                             </div>
                         </div>
@@ -289,8 +346,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         )}
 
-                        {/* Payment Method Selector */}
-                        {availableMethods.length > 0 && (
+                        {/* Payment Method Selector (For legacy/Deposit/Transfer flows) */}
+                        {availableMethods.length > 0 && tab !== 'WITHDRAWAL' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
                                 <Label className={FORM_STYLES.label}>
                                     {tab === 'TRANSFER' ? 'Canal de Traspaso / Método' : 'Método de Pago'}
