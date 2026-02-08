@@ -336,66 +336,60 @@ class Command(BaseCommand):
                 # We don't raise here to allow the rest of the purge to continue
                 # if we are in a fresh system state.
 
-        # 1. Workflow & Notifications (Leaves)
+        # Workflow models
         _safe_delete(Task, "Task")
         _safe_delete(Notification, "Notification")
         _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
 
-        # 2. Production child records & BOMs
+        # Production child records
         _safe_delete(ProductionConsumption, "ProductionConsumption")
         _safe_delete(WorkOrder, "WorkOrder")
         _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
         _safe_delete(BillOfMaterials, "BillOfMaterials")
 
-        # 3. Budgeting
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
 
-        # 4. Transactional Documents (Protect JournalEntries)
-        # NoteWorkflow references Invoices
+        # 2. Note Workflows (Reference Invoices)
         _safe_delete(NoteWorkflow, "NoteWorkflow")
-        
-        # Subscriptions
-        _safe_delete(Subscription, "Subscription")
-        
-        # Sales & Billing (Invoices protect JournalEntries)
-        _safe_delete(SaleReturnLine, "SaleReturnLine")
-        _safe_delete(SaleReturn, "SaleReturn")
-        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
-        _safe_delete(SaleDelivery, "SaleDelivery")
-        _safe_delete(Invoice, "Invoice") # Must be deleted before JournalEntry
-        _safe_delete(SaleLine, "SaleLine")
-        _safe_delete(SaleOrder, "SaleOrder")
 
-        # Purchasing
+        # 3. Subscriptions
+        _safe_delete(Subscription, "Subscription")
+
+        # 3. Transactional documents
+        _safe_delete(StockMove, "StockMove")
+        _safe_delete(TreasuryMovement, "TreasuryMovement")
+        _safe_delete(JournalEntry, "JournalEntry")
+        _safe_delete(Invoice, "Invoice")
+        
+        # 4. Purchasing
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
         _safe_delete(PurchaseReturn, "PurchaseReturn")
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
         _safe_delete(PurchaseReceipt, "PurchaseReceipt")
         _safe_delete(PurchaseLine, "PurchaseLine")
         _safe_delete(PurchaseOrder, "PurchaseOrder")
+        
+        # 5. Sales
+        _safe_delete(SaleReturnLine, "SaleReturnLine")
+        _safe_delete(SaleReturn, "SaleReturn")
+        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
+        _safe_delete(SaleDelivery, "SaleDelivery")
+        _safe_delete(SaleLine, "SaleLine")
+        _safe_delete(SaleOrder, "SaleOrder")
 
-        # Inventory Movements (StockMoves often link to JournalEntries)
-        _safe_delete(StockMove, "StockMove")
-
-        # Treasury & POS (Movements link to JournalEntries)
+        # 6. POS & Treasury Infrastructure
         _safe_delete(CashDifference, "CashDifference")
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
-        
+
+        # 7. Treasury & Reconciliation
         _safe_delete(CardTransaction, "CardTransaction")
         _safe_delete(DailySettlement, "DailySettlement")
-        _safe_delete(BankStatement, "BankStatement") 
-        _safe_delete(ReconciliationMatch, "ReconciliationMatch") # Links to TreasuryMovement
+        _safe_delete(BankStatement, "BankStatement") # Cascades to lines
+        _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationRule, "ReconciliationRule")
-        _safe_delete(TreasuryMovement, "TreasuryMovement") # Must be deleted before JournalEntry if linked
-        
-        # 5. Core Accounting (Now safe to delete)
-        # JournalEntry cascades to JournalItem. JournalItem protects Account.
-        _safe_delete(JournalEntry, "JournalEntry")
-
-        # 6. Master Data & Settings
         _safe_delete(CardPaymentProvider, "CardPaymentProvider")
         
         # Payment Methods must be deleted before accounts if they have protecting constraints
@@ -403,22 +397,18 @@ class Command(BaseCommand):
         _safe_delete(Bank, "Bank")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         
-        # Pricing & Products
+        # 8. Master Data (Links to almost everything above)
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(Product, "Product")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
-        
-        # Contacts (Customers/Suppliers)
         _safe_delete(Contact, "Contact")
 
-        # 7. Foundations
+        # 9. Foundations
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
-        
-        # Accounts (Last, as they are referenced by almost everything)
         _safe_delete(Account, "Account")
 
     def _get_account_references(self):

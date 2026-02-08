@@ -509,9 +509,6 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="CASH">Efectivo</SelectItem>
-                                                <SelectItem value="DEBIT_CARD">Tarjeta de Débito (Compras)</SelectItem>
-                                                <SelectItem value="CREDIT_CARD">Tarjeta de Crédito (Compras)</SelectItem>
                                                 <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
                                                 <SelectItem value="TRANSFER">Transferencia</SelectItem>
                                                 <SelectItem value="CHECK">Cheque</SelectItem>

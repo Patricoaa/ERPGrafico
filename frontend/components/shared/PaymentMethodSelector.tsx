@@ -1,8 +1,9 @@
 "use client"
 
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
-import { useMemo } from "react"
+import { useMemo, useEffect } from "react"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -98,109 +99,156 @@ export function PaymentMethodSelector({
     // Specific methods for the CURRENTLY selected type
     const currentTypeMethods = useMemo(() => {
         if (!value.methodType) return []
-        const typeGroup = availableTypes.find(t => t.id === value.methodType)
-        return typeGroup ? typeGroup.methods : []
-    }, [value.methodType, availableTypes])
+        // @ts-ignore
+        return methodsByType[value.methodType] || []
+    }, [value.methodType, methodsByType])
+
+    // Auto-select logic: If a type is selected and has only 1 method, select it automatically.
+    // Also, if no specific account/method is selected but we have candidates, select the first one.
+    useEffect(() => {
+        if (!value.methodType) return
+
+        if (currentTypeMethods.length > 0) {
+            // Check if current selection is valid for this type
+            const isCurrentValid = currentTypeMethods.some(m =>
+                m.id.toString() === value.paymentMethodId &&
+                m.treasury_account.toString() === value.treasuryAccountId
+            )
+
+            if (!isCurrentValid) {
+                // Default to first available method for this type
+                const defaultMethod = currentTypeMethods[0]
+                onChange({
+                    ...value,
+                    treasuryAccountId: defaultMethod.treasury_account.toString(),
+                    paymentMethodId: defaultMethod.id.toString()
+                })
+            }
+        } else {
+            // Type selected but no methods available (shouldn't happen due to filtering, but safe fallback)
+            if (value.treasuryAccountId || value.paymentMethodId) {
+                onChange({ ...value, treasuryAccountId: null, paymentMethodId: null })
+            }
+        }
+    }, [value.methodType, currentTypeMethods, onChange, value.paymentMethodId, value.treasuryAccountId])
 
 
-    // Handler for Type Selection
-    const handleTypeSelect = (typeId: string) => {
-        // Find default method for this type (if any)
-        const typeGroup = availableTypes.find(t => t.id === typeId)
-        const defaultMethod = typeGroup?.methods[0]
+    // Handle Type Change
+    const handleTypeChange = (type: string) => {
+        // Find methods for this new type
+        // @ts-ignore
+        const newMethods = methodsByType[type] || []
 
-        onChange({
-            methodType: typeId as any,
-            treasuryAccountId: defaultMethod?.treasury_account?.toString() || null,
-            paymentMethodId: defaultMethod?.id.toString() || null
-        })
+        const nextValue: PaymentMethodValue = {
+            // @ts-ignore
+            methodType: type,
+            treasuryAccountId: null,
+            paymentMethodId: null
+        }
+
+        // If there's only one method (or at least one), we'll let the useEffect above handle the specific selection
+        // OR we can do it right here to be snappier
+        if (newMethods.length > 0) {
+            nextValue.treasuryAccountId = newMethods[0].treasury_account.toString()
+            nextValue.paymentMethodId = newMethods[0].id.toString()
+        }
+
+        onChange(nextValue)
     }
 
-    const handleMethodSelect = (methodId: string) => {
-        const method = allowedMethods.find(m => m.id.toString() === methodId)
-        if (!method) return
-
-        onChange({
-            ...value,
-            paymentMethodId: methodId,
-            treasuryAccountId: method.treasury_account?.toString() || null
-        })
+    if (loading && availableTypes.length === 0) {
+        return <div className="h-24 w-full animate-pulse bg-muted rounded-xl" />
     }
 
-    if (loading) {
-        return <div className="p-4 text-center text-muted-foreground text-sm">Cargando métodos...</div>
-    }
-
-    if (allowedMethods.length === 0) {
+    if (availableTypes.length === 0) {
         return (
-            <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground text-sm bg-muted/30">
-                No hay métodos de pago habilitados para esta operación.
+            <div className="p-4 border border-dashed rounded-xl text-center text-muted-foreground text-sm">
+                No hay métodos de pago disponibles para esta operación.
             </div>
         )
     }
 
     return (
         <div className={cn("space-y-4", className)}>
-            {/* 1. High-Level Types (Tabs/Cards) */}
-            <div className="flex flex-wrap gap-3">
+            <RadioGroup
+                value={value.methodType || ""}
+                onValueChange={handleTypeChange}
+                className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
                 {availableTypes.map((type) => {
                     const isSelected = value.methodType === type.id
-                    const Icon = type.icon
-
                     return (
-                        <button
-                            key={type.id}
-                            type="button"
-                            onClick={() => handleTypeSelect(type.id)}
-                            className={cn(
-                                "relative flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 text-left flex-1 min-w-[140px]",
-                                isSelected
-                                    ? cn("border-2 shadow-sm ring-1 ring-offset-1 ring-primary/20", type.bg, type.border, type.color)
-                                    : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                            )}
-                        >
-                            <div className={cn(
-                                "p-2 rounded-lg transition-colors",
-                                isSelected ? "bg-white/60 shadow-sm" : "bg-slate-100"
-                            )}>
-                                <Icon className={cn("h-5 w-5", isSelected ? type.color : "text-slate-500")} />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className={cn("font-bold text-sm", isSelected ? "text-slate-900" : "text-slate-700")}>
+                        <div key={type.id} className="relative">
+                            <RadioGroupItem
+                                value={type.id}
+                                id={`pm-type-${type.id}`}
+                                className="sr-only"
+                            />
+                            <Label
+                                htmlFor={`pm-type-${type.id}`}
+                                className={cn(
+                                    "flex flex-col items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:bg-accent",
+                                    isSelected
+                                        ? `border-primary/50 bg-accent ring-1 ring-primary/20`
+                                        : "border-muted bg-popover"
+                                )}
+                            >
+                                <div className={cn(
+                                    "p-3 rounded-full text-white",
+                                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                )}>
+                                    <type.icon className="h-6 w-6" />
+                                </div>
+                                <span className={cn(
+                                    "font-bold uppercase text-xs tracking-wider",
+                                    isSelected ? "text-primary" : "text-muted-foreground"
+                                )}>
                                     {type.label}
                                 </span>
-                            </div>
-
-                            {isSelected && (
-                                <div className={cn("absolute inset-0 rounded-xl ring-2 ring-inset ring-primary/10 pointer-events-none")} />
-                            )}
-                        </button>
+                            </Label>
+                        </div>
                     )
                 })}
-            </div>
+            </RadioGroup>
 
-            {/* 2. Specific Method Selection (If more than 1 for the selected type) */}
+            {/* Sub-selector for specific Method/Account if multiple exist */}
             {value.methodType && currentTypeMethods.length > 1 && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                    <Label className="text-xs text-muted-foreground ml-1 mb-1.5 block">
-                        Seleccione opción específica:
+                <div className="animate-in fade-in slide-in-from-top-1">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">
+                        Seleccionar {value.methodType === 'TRANSFER' ? 'Cuenta Bancaria' : 'Cuenta / Opción'}
                     </Label>
                     <Select
                         value={value.paymentMethodId || ""}
-                        onValueChange={handleMethodSelect}
+                        onValueChange={(val) => {
+                            const selected = currentTypeMethods.find(m => m.id.toString() === val)
+                            if (selected) {
+                                onChange({
+                                    ...value,
+                                    paymentMethodId: selected.id.toString(),
+                                    treasuryAccountId: selected.treasury_account.toString()
+                                })
+                            }
+                        }}
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seleccione..." />
+                        <SelectTrigger className="h-10 bg-background">
+                            <SelectValue placeholder="Seleccione opción..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {currentTypeMethods.map(method => (
-                                <SelectItem key={method.id} value={method.id.toString()}>
-                                    {method.name}
-                                    {method.treasury_account_name && <span className="text-muted-foreground text-xs ml-2">({method.treasury_account_name})</span>}
+                            {currentTypeMethods.map(m => (
+                                <SelectItem key={m.id} value={m.id.toString()}>
+                                    {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}
+                                    <span className="text-muted-foreground text-xs ml-2">({m.treasury_account_name})</span>
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
+                </div>
+            )}
+
+            {/* Show selected account info if only 1 exists, for confirmation */}
+            {value.methodType && currentTypeMethods.length === 1 && (
+                <div className="text-xs text-muted-foreground text-center bg-muted/30 p-2 rounded border border-dashed">
+                    Cuenta: <span className="font-medium text-foreground">{currentTypeMethods[0].treasury_account_name}</span>
                 </div>
             )}
         </div>
