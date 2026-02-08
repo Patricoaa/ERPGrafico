@@ -45,9 +45,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
     })
 
     const isMethodAllowed = (methodId: string) => {
-        // If loading, assume true to avoid flickering, or false? 
-        // Better to wait or assume true if we want to be optimistic. 
-        // But for safety, if loaded and empty, false.
         if (loadingMethods) return true
         if (!allowedMethods.length) return false
 
@@ -58,6 +55,8 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type))
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
+            case 'CHECK':
+                return allowedMethods.some(m => m.method_type === 'CHECK')
             default:
                 return false
         }
@@ -102,24 +101,34 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
         })
     }, [accounts, paymentData.method])
 
-    useEffect(() => {
-        // Auto-select: If there is at least one candidate account
-        if (filteredAccounts.length >= 1) {
-            const currentId = paymentData.treasuryAccountId?.toString();
-            const isValid = filteredAccounts.some(acc => acc.id.toString() === currentId);
+    const methodsForType = useMemo(() => {
+        return allowedMethods.filter(m => {
+            if (paymentData.method === 'CASH') return m.method_type === 'CASH'
+            if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type)
+            if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
+            if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
+            return false
+        })
+    }, [allowedMethods, paymentData.method])
 
-            // If current selection is not valid for this method, pick the first one
+    useEffect(() => {
+        // Auto-select: If there is at least one candidate account/method
+        if (methodsForType.length >= 1) {
+            const currentAccountId = paymentData.treasuryAccountId?.toString();
+            // If the current account ID is not associated with any of the allowed methods for this type, select the first one
+            const isValid = methodsForType.some(m => m.treasury_account.toString() === currentAccountId);
+
             if (!isValid) {
                 setPaymentData({
                     ...paymentData,
-                    treasuryAccountId: filteredAccounts[0].id.toString()
+                    treasuryAccountId: methodsForType[0].treasury_account.toString(),
+                    paymentMethodId: methodsForType[0].id // Optional: store method ID
                 });
             }
-        } else if (filteredAccounts.length === 0 && paymentData.treasuryAccountId) {
-            // No valid accounts for this method, clear selection
-            setPaymentData({ ...paymentData, treasuryAccountId: null });
+        } else if (methodsForType.length === 0 && paymentData.treasuryAccountId) {
+            setPaymentData({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
         }
-    }, [filteredAccounts, paymentData.method, setPaymentData]) // Added paymentData.method to dependencies to re-run on method change
+    }, [methodsForType, paymentData.method, setPaymentData])
 
     const terminalHasCardTerminal = useMemo(() => {
         return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL')
@@ -132,32 +141,32 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 label: 'Efectivo',
                 icon: Banknote,
                 color: 'text-emerald-600',
-                hasAccounts: accounts.some(a => a.allows_cash),
-                isAllowed: isMethodAllowed('CASH')
+                isAllowed: isMethodAllowed('CASH'),
+                hasAccounts: accounts.some(a => a.allows_cash) || isMethodAllowed('CASH') // Fallback to allowing if method is allowed
             },
             {
                 id: 'CARD',
                 label: `Tarjeta${terminalHasCardTerminal ? ' (terminal de cobro)' : ''}`,
                 icon: CreditCard,
                 color: 'text-blue-600',
-                hasAccounts: accounts.some(a => a.allows_card),
-                isAllowed: isMethodAllowed('CARD')
+                isAllowed: isMethodAllowed('CARD'),
+                hasAccounts: accounts.some(a => a.allows_card) || isMethodAllowed('CARD')
             },
             {
                 id: 'TRANSFER',
                 label: 'Transferencia',
                 icon: Building2,
                 color: 'text-purple-600',
-                hasAccounts: accounts.some(a => a.allows_transfer),
-                isAllowed: isMethodAllowed('TRANSFER')
+                isAllowed: isMethodAllowed('TRANSFER'),
+                hasAccounts: accounts.some(a => a.allows_transfer) || isMethodAllowed('TRANSFER')
             },
             {
                 id: 'CHECK',
                 label: 'Cheque',
                 icon: ClipboardList,
                 color: 'text-amber-600',
-                hasAccounts: accounts.some(a => a.allows_check),
-                isAllowed: isMethodAllowed('CHECK')
+                isAllowed: isMethodAllowed('CHECK'),
+                hasAccounts: accounts.some(a => a.allows_check) || isMethodAllowed('CHECK')
             }
         ]
 
@@ -223,18 +232,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 )}
             </div>
 
-            {accounts.length === 0 && (
-                <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle className="text-sm font-bold">Sin Métodos de Pago</AlertTitle>
-                    <AlertDescription className="text-xs mt-1">
-                        No hay cuentas de tesorería configuradas.
-                        <Link href="/treasury/accounts" className="font-bold underline ml-1 hover:text-destructive/80 transition-colors">
-                            Configurar ahora
-                        </Link>
-                    </AlertDescription>
-                </Alert>
-            )}
 
             <div className="space-y-4">
                 <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
@@ -290,16 +287,27 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                                             </div>
                                         )}
 
-                                        {filteredAccounts.length > 1 && (
+                                        {methodsForType.length > 1 && (
                                             <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cuenta Destino</Label>
+                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                                                    {paymentData.method === 'TRANSFER' ? 'Seleccionar Banco / Cuenta' : 'Seleccionar Cuenta'}
+                                                </Label>
                                                 <select
-                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:ring-1 focus:ring-primary outline-none"
                                                     value={paymentData.treasuryAccountId || ""}
-                                                    onChange={(e) => setPaymentData({ ...paymentData, treasuryAccountId: e.target.value })}
+                                                    onChange={(e) => {
+                                                        const selectedMethod = methodsForType.find(m => m.treasury_account.toString() === e.target.value)
+                                                        setPaymentData({
+                                                            ...paymentData,
+                                                            treasuryAccountId: e.target.value,
+                                                            paymentMethodId: selectedMethod?.id
+                                                        })
+                                                    }}
                                                 >
-                                                    {filteredAccounts.map((acc) => (
-                                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                                    {methodsForType.map((m) => (
+                                                        <option key={m.id} value={m.treasury_account}>
+                                                            {m.name} ({m.treasury_account_name})
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>

@@ -552,6 +552,7 @@ class POSTerminal(models.Model):
             'CASH': ['CASH'],
             'CARD': ['DEBIT_CARD', 'CREDIT_CARD', 'CARD_TERMINAL'],
             'TRANSFER': ['TRANSFER'],
+            'CHECK': ['CHECK'],
         }.get(payment_method, [payment_method])
 
         # Get accounts and their IDs from allowed payment methods

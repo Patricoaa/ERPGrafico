@@ -314,6 +314,17 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                         return prev
                     }
                 }
+
+                // Validation: Max 1 CARD_TERMINAL method
+                if (methodToAdd?.method_type === 'CARD_TERMINAL') {
+                    const existingTerminal = allMethods.find(m =>
+                        prev.includes(m.id) && m.method_type === 'CARD_TERMINAL'
+                    )
+                    if (existingTerminal) {
+                        toast.warning("Solo se puede seleccionar 1 TERMINAL DE COBRO por terminal POS.")
+                        return prev
+                    }
+                }
                 return [...prev, methodId]
             }
         })

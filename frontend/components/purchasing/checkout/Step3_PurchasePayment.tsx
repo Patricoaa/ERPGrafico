@@ -129,32 +129,32 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
             label: 'Efectivo',
             icon: Banknote,
             color: 'text-emerald-600',
-            hasAccounts: accounts.some(a => a.allows_cash),
-            isAllowed: isMethodAllowed('CASH')
+            isAllowed: isMethodAllowed('CASH'),
+            hasAccounts: accounts.some(a => a.allows_cash) || isMethodAllowed('CASH')
         },
         {
             id: 'CARD',
             label: 'Tarjeta',
             icon: CreditCard,
             color: 'text-blue-600',
-            hasAccounts: accounts.some(a => a.allows_card),
-            isAllowed: isMethodAllowed('CARD')
+            isAllowed: isMethodAllowed('CARD'),
+            hasAccounts: accounts.some(a => a.allows_card) || isMethodAllowed('CARD')
         },
         {
             id: 'TRANSFER',
             label: 'Transferencia',
             icon: Building2,
             color: 'text-purple-600',
-            hasAccounts: accounts.some(a => a.allows_transfer),
-            isAllowed: isMethodAllowed('TRANSFER')
+            isAllowed: isMethodAllowed('TRANSFER'),
+            hasAccounts: accounts.some(a => a.allows_transfer) || isMethodAllowed('TRANSFER')
         },
         {
             id: 'CHECK',
             label: 'Cheque',
             icon: ClipboardList,
             color: 'text-amber-600',
-            hasAccounts: accounts.some(a => a.allows_check),
-            isAllowed: isMethodAllowed('CHECK')
+            isAllowed: isMethodAllowed('CHECK'),
+            hasAccounts: accounts.some(a => a.allows_check) || isMethodAllowed('CHECK')
         }
     ]
 
@@ -179,18 +179,6 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                 <Wallet className="h-8 w-8 text-destructive/20" />
             </div>
 
-            {accounts.length === 0 && (
-                <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle className="text-sm font-bold">Sin Métodos de Pago</AlertTitle>
-                    <AlertDescription className="text-xs mt-1">
-                        No hay cuentas de tesorería de donde extraer fondos.
-                        <Link href="/treasury/accounts" className="font-bold underline ml-1 hover:text-destructive/80 transition-colors">
-                            Configurar ahora
-                        </Link>
-                    </AlertDescription>
-                </Alert>
-            )}
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                 <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
