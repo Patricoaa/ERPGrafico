@@ -23,11 +23,13 @@ import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, B
 interface PaymentMethod {
     id: number
     name: string
-    method_type: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT' | 'OTHER'
+    method_type: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT' | 'OTHER' | 'CARD_TERMINAL'
     method_type_display: string
     treasury_account: number
     treasury_account_name: string
     is_active: boolean
+    is_terminal: boolean
+    allow_for_sales: boolean
 }
 
 interface Terminal {
@@ -281,8 +283,16 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
     const fetchMethods = async () => {
         try {
             const res = await api.get('/treasury/payment-methods/')
-            // Only active methods
-            setAllMethods((res.data.results || res.data).filter((m: PaymentMethod) => m.is_active))
+            // Only active methods AND only those suitable for a Terminal (Collection)
+            const methods = (res.data.results || res.data).filter((m: PaymentMethod) => m.is_active)
+
+            // Refined filter: terminals should only handle collection methods
+            // CARD_TERMINAL is now the primary type for this
+            const collectionMethods = methods.filter((m: PaymentMethod) =>
+                m.method_type === 'CARD_TERMINAL' || (m.method_type === 'CASH' && m.allow_for_sales === true)
+            )
+
+            setAllMethods(collectionMethods)
         } catch (error) {
             console.error("Error fetching methods", error)
         }
@@ -324,8 +334,8 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             name,
             code,
             location,
-            serial_number: serialNumber,
-            ip_address: ipAddress,
+            serial_number: serialNumber || "", // Use empty string for CharField
+            ip_address: ipAddress || null,     // null is fine for GenericIPAddressField
             allowed_payment_method_ids: selectedMethodIds,
             default_treasury_account: defaultAccount
         }
@@ -341,7 +351,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             onSuccess()
             onOpenChange(false)
         } catch (error: any) {
-            console.error(error)
+            console.error("Error saving terminal:", error.response?.data || error)
             toast.error("Error al guardar terminal")
         } finally {
             setLoading(false)
@@ -357,12 +367,13 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
     }, {} as Record<string, PaymentMethod[]>)
 
     // Order of groups
-    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
+    const typeOrder = ['CASH', 'CARD_TERMINAL', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
             'CASH': 'Efectivo (Cajas)',
-            'CARD': 'Tarjetas (Débito/Crédito)',
+            'CARD': 'Tarjetas Propias',
+            'CARD_TERMINAL': 'Terminales de Cobro (Transbank/Otros)',
             'TRANSFER': 'Transferencias',
             'CHECK': 'Cheques',
             'OTHER': 'Otros'

@@ -22,6 +22,20 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
     method_type_display = serializers.CharField(source='get_method_type_display', read_only=True)
     treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
     
+    # Ensure it's writable as ID
+    treasury_account = serializers.PrimaryKeyRelatedField(
+        queryset=TreasuryAccount.objects.all(),
+        required=True
+    )
+    
+    card_provider_name = serializers.CharField(source='card_provider.name', read_only=True, allow_null=True)
+    
+    # Read-only contact ID for frontend initialization
+    contact_id = serializers.IntegerField(source='card_provider.supplier_id', read_only=True, allow_null=True)
+    
+    # write-only field to handle contact selection from frontend
+    contact_provider_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    
     class Meta:
         model = PaymentMethod
         fields = '__all__'
@@ -55,6 +69,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         many=True,
         queryset=TreasuryAccount.objects.all(),
         source='allowed_treasury_accounts',
+        required=False,
         write_only=True
     )
 
@@ -64,10 +79,17 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         many=True,
         queryset=PaymentMethod.objects.all(),
         source='allowed_payment_methods',
+        required=False,
         write_only=True
     )
     
     # Support for default account
+    default_treasury_account = serializers.PrimaryKeyRelatedField(
+        queryset=TreasuryAccount.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    
     default_treasury_account_name = serializers.CharField(
         source='default_treasury_account.name',
         read_only=True,
@@ -112,22 +134,36 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         """
         Ensure default_treasury_account is compatible with the terminal's allowed methods.
         """
-        default_account = attrs.get('default_treasury_account', getattr(self.instance, 'default_treasury_account', None))
+        # Get the default account from attrs or current instance
+        default_account = attrs.get('default_treasury_account')
+        if default_account is None and self.instance:
+            default_account = self.instance.default_treasury_account
         
+        # If no default account is set or being set, validation passes
+        if not default_account:
+            return attrs
+
         # Get allowed accounts from either current attrs (new selection) or database
-        allowed_methods = attrs.get('allowed_payment_methods', [])
-        if not allowed_methods and self.instance:
-            allowed_methods = list(self.instance.allowed_payment_methods.all())
-            
-        allowed_account_ids = {m.treasury_account_id for m in allowed_methods}
+        # Note: We use the source names here
+        allowed_methods = attrs.get('allowed_payment_methods')
         
-        # Also check legacy field if provided
-        if 'allowed_treasury_accounts' in attrs:
-            allowed_account_ids.update(a.id for a in attrs['allowed_treasury_accounts'])
+        allowed_account_ids = set()
+        
+        # If methods are being updated, use new ones
+        if allowed_methods is not None:
+            allowed_account_ids.update(m.treasury_account_id for m in allowed_methods)
         elif self.instance:
+            # Fallback to current methods if not in attrs
+            allowed_account_ids.update(self.instance.allowed_payment_methods.values_list('treasury_account_id', flat=True))
+            
+        # Also check legacy field if provided (for backward compatibility during migration)
+        allowed_accounts_legacy = attrs.get('allowed_treasury_accounts')
+        if allowed_accounts_legacy is not None:
+            allowed_account_ids.update(a.id for a in allowed_accounts_legacy)
+        elif self.instance and allowed_methods is None: # Only fallback if not sending new methods
             allowed_account_ids.update(self.instance.allowed_treasury_accounts.values_list('id', flat=True))
 
-        if default_account and allowed_account_ids and default_account.id not in allowed_account_ids:
+        if allowed_account_ids and default_account.id not in allowed_account_ids:
             raise serializers.ValidationError({
                 'default_treasury_account':
                 'La cuenta predeterminada debe ser una de las cuentas asociadas a los métodos de pago permitidos.'
@@ -148,6 +184,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
     
     payment_method_new_name = serializers.CharField(source='payment_method_new.name', read_only=True, allow_null=True)
+    card_provider_name = serializers.CharField(source='card_provider.name', read_only=True, allow_null=True)
     
     # Legacy/Display fields for frontend compatibility
     journal_name = serializers.SerializerMethodField()

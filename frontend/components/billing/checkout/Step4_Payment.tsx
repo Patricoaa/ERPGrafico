@@ -52,7 +52,7 @@ export function Step4_Payment({
             case 'CASH':
                 return allowedMethods.some(m => m.method_type === 'CASH')
             case 'CARD':
-                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD'].includes(m.method_type))
+                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type))
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             default:

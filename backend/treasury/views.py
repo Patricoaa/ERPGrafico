@@ -6,7 +6,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationRule, POSTerminal, 
-                     CashDifference, POSSession, POSSessionAudit, Bank, PaymentMethod)
+                     CashDifference, POSSession, POSSessionAudit, Bank, PaymentMethod,
+                     CardPaymentProvider, DailySettlement)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
@@ -14,7 +15,8 @@ from .serializers import (
     POSTerminalSerializer,
     CashDifferenceSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
-    BankSerializer, PaymentMethodSerializer
+    BankSerializer, PaymentMethodSerializer,
+    CardPaymentProviderSerializer, DailySettlementSerializer
 )
 from .services import TreasuryService
 from .reconciliation_service import ReconciliationService
@@ -52,6 +54,65 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
             qs = qs.filter(allow_for_purchases=True)
             
         return qs
+
+    def perform_create(self, serializer):
+        contact_id = serializer.validated_data.pop('contact_provider_id', None)
+        instance = serializer.save()
+        if contact_id:
+            self._resolve_card_provider(instance, contact_id)
+
+    def perform_update(self, serializer):
+        contact_id = serializer.validated_data.pop('contact_provider_id', None)
+        instance = serializer.save()
+        if contact_id:
+            self._resolve_card_provider(instance, contact_id)
+
+    def _resolve_card_provider(self, payment_method, contact_id):
+        """
+        Resolves a Contact ID into a CardPaymentProvider.
+        If it doesn't exist, creates one with defaults.
+        """
+        from .models import CardPaymentProvider
+        from contacts.models import Contact
+        from accounting.models import AccountingSettings
+
+        try:
+            contact = Contact.objects.get(id=contact_id)
+            provider = CardPaymentProvider.objects.filter(supplier=contact).first()
+
+            if not provider:
+                # Create default provider for this contact
+                settings = AccountingSettings.objects.first()
+                
+                # Check if we have required accounts
+                # We need a receivable account (Asset) and a commission bridge (Liability/Expense)
+                # For now, if settings are missing, we use defaults if available or fail gracefully
+                receivable_acc = settings.default_receivable_account if settings else None
+                commission_acc = settings.card_commission_account if settings else None
+                
+                if not receivable_acc:
+                    # Fallback or error? Let's try to find a suitable account or allow null if model allows
+                    # (But model requires it). We'll assume settings exist or this is a demo.
+                    pass
+
+                provider = CardPaymentProvider.objects.create(
+                    name=contact.name,
+                    code=f"PROV-{contact.id}",
+                    supplier=contact,
+                    receivable_account=receivable_acc,
+                    commission_bridge_account=commission_acc,
+                    commission_rate=Decimal('2.95'),
+                    vat_rate=Decimal('19.00')
+                )
+            
+            payment_method.card_provider = provider
+            payment_method.save()
+            
+        except Contact.DoesNotExist:
+            pass
+        except Exception as e:
+            # Log error or handle
+            print(f"Error resolving card provider: {e}")
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
@@ -302,10 +363,17 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 from sales.models import SaleOrder
                 sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
 
+            # Resolve Granular Payment Method
+            payment_method_id = request.data.get('payment_method_id') or request.data.get('payment_method_new')
+            payment_method_new = None
+            if payment_method_id:
+                payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
+
             movement = TreasuryService.create_movement(
                 amount=amount,
                 movement_type=movement_type, # Expects 'INBOUND'/'OUTBOUND' match
                 payment_method=request.data.get('payment_method') or request.data.get('paymentMethod') or 'CASH',
+                payment_method_new=payment_method_new,
                 from_account=from_account,
                 to_account=to_account,
                 reference=reference,

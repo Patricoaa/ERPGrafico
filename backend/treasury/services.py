@@ -51,6 +51,10 @@ class TreasuryService:
             from .models import POSSession
             pos_session = POSSession.objects.filter(id=pos_session_id).first()
 
+        # 1.6 Propagate Card Provider from Payment Method if not provided
+        if not card_provider and payment_method_new and payment_method_new.card_provider:
+            card_provider = payment_method_new.card_provider
+
         # 2. Create TreasuryMovement
         movement = TreasuryMovement.objects.create(
             movement_type=movement_type,
@@ -81,6 +85,11 @@ class TreasuryService:
         # 4. Handle POS Session Totals
         if pos_session:
             TreasuryService._update_pos_session(movement, pos_session)
+
+        # 4.5 Register Card Transaction if applicable
+        if movement.card_provider and movement.movement_type == TreasuryMovement.Type.INBOUND:
+            from .card_transaction_service import CardTransactionService
+            CardTransactionService.process_movement(movement)
 
         # 5. Generate Accounting Entry
         if not is_pending_registration:
@@ -206,24 +215,31 @@ class TreasuryService:
         
         # 2. INBOUND (Sale / Deposit)
         elif movement.movement_type == TreasuryMovement.Type.INBOUND:
-             # Debit ToAccount (Treasury)
-             if to_acc:
-                 JournalItem.objects.create(entry=entry, account=to_acc, debit=movement.amount, credit=0)
-             
-             # Credit Source (Revenue / Debtor)
-             source_acc = None
-             if movement.invoice or movement.sale_order:
-                  # Customer Account
-                  source_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
-             elif movement.justify_reason:
-                  # Operational Reasons (Tips, Adjustments)
-                  source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
-             
-             if not source_acc and movement.contact:
-                  source_acc = movement.contact.account_receivable
+            # Debit ToAccount (Treasury or Card Provider Receivable)
+            debit_acc = to_acc
+            
+            # If it's a terminal-based payment, the money is in transit with the provider
+            is_terminal = getattr(movement.payment_method_new, 'is_terminal', False)
+            if is_terminal and movement.card_provider and movement.card_provider.receivable_account:
+                 debit_acc = movement.card_provider.receivable_account
+            
+            if debit_acc:
+                JournalItem.objects.create(entry=entry, account=debit_acc, debit=movement.amount, credit=0)
+            
+            # Credit Source (Revenue / Debtor)
+            source_acc = None
+            if movement.invoice or movement.sale_order:
+                # Customer Account
+                source_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+            elif movement.justify_reason:
+                # Operational Reasons (Tips, Adjustments)
+                source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
+            
+            if not source_acc and movement.contact:
+                source_acc = movement.contact.account_receivable
 
-             if source_acc:
-                  JournalItem.objects.create(entry=entry, account=source_acc, debit=0, credit=movement.amount)
+            if source_acc:
+                JournalItem.objects.create(entry=entry, account=source_acc, debit=0, credit=movement.amount)
 
         # 3. OUTBOUND (Expense / Withdrawal)
         elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:

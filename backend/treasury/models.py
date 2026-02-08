@@ -895,6 +895,7 @@ class PaymentMethod(models.Model):
         CASH = 'CASH', _('Efectivo')
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Terminal de Cobros (Transbank/Otros)')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
         CREDIT_LINE = 'CREDIT_LINE', _('Línea de Crédito')
@@ -909,8 +910,23 @@ class PaymentMethod(models.Model):
         verbose_name=_("Cuenta de Tesorería")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
+    is_terminal = models.BooleanField(
+        _("Es Terminal de Cobro"), 
+        default=False,
+        help_text=_("Indica si es un terminal de terceros (Transbank, etc.) para recaudar ventas. "
+                  "Si es Falso, se considera un medio de pago de la empresa (Caja, Tarjeta Propia, etc.).")
+    )
     allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
     allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
+    
+    # Optional link to Card Provider for CARD methods
+    card_provider = models.ForeignKey(
+        'CardPaymentProvider',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_methods',
+        verbose_name=_("Proveedor de Tarjeta")
+    )
     
     # Optional settings per method
     requires_reference = models.BooleanField(_("Requiere Referencia"), default=False)
@@ -931,6 +947,7 @@ class PaymentMethod(models.Model):
         Type.CASH: [TreasuryAccount.Type.CASH],
         Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CASH],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
         Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
     }
@@ -942,6 +959,12 @@ class PaymentMethod(models.Model):
         """Validar compatibilidad entre método y tipo de cuenta"""
         from django.core.exceptions import ValidationError
         super().clean()
+        
+        # Auto-enforce terminal settings
+        if self.method_type == self.Type.CARD_TERMINAL:
+            self.is_terminal = True
+            self.allow_for_sales = True
+            self.allow_for_purchases = False
         
         if not self.treasury_account:
             return
@@ -961,6 +984,10 @@ class PaymentMethod(models.Model):
                     f"Tipos permitidos: {', '.join(allowed_account_types)}"
                 )
             })
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class CardPaymentProvider(models.Model):

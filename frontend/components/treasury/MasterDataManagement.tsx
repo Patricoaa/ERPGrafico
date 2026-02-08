@@ -229,6 +229,7 @@ interface PaymentMethod {
     requires_reference: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
+    is_terminal: boolean
 }
 
 export function PaymentMethodManagement() {
@@ -280,8 +281,17 @@ export function PaymentMethodManagement() {
             header: "Nombre",
             cell: ({ row }: any) => (
                 <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{row.original.name}</span>
+                    {row.original.is_terminal ? (
+                        <div className="bg-primary/10 p-1 rounded" title="Terminal de Cobro">
+                            <CreditCard className="h-4 w-4 text-primary" />
+                        </div>
+                    ) : (
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <div className="flex flex-col">
+                        <span className="font-medium">{row.original.name}</span>
+                        {row.original.is_terminal && <span className="text-[10px] text-primary font-semibold uppercase">Terminal</span>}
+                    </div>
                 </div>
             )
         },
@@ -361,27 +371,57 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     const [allowPurchases, setAllowPurchases] = useState(true)
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<any[]>([])
+    const [cardProviders, setCardProviders] = useState<any[]>([])
+    const [cardProviderId, setCardProviderId] = useState<string | null>(null)
+    const [isTerminal, setIsTerminal] = useState(false)
 
     useEffect(() => {
-        const fetchAccounts = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get("/treasury/accounts/")
-                setAccounts(res.data)
+                const [accRes, contactRes] = await Promise.all([
+                    api.get("/treasury/accounts/"),
+                    api.get("/contacts/?is_supplier=true")
+                ])
+                setAccounts(accRes.data)
+                setCardProviders(contactRes.data)
             } catch (err) { }
         }
-        fetchAccounts()
+        fetchData()
     }, [])
 
     useEffect(() => {
         if (open) {
             setName(method?.name || "")
             setType(method?.method_type || "DEBIT_CARD")
-            setAccountId(method?.treasury_account ? method.treasury_account.toString() : null)
+
+            // Handle both ID and object cases for initialization
+            const acc = method?.treasury_account
+            setAccountId(acc ? (typeof acc === 'object' ? acc.id.toString() : acc.toString()) : null)
+
             setRequiresRef(method?.requires_reference || false)
             setAllowSales(method?.allow_for_sales ?? true)
             setAllowPurchases(method?.allow_for_purchases ?? true)
+            setCardProviderId(method?.contact_id?.toString() || null)
+            setIsTerminal(method?.is_terminal || false)
         }
     }, [open, method])
+
+    // Logic for auto-setting terminal when type is CARD_TERMINAL
+    const handleTypeChange = (newType: string) => {
+        setType(newType)
+        if (newType === 'CARD_TERMINAL') {
+            setIsTerminal(true)
+            setAllowSales(true)
+            setAllowPurchases(false)
+        } else {
+            // Reset terminal status if type changes from CARD_TERMINAL
+            if (isTerminal) { // Only reset if it was previously a terminal
+                setIsTerminal(false)
+                setAllowSales(true) // Default to true for non-terminal types
+                setAllowPurchases(true) // Default to true for non-terminal types
+            }
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -397,7 +437,9 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                 treasury_account: accountId,
                 requires_reference: requiresRef,
                 allow_for_sales: allowSales,
-                allow_for_purchases: allowPurchases
+                allow_for_purchases: allowPurchases,
+                is_terminal: isTerminal,
+                contact_provider_id: isTerminal ? cardProviderId : null
             }
             if (method) {
                 await api.patch(`/treasury/payment-methods/${method.id}/`, payload)
@@ -432,7 +474,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>Tipo</Label>
-                                <Select value={type} onValueChange={setType}>
+                                <Select value={type} onValueChange={handleTypeChange}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
@@ -440,6 +482,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                         <SelectItem value="CASH">Efectivo</SelectItem>
                                         <SelectItem value="DEBIT_CARD">Tarjeta Débito</SelectItem>
                                         <SelectItem value="CREDIT_CARD">Tarjeta Crédito</SelectItem>
+                                        <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
                                         <SelectItem value="TRANSFER">Transferencia</SelectItem>
                                         <SelectItem value="CHECK">Cheque</SelectItem>
                                         <SelectItem value="CREDIT_LINE">Crédito</SelectItem>
@@ -462,13 +505,23 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => setAllowSales(!!v)} />
-                                <Label htmlFor="allow-sales" className="text-xs cursor-pointer">Permitir Ventas</Label>
+                            <div className="flex items-center space-x-2 col-span-2 pb-2 mb-2 border-b">
+                                <Checkbox id="is-terminal" checked={isTerminal} onCheckedChange={(v) => {
+                                    setIsTerminal(!!v)
+                                    if (!!v) setAllowPurchases(false)
+                                }} />
+                                <div className="grid gap-0.5 leading-none">
+                                    <Label htmlFor="is-terminal" className="text-sm font-bold cursor-pointer text-primary">Es Terminal de Cobro (Ventas)</Label>
+                                    <p className="text-[10px] text-muted-foreground">Marque si este método es para recibir pagos de clientes vía Transbank, etc.</p>
+                                </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => setAllowPurchases(!!v)} />
-                                <Label htmlFor="allow-purchases" className="text-xs cursor-pointer">Permitir Compras</Label>
+                                <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => setAllowSales(!!v)} />
+                                <Label htmlFor="allow-sales" className="text-xs cursor-pointer">Permitir en Ventas</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => setAllowPurchases(!!v)} disabled={isTerminal} />
+                                <Label htmlFor="allow-purchases" className={`text-xs cursor-pointer ${isTerminal ? 'opacity-50' : ''}`}>Permitir en Compras</Label>
                             </div>
                             <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1">
                                 <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
@@ -476,7 +529,31 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    {isTerminal && (
+                        <div className="mt-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                                <CreditCard className="h-4 w-4" /> Configuración de Recaudación
+                            </div>
+                            <div className="grid gap-2">
+                                <Label className="text-xs">Proveedor (Contacto)</Label>
+                                <Select value={cardProviderId || ""} onValueChange={setCardProviderId}>
+                                    <SelectTrigger className="bg-white">
+                                        <SelectValue placeholder="Seleccionar contacto del proveedor..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cardProviders.map(prov => (
+                                            <SelectItem key={prov.id} value={prov.id.toString()}>{prov.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+                                * Al ser un terminal, los pagos no se reflejarán inmediatamente en el saldo bancario,
+                                sino como cuentas por cobrar al proveedor hasta su liquidación.
+                            </p>
+                        </div>
+                    )}
+                    <DialogFooter className="pt-4">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -485,6 +562,6 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }
