@@ -40,7 +40,7 @@ import { Loader2, CreditCard, Landmark, Wallet } from "lucide-react"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
-    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT", "OTHER"]),
+    payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "CARD_TERMINAL", "TRANSFER", "CHECK"]),
     treasury_account: z.string().optional().nullable(),
     amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),

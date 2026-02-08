@@ -357,10 +357,12 @@ class Command(BaseCommand):
         _safe_delete(Subscription, "Subscription")
 
         # 3. Transactional documents
+        _safe_delete(StockMove, "StockMove")
         _safe_delete(TreasuryMovement, "TreasuryMovement")
+        _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(Invoice, "Invoice")
         
-        # Purchasing
+        # 4. Purchasing
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
         _safe_delete(PurchaseReturn, "PurchaseReturn")
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
@@ -368,19 +370,34 @@ class Command(BaseCommand):
         _safe_delete(PurchaseLine, "PurchaseLine")
         _safe_delete(PurchaseOrder, "PurchaseOrder")
         
-        # Sales
+        # 5. Sales
         _safe_delete(SaleReturnLine, "SaleReturnLine")
         _safe_delete(SaleReturn, "SaleReturn")
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(SaleDelivery, "SaleDelivery")
         _safe_delete(SaleLine, "SaleLine")
         _safe_delete(SaleOrder, "SaleOrder")
+
+        # 6. POS & Treasury Infrastructure
+        _safe_delete(CashDifference, "CashDifference")
+        _safe_delete(POSSessionAudit, "POSSessionAudit")
+        _safe_delete(POSSession, "POSSession")
+        _safe_delete(POSTerminal, "POSTerminal")
+
+        # 7. Treasury & Reconciliation
+        _safe_delete(CardTransaction, "CardTransaction")
+        _safe_delete(DailySettlement, "DailySettlement")
+        _safe_delete(BankStatement, "BankStatement") # Cascades to lines
+        _safe_delete(ReconciliationMatch, "ReconciliationMatch")
+        _safe_delete(ReconciliationRule, "ReconciliationRule")
+        _safe_delete(CardPaymentProvider, "CardPaymentProvider")
         
-        # 4. Inventory & Accounting
-        _safe_delete(StockMove, "StockMove")
-        _safe_delete(JournalEntry, "JournalEntry")
+        # Payment Methods must be deleted before accounts if they have protecting constraints
+        _safe_delete(PaymentMethod, "PaymentMethod")
+        _safe_delete(Bank, "Bank")
+        _safe_delete(TreasuryAccount, "TreasuryAccount")
         
-        # 5. Master Data
+        # 8. Master Data (Links to almost everything above)
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(Product, "Product")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
@@ -388,30 +405,10 @@ class Command(BaseCommand):
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(Contact, "Contact")
-        
-        # 6. Treasury & Reconciliation
-        _safe_delete(CardTransaction, "CardTransaction")
-        _safe_delete(DailySettlement, "DailySettlement")
-        _safe_delete(BankStatement, "BankStatement") # Cascades to lines
-        _safe_delete(ReconciliationMatch, "ReconciliationMatch")
-        _safe_delete(ReconciliationRule, "ReconciliationRule")
-        _safe_delete(CardPaymentProvider, "CardPaymentProvider")
-        # TreasuryAccount moved to end of section
-        # _safe_delete(AccountingSettings, "AccountingSettings")
+
+        # 9. Foundations
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
-        
-        # Treasury New Models
-        _safe_delete(CashDifference, "CashDifference")
-        _safe_delete(POSSessionAudit, "POSSessionAudit")
-        _safe_delete(POSSession, "POSSession")
-        _safe_delete(POSTerminal, "POSTerminal")
-        
-        # Now safe to delete TreasuryAccount
-        _safe_delete(TreasuryAccount, "TreasuryAccount")
-
-        
-        # 7. Accounts
         _safe_delete(Account, "Account")
 
     def _get_account_references(self):
@@ -988,7 +985,7 @@ class Command(BaseCommand):
             name="Tarjeta Transbank POS 01",
             treasury_account=till1,
             defaults={
-                'method_type': PaymentMethod.Type.DEBIT_CARD,
+                'method_type': PaymentMethod.Type.CARD_TERMINAL,
                 'allow_for_sales': True,
                 'allow_for_purchases': False # POS usually only for sales
             }
@@ -1038,7 +1035,7 @@ class Command(BaseCommand):
         
         # Payment Methods for Bank Account (Estado)
         
-        PaymentMethod.objects.get_or_create(
+        pm_trans_est, _ = PaymentMethod.objects.get_or_create(
             name="Transferencia Estado",
             treasury_account=bco01,
             defaults={
@@ -1047,12 +1044,12 @@ class Command(BaseCommand):
                 'allow_for_purchases': True
             }
         )
-        PaymentMethod.objects.get_or_create(
+        pm_deb_est, _ = PaymentMethod.objects.get_or_create(
             name="Tarjeta Débito Estado",
             treasury_account=bco01,
             defaults={
                 'method_type': PaymentMethod.Type.DEBIT_CARD,
-                'allow_for_sales': True,
+                'allow_for_sales': False,
                 'allow_for_purchases': True
             }
         )
@@ -1114,7 +1111,7 @@ class Command(BaseCommand):
             treasury_account=bank_chile,
             defaults={
                 'method_type': PaymentMethod.Type.CHECK,
-                'allow_for_sales': False,
+                'allow_for_sales': True, # Allow for sales in POS
                 'allow_for_purchases': True
             }
         )
@@ -1147,15 +1144,13 @@ class Command(BaseCommand):
             name="Webpay / Transbank",
             treasury_account=bco01,
             defaults={
-                'method_type': PaymentMethod.Type.CREDIT_CARD,
+                'method_type': PaymentMethod.Type.CARD_TERMINAL,
                 'allow_for_sales': True,
                 'allow_for_purchases': False
             }
         )
         
         # 2. POS Terminals
-        bank_account = bco01
-        
         t1, _ = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
@@ -1164,8 +1159,9 @@ class Command(BaseCommand):
                 'default_treasury_account': till1 # Linked to specific till account
             }
         )
-        # Assign allowed accounts (Cash + Bank for Card/Transfer)
-        t1.allowed_treasury_accounts.set([till1, bank_account, recepcion])
+        # Assign allowed payment methods (all typical collection methods)
+        all_sales_methods = PaymentMethod.objects.filter(allow_for_sales=True)
+        t1.allowed_payment_methods.set(all_sales_methods)
 
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
@@ -1175,6 +1171,7 @@ class Command(BaseCommand):
                 'default_treasury_account': caja01
             }
         )
-        t2.allowed_treasury_accounts.set([caja01, bank_account])
+        t2.allowed_payment_methods.set(all_sales_methods)
 
-        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills as Accounts).")
+        # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
+        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")

@@ -545,16 +545,21 @@ class POSTerminal(models.Model):
         Returns:
             QuerySet[TreasuryAccount]: Cuentas compatibles con el método
         """
-        lookup = {
-            'CASH': 'allows_cash',
-            'CARD': 'allows_card',
-            'TRANSFER': 'allows_transfer',
-        }
-        filter_key = lookup.get(payment_method)
-        if not filter_key:
-            return self.allowed_treasury_accounts.none()
-        
-        return self.allowed_treasury_accounts.filter(**{filter_key: True})
+        # Mapping from generic payment buttons to specific backend types
+        # Note: 'CARD' button should find both native cards AND terminals
+        method_types = {
+            'CASH': ['CASH'],
+            'CARD': ['DEBIT_CARD', 'CREDIT_CARD', 'CARD_TERMINAL'],
+            'TRANSFER': ['TRANSFER'],
+        }.get(payment_method, [payment_method])
+
+        # Get accounts and their IDs from allowed payment methods
+        account_ids = self.allowed_payment_methods.filter(
+            method_type__in=method_types,
+            is_active=True
+        ).values_list('treasury_account_id', flat=True)
+
+        return TreasuryAccount.objects.filter(id__in=account_ids)
 
 
 class BankStatement(models.Model):
@@ -898,8 +903,6 @@ class PaymentMethod(models.Model):
         CARD_TERMINAL = 'CARD_TERMINAL', _('Terminal de Cobros (Transbank/Otros)')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
-        CREDIT_LINE = 'CREDIT_LINE', _('Línea de Crédito')
-        OTHER = 'OTHER', _('Otro')
 
     name = models.CharField(_("Nombre"), max_length=100)
     method_type = models.CharField(_("Tipo de Método"), max_length=20, choices=Type.choices)
@@ -960,11 +963,20 @@ class PaymentMethod(models.Model):
         from django.core.exceptions import ValidationError
         super().clean()
         
-        # Auto-enforce terminal settings
+        # Auto-enforce terminal settings and operation restrictions
         if self.method_type == self.Type.CARD_TERMINAL:
             self.is_terminal = True
             self.allow_for_sales = True
             self.allow_for_purchases = False
+        elif self.method_type in [self.Type.DEBIT_CARD, self.Type.CREDIT_CARD]:
+            self.is_terminal = False
+            self.allow_for_sales = False
+            self.allow_for_purchases = True
+        else:
+            self.is_terminal = False
+            # CASH, TRANSFER, CHECK are usually flexible, 
+            # but we can set sensible defaults if needed.
+            # Leaving them as they are or defaulting to True.
         
         if not self.treasury_account:
             return

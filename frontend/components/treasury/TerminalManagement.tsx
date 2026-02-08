@@ -287,9 +287,8 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             const methods = (res.data.results || res.data).filter((m: PaymentMethod) => m.is_active)
 
             // Refined filter: terminals should only handle collection methods
-            // CARD_TERMINAL is now the primary type for this
             const collectionMethods = methods.filter((m: PaymentMethod) =>
-                m.method_type === 'CARD_TERMINAL' || (m.method_type === 'CASH' && m.allow_for_sales === true)
+                ['CARD_TERMINAL', 'CASH', 'TRANSFER', 'CHECK'].includes(m.method_type) && m.allow_for_sales === true
             )
 
             setAllMethods(collectionMethods)

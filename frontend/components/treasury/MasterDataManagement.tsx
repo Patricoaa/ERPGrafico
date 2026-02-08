@@ -413,13 +413,13 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             setIsTerminal(true)
             setAllowSales(true)
             setAllowPurchases(false)
+        } else if (newType === 'DEBIT_CARD' || newType === 'CREDIT_CARD') {
+            setIsTerminal(false)
+            setAllowSales(false)
+            setAllowPurchases(true)
         } else {
-            // Reset terminal status if type changes from CARD_TERMINAL
-            if (isTerminal) { // Only reset if it was previously a terminal
-                setIsTerminal(false)
-                setAllowSales(true) // Default to true for non-terminal types
-                setAllowPurchases(true) // Default to true for non-terminal types
-            }
+            // CASH, TRANSFER, CHECK
+            setIsTerminal(false)
         }
     }
 
@@ -479,14 +479,9 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="CASH">Efectivo</SelectItem>
-                                        <SelectItem value="DEBIT_CARD">Tarjeta Débito</SelectItem>
-                                        <SelectItem value="CREDIT_CARD">Tarjeta Crédito</SelectItem>
                                         <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
                                         <SelectItem value="TRANSFER">Transferencia</SelectItem>
                                         <SelectItem value="CHECK">Cheque</SelectItem>
-                                        <SelectItem value="CREDIT_LINE">Crédito</SelectItem>
-                                        <SelectItem value="OTHER">Otro</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -505,23 +500,25 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
-                            <div className="flex items-center space-x-2 col-span-2 pb-2 mb-2 border-b">
-                                <Checkbox id="is-terminal" checked={isTerminal} onCheckedChange={(v) => {
-                                    setIsTerminal(!!v)
-                                    if (!!v) setAllowPurchases(false)
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => {
+                                    if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
+                                        toast.error("Tarjetas propias son solo para compras")
+                                        return
+                                    }
+                                    setAllowSales(!!v)
                                 }} />
-                                <div className="grid gap-0.5 leading-none">
-                                    <Label htmlFor="is-terminal" className="text-sm font-bold cursor-pointer text-primary">Es Terminal de Cobro (Ventas)</Label>
-                                    <p className="text-[10px] text-muted-foreground">Marque si este método es para recibir pagos de clientes vía Transbank, etc.</p>
-                                </div>
+                                <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir Ventas</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => setAllowSales(!!v)} />
-                                <Label htmlFor="allow-sales" className="text-xs cursor-pointer">Permitir en Ventas</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => setAllowPurchases(!!v)} disabled={isTerminal} />
-                                <Label htmlFor="allow-purchases" className={`text-xs cursor-pointer ${isTerminal ? 'opacity-50' : ''}`}>Permitir en Compras</Label>
+                                <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => {
+                                    if (type === 'CARD_TERMINAL') {
+                                        toast.error("Terminales de cobro son solo para ventas")
+                                        return
+                                    }
+                                    setAllowPurchases(!!v)
+                                }} />
+                                <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir Compras</Label>
                             </div>
                             <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1">
                                 <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
@@ -529,7 +526,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                         </div>
                     </div>
-                    {isTerminal && (
+                    {type === 'CARD_TERMINAL' && (
                         <div className="mt-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
                             <div className="flex items-center gap-2 text-primary font-bold">
                                 <CreditCard className="h-4 w-4" /> Configuración de Recaudación
