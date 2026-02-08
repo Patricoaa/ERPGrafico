@@ -444,6 +444,8 @@ class TreasuryAccount(models.Model):
         if self.account:
             return self.account.balance
         return 0
+    
+    history = HistoricalRecords()
 
 
 class POSTerminal(models.Model):

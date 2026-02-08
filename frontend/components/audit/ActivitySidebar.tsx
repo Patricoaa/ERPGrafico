@@ -36,7 +36,7 @@ const ENDPOINT_MAP: Record<string, string> = {
     'treasuryaccount': '/treasury/accounts',
     'bank': '/treasury/banks',
     'paymentmethod': '/treasury/payment-methods',
-    'terminal': '/treasury/terminals'
+    'terminal': '/treasury/pos-terminals'
 }
 
 const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']

@@ -30,12 +30,12 @@ from accounting.models import Account
 from core.views import AuditHistoryMixin
 
 
-class BankViewSet(viewsets.ModelViewSet):
+class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
     serializer_class = BankSerializer
 
 
-class PaymentMethodViewSet(viewsets.ModelViewSet):
+class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by('name')
     serializer_class = PaymentMethodSerializer
 
@@ -114,7 +114,7 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
             # Log error or handle
             print(f"Error resolving card provider: {e}")
 
-class TreasuryAccountViewSet(viewsets.ModelViewSet):
+class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
 
@@ -134,7 +134,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet):
         return qs
 
 
-class POSTerminalViewSet(viewsets.ModelViewSet):
+class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
     ViewSet for managing POS Terminals.
     Supports filtering by active status via `?active_only=true` query param.
