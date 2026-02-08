@@ -140,11 +140,8 @@ class POSTerminalViewSet(viewsets.ModelViewSet):
         terminal = self.get_object()
         operation = request.query_params.get('operation')
         
-        # Obtener métodos de las cuentas permitidas
-        methods = PaymentMethod.objects.filter(
-            treasury_account__in=terminal.allowed_treasury_accounts.all(),
-            is_active=True
-        )
+        # Obtener métodos de pago permitidos directamente
+        methods = terminal.allowed_payment_methods.filter(is_active=True)
         
         # Filtrar por tipo de operación
         if operation == 'sales':

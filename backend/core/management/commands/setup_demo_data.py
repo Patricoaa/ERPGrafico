@@ -1030,13 +1030,13 @@ class Command(BaseCommand):
                 'account_number': "123-45678-01",
                 'allows_cash': False,
                 'allows_card': True,
-                'allows_transfer': True
+                'allows_transfer': True,
+                'bank': b_estado
             }
         )
         
+        
         # Payment Methods for Bank Account (Estado)
-        bco01.bank = b_estado
-        bco01.save()
         
         PaymentMethod.objects.get_or_create(
             name="Transferencia Estado",
@@ -1092,13 +1092,13 @@ class Command(BaseCommand):
                 'account_number': "987-65432-09",
                 'allows_cash': False,
                 'allows_card': True,
-                'allows_transfer': True
+                'allows_transfer': True,
+                'bank': b_chile
             }
         )
         
+        
         # Payment Methods for Bank Account (Chile)
-        bank_chile.bank = b_chile
-        bank_chile.save()
         
         PaymentMethod.objects.get_or_create(
             name="Transferencia Bco Chile",

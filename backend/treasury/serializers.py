@@ -45,7 +45,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
 class POSTerminalSerializer(serializers.ModelSerializer):
     # Computed field (read-only)
-    allowed_payment_methods = serializers.SerializerMethodField()
+    allowed_payment_method_types = serializers.SerializerMethodField()
     
     # Nested serialization for reading (detailed account info)
     allowed_treasury_accounts = TreasuryAccountSerializer(many=True, read_only=True)
@@ -55,6 +55,15 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         many=True,
         queryset=TreasuryAccount.objects.all(),
         source='allowed_treasury_accounts',
+        write_only=True
+    )
+
+    # New Granular Payment Methods
+    allowed_payment_methods = PaymentMethodSerializer(many=True, read_only=True)
+    allowed_payment_method_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=PaymentMethod.objects.all(),
+        source='allowed_payment_methods',
         write_only=True
     )
     
@@ -85,31 +94,43 @@ class POSTerminalSerializer(serializers.ModelSerializer):
             'default_treasury_account_code', 'default_treasury_account_balance',
             'allowed_treasury_accounts',  # Read (full objects)
             'allowed_treasury_account_ids',  # Write (only IDs)
-            'allowed_payment_methods',  # Computed from accounts
+            'allowed_payment_methods',  # Read (full objects)
+            'allowed_payment_method_ids', # Write (only IDs)
+            'allowed_payment_method_types',  # Computed types
             'serial_number', 'ip_address',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
     
-    def get_allowed_payment_methods(self, obj):
+    def get_allowed_payment_method_types(self, obj):
         """
-        Returns the computed list of allowed payment methods based on
-        the associated treasury accounts.
+        Returns the computed list of allowed payment method TYPES.
         """
-        return obj.allowed_payment_methods
+        return obj.allowed_payment_method_types
     
     def validate(self, attrs):
         """
-        Ensure default_treasury_account is part of allowed_treasury_accounts.
+        Ensure default_treasury_account is compatible with the terminal's allowed methods.
         """
-        default_account = attrs.get('default_treasury_account')
-        allowed_accounts = attrs.get('allowed_treasury_accounts', [])
+        default_account = attrs.get('default_treasury_account', getattr(self.instance, 'default_treasury_account', None))
         
-        # If setting a default account, ensure it's in the allowed list
-        if default_account and allowed_accounts and default_account not in allowed_accounts:
+        # Get allowed accounts from either current attrs (new selection) or database
+        allowed_methods = attrs.get('allowed_payment_methods', [])
+        if not allowed_methods and self.instance:
+            allowed_methods = list(self.instance.allowed_payment_methods.all())
+            
+        allowed_account_ids = {m.treasury_account_id for m in allowed_methods}
+        
+        # Also check legacy field if provided
+        if 'allowed_treasury_accounts' in attrs:
+            allowed_account_ids.update(a.id for a in attrs['allowed_treasury_accounts'])
+        elif self.instance:
+            allowed_account_ids.update(self.instance.allowed_treasury_accounts.values_list('id', flat=True))
+
+        if default_account and allowed_account_ids and default_account.id not in allowed_account_ids:
             raise serializers.ValidationError({
                 'default_treasury_account':
-                'La cuenta predeterminada debe estar en la lista de cuentas permitidas.'
+                'La cuenta predeterminada debe ser una de las cuentas asociadas a los métodos de pago permitidos.'
             })
         
         return attrs

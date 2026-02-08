@@ -470,11 +470,21 @@ class POSTerminal(models.Model):
     is_active = models.BooleanField(_("Activo"), default=True)
     
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
+    allowed_payment_methods = models.ManyToManyField(
+        'PaymentMethod',
+        related_name='pos_terminals',
+        verbose_name=_("Métodos de Pago Permitidos"),
+        help_text=_("Métodos de pago específicos permitidos en este terminal"),
+        blank=True
+    )
+
+    # ManyToMany: Cuentas de tesorería permitidas para este terminal (Legacy/Optional)
     allowed_treasury_accounts = models.ManyToManyField(
         'TreasuryAccount',
         related_name='pos_terminals',
-        verbose_name=_("Cuentas de Tesorería Permitidas"),
-        help_text=_("Cuentas que este terminal puede utilizar para registrar pagos")
+        verbose_name=_("Cuentas de Tesorería (Legacy)"),
+        help_text=_("DEPRECATED: Use allowed_payment_methods instead"),
+        blank=True
     )
     
     # Cuenta predeterminada (para sugerencias en UI)
@@ -514,23 +524,16 @@ class POSTerminal(models.Model):
         return f"{self.name} ({self.code})"
     
     @property
-    def allowed_payment_methods(self):
+    def allowed_payment_method_types(self):
         """
-        Métodos de pago permitidos en este terminal, derivados de las
-        cuentas de tesorería asociadas.
+        Tipos de métodos de pago permitidos en este terminal.
         
         Returns:
-            list[str]: Lista de métodos permitidos ('CASH', 'CARD', 'TRANSFER')
+            list[str]: Lista de tipos permitidos ('CASH', 'CARD', 'TRANSFER')
         """
-        methods = set()
-        for account in self.allowed_treasury_accounts.all():
-            if account.allows_cash:
-                methods.add('CASH')
-            if account.allows_card:
-                methods.add('CARD')
-            if account.allows_transfer:
-                methods.add('TRANSFER')
-        return sorted(list(methods))
+        return sorted(list(set(
+            self.allowed_payment_methods.values_list('method_type', flat=True)
+        )))
     
     def get_accounts_for_method(self, payment_method):
         """

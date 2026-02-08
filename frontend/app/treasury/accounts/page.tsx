@@ -33,6 +33,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/components/treasury/MasterDataManagement"
+import { TerminalManagement } from "@/components/treasury/TerminalManagement"
 
 interface TreasuryAccount {
     id: number
@@ -222,27 +223,35 @@ export default function TreasuryAccountsPage() {
         },
     ]
 
-    return (
-        <div className="p-8 space-y-6">
-            <div className="flex justify-between items-center mb-2">
+        < div className = "flex-1 space-y-4 p-8 pt-6" >
+            <div className="flex items-center justify-between space-y-2">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-primary">Tesorería</h1>
+                    <h2 className="text-3xl font-bold tracking-tight">Tesorería</h2>
                     <p className="text-muted-foreground">Administración de cuentas, bancos y métodos de pago.</p>
                 </div>
             </div>
 
-            <Tabs defaultValue="accounts" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 max-w-[600px] mb-8 bg-muted/50 p-1 rounded-xl border">
-                    <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <List className="h-4 w-4" /> Cuentas
-                    </TabsTrigger>
-                    <TabsTrigger value="banks" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <Landmark className="h-4 w-4" /> Bancos
-                    </TabsTrigger>
-                    <TabsTrigger value="methods" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                        <CreditCard className="h-4 w-4" /> Métodos de Pago
-                    </TabsTrigger>
-                </TabsList>
+            <Tabs defaultValue="accounts" className="space-y-4">
+                <div className="flex justify-center">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50 rounded-full h-12 p-1 border">
+                        <TabsTrigger value="accounts" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                            <List className="h-4 w-4" /> 
+                            <span className="max-sm:hidden">Cuentas</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="banks" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                            <Landmark className="h-4 w-4" />
+                            <span className="max-sm:hidden">Bancos</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="methods" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            <span className="max-sm:hidden">Métodos</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="terminals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                            <Banknote className="h-4 w-4" />
+                            <span className="max-sm:hidden">Terminales</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
@@ -270,6 +279,10 @@ export default function TreasuryAccountsPage() {
                 <TabsContent value="methods">
                     <PaymentMethodManagement />
                 </TabsContent>
+
+                <TabsContent value="terminals">
+                    <TerminalManagement />
+                </TabsContent>
             </Tabs>
 
             <AccountDialog
@@ -281,7 +294,7 @@ export default function TreasuryAccountsPage() {
                     fetchAccounts()
                 }}
             />
-        </div>
+        </div >
     )
 }
 
@@ -291,9 +304,9 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
     const [currency, setCurrency] = useState("CLP")
     const [accountingAccount, setAccountingAccount] = useState<string | null>(null)
-    const [allowsCash, setAllowsCash] = useState(false)
-    const [allowsCard, setAllowsCard] = useState(false)
-    const [allowsTransfer, setAllowsTransfer] = useState(false)
+    // Removed manual flags state
+    // const [allowsCash, setAllowsCash] = useState(false)
+    // ...
 
     // Detailed fields
     const [location, setLocation] = useState("")
@@ -320,9 +333,9 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setType(account.account_type)
                 setCurrency(account.currency)
                 setAccountingAccount(account.account ? account.account.toString() : null)
-                setAllowsCash(account.allows_cash)
-                setAllowsCard(account.allows_card)
-                setAllowsTransfer(account.allows_transfer)
+                // setAllowsCash(true)
+                // setAllowsCard(false)
+                // setAllowsTransfer(false)
                 setLocation(account.location || "")
                 setCustodian(account.custodian || null)
                 setIsPhysical(account.is_physical || false)
@@ -333,9 +346,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 setType("CASH")
                 setCurrency("CLP")
                 setAccountingAccount(null)
-                setAllowsCash(true)
-                setAllowsCard(false)
-                setAllowsTransfer(false)
+                // Flags auto-set on submit
                 setLocation("")
                 setCustodian(null)
                 setIsPhysical(false)
@@ -354,6 +365,13 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
         e.preventDefault()
         setLoading(true)
         try {
+            // Auto-calculate capabilities based on type
+            const allowsCash = type === 'CASH'
+            // Checking, Debit, Credit card accounts allow cards methods (usually)
+            const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(type)
+            // Checking allows transfers
+            const allowsTransfer = ['CHECKING'].includes(type)
+
             const payload = {
                 name,
                 account_type: type,
@@ -498,25 +516,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                                 )}
                             </div>
 
-                            <div className="p-4 border rounded-xl bg-muted/30 space-y-3 shadow-inner">
-                                <Label className="text-sm font-bold flex items-center gap-1">
-                                    <CreditCard className="h-4 w-4" /> Métodos de Pago
-                                </Label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
-                                        <Checkbox id="check-cash" checked={allowsCash} onCheckedChange={(v) => setAllowsCash(!!v)} />
-                                        <Label htmlFor="check-cash" className="text-xs cursor-pointer flex-1">Permitir Efectivo</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
-                                        <Checkbox id="check-card" checked={allowsCard} onCheckedChange={(v) => setAllowsCard(!!v)} />
-                                        <Label htmlFor="check-card" className="text-xs cursor-pointer flex-1">Permitir Tarjeta</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 hover:bg-white/50 p-1.5 rounded-md transition-colors">
-                                        <Checkbox id="check-transfer" checked={allowsTransfer} onCheckedChange={(v) => setAllowsTransfer(!!v)} />
-                                        <Label htmlFor="check-transfer" className="text-xs cursor-pointer flex-1">Permitir Transferencia</Label>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -529,6 +528,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                     </DialogFooter>
                 </form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }
