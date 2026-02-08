@@ -39,9 +39,6 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
         enabled: true
     })
 
-    console.log('Step3_PurchasePayment: allowedMethods', allowedMethods)
-    console.log('Step3_PurchasePayment: loadingMethods', loadingMethods)
-
     const isMethodAllowed = (methodId: string) => {
         if (loadingMethods) return true
         if (!allowedMethods.length) return false
