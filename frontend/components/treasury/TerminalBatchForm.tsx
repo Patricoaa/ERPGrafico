@@ -14,6 +14,9 @@ import { CalendarIcon, Loader2, Calculator, Info } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -32,6 +35,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [commissionTax, setCommissionTax] = useState<string>("0")
     const [netDeposit, setNetDeposit] = useState<string>("0")
     const [reference, setReference] = useState("")
+    const [selectedMovements, setSelectedMovements] = useState<any[]>([])
+    const [openSelection, setOpenSelection] = useState(false)
 
     // Validation State
     const [isValid, setIsValid] = useState(true)
@@ -61,6 +66,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         const difference = net - calculatedNet
 
         setDiff(difference)
+        setNetDeposit(calculatedNet.toString())
         setIsValid(Math.abs(difference) < 1) // Tolerance of 1 peso
     }, [grossAmount, commissionNet, commissionTax, netDeposit])
 
@@ -70,32 +76,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             toast.error("Seleccione terminal y fecha")
             return
         }
-
-        const dateStr = format(date, "yyyy-MM-dd")
-        setLoading(true)
-        try {
-            // Fetch sales for this day/terminal
-            // This endpoint might need to be created or use existing movements filter
-            const res = await api.get(`/treasury/movements/`, {
-                params: {
-                    payment_method_id: paymentMethodId,
-                    date: dateStr,
-                    movement_type: 'INBOUND',
-                    terminal_batch__isnull: 'True' // Filter for not yet batched movements
-                }
-            })
-
-            const movements = res.data.results || res.data
-            const total = movements.reduce((sum: number, m: any) => sum + parseFloat(m.amount), 0)
-
-            setGrossAmount(total.toString())
-            toast.success(`${movements.length} ventas encontradas: $${total}`)
-
-        } catch (error) {
-            toast.error("Error al obtener ventas")
-        } finally {
-            setLoading(false)
-        }
+        setOpenSelection(true)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -114,10 +95,11 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 commission_base: parseFloat(commissionNet),
                 commission_tax: parseFloat(commissionTax),
                 net_amount: parseFloat(netDeposit),
-                terminal_reference: reference
+                terminal_reference: reference,
+                movement_ids: selectedMovements.map(m => m.id)
             }
 
-            await api.post('/treasury/terminal-batches/create_batch/', payload)
+            await api.post('/treasury/terminal-batches/', payload)
             toast.success("Liquidación registrada exitosamente")
             onSuccess()
         } catch (error: any) {
@@ -198,8 +180,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             step="1"
                             value={grossAmount}
                             onChange={e => setGrossAmount(e.target.value)}
-                            className="font-bold"
+                            disabled={selectedMovements.length > 0}
+                            className={cn("font-bold", selectedMovements.length > 0 && "bg-muted")}
                         />
+                        {selectedMovements.length > 0 && (
+                            <p className="text-[10px] text-primary font-bold">
+                                {selectedMovements.length} ventas vinculadas
+                            </p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -209,7 +197,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 type="number"
                                 step="1"
                                 value={commissionNet}
-                                onChange={e => setCommissionNet(e.target.value)}
+                                onChange={e => {
+                                    const val = e.target.value
+                                    setCommissionNet(val)
+                                    // Auto-calc tax (19% as a helper, user can override)
+                                    const net = parseFloat(val) || 0
+                                    setCommissionTax(Math.round(net * 0.19).toString())
+                                }}
                                 className="text-right"
                             />
                         </div>
@@ -219,8 +213,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 type="number"
                                 step="1"
                                 value={commissionTax}
-                                onChange={e => setCommissionTax(e.target.value)}
-                                className="text-right"
+                                readOnly
+                                className="text-right bg-muted"
                             />
                         </div>
                     </div>
@@ -231,10 +225,11 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             type="number"
                             step="1"
                             value={netDeposit}
-                            onChange={e => setNetDeposit(e.target.value)}
+                            readOnly
                             className={cn(
                                 "font-bold text-lg text-right",
                                 isValid ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-destructive border-destructive/50 bg-destructive/10"
+                                , "bg-muted cursor-not-allowed"
                             )}
                         />
                         {!isValid && (
@@ -248,11 +243,153 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-                <Button type="submit" disabled={loading || !isValid}>
+                <Button type="submit" disabled={loading || !isValid || !paymentMethodId}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Registrar Liquidación
                 </Button>
             </div>
+
+            <SaleSelectionModal
+                open={openSelection}
+                onOpenChange={setOpenSelection}
+                paymentMethodId={paymentMethodId}
+                date={date}
+                onConfirm={(movements) => {
+                    setSelectedMovements(movements)
+                    const total = movements.reduce((sum, m) => sum + parseFloat(m.amount), 0)
+                    setGrossAmount(total.toString())
+                    setOpenSelection(false)
+                }}
+            />
         </form>
+    )
+}
+
+function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfirm }: {
+    open: boolean,
+    onOpenChange: (open: boolean) => void,
+    paymentMethodId: string,
+    date: Date | undefined,
+    onConfirm: (movements: any[]) => void
+}) {
+    const [movements, setMovements] = useState<any[]>([])
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        if (open && paymentMethodId && date) {
+            setLoading(true)
+            const dateStr = format(date, "yyyy-MM-dd")
+            api.get(`/treasury/movements/`, {
+                params: {
+                    payment_method_id: paymentMethodId,
+                    date: dateStr,
+                    movement_type: 'INBOUND',
+                    terminal_batch__isnull: 'True'
+                }
+            }).then(res => {
+                const data = res.data.results || res.data
+                setMovements(data)
+                // Select all by default
+                setSelectedIds(new Set(data.map((m: any) => m.id)))
+            }).finally(() => setLoading(false))
+        }
+    }, [open, paymentMethodId, date])
+
+    const toggleAll = () => {
+        if (selectedIds.size === movements.length) {
+            setSelectedIds(new Set())
+        } else {
+            setSelectedIds(new Set(movements.map(m => m.id)))
+        }
+    }
+
+    const toggleOne = (id: number) => {
+        const next = new Set(selectedIds)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        setSelectedIds(next)
+    }
+
+    const totalSelected = movements
+        .filter(m => selectedIds.has(m.id))
+        .reduce((sum, m) => sum + parseFloat(m.amount), 0)
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle>Seleccionar Ventas a Liquidar</DialogTitle>
+                    <DialogDescription>
+                        Seleccione las transacciones que el proveedor incluyó en esta liquidación.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="py-4">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="select-all"
+                                checked={selectedIds.size === movements.length && movements.length > 0}
+                                onCheckedChange={toggleAll}
+                            />
+                            <Label htmlFor="select-all" className="text-sm font-bold cursor-pointer">
+                                Seleccionar Todas ({movements.length})
+                            </Label>
+                        </div>
+                        <div className="text-sm font-black text-emerald-600">
+                            Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
+                        </div>
+                    </div>
+
+                    <ScrollArea className="h-[300px] border rounded-md">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : movements.length === 0 ? (
+                            <div className="p-8 text-center text-muted-foreground italic">
+                                No se encontraron ventas pendientes para esta fecha.
+                            </div>
+                        ) : (
+                            <div className="divide-y">
+                                {movements.map((m) => (
+                                    <div
+                                        key={m.id}
+                                        className="flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer"
+                                        onClick={() => toggleOne(m.id)}
+                                    >
+                                        <Checkbox
+                                            checked={selectedIds.has(m.id)}
+                                            onCheckedChange={() => toggleOne(m.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase">{m.partner_name || 'Particular'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black">
+                                                {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(parseFloat(m.amount))}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button
+                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)))}
+                        disabled={selectedIds.size === 0}
+                    >
+                        Confirmar Selección
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }

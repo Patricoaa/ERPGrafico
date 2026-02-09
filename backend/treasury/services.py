@@ -329,12 +329,10 @@ class TreasuryService:
 class TerminalBatchService:
     @staticmethod
     @transaction.atomic
-    def create_batch(payment_method, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', supplier=None, user=None):
+    def create_batch(payment_method, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', supplier=None, user=None, movement_ids=None):
         """
-        Creates a TerminalBatch for Stage 2 accounting (Settlement).
-        1. Validates amounts and links relevant payments.
-        2. Creates TerminalBatch record.
-        3. Generates Settlement Journal Entry.
+        Create a TerminalBatch and its accounting entries.
+        Stage 2 of the Terminal accounting flow.
         """
         # 1. Validation
         if not payment_method.is_terminal:
@@ -355,13 +353,22 @@ class TerminalBatchService:
              raise ValidationError("El método de pago debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
 
         # 2. Identify Payments
-        # Find payments from the sales_date with this payment_method that are not yet batched
-        payments = TreasuryMovement.objects.filter(
-            date__date=sales_date,
-            payment_method_new=payment_method,
-            movement_type=TreasuryMovement.Type.INBOUND,
-            terminal_batch__isnull=True
-        )
+        if movement_ids:
+            payments = TreasuryMovement.objects.filter(
+                id__in=movement_ids,
+                payment_method_new=payment_method,
+                terminal_batch__isnull=True
+            )
+            if len(payments) != len(movement_ids):
+                raise ValidationError("Algunos de los pagos seleccionados no existen, ya fueron loteados o no pertenecen a este terminal.")
+        else:
+            # Fallback: Find payments from the sales_date with this payment_method that are not yet batched
+            payments = TreasuryMovement.objects.filter(
+                date=sales_date, # Fixed: date is a DateField
+                payment_method_new=payment_method,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                terminal_batch__isnull=True
+            )
         
         # Optional: Validate total gross amount matches sum of payments?
         # In real world, they might differ slightly due to timing/cutoffs. Usually we batch what we find.

@@ -1606,6 +1606,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             
             payment_method = PaymentMethod.objects.get(pk=payment_method_id)
             supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
+            movement_ids = data.get('movement_ids', None)
             
             batch = TerminalBatchService.create_batch(
                 payment_method=payment_method,
@@ -1616,7 +1617,8 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
                 net_amount=net_amount,
                 terminal_reference=terminal_reference,
                 supplier=supplier,
-                user=request.user
+                user=request.user,
+                movement_ids=movement_ids
             )
             
             return Response(TerminalBatchSerializer(batch).data, status=status.HTTP_201_CREATED)
