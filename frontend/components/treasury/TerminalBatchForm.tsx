@@ -81,7 +81,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     payment_method_id: paymentMethodId,
                     date: dateStr,
                     movement_type: 'INBOUND',
-                    is_batch_pending: true // Filter for not yet batched
+                    terminal_batch__isnull: 'True' // Filter for not yet batched movements
                 }
             })
 
@@ -89,7 +89,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             const total = movements.reduce((sum: number, m: any) => sum + parseFloat(m.amount), 0)
 
             setGrossAmount(total.toString())
-            toast.success(`Ventas encontradas: $${total}`)
+            toast.success(`${movements.length} ventas encontradas: $${total}`)
 
         } catch (error) {
             toast.error("Error al obtener ventas")

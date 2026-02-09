@@ -54,8 +54,7 @@ class DifferenceService:
         line: BankStatementLine,
         difference_type: str,
         user,
-        notes: str = "",
-        provider_id: Optional[int] = None
+        notes: str = ""
     ) -> JournalEntry:
         """
         Crea asiento contable de ajuste por diferencia.
@@ -71,7 +70,7 @@ class DifferenceService:
         
         # Obtener configuración contable
         settings = AccountingSettings.objects.select_related(
-            'bank_commission_account', 'card_commission_account', 'interest_income_account', 
+            'bank_commission_account', 'interest_income_account', 
             'exchange_difference_account', 'rounding_adjustment_account', 
             'error_adjustment_account', 'miscellaneous_adjustment_account'
         ).first()

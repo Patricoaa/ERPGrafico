@@ -415,7 +415,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
             displayId.toLowerCase().includes(query) ||
             contactName.toLowerCase().includes(query) ||
             docLabel.includes(query) ||
-            payment.amount?.toString().includes(query)
+            payment.amount?.toString().includes(query) ||
+            (payment.is_batch && payment.terminal_reference?.toLowerCase().includes(query))
         )
     }).sort((a, b) => {
         // Prioritize smart suggestions visually
@@ -888,6 +889,17 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                         </div>
                                                     )}
 
+                                                    {payment.is_batch && payment.terminal_reference && (
+                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full shadow-sm">
+                                                            Ref: {payment.terminal_reference}
+                                                        </div>
+                                                    )}
+
+                                                    {payment.is_batch && payment.payment_count > 0 && (
+                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full shadow-sm">
+                                                            {payment.payment_count} pagos
+                                                        </div>
+                                                    )}
 
                                                     📅 {format(new Date(payment.date), 'dd/MM/yy', { locale: es })}
                                                 </div>

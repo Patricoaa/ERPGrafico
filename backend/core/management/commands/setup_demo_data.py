@@ -17,11 +17,10 @@ from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, Sa
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
     TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
-    ReconciliationMatch, ReconciliationRule, CardPaymentProvider,
-    DailySettlement, CardTransaction,
+    ReconciliationMatch, ReconciliationRule,
     CashDifference,
     POSTerminal, POSSession, POSSessionAudit,
-    Bank, PaymentMethod
+    Bank, PaymentMethod, TerminalBatch
 )
 from billing.models import Invoice, NoteWorkflow
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
@@ -85,7 +84,7 @@ class Command(BaseCommand):
         self._add_initial_stock(accounts)
 
         self.stdout.write('Creating Treasury Infrastructure...')
-        self._create_treasury_infrastructure(accounts)
+        self._create_treasury_infrastructure(accounts, partners)
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
@@ -358,9 +357,10 @@ class Command(BaseCommand):
 
         # 3. Transactional documents
         _safe_delete(StockMove, "StockMove")
-        _safe_delete(TreasuryMovement, "TreasuryMovement")
-        _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(Invoice, "Invoice")
+        _safe_delete(TreasuryMovement, "TreasuryMovement")
+        _safe_delete(TerminalBatch, "TerminalBatch")
+        _safe_delete(JournalEntry, "JournalEntry")
         
         # 4. Purchasing
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
@@ -385,12 +385,9 @@ class Command(BaseCommand):
         _safe_delete(POSTerminal, "POSTerminal")
 
         # 7. Treasury & Reconciliation
-        _safe_delete(CardTransaction, "CardTransaction")
-        _safe_delete(DailySettlement, "DailySettlement")
         _safe_delete(BankStatement, "BankStatement") # Cascades to lines
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationRule, "ReconciliationRule")
-        _safe_delete(CardPaymentProvider, "CardPaymentProvider")
         
         # Payment Methods must be deleted before accounts if they have protecting constraints
         _safe_delete(PaymentMethod, "PaymentMethod")
@@ -903,7 +900,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
 
-    def _create_treasury_infrastructure(self, accounts):
+    def _create_treasury_infrastructure(self, accounts, partners):
         self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
         
         manager_user = User.objects.get(username='gerente')
@@ -987,7 +984,11 @@ class Command(BaseCommand):
             defaults={
                 'method_type': PaymentMethod.Type.CARD_TERMINAL,
                 'allow_for_sales': True,
-                'allow_for_purchases': False # POS usually only for sales
+                'allow_for_purchases': False, # POS usually only for sales
+                'is_terminal': True,
+                'supplier': partners['suppliers'][0],
+                'terminal_receivable_account': accounts['receivable'],
+                'commission_expense_account': accounts['expense_general']
             }
         )
 
@@ -1146,7 +1147,11 @@ class Command(BaseCommand):
             defaults={
                 'method_type': PaymentMethod.Type.CARD_TERMINAL,
                 'allow_for_sales': True,
-                'allow_for_purchases': False
+                'allow_for_purchases': False,
+                'is_terminal': True,
+                'supplier': partners['suppliers'][0],
+                'terminal_receivable_account': accounts['receivable'],
+                'commission_expense_account': accounts['expense_general']
             }
         )
         

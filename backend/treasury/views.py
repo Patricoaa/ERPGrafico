@@ -669,7 +669,7 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             
             if difference_type and line.difference_amount != 0:
                 DifferenceService.create_difference_adjustment(
-                    line, difference_type, request.user, notes, card_provider_id
+                    line, difference_type, request.user, notes
                 )
             
             confirmed_line = MatchingService.confirm_match(pk, request.user)

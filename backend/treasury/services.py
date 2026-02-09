@@ -15,7 +15,7 @@ class TreasuryService:
                         partner=None, invoice=None, sale_order=None, purchase_order=None,
                         pos_session=None, pos_session_id=None, reference='', notes='', justify_reason=None,
                         transaction_number=None, is_pending_registration=False,
-                        card_provider=None, payment_method_new=None, is_reconciled=False):
+                        payment_method_new=None, is_reconciled=False):
         """
         Unified method to create a TreasuryMovement.
         Handles:
@@ -51,9 +51,6 @@ class TreasuryService:
             from .models import POSSession
             pos_session = POSSession.objects.filter(id=pos_session_id).first()
 
-        # 1.6 Propagate Card Provider from Payment Method if not provided
-        if not card_provider and payment_method_new and payment_method_new.card_provider:
-            card_provider = payment_method_new.card_provider
 
         # 2. Create TreasuryMovement
         movement = TreasuryMovement.objects.create(
@@ -74,7 +71,6 @@ class TreasuryService:
             justify_reason=justify_reason,
             pos_session=pos_session,
             transaction_number=transaction_number,
-            card_provider=card_provider,
             is_pending_registration=is_pending_registration,
             is_reconciled=is_reconciled
         )
@@ -86,10 +82,6 @@ class TreasuryService:
         if pos_session:
             TreasuryService._update_pos_session(movement, pos_session)
 
-        # 4.5 Register Card Transaction if applicable
-        if movement.card_provider and movement.movement_type == TreasuryMovement.Type.INBOUND:
-            from .card_transaction_service import CardTransactionService
-            CardTransactionService.process_movement(movement)
 
         # 5. Generate Accounting Entry
         if not is_pending_registration:
@@ -225,9 +217,6 @@ class TreasuryService:
             if is_terminal:
                  if movement.payment_method_new.terminal_receivable_account:
                      debit_acc = movement.payment_method_new.terminal_receivable_account
-                 elif movement.card_provider and movement.card_provider.receivable_account:
-                     # Fallback for legacy card providers
-                     debit_acc = movement.card_provider.receivable_account
             
             if debit_acc:
                 JournalItem.objects.create(entry=entry, account=debit_acc, debit=movement.amount, credit=0)
@@ -475,12 +464,11 @@ class TerminalBatchService:
             contact=supplier,
             dte_type=Invoice.DTEType.PURCHASE_INV,
             date=timezone.now().date(),
-            total_net=total_commission_net,
-            total_tax=total_commission_tax,
-            total=total_commission,
-            status=Invoice.Status.DRAFT,
-            # notes field removed as it doesn't exist in Invoice model
-            # created_by removed as it doesn't exist in Invoice model
+            total_net=total_commission_net.quantize(Decimal('1')),
+            total_tax=total_commission_tax.quantize(Decimal('1')),
+            total=total_commission.quantize(Decimal('1')),
+            status=Invoice.Status.PAID,
+            payment_method=Invoice.PaymentMethod.TRANSFER # Already deducted from account
         )
         
         # Link batches

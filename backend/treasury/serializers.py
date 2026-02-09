@@ -460,7 +460,7 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         # Allow any Contact as supplier
         from contacts.models import Contact
-        self.fields['supplier'].queryset = Contact.objects.filter(is_supplier=True)
+        self.fields['supplier'].queryset = Contact.objects.all()
     
     def get_settlement_journal_entry_data(self, obj):
         if obj.settlement_journal_entry:
