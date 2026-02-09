@@ -77,7 +77,11 @@ export default function PurchaseInvoicesPage() {
             // Includes: FACTURA_COMPRA (custom type?), or standard Invoices linked to PO, or NC/ND linked to PO.
             // Let's stick to "linked to purchase_order" or "DTE Type is specifically Purchase-related" check.
             // Include: Invoices with PO OR Invoices with Service Obligation
-            const filtered = results.filter((i: any) => i.purchase_order || i.service_obligation)
+            const filtered = results.filter((i: any) =>
+                i.purchase_order ||
+                i.service_obligation ||
+                i.dte_type === 'PURCHASE_INV'
+            )
             setDocuments(filtered)
         } catch (error) {
             console.error(error)

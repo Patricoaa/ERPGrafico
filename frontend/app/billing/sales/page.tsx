@@ -38,7 +38,10 @@ export default function SalesInvoicesPage() {
             const res = await api.get('/billing/invoices/')
             // Filter only sales
             const results = res.data.results || res.data
-            setInvoices(results.filter((i: any) => i.sale_order))
+            setInvoices(results.filter((i: any) =>
+                i.sale_order ||
+                ['FACTURA', 'BOLETA'].includes(i.dte_type)
+            ))
         } catch (error) {
             toast.error("Error al cargar facturas")
         } finally {
