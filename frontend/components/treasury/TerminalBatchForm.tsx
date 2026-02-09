@@ -36,6 +36,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [netDeposit, setNetDeposit] = useState<string>("0")
     const [reference, setReference] = useState("")
     const [selectedMovements, setSelectedMovements] = useState<any[]>([])
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
 
     // Validation State
@@ -61,7 +62,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         const cNet = parseFloat(commissionNet) || 0
         const cTax = parseFloat(commissionTax) || 0
 
-        const calculatedNet = gross - (cNet + cTax)
+        const calculatedNet = Math.round(gross - (cNet + cTax))
         setNetDeposit(calculatedNet.toString())
         setIsValid(gross > 0 && calculatedNet >= 0)
     }, [grossAmount, commissionNet, commissionTax])
@@ -241,8 +242,10 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 onOpenChange={setOpenSelection}
                 paymentMethodId={paymentMethodId}
                 date={date}
-                onConfirm={(movements) => {
+                initialSelectedIds={selectedIds}
+                onConfirm={(movements, ids) => {
                     setSelectedMovements(movements)
+                    setSelectedIds(ids)
                     const total = movements.reduce((sum, m) => sum + parseFloat(m.amount), 0)
                     setGrossAmount(total.toString())
                     setOpenSelection(false)
@@ -252,12 +255,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     )
 }
 
-function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfirm }: {
+function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfirm, initialSelectedIds }: {
     open: boolean,
     onOpenChange: (open: boolean) => void,
     paymentMethodId: string,
     date: Date | undefined,
-    onConfirm: (movements: any[]) => void
+    onConfirm: (movements: any[], ids: Set<number>) => void,
+    initialSelectedIds: Set<number>
 }) {
     const [movements, setMovements] = useState<any[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -269,7 +273,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
             const dateStr = format(date, "yyyy-MM-dd")
             api.get(`/treasury/movements/`, {
                 params: {
-                    payment_method_id: paymentMethodId,
+                    payment_method_new: paymentMethodId,
                     date: dateStr,
                     movement_type: 'INBOUND',
                     terminal_batch__isnull: 'True'
@@ -277,8 +281,17 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
             }).then(res => {
                 const data = res.data.results || res.data
                 setMovements(data)
-                // Select all by default
-                setSelectedIds(new Set(data.map((m: any) => m.id)))
+                // Initialize selection: merge current selection with fetched data if they exist
+                // Or just keep currently selected if they are in the result
+                const next = new Set<number>()
+                initialSelectedIds.forEach(id => {
+                    if (data.some((m: any) => m.id === id)) next.add(id)
+                })
+                // If it's the first time loading for this terminal/day, select all by default
+                if (initialSelectedIds.size === 0) {
+                    data.forEach((m: any) => next.add(m.id))
+                }
+                setSelectedIds(next)
             }).finally(() => setLoading(false))
         }
     }, [open, paymentMethodId, date])
@@ -370,7 +383,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button
-                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)))}
+                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
                         disabled={selectedIds.size === 0}
                     >
                         Confirmar Selección

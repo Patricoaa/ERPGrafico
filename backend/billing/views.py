@@ -140,6 +140,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         order_data = request.data.get('order_data')
         dte_type = request.data.get('dte_type')
         payment_method = request.data.get('payment_method')
+        payment_method_id = request.data.get('payment_method_id')
         transaction_number = request.data.get('transaction_number')
         is_pending_registration = request.data.get('is_pending_registration', False)
         if isinstance(is_pending_registration, str):
@@ -208,6 +209,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 payment_type=payment_type,
                 line_files=line_files,
                 pos_session_id=pos_session_id,
+                payment_method_id=payment_method_id,
                 user=request.user
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)

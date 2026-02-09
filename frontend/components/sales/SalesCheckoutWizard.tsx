@@ -435,6 +435,9 @@ export function SalesCheckoutWizard({
             // Payment data
             const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : paymentData.method
             formData.append('payment_method', finalPaymentMethod)
+            if (paymentData.paymentMethodId && paymentData.amount > 0) {
+                formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+            }
             formData.append('amount', paymentData.amount.toString())
             formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)

@@ -224,6 +224,10 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             val = terminal_batch_isnull.lower() == 'true'
             qs = qs.filter(terminal_batch__isnull=val)
 
+        pm = self.request.query_params.get('payment_method_new')
+        if pm:
+            qs = qs.filter(payment_method_new_id=pm)
+
         return qs
 
     filterset_fields = [
@@ -1632,8 +1636,13 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             return Response(TerminalBatchSerializer(batch).data, status=status.HTTP_201_CREATED)
             
         except ValidationError as e:
+            import traceback
+            print(f"TERMINAL BATCH VALIDATION ERROR: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            import traceback
+            print(f"TERMINAL BATCH INTERNAL ERROR: {str(e)}")
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])

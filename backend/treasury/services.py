@@ -400,8 +400,7 @@ class TerminalBatchService:
             date=batch.settlement_date,
             description=description,
             reference=batch.display_id,
-            state=JournalEntry.State.DRAFT,
-            created_by=user
+            state=JournalEntry.State.DRAFT
         )
         
         # A. Expense Commission (Debit)
@@ -461,7 +460,7 @@ class TerminalBatchService:
         # Create Invoice (Billing Module)
         # Assuming Invoice.objects.create works or use a service
         from billing.models import Invoice
-        from billing.services import InvoiceService # Hypothetical
+        # from billing.services import BillingService
         
         # Reuse billing logic. For now let's say we create a draft invoice.
         # This part depends on Billing module specifics.

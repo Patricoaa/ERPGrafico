@@ -291,7 +291,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -450,6 +450,12 @@ class BillingService:
             from_acc = None
             to_acc = None
             
+            # Resolve PaymentMethod instance for treasury movement
+            payment_method_inst = None
+            if payment_method_id:
+                from treasury.models import PaymentMethod
+                payment_method_inst = PaymentMethod.objects.filter(id=payment_method_id).first()
+            
             if payment_type == TreasuryMovement.Type.INBOUND:
                 to_acc = treasury_account
             else:
@@ -468,6 +474,7 @@ class BillingService:
                 transaction_number=transaction_number,
                 is_pending_registration=payment_is_pending,
                 pos_session_id=pos_session_id,
+                payment_method_new=payment_method_inst,
                 created_by=user
             )
             
