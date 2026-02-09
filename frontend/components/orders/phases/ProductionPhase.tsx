@@ -1,0 +1,141 @@
+
+import { useState } from "react"
+import { PhaseCard } from "./PhaseCard"
+import { ClipboardList, Ban } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import api from "@/lib/api"
+import { toast } from "sonner"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
+interface ProductionPhaseProps {
+    order: any
+    activeDoc: any
+    registry: any
+    userPermissions: string[]
+    onActionSuccess?: () => void
+    openDetails: (docType: string, id: number | string) => void
+    actionEngineRef: any
+    showAnimations: boolean
+    initialOpen?: boolean
+}
+
+export function ProductionPhase({
+    order,
+    activeDoc,
+    registry,
+    userPermissions,
+    onActionSuccess,
+    openDetails,
+    actionEngineRef,
+    showAnimations,
+    initialOpen = true
+}: ProductionPhaseProps) {
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean,
+        title: string,
+        description: React.ReactNode,
+        onConfirm: () => Promise<void> | void,
+        variant?: 'destructive' | 'warning',
+        confirmText?: string
+    }>({
+        open: false,
+        title: "",
+        description: null,
+        onConfirm: () => { }
+    })
+
+    const totalOTs = activeDoc.work_orders?.length || 0
+    const totalOTProgress = totalOTs > 0
+        ? (activeDoc.work_orders || []).reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        : 0
+
+    // Only show if order has manufacturable items or existing work orders
+    const showProduction = (order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: any) => l.is_manufacturable)
+
+    if (!showProduction) return null
+
+    const invoices = activeDoc.related_documents?.invoices || []
+
+    const handleAnnulWorkOrder = async (id: number) => {
+        setConfirmModal({
+            open: true,
+            title: "Anular Orden de Trabajo",
+            variant: "destructive",
+            confirmText: "Anular OT",
+            onConfirm: async () => {
+                try {
+                    await api.post(`/production/orders/${id}/annul/`)
+                    toast.success("OT anulada correctamente")
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: any) {
+                    toast.error(error.response?.data?.error || "Error al anular OT")
+                }
+            },
+            description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?"
+        })
+    }
+
+    return (
+        <>
+            <PhaseCard
+                title="Producción"
+                icon={ClipboardList}
+                variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
+                documents={activeDoc.work_orders?.map((ot: any) => ({
+                    type: 'Orden de Trabajo',
+                    number: ot.display_id || `OT-${ot.code || ot.id}`,
+                    icon: ClipboardList,
+                    id: ot.id,
+                    docType: 'work_order',
+                    status: ot.status,
+                    progressValue: ot.production_progress || 0,
+                    actions: [
+                        // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
+                        ...((ot.status !== 'CANCELLED' &&
+                            invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                            ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
+                                icon: Ban,
+                                title: 'Anular OT',
+                                color: 'text-orange-500 hover:bg-orange-500/10',
+                                onClick: () => handleAnnulWorkOrder(ot.id)
+                            }] : [])
+                    ]
+                })) || []}
+                onViewDetail={openDetails}
+                actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                emptyMessage="Sin órdenes de trabajo"
+                order={activeDoc}
+                userPermissions={userPermissions}
+                onActionSuccess={onActionSuccess}
+                actionEngineRef={actionEngineRef}
+                showDocProgress={true}
+                initialOpen={initialOpen}
+                stageId="production"
+                isComplete={totalOTProgress === 100 && totalOTs > 0}
+            >
+                {totalOTs > 0 ? (
+                    <div className="space-y-1 px-1">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground/60">
+                            <span>PROGRESO</span>
+                            <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
+                        </div>
+                        <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-white/5 transition-all duration-1000" />
+                    </div>
+                ) : (
+                    <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>
+                )}
+            </PhaseCard>
+
+            <ActionConfirmModal
+                open={confirmModal.open}
+                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                title={confirmModal.title}
+                description={confirmModal.description}
+                onConfirm={confirmModal.onConfirm}
+                variant={confirmModal.variant}
+                confirmText={confirmModal.confirmText}
+            />
+        </>
+    )
+}

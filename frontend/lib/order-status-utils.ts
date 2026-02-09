@@ -135,3 +135,16 @@ export const getNoteHubStatuses = (note: any) => {
         isComplete: logStatus === 'success' && billingStatus === 'success' && treasuryStatus === 'success'
     }
 }
+
+// Helper to prevent duplicate prefixes (e.g. OC-OC-123)
+export const formatDocumentId = (prefix: string, number: string | number, displayId?: string) => {
+    if (displayId) return displayId
+    const numStr = String(number || '')
+    const cleanPrefix = prefix.replace('-', '') // Handle both "OC" and "OC-" inputs if needed, though we usually pass "OC"
+
+    // Check if it already starts with the prefix (case insensitive)
+    if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
+        return numStr
+    }
+    return `${prefix}-${numStr}`
+}
