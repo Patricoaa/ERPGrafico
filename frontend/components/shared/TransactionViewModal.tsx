@@ -138,7 +138,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return { main: `Comprobante de ${typeLabel}`, sub: `${prefix}-${data.number || data.id}` }
             case 'payment':
                 const payPrefix = data.payment_type === 'INBOUND' ? 'Comprobante de Ingreso' : 'Comprobante de Egreso'
-                const payId = data.display_id || (data.payment_type === 'INBOUND' ? 'ING-' : 'EGR-') + data.id
+                const payId = data.display_id || (data.payment_type === 'INBOUND' ? 'DEP-' : 'RET-') + data.id
                 return { main: payPrefix, sub: payId }
             case 'journal_entry':
                 return { main: "Asiento Contable", sub: `AS-${data.number || data.id}` }

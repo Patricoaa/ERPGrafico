@@ -235,9 +235,9 @@ class TreasuryMovement(models.Model):
     @property
     def display_id(self):
         prefix = 'MOV'
-        if self.movement_type == self.Type.INBOUND: prefix = 'ING'
-        elif self.movement_type == self.Type.OUTBOUND: prefix = 'EGR'
-        elif self.movement_type == self.Type.TRANSFER: prefix = 'TRF'
+        if self.movement_type == self.Type.INBOUND: prefix = 'DEP'
+        elif self.movement_type == self.Type.OUTBOUND: prefix = 'RET'
+        elif self.movement_type == self.Type.TRANSFER: prefix = 'TRAS'
         return f"{prefix}-{str(self.id).zfill(6)}"
 
     @property

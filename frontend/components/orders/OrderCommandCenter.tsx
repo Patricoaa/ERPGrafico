@@ -320,13 +320,13 @@ export function OrderCommandCenter({
 
                             {/* 1. Origen */}
                             <OriginPhase
-                                isNoteMode={isNoteMode}
+                                isNoteMode={!!isNoteMode}
                                 activeInvoice={activeInvoice}
                                 noteStatuses={noteStatuses}
                                 order={order}
                                 activeDoc={activeDoc}
                                 type={type}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 onEdit={onEdit}
                                 userPermissions={userPermissions}
@@ -339,7 +339,7 @@ export function OrderCommandCenter({
                                 activeDoc={activeDoc}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
@@ -348,13 +348,13 @@ export function OrderCommandCenter({
                             {/* 3. Logística / Cumplimiento */}
                             <LogisticsPhase
                                 activeDoc={activeDoc}
-                                isNoteMode={isNoteMode}
+                                isNoteMode={!!isNoteMode}
                                 noteStatuses={noteStatuses}
                                 isSale={isSale}
                                 invoices={invoices}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
@@ -362,14 +362,14 @@ export function OrderCommandCenter({
 
                             {/* 4. Facturación */}
                             <BillingPhase
-                                isNoteMode={isNoteMode}
+                                isNoteMode={!!isNoteMode}
                                 noteStatuses={noteStatuses}
                                 activeDoc={activeDoc}
                                 invoices={invoices}
                                 billingIsComplete={billingIsComplete}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
@@ -377,20 +377,19 @@ export function OrderCommandCenter({
 
                             {/* 5. Tesorería */}
                             <TreasuryPhase
-                                isNoteMode={isNoteMode}
+                                isNoteMode={!!isNoteMode}
                                 noteStatuses={noteStatuses}
                                 activeDoc={activeDoc}
                                 payments={payments}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
                             />
                         </div>
 
-                        {/* GLOBAL ACTIONS FOOTER */}
                         {userPermissions.length > 0 && (
                             <div className="mt-2 border-t border-border/40 pt-4">
                                 <ActionCategory
@@ -422,7 +421,7 @@ export function OrderCommandCenter({
                     type={detailsModal.type}
                     id={Number(detailsModal.id)}
                 />
-            </BaseModal>
+            </BaseModal >
         </>
     )
 }

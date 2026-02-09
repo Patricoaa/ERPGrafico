@@ -16,6 +16,7 @@ import { toast } from "sonner"
 // Define the type for our data
 interface TreasuryMovement {
     id: number
+    display_id: string
     movement_type: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     movement_type_display: string
     payment_method: string
@@ -77,6 +78,15 @@ export default function TreasuryMovementsPage() {
     }
 
     const columns: ColumnDef<TreasuryMovement>[] = [
+        {
+            accessorKey: "display_id",
+            header: "Folio",
+            cell: ({ row }) => (
+                <span className="font-mono text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
+                    {row.getValue("display_id")}
+                </span>
+            ),
+        },
         {
             accessorKey: "date", // Use logical date, or created_at
             header: "Fecha",
