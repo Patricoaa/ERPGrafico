@@ -46,7 +46,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     useEffect(() => {
         const fetchTerminals = async () => {
             try {
-                const res = await api.get('/treasury/payment-methods/?is_terminal=true')
+                const res = await api.get('/treasury/payment-methods/?method_type=CARD_TERMINAL')
                 setTerminals(res.data)
             } catch (error) {
                 toast.error("Error al cargar terminales")
@@ -58,17 +58,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     // Real-time validation
     useEffect(() => {
         const gross = parseFloat(grossAmount) || 0
-        const commNet = parseFloat(commissionNet) || 0
-        const commTax = parseFloat(commissionTax) || 0
-        const net = parseFloat(netDeposit) || 0
+        const cNet = parseFloat(commissionNet) || 0
+        const cTax = parseFloat(commissionTax) || 0
 
-        const calculatedNet = gross - (commNet + commTax)
-        const difference = net - calculatedNet
-
-        setDiff(difference)
+        const calculatedNet = gross - (cNet + cTax)
         setNetDeposit(calculatedNet.toString())
-        setIsValid(Math.abs(difference) < 1) // Tolerance of 1 peso
-    }, [grossAmount, commissionNet, commissionTax, netDeposit])
+        setIsValid(gross > 0 && calculatedNet >= 0)
+    }, [grossAmount, commissionNet, commissionTax])
 
 
     const handleAutoCalculate = async () => {
@@ -89,7 +85,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         setLoading(true)
         try {
             const payload = {
-                payment_method_id: paymentMethodId,
+                payment_method: paymentMethodId,
                 sales_date: date ? format(date, "yyyy-MM-dd") : null,
                 gross_amount: parseFloat(grossAmount),
                 commission_base: parseFloat(commissionNet),
@@ -226,17 +222,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className={cn(
-                                "font-bold text-lg text-right",
-                                isValid ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-destructive border-destructive/50 bg-destructive/10"
-                                , "bg-muted cursor-not-allowed"
-                            )}
+                            className="font-bold text-lg text-right text-emerald-600 border-emerald-200 bg-emerald-50 bg-muted cursor-not-allowed"
                         />
-                        {!isValid && (
-                            <p className="text-[10px] text-destructive text-right font-medium">
-                                Diferencia: {diff > 0 ? '+' : ''}{diff} (Revisar montos)
-                            </p>
-                        )}
                     </div>
                 </div>
             </div>

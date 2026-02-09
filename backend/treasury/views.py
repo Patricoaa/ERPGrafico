@@ -50,6 +50,14 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         for_purchases = self.request.query_params.get('for_purchases')
         if for_purchases == 'true':
             qs = qs.filter(allow_for_purchases=True)
+
+        is_terminal = self.request.query_params.get('is_terminal')
+        if is_terminal == 'true':
+            qs = qs.filter(is_terminal=True)
+
+        method_type = self.request.query_params.get('method_type')
+        if method_type:
+            qs = qs.filter(method_type=method_type)
             
         return qs
 

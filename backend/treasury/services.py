@@ -400,7 +400,7 @@ class TerminalBatchService:
             date=batch.settlement_date,
             description=description,
             reference=batch.display_id,
-            state=JournalEntry.State.POSTED, # Auto-post for now
+            state=JournalEntry.State.DRAFT,
             created_by=user
         )
         
