@@ -46,6 +46,7 @@ interface SaleOrder {
         deliveries: any[]
     }
     lines?: any[]
+    pos_session_display?: string
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -329,7 +330,7 @@ export default function SalesOrdersPage() {
             header: "Sesión POS",
             cell: ({ row }) => (
                 <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
-                    {translateSalesChannel(row.original.channel_display)}
+                    {row.original.pos_session_display || translateSalesChannel(row.original.channel_display)}
                 </DataCell.Badge>
             ),
         },

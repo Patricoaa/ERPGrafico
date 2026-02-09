@@ -131,7 +131,10 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
-    pos_session_display = serializers.CharField(source='pos_session.__str__', read_only=True)
+    pos_session_display = serializers.SerializerMethodField()
+
+    def get_pos_session_display(self, obj):
+        return str(obj.pos_session) if obj.pos_session else None
 
     class Meta:
         model = SaleOrder

@@ -825,7 +825,7 @@ export function OrderCommandCenter({
                                     ]
                                 }))}
                                 onViewDetail={openDetails}
-                                actions={(isNoteMode ? [] : registry.billing?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                                actions={(isNoteMode ? [] : registry.documents?.actions || []).filter((a: any) => !a.id.includes('view-'))}
                                 emptyMessage="Sin documentos emitidos"
                                 order={activeDoc}
                                 userPermissions={userPermissions}

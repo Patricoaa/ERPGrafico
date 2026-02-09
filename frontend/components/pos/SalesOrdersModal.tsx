@@ -201,7 +201,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
         },
         {
             accessorKey: "channel_display",
-            header: "Canal",
+            header: "Sesión POS",
             cell: ({ row }) => {
                 const sessionDisplay = row.original.pos_session_display
                 const channelDisplay = translateSalesChannel(row.original.channel_display)
