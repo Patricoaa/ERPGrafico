@@ -224,14 +224,25 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
+        # 1. Direct contact
         if obj.contact:
             return obj.contact.name
-        if obj.invoice and obj.invoice.contact:
-            return obj.invoice.contact.name
+        
+        # 2. From Invoice or its linked orders
+        if obj.invoice:
+            if obj.invoice.contact:
+                return obj.invoice.contact.name
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
+                return obj.invoice.sale_order.customer.name
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
+                return obj.invoice.purchase_order.supplier.name
+        
+        # 3. Direct Order links
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
         if obj.purchase_order and obj.purchase_order.supplier:
             return obj.purchase_order.supplier.name
+            
         return 'Particular'
 
     def get_journal_entry(self, obj):
@@ -262,17 +273,25 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
             info['type'] = 'invoice'
             info['id'] = obj.invoice.id
             info['number'] = obj.invoice.number
-            info['label'] = f"{obj.invoice.get_dte_type_display()} #{obj.invoice.number}"
+            
+            # Map DTE Types to internal prefixes
+            prefix = 'DOC'
+            if obj.invoice.dte_type == 'FACTURA': prefix = 'FE'
+            elif obj.invoice.dte_type == 'BOLETA': prefix = 'BOL'
+            elif obj.invoice.dte_type == 'NOTA_CREDITO': prefix = 'NC'
+            elif obj.invoice.dte_type == 'NOTA_DEBITO': prefix = 'ND'
+            
+            info['label'] = f"{prefix} {obj.invoice.number}"
         elif obj.purchase_order:
             info['type'] = 'purchase_order'
             info['id'] = obj.purchase_order.id
             info['number'] = obj.purchase_order.number
-            info['label'] = f"OCS-{obj.purchase_order.number}"
+            info['label'] = f"OC {obj.purchase_order.number}"
         elif obj.sale_order:
             info['type'] = 'sale_order'
             info['id'] = obj.sale_order.id
             info['number'] = obj.sale_order.number
-            info['label'] = f"PV-{obj.sale_order.number}"
+            info['label'] = f"NV {obj.sale_order.number}"
         
         return info if info['type'] else None
     

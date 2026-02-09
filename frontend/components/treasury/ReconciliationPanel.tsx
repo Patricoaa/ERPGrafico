@@ -839,39 +839,44 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                     {isAmountMatch && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
                                                     {isBackendSuggest && <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
                                                 </div>
-                                                <p className="text-sm font-bold text-foreground/80 truncate mb-0.5">{payment.contact_name || 'Particular'}</p>
+                                                <p className="text-[15px] font-black text-foreground/90 leading-tight mb-1 flex items-center gap-1.5">
+                                                    {payment.partner_name || payment.contact_name || 'Particular'}
+                                                </p>
 
                                                 {/* Enriched Info */}
-                                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                                                     {payment.document_info && (
-                                                        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
-                                                            <Filter className="h-2.5 w-2.5 opacity-50" />
+                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full shadow-sm">
+                                                            <Sparkles className="h-2.5 w-2.5 opacity-70" />
                                                             {payment.document_info.label}
                                                         </div>
                                                     )}
-                                                    <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                                                        📅 {format(new Date(payment.date), 'dd/MM/yy', { locale: es })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-[15px] font-black font-mono tracking-tight text-foreground/90">
-                                                    {formatCurrency(Math.abs(parseFloat(payment.amount)))}
-                                                </div>
-                                                <div className="text-[9px] font-bold uppercase text-muted-foreground/50 mt-0.5">
-                                                    {payment.payment_method_new_name || payment.payment_method_display || 'Transferencia'}
+
+
+                                                    📅 {format(new Date(payment.date), 'dd/MM/yy', { locale: es })}
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="text-right flex flex-col justify-between items-end h-full py-0.5">
+                                            <div className="text-[17px] font-black font-mono tracking-tight text-foreground/90 bg-muted/10 px-2 py-1 rounded-lg border border-transparent group-hover:border-muted-foreground/10 transition-colors">
+                                                {formatCurrency(Math.abs(parseFloat(payment.amount)))}
+                                            </div>
+                                            <div className="mt-2">
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase bg-white/50 border-muted-foreground/20 text-muted-foreground/80 tracking-widest px-2 py-0 boxShadow-sm">
+                                                    {payment.payment_method_new_name || payment.payment_method_display || 'Transferencia'}
+                                                </Badge>
+                                            </div>
+                                        </div>
                                     </div>
-                                )
+                                    </div>
+                        )
                             })}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
 
-            {/* Difference Adjustment Dialog */}
+            {/* Difference Adjustment Dialog */ }
             <Dialog open={diffDialog.open} onOpenChange={open => setDiffDialog(prev => ({ ...prev, open }))}>
                 <DialogContent className="max-w-md bg-white p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
                     <div className="bg-amber-500 p-6 text-white">
@@ -985,7 +990,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     )
 }
 
