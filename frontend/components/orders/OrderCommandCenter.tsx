@@ -29,7 +29,7 @@ import { ProductionPhase } from "./phases/ProductionPhase"
 import { LogisticsPhase } from "./phases/LogisticsPhase"
 import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
-import { OrderHeaderDashboard } from "./OrderHeaderDashboard"
+// import { OrderHeaderDashboard } from "./OrderHeaderDashboard"
 
 interface OrderCommandCenterProps {
     orderId?: number | null
@@ -315,16 +315,6 @@ export function OrderCommandCenter({
                 <TooltipProvider delayDuration={0}>
                     <div className="p-6 pt-2">
 
-                        {/* HEADER DASHBOARD WITH KPIs & STEPPER */}
-                        <OrderHeaderDashboard
-                            order={order}
-                            activeInvoice={activeInvoice}
-                            isNoteMode={!!isNoteMode}
-                            type={type}
-                            globalStatus={globalStatus}
-                            phasesStatus={phasesStatus}
-                        />
-
                         {/* Responsive Grid: dynamic columns based on content */}
                         <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4", gridCols)}>
 
@@ -341,7 +331,6 @@ export function OrderCommandCenter({
                                 onEdit={onEdit}
                                 userPermissions={userPermissions}
                                 actionEngineRef={actionEngineRef}
-                                initialOpen={phasesStatus.origin !== 'success'}
                             />
 
                             {/* 2. Producción */}
@@ -354,7 +343,6 @@ export function OrderCommandCenter({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
-                                initialOpen={phasesStatus.production !== 'success' && phasesStatus.production !== 'not_applicable'}
                             />
 
                             {/* 3. Logística / Cumplimiento */}
@@ -370,7 +358,6 @@ export function OrderCommandCenter({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
-                                initialOpen={phasesStatus.logistics !== 'success' && phasesStatus.logistics !== 'not_applicable'}
                             />
 
                             {/* 4. Facturación */}
@@ -386,7 +373,6 @@ export function OrderCommandCenter({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
-                                initialOpen={phasesStatus.billing !== 'success'}
                             />
 
                             {/* 5. Tesorería */}
@@ -401,7 +387,6 @@ export function OrderCommandCenter({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
-                                initialOpen={phasesStatus.treasury !== 'success'}
                             />
                         </div>
 

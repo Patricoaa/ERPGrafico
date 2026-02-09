@@ -16,7 +16,6 @@ interface ProductionPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     showAnimations: boolean
-    initialOpen?: boolean
 }
 
 export function ProductionPhase({
@@ -27,8 +26,7 @@ export function ProductionPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    showAnimations,
-    initialOpen = true
+    showAnimations
 }: ProductionPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -110,7 +108,6 @@ export function ProductionPhase({
                 onActionSuccess={onActionSuccess}
                 actionEngineRef={actionEngineRef}
                 showDocProgress={true}
-                initialOpen={initialOpen}
                 stageId="production"
                 isComplete={totalOTProgress === 100 && totalOTs > 0}
             >

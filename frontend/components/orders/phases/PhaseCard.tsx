@@ -1,11 +1,9 @@
-
-import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ActionCategory } from "../ActionCategory"
-import { Eye, Settings2, ChevronDown, ChevronUp } from "lucide-react"
+import { Eye, Settings2 } from "lucide-react"
 
 interface PhaseCardProps {
     title: string
@@ -24,7 +22,6 @@ interface PhaseCardProps {
     stageId?: string
     isComplete?: boolean
     posSessionId?: number | null
-    initialOpen?: boolean
 }
 
 export function PhaseCard({
@@ -43,10 +40,8 @@ export function PhaseCard({
     showDocProgress = false,
     stageId = '',
     isComplete = false,
-    posSessionId = null,
-    initialOpen = true
+    posSessionId = null
 }: PhaseCardProps) {
-    const [isOpen, setIsOpen] = useState(initialOpen)
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
 
@@ -99,10 +94,7 @@ export function PhaseCard({
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent pointer-events-none" />
             )}
 
-            <div
-                className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
-                onClick={() => setIsOpen(!isOpen)}
-            >
+            <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/5">
                 <div className={cn("p-2 rounded-xl shadow-inner transition-transform duration-500 group-hover/card:scale-110", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])}>
                     {isSuccess ? <div className="relative">
                         <Icon className="h-4 w-4" />
@@ -164,123 +156,111 @@ export function PhaseCard({
                             </Tooltip>
                         )
                     })}
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-white/10 ml-1"
-                    >
-                        {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                    </Button>
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="animate-in slide-in-from-top-2 duration-300 flex flex-col flex-1">
-                    <CardContent className="p-5 flex-1 flex flex-col gap-4 relative z-10">
-                        {/* Documents List - Uniform Row Style */}
-                        <div className="space-y-2 min-h-[40px]">
-                            {documents.length > 0 ? (
-                                documents.map((doc: any, i: number) => (
-                                    <div key={i} className="flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12">
-                                        <div className="flex items-center gap-2.5 overflow-hidden">
-                                            <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">
-                                                <doc.icon className="h-4 w-4 text-primary/80" />
-                                            </div>
-                                            <div className="flex flex-col overflow-hidden">
-                                                <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
-                                                    {doc.number}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-0.5 opacity-20 group-hover/doc:opacity-100 transition-opacity">
-                                            {doc.actions?.map((action: any, idx: number) => (
-                                                <Button
-                                                    key={idx}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={cn("h-7 w-7 rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10")}
-                                                    onClick={(e) => { e.stopPropagation(); action.onClick() }}
-                                                    title={action.title}
-                                                >
-                                                    <action.icon className="h-4 w-4" />
-                                                </Button>
-                                            ))}
-
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg"
-                                                onClick={() => !doc.disabled && onViewDetail?.(doc.docType, doc.id)}
-                                                disabled={doc.disabled}
-                                                title="Ver Detalles"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+            <CardContent className="p-5 flex-1 flex flex-col gap-4 relative z-10">
+                {/* Documents List - Uniform Row Style */}
+                <div className="space-y-2 min-h-[40px]">
+                    {documents.length > 0 ? (
+                        documents.map((doc: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">
+                                        <doc.icon className="h-4 w-4 text-primary/80" />
                                     </div>
-                                ))
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-4 border border-dashed border-border/20 rounded-2xl bg-muted/5">
-                                    <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
+                                            {doc.number}
+                                        </span>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
 
-                        {/* Visual Support Container - FLAT */}
-                        <div className="flex-1 flex flex-col justify-center min-h-[100px]">
-                            {children}
-                        </div>
+                                <div className="flex items-center gap-0.5 opacity-20 group-hover/doc:opacity-100 transition-opacity">
+                                    {doc.actions?.map((action: any, idx: number) => (
+                                        <Button
+                                            key={idx}
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn("h-7 w-7 rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10")}
+                                            onClick={(e) => { e.stopPropagation(); action.onClick() }}
+                                            title={action.title}
+                                        >
+                                            <action.icon className="h-4 w-4" />
+                                        </Button>
+                                    ))}
 
-                        {/* Actions Section */}
-                        <div className="mt-auto">
-                            {!isSuccess && categorizedActions.primary.length > 0 && (
-                                <ActionCategory
-                                    category={{ actions: categorizedActions.primary } as any}
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    layout="grid"
-                                    compact={true}
-                                    showBadge={false}
-                                    posSessionId={posSessionId}
-                                />
-                            )}
-
-                            {isSuccess && (
-                                <div className="flex flex-col items-center justify-center py-2 opacity-30">
-                                    <Settings2 className="h-3 w-3 text-muted-foreground mb-1" />
-                                    <span className="text-[7px] text-muted-foreground font-black uppercase tracking-widest">Etapa Completada</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg"
+                                        onClick={() => !doc.disabled && onViewDetail?.(doc.docType, doc.id)}
+                                        disabled={doc.disabled}
+                                        title="Ver Detalles"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    </CardContent>
-
-                    {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
-                    {categorizedActions.secondary.filter((a: any) =>
-                        !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                    ).length > 0 && (
-                            <div className="pb-1 px-4">
-                                <ActionCategory
-                                    category={{
-                                        actions: categorizedActions.secondary.filter((a: any) =>
-                                            !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                                        )
-                                    } as any}
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    layout="flex"
-                                    compact={true}
-                                    ghost={true}
-                                    showBadge={false}
-                                    posSessionId={posSessionId}
-                                />
                             </div>
-                        )}
+                        ))
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-4 border border-dashed border-border/20 rounded-2xl bg-muted/5">
+                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* Visual Support Container - FLAT */}
+                <div className="flex-1 flex flex-col justify-center min-h-[100px]">
+                    {children}
+                </div>
+
+                {/* Actions Section */}
+                <div className="mt-auto">
+                    {!isSuccess && categorizedActions.primary.length > 0 && (
+                        <ActionCategory
+                            category={{ actions: categorizedActions.primary } as any}
+                            order={order}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            layout="grid"
+                            compact={true}
+                            showBadge={false}
+                            posSessionId={posSessionId}
+                        />
+                    )}
+
+                    {isSuccess && (
+                        <div className="flex flex-col items-center justify-center py-2 opacity-30">
+                            <Settings2 className="h-3 w-3 text-muted-foreground mb-1" />
+                            <span className="text-[7px] text-muted-foreground font-black uppercase tracking-widest">Etapa Completada</span>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+
+            {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
+            {categorizedActions.secondary.filter((a: any) =>
+                !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
+            ).length > 0 && (
+                    <div className="pb-1 px-4">
+                        <ActionCategory
+                            category={{
+                                actions: categorizedActions.secondary.filter((a: any) =>
+                                    !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
+                                )
+                            } as any}
+                            order={order}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            layout="flex"
+                            compact={true}
+                            ghost={true}
+                            showBadge={false}
+                            posSessionId={posSessionId}
+                        />
+                    </div>
+                )}
         </Card>
     )
 }

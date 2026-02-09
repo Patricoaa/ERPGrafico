@@ -20,7 +20,6 @@ interface LogisticsPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     showAnimations: boolean
-    initialOpen?: boolean
 }
 
 export function LogisticsPhase({
@@ -34,8 +33,7 @@ export function LogisticsPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    showAnimations,
-    initialOpen = true
+    showAnimations
 }: LogisticsPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -190,7 +188,6 @@ export function LogisticsPhase({
                 onActionSuccess={onActionSuccess}
                 actionEngineRef={actionEngineRef}
                 showDocProgress={true}
-                initialOpen={initialOpen}
                 stageId="logistics"
                 isComplete={logisticsProgress >= 100}
             >

@@ -20,7 +20,6 @@ interface TreasuryPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     posSessionId?: number | null
-    initialOpen?: boolean
 }
 
 export function TreasuryPhase({
@@ -33,8 +32,7 @@ export function TreasuryPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    posSessionId,
-    initialOpen = true
+    posSessionId
 }: TreasuryPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -159,7 +157,6 @@ export function TreasuryPhase({
                 stageId="treasury"
                 isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
-                initialOpen={initialOpen}
             >
                 <div className="space-y-1 py-1">
                     <div className="flex items-center justify-between text-[11px] font-bold">

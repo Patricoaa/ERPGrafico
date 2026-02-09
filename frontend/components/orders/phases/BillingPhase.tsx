@@ -19,7 +19,6 @@ interface BillingPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     posSessionId?: number | null
-    initialOpen?: boolean
 }
 
 export function BillingPhase({
@@ -33,8 +32,7 @@ export function BillingPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    posSessionId,
-    initialOpen = true
+    posSessionId
 }: BillingPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -132,7 +130,6 @@ export function BillingPhase({
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
                 actionEngineRef={actionEngineRef}
-                initialOpen={initialOpen}
                 stageId="billing"
                 isComplete={billingIsComplete}
                 posSessionId={posSessionId}
