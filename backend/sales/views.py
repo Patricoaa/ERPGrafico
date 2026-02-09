@@ -60,6 +60,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         pos_session_id = request.data.get('pos_session_id')
         from treasury.models import POSSession
         
+        session = None
         if pos_session_id:
             # Shared session scenario
             session = POSSession.objects.filter(id=pos_session_id, status='OPEN').first()
@@ -70,8 +71,8 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 )
         else:
             # Personal session scenario
-            has_session = POSSession.objects.filter(user=request.user, status='OPEN').exists()
-            if not has_session:
+            session = POSSession.objects.filter(user=request.user, status='OPEN').last()
+            if not session:
                  return Response(
                     {'error': 'Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -79,7 +80,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        order = serializer.save()
+        order = serializer.save(pos_session=session)
         
         # Parse files for lines if any
         line_files = {}

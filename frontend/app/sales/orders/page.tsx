@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical, LayoutDashboard } from "lucide-react"
+import { Pencil, Trash2, Eye, FileText, CheckCircle, Banknote, Truck, History, FileBadge, FileEdit, X, MoreVertical, LayoutDashboard, Monitor } from "lucide-react"
 import api from "@/lib/api"
 import { SaleOrderForm } from "@/components/forms/SaleOrderForm"
 import { toast } from "sonner"
@@ -47,6 +47,7 @@ interface SaleOrder {
     }
     lines?: any[]
     pos_session_display?: string
+    pos_session?: number
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
@@ -328,11 +329,22 @@ export default function SalesOrdersPage() {
         {
             accessorKey: "channel_display",
             header: "Sesión POS",
-            cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
-                    {row.original.pos_session_display || translateSalesChannel(row.original.channel_display)}
-                </DataCell.Badge>
-            ),
+            cell: ({ row }) => {
+                const sessionId = row.original.pos_session
+                if (sessionId) {
+                    return (
+                        <div className="flex items-center gap-2 text-primary hover:underline cursor-pointer group">
+                            <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span className="font-medium">Sesión #{sessionId}</span>
+                        </div>
+                    )
+                }
+                return (
+                    <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                        {translateSalesChannel(row.original.channel_display)}
+                    </DataCell.Badge>
+                )
+            },
         },
         {
             accessorKey: "date",

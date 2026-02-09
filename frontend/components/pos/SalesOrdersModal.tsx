@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { LayoutDashboard, ShoppingCart } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, Monitor } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -40,6 +40,7 @@ interface SaleOrder {
     }
     lines?: any[]
     pos_session_display?: string
+    pos_session?: number
 }
 
 interface SalesOrdersModalProps {
@@ -203,12 +204,21 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
             accessorKey: "channel_display",
             header: "Sesión POS",
             cell: ({ row }) => {
-                const sessionDisplay = row.original.pos_session_display
+                const sessionId = row.original.pos_session
                 const channelDisplay = translateSalesChannel(row.original.channel_display)
+
+                if (sessionId) {
+                    return (
+                        <div className="flex items-center gap-2 text-primary hover:underline cursor-pointer group">
+                            <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <span className="font-medium">Sesión #{sessionId}</span>
+                        </div>
+                    )
+                }
 
                 return (
                     <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
-                        {sessionDisplay ? sessionDisplay : channelDisplay}
+                        {channelDisplay}
                     </DataCell.Badge>
                 )
             },
