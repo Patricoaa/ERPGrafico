@@ -131,6 +131,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
+    pos_session_display = serializers.CharField(source='pos_session.__str__', read_only=True)
 
     class Meta:
         model = SaleOrder

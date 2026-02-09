@@ -369,6 +369,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             if payment_method_id:
                 payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
 
+            # POS Session
+            pos_session_id = request.data.get('pos_session_id') or request.data.get('pos_session')
+
             movement = TreasuryService.create_movement(
                 amount=amount,
                 movement_type=movement_type, # Expects 'INBOUND'/'OUTBOUND' match
@@ -383,6 +386,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 sale_order=sale_order,
                 transaction_number=transaction_number,
                 is_pending_registration=is_pending_registration,
+                pos_session_id=pos_session_id,
                 created_by=request.user
             )
             

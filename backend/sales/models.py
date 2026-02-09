@@ -36,6 +36,13 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
+    pos_session = models.ForeignKey(
+        'treasury.POSSession',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='sale_orders',
+        verbose_name=_("Sesión de Caja")
+    )
     
     history = HistoricalRecords()
     

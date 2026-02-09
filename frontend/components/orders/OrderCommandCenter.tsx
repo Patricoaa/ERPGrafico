@@ -54,6 +54,7 @@ interface OrderCommandCenterProps {
     onOpenChange: (open: boolean) => void
     onActionSuccess?: () => void
     onEdit?: (orderId: number) => void
+    posSessionId?: number | null
 }
 
 const pulseGlow = `
@@ -92,7 +93,8 @@ export function OrderCommandCenter({
     open,
     onOpenChange,
     onActionSuccess,
-    onEdit
+    onEdit,
+    posSessionId = null
 }: OrderCommandCenterProps) {
     const [order, setOrder] = useState<any>(null)
     const [activeInvoice, setActiveInvoice] = useState<any>(null)
@@ -916,6 +918,7 @@ export function OrderCommandCenter({
                             userPermissions={userPermissions}
                             onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                             layout="flex"
+                            posSessionId={posSessionId}
                         />
                     </div>
                 </TooltipProvider>

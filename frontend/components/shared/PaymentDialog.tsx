@@ -45,6 +45,7 @@ interface PaymentDialogProps {
         document_attachment: string | null
     } | null
     title?: string
+    posSessionId?: number | null
 }
 
 export function PaymentDialog({
@@ -58,7 +59,8 @@ export function PaymentDialog({
     isPurchase = false,
     isRefund = false,
     existingInvoice = null,
-    title
+    title,
+    posSessionId = null
 }: PaymentDialogProps) {
     const [dteType, setDteType] = useState("NONE")
     const [documentReference, setDocumentReference] = useState("")
@@ -75,6 +77,8 @@ export function PaymentDialog({
         transactionNumber: '',
         isPending: false
     })
+
+    const [terminalId, setTerminalId] = useState<number | null>(null)
 
     // Reset payment data when modal opens
     useEffect(() => {
@@ -99,6 +103,21 @@ export function PaymentDialog({
             }
         }
     }, [open, pendingAmount, isPurchase, existingInvoice])
+
+    // Fetch terminal from POS session
+    useEffect(() => {
+        if (posSessionId) {
+            api.get(`/treasury/pos-sessions/${posSessionId}/`)
+                .then(response => {
+                    setTerminalId(response.data.terminal || null)
+                })
+                .catch(error => {
+                    console.error('Error fetching POS session:', error)
+                })
+        } else {
+            setTerminalId(null)
+        }
+    }, [posSessionId])
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -218,23 +237,33 @@ export function PaymentDialog({
                         )}
 
                         {/* Payment Method Card Selector */}
-                        <PaymentMethodCardSelector
-                            operation={isPurchase ? 'purchases' : 'sales'}
-                            total={pendingAmount}
-                            paymentData={paymentData}
-                            onPaymentDataChange={setPaymentData}
-                            compactMode={true}
-                            labels={{
-                                totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
-                                amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
-                                differencePositiveLabel: isRefund ? 'Diferencia a favor' : 'Vuelto',
-                                differenceNegativeLabel: 'Deuda Pendiente',
-                                amountModalTitle: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
-                                amountModalDescription: isRefund
-                                    ? 'Ingrese el monto a reembolsar.'
-                                    : (isPurchase ? 'Ingrese el monto a pagar.' : 'Ingrese el monto recibido.')
-                            }}
-                        />
+                        {/* Only show when terminalId is loaded if posSessionId is provided */}
+                        {(!posSessionId || terminalId !== null) && (
+                            <PaymentMethodCardSelector
+                                operation={isPurchase ? 'purchases' : 'sales'}
+                                terminalId={terminalId || undefined}
+                                total={pendingAmount}
+                                paymentData={paymentData}
+                                onPaymentDataChange={setPaymentData}
+                                compactMode={true}
+                                labels={{
+                                    totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
+                                    amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
+                                    differencePositiveLabel: isRefund ? 'Diferencia a favor' : 'Vuelto',
+                                    differenceNegativeLabel: 'Deuda Pendiente',
+                                    amountModalTitle: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
+                                    amountModalDescription: isRefund
+                                        ? 'Ingrese el monto a reembolsar.'
+                                        : (isPurchase ? 'Ingrese el monto a pagar.' : 'Ingrese el monto recibido.')
+                                }}
+                            />
+                        )}
+                        {posSessionId && terminalId === null && (
+                            <div className="flex items-center justify-center p-8 text-muted-foreground">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="ml-3">Cargando métodos de pago...</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

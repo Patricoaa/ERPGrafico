@@ -30,6 +30,7 @@ interface ActionCategoryProps {
     compact?: boolean
     ghost?: boolean
     showBadge?: boolean
+    posSessionId?: number | null
 }
 
 export const ActionCategory = forwardRef(({
@@ -40,7 +41,8 @@ export const ActionCategory = forwardRef(({
     layout = 'list',
     compact = false,
     ghost = false,
-    showBadge = true
+    showBadge = true,
+    posSessionId = null
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
     const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -225,7 +227,8 @@ export const ActionCategory = forwardRef(({
                 payment_type: isSale ?
                     (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'OUTBOUND' : 'INBOUND') :
                     (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'),
-                partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
+                partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
+                ...(posSessionId ? { pos_session_id: posSessionId } : {})
             }
 
             if (isInvoice) {
@@ -359,6 +362,7 @@ export const ActionCategory = forwardRef(({
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
+                    posSessionId={posSessionId}
                 />
             )}
 

@@ -46,6 +46,7 @@ import { Cart } from './components/Cart'
 import { SessionControl, SessionControlHandle } from '@/components/pos/SessionControl'
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/components/pos/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing'
+import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
 
 // 🚀 Lazy-loaded heavy components (modals only used when triggered)
 const SalesCheckoutWizard = dynamic(
@@ -148,6 +149,7 @@ function POSPageContent() {
         initialValue: number
     } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
+    const [ordersModalOpen, setOrdersModalOpen] = useState(false)
 
     // Auto-save drafts
     useEffect(() => {
@@ -330,11 +332,9 @@ function POSPageContent() {
                                 <BarChart3 className="mr-2 h-4 w-4" />
                                 <span>Reporte X (Parcial)</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <a href="/sales/orders" className="cursor-pointer flex items-center">
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    <span>Notas de Venta</span>
-                                </a>
+                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>Notas de Venta</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -479,6 +479,12 @@ function POSPageContent() {
             />
 
             <ScannerFeedback ref={scannerFeedbackRef} />
+
+            <SalesOrdersModal
+                open={ordersModalOpen}
+                onOpenChange={setOrdersModalOpen}
+                posSessionId={currentSession?.id}
+            />
         </div>
     )
 }
