@@ -41,6 +41,7 @@ interface PaymentMethodCardSelectorProps {
         amountModalTitle?: string
         amountModalDescription?: string
     }
+    compactMode?: boolean
 }
 
 export function PaymentMethodCardSelector({
@@ -49,7 +50,8 @@ export function PaymentMethodCardSelector({
     total,
     paymentData,
     onPaymentDataChange,
-    labels = {}
+    labels = {},
+    compactMode = false
 }: PaymentMethodCardSelectorProps) {
     const {
         totalLabel = 'Total',
@@ -188,32 +190,34 @@ export function PaymentMethodCardSelector({
     }, [allowedMethods, terminalHasCardTerminal, isMethodAllowed, operation])
 
     const difference = paymentData.amount - total
+    const showChangeCard = !(operation === 'purchases' && difference >= 0);
 
     return (
         <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center h-24">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className={cn("bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{totalLabel}</Label>
-                        <p className="text-xl font-bold text-primary">
+                        <p className={cn("font-bold text-primary", compactMode ? "text-lg" : "text-xl")}>
                             {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </p>
                     </div>
                 </div>
 
-                <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center h-24">
+                <div className={cn("bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{amountLabel}</Label>
-                        <p className="text-xl font-bold text-blue-600">
+                        <p className={cn("font-bold text-blue-600", compactMode ? "text-lg" : "text-xl")}>
                             {Number(paymentData.amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </p>
                     </div>
                 </div>
 
-                {paymentData.amount > 0 && (
+                {paymentData.amount > 0 && showChangeCard && (
                     <div className={cn(
-                        "p-4 rounded-xl border flex justify-between items-center h-24 shadow-sm transition-all animate-in zoom-in-95 duration-200",
+                        "rounded-xl border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
+                        compactMode ? "p-3 h-20" : "p-4 h-24",
                         difference >= 0
                             ? "bg-emerald-500/5 border-emerald-500/10"
                             : "bg-orange-500/5 border-orange-500/10"
@@ -223,8 +227,9 @@ export function PaymentMethodCardSelector({
                                 {difference >= 0 ? differencePositiveLabel : differenceNegativeLabel}
                             </Label>
                             <p className={cn(
-                                "text-xl font-bold",
-                                difference >= 0 ? "text-emerald-600" : "text-orange-600"
+                                "font-bold",
+                                difference >= 0 ? "text-emerald-600" : "text-orange-600",
+                                compactMode ? "text-lg" : "text-xl"
                             )}>
                                 {Math.abs(difference).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                             </p>
@@ -248,7 +253,12 @@ export function PaymentMethodCardSelector({
                         <div key={m.id} className="relative group h-full">
                             <Label
                                 htmlFor={`method-${m.id}`}
-                                className={`flex flex-col gap-4 rounded-2xl border-2 border-muted bg-popover p-6 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full ${paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : ''} ${!m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={cn(
+                                    "flex flex-col rounded-2xl border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
+                                    paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : '',
+                                    !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
+                                    compactMode ? "gap-2 p-3" : "gap-4 p-6"
+                                )}
                                 onClick={(e) => {
                                     if (!m.isAllowed) {
                                         e.preventDefault()
@@ -260,12 +270,21 @@ export function PaymentMethodCardSelector({
                                 }}
                             >
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
-                                <div className="flex flex-col items-center justify-center gap-4">
-                                    <div className={`p-6 rounded-2xl bg-background border-2 shadow-sm ${m.color}`}>
-                                        <m.icon className="h-10 w-10" />
+                                <div className="flex flex-col items-center justify-center gap-4 h-full">
+                                    <div className={cn(
+                                        "rounded-2xl bg-background border-2 shadow-sm flex items-center justify-center",
+                                        m.color,
+                                        compactMode ? "p-3" : "p-6"
+                                    )}>
+                                        <m.icon className={cn(
+                                            compactMode ? "h-6 w-6" : "h-10 w-10"
+                                        )} />
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
-                                        <span className="text-sm font-black uppercase tracking-tight text-center">{m.label}</span>
+                                        <span className={cn(
+                                            "font-black uppercase tracking-tight text-center",
+                                            compactMode ? "text-xs" : "text-sm"
+                                        )}>{m.label}</span>
                                         {!m.isAllowed && (
                                             <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">No Disponible</span>
                                         )}

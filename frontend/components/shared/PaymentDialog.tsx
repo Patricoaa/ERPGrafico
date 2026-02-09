@@ -102,7 +102,7 @@ export function PaymentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="xs">
+            <DialogContent size="lg">
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <Banknote className="h-5 w-5" />
@@ -111,25 +111,6 @@ export function PaymentDialog({
                 </DialogHeader>
 
                 <div className="py-4 space-y-6">
-                    <div className="relative overflow-hidden p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/10 shadow-inner">
-                        <div className="flex justify-between items-center relative z-10">
-                            <div>
-                                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">Monto de la Orden</p>
-                                <p className="text-sm font-bold text-muted-foreground opacity-80">{formatCurrency(total)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[10px] uppercase font-black tracking-[0.2em] text-primary/70 mb-1">
-                                    {isRefund ? "Total a Reembolsar" : "Saldo Pendiente"}
-                                </p>
-                                <p className="text-4xl font-black text-primary tracking-tighter drop-shadow-sm">
-                                    {formatCurrency(pendingAmount)}
-                                </p>
-                            </div>
-                        </div>
-                        {/* Abstract background elements */}
-                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-32 h-32 bg-primary/5 rounded-full blur-3xl"></div>
-                    </div>
-
                     <div className="grid gap-4">
                         {showDteSelector && !hideDteFields && (
                             <div className="grid gap-2">
@@ -242,6 +223,7 @@ export function PaymentDialog({
                             total={pendingAmount}
                             paymentData={paymentData}
                             onPaymentDataChange={setPaymentData}
+                            compactMode={true}
                             labels={{
                                 totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
                                 amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
