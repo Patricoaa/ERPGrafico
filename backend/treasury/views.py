@@ -205,15 +205,16 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             from django.db.models import Q
             qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
             
-        # Filter pending batch movements
-        is_batch_pending = self.request.query_params.get('is_batch_pending')
-        if is_batch_pending == 'true':
-            qs = qs.filter(terminal_batch__isnull=True)
-            
-        # Filter by date range if needed (or exact date)
+        # Date filter
         date = self.request.query_params.get('date')
         if date:
-            qs = qs.filter(date__date=date)
+            qs = qs.filter(date=date)
+
+        # Batch filtering (IsNull)
+        terminal_batch_isnull = self.request.query_params.get('terminal_batch__isnull')
+        if terminal_batch_isnull:
+            val = terminal_batch_isnull.lower() == 'true'
+            qs = qs.filter(terminal_batch__isnull=val)
 
         return qs
 

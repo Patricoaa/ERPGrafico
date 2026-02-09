@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TerminalManagement } from "@/components/treasury/TerminalManagement"
-import { Banknote, List } from "lucide-react"
+import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatchesManagement"
+import { Banknote, List, Receipt } from "lucide-react"
 import POSSessionsPage from "../sessions/page"
 
 export default function TerminalsPage() {
@@ -18,10 +19,14 @@ export default function TerminalsPage() {
 
             <Tabs defaultValue="terminals" className="space-y-4">
                 <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
                         <TabsTrigger value="terminals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
                             <Banknote className="h-4 w-4" />
                             <span className="max-sm:hidden">Terminales POS</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="batches" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+                            <Receipt className="h-4 w-4" />
+                            <span className="max-sm:hidden">Lotes de Liquidación</span>
                         </TabsTrigger>
                         <TabsTrigger value="sessions" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
                             <List className="h-4 w-4" />
@@ -32,6 +37,10 @@ export default function TerminalsPage() {
 
                 <TabsContent value="terminals">
                     <TerminalManagement />
+                </TabsContent>
+
+                <TabsContent value="batches">
+                    <TerminalBatchesManagement showTitle={false} />
                 </TabsContent>
 
                 <TabsContent value="sessions">
