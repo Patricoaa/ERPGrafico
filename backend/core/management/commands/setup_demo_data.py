@@ -1151,7 +1151,7 @@ class Command(BaseCommand):
                 'is_terminal': True,
                 'supplier': partners['suppliers'][0],
                 'terminal_receivable_account': accounts['receivable'],
-                'commission_expense_account': accounts['expense_general']
+                'commission_expense_account': Account.objects.get(code='5.2.13') # Use granular card commission account
             }
         )
         
@@ -1161,22 +1161,24 @@ class Command(BaseCommand):
             defaults={
                 'name': "Caja Central P1",
                 'location': "Planta 1 - Recepción",
-                'default_treasury_account': till1 # Linked to specific till account
+                'default_treasury_account': bco01 # Point to Bank Account as requested
             }
         )
-        # Assign allowed payment methods (all typical collection methods)
-        all_sales_methods = PaymentMethod.objects.filter(allow_for_sales=True)
-        t1.allowed_payment_methods.set(all_sales_methods)
+        # Assign allowed payment methods (Only 1 CASH method as requested + cards/transfers)
+        cash_pm_01 = PaymentMethod.objects.get(name="Efectivo POS 01")
+        other_methods = PaymentMethod.objects.filter(allow_for_sales=True).exclude(method_type=PaymentMethod.Type.CASH)
+        t1.allowed_payment_methods.set([cash_pm_01] | list(other_methods))
 
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
                 'name': "Caja Taller P2",
                 'location': "Planta 2 - Taller",
-                'default_treasury_account': caja01
+                'default_treasury_account': bco01 # Point to Bank Account as requested
             }
         )
-        t2.allowed_payment_methods.set(all_sales_methods)
+        cash_pm_taller = PaymentMethod.objects.get(name="Efectivo Taller")
+        t2.allowed_payment_methods.set([cash_pm_taller] | list(other_methods))
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")

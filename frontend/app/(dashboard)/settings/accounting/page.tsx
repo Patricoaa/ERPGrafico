@@ -66,6 +66,10 @@ const accountingSchema = z.object({
     pos_other_outflow_account: z.string().nullable(),
     pos_cash_difference_approval_threshold: z.number(),
 
+    // Terminal Bridge Accounts
+    terminal_commission_bridge_account: z.string().nullable(),
+    terminal_iva_bridge_account: z.string().nullable(),
+
     code_format: z.string(),
     asset_prefix: z.string(),
     liability_prefix: z.string(),
@@ -131,6 +135,8 @@ export default function AccountingSettingsPage() {
             pos_other_inflow_account: null,
             pos_other_outflow_account: null,
             pos_cash_difference_approval_threshold: 5000,
+            terminal_commission_bridge_account: null,
+            terminal_iva_bridge_account: null,
 
             code_format: "X.X.XX.XXX",
             asset_prefix: "1",
@@ -334,6 +340,11 @@ export default function AccountingSettingsPage() {
                                                 <AccountField form={form} name="exchange_difference_account" label="Dif. Cambio" accountType="" />
                                                 <AccountField form={form} name="error_adjustment_account" label="Ajuste Error" accountType="EXPENSE" />
                                                 <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+
+                                                <Separator className="my-2" />
+                                                <p className="text-[10px] font-bold uppercase text-blue-600 mb-2">Comisiones Terminales (Puente)</p>
+                                                <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
+                                                <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comis." accountType="ASSET" />
                                             </div>
 
                                             <div className="space-y-4">

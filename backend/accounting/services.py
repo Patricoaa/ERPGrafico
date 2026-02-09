@@ -119,6 +119,8 @@ class AccountingService:
             
             ('1.1.06', 'Cuentas Puente Activo', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.06.01', 'Salida de Stock (Pendiente de Facturar)', AccountType.ASSET, '1.1.06', None, None, None),
+            ('1.1.06.02', 'Comisiones Terminal (Puente)', AccountType.ASSET, '1.1.06', None, None, None),
+            ('1.1.06.03', 'IVA Comisiones Terminal (Puente)', AccountType.ASSET, '1.1.06', None, None, None),
 
             # 1.2 Non-Current Assets
             ('1.2', 'Activos No Corrientes', AccountType.ASSET, None, None, None, BSCategory.NON_CURRENT_ASSET),
@@ -176,10 +178,25 @@ class AccountingService:
             ('5.2.04', 'Honorarios Profesionales', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.05', 'Materiales y Suministros Consumibles', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.06', 'Gastos Generales', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.07', 'Mantenimiento y Reparaciones', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.08', 'Publicidad y Propaganda', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.09', 'Seguros', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.10', 'Comisiones Bancarias', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.11', 'Ajuste por Redondeo', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.12', 'Ajuste por Error', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.13', 'Comisión Tarjeta / Transbank', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.14', 'Faltante por Robo', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.15', 'Otros Egresos POS', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.16', 'Redondeo y Vueltos POS (Ajuste)', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.17', 'Errores de Conteo y Sistema POS', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.18', 'Gastos de Colación y Movilización', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.19', 'Suministros de Oficina y Computación', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.20', 'Amortización Intangibles', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.21', 'Gastos de Representación', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.22', 'Impuestos, Tasas y Patentes', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.23', 'Seguridad y Vigilancia', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.24', 'Suscripciones y Membresías Software', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.25', 'Gastos de Correspondencia', AccountType.EXPENSE, '5.2', None, None, None),
         ]
         
         created_count = 0
@@ -253,6 +270,10 @@ class AccountingService:
             'pos_counting_error_account': '5.2.17',
             'pos_system_error_account': '5.2.17',
             'pos_rounding_adjustment_account': '5.2.16',
+
+            # Terminal Bridge
+            'terminal_commission_bridge_account': '1.1.06.02',
+            'terminal_iva_bridge_account': '1.1.06.03',
         }
 
         for field, code in mapping.items():

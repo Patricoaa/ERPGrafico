@@ -403,15 +403,32 @@ class TerminalBatchService:
             state=JournalEntry.State.DRAFT
         )
         
-        # A. Expense Commission (Debit)
+        # Get Bridge Accounts
+        settings = AccountingSettings.objects.first()
+        comm_bridge = settings.terminal_commission_bridge_account if settings else None
+        iva_bridge = settings.terminal_iva_bridge_account if settings else None
+        
+        if not (comm_bridge and iva_bridge):
+             # Log warning or handle gracefully? For now mandatory if using this flow.
+             raise ValidationError("Debe configurar las cuentas puente de comisiones e IVA en la configuración contable.")
+
+        # A. Bridge Commission - Neto (Debit)
         JournalItem.objects.create(
             entry=entry,
-            account=expense_acc,
-            debit=commission_total,
+            account=comm_bridge,
+            debit=commission_base,
+            credit=0
+        )
+
+        # B. Bridge IVA (Debit)
+        JournalItem.objects.create(
+            entry=entry,
+            account=iva_bridge,
+            debit=commission_tax,
             credit=0
         )
         
-        # B. Bank Check/Transfer (Debit) <-- Net Amount received
+        # C. Bank Check/Transfer (Debit) <-- Net Amount received
         JournalItem.objects.create(
             entry=entry,
             account=bank_acc,
@@ -419,13 +436,12 @@ class TerminalBatchService:
             credit=0
         )
         
-        # C. Receivable Offset (Credit) <-- Gross Amount was previously debited here
-        # So we credit the SUM (Commission + Net) which should equal Gross
+        # D. Receivable Offset (Credit) <-- Gross Amount was previously debited here
         JournalItem.objects.create(
             entry=entry,
             account=receivable_acc,
             debit=0,
-            credit=gross_amount # Or commission_total + net_amount
+            credit=gross_amount
         )
         
         JournalEntryService.post_entry(entry)
@@ -459,14 +475,22 @@ class TerminalBatchService:
         total_commission = total_commission_net + total_commission_tax
         
         # Create Invoice (Billing Module)
-        # Assuming Invoice.objects.create works or use a service
         from billing.models import Invoice
-        # from billing.services import BillingService
         
-        # Reuse billing logic. For now let's say we create a draft invoice.
-        # This part depends on Billing module specifics.
-        # Minimal placehold implementation:
+        # Get Accounts needed
+        settings = AccountingSettings.objects.first()
+        comm_bridge = settings.terminal_commission_bridge_account if settings else None
+        iva_bridge = settings.terminal_iva_bridge_account if settings else None
+        vat_account = settings.default_tax_receivable_account if settings else None
         
+        # Grab first batch to get the supplier's terminal configuration (for specific expense account)
+        first_batch = batches.first()
+        expense_acc = first_batch.payment_method.commission_expense_account if first_batch.payment_method else None
+        payable_acc = supplier.account_payable or settings.default_payable_account if settings else None
+
+        if not (comm_bridge and iva_bridge and vat_account and expense_acc and payable_acc):
+             raise ValidationError("Falta configuración de cuentas (Puente, IVA, Gasto o Por Pagar) para generar la factura.")
+
         invoice = Invoice.objects.create(
             contact=supplier,
             dte_type=Invoice.DTEType.PURCHASE_INV,
@@ -477,9 +501,42 @@ class TerminalBatchService:
             total_tax=total_commission_tax.quantize(Decimal('1')),
             total=total_commission.quantize(Decimal('1')),
             status=Invoice.Status.PAID,
-            payment_method=Invoice.PaymentMethod.TRANSFER # Already deducted from account
+            payment_method=Invoice.PaymentMethod.TRANSFER
         )
         
+        # 1. Invoice Entry (Expense/IVA vs Payable)
+        description_inv = f"Factura Comisión {supplier.name} - {month}/{year} (Loteado)"
+        entry_inv = JournalEntry.objects.create(
+            date=invoice.date,
+            description=description_inv,
+            reference=f"COMM-{invoice.id}",
+            state=JournalEntry.State.POSTED
+        )
+        # Debit Gasto
+        JournalItem.objects.create(entry=entry_inv, account=expense_acc, debit=total_commission_net, credit=0, partner=supplier.name)
+        # Debit IVA
+        JournalItem.objects.create(entry=entry_inv, account=vat_account, debit=total_commission_tax, credit=0, partner=supplier.name)
+        # Credit Payable
+        JournalItem.objects.create(entry=entry_inv, account=payable_acc, debit=0, credit=total_commission, partner=supplier.name)
+        
+        invoice.journal_entry = entry_inv
+        invoice.save()
+
+        # 2. Clearing Entry (Payable vs Bridge Accounts)
+        # This "pays" the invoice by using the retentions accumulated in bridge accounts
+        entry_clear = JournalEntry.objects.create(
+            date=invoice.date,
+            description=f"Compensación Retenciones Terminal {supplier.name} - {month}/{year}",
+            reference=f"CLEA-{invoice.id}",
+            state=JournalEntry.State.POSTED
+        )
+        # Debit Payable
+        JournalItem.objects.create(entry=entry_clear, account=payable_acc, debit=total_commission, credit=0, partner=supplier.name)
+        # Credit Bridge Commission
+        JournalItem.objects.create(entry=entry_clear, account=comm_bridge, debit=0, credit=total_commission_net, partner=supplier.name)
+        # Credit Bridge IVA
+        JournalItem.objects.create(entry=entry_clear, account=iva_bridge, debit=0, credit=total_commission_tax, partner=supplier.name)
+
         # Link batches
         batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
         

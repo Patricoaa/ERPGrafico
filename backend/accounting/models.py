@@ -502,6 +502,18 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Ajuste por Redondeo"),
         help_text=_("Para justificar diferencias de redondeo")
     )
+    terminal_commission_bridge_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_terminal_comm_bridge',
+        verbose_name=_("Cuenta Puente Comisión Terminales"),
+        help_text=_("Cuenta de activo/puente para retenciones de comisión sin factura.")
+    )
+    terminal_iva_bridge_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_terminal_iva_bridge',
+        verbose_name=_("Cuenta Puente IVA Terminales"),
+        help_text=_("Cuenta de activo/puente para el IVA de comisiones sin factura.")
+    )
     error_adjustment_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_error_adj',
