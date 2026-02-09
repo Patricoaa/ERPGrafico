@@ -22,7 +22,7 @@ class DifferenceService:
     
     # Tipos de diferencias predefinidos
     COMMISSION = 'COMMISSION'
-    CARD_COMMISSION = 'CARD_COMMISSION'  # Comisión Transbank/Tarjeta
+
     INTEREST = 'INTEREST'
     EXCHANGE_DIFF = 'EXCHANGE_DIFF'
     ROUNDING = 'ROUNDING'
@@ -31,7 +31,6 @@ class DifferenceService:
     
     DIFFERENCE_CHOICES = [
         (COMMISSION, 'Comisión Bancaria'),
-        (CARD_COMMISSION, 'Comisión Tarjeta'),
         (INTEREST, 'Intereses Percibidos/Pagados'),
         (EXCHANGE_DIFF, 'Diferencia de Cambio'),
         (ROUNDING, 'Ajuste por Redondeo'),
@@ -42,7 +41,6 @@ class DifferenceService:
     # Mapeo de tipos a nombres de campos en AccountingSettings
     ACCOUNT_FIELD_MAP = {
         COMMISSION: 'bank_commission_account',
-        CARD_COMMISSION: 'card_commission_account',
         INTEREST: 'interest_income_account',
         EXCHANGE_DIFF: 'exchange_difference_account',
         ROUNDING: 'rounding_adjustment_account',
@@ -84,50 +82,7 @@ class DifferenceService:
         # Obtener cuenta según el tipo
         difference_account = None
         
-        if difference_type == DifferenceService.CARD_COMMISSION:
-            from .models import CardPaymentProvider, DailySettlement
-            provider = None
-            
-            if provider_id:
-                provider = CardPaymentProvider.objects.filter(id=provider_id).first()
-                
-            if not provider and line.reconciliation_match:
-                first_movement = line.reconciliation_match.movements.filter(card_provider__isnull=False).first()
-                if first_movement:
-                    provider = first_movement.card_provider
-            elif line.reconciliation_match:
-                first_movement = line.reconciliation_match.movements.filter(card_provider__isnull=False).first()
-                if first_movement:
-                    provider = first_movement.card_provider
-            
-            if provider and provider.commission_bridge_account:
-                difference_account = provider.commission_bridge_account
-                
-                # Crear Liquidación Diaria Automática
-                total_diff_abs = abs(line.difference_amount)
-                vat_rate = provider.vat_rate / Decimal('100.0')
-                
-                commission = (total_diff_abs / (Decimal('1') + vat_rate)).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                vat = total_diff_abs - commission
-                
-                DailySettlement.objects.update_or_create(
-                    bank_statement_line=line,
-                    defaults={
-                        'provider': provider,
-                        'settlement_date': line.transaction_date,
-                        'total_gross': abs(line.amount) + total_diff_abs,
-                        'total_commission': commission,
-                        'total_vat': vat,
-                        'total_net': abs(line.amount),
-                        'is_reconciled': True,
-                        'reconciled_at': timezone.now(),
-                        'notes': notes or f"Generado via conciliación #{line.id}"
-                    }
-                )
-            elif settings.card_commission_account:
-                difference_account = settings.card_commission_account
-            elif settings.bank_commission_account:
-                difference_account = settings.bank_commission_account
+
 
         if not difference_account:
             field_name = DifferenceService.ACCOUNT_FIELD_MAP.get(difference_type)
@@ -161,7 +116,7 @@ class DifferenceService:
                 JournalItem.objects.create(entry=entry, account=difference_account, debit=abs_diff, credit=0)
                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
         else:
-            if difference_type in [DifferenceService.COMMISSION, DifferenceService.CARD_COMMISSION, DifferenceService.ERROR]:
+            if difference_type in [DifferenceService.COMMISSION, DifferenceService.ERROR]:
                 JournalItem.objects.create(entry=entry, account=difference_account, debit=abs_diff, credit=0)
                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=0, credit=abs_diff)
             else:

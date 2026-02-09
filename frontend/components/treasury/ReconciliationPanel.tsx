@@ -50,7 +50,7 @@ interface BankStatementLine {
 }
 
 interface PaymentSuggestion {
-    payment_data: {
+    payment_data?: {
         id: number
         display_id: string
         amount: string
@@ -58,6 +58,14 @@ interface PaymentSuggestion {
         contact_name: string
         payment_type: string
     }
+    batch_data?: {
+        id: number
+        display_id: string
+        net_amount: string
+        sales_date: string
+        payment_method_name: string
+    }
+    is_batch?: boolean
     score: number
     reasons: string[]
     difference: string
@@ -102,8 +110,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
     })
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
-    const [cardProviders, setCardProviders] = useState<any[]>([])
-    const [selectedProviderId, setSelectedProviderId] = useState<string>("")
+
     const [searchQuery, setSearchQuery] = useState("")
     const [actionDialog, setActionDialog] = useState<{
         open: boolean,
@@ -116,17 +123,9 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         fetchUnreconciledLines()
         fetchUnreconciledPayments()
         fetchStatement()
-        fetchProviders()
     }, [statementId])
 
-    const fetchProviders = async () => {
-        try {
-            const response = await api.get('/treasury/card-providers/')
-            setCardProviders(response.data.results || response.data)
-        } catch (error) {
-            console.error('Error fetching card providers:', error)
-        }
-    }
+
 
     const fetchStatement = async () => {
         try {
@@ -161,14 +160,14 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
             if (e.key === 'Escape') {
                 if (diffDialog.open) {
                     setDiffDialog(prev => ({ ...prev, open: false }))
-                } else if (selectedLine) {
-                    handleExclude(selectedLine.id)
+                } else if (selectedLines.length > 0) {
+                    handleExclude(selectedLines[selectedLines.length - 1].id)
                 }
             } else if (e.key === 'Enter') {
                 if (diffDialog.open) {
                     confirmDifferenceMatch()
-                } else if (selectedLine && suggestions.length > 0) {
-                    handleMatch(selectedLine.id, suggestions[0].payment_data.id)
+                } else if (selectedLines.length > 0 && suggestions.length > 0) {
+                    handleMatch(selectedLines[selectedLines.length - 1].id, (suggestions[0].is_batch ? suggestions[0].batch_data?.id : suggestions[0].payment_data?.id)!)
                 }
             }
         }
@@ -208,7 +207,28 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                     limit: 100 // Get a good amount for the side panel
                 }
             })
-            setUnreconciledPayments(response.data.results || response.data)
+
+            // Also fetch unreconciled batches
+            const batchesResponse = await api.get('/treasury/terminal-batches/', {
+                params: {
+                    status: 'SETTLED',
+                    reconciliation_match__isnull: 'True'
+                }
+            })
+
+            const payments = response.data.results || response.data
+            const batches = (batchesResponse.data.results || batchesResponse.data).map((b: any) => ({
+                ...b,
+                id: b.id,
+                display_id: b.display_id,
+                amount: b.net_amount,
+                date: b.sales_date,
+                contact_name: b.supplier_name || 'Terminal Settlement',
+                payment_method_new_name: b.payment_method_name,
+                is_batch: true
+            }))
+
+            setUnreconciledPayments([...payments, ...batches])
         } catch (error) {
             console.error('Error fetching unreconciled payments:', error)
         } finally {
@@ -312,9 +332,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                     amount: diff.toString(),
                     isGroup: true
                 })
-                // Heuristic: If net < gross (negative diff), suggest COMMISSION
                 if (diff < 0) {
-                    setDiffType("CARD_COMMISSION")
+                    setDiffType("COMMISSION")
                 } else {
                     setDiffType("ROUNDING")
                 }
@@ -325,11 +344,13 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         try {
             setMatching(true)
             const lineIds = selectedLines.map(l => l.id)
-            const paymentIds = selectedPayments.map(p => p.id)
+            const paymentIds = selectedPayments.filter(p => !p.is_batch).map(p => p.id)
+            const batchIds = selectedPayments.filter(p => p.is_batch).map(p => p.id)
 
             const payload: any = {
                 line_ids: lineIds,
-                payment_ids: paymentIds
+                payment_ids: paymentIds,
+                batch_ids: batchIds
             }
 
             if (force) {
@@ -352,7 +373,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
             if (force) {
                 confirmPayload.difference_type = diffType
                 confirmPayload.notes = diffNotes
-                confirmPayload.card_provider_id = selectedProviderId
+
             }
 
             await api.post(`/treasury/statement-lines/${lineIds[0]}/confirm/`, confirmPayload)
@@ -402,8 +423,8 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         const isAmountMatchA = lineTotal !== null && Math.abs(Math.abs(parseFloat(a.amount)) - lineTotal) < 1
         const isAmountMatchB = lineTotal !== null && Math.abs(Math.abs(parseFloat(b.amount)) - lineTotal) < 1
 
-        const isBackendSuggestA = suggestions.some(s => s.payment_data.id === a.id)
-        const isBackendSuggestB = suggestions.some(s => s.payment_data.id === b.id)
+        const isBackendSuggestA = suggestions.some(s => s.is_batch ? s.batch_data?.id === a.id : s.payment_data?.id === a.id)
+        const isBackendSuggestB = suggestions.some(s => s.is_batch ? s.batch_data?.id === b.id : s.payment_data?.id === b.id)
 
         const scoreA = (isBackendSuggestA ? 10 : 0) + (isAmountMatchA ? 5 : 0)
         const scoreB = (isBackendSuggestB ? 10 : 0) + (isAmountMatchB ? 5 : 0)
@@ -413,7 +434,10 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
 
     const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
         if (!force) {
-            const suggestion = suggestions.find(s => s.payment_data.id === paymentId)
+            const suggestion = suggestions.find(s => {
+                const id = s.is_batch ? s.batch_data?.id : s.payment_data?.id;
+                return id === paymentId;
+            })
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
 
             if (diffAmount !== 0) {
@@ -435,15 +459,25 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
 
         try {
             setMatching(true)
-            await api.post(`/treasury/statement-lines/${lineId}/match/`, {
-                payment_id: paymentId
-            })
+            const isBatch = suggestions.find(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)?.is_batch
+
+            if (isBatch) {
+                await api.post(`/treasury/statement-lines/match_group/`, {
+                    line_ids: [lineId],
+                    batch_ids: [paymentId],
+                    payment_ids: []
+                })
+            } else {
+                await api.post(`/treasury/statement-lines/${lineId}/match/`, {
+                    payment_id: paymentId
+                })
+            }
 
             const confirmData: any = {}
             if (force) {
                 confirmData.difference_type = diffType
                 confirmData.notes = diffNotes
-                confirmData.card_provider_id = selectedProviderId
+
             }
 
             await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmData)
@@ -804,7 +838,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                 const isSelected = selectedPayments.some(p => p.id === payment.id)
                                 const lineTotal = selectedLines.length > 0 ? selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0) : null
                                 const isAmountMatch = lineTotal !== null && Math.abs(Math.abs(parseFloat(payment.amount)) - lineTotal) < 1
-                                const isBackendSuggest = suggestions.some(s => s.payment_data.id === payment.id)
+                                const isBackendSuggest = suggestions.some(s => s.is_batch ? s.batch_data?.id === payment.id : s.payment_data?.id === payment.id)
                                 const isSmartSuggestion = isAmountMatch || isBackendSuggest
 
                                 return (
@@ -830,17 +864,19 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className={cn(
                                                         "text-[10px] font-black px-1.5 py-0.5 rounded",
-                                                        (payment.display_id?.startsWith('DEP') || payment.movement_type === 'INBOUND') ? "text-emerald-700 bg-emerald-100" :
-                                                            (payment.display_id?.startsWith('RET') || payment.movement_type === 'OUTBOUND') ? "text-red-700 bg-red-100" :
-                                                                "text-sky-700 bg-sky-100"
+                                                        payment.is_batch ? "text-amber-700 bg-amber-100" :
+                                                            (payment.display_id?.startsWith('DEP') || payment.movement_type === 'INBOUND') ? "text-emerald-700 bg-emerald-100" :
+                                                                (payment.display_id?.startsWith('RET') || payment.movement_type === 'OUTBOUND') ? "text-red-700 bg-red-100" :
+                                                                    "text-sky-700 bg-sky-100"
                                                     )}>
                                                         {payment.display_id || payment.code}
                                                     </span>
+                                                    {payment.is_batch && <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 font-bold border-amber-500 text-amber-600">LOTE</Badge>}
                                                     {isAmountMatch && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
                                                     {isBackendSuggest && <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
                                                 </div>
                                                 <p className="text-[15px] font-black text-foreground/90 leading-tight mb-1 flex items-center gap-1.5">
-                                                    {payment.partner_name || payment.contact_name || 'Particular'}
+                                                    {payment.partner_name || payment.contact_name || (payment.is_batch ? 'Lote Terminal' : 'Particular')}
                                                 </p>
 
                                                 {/* Enriched Info */}
@@ -868,15 +904,14 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                             </div>
                                         </div>
                                     </div>
-                                    </div>
-                        )
+                                )
                             })}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-            {/* Difference Adjustment Dialog */ }
+            {/* Difference Adjustment Dialog */}
             <Dialog open={diffDialog.open} onOpenChange={open => setDiffDialog(prev => ({ ...prev, open }))}>
                 <DialogContent className="max-w-md bg-white p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
                     <div className="bg-amber-500 p-6 text-white">
@@ -902,7 +937,6 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="COMMISSION">🏦 Comisión Bancaria</SelectItem>
-                                        <SelectItem value="CARD_COMMISSION">💳 Comisión Tarjeta</SelectItem>
                                         <SelectItem value="INTEREST">📈 Intereses Percibidos/Pagados</SelectItem>
                                         <SelectItem value="EXCHANGE_DIFF">💱 Diferencia de Cambio</SelectItem>
                                         <SelectItem value="ROUNDING">🔢 Ajuste por Redondeo</SelectItem>
@@ -911,23 +945,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {diffType === 'CARD_COMMISSION' && (
-                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 font-sans">Proveedor de Abono (Transbank, etc.)</Label>
-                                    <Select value={selectedProviderId} onValueChange={setSelectedProviderId}>
-                                        <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-blue-500 shadow-sm">
-                                            <SelectValue placeholder="Seleccione proveedor..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {cardProviders.map(p => (
-                                                <SelectItem key={p.id} value={p.id.toString()}>
-                                                    {p.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
+
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observaciones</Label>
                                 <Textarea
@@ -990,7 +1008,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div >
+        </div>
     )
 }
 

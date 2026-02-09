@@ -11,7 +11,7 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule
+from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule, TerminalBatch
 from .rule_service import RuleService
 
 
@@ -128,9 +128,56 @@ class MatchingService:
             if score_data['score'] >= 50:  # Threshold mínimo
                 suggestions.append(score_data)
         
-        # Ordenar por score descendente y limitar
+        # Order by score descending and limit
         suggestions.sort(key=lambda x: x['score'], reverse=True)
+        
+        # 3. Batch Suggestions (Specific for Terminal Settlements)
+        if is_inbound and len(suggestions) < limit:
+            batch_suggestions = MatchingService._suggest_batches(line, limit - len(suggestions))
+            suggestions.extend(batch_suggestions)
+
         return suggestions[:limit]
+    
+    @staticmethod
+    def _suggest_batches(line: BankStatementLine, limit: int) -> List[Dict[str, Any]]:
+        """Busca lotes de terminales que coincidan con la línea de abono."""
+        line_amount = line.credit - line.debit
+        date_min = line.transaction_date - timedelta(days=7)
+        date_max = line.transaction_date + timedelta(days=7)
+        
+        batches = TerminalBatch.objects.filter(
+            status=TerminalBatch.Status.SETTLED,
+            reconciliation_match__isnull=True,
+            net_amount__gte=line_amount * Decimal('0.95'),
+            net_amount__lte=line_amount * Decimal('1.05'),
+            sales_date__gte=date_min,
+            sales_date__lte=date_max,
+            payment_method__treasury_account=line.statement.treasury_account
+        )
+        
+        suggestions = []
+        from .serializers import TerminalBatchSerializer
+        for b in batches[:limit]:
+            score = 60 # Base score for amount/date proximity
+            reasons = ['batch_match']
+            
+            diff = line_amount - b.net_amount
+            if diff == 0:
+                score += 30
+                reasons.append('exact_amount')
+            
+            if b.terminal_reference and line.reference and b.terminal_reference.upper() in line.reference.upper():
+                score += 10
+                reasons.append('reference_match')
+                
+            suggestions.append({
+                'batch_data': TerminalBatchSerializer(b).data,
+                'score': min(score, 100),
+                'reasons': reasons,
+                'difference': diff,
+                'is_batch': True
+            })
+        return suggestions
     
     @staticmethod
     def suggest_lines_for_payment(
@@ -313,7 +360,8 @@ class MatchingService:
         movement_ids: List[int],
         user,
         difference_reason: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
+        batch_ids: Optional[List[int]] = None
     ):
         """
         Crea un grupo de conciliación (N:M).
@@ -322,9 +370,12 @@ class MatchingService:
         
         lines = list(BankStatementLine.objects.filter(id__in=line_ids).select_for_update())
         payments = list(TreasuryMovement.objects.filter(id__in=movement_ids).select_for_update())
+        batches = []
+        if batch_ids:
+            batches = list(TerminalBatch.objects.filter(id__in=batch_ids).select_for_update())
         
-        if len(lines) != len(line_ids) or len(payments) != len(movement_ids):
-            raise ValueError("Algunas líneas o pagos no existen")
+        if len(lines) != len(line_ids) or len(payments) != len(movement_ids) or (batch_ids and len(batches) != len(batch_ids)):
+            raise ValueError("Algunas líneas, pagos o lotes no existen")
             
         # Validaciones de estado y consistencia
         is_all_abonos = all(l.credit > 0 for l in lines)
@@ -340,8 +391,8 @@ class MatchingService:
             raise ValueError("No se pueden mezclar Ingresos y Egresos en un mismo grupo de conciliación.")
 
         # Validación de sentido cruzado
-        if is_all_abonos and not is_all_inbound:
-            raise ValueError("Los Abonos bancarios solo pueden conciliarse con Ingresos del sistema.")
+        if is_all_abonos and not (is_all_inbound or (batches and all(b.net_amount > 0 for b in batches))):
+            raise ValueError("Los Abonos bancarios solo pueden conciliarse con Ingresos del sistema o Lotes de Terminal.")
         if is_all_cargos and not is_all_outbound:
             raise ValueError("Los Cargos bancarios solo pueden conciliarse con Egresos del sistema.")
 
@@ -359,6 +410,10 @@ class MatchingService:
                     f"Pago {p.display_id} está pendiente de registro bancario. "
                     "No se puede reconciliar hasta que el banco confirme la transacción."
                 )
+
+        for b in batches:
+            if b.status == TerminalBatch.Status.RECONCILED:
+                 raise ValueError(f"Lote {b.display_id} ya reconciliado")
 
         # Create Group
         treasury_account = lines[0].statement.treasury_account
@@ -383,6 +438,12 @@ class MatchingService:
             p.reconciliation_match = group
             p.save()
             total_payments_amount += abs(p.amount)
+
+        # Link Batches
+        for b in batches:
+            b.reconciliation_match = group
+            b.save()
+            total_payments_amount += b.net_amount
             
         # Calculate Difference and assign to first line (Arbitrary anchor)
         difference = total_lines_amount - total_payments_amount
@@ -462,6 +523,15 @@ class MatchingService:
                 reconciliation_state='RECONCILED'
             ).count()
             l.statement.save()
+
+        # Update All Terminal Batches in Group
+        for b in group.terminal_batches.all():
+            b.status = TerminalBatch.Status.RECONCILED
+            # Also set deposit_date to statement date if null
+            if not b.deposit_date:
+                b.deposit_date = line.transaction_date
+            b.bank_statement_line = line
+            b.save()
 
         # Update All TreasuryMovements in Group AND Handle Transfer if Accounts Differs
         for p in group.payments.all():
@@ -574,7 +644,14 @@ class MatchingService:
             ).count()
             l.statement.save()
             
-        # 3. Delete Group
+        # 3. TerminalBatches
+        for b in group.terminal_batches.all():
+            b.status = TerminalBatch.Status.SETTLED
+            b.reconciliation_match = None
+            b.bank_statement_line = None
+            b.save()
+            
+        # 4. Delete Group
         group.delete()
         
         line.refresh_from_db()

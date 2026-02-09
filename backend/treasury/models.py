@@ -178,14 +178,7 @@ class TreasuryMovement(models.Model):
         verbose_name=_("Reconciliado Por")
     )
     
-    # Card Payment Provider
-    card_provider = models.ForeignKey(
-        'CardPaymentProvider',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='movements',
-        verbose_name=_("Proveedor de Tarjeta")
-    )
+
     
     # POS Session
     pos_session = models.ForeignKey(
@@ -204,6 +197,16 @@ class TreasuryMovement(models.Model):
         blank=True,
         null=True,
         help_text=_("Código de justificación para movimientos manuales")
+    )
+
+    # Terminal batch linkage (for terminal payments)
+    terminal_batch = models.ForeignKey(
+        'TerminalBatch',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payments',
+        verbose_name=_("Lote Terminal"),
+        help_text=_("Lote al que pertenece este pago (si es terminal)")
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -359,15 +362,7 @@ class TreasuryAccount(models.Model):
         help_text=_("Marcar si esta cuenta representa un lugar físico de almacenamiento de dinero")
     )
     
-    # Configuration for Card Payments
-    card_receivable_account = models.ForeignKey(
-        Account,
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='treasury_card_receivables',
-        verbose_name=_("Cuenta Puente Tarjetas (Bruto)"),
-        help_text=_("Cuenta donde se registran las ventas bruto (ej: Transbank por Cobrar)")
-    )
+
     
     # Custom manager
     objects = TreasuryAccountManager()
@@ -926,13 +921,38 @@ class PaymentMethod(models.Model):
     allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
     allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
     
-    # Optional link to Card Provider for CARD methods
-    card_provider = models.ForeignKey(
-        'CardPaymentProvider',
-        on_delete=models.SET_NULL,
+    # Terminal commission configuration
+    supplier = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='payment_methods',
-        verbose_name=_("Proveedor de Tarjeta")
+        related_name='terminal_payment_methods',
+        verbose_name=_("Proveedor del Terminal"),
+        help_text=_("Proveedor que retiene comisiones (ej: Transbank, Mercado Pago)")
+    )
+    
+    terminal_receivable_account = models.ForeignKey(
+        'accounting.Account',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='terminal_receivables',
+        verbose_name=_("Cuenta Por Cobrar Terminal"),
+        help_text=_(
+            "Cuenta transitoria donde se registran ventas hasta recibir liquidación. "
+            "Ejemplo: '1-1-004 Por Cobrar Transbank' o '1-1-005 Por Cobrar Mercado Pago'"
+        )
+    )
+    
+    commission_expense_account = models.ForeignKey(
+        'accounting.Account',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='terminal_commission_expenses',
+        verbose_name=_("Cuenta Gasto Comisión"),
+        help_text=_(
+            "Cuenta de gasto donde se registran las comisiones. "
+            "Ejemplo: '5-1-003 Comisiones Transbank' o '5-1-004 Comisiones Mercado Pago'"
+        )
     )
     
     # Optional settings per method
@@ -972,6 +992,22 @@ class PaymentMethod(models.Model):
             self.is_terminal = True
             self.allow_for_sales = True
             self.allow_for_purchases = False
+            
+            # Validate terminal-specific fields
+            errors = {}
+            if not self.supplier:
+                errors['supplier'] = _("Los terminales de cobro requieren un proveedor configurado")
+            if not self.terminal_receivable_account:
+                errors['terminal_receivable_account'] = _(
+                    "Los terminales de cobro requieren una cuenta por cobrar terminal configurada"
+                )
+            if not self.commission_expense_account:
+                errors['commission_expense_account'] = _(
+                    "Los terminales de cobro requieren una cuenta de gasto comisión configurada"
+                )
+            if errors:
+                raise ValidationError(errors)
+                
         elif self.method_type in [self.Type.DEBIT_CARD, self.Type.CREDIT_CARD]:
             self.is_terminal = False
             self.allow_for_sales = False
@@ -1006,209 +1042,191 @@ class PaymentMethod(models.Model):
         super().save(*args, **kwargs)
 
 
-class CardPaymentProvider(models.Model):
-    """Proveedor de procesamiento de pagos con tarjeta (Transbank, Webpay, etc.)"""
+class TerminalBatch(models.Model):
+    """
+    Lote diario de ventas con terminal que se liquida en conjunto.
+    Representa la información que el terminal entrega 1-2 días después.
+    """
     
-    name = models.CharField(_("Nombre"), max_length=100)
-    code = models.CharField(_("Código"), max_length=20, unique=True)
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', _('Pendiente Liquidación')
+        SETTLED = 'SETTLED', _('Liquidado')
+        RECONCILED = 'RECONCILED', _('Reconciliado')
+        INVOICED = 'INVOICED', _('Facturado')
     
-    # Proveedor que factura (debe existir en contacts.Contact)
+    # Identificación
+    payment_method = models.ForeignKey(
+        'PaymentMethod',
+        on_delete=models.PROTECT,
+        related_name='batches',
+        verbose_name=_("Método de Pago (Terminal)")
+    )
+    
     supplier = models.ForeignKey(
         'contacts.Contact',
         on_delete=models.PROTECT,
-        related_name='card_providers',
-        verbose_name=_("Proveedor (Contacto)")
+        related_name='terminal_batches',
+        verbose_name=_("Proveedor Terminal")
     )
     
-    # Configuración de Comisiones
-    commission_rate = models.DecimalField(
-        _("Tasa de Comisión (%)"),
-        max_digits=5,
-        decimal_places=2,
-        default=2.95
+    # Fechas
+    sales_date = models.DateField(
+        _("Fecha de Ventas"),
+        help_text=_("Día en que se realizaron las ventas")
     )
-    fixed_amount = models.DecimalField(
-        _("Monto Fijo"),
-        max_digits=10,
-        decimal_places=2,
-        default=0
+    settlement_date = models.DateField(
+        _("Fecha de Liquidación"),
+        help_text=_("Día en que el terminal informó la comisión")
     )
-    vat_rate = models.DecimalField(
-        _("Tasa de IVA (%)"),
-        max_digits=5,
-        decimal_places=2,
-        default=19
+    deposit_date = models.DateField(
+        _("Fecha de Depósito"),
+        null=True, blank=True,
+        help_text=_("Día en que llegó el dinero al banco")
     )
     
-    settlement_delay_days = models.IntegerField(
-        _("Días de Retraso de Abono"),
-        default=1
+    # Montos (informados por el terminal)
+    gross_amount = models.DecimalField(
+        _("Monto Bruto"),
+        max_digits=12, decimal_places=2,
+        help_text=_("Total de ventas del día")
     )
     
-    # Cuentas Contables
-    receivable_account = models.ForeignKey(
-        'accounting.Account',
-        on_delete=models.PROTECT,
-        related_name='card_provider_receivables',
-        verbose_name=_("Cuenta Tarjetas por Cobrar")
-    )
-    commission_bridge_account = models.ForeignKey(
-        'accounting.Account',
-        on_delete=models.PROTECT,
-        related_name='card_commission_bridges',
-        verbose_name=_("Cuenta Puente Comisiones Pendientes"),
-        help_text=_("Pasivo transitorio: Comisiones retenidas pendientes de facturar")
+    commission_base = models.DecimalField(
+        _("Comisión Neta"),
+        max_digits=12, decimal_places=2,
+        help_text=_("Comisión sin IVA")
     )
     
-    is_active = models.BooleanField(_("Activo"), default=True)
-
-    class Meta:
-        verbose_name = _("Proveedor de Pagos con Tarjeta")
-        verbose_name_plural = _("Proveedores de Pagos con Tarjeta")
-
-    def __str__(self):
-        return self.name
-
-
-class DailySettlement(models.Model):
-    """Abono diario del proveedor de tarjetas"""
-    
-    provider = models.ForeignKey(
-        'CardPaymentProvider',
-        on_delete=models.PROTECT,
-        related_name='settlements'
+    commission_tax = models.DecimalField(
+        _("IVA Comisión"),
+        max_digits=12, decimal_places=2,
+        help_text=_("IVA sobre la comisión")
     )
     
-    settlement_date = models.DateField(_("Fecha de Abono"))
-    
-    # Montos totales
-    total_gross = models.DecimalField(
-        _("Total Bruto"),
-        max_digits=12,
-        decimal_places=2
-    )
-    total_commission = models.DecimalField(
-        _("Total Comisiones"),
-        max_digits=12,
-        decimal_places=2
-    )
-    total_vat = models.DecimalField(
-        _("Total IVA"),
-        max_digits=12,
-        decimal_places=2
-    )
-    total_net = models.DecimalField(
-        _("Total Neto Abonado"),
-        max_digits=12,
-        decimal_places=2
+    commission_total = models.DecimalField(
+        _("Comisión Total"),
+        max_digits=12, decimal_places=2,
+        help_text=_("Comisión + IVA")
     )
     
-    # Reconciliación
+    net_amount = models.DecimalField(
+        _("Monto Neto Depositado"),
+        max_digits=12, decimal_places=2,
+        help_text=_("Monto que llegó al banco")
+    )
+    
+    # Referencia del terminal
+    terminal_reference = models.CharField(
+        _("Referencia Terminal"),
+        max_length=100,
+        blank=True,
+        help_text=_("Número de lote o referencia del terminal")
+    )
+    
+    # Estado
+    status = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING
+    )
+    
+    # Asiento contable de ajuste (Etapa 2)
+    settlement_journal_entry = models.ForeignKey(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='terminal_batch_settlements',
+        verbose_name=_("Asiento de Liquidación")
+    )
+    
+    # Conciliación bancaria
     bank_statement_line = models.ForeignKey(
         'BankStatementLine',
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='card_settlements'
+        null=True, blank=True,
+        related_name='terminal_batches',
+        verbose_name=_("Línea de Cartola")
     )
-    is_reconciled = models.BooleanField(_("Reconciliado"), default=False)
-    reconciled_at = models.DateTimeField(null=True, blank=True)
     
-    # Facturación mensual
-    monthly_invoice = models.ForeignKey(
+    reconciliation_match = models.ForeignKey(
+        'ReconciliationMatch',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='terminal_batches',
+        verbose_name=_("Grupo de Conciliación")
+    )
+    
+    # Facturación
+    supplier_invoice = models.ForeignKey(
         'billing.Invoice',
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='card_settlements'
+        null=True, blank=True,
+        related_name='terminal_batches',
+        verbose_name=_("Factura Proveedor")
+    )
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_terminal_batches'
     )
     
     notes = models.TextField(_("Notas"), blank=True)
-
+    
+    history = HistoricalRecords()
+    
     class Meta:
-        verbose_name = _("Abono Diario Tarjetas")
-        verbose_name_plural = _("Abonos Diarios Tarjetas")
-
+        verbose_name = _("Lote Terminal")
+        verbose_name_plural = _("Lotes Terminal")
+        ordering = ['-sales_date', '-id']
+        unique_together = [['payment_method', 'sales_date', 'terminal_reference']]
+        indexes = [
+            models.Index(fields=['payment_method', 'sales_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['supplier', 'sales_date']),
+        ]
+    
     def __str__(self):
-        return f"{self.provider.code} - {self.settlement_date}"
+        return f"{self.payment_method.name} - {self.sales_date} (${self.gross_amount})"
+    
+    @property
+    def payment_count(self):
+        """Número de pagos individuales en este lote"""
+        return self.payments.count()
+    
+    @property
+    def display_id(self):
+        return f"LOTE-{str(self.id).zfill(6)}"
+    
+    def clean(self):
+        """Validar que net_amount = gross_amount - commission_total"""
+        from django.core.exceptions import ValidationError
+        from decimal import Decimal
+        super().clean()
+        
+        expected_net = self.gross_amount - self.commission_total
+        if abs(self.net_amount - expected_net) > Decimal('0.01'):
+            raise ValidationError({
+                'net_amount': _(
+                    f"El monto neto debe ser bruto - comisión. "
+                    f"Esperado: ${expected_net}, Recibido: ${self.net_amount}"
+                )
+            })
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate commission_total if not set
+        if not self.commission_total:
+            self.commission_total = self.commission_base + self.commission_tax
+        
+        self.clean()
+        super().save(*args, **kwargs)
 
 
-class CardTransaction(models.Model):
-    """Transacción individual de tarjeta vinculada a un pago del sistema"""
-    
-    provider = models.ForeignKey(
-        'CardPaymentProvider',
-        on_delete=models.PROTECT,
-        related_name='transactions'
-    )
-    payment = models.OneToOneField(
-        'TreasuryMovement',
-        on_delete=models.PROTECT,
-        related_name='card_transaction'
-    )
-    
-    transaction_date = models.DateField(_("Fecha de Transacción"))
-    authorization_code = models.CharField(max_length=50, blank=True)
-    
-    # Montos calculados
-    gross_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        help_text=_("Monto total de la venta")
-    )
-    commission_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    commission_vat = models.DecimalField(max_digits=12, decimal_places=2)
-    net_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        help_text=_("Monto neto a recibir = bruto - comisión - IVA")
-    )
-    
-    expected_settlement_date = models.DateField(null=True, blank=True)
-    
-    # Link to Daily Settlement
-    daily_settlement = models.ForeignKey(
-        DailySettlement,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='transactions'
-    )
 
-    # Reconciliación
-    bank_statement_line = models.ForeignKey(
-        'BankStatementLine',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='card_transactions'
-    )
-    is_reconciled = models.BooleanField(default=False)
-    reconciled_at = models.DateTimeField(null=True, blank=True)
-    
-    # Comisión procesada
-    commission_journal_entry = models.ForeignKey(
-        'accounting.JournalEntry',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='card_daily_commissions'
-    )
-    
-    # Factura mensual (se asigna al final del mes)
-    monthly_invoice = models.ForeignKey(
-        'billing.Invoice',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='card_transactions'
-    )
-
-    class Meta:
-        verbose_name = _("Transacción de Tarjeta")
-        verbose_name_plural = _("Transacciones de Tarjeta")
-
-    def __str__(self):
-        return f"{self.provider.code} - {self.gross_amount}"
 
 
 class POSSession(models.Model):

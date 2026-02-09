@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
-                     ReconciliationRule, CardPaymentProvider, DailySettlement, 
-                     CardTransaction, POSTerminal, 
+                     ReconciliationRule, POSTerminal, 
                      CashDifference, POSSessionAudit, Bank, PaymentMethod)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
@@ -28,13 +27,11 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
         required=True
     )
     
-    card_provider_name = serializers.CharField(source='card_provider.name', read_only=True, allow_null=True)
-    
-    # Read-only contact ID for frontend initialization
-    contact_id = serializers.IntegerField(source='card_provider.supplier_id', read_only=True, allow_null=True)
-    
-    # write-only field to handle contact selection from frontend
-    contact_provider_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    # Terminal specific display fields
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True, allow_null=True)
+    terminal_receivable_account_name = serializers.CharField(source='terminal_receivable_account.name', read_only=True, allow_null=True)
+    commission_expense_account_name = serializers.CharField(source='commission_expense_account.name', read_only=True, allow_null=True)
+
     
     class Meta:
         model = PaymentMethod
@@ -54,7 +51,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_type', 
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
                   'location', 'custodian', 'custodian_name', 'is_physical', 'current_balance', 
-                  'payment_methods', 'card_receivable_account']
+                  'payment_methods']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
@@ -186,7 +183,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
     
     payment_method_new_name = serializers.CharField(source='payment_method_new.name', read_only=True, allow_null=True)
-    card_provider_name = serializers.CharField(source='card_provider.name', read_only=True, allow_null=True)
+
     
     # Legacy/Display fields for frontend compatibility
     journal_name = serializers.SerializerMethodField()
@@ -202,6 +199,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     # Additional Context
     justify_reason_display = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    terminal_batch_display = serializers.SerializerMethodField()
 
     def get_is_inbound(self, obj):
         # Determine if it's an inflow to the account being considered
@@ -302,6 +300,11 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
                 'statement_id': obj.bank_statement_line.statement.id,
                 'statement_display_id': obj.bank_statement_line.statement.display_id,
             }
+        return None
+
+    def get_terminal_batch_display(self, obj):
+        if obj.terminal_batch:
+            return obj.terminal_batch.display_id
         return None
 
 
@@ -413,26 +416,76 @@ class ReconciliationRuleSerializer(serializers.ModelSerializer):
         read_only_fields = ['times_applied', 'success_rate', 'created_by']
 
 
-class CardPaymentProviderSerializer(serializers.ModelSerializer):
+
+
+class TerminalBatchSerializer(serializers.ModelSerializer):
+    """Serializer for Terminal Batch settlement information"""
+    
+    # Display fields
+    payment_method_name = serializers.CharField(source='payment_method.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-
-    class Meta:
-        model = CardPaymentProvider
-        fields = '__all__'
-
-
-class DailySettlementSerializer(serializers.ModelSerializer):
-    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    payment_count = serializers.IntegerField(read_only=True)
+    
+    # Nested objects for detailed view
+    settlement_journal_entry_data = serializers.SerializerMethodField()
+    bank_statement_line_data = serializers.SerializerMethodField()
+    supplier_invoice_data = serializers.SerializerMethodField()
+    
+    # Writable fields
+    payment_method = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.filter(is_terminal=True)
+    )
+    supplier = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentMethod.objects.none()  # Placeholder to satisfy DRF, will be set in __init__
+    )
     
     class Meta:
-        model = DailySettlement
-        fields = '__all__'
-
-
-class CardTransactionSerializer(serializers.ModelSerializer):
-    provider_name = serializers.CharField(source='provider.name', read_only=True)
+        from .models import TerminalBatch
+        model = TerminalBatch
+        fields = [
+            'id', 'display_id', 'payment_method', 'payment_method_name',
+            'supplier', 'supplier_name', 'sales_date', 'settlement_date', 'deposit_date',
+            'gross_amount', 'commission_base', 'commission_tax', 'commission_total', 'net_amount',
+            'terminal_reference', 'status', 'status_display', 'payment_count',
+            'settlement_journal_entry', 'settlement_journal_entry_data',
+            'bank_statement_line', 'bank_statement_line_data',
+            'supplier_invoice', 'supplier_invoice_data',
+            'notes', 'created_at', 'created_by'
+        ]
+        read_only_fields = ['created_at', 'created_by', 'settlement_journal_entry', 'bank_statement_line', 'supplier_invoice']
     
-    class Meta:
-        model = CardTransaction
-        fields = '__all__'
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Allow any Contact as supplier
+        from contacts.models import Contact
+        self.fields['supplier'].queryset = Contact.objects.filter(is_supplier=True)
+    
+    def get_settlement_journal_entry_data(self, obj):
+        if obj.settlement_journal_entry:
+            from accounting.serializers import JournalEntrySerializer
+            return JournalEntrySerializer(obj.settlement_journal_entry).data
+        return None
+    
+    def get_bank_statement_line_data(self, obj):
+        if obj.bank_statement_line:
+            return {
+                'id': obj.bank_statement_line.id,
+                'statement_id': obj.bank_statement_line.statement.id,
+                'statement_display_id': obj.bank_statement_line.statement.display_id,
+                'transaction_date': obj.bank_statement_line.transaction_date,
+                'description': obj.bank_statement_line.description,
+                'amount': obj.bank_statement_line.credit or obj.bank_statement_line.debit
+            }
+        return None
+    
+    def get_supplier_invoice_data(self, obj):
+        if obj.supplier_invoice:
+            return {
+                'id': obj.supplier_invoice.id,
+                'number': obj.supplier_invoice.number,
+                'total': obj.supplier_invoice.total,
+                'status': obj.supplier_invoice.status
+            }
+        return None

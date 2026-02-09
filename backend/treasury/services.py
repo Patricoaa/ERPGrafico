@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import TreasuryMovement, TreasuryAccount
+from .models import TreasuryMovement, TreasuryAccount, TerminalBatch
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -219,9 +219,15 @@ class TreasuryService:
             debit_acc = to_acc
             
             # If it's a terminal-based payment, the money is in transit with the provider
+            # If it's a terminal-based payment, the money is in transit with the provider
+            # Stage 1: Record to Terminal Receivable Account
             is_terminal = getattr(movement.payment_method_new, 'is_terminal', False)
-            if is_terminal and movement.card_provider and movement.card_provider.receivable_account:
-                 debit_acc = movement.card_provider.receivable_account
+            if is_terminal:
+                 if movement.payment_method_new.terminal_receivable_account:
+                     debit_acc = movement.payment_method_new.terminal_receivable_account
+                 elif movement.card_provider and movement.card_provider.receivable_account:
+                     # Fallback for legacy card providers
+                     debit_acc = movement.card_provider.receivable_account
             
             if debit_acc:
                 JournalItem.objects.create(entry=entry, account=debit_acc, debit=movement.amount, credit=0)
@@ -329,3 +335,155 @@ class TreasuryService:
         # For now, let's delete strictly to avoid orphans affecting totals.
         # The reversed entry remains as audit trail.
         movement.delete()
+
+
+class TerminalBatchService:
+    @staticmethod
+    @transaction.atomic
+    def create_batch(payment_method, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', supplier=None, user=None):
+        """
+        Creates a TerminalBatch for Stage 2 accounting (Settlement).
+        1. Validates amounts and links relevant payments.
+        2. Creates TerminalBatch record.
+        3. Generates Settlement Journal Entry.
+        """
+        # 1. Validation
+        if not payment_method.is_terminal:
+             raise ValidationError("El método de pago debe ser un terminal.")
+        
+        commission_total = commission_base + commission_tax
+        expected_net = gross_amount - commission_total
+        
+        if abs(net_amount - expected_net) > Decimal('0.01'):
+             raise ValidationError(f"El monto neto no coincide con Bruto - Comisión. Esperado: {expected_net}")
+
+        # Accounts Validation
+        receivable_acc = payment_method.terminal_receivable_account
+        expense_acc = payment_method.commission_expense_account
+        bank_acc = payment_method.treasury_account.account if payment_method.treasury_account else None
+
+        if not (receivable_acc and expense_acc and bank_acc):
+             raise ValidationError("El método de pago debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
+
+        # 2. Identify Payments
+        # Find payments from the sales_date with this payment_method that are not yet batched
+        payments = TreasuryMovement.objects.filter(
+            date__date=sales_date,
+            payment_method_new=payment_method,
+            movement_type=TreasuryMovement.Type.INBOUND,
+            terminal_batch__isnull=True
+        )
+        
+        # Optional: Validate total gross amount matches sum of payments?
+        # In real world, they might differ slightly due to timing/cutoffs. Usually we batch what we find.
+        # But for stricter control we could warn. For now let's just batch them.
+        
+        batch = TerminalBatch.objects.create(
+            payment_method=payment_method,
+            supplier=supplier or payment_method.supplier,
+            sales_date=sales_date,
+            settlement_date=timezone.now().date(), # Or passed as arg
+            deposit_date=timezone.now().date(), # Assuming deposit happens on settlement report
+            gross_amount=gross_amount,
+            commission_base=commission_base,
+            commission_tax=commission_tax,
+            commission_total=commission_total,
+            net_amount=net_amount,
+            terminal_reference=terminal_reference,
+            status=TerminalBatch.Status.SETTLED,
+            created_by=user
+        )
+        
+        # Link payments
+        payments.update(terminal_batch=batch)
+        
+        # 3. Create Accounting Entry (Settlement)
+        # Description: Liquidación Terminal [Method] - [Date]
+        description = f"Liq. {payment_method.name} - {sales_date}"
+        entry = JournalEntry.objects.create(
+            date=batch.settlement_date,
+            description=description,
+            reference=batch.display_id,
+            state=JournalEntry.State.POSTED, # Auto-post for now
+            created_by=user
+        )
+        
+        # A. Expense Commission (Debit)
+        JournalItem.objects.create(
+            entry=entry,
+            account=expense_acc,
+            debit=commission_total,
+            credit=0
+        )
+        
+        # B. Bank Check/Transfer (Debit) <-- Net Amount received
+        JournalItem.objects.create(
+            entry=entry,
+            account=bank_acc,
+            debit=net_amount,
+            credit=0
+        )
+        
+        # C. Receivable Offset (Credit) <-- Gross Amount was previously debited here
+        # So we credit the SUM (Commission + Net) which should equal Gross
+        JournalItem.objects.create(
+            entry=entry,
+            account=receivable_acc,
+            debit=0,
+            credit=gross_amount # Or commission_total + net_amount
+        )
+        
+        JournalEntryService.post_entry(entry)
+        
+        batch.settlement_journal_entry = entry
+        batch.save()
+        
+        return batch
+
+    @staticmethod
+    def generate_monthly_invoice(supplier, year, month, user=None):
+        """
+        Aggregates SETTLED batches for a month/supplier and generates a Supplier Invoice.
+        Status -> INVOICED.
+        """
+        # Find batches
+        batches = TerminalBatch.objects.filter(
+            supplier=supplier,
+            sales_date__year=year,
+            sales_date__month=month,
+            status=TerminalBatch.Status.SETTLED,
+            supplier_invoice__isnull=True
+        )
+        
+        if not batches.exists():
+            return None
+            
+        total_commission_net = sum(b.commission_base for b in batches)
+        total_commission_tax = sum(b.commission_tax for b in batches)
+        total_commission = total_commission_net + total_commission_tax
+        
+        # Create Invoice (Billing Module)
+        # Assuming Invoice.objects.create works or use a service
+        from billing.models import Invoice
+        from billing.services import InvoiceService # Hypothetical
+        
+        # Reuse billing logic. For now let's say we create a draft invoice.
+        # This part depends on Billing module specifics.
+        # Minimal placehold implementation:
+        
+        invoice = Invoice.objects.create(
+            contact=supplier,
+            dte_type=Invoice.DTEType.PURCHASE_INV,
+            date=timezone.now().date(),
+            total_net=total_commission_net,
+            total_tax=total_commission_tax,
+            total=total_commission,
+            status=Invoice.Status.DRAFT,
+            # notes field removed as it doesn't exist in Invoice model
+            # created_by removed as it doesn't exist in Invoice model
+        )
+        
+        # Link batches
+        batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
+        
+        return invoice

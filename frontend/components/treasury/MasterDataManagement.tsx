@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 // --- Bank Management ---
 
@@ -256,6 +257,12 @@ interface PaymentMethod {
     allow_for_sales: boolean
     allow_for_purchases: boolean
     is_terminal: boolean
+    supplier: number | null
+    supplier_name: string | null
+    terminal_receivable_account: number | null
+    terminal_receivable_account_name: string | null
+    commission_expense_account: number | null
+    commission_expense_account_name: string | null
 }
 
 export function PaymentMethodManagement() {
@@ -400,6 +407,8 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     const [cardProviders, setCardProviders] = useState<any[]>([])
     const [cardProviderId, setCardProviderId] = useState<string | null>(null)
     const [isTerminal, setIsTerminal] = useState(false)
+    const [terminalReceivableAccount, setTerminalReceivableAccount] = useState<string | null>(null)
+    const [commissionExpenseAccount, setCommissionExpenseAccount] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -427,8 +436,10 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             setRequiresRef(method?.requires_reference || false)
             setAllowSales(method?.allow_for_sales ?? true)
             setAllowPurchases(method?.allow_for_purchases ?? true)
-            setCardProviderId(method?.contact_id?.toString() || null)
+            setCardProviderId(method?.contact_id?.toString() || (method as any)?.supplier?.toString() || null)
             setIsTerminal(method?.is_terminal || false)
+            setTerminalReceivableAccount(method?.terminal_receivable_account ? method.terminal_receivable_account.toString() : null)
+            setCommissionExpenseAccount(method?.commission_expense_account ? method.commission_expense_account.toString() : null)
         }
     }, [open, method])
 
@@ -465,7 +476,9 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                 allow_for_sales: allowSales,
                 allow_for_purchases: allowPurchases,
                 is_terminal: isTerminal,
-                contact_provider_id: isTerminal ? cardProviderId : null
+                supplier: isTerminal ? cardProviderId : null,
+                terminal_receivable_account: isTerminal ? terminalReceivableAccount : null,
+                commission_expense_account: isTerminal ? commissionExpenseAccount : null
             }
             if (method) {
                 await api.patch(`/treasury/payment-methods/${method.id}/`, payload)
@@ -576,8 +589,41 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        <p className="text-[10px] text-muted-foreground text-center">
+                                            Entidad que procesa los pagos (ej: Transbank, Mercado Pago).
+                                        </p>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs">Cuenta Por Cobrar Terminal</Label>
+                                        <AccountSelector
+                                            value={terminalReceivableAccount}
+                                            onChange={(val) => setTerminalReceivableAccount(val)}
+                                            accountType="ASSET"
+                                            isReconcilable={true}
+                                            placeholder="Seleccione cuenta transitoria..."
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Cuenta transitoria donde se acumulan las ventas hasta que el proveedor liquida.
+                                            (Ej: 1-1-004 Por Cobrar Transbank)
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs">Cuenta Gasto Comisión</Label>
+                                        <AccountSelector
+                                            value={commissionExpenseAccount}
+                                            onChange={(val) => setCommissionExpenseAccount(val)}
+                                            accountType="EXPENSE"
+                                            placeholder="Seleccione cuenta de gasto..."
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Cuenta de gasto donde se registrarán las comisiones.
+                                            (Ej: 5-1-003 Comisiones Transbank)
+                                        </p>
+                                    </div>
+
+                                    <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-primary/10 pt-2 mt-2">
                                         * Al ser un terminal, los pagos no se reflejarán inmediatamente en el saldo bancario,
                                         sino como cuentas por cobrar al proveedor hasta su liquidación.
                                     </p>

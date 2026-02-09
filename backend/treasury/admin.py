@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule
+from .models import TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule, TerminalBatch
 
 
 @admin.register(TreasuryMovement)
@@ -112,5 +112,41 @@ class ReconciliationRuleAdmin(admin.ModelAdmin):
         }),
         ('Configuración de Matching', {
             'fields': ('match_config',)
+        }),
+    )
+
+
+@admin.register(TerminalBatch)
+class TerminalBatchAdmin(admin.ModelAdmin):
+    list_display = ['display_id', 'payment_method', 'supplier', 'sales_date', 'gross_amount', 'commission_total', 'net_amount', 'status', 'payment_count']
+    list_filter = ['status', 'payment_method', 'supplier', 'sales_date']
+    search_fields = ['terminal_reference', 'notes']
+    readonly_fields = ['display_id', 'payment_count', 'created_at', 'created_by']
+    
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('payment_method', 'supplier', 'terminal_reference', 'status')
+        }),
+        ('Fechas', {
+            'fields': ('sales_date', 'settlement_date', 'deposit_date')
+        }),
+        ('Montos', {
+            'fields': ('gross_amount', 'commission_base', 'commission_tax', 'commission_total', 'net_amount')
+        }),
+        ('Vinculaciones', {
+            'fields': ('settlement_journal_entry', 'bank_statement_line', 'supplier_invoice'),
+            'classes': ('collapse',)
+        }),
+        ('Estadísticas', {
+            'fields': ('payment_count',),
+            'classes': ('collapse',)
+        }),
+        ('Notas', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('display_id', 'created_at', 'created_by'),
+            'classes': ('collapse',)
         }),
     )

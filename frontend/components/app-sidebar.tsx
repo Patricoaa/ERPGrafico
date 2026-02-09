@@ -50,7 +50,7 @@ const categoryItems: Record<string, any> = {
         { title: "Movimientos de Tesorería", url: "/treasury/movements" },
         { title: "Diferencias POS", url: "/treasury/differences" },
         { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
-        { title: "Facturación Tarjetas", url: "/treasury/card-billing" },
+
     ],
     "purchasing": [
         { title: "Ordenes de Compra", url: "/purchasing/orders" },

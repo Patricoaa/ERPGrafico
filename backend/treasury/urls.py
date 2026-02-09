@@ -4,9 +4,9 @@ from .views import (
     TreasuryMovementViewSet, TreasuryAccountViewSet, POSTerminalViewSet,
     BankStatementViewSet, BankStatementLineViewSet,
     ReconciliationRuleViewSet, ReconciliationReportsViewSet,
-    CardBillingViewSet, POSSessionViewSet, 
+    POSSessionViewSet, 
     CashDifferenceViewSet, TreasuryDashboardViewSet,
-    BankViewSet, PaymentMethodViewSet, CardPaymentProviderViewSet
+    BankViewSet, PaymentMethodViewSet, TerminalBatchViewSet
 )
 
 
@@ -17,7 +17,8 @@ router.register(r'accounts', TreasuryAccountViewSet)
 router.register(r'pos-terminals', POSTerminalViewSet)
 router.register(r'banks', BankViewSet)
 router.register(r'payment-methods', PaymentMethodViewSet)
-router.register(r'card-providers', CardPaymentProviderViewSet)
+router.register(r'terminal-batches', TerminalBatchViewSet)
+
 
 # router.register(r'cash-movements', CashMovementViewSet) # Removed
 router.register(r'cash-differences', CashDifferenceViewSet)
@@ -25,7 +26,7 @@ router.register(r'statements', BankStatementViewSet)
 router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-rules', ReconciliationRuleViewSet)
 router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
-router.register(r'card-billing', CardBillingViewSet, basename='card-billing')
+
 router.register(r'pos-sessions', POSSessionViewSet, basename='possession')
 router.register(r'dashboard', TreasuryDashboardViewSet, basename='treasury-dashboard')
 

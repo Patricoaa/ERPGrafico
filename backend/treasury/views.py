@@ -5,9 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, POSTerminal, 
-                     CashDifference, POSSession, POSSessionAudit, Bank, PaymentMethod,
-                     CardPaymentProvider, DailySettlement)
+                     ReconciliationRule, POSTerminal, TerminalBatch,
+                     CashDifference, POSSession, POSSessionAudit, Bank, PaymentMethod)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
@@ -15,10 +14,9 @@ from .serializers import (
     POSTerminalSerializer,
     CashDifferenceSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
-    BankSerializer, PaymentMethodSerializer,
-    CardPaymentProviderSerializer, DailySettlementSerializer
+    BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer
 )
-from .services import TreasuryService
+from .services import TreasuryService, TerminalBatchService
 from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
 from .rule_service import RuleService
@@ -56,63 +54,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return qs
 
     def perform_create(self, serializer):
-        contact_id = serializer.validated_data.pop('contact_provider_id', None)
-        instance = serializer.save()
-        if contact_id:
-            self._resolve_card_provider(instance, contact_id)
+        serializer.save()
 
     def perform_update(self, serializer):
-        contact_id = serializer.validated_data.pop('contact_provider_id', None)
-        instance = serializer.save()
-        if contact_id:
-            self._resolve_card_provider(instance, contact_id)
+        serializer.save()
 
-    def _resolve_card_provider(self, payment_method, contact_id):
-        """
-        Resolves a Contact ID into a CardPaymentProvider.
-        If it doesn't exist, creates one with defaults.
-        """
-        from .models import CardPaymentProvider
-        from contacts.models import Contact
-        from accounting.models import AccountingSettings
-
-        try:
-            contact = Contact.objects.get(id=contact_id)
-            provider = CardPaymentProvider.objects.filter(supplier=contact).first()
-
-            if not provider:
-                # Create default provider for this contact
-                settings = AccountingSettings.objects.first()
-                
-                # Check if we have required accounts
-                # We need a receivable account (Asset) and a commission bridge (Liability/Expense)
-                # For now, if settings are missing, we use defaults if available or fail gracefully
-                receivable_acc = settings.default_receivable_account if settings else None
-                commission_acc = settings.card_commission_account if settings else None
-                
-                if not receivable_acc:
-                    # Fallback or error? Let's try to find a suitable account or allow null if model allows
-                    # (But model requires it). We'll assume settings exist or this is a demo.
-                    pass
-
-                provider = CardPaymentProvider.objects.create(
-                    name=contact.name,
-                    code=f"PROV-{contact.id}",
-                    supplier=contact,
-                    receivable_account=receivable_acc,
-                    commission_bridge_account=commission_acc,
-                    commission_rate=Decimal('2.95'),
-                    vat_rate=Decimal('19.00')
-                )
-            
-            payment_method.card_provider = provider
-            payment_method.save()
-            
-        except Contact.DoesNotExist:
-            pass
-        except Exception as e:
-            # Log error or handle
-            print(f"Error resolving card provider: {e}")
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
@@ -259,6 +205,16 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             from django.db.models import Q
             qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
             
+        # Filter pending batch movements
+        is_batch_pending = self.request.query_params.get('is_batch_pending')
+        if is_batch_pending == 'true':
+            qs = qs.filter(terminal_batch__isnull=True)
+            
+        # Filter by date range if needed (or exact date)
+        date = self.request.query_params.get('date')
+        if date:
+            qs = qs.filter(date__date=date)
+
         return qs
 
     filterset_fields = [
@@ -839,82 +795,7 @@ class ReconciliationReportsViewSet(viewsets.ViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class CardBillingViewSet(viewsets.ViewSet):
-    """ViewSet for Card Payment Billing and Dashboard"""
-    
-    @action(detail=False, methods=['get'])
-    def dashboard(self, request):
-        """Dashboard data for card commissions and invoicing"""
-        try:
-            from django.utils import timezone
-            year = int(request.query_params.get('year', timezone.now().year))
-            month = int(request.query_params.get('month', timezone.now().month))
-            
-            providers = CardPaymentProvider.objects.filter(is_active=True)
-            data = []
-            
-            for provider in providers:
-                settlements = DailySettlement.objects.filter(
-                    provider=provider,
-                    settlement_date__year=year,
-                    settlement_date__month=month
-                ).order_by('settlement_date')
-                
-                # Fetch monthly invoice if any settlement has one
-                invoice = None
-                settlement_with_invoice = settlements.filter(monthly_invoice__isnull=False).first()
-                if settlement_with_invoice:
-                    invoice = settlement_with_invoice.monthly_invoice
-                
-                provider_data = {
-                    'provider_id': provider.id,
-                    'provider_name': provider.name,
-                    'supplier_name': provider.supplier.name,
-                    'total_gross': sum(s.total_gross for s in settlements),
-                    'total_commission': sum(s.total_commission for s in settlements),
-                    'total_vat': sum(s.total_vat for s in settlements),
-                    'total_net': sum(s.total_net for s in settlements),
-                    'settlements_count': settlements.count(),
-                    'invoice_id': invoice.id if invoice else None,
-                    'invoice_number': invoice.number if invoice else None,
-                    'invoice_status': invoice.status if invoice else 'PENDING',
-                    'details': DailySettlementSerializer(settlements, many=True).data
-                }
-                data.append(provider_data)
-                
-            return Response(data)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['post'])
-    def generate_invoice(self, request):
-        """Manually trigger monthly invoice generation"""
-        try:
-            provider_id = request.data.get('provider_id')
-            year = int(request.data.get('year'))
-            month = int(request.data.get('month'))
-            
-            from .card_invoice_service import CardInvoiceService
-            provider = CardPaymentProvider.objects.get(id=provider_id)
-            
-            invoice = CardInvoiceService.generate_monthly_invoice(provider, year, month, request.user)
-            
-            if invoice:
-                return Response({
-                    'message': 'Factura generada con éxito',
-                    'invoice_id': invoice.id
-                })
-            else:
-                return Response({
-                    'error': 'No hay liquidaciones pendientes para este periodo'
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
-        except CardPaymentProvider.DoesNotExist:
-            return Response({'error': 'Proveedor no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class POSSessionViewSet(viewsets.ModelViewSet):
@@ -1684,8 +1565,95 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class CardPaymentProviderViewSet(viewsets.ModelViewSet):
-    """ViewSet for Card Payment Providers (Transbank, Getnet, etc.)"""
-    queryset = CardPaymentProvider.objects.all()
-    serializer_class = CardPaymentProviderSerializer
-    search_fields = ['name', 'internal_code']
+
+class TerminalBatchViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Terminal Batches (Settlements).
+    """
+    queryset = TerminalBatch.objects.all().order_by('-sales_date', '-created_at')
+    serializer_class = TerminalBatchSerializer
+    filterset_fields = ['status', 'payment_method', 'supplier', 'sales_date']
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Date range filtering
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        
+        if date_from:
+            qs = qs.filter(sales_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(sales_date__lte=date_to)
+            
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        """
+        Custom create to use TerminalBatchService.
+        """
+        try:
+            data = request.data
+            payment_method_id = data.get('payment_method')
+            sales_date = data.get('sales_date')
+            gross_amount = Decimal(str(data.get('gross_amount')))
+            commission_base = Decimal(str(data.get('commission_base', 0)))
+            commission_tax = Decimal(str(data.get('commission_tax', 0)))
+            net_amount = Decimal(str(data.get('net_amount')))
+            terminal_reference = data.get('terminal_reference', '')
+            supplier_id = data.get('supplier')
+            
+            payment_method = PaymentMethod.objects.get(pk=payment_method_id)
+            supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
+            
+            batch = TerminalBatchService.create_batch(
+                payment_method=payment_method,
+                sales_date=sales_date,
+                gross_amount=gross_amount,
+                commission_base=commission_base,
+                commission_tax=commission_tax,
+                net_amount=net_amount,
+                terminal_reference=terminal_reference,
+                supplier=supplier,
+                user=request.user
+            )
+            
+            return Response(TerminalBatchSerializer(batch).data, status=status.HTTP_201_CREATED)
+            
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'])
+    def generate_invoice(self, request):
+        """
+        Generate supplier invoice for settled batches.
+        """
+        try:
+            supplier_id = request.data.get('supplier_id')
+            year = int(request.data.get('year'))
+            month = int(request.data.get('month'))
+            
+            supplier = Contact.objects.get(pk=supplier_id)
+            
+            invoice = TerminalBatchService.generate_monthly_invoice(
+                supplier=supplier,
+                year=year,
+                month=month,
+                user=request.user
+            )
+            
+            if not invoice:
+                 return Response({'message': 'No hay lotes liquidados para facturar en este mes.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            return Response({
+                'message': 'Factura generada exitosamente',
+                'invoice_id': invoice.id,
+                'number': invoice.number
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
