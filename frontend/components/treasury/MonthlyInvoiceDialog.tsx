@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Loader2 } from "lucide-react"
@@ -20,6 +21,9 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
     const [supplierId, setSupplierId] = useState<string>("")
     const [month, setMonth] = useState<string>(new Date().getMonth() + 1 + "")
     const [year, setYear] = useState<string>(new Date().getFullYear() + "")
+    const [number, setNumber] = useState("")
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [attachment, setAttachment] = useState<File | null>(null)
 
     useEffect(() => {
         if (open) {
@@ -36,18 +40,34 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
             return
         }
 
+        if (!number) {
+            toast.error("El número de factura es obligatorio")
+            return
+        }
+
+        if (!attachment) {
+            toast.error("Debe adjuntar el documento de la factura")
+            return
+        }
+
         setLoading(true)
         try {
-            const res = await api.post('/treasury/terminal-batches/generate_invoice/', {
-                supplier_id: supplierId,
-                month: parseInt(month),
-                year: parseInt(year)
+            const formData = new FormData()
+            formData.append('supplier_id', supplierId)
+            formData.append('month', month)
+            formData.append('year', year)
+            formData.append('number', number)
+            formData.append('date', date)
+            if (attachment) {
+                formData.append('document_attachment', attachment)
+            }
+
+            await api.post('/treasury/terminal-batches/generate_invoice/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             })
 
             toast.success("Factura generada exitosamente")
             onOpenChange(false)
-            // Ideally we should redirect to the invoice or show a link
-
         } catch (error: any) {
             toast.error(error.response?.data?.message || error.response?.data?.error || "Error al generar factura")
         } finally {
@@ -61,7 +81,7 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
                 <DialogHeader>
                     <DialogTitle>Generar Factura Mensual</DialogTitle>
                     <DialogDescription>
-                        Agrupa todas las liquidaciones del mes seleccionado para un proveedor y genera una Factura de Compra borrador.
+                        Ingrese los datos de la factura mensual del proveedor para agrupar las liquidaciones.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -110,13 +130,45 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
                             </Select>
                         </div>
                     </div>
+
+                    <div className="border-t pt-4 space-y-4">
+                        <div className="grid gap-2">
+                            <Label>N° de Factura <span className="text-destructive">*</span></Label>
+                            <Input
+                                placeholder="Ej: 84729"
+                                value={number}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Fecha de Emisión <span className="text-destructive">*</span></Label>
+                            <Input
+                                type="date"
+                                value={date}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Adjuntar Factura (PDF) <span className="text-destructive">*</span></Label>
+                            <Input
+                                type="file"
+                                accept="application/pdf,image/*"
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAttachment(e.target.files?.[0] || null)}
+                                className="cursor-pointer"
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                <DialogFooter className="border-t pt-4">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={loading}>
+                        Cancelar
+                    </Button>
                     <Button onClick={handleSubmit} disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Generar Factura
+                        Generar y Finalizar
                     </Button>
                 </DialogFooter>
             </DialogContent>

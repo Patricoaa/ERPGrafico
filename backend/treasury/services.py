@@ -436,7 +436,8 @@ class TerminalBatchService:
         return batch
 
     @staticmethod
-    def generate_monthly_invoice(supplier, year, month, user=None):
+    @transaction.atomic
+    def generate_monthly_invoice(supplier, year, month, user=None, number=None, date=None, document_attachment=None):
         """
         Aggregates SETTLED batches for a month/supplier and generates a Supplier Invoice.
         Status -> INVOICED.
@@ -469,7 +470,9 @@ class TerminalBatchService:
         invoice = Invoice.objects.create(
             contact=supplier,
             dte_type=Invoice.DTEType.PURCHASE_INV,
-            date=timezone.now().date(),
+            number=number or "",
+            document_attachment=document_attachment,
+            date=date or timezone.now().date(),
             total_net=total_commission_net.quantize(Decimal('1')),
             total_tax=total_commission_tax.quantize(Decimal('1')),
             total=total_commission.quantize(Decimal('1')),

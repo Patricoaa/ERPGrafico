@@ -1661,7 +1661,10 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
                 supplier=supplier,
                 year=year,
                 month=month,
-                user=request.user
+                user=request.user,
+                number=request.data.get('number'),
+                date=request.data.get('date'),
+                document_attachment=request.FILES.get('document_attachment')
             )
             
             if not invoice:
