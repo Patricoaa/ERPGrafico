@@ -832,7 +832,7 @@ export function OrderCommandCenter({
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 actionEngineRef={actionEngineRef}
                                 stageId="billing"
-                                isComplete={billingIsComplete}
+                                isComplete={billingIsComplete} posSessionId={posSessionId}
                             />
 
                             {/* 5. Tesorería */}
@@ -876,7 +876,7 @@ export function OrderCommandCenter({
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 actionEngineRef={actionEngineRef}
                                 stageId="treasury"
-                                isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
+                                isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions} posSessionId={posSessionId}
                             >
                                 <div className="space-y-1 py-1">
                                     <div className="flex items-center justify-between text-[11px] font-bold">
@@ -972,7 +972,8 @@ function PhaseCard({
     actionEngineRef,
     showDocProgress = false,
     stageId = '',
-    isComplete = false
+    isComplete = false,
+    posSessionId = null
 }: any) {
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
@@ -1156,6 +1157,7 @@ function PhaseCard({
                             layout="grid"
                             compact={true}
                             showBadge={false}
+                            posSessionId={posSessionId}
                         />
                     )}
 
@@ -1186,6 +1188,7 @@ function PhaseCard({
                             compact={true}
                             ghost={true}
                             showBadge={false}
+                            posSessionId={posSessionId}
                         />
                     </div>
                 )}

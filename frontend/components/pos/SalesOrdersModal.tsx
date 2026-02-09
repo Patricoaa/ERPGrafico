@@ -312,7 +312,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <ShoppingCart className="h-5 w-5" />
-                            {viewMode === 'orders' ? 'Órdenes de Venta' : 'Notas de Crédito y Débito'}
+                            {viewMode === 'orders' ? 'Notas de Venta' : 'Notas de Crédito y Débito'}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="flex-1 overflow-hidden px-6 pb-6">

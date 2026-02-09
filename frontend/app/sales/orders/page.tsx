@@ -326,7 +326,7 @@ export default function SalesOrdersPage() {
         },
         {
             accessorKey: "channel_display",
-            header: "Canal",
+            header: "Sesión POS",
             cell: ({ row }) => (
                 <DataCell.Badge variant="outline" className="text-[10px] whitespace-nowrap">
                     {translateSalesChannel(row.original.channel_display)}
