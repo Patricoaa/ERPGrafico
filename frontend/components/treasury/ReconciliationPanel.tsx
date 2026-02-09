@@ -264,7 +264,15 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
 
         // Check for consistency (All same sense)
         const lineSenses = selectedLines.map(l => parseFloat(l.credit) > 0 ? 'ABONO' : 'CARGO')
-        const paySenses = selectedPayments.map(p => p.payment_type)
+        const getPaymentSense = (p: any) => {
+            if (p.payment_type === 'INBOUND') return 'INBOUND'
+            if (p.payment_type === 'OUTBOUND') return 'OUTBOUND'
+            if (p.payment_type === 'TRANSFER') {
+                return p.to_account === treasuryAccountId ? 'INBOUND' : 'OUTBOUND'
+            }
+            return p.payment_type
+        }
+        const paySenses = selectedPayments.map(getPaymentSense)
 
         const allLinesSame = new Set(lineSenses).size === 1
         const allPaysSame = new Set(paySenses).size === 1
@@ -282,11 +290,11 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         const paySense = paySenses[0]
 
         if (lineSense === 'ABONO' && paySense !== 'INBOUND') {
-            alert("⚠️ Los Abonos bancarios solo pueden conciliarse con Ingresos.")
+            alert("⚠️ Los Abonos bancarios solo pueden conciliarse con Ingresos o Traspasos entrantes.")
             return
         }
         if (lineSense === 'CARGO' && paySense !== 'OUTBOUND') {
-            alert("⚠️ Los Cargos bancarios solo pueden conciliarse con Egresos.")
+            alert("⚠️ Los Cargos bancarios solo pueden conciliarse con Egresos o Traspasos salientes.")
             return
         }
 
@@ -820,7 +828,14 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                         <div className="flex items-start justify-between gap-4 pl-6">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-[10px] font-black text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{payment.display_id || payment.code}</span>
+                                                    <span className={cn(
+                                                        "text-[10px] font-black px-1.5 py-0.5 rounded",
+                                                        (payment.display_id?.startsWith('DEP') || payment.movement_type === 'INBOUND') ? "text-emerald-700 bg-emerald-100" :
+                                                            (payment.display_id?.startsWith('RET') || payment.movement_type === 'OUTBOUND') ? "text-red-700 bg-red-100" :
+                                                                "text-sky-700 bg-sky-100"
+                                                    )}>
+                                                        {payment.display_id || payment.code}
+                                                    </span>
                                                     {isAmountMatch && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
                                                     {isBackendSuggest && <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
                                                 </div>
@@ -844,7 +859,7 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
                                                     {formatCurrency(Math.abs(parseFloat(payment.amount)))}
                                                 </div>
                                                 <div className="text-[9px] font-bold uppercase text-muted-foreground/50 mt-0.5">
-                                                    {payment.payment_method_display || 'Transferencia'}
+                                                    {payment.payment_method_new_name || payment.payment_method_display || 'Transferencia'}
                                                 </div>
                                             </div>
                                         </div>

@@ -249,9 +249,20 @@ class CashDifferenceViewSet(viewsets.ModelViewSet):
 class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
     serializer_class = TreasuryMovementSerializer
+
+    def get_queryset(self):
+        qs = self.queryset
+        
+        # Handle treasury_account filtering (matches either from or to)
+        treasury_account = self.request.query_params.get('treasury_account')
+        if treasury_account:
+            from django.db.models import Q
+            qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
+            
+        return qs
+
     filterset_fields = [
         'is_reconciled', 
-        'from_account', 'to_account', 
         'movement_type', 'payment_method', 'payment_method_new',
         'contact'
     ]
@@ -1672,3 +1683,9 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
             return Response({'message': 'Traspaso registrado correctamente', 'id': movement.id})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class CardPaymentProviderViewSet(viewsets.ModelViewSet):
+    """ViewSet for Card Payment Providers (Transbank, Getnet, etc.)"""
+    queryset = CardPaymentProvider.objects.all()
+    serializer_class = CardPaymentProviderSerializer
+    search_fields = ['name', 'internal_code']

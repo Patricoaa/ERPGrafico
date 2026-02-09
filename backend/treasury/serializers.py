@@ -178,7 +178,9 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
-    
+    payment_type = serializers.CharField(source='movement_type', read_only=True)
+    # Helper to distinguish direction in transfers
+    is_inbound = serializers.SerializerMethodField()
     # Account Names
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
@@ -200,6 +202,15 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     # Additional Context
     justify_reason_display = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+
+    def get_is_inbound(self, obj):
+        # Determine if it's an inflow to the account being considered
+        # Since we don't have the context account here, we use a heuristic:
+        # If it's INBOUND, it's inbound.
+        # If it's TRANSFER, it could be either. 
+        # But for the purpose of the ReconciliationPanel (which SELECTS logically),
+        # we can just return the movement_type and let the frontend decide based on the treasuryAccountId it has.
+        return obj.movement_type == 'INBOUND'
 
     class Meta:
         model = TreasuryMovement

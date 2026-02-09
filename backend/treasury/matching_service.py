@@ -64,14 +64,26 @@ class MatchingService:
         date_min = line.transaction_date - timedelta(days=7)
         date_max = line.transaction_date + timedelta(days=7)
         
-        # Criterios básicos: misma cuenta, no reconciliado, mismo sentido
-        # Exclude pending payments that haven't been registered in the bank yet
+        # Criterios básicos: no reconciliado, exclude pending
         base_filters = Q(
-            treasury_account=line.statement.treasury_account,
             is_reconciled=False,
-            is_pending_registration=False,  # Don't suggest pending payments
-            movement_type='INBOUND' if is_inbound else 'OUTBOUND'
+            is_pending_registration=False,
         )
+        
+        # Filtro de cuenta y sentido
+        account = line.statement.treasury_account
+        if is_inbound:
+            # Abono: Buscar INBOUND a la cuenta O TRANSFER hacia la cuenta
+            base_filters &= (
+                (Q(movement_type='INBOUND') & Q(to_account=account)) |
+                (Q(movement_type='TRANSFER') & Q(to_account=account))
+            )
+        else:
+            # Cargo: Buscar OUTBOUND desde la cuenta O TRANSFER desde la cuenta
+            base_filters &= (
+                (Q(movement_type='OUTBOUND') & Q(from_account=account)) |
+                (Q(movement_type='TRANSFER') & Q(from_account=account))
+            )
 
         # Candidatos por proximidad de fecha O por coincidencia exacta de ID/Referencia
         candidate_filters = Q(date__gte=date_min, date__lte=date_max)
@@ -140,17 +152,31 @@ class MatchingService:
         date_min = payment.date - timedelta(days=7)
         date_max = payment.date + timedelta(days=7)
         
-        # Filtros base
+        # Sentido e identificación de cuenta relevante
+        if payment.movement_type == 'TRANSFER':
+            # Si es traspaso, la cuenta relevante para la línea de cartola 
+            # es la que recibe (si buscamos abonos) o la que entrega (si buscamos cargos)
+            # Como el pago es uno solo, el sentido depende de en qué cuenta estemos mirando.
+            # En MatchingService, asumimos que buscamos líneas para EL LADO del pago que toca el banco.
+            
+            # Si el pago tiene to_account bancaria, buscamos Abonos (credit > 0)
+            if payment.to_account and payment.to_account.account_type != 'CASH':
+                account = payment.to_account
+                sense_filter = Q(credit__gt=0)
+            else:
+                account = payment.from_account
+                sense_filter = Q(debit__gt=0)
+        else:
+            account = payment.from_account or payment.to_account
+            sense_filter = Q(credit__gt=0) if payment.movement_type == 'INBOUND' else Q(debit__gt=0)
+            
         filters = Q(
-            statement__treasury_account=payment.treasury_account,
+            statement__treasury_account=account,
             reconciliation_state='UNRECONCILED'
         )
+        filters &= sense_filter
         
-        # Sentido
-        if payment.movement_type == 'INBOUND':
-            filters &= Q(credit__gt=0)
-        else:
-            filters &= Q(debit__gt=0)
+        # Búsqueda de candidatos...
             
         # Candidatos
         candidate_filters = Q(transaction_date__gte=date_min, transaction_date__lte=date_max)

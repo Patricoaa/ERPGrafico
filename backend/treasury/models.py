@@ -1017,7 +1017,6 @@ class CardPaymentProvider(models.Model):
         'contacts.Contact',
         on_delete=models.PROTECT,
         related_name='card_providers',
-        limit_choices_to={'is_supplier': True},
         verbose_name=_("Proveedor (Contacto)")
     )
     
