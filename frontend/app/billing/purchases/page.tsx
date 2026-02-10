@@ -192,7 +192,9 @@ export default function PurchaseInvoicesPage() {
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                                    doc.dte_type === 'BOLETA' ? 'BOL' : 'FACT'}
+                                    doc.dte_type === 'BOLETA' ? 'BOL' :
+                                        doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT'}
                         </span>
                     </div>
                 )

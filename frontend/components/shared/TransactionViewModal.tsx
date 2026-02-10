@@ -131,10 +131,14 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'invoice':
                 const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
                     data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
-                        data.dte_type === 'BOLETA' ? 'Boleta de Venta' : 'Factura de Venta'
+                        data.dte_type === 'BOLETA' ? 'Boleta de Venta' :
+                            data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
+                                data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' : 'Factura de Venta'
                 const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' :
                     data.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                        data.dte_type === 'BOLETA' ? 'BOL' : 'FACT'
+                        data.dte_type === 'BOLETA' ? 'BOL' :
+                            data.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                                data.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT'
                 return { main: `Comprobante de ${typeLabel}`, sub: `${prefix}-${data.number || data.id}` }
             case 'payment':
                 const payPrefix = data.payment_type === 'INBOUND' ? 'Comprobante de Ingreso' : 'Comprobante de Egreso'
