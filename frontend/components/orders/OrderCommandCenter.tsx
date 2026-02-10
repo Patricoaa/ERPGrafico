@@ -326,7 +326,7 @@ export function OrderCommandCenter({
                                 order={order}
                                 activeDoc={activeDoc}
                                 type={type}
-                                onActionSuccess={onActionSuccess}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 onEdit={onEdit}
                                 userPermissions={userPermissions}
@@ -339,7 +339,7 @@ export function OrderCommandCenter({
                                 activeDoc={activeDoc}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
@@ -354,7 +354,7 @@ export function OrderCommandCenter({
                                 invoices={invoices}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
@@ -369,7 +369,7 @@ export function OrderCommandCenter({
                                 billingIsComplete={billingIsComplete}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
@@ -383,7 +383,7 @@ export function OrderCommandCenter({
                                 payments={payments}
                                 registry={registry}
                                 userPermissions={userPermissions}
-                                onActionSuccess={onActionSuccess}
+                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}

@@ -250,6 +250,11 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        # Trigger status update on related documents
+        TreasuryService.update_related_document_status(instance)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

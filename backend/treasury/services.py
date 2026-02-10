@@ -76,7 +76,7 @@ class TreasuryService:
         )
 
         # 3. Handle Business Documents (Status Updates)
-        TreasuryService._update_business_documents(movement, invoice, sale_order, purchase_order)
+        TreasuryService.update_related_document_status(movement, invoice, sale_order, purchase_order)
 
         # 4. Handle POS Session Totals
         if pos_session:
@@ -123,21 +123,22 @@ class TreasuryService:
         )
 
     @staticmethod
-    def _update_business_documents(movement, invoice, sale_order, purchase_order):
+    def update_related_document_status(movement, invoice=None, sale_order=None, purchase_order=None):
         # Logic to update status to PAID
         targets = []
         if invoice: targets.append(invoice)
         if sale_order and not invoice: targets.append(sale_order)
         if purchase_order and not invoice: targets.append(purchase_order)
+        
+        # If arguments are missing, try to resolve from movement
+        if not invoice and movement.invoice: targets.append(movement.invoice)
+        if not sale_order and movement.sale_order and not movement.invoice: targets.append(movement.sale_order)
+        if not purchase_order and movement.purchase_order and not movement.invoice: targets.append(movement.purchase_order)
+
+        targets = list(set(targets)) # unique
 
         for target in targets:
              # Recalculate total paid
-             # Assumption: target has .payments related manager. 
-             # We updated related_name in TreasuryMovement to 'payments' for compatibility?
-             # Or we need to check if target.payments works or we need target.treasury_movements.
-             # The model rename usually keeps related_name or we check model definition.
-             # Assuming related_name='payments' or we filter.
-             
              model_to_field = {
                  'invoice': 'invoice',
                  'saleorder': 'sale_order',
@@ -145,21 +146,58 @@ class TreasuryService:
              }
              field_name = model_to_field.get(target._meta.model_name, target._meta.model_name)
              
-             total_paid = sum(m.amount for m in TreasuryMovement.objects.filter(
-                 **{field_name: target}
-             ))
+             # Get all related payments
+             related_payments = TreasuryMovement.objects.filter(**{field_name: target})
+             total_paid = sum(m.amount for m in related_payments)
              
              target_total = getattr(target, 'total', 0)
              if hasattr(target, 'effective_total'): target_total = target.effective_total
 
+             # Check if fully paid
              if total_paid >= target_total:
+                 # CRITICAL: Check if any payment requires a transaction number but misses it
+                 has_pending_transactions = related_payments.filter(
+                     movement_type__in=[TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER],
+                     payment_method__in=[TreasuryMovement.Method.CARD, TreasuryMovement.Method.TRANSFER],
+                     transaction_number__isnull=True
+                 ).exclude(transaction_number__exact='').exists()
+                 
+                 # Also check empty string explicitly in case nulls are handled differently
+                 if not has_pending_transactions:
+                      # If we do exclude(exact='') above, it handles empty strings.
+                      # Let's be thorough:
+                      pending_empty = related_payments.filter(
+                         movement_type__in=[TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER],
+                         payment_method__in=[TreasuryMovement.Method.CARD, TreasuryMovement.Method.TRANSFER],
+                         transaction_number=''
+                      ).exists()
+                      has_pending_transactions = has_pending_transactions or pending_empty
+
                  status_field = 'status'
-                 # Determine PAID status constant
-                 # This relies on imports, let's do soft check or import models inside
                  if hasattr(target, 'Status'):
                       if hasattr(target.Status, 'PAID'):
-                          setattr(target, status_field, target.Status.PAID)
-                          target.save()
+                          # Only mark as PAID if NO pending transaction numbers
+                          if not has_pending_transactions:
+                              setattr(target, status_field, target.Status.PAID)
+                              target.save()
+                          else:
+                              # If it was PAID but now we see it's missing TR (maybe reverted?), 
+                              # we might want to revert to INVOICED/CONFIRMED?
+                              # For now, let's just NOT set it to PAID.
+                              # If we want to support "Un-paying", we'd need to check if current status IS Paid and revert it.
+                              # That's safer to ensure sync.
+                              if target.status == target.Status.PAID:
+                                   # Revert to valid previous state
+                                   # This is tricky without state machine. 
+                                   # Suggestion: If Invoiced -> INVOICED, else CONFIRMED
+                                   new_status = target.Status.CONFIRMED
+                                   if hasattr(target.Status, 'INVOICED'):
+                                        # Check if it has invoices
+                                        # (Simple heuristic)
+                                        new_status = target.Status.INVOICED
+                                   
+                                   setattr(target, status_field, new_status)
+                                   target.save()
 
     @staticmethod
     def _update_pos_session(movement, pos_session):

@@ -213,7 +213,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryMovement
         fields = '__all__'
-        read_only_fields = ['created_by', 'created_at', 'history', 'transaction_number', 'is_pending_registration']
+        read_only_fields = ['created_by', 'created_at', 'history', 'is_pending_registration']
     
     def get_journal_name(self, obj):
         # Return the name of the primary treasury account involved

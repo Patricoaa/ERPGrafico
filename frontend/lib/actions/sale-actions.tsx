@@ -191,9 +191,9 @@ export const saleOrderActions: ActionRegistry = {
                         return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.dte_type !== 'NOTA_CREDITO'
                     }
 
-                    // Show if there's a pending amount or order is not paid
-                    const hasPendingAmount = (activeDoc.pending_amount ?? 0) > 0
-                    return hasPendingAmount || (activeDoc.status !== 'PAID' && activeDoc.status !== 'CANCELLED')
+                    // Show if there's a pending amount
+                    const hasPendingAmount = (parseFloat(activeDoc.pending_amount) || 0) > 0
+                    return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                 },
                 badge: { type: 'pending' },
                 excludedStatus: ['CANCELLED']
