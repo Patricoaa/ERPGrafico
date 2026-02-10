@@ -6,6 +6,7 @@ from accounting.models import Account
 from core.mixins import TotalsCalculationMixin
 from core.services import SequenceService
 from simple_history.models import HistoricalRecords
+from decimal import Decimal
 
 class SaleOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):

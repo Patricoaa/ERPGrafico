@@ -9,12 +9,18 @@ import { PricingUtils } from "@/lib/pricing"
 interface PurchaseOrderSummaryCardProps {
     orderLines: any[]
     total: number
+    dteType?: string
 }
 
 export function PurchaseOrderSummaryCard({
     orderLines,
-    total
+    total,
+    dteType
 }: PurchaseOrderSummaryCardProps) {
+    const isExempt = dteType === 'FACTURA_EXENTA' || dteType === 'BOLETA_EXENTA';
+    const net = isExempt ? total : PricingUtils.grossToNet(total);
+    const tax = isExempt ? 0 : PricingUtils.extractTax(total);
+
     return (
         <div className="h-full flex flex-col bg-muted/20 border-l">
             <div className="flex-1 overflow-auto custom-scrollbar">
@@ -51,12 +57,14 @@ export function PurchaseOrderSummaryCard({
             <div className="p-6 bg-background border-t shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] space-y-3">
                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>Subtotal Neto</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(PricingUtils.grossToNet(total))}</span>
+                    <span className="whitespace-nowrap font-mono">{formatCurrency(net)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
-                    <span>IVA (19%)</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(PricingUtils.extractTax(total))}</span>
-                </div>
+                {!isExempt && (
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                        <span>IVA (19%)</span>
+                        <span className="whitespace-nowrap font-mono">{formatCurrency(tax)}</span>
+                    </div>
+                )}
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Compra</span>

@@ -78,11 +78,17 @@ export function SalesCheckoutWizard({
     }, [open, initialOrderLines])
 
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
-    const currentTotal = currentOrderLines.reduce((acc: number, line: any) => {
-        if (line.total_gross !== undefined) return acc + line.total_gross;
-        const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
-        return acc + PricingUtils.netToGross(net);
-    }, 0);
+    const currentTotal = useMemo(() => {
+        const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
+        return currentOrderLines.reduce((acc: number, line: any) => {
+            const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
+
+            if (isExempt) return acc + net;
+
+            if (line.total_gross !== undefined) return acc + line.total_gross;
+            return acc + PricingUtils.netToGross(net);
+        }, 0);
+    }, [currentOrderLines, dteData.type]);
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
@@ -404,7 +410,7 @@ export function SalesCheckoutWizard({
                         unit_price: l.unit_price_net || l.unit_price,
                         unit_price_gross: l.unit_price_gross,
                         uom: l.uom || null,
-                        tax_rate: 19,
+                        tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
                         manufacturing_data: cleanMfgData
                     }
                 })
@@ -560,6 +566,7 @@ export function SalesCheckoutWizard({
                     <OrderSummaryCard
                         orderLines={currentOrderLines}
                         total={currentTotal}
+                        dteType={dteData.type}
                     />
                 </div>
             </div>

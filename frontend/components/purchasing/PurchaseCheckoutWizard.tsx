@@ -105,22 +105,6 @@ export function PurchaseCheckoutWizard({
         // we might reset the user's progress in Step 1, which is what we are avoiding.
     }, [open])
 
-    useEffect(() => {
-        const newTotal = currentOrderLines.reduce((sum, line) => {
-            const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
-            const tax = PricingUtils.calculateTax(net)
-            return sum + net + tax
-        }, 0)
-        setCurrentTotal(newTotal)
-    }, [currentOrderLines])
-
-
-    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
-    const [selectedSupplierName, setSelectedSupplierName] = useState("")
-    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
-    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
-
     const [dteData, setDteData] = useState({
         type: 'FACTURA',
         number: '',
@@ -128,6 +112,22 @@ export function PurchaseCheckoutWizard({
         attachment: null,
         isPending: false
     })
+
+    useEffect(() => {
+        const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
+        const newTotal = currentOrderLines.reduce((sum, line) => {
+            const net = ((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))
+            const tax = isExempt ? 0 : PricingUtils.calculateTax(net)
+            return sum + net + tax
+        }, 0)
+        setCurrentTotal(newTotal)
+    }, [currentOrderLines, dteData.type])
+
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
+    const [selectedSupplierName, setSelectedSupplierName] = useState("")
+    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
+    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
     const [paymentData, setPaymentData] = useState({
         method: '',
@@ -271,7 +271,7 @@ export function PurchaseCheckoutWizard({
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,
                     uom: l.uom,
-                    tax_rate: 19
+                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19
                 }))
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
@@ -451,6 +451,7 @@ export function PurchaseCheckoutWizard({
                     <PurchaseOrderSummaryCard
                         orderLines={currentOrderLines}
                         total={currentTotal}
+                        dteType={dteData.type}
                     />
                 </div>
             </div>
