@@ -274,22 +274,32 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
             api.get(`/treasury/movements/`, {
                 params: {
                     payment_method_new: paymentMethodId,
-                    date: dateStr,
+                    // Remove date filter to show all pending
                     movement_type: 'INBOUND',
                     terminal_batch__isnull: 'True'
                 }
             }).then(res => {
                 const data = res.data.results || res.data
-                setMovements(data)
-                // Initialize selection: merge current selection with fetched data if they exist
-                // Or just keep currently selected if they are in the result
-                const next = new Set<number>()
-                initialSelectedIds.forEach(id => {
-                    if (data.some((m: any) => m.id === id)) next.add(id)
+
+                // Sort: Prioritize selected date, then by date descending
+                const sorted = [...data].sort((a: any, b: any) => {
+                    if (a.date === dateStr && b.date !== dateStr) return -1
+                    if (a.date !== dateStr && b.date === dateStr) return 1
+                    return b.date.localeCompare(a.date)
                 })
-                // If it's the first time loading for this terminal/day, select all by default
+
+                setMovements(sorted)
+
+                // Initial auto-selection: only sales for the selected date
+                const next = new Set<number>()
                 if (initialSelectedIds.size === 0) {
-                    data.forEach((m: any) => next.add(m.id))
+                    sorted.forEach((m: any) => {
+                        if (m.date === dateStr) next.add(m.id)
+                    })
+                } else {
+                    initialSelectedIds.forEach(id => {
+                        if (sorted.some((m: any) => m.id === id)) next.add(id)
+                    })
                 }
                 setSelectedIds(next)
             }).finally(() => setLoading(false))
@@ -365,8 +375,17 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                                             onClick={(e) => e.stopPropagation()}
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{m.partner_name || 'Particular'}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
+                                                {m.date === format(date!, "yyyy-MM-dd") && (
+                                                    <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-primary/10 text-primary border-primary/20">Hoy</Badge>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">
+                                                <span>{m.partner_name || 'Particular'}</span>
+                                                <span>•</span>
+                                                <span className="font-medium">{format(new Date(m.date + 'T12:00:00'), "dd/MM/yyyy")}</span>
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-black">
