@@ -20,10 +20,16 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-export function GroupManagement() {
+interface GroupManagementProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupManagementProps) {
     const [loading, setLoading] = useState(true)
     const [groups, setGroups] = useState<any[]>([])
     const [deleteId, setDeleteId] = useState<number | null>(null)
+    const [showCreateModal, setShowCreateModal] = useState(false)
 
     const fetchGroups = async () => {
         try {
@@ -39,6 +45,12 @@ export function GroupManagement() {
     useEffect(() => {
         fetchGroups()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setShowCreateModal(true)
+        }
+    }, [externalOpen])
 
     const handleDelete = async () => {
         if (!deleteId) return
@@ -60,7 +72,7 @@ export function GroupManagement() {
                 <DataTableColumnHeader column={column} title="Nombre del Grupo" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 font-medium">
+                <div className="flex items-center gap-2 font-medium text-xs">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     {row.getValue("name")}
                 </div>
@@ -71,7 +83,7 @@ export function GroupManagement() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Miembros" />
             ),
-            cell: ({ row }) => <div className="pl-4">{row.getValue("user_count")}</div>,
+            cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
         },
         {
             id: "actions",
@@ -82,7 +94,7 @@ export function GroupManagement() {
                         initialData={row.original}
                         onSuccess={fetchGroups}
                         trigger={
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Edit className="h-4 w-4" />
                             </Button>
                         }
@@ -90,7 +102,7 @@ export function GroupManagement() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => setDeleteId(row.original.id)}
                     >
                         <Trash2 className="h-4 w-4" />
@@ -102,24 +114,6 @@ export function GroupManagement() {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center bg-muted/40 p-4 rounded-lg border">
-                <div>
-                    <h3 className="text-lg font-medium">Grupos y Equipos</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Gestiona los equipos funcionales para asignación de tareas y workflows.
-                    </p>
-                </div>
-                <GroupForm
-                    onSuccess={fetchGroups}
-                    trigger={
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nuevo Grupo
-                        </Button>
-                    }
-                />
-            </div>
-
             {loading ? (
                 <div className="flex h-[200px] items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -131,6 +125,19 @@ export function GroupManagement() {
                     searchPlaceholder="Buscar grupo..."
                 />
             )}
+
+            <GroupForm
+                open={showCreateModal}
+                onOpenChange={(open) => {
+                    setShowCreateModal(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
+                onSuccess={() => {
+                    setShowCreateModal(false)
+                    onExternalOpenChange?.(false)
+                    fetchGroups()
+                }}
+            />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>

@@ -21,6 +21,7 @@ export default function UsersSettingsPage() {
     const [activeTab, setActiveTab] = useState("users")
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<any[]>([])
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
 
     const fetchUsers = async () => {
         try {
@@ -152,7 +153,11 @@ export default function UsersSettingsPage() {
                 return {
                     title: "Grupos y Equipos",
                     description: "Organice a sus colaboradores por departamentos o funciones específicas.",
-                    actions: null // GroupManagement has its own creation in context for now, or we can move it later if requested
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsGroupModalOpen(true)} title="Nuevo Grupo">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )
                 }
             default:
                 return { title: "Usuarios", description: "", actions: null }
@@ -202,7 +207,7 @@ export default function UsersSettingsPage() {
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none">
-                        <GroupManagement />
+                        <GroupManagement externalOpen={isGroupModalOpen} onExternalOpenChange={setIsGroupModalOpen} />
                     </TabsContent>
                 </div>
             </Tabs>
