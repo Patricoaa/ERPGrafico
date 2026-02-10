@@ -37,7 +37,6 @@ export function StockReport() {
         }
     }
 
-
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "name",
@@ -164,10 +163,6 @@ export function StockReport() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h3 className="text-lg font-semibold whitespace-nowrap">Reporte de Valorización</h3>
-            </div>
-
             <DataTable
                 columns={columns}
                 data={report}

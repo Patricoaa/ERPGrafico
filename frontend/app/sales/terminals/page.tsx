@@ -9,9 +9,11 @@ import POSSessionsPage from "../sessions/page"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, Store } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function TerminalsPage() {
+    const router = useRouter()
     const [activeTab, setActiveTab] = useState("terminals")
     const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false)
     const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
@@ -56,7 +58,13 @@ export default function TerminalsPage() {
                 return {
                     title: "Historial de Sesiones",
                     description: "Registro cronológico de aperturas y cierres de terminales POS.",
-                    actions: null
+                    actions: null,
+                    children: (
+                        <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
+                            <Store className="mr-2 h-4 w-4" />
+                            Ir al POS
+                        </Button>
+                    )
                 }
             default:
                 return { title: "Terminales", description: "", actions: null }
@@ -93,7 +101,7 @@ export default function TerminalsPage() {
                 </TabsContent>
 
                 <TabsContent value="sessions">
-                    <POSSessionsPage />
+                    <POSSessionsPage hideHeader />
                 </TabsContent>
             </Tabs>
         </div>

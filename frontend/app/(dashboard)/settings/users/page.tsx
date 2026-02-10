@@ -15,10 +15,10 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/components/settings/GroupManagement"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { Users, UserPlus } from "lucide-react"
-import { PageHeader as CustomPageHeader } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function UsersSettingsPage() {
-    const router = useRouter()
+    const [activeTab, setActiveTab] = useState("users")
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<any[]>([])
 
@@ -131,61 +131,74 @@ export default function UsersSettingsPage() {
         { value: "groups", label: "Grupos y Equipos", icon: UserPlus },
     ]
 
-    // ... (Render logic)
+    const getHeaderConfig = () => {
+        switch (activeTab) {
+            case "users":
+                return {
+                    title: "Gestión de Usuarios",
+                    description: "Administre el acceso de los empleados y sus roles en el sistema.",
+                    actions: (
+                        <UserForm
+                            onSuccess={fetchUsers}
+                            trigger={
+                                <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            }
+                        />
+                    )
+                }
+            case "groups":
+                return {
+                    title: "Grupos y Equipos",
+                    description: "Organice a sus colaboradores por departamentos o funciones específicas.",
+                    actions: null // GroupManagement has its own creation in context for now, or we can move it later if requested
+                }
+            default:
+                return { title: "Usuarios", description: "", actions: null }
+        }
+    }
+
+    const { title, description, actions } = getHeaderConfig()
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <CustomPageHeader
-                title="Usuarios y Permisos"
-                description="Gestione el acceso al sistema y los equipos de trabajo."
-                titleActions={
-                    <UserForm
-                        onSuccess={fetchUsers}
-                        trigger={
-                            <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                        }
-                    />
-                }
-            />
-
-            <Tabs defaultValue="users" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <PageTabs tabs={tabs} maxWidth="max-w-md" />
+
+                <PageHeader
+                    title={title}
+                    description={description}
+                    titleActions={actions}
+                />
 
                 <div className="pt-4">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4">
-                        <div className="flex items-center gap-4">
-                            <h3 className="text-lg font-semibold">Lista de Usuarios</h3>
-                        </div>
-
-                        <div className="">
-                            {loading ? (
-                                <div className="flex h-[200px] items-center justify-center">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                </div>
-                            ) : (
-                                <DataTable
-                                    columns={columns}
-                                    data={users}
-                                    globalFilterFields={["username", "email", "first_name", "last_name"]}
-                                    searchPlaceholder="Buscar usuario por nombre, email o username..."
-                                    useAdvancedFilter={true}
-                                    facetedFilters={[
-                                        {
-                                            column: "role",
-                                            title: "Rol",
-                                            options: [
-                                                { label: "Admin", value: "ADMIN" },
-                                                { label: "Gerente", value: "MANAGER" },
-                                                { label: "Operador", value: "OPERATOR" },
-                                                { label: "Lectura", value: "READ_ONLY" },
-                                            ],
-                                        },
-                                    ]}
-                                />
-                            )}
-                        </div>
+                        {loading ? (
+                            <div className="flex h-[200px] items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        ) : (
+                            <DataTable
+                                columns={columns}
+                                data={users}
+                                globalFilterFields={["username", "email", "first_name", "last_name"]}
+                                searchPlaceholder="Buscar usuario por nombre, email o username..."
+                                useAdvancedFilter={true}
+                                facetedFilters={[
+                                    {
+                                        column: "role",
+                                        title: "Rol",
+                                        options: [
+                                            { label: "Admin", value: "ADMIN" },
+                                            { label: "Gerente", value: "MANAGER" },
+                                            { label: "Operador", value: "OPERATOR" },
+                                            { label: "Lectura", value: "READ_ONLY" },
+                                        ],
+                                    },
+                                ]}
+                            />
+                        )}
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none">

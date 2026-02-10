@@ -31,7 +31,12 @@ interface StockMove {
     }>
 }
 
-export function MovementList() {
+interface MovementListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function MovementList({ externalOpen, onExternalOpenChange }: MovementListProps) {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
@@ -52,6 +57,12 @@ export function MovementList() {
     useEffect(() => {
         fetchMoves()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setShowAdjustmentModal(true)
+        }
+    }, [externalOpen])
 
     const columns: ColumnDef<StockMove>[] = [
         {
@@ -197,13 +208,6 @@ export function MovementList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Historial de Movimientos</h3>
-                <Button onClick={() => setShowAdjustmentModal(true)} size="icon" className="rounded-full h-8 w-8" title="Nuevo Ajuste">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <div className="">
                 <DataTable
                     columns={columns}
@@ -237,12 +241,22 @@ export function MovementList() {
                 )
             }
 
-            <Dialog open={showAdjustmentModal} onOpenChange={setShowAdjustmentModal}>
+            <Dialog open={showAdjustmentModal} onOpenChange={(open) => {
+                setShowAdjustmentModal(open)
+                if (!open) onExternalOpenChange?.(false)
+            }}>
                 <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Nuevo Ajuste de Stock</DialogTitle>
                     </DialogHeader>
-                    <AdjustmentForm onSuccess={() => { setShowAdjustmentModal(false); fetchMoves(); }} onCancel={() => setShowAdjustmentModal(false)} />
+                    <AdjustmentForm onSuccess={() => {
+                        setShowAdjustmentModal(false);
+                        onExternalOpenChange?.(false);
+                        fetchMoves();
+                    }} onCancel={() => {
+                        setShowAdjustmentModal(false);
+                        onExternalOpenChange?.(false);
+                    }} />
                 </DialogContent>
             </Dialog>
         </div >

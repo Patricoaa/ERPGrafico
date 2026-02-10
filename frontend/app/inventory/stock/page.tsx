@@ -6,7 +6,7 @@ import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
 import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
-import { Warehouse, History, FileBarChart, RefreshCw } from "lucide-react"
+import { Warehouse, History, FileBarChart, RefreshCw, PlayCircle } from "lucide-react"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,9 @@ import { Plus } from "lucide-react"
 export default function UnifiedStockPage() {
     const [activeTab, setActiveTab] = useState("report")
     const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState(false)
+    const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
+    const [isPlanifierRunning, setIsPlanifierRunning] = useState(false)
+    const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
 
     const tabs = [
         { value: "report", label: "Stock", icon: FileBarChart },
@@ -35,13 +38,27 @@ export default function UnifiedStockPage() {
                 return {
                     title: "Historial de Movimientos",
                     description: "Registro cronológico de entradas, salidas y transferencias.",
-                    actions: null
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsAdjustmentModalOpen(true)} title="Nuevo Ajuste">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )
                 }
             case "replenishment":
                 return {
                     title: "Gestión de Reabastecimiento",
                     description: "Análisis de stock crítico y sugerencias de compra.",
-                    actions: null
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsRuleModalOpen(true)} title="Nueva Regla">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    ),
+                    children: (
+                        <Button variant="outline" size="sm" onClick={() => setIsPlanifierRunning(true)} className="h-8 rounded-full">
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                            Planificar
+                        </Button>
+                    )
                 }
             case "warehouses":
                 return {
@@ -76,10 +93,15 @@ export default function UnifiedStockPage() {
                         <StockReport />
                     </TabsContent>
                     <TabsContent value="movements" className="mt-0 outline-none">
-                        <MovementList />
+                        <MovementList externalOpen={isAdjustmentModalOpen} onExternalOpenChange={setIsAdjustmentModalOpen} />
                     </TabsContent>
                     <TabsContent value="replenishment" className="mt-0 outline-none">
-                        <ReplenishmentDashboard />
+                        <ReplenishmentDashboard
+                            externalRunPlanifier={isPlanifierRunning}
+                            onExternalRunPlanifierChange={setIsPlanifierRunning}
+                            externalOpenRule={isRuleModalOpen}
+                            onExternalOpenRuleChange={setIsRuleModalOpen}
+                        />
                     </TabsContent>
                     <TabsContent value="warehouses" className="mt-0 outline-none">
                         <WarehouseList externalOpen={isWarehouseModalOpen} onExternalOpenChange={setIsWarehouseModalOpen} />

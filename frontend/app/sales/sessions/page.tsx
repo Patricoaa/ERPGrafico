@@ -13,6 +13,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { FileText, Store, Lock, Calculator, Banknote, CreditCard, ArrowRightLeft, Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import {
     Dialog,
     DialogContent,
@@ -50,7 +51,11 @@ interface POSSession {
     total_other_cash_outflow: number
 }
 
-export default function POSSessionsPage() {
+interface POSSessionsPageProps {
+    hideHeader?: boolean
+}
+
+export default function POSSessionsPage({ hideHeader = false }: POSSessionsPageProps) {
     const router = useRouter()
     const [sessions, setSessions] = useState<POSSession[]>([])
     const [loading, setLoading] = useState(true)
@@ -216,16 +221,18 @@ export default function POSSessionsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Sesiones Punto de Venta"
-                description="Historial de aperturas y cierres de caja."
-            >
-                <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
-                    <Store className="mr-2 h-4 w-4" />
-                    Ir al POS
-                </Button>
-            </PageHeader>
+        <div className={cn("flex-1 space-y-4", !hideHeader && "p-8 pt-6")}>
+            {!hideHeader && (
+                <PageHeader
+                    title="Sesiones Punto de Venta"
+                    description="Historial de aperturas y cierres de caja."
+                >
+                    <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
+                        <Store className="mr-2 h-4 w-4" />
+                        Ir al POS
+                    </Button>
+                </PageHeader>
+            )}
 
             {/* Main Content */}
             {loading ? (
