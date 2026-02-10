@@ -198,6 +198,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'transaction_number': pay.transaction_number,
                 'is_pending_registration': pay.is_pending_registration,
                 'invoice_id': pay.invoice_id,
+                'payment_type': pay.movement_type,
                 'code': code
             })
         

@@ -47,7 +47,7 @@ export const getHubStatuses = (order: any) => {
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
     const hasPendingTransactions = payments.some((pay: any) => {
         const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && pay.payment_method === 'TRANSFER') ||
+            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
         )
         return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
@@ -114,7 +114,7 @@ export const getNoteHubStatuses = (note: any) => {
     const payments = note.serialized_payments || note.payments_detail || note.related_documents?.payments || []
     const hasPendingTransactions = payments.some((pay: any) => {
         const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && pay.payment_method === 'TRANSFER') ||
+            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
         )
         return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
