@@ -504,38 +504,26 @@ class TerminalBatchService:
             payment_method=Invoice.PaymentMethod.TRANSFER
         )
         
-        # 1. Invoice Entry (Expense/IVA vs Payable)
-        description_inv = f"Factura Comisión {supplier.name} - {month}/{year} (Loteado)"
+        # 1. Invoice Entry (Expense/IVA vs Bridge Accounts)
+        # This directly clears the bridge accounts and recognizes the final expense/VAT
+        description_inv = f"Compensación Retenciones Terminal {supplier.name} - {month}/{year}"
         entry_inv = JournalEntry.objects.create(
             date=invoice.date,
             description=description_inv,
             reference=f"COMM-{invoice.id}",
             state=JournalEntry.State.POSTED
         )
-        # Debit Gasto
+        # Debit REAL Expense
         JournalItem.objects.create(entry=entry_inv, account=expense_acc, debit=total_commission_net, credit=0, partner=supplier.name)
-        # Debit IVA
+        # Debit REAL IVA
         JournalItem.objects.create(entry=entry_inv, account=vat_account, debit=total_commission_tax, credit=0, partner=supplier.name)
-        # Credit Payable
-        JournalItem.objects.create(entry=entry_inv, account=payable_acc, debit=0, credit=total_commission, partner=supplier.name)
+        # Credit BRIDGE Commission
+        JournalItem.objects.create(entry=entry_inv, account=comm_bridge, debit=0, credit=total_commission_net, partner=supplier.name)
+        # Credit BRIDGE IVA
+        JournalItem.objects.create(entry=entry_inv, account=iva_bridge, debit=0, credit=total_commission_tax, partner=supplier.name)
         
         invoice.journal_entry = entry_inv
         invoice.save()
-
-        # 2. Clearing Entry (Payable vs Bridge Accounts)
-        # This "pays" the invoice by using the retentions accumulated in bridge accounts
-        entry_clear = JournalEntry.objects.create(
-            date=invoice.date,
-            description=f"Compensación Retenciones Terminal {supplier.name} - {month}/{year}",
-            reference=f"CLEA-{invoice.id}",
-            state=JournalEntry.State.POSTED
-        )
-        # Debit Payable
-        JournalItem.objects.create(entry=entry_clear, account=payable_acc, debit=total_commission, credit=0, partner=supplier.name)
-        # Credit Bridge Commission
-        JournalItem.objects.create(entry=entry_clear, account=comm_bridge, debit=0, credit=total_commission_net, partner=supplier.name)
-        # Credit Bridge IVA
-        JournalItem.objects.create(entry=entry_clear, account=iva_bridge, debit=0, credit=total_commission_tax, partner=supplier.name)
 
         # Link batches
         batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
