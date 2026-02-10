@@ -1,13 +1,19 @@
 "use client"
 
 import React, { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UoMList } from "@/components/inventory/UoMList"
 import { UoMCategoryList } from "@/components/inventory/UoMCategoryList"
 import { Scale, Layers } from "lucide-react"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 export default function UnifiedUoMPage() {
     const [activeTab, setActiveTab] = useState("units")
+
+    const tabs = [
+        { value: "units", label: "Unidades", icon: Scale },
+        { value: "categories", label: "Categorías", icon: Layers },
+    ]
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -19,18 +25,7 @@ export default function UnifiedUoMPage() {
             </div>
 
             <Tabs defaultValue="units" className="space-y-4" onValueChange={setActiveTab}>
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-sm grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border">
-                        <TabsTrigger value="units" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Scale className="h-4 w-4" />
-                            <span>Unidades</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="categories" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Layers className="h-4 w-4" />
-                            <span>Categorías</span>
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} maxWidth="max-w-sm" />
 
                 <div className="pt-4">
                     <TabsContent value="units" className="mt-0 outline-none">

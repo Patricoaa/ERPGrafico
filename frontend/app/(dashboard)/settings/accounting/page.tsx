@@ -14,9 +14,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { ChevronLeft, Loader2, Save, Database, Settings2, BarChart3, Calculator } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -210,51 +211,20 @@ export default function AccountingSettingsPage() {
         )
     }
 
+    const tabs = [
+        { value: "mapping", label: "Mapeos Base", icon: BarChart3 },
+        { value: "structure", label: "Estructura y Prefijos", icon: Settings2 },
+        { value: "business", label: "Reglas de Negocio", icon: Calculator },
+    ]
+
+    // ... (Render logic)
+
     return (
         <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Configuración Contable</h2>
-                        <p className="text-muted-foreground mt-1">Gestione el plan de cuentas, mapeos predeterminados y reglas de negocio.</p>
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handlePopulateIFRS}
-                        disabled={populating || saving}
-                        className="gap-2"
-                    >
-                        {populating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-                        Poblar Plan IFRS
-                    </Button>
-                    <Button
-                        onClick={form.handleSubmit(onSubmit)}
-                        disabled={saving || populating}
-                        className="gap-2"
-                    >
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Guardar Cambios
-                    </Button>
-                </div>
-            </div>
+            {/* ... (Header) */}
 
             <Tabs defaultValue="mapping" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
-                    <TabsTrigger value="mapping" className="gap-2">
-                        <BarChart3 className="h-4 w-4" /> Mapeos Base
-                    </TabsTrigger>
-                    <TabsTrigger value="structure" className="gap-2">
-                        <Settings2 className="h-4 w-4" /> Estructura y Prefijos
-                    </TabsTrigger>
-                    <TabsTrigger value="business" className="gap-2">
-                        <Calculator className="h-4 w-4" /> Reglas de Negocio
-                    </TabsTrigger>
-                </TabsList>
+                <PageTabs tabs={tabs} maxWidth="max-w-2xl" />
 
                 <Form {...form}>
                     <form className="space-y-6 overflow-visible">

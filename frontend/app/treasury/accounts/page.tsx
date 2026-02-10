@@ -33,10 +33,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/components/treasury/MasterDataManagement"
 import { TerminalManagement } from "@/components/treasury/TerminalManagement"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 interface TreasuryAccount {
     id: number
@@ -217,6 +218,12 @@ export default function TreasuryAccountsPage() {
         },
     ]
 
+    const tabs = [
+        { value: "accounts", label: "Cuentas de tesorería", icon: List },
+        { value: "banks", label: "Bancos", icon: Landmark },
+        { value: "methods", label: "Métodos", icon: CreditCard },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -227,22 +234,7 @@ export default function TreasuryAccountsPage() {
             </div>
 
             <Tabs defaultValue="accounts" className="space-y-4">
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-xl grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
-                        <TabsTrigger value="accounts" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <List className="h-4 w-4" />
-                            <span className="max-sm:hidden">Cuentas de tesorería</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="banks" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Landmark className="h-4 w-4" />
-                            <span className="max-sm:hidden">Bancos</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="methods" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            <span className="max-sm:hidden">Métodos</span>
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} />
 
                 <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">

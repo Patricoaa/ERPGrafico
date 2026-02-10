@@ -1,39 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { TerminalManagement } from "@/components/treasury/TerminalManagement"
 import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatchesManagement"
 import { Banknote, List, Receipt } from "lucide-react"
 import POSSessionsPage from "../sessions/page"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 export default function TerminalsPage() {
+    const tabs = [
+        { value: "terminals", label: "Terminales POS", icon: Banknote },
+        { value: "batches", label: "Lotes de Liquidación", icon: Receipt },
+        { value: "sessions", label: "Historial de Sesiones", icon: List },
+    ]
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Terminales y Sesiones</h2>
-                    <p className="text-muted-foreground">Administración de puntos de venta y control de turnos.</p>
-                </div>
-            </div>
+            {/* ... (Header) */}
 
             <Tabs defaultValue="terminals" className="space-y-4">
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
-                        <TabsTrigger value="terminals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Banknote className="h-4 w-4" />
-                            <span className="max-sm:hidden">Terminales POS</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="batches" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <Receipt className="h-4 w-4" />
-                            <span className="max-sm:hidden">Lotes de Liquidación</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="sessions" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                            <List className="h-4 w-4" />
-                            <span className="max-sm:hidden">Historial de Sesiones</span>
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} maxWidth="max-w-2xl" />
 
                 <TabsContent value="terminals">
                     <TerminalManagement />

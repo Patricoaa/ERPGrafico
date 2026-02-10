@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Download, CalendarIcon } from "lucide-react"
+import { Download, CalendarIcon, FileText, BarChart2, TrendingUp } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FinancialStatementTable } from "@/components/finances/FinancialStatementTable"
@@ -16,11 +16,18 @@ import { DateRange } from "react-day-picker"
 import { format, startOfYear, subMonths, subYears, startOfMonth, endOfMonth } from "date-fns"
 import { es } from 'date-fns/locale'
 import { cn } from "@/lib/utils"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 export default function StatementsPage() {
     const [loading, setLoading] = useState(false);
     const [showComparison, setShowComparison] = useState(false);
     const [activeTab, setActiveTab] = useState('bs');
+
+    const tabs = [
+        { value: "bs", label: "Balance", icon: FileText },
+        { value: "pl", label: "Resultados", icon: BarChart2 },
+        { value: "cf", label: "Flujos", icon: TrendingUp },
+    ]
 
     // Date State
     const [date, setDate] = useState<DateRange | undefined>({
@@ -187,13 +194,7 @@ export default function StatementsPage() {
                 onValueChange={setActiveTab}
                 className="space-y-4"
             >
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-sm:max-w-xs max-w-sm grid-cols-3 bg-muted rounded-full h-11 p-1">
-                        <TabsTrigger value="bs" className="rounded-full">Balance</TabsTrigger>
-                        <TabsTrigger value="pl" className="rounded-full">Resultados</TabsTrigger>
-                        <TabsTrigger value="cf" className="rounded-full">Flujos</TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} maxWidth="max-w-sm" />
 
                 <div className="max-w-5xl mx-auto w-full pt-4">
                     <TabsContent value="bs">

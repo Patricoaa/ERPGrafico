@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { RatiosView } from "@/components/finances/RatiosView"
@@ -9,6 +9,8 @@ import { BIAnalyticsView } from "@/components/finances/BIAnalyticsView"
 import { DateRangeSelector } from "@/components/finances/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PieChart, Activity } from "lucide-react"
 
 export default function AnalysisPage() {
     const [showComparison, setShowComparison] = useState(false);
@@ -23,6 +25,11 @@ export default function AnalysisPage() {
         from: startOfYear(subYears(new Date(), 1)),
         to: subYears(new Date(), 1),
     })
+
+    const tabs = [
+        { value: "ratios", label: "Ratios Financieros", icon: PieChart },
+        { value: "bi", label: "Business Intelligence", icon: Activity },
+    ]
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -50,12 +57,7 @@ export default function AnalysisPage() {
             </div>
 
             <Tabs defaultValue="ratios" className="space-y-4">
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100 dark:bg-slate-800 rounded-full h-11 p-1">
-                        <TabsTrigger value="ratios" className="rounded-full">Ratios Financieros</TabsTrigger>
-                        <TabsTrigger value="bi" className="rounded-full">Business Intelligence</TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} maxWidth="max-w-sm" />
 
                 <div className="max-w-6xl mx-auto w-full pt-4">
                     <TabsContent value="ratios">

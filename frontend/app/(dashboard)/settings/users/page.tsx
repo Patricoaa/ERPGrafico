@@ -11,8 +11,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Loader2, ChevronLeft } from "lucide-react"
 import { UserForm } from "@/components/forms/UserForm"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/components/settings/GroupManagement"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { Users, UserPlus } from "lucide-react"
 
 export default function UsersSettingsPage() {
     const router = useRouter()
@@ -123,6 +125,13 @@ export default function UsersSettingsPage() {
         },
     ]
 
+    const tabs = [
+        { value: "users", label: "Usuarios", icon: Users },
+        { value: "groups", label: "Grupos y Equipos", icon: UserPlus },
+    ]
+
+    // ... (Render logic)
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -133,16 +142,7 @@ export default function UsersSettingsPage() {
             </div>
 
             <Tabs defaultValue="users" className="space-y-4">
-                <div className="flex justify-center">
-                    <TabsList className="grid w-full max-w-md grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border">
-                        <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                            Usuarios
-                        </TabsTrigger>
-                        <TabsTrigger value="groups" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                            Grupos y Equipos
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+                <PageTabs tabs={tabs} maxWidth="max-w-md" />
 
                 <div className="pt-4">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4">
