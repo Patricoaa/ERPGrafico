@@ -4,7 +4,6 @@ import "./globals.css";
 import AuthGuard from "@/components/auth/AuthGuard"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
-import { CostCalculatorButton } from "@/components/tools/CostCalculatorButton"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +34,6 @@ export default function RootLayout({
           <GlobalModalProvider>
             <AuthGuard>
               {children}
-              <CostCalculatorButton />
             </AuthGuard>
           </GlobalModalProvider>
         </AuthProvider>

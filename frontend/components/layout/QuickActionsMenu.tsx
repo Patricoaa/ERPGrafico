@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, ShoppingCart, Printer, Home, Inbox } from "lucide-react"
+import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator } from "lucide-react"
+import { CostCalculatorModal } from "@/components/tools/CostCalculatorModal"
 import { cn } from "@/lib/utils"
 import {
     Tooltip,
@@ -53,6 +54,7 @@ interface QuickActionsMenuProps {
 export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMenuProps) {
     const pathname = usePathname()
     const [pendingCount, setPendingCount] = useState(0)
+    const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
 
     const fetchTaskCounts = async () => {
         try {
@@ -140,6 +142,31 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                             Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
                         </TooltipContent>
                     </Tooltip>
+
+                    {/* Calculator Toggle Button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => setIsCalculatorOpen(true)}
+                                className={cn(
+                                    "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    isCalculatorOpen
+                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                        : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                )}
+                            >
+                                <Calculator className={cn("h-5 w-5 transition-colors", !isCalculatorOpen && "group-hover:text-purple-500")} />
+                                {isCalculatorOpen && (
+                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
+                                )}
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                            Calculadora de Costos
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <CostCalculatorModal open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
                 </TooltipProvider>
             </div>
         </div>

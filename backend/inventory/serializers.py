@@ -145,6 +145,7 @@ class ProductSerializer(serializers.ModelSerializer):
     # Replenishment Rules
     reordering_rules = ReorderingRuleSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, read_only=True)
+    available_uoms = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -168,7 +169,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
             'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
             'payment_day_type', 'payment_day', 'payment_interval_days',
-            'attachments',
+            'attachments', 'available_uoms',
             # Variant Fields
             'has_variants', 'variants_count', 'parent_template', 'attribute_values', 'attribute_values_data',
             'variant_display_name', 'variants',
@@ -270,6 +271,13 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_requires_bom_validation(self, obj):
         return obj.requires_bom_validation
+
+    def get_available_uoms(self, obj):
+        if not obj.uom:
+            return []
+        from .services import UoMService
+        uoms = UoMService.get_allowed_uoms_for_context(obj, 'bom')
+        return UoMSerializer(uoms, many=True).data
 
     def validate(self, data):
         # Fallback for base UoM if missing but others are present

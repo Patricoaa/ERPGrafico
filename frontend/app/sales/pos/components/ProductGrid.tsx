@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/currency'
 import { PricingUtils } from '@/lib/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { Product, Category, StockLimits } from '@/types/pos'
+import { Plus } from 'lucide-react'
 import { memo } from 'react'
 
 interface ProductGridProps {
@@ -78,13 +79,20 @@ function ProductGridComponent({
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
-                                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                                 <DynamicIcon
                                     name={categoryIcon || "Package"}
                                     className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform"
                                 />
                             )}
+
+                            {/* Hover Badge */}
+                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Badge className="bg-primary text-primary-foreground shadow-lg scale-90 group-hover:scale-100 transition-transform">
+                                    <Plus className="h-4 w-4 mr-1" /> Agregar
+                                </Badge>
+                            </div>
 
                             {/* Stock/Availability Badge */}
                             {product.product_type === 'STORABLE' && (
