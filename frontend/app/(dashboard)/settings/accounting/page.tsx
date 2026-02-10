@@ -11,13 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { ChevronLeft, Loader2, Save, Database, Settings2, BarChart3, Calculator } from "lucide-react"
+import { ChevronLeft, Loader2, Save, Database, Settings2, BarChart3, Calculator, CloudCheck, CloudUpload, AlertCircle as AlertCircleIcon } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 const accountingSchema = z.object({
     default_receivable_account: z.string().nullable(),
@@ -177,6 +178,22 @@ export default function AccountingSettingsPage() {
         fetchSettings()
     }, [form])
 
+    const watchedValues = form.watch()
+
+    useEffect(() => {
+        if (!loading) {
+            const timer = setTimeout(() => {
+                const isDirty = Object.keys(form.control._names.mount).some(
+                    (name) => form.getFieldState(name as any).isDirty
+                )
+                if (isDirty) {
+                    form.handleSubmit(onSubmit)()
+                }
+            }, 1000)
+            return () => clearTimeout(timer)
+        }
+    }, [watchedValues, loading])
+
     async function onSubmit(data: AccountingFormValues) {
         setSaving(true)
         try {
@@ -221,7 +238,26 @@ export default function AccountingSettingsPage() {
 
     return (
         <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
-            {/* ... (Header) */}
+            <PageHeader
+                title="Configuración Contable"
+                description="Configura los mapeos de cuentas, prefijos y reglas de negocio para la contabilidad automatizada."
+            >
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
+                        {saving ? (
+                            <>
+                                <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
+                                <span className="text-blue-600">Guardando cambios...</span>
+                            </>
+                        ) : (
+                            <>
+                                <CloudCheck className="h-3 w-3 text-emerald-500" />
+                                <span className="text-emerald-600">Cambios guardados</span>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </PageHeader>
 
             <Tabs defaultValue="mapping" className="space-y-4">
                 <PageTabs tabs={tabs} maxWidth="max-w-2xl" />
@@ -517,7 +553,7 @@ export default function AccountingSettingsPage() {
                     </form>
                 </Form>
             </Tabs>
-        </div>
+        </div >
     )
 }
 

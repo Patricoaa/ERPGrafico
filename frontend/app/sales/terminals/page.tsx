@@ -7,6 +7,7 @@ import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatches
 import { Banknote, List, Receipt } from "lucide-react"
 import POSSessionsPage from "../sessions/page"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function TerminalsPage() {
     const tabs = [
@@ -17,7 +18,10 @@ export default function TerminalsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            {/* ... (Header) */}
+            <PageHeader
+                title="Terminales y Puntos de Venta"
+                description="Gestiona tus terminales de pago, lotes de liquidación y sesiones de venta."
+            />
 
             <Tabs defaultValue="terminals" className="space-y-4">
                 <PageTabs tabs={tabs} maxWidth="max-w-2xl" />
@@ -34,6 +38,6 @@ export default function TerminalsPage() {
                     <POSSessionsPage />
                 </TabsContent>
             </Tabs>
-        </div>
+        </div >
     )
 }
