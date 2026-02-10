@@ -83,6 +83,42 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         return f"{self.display_id} {self.customer.name}"
     
     @property
+    def effective_total(self):
+        """
+        Calculates the real total of the order considering associated documents.
+        This is used for financial status (PAID check) and dashboards.
+        """
+        from billing.models import Invoice
+        invoices = self.invoices.all()
+        if not invoices.exists():
+            return self.total
+            
+        # We define which DTE types are considered "primary" documents (not corrections)
+        primary_types = [
+            Invoice.DTEType.FACTURA, 
+            Invoice.DTEType.FACTURA_EXENTA,
+            Invoice.DTEType.BOLETA,
+            Invoice.DTEType.BOLETA_EXENTA
+        ]
+        
+        # If we have primary documents, we sum them (plus debit notes, minus credit notes)
+        # Otherwise we use the original order total as base.
+        has_primary = invoices.filter(dte_type__in=primary_types).exists()
+        
+        if not has_primary:
+            base = self.total
+        else:
+            base = Decimal('0')
+            
+        for inv in invoices:
+            if inv.dte_type in primary_types or inv.dte_type == Invoice.DTEType.NOTA_DEBITO:
+                base += inv.total
+            elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
+                base -= inv.total
+                
+        return base
+
+    @property
     def display_id(self):
         return f"NV-{self.number}"
     

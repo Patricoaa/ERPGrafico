@@ -103,8 +103,9 @@ export function BillingPhase({
                 variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))}
                 documents={invoices.map((inv: any) => ({
                     type: inv.dte_type_display || 'Documento',
-                    number: formatDocumentId(inv.dte_type === 'BOLETA' ? 'BOL' : 'FACT', inv.number || '---', inv.display_id),
+                    number: inv.display_id || formatDocumentId(inv.dte_type === 'BOLETA' ? 'BOL' : 'FACT', inv.number || '---', inv.display_id),
                     icon: FileText,
+                    color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
                     id: inv.id,
                     docType: 'invoice',
                     status: inv.status,

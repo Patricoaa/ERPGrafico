@@ -67,10 +67,12 @@ export function NoteItemsSummary({
                     <span>Subtotal Neto</span>
                     <span className="whitespace-nowrap font-mono">{formatCurrency(totalNet)}</span>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
-                    <span>IVA (19%)</span>
-                    <span className="whitespace-nowrap font-mono">{formatCurrency(totalTax)}</span>
-                </div>
+                {totalTax > 0 && (
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                        <span>IVA (19%)</span>
+                        <span className="whitespace-nowrap font-mono">{formatCurrency(totalTax)}</span>
+                    </div>
+                )}
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Ajuste</span>

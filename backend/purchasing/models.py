@@ -98,7 +98,14 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         net = Decimal('0')
         # If we have a finalized invoice flow, use the sum of documents.
         # Otherwise, use original total as base if no primary invoice exists.
-        has_primary = invoices.filter(dte_type__in=[Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV]).exists()
+        primary_types = [
+            Invoice.DTEType.FACTURA, 
+            Invoice.DTEType.FACTURA_EXENTA,
+            Invoice.DTEType.BOLETA,
+            Invoice.DTEType.BOLETA_EXENTA,
+            Invoice.DTEType.PURCHASE_INV
+        ]
+        has_primary = invoices.filter(dte_type__in=primary_types).exists()
         
         if not has_primary:
             base = self.total
@@ -106,7 +113,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
             base = Decimal('0')
             
         for inv in invoices:
-            if inv.dte_type in [Invoice.DTEType.FACTURA, Invoice.DTEType.NOTA_DEBITO, Invoice.DTEType.PURCHASE_INV]:
+            if inv.dte_type in primary_types or inv.dte_type == Invoice.DTEType.NOTA_DEBITO:
                 base += inv.total
             elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
                 base -= inv.total

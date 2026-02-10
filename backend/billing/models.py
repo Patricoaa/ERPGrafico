@@ -13,7 +13,9 @@ from .note_workflow import NoteWorkflow  # Import workflow model
 class Invoice(models.Model):
     class DTEType(models.TextChoices):
         FACTURA = 'FACTURA', _('Factura Electrónica')
+        FACTURA_EXENTA = 'FACTURA_EXENTA', _('Factura No Afecta o Exenta')
         BOLETA = 'BOLETA', _('Boleta Electrónica')
+        BOLETA_EXENTA = 'BOLETA_EXENTA', _('Boleta No Afecta o Exenta')
         PURCHASE_INV = 'PURCHASE_INV', _('Factura de Compra')
         NOTA_CREDITO = 'NOTA_CREDITO', _('Nota de Crédito')
         NOTA_DEBITO = 'NOTA_DEBITO', _('Nota de Débito')
@@ -30,7 +32,21 @@ class Invoice(models.Model):
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
 
-    dte_type = models.CharField(_("Tipo DTE"), max_length=20, choices=DTEType.choices)
+    dte_type = models.CharField(_("Tipo DTE"), max_length=25, choices=DTEType.choices)
+    sii_document_code = models.IntegerField(
+        _("Código SII"),
+        null=True,
+        blank=True,
+        choices=[
+            (33, 'Factura Electrónica'),
+            (34, 'Factura Exenta'),
+            (39, 'Boleta Electrónica'),
+            (41, 'Boleta Exenta'),
+            (56, 'Nota de Débito'),
+            (61, 'Nota de Crédito'),
+        ],
+        help_text=_("Código oficial del tipo de DTE según SII de Chile")
+    )
     number = models.CharField(_("Folio"), max_length=20, blank=True)
     document_attachment = models.FileField(
         _("Adjunto de Documento"), 
@@ -84,9 +100,38 @@ class Invoice(models.Model):
         return self.display_id
 
     @property
+    def sii_code(self) -> int:
+        """Retorna el código SII numérico del documento"""
+        if self.sii_document_code:
+            return self.sii_document_code
+        
+        # Fallback para documentos antiguos sin código asignado
+        code_map = {
+            'FACTURA': 33,
+            'FACTURA_EXENTA': 34,
+            'BOLETA': 39,
+            'BOLETA_EXENTA': 41,
+            'NOTA_DEBITO': 56,
+            'NOTA_CREDITO': 61,
+            'PURCHASE_INV': 33,  # Asumir factura afecta por defecto
+        }
+        return code_map.get(self.dte_type, 0)
+    
+    @property
+    def is_tax_exempt(self) -> bool:
+        """Indica si el documento está exento de IVA"""
+        return self.dte_type in [
+            self.DTEType.FACTURA_EXENTA,
+            self.DTEType.BOLETA_EXENTA
+        ]
+    
+    @property
     def display_id(self):
+        """Retorna ID del documento con prefijo apropiado"""
         prefix = 'FACT'
         if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
-        elif self.dte_type == 'NOTA_DEBITO': prefix = 'NB'
+        elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'
         elif self.dte_type == 'BOLETA': prefix = 'BOL'
+        elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BOL-EX'
+        elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FACT-EX'
         return f"{prefix}-{self.number or 'Draft'}"

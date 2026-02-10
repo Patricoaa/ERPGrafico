@@ -221,12 +221,17 @@ class BillingService:
             items
         )
 
-        # Keep cost capitalization update for Boletas
+        # Keep cost capitalization update ONLY for TAXABLE Boletas (not BOLETA_EXENTA)
+        # Tax-exempt boletas have no IVA to capitalize
         if dte_type == Invoice.DTEType.BOLETA:
             for line in order.lines.all():
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 if line_tax > 0 and line.quantity > 0:
                     BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
+        elif dte_type == Invoice.DTEType.BOLETA_EXENTA:
+            # No IVA capitalization for tax-exempt boletas
+            pass
+
 
         # Only post the entry if the invoice is POSTED, not DRAFT
         if status == Invoice.Status.POSTED:

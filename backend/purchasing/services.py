@@ -581,7 +581,13 @@ class PurchasingService:
 
         if not original_invoice:
             original_invoice = order.invoices.filter(
-                dte_type__in=[Invoice.DTEType.FACTURA, Invoice.DTEType.PURCHASE_INV, Invoice.DTEType.BOLETA]
+                dte_type__in=[
+                    Invoice.DTEType.FACTURA, 
+                    Invoice.DTEType.FACTURA_EXENTA,
+                    Invoice.DTEType.BOLETA,
+                    Invoice.DTEType.BOLETA_EXENTA,
+                    Invoice.DTEType.PURCHASE_INV
+                ]
             ).first()
         
         if not original_invoice:

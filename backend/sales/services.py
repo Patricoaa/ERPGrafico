@@ -743,6 +743,16 @@ class SalesService:
         original_invoice = None
         if original_invoice_id:
             original_invoice = Invoice.objects.filter(id=original_invoice_id).first()
+        else:
+            # Fallback: link to the first primary invoice if exists
+            original_invoice = order.invoices.filter(
+                dte_type__in=[
+                    Invoice.DTEType.FACTURA, 
+                    Invoice.DTEType.FACTURA_EXENTA,
+                    Invoice.DTEType.BOLETA, 
+                    Invoice.DTEType.BOLETA_EXENTA
+                ]
+            ).first()
         
         # 1. Business Logic Validations
         if return_items:

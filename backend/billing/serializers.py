@@ -25,6 +25,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     corrected_invoice = serializers.SerializerMethodField()
     order_delivery_status = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
+    is_tax_exempt = serializers.ReadOnlyField()
 
     class Meta:
         model = Invoice

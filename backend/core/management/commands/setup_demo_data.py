@@ -1167,7 +1167,7 @@ class Command(BaseCommand):
         # Assign allowed payment methods (Only 1 CASH method as requested + cards/transfers)
         cash_pm_01 = PaymentMethod.objects.get(name="Efectivo POS 01")
         other_methods = PaymentMethod.objects.filter(allow_for_sales=True).exclude(method_type=PaymentMethod.Type.CASH)
-        t1.allowed_payment_methods.set([cash_pm_01] | list(other_methods))
+        t1.allowed_payment_methods.set([cash_pm_01] + list(other_methods))
 
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
@@ -1178,7 +1178,7 @@ class Command(BaseCommand):
             }
         )
         cash_pm_taller = PaymentMethod.objects.get(name="Efectivo Taller")
-        t2.allowed_payment_methods.set([cash_pm_taller] | list(other_methods))
+        t2.allowed_payment_methods.set([cash_pm_taller] + list(other_methods))
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")

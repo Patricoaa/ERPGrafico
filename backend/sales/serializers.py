@@ -209,7 +209,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return sum(p.amount for p in obj.payments.all())
 
     def get_pending_amount(self, obj):
-        return obj.total - self.get_total_paid(obj)
+        return obj.effective_total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
         # Only calculate progress for OTs NOT linked to notes

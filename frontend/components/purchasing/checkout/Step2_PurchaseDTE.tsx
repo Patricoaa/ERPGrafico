@@ -27,25 +27,43 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="grid grid-cols-2 gap-4"
+                    className="grid grid-cols-4 gap-4"
                 >
                     <Label
                         htmlFor="type-boleta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA' ? 'border-primary' : ''}`}
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA' ? 'border-primary' : ''}`}
                     >
                         <RadioGroupItem value="BOLETA" id="type-boleta" className="sr-only" />
                         <Receipt className="mb-3 h-6 w-6" />
                         <span className="text-sm font-medium">Boleta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Folio requerido</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 39</span>
                     </Label>
                     <Label
                         htmlFor="type-factura"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\u0026:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
                     >
                         <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
                         <FileText className="mb-3 h-6 w-6" />
                         <span className="text-sm font-medium">Factura</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Folio y adjunto requeridos</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 33</span>
+                    </Label>
+                    <Label
+                        htmlFor="type-boleta-exenta"
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA_EXENTA' ? 'border-primary' : ''}`}
+                    >
+                        <RadioGroupItem value="BOLETA_EXENTA" id="type-boleta-exenta" className="sr-only" />
+                        <Receipt className="mb-3 h-6 w-6 text-amber-600" />
+                        <span className="text-sm font-medium">Boleta Exenta</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 41</span>
+                    </Label>
+                    <Label
+                        htmlFor="type-factura-exenta"
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA_EXENTA' ? 'border-primary' : ''}`}
+                    >
+                        <RadioGroupItem value="FACTURA_EXENTA" id="type-factura-exenta" className="sr-only" />
+                        <FileText className="mb-3 h-6 w-6 text-amber-600" />
+                        <span className="text-sm font-medium">Factura Exenta</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 34</span>
                     </Label>
                 </RadioGroup>
             </div>

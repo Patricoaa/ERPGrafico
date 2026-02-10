@@ -473,6 +473,7 @@ class AccountingMapper:
     def get_entries_for_sale_invoice(invoice, settings):
         """
         Sale Invoice: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
+        Modified to support tax-exempt documents (no IVA)
         """
         order = invoice.sale_order
         receivable_account = order.customer.account_receivable or settings.default_receivable_account
@@ -490,31 +491,49 @@ class AccountingMapper:
             {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
         ]
         
-        # Distribute Total Net across accounts based on Gross grouping
-        total_net_remaining = invoice.total_net
-        accounts = list(revenue_gross_grouping.items())
+        # Check if document is tax-exempt
+        is_tax_exempt = invoice.is_tax_exempt
         
-        for i, (acc, gross_amount) in enumerate(accounts):
-            if i == len(accounts) - 1:
-                 # Last account takes the remainder
-                 net_amount = total_net_remaining
-            else:
-                 net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        if is_tax_exempt:
+            # Tax-exempt documents: Total = Net (no IVA separation)
+            for acc, gross_amount in revenue_gross_grouping.items():
+                if gross_amount != 0:
+                    items.append({
+                        'account': acc,
+                        'debit': Decimal('0.00'),
+                        'credit': gross_amount,
+                        'label': f"Venta Exenta {invoice.number or ''}"
+                    })
+        else:
+            # Standard taxable documents: Separate Net and IVA
+            # Distribute Total Net across accounts based on Gross grouping
+            total_net_remaining = invoice.total_net
+            accounts = list(revenue_gross_grouping.items())
             
-            if net_amount != 0:
-                items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Factura {invoice.number or ''}"})
-                total_net_remaining -= net_amount
-        
-        if invoice.total_tax > 0:
-            tax_acc = settings.default_tax_payable_account
-            items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': invoice.total_tax, 'label': "IVA Débito Fiscal"})
+            for i, (acc, gross_amount) in enumerate(accounts):
+                if i == len(accounts) - 1:
+                     # Last account takes the remainder
+                     net_amount = total_net_remaining
+                else:
+                     net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                
+                if net_amount != 0:
+                    items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Factura {invoice.number or ''}"})
+                    total_net_remaining -= net_amount
+            
+            # Add IVA only for taxable documents
+            if invoice.total_tax > 0:
+                tax_acc = settings.default_tax_payable_account
+                items.append({'account': tax_acc, 'debit': Decimal('0.00'), 'credit': invoice.total_tax, 'label': "IVA Débito Fiscal"})
             
         return f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}", f"{invoice.dte_type[:3]}-{order.number}", items
+
 
     @staticmethod
     def get_entries_for_purchase_bill(invoice, settings):
         """
         Purchase Bill: Payable (Cr) vs Clearing (Dr) + Tax (Dr) or Capitalized Tax (Dr)
+        Modified to support tax-exempt documents (no IVA)
         """
         order = invoice.purchase_order
         payable_account = order.supplier.account_payable or settings.default_payable_account
@@ -530,29 +549,32 @@ class AccountingMapper:
         ]
         
         # Handle Taxes vs Capitalization
+        is_tax_exempt = invoice.is_tax_exempt
         is_boleta = invoice.dte_type == 'BOLETA'
         
-        if is_boleta:
-            # BOLETAS: Tax is capitalized into inventory, Net goes to bridge
-            # This ensures balance even if receipt was recorded at Net
-            if invoice.total_tax > 0:
-                items.append({
-                    'account': settings.default_inventory_account,
-                    'debit': invoice.total_tax,
-                    'credit': Decimal('0.00'),
-                    'label': "IVA Capitalizado (Boleta)"
-                })
-        else:
-            # FACTURAS: Record VAT as tax receivable
-            if invoice.total_tax > 0 and tax_account:
-                 items.append({
-                    'account': tax_account,
-                    'debit': invoice.total_tax,
-                    'credit': Decimal('0.00'),
-                    'label': "IVA Compras (Crédito Fiscal)"
-                 })
+        if not is_tax_exempt:
+            if is_boleta:
+                # BOLETAS: Tax is capitalized into inventory, Net goes to bridge
+                # This ensures balance even if receipt was recorded at Net
+                if invoice.total_tax > 0:
+                    items.append({
+                        'account': settings.default_inventory_account,
+                        'debit': invoice.total_tax,
+                        'credit': Decimal('0.00'),
+                        'label': "IVA Capitalizado (Boleta)"
+                    })
+            else:
+                # FACTURAS: Record VAT as tax receivable
+                if invoice.total_tax > 0 and tax_account:
+                     items.append({
+                        'account': tax_account,
+                        'debit': invoice.total_tax,
+                        'credit': Decimal('0.00'),
+                        'label': "IVA Compras (Crédito Fiscal)"
+                     })
 
         return f"{invoice.get_dte_type_display()} Compra {invoice.number or '(Pendiente)'} - OC {order.number}", f"FCP-{invoice.id}", items
+
 
     @staticmethod
     def get_entries_for_receipt(receipt, settings):
