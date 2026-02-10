@@ -13,6 +13,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface JournalEntry {
     id: number
@@ -207,12 +208,12 @@ export default function EntriesPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-bold tracking-tight">Asientos Contables</h2>
-                <div className="flex items-center pt-1">
-                    <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
-                </div>
-            </div>
+            <PageHeader
+                title="Asientos Contables"
+                description="Registro cronológico de todas las transacciones contables del sistema."
+            >
+                <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
+            </PageHeader>
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">

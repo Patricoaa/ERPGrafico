@@ -24,6 +24,7 @@ import { getHubStatuses } from "@/lib/order-status-utils"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { translateSalesChannel } from "@/lib/utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 
 interface SaleOrder {
@@ -449,25 +450,25 @@ export default function SalesOrdersPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Notas de Venta</h2>
-                <div className="flex items-center space-x-2 pt-1">
+            <PageHeader
+                title="Notas de Venta"
+                description="Gestiona tus pedidos, facturación y estados de entrega de forma centralizada."
+            >
+                {editingOrder && (
+                    <SaleOrderForm
+                        initialData={editingOrder}
+                        open={isFormOpen && !!editingOrder}
+                        onOpenChange={(open) => {
+                            setIsFormOpen(open)
+                            if (!open) setEditingOrder(null)
+                        }}
+                        onSuccess={fetchOrders}
+                    />
+                )}
+            </PageHeader>
 
-                    {editingOrder && (
-                        <SaleOrderForm
-                            initialData={editingOrder}
-                            open={isFormOpen && !!editingOrder}
-                            onOpenChange={(open) => {
-                                setIsFormOpen(open)
-                                if (!open) setEditingOrder(null)
-                            }}
-                            onSuccess={fetchOrders}
-                        />
-                    )}
-                </div>
-            </div>
             {loading ? (
-                <div className="flex items-center justify-between h-64 justify-center">
+                <div className="flex items-center justify-center h-64">
                     <div className="text-muted-foreground">Cargando datos...</div>
                 </div>
             ) : (
@@ -551,7 +552,8 @@ export default function SalesOrdersPage() {
                         />
                     </Tabs>
                 </div>
-            )}
+            )
+            }
 
 
             {
@@ -662,6 +664,6 @@ export default function SalesOrdersPage() {
                 }}
                 onActionSuccess={fetchOrders}
             />
-        </div >
+        </div>
     )
 }

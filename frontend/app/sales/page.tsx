@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingCart, Users, Play } from "lucide-react"
 import Link from "next/link"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function SalesPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Módulo de Ventas</h2>
-            </div>
+            <PageHeader
+                title="Módulo de Ventas"
+                description="Gestión integral de ventas, puntos de venta y sesiones de caja."
+            />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/sales/pos">
                     <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-primary">

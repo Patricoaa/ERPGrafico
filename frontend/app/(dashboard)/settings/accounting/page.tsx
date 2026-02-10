@@ -256,6 +256,13 @@ export default function AccountingSettingsPage() {
                             </>
                         )}
                     </div>
+                    <PageHeaderButton
+                        onClick={handlePopulateIFRS}
+                        disabled={populating}
+                        icon={populating ? Loader2 : Database}
+                        label={populating ? "Poblando..." : "Poblar Cuentas IFRS"}
+                        variant="outline"
+                    />
                 </div>
             </PageHeader>
 

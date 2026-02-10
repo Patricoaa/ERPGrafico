@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Printer, ClipboardList, PenTool } from "lucide-react"
 import Link from "next/link"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function ProductionPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Módulo de Producción</h2>
-            </div>
+            <PageHeader
+                title="Módulo de Producción"
+                description="Gestión de órdenes de trabajo, planificación y control de procesos productivos."
+            />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/production/orders">
                     <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-l-orange-500">

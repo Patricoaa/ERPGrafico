@@ -8,6 +8,7 @@ import { StockReport } from "@/components/inventory/StockReport"
 import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
 import { Warehouse, History, FileBarChart, RefreshCw } from "lucide-react"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function UnifiedStockPage() {
     const [activeTab, setActiveTab] = useState("report")
@@ -21,12 +22,10 @@ export default function UnifiedStockPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Gestión de Stock</h2>
-                    <p className="text-muted-foreground">Controla tus almacenes, movimientos y valorización de inventario.</p>
-                </div>
-            </div>
+            <PageHeader
+                title="Gestión de Stock"
+                description="Controla tus almacenes, movimientos y valorización de inventario."
+            />
 
             <Tabs defaultValue="report" className="space-y-4" onValueChange={setActiveTab}>
                 <PageTabs tabs={tabs} maxWidth="max-w-2xl" />

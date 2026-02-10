@@ -16,6 +16,7 @@ import { AccountForm } from "@/components/forms/AccountForm"
 import { DataManagement } from "@/components/shared/DataManagement"
 
 import { LedgerModal } from "@/components/shared/LedgerModal"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface Account {
     id: number
@@ -162,9 +163,11 @@ export default function AccountsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Plan de Cuentas</h2>
-                <div className="flex items-center space-x-2 pt-1">
+            <PageHeader
+                title="Plan de Cuentas"
+                description="Administra la estructura de cuentas contables y su jerarquía."
+            >
+                <div className="flex items-center gap-2">
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} triggerVariant="circular" />
                     <DataManagement
                         endpoint="/accounting/accounts/"
@@ -175,7 +178,7 @@ export default function AccountsPage() {
                         ]}
                     />
                 </div>
-            </div>
+            </PageHeader>
             <DataTable
                 columns={columns}
                 data={accounts}

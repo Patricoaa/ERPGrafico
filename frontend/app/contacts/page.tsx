@@ -14,6 +14,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 interface Contact {
     id: number
@@ -195,17 +196,17 @@ export default function ContactsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Contactos</h2>
-                <Button
-                    size="icon"
-                    className="rounded-full h-8 w-8"
+            <PageHeader
+                title="Contactos"
+                description="Directorio centralizado de clientes, proveedores y colaboradores."
+            >
+                <PageHeaderButton
                     onClick={() => { setSelectedContact(null); setModalOpen(true); }}
+                    icon={Plus}
+                    circular
                     title="Nuevo Contacto"
-                >
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
+                />
+            </PageHeader>
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">

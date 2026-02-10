@@ -37,6 +37,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/components/treasury/MasterDataManagement"
 import { TerminalManagement } from "@/components/treasury/TerminalManagement"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 
 interface TreasuryAccount {
@@ -226,12 +227,10 @@ export default function TreasuryAccountsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Tesorería</h2>
-                    <p className="text-muted-foreground">Administración de cuentas, bancos y métodos de pago.</p>
-                </div>
-            </div>
+            <PageHeader
+                title="Tesorería"
+                description="Administración de cuentas, bancos y métodos de pago."
+            />
 
             <Tabs defaultValue="accounts" className="space-y-4">
                 <PageTabs tabs={tabs} />
@@ -242,8 +241,13 @@ export default function TreasuryAccountsPage() {
                             <h2 className="text-xl font-bold tracking-tight text-primary">Cuentas de Tesorería</h2>
                             <p className="text-sm text-muted-foreground">Registre y configure sus cuentas bancarias de tesorería.</p>
                         </div>
-                        <Button onClick={openCreate} size="lg" className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
-                            <Plus className="mr-2 h-5 w-5" /> Nueva Cuenta
+                        <Button
+                            onClick={openCreate}
+                            size="icon"
+                            className="rounded-full h-10 w-10 shadow-md hover:shadow-lg transition-all duration-300"
+                            title="Nueva Cuenta"
+                        >
+                            <Plus className="h-5 w-5" />
                         </Button>
                     </div>
 

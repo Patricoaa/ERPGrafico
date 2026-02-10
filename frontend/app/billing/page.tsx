@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Receipt, ShoppingCart, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function BillingPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Módulo de Facturación</h2>
-            </div>
+            <PageHeader
+                title="Módulo de Facturación"
+                description="Gestión integral de documentos electrónicos emitidos y recibidos."
+            />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/billing/sales">
                     <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-emerald-500">

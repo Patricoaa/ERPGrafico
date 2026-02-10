@@ -15,6 +15,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/components/settings/GroupManagement"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { Users, UserPlus } from "lucide-react"
+import { PageHeader as CustomPageHeader } from "@/components/shared/PageHeader"
 
 export default function UsersSettingsPage() {
     const router = useRouter()
@@ -134,12 +135,10 @@ export default function UsersSettingsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Usuarios y Permisos</h2>
-                    <p className="text-muted-foreground">Gestione el acceso al sistema y los equipos de trabajo.</p>
-                </div>
-            </div>
+            <CustomPageHeader
+                title="Usuarios y Permisos"
+                description="Gestione el acceso al sistema y los equipos de trabajo."
+            />
 
             <Tabs defaultValue="users" className="space-y-4">
                 <PageTabs tabs={tabs} maxWidth="max-w-md" />

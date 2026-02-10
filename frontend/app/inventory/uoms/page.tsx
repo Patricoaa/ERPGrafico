@@ -6,6 +6,7 @@ import { UoMList } from "@/components/inventory/UoMList"
 import { UoMCategoryList } from "@/components/inventory/UoMCategoryList"
 import { Scale, Layers } from "lucide-react"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function UnifiedUoMPage() {
     const [activeTab, setActiveTab] = useState("units")
@@ -17,12 +18,10 @@ export default function UnifiedUoMPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Unidades de Medida</h2>
-                    <p className="text-muted-foreground">Configura las unidades y categorías para el control de inventario.</p>
-                </div>
-            </div>
+            <PageHeader
+                title="Unidades de Medida"
+                description="Configura las unidades y categorías para el control de inventario."
+            />
 
             <Tabs defaultValue="units" className="space-y-4" onValueChange={setActiveTab}>
                 <PageTabs tabs={tabs} maxWidth="max-w-sm" />

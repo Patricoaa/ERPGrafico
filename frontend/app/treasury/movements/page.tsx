@@ -12,6 +12,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 // Define the type for our data
 interface TreasuryMovement {
@@ -264,17 +265,17 @@ export default function TreasuryMovementsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Movimientos de Tesorería</h2>
-                <Button
-                    size="icon"
-                    className="rounded-full h-8 w-8"
+            <PageHeader
+                title="Movimientos de Tesorería"
+                description="Registro histórico de ingresos, egresos y traslados de fondos."
+            >
+                <PageHeaderButton
                     onClick={() => setOpenModal(true)}
+                    icon={Plus}
+                    circular
                     title="Nuevo Movimiento"
-                >
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
+                />
+            </PageHeader>
 
             <CashMovementModal
                 open={openModal}

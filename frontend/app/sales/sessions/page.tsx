@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { POSReport } from "@/components/pos/POSReport"
 import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface POSSession {
     id: number
@@ -216,21 +217,15 @@ export default function POSSessionsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground/90">Sesiones Punto de Venta</h2>
-                    <p className="text-muted-foreground">
-                        Historial de aperturas y cierres de caja.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
-                        <Store className="mr-2 h-4 w-4" />
-                        Ir al POS
-                    </Button>
-                </div>
-            </div>
+            <PageHeader
+                title="Sesiones Punto de Venta"
+                description="Historial de aperturas y cierres de caja."
+            >
+                <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
+                    <Store className="mr-2 h-4 w-4" />
+                    Ir al POS
+                </Button>
+            </PageHeader>
 
             {/* Main Content */}
             {loading ? (
