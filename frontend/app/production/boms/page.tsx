@@ -14,6 +14,7 @@ import { BOMFormDialog } from "@/components/production/BOMFormDialog"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface BOM {
     id: number
@@ -183,14 +184,20 @@ export default function BOMsPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Listas de Materiales (BOM)</h2>
-                <div className="flex items-center pt-1">
-                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => { setEditingBom(null); setIsFormOpen(true); }} title="Nueva Lista">
+            <PageHeader
+                title="Listas de Materiales (BOM)"
+                description="Gestión de estructuras de productos y costos de fabricación."
+                titleActions={
+                    <Button
+                        size="icon"
+                        className="rounded-full h-8 w-8"
+                        onClick={() => { setEditingBom(null); setIsFormOpen(true); }}
+                        title="Nueva Lista"
+                    >
                         <Plus className="h-4 w-4" />
                     </Button>
-                </div>
-            </div>
+                }
+            />
 
 
 

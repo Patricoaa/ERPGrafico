@@ -23,7 +23,12 @@ interface UoMCategory {
     name: string
 }
 
-export function UoMCategoryList() {
+interface UoMCategoryListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCategoryListProps) {
     const [categories, setCategories] = useState<UoMCategory[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -48,6 +53,13 @@ export function UoMCategoryList() {
     useEffect(() => {
         fetchCategories()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setCurrentCategory({})
+            setIsModalOpen(true)
+        }
+    }, [externalOpen])
 
     const handleSave = async () => {
         if (!currentCategory.name) {
@@ -108,13 +120,6 @@ export function UoMCategoryList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Categorías de Unidades</h3>
-                <Button onClick={() => { setCurrentCategory({}); setIsModalOpen(true) }} size="icon" className="rounded-full h-8 w-8" title="Nueva Categoría">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <DataTable
                 columns={columns}
                 data={categories}
@@ -123,7 +128,13 @@ export function UoMCategoryList() {
                 useAdvancedFilter={true}
             />
 
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <Dialog
+                open={isModalOpen}
+                onOpenChange={(open) => {
+                    setIsModalOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{currentCategory.id ? 'Editar' : 'Crear'} Categoría de Medida</DialogTitle>

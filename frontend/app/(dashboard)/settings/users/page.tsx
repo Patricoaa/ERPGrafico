@@ -138,6 +138,16 @@ export default function UsersSettingsPage() {
             <CustomPageHeader
                 title="Usuarios y Permisos"
                 description="Gestione el acceso al sistema y los equipos de trabajo."
+                titleActions={
+                    <UserForm
+                        onSuccess={fetchUsers}
+                        trigger={
+                            <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        }
+                    />
+                }
             />
 
             <Tabs defaultValue="users" className="space-y-4">
@@ -147,14 +157,6 @@ export default function UsersSettingsPage() {
                     <TabsContent value="users" className="mt-0 outline-none space-y-4">
                         <div className="flex items-center gap-4">
                             <h3 className="text-lg font-semibold">Lista de Usuarios</h3>
-                            <UserForm
-                                onSuccess={fetchUsers}
-                                trigger={
-                                    <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                }
-                            />
                         </div>
 
                         <div className="">

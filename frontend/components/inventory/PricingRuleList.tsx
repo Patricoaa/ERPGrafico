@@ -36,7 +36,12 @@ interface PricingRule {
     active: boolean
 }
 
-export function PricingRuleList() {
+interface PricingRuleListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingRuleListProps) {
     const [rules, setRules] = useState<PricingRule[]>([])
     const [loading, setLoading] = useState(true)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
@@ -70,6 +75,13 @@ export function PricingRuleList() {
     useEffect(() => {
         fetchRules()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setEditingRule(null)
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
 
     const columns: ColumnDef<PricingRule>[] = [
         {
@@ -191,13 +203,6 @@ export function PricingRuleList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Reglas de Precio</h3>
-                <Button onClick={() => setIsFormOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Nueva Regla">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <PricingRuleForm
                 onSuccess={fetchRules}
                 open={isFormOpen && !editingRule}
@@ -212,7 +217,10 @@ export function PricingRuleList() {
                     open={isFormOpen && !!editingRule}
                     onOpenChange={(open: boolean) => {
                         setIsFormOpen(open)
-                        if (!open) setEditingRule(null)
+                        if (!open) {
+                            setEditingRule(null)
+                            onExternalOpenChange?.(false)
+                        }
                     }}
                     onSuccess={fetchRules}
                 />

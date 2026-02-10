@@ -20,7 +20,12 @@ import { Label } from "@/components/ui/label";
 
 import { BudgetEditor } from './BudgetEditor';
 
-export const BudgetManager = () => {
+interface BudgetManagerProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export const BudgetManager = ({ externalOpen, onExternalOpenChange }: BudgetManagerProps) => {
     const [budgets, setBudgets] = useState<any[]>([]);
     const [selectedBudget, setSelectedBudget] = useState<any>(null);
     const [executionData, setExecutionData] = useState<any>(null);
@@ -55,6 +60,12 @@ export const BudgetManager = () => {
     useEffect(() => {
         loadBudgets();
     }, []);
+
+    useEffect(() => {
+        if (externalOpen) {
+            setIsCreateOpen(true);
+        }
+    }, [externalOpen]);
 
     const viewExecution = async (budget: any) => {
         setSelectedBudget(budget);
@@ -97,56 +108,55 @@ export const BudgetManager = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">Gestión de Presupuestos</h3>
-                <Button onClick={() => setIsCreateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Nuevo Presupuesto</Button>
-                <BaseModal
-                    open={isCreateOpen}
-                    onOpenChange={setIsCreateOpen}
-                    size="md"
-                    title="Crear Nuevo Presupuesto"
-                    footer={
-                        <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
-                    }
-                >
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Nombre o Referencia</Label>
-                            <Input
-                                value={newBudget.name}
-                                onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
-                                placeholder="Ej: Presupuesto Operativo"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Año del Presupuesto</Label>
-                            <Input
-                                type="number"
-                                min={2020}
-                                max={2100}
-                                defaultValue={new Date().getFullYear()}
-                                onChange={e => {
-                                    const year = e.target.value;
-                                    setNewBudget({
-                                        ...newBudget,
-                                        name: newBudget.name || `Presupuesto ${year}`,
-                                        start_date: `${year}-01-01`,
-                                        end_date: `${year}-12-31`
-                                    })
-                                }}
-                            />
-                            <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Descripción</Label>
-                            <Input
-                                value={newBudget.description}
-                                onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
-                            />
-                        </div>
+            <BaseModal
+                open={isCreateOpen}
+                onOpenChange={(open) => {
+                    setIsCreateOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
+                size="md"
+                title="Crear Nuevo Presupuesto"
+                footer={
+                    <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                }
+            >
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Nombre o Referencia</Label>
+                        <Input
+                            value={newBudget.name}
+                            onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
+                            placeholder="Ej: Presupuesto Operativo"
+                        />
                     </div>
-                </BaseModal>
-            </div>
+                    <div className="space-y-2">
+                        <Label>Año del Presupuesto</Label>
+                        <Input
+                            type="number"
+                            min={2020}
+                            max={2100}
+                            defaultValue={new Date().getFullYear()}
+                            onChange={e => {
+                                const year = e.target.value;
+                                setNewBudget({
+                                    ...newBudget,
+                                    name: newBudget.name || `Presupuesto ${year}`,
+                                    start_date: `${year}-01-01`,
+                                    end_date: `${year}-12-31`
+                                })
+                            }}
+                        />
+                        <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Descripción</Label>
+                        <Input
+                            value={newBudget.description}
+                            onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </BaseModal>
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="md:col-span-1">
@@ -252,16 +262,18 @@ export const BudgetManager = () => {
                 </Card>
             </div>
 
-            {budgetToEdit && (
-                <BudgetEditor
-                    open={isEditorOpen}
-                    onOpenChange={setIsEditorOpen}
-                    budget={budgetToEdit}
-                    onSave={() => {
-                        viewExecution(budgetToEdit); // Refresh view
-                    }}
-                />
-            )}
-        </div>
+            {
+                budgetToEdit && (
+                    <BudgetEditor
+                        open={isEditorOpen}
+                        onOpenChange={setIsEditorOpen}
+                        budget={budgetToEdit}
+                        onSave={() => {
+                            viewExecution(budgetToEdit); // Refresh view
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 };

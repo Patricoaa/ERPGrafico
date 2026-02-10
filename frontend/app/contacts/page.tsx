@@ -199,14 +199,15 @@ export default function ContactsPage() {
             <PageHeader
                 title="Contactos"
                 description="Directorio centralizado de clientes, proveedores y colaboradores."
-            >
-                <PageHeaderButton
-                    onClick={() => { setSelectedContact(null); setModalOpen(true); }}
-                    icon={Plus}
-                    circular
-                    title="Nuevo Contacto"
-                />
-            </PageHeader>
+                titleActions={
+                    <PageHeaderButton
+                        onClick={() => { setSelectedContact(null); setModalOpen(true); }}
+                        icon={Plus}
+                        circular
+                        title="Nuevo Contacto"
+                    />
+                }
+            />
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">

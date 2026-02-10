@@ -14,7 +14,21 @@ import { TerminalBatchForm } from "@/components/treasury/TerminalBatchForm"
 import { MonthlyInvoiceDialog } from "@/components/treasury/MonthlyInvoiceDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
-export function TerminalBatchesManagement({ showTitle = true }: { showTitle?: boolean }) {
+interface TerminalBatchesManagementProps {
+    showTitle?: boolean
+    externalOpenBatch?: boolean
+    onExternalOpenBatchChange?: (open: boolean) => void
+    externalOpenInvoice?: boolean
+    onExternalOpenInvoiceChange?: (open: boolean) => void
+}
+
+export function TerminalBatchesManagement({
+    showTitle = true,
+    externalOpenBatch,
+    onExternalOpenBatchChange,
+    externalOpenInvoice,
+    onExternalOpenInvoiceChange
+}: TerminalBatchesManagementProps) {
     const [batches, setBatches] = useState([])
     const [loading, setLoading] = useState(true)
     const [openCreate, setOpenCreate] = useState(false)
@@ -35,6 +49,18 @@ export function TerminalBatchesManagement({ showTitle = true }: { showTitle?: bo
     useEffect(() => {
         fetchBatches()
     }, [])
+
+    useEffect(() => {
+        if (externalOpenBatch) {
+            setOpenCreate(true)
+        }
+    }, [externalOpenBatch])
+
+    useEffect(() => {
+        if (externalOpenInvoice) {
+            setOpenInvoice(true)
+        }
+    }, [externalOpenInvoice])
 
     const columns = [
         {
@@ -144,7 +170,7 @@ export function TerminalBatchesManagement({ showTitle = true }: { showTitle?: bo
             )}
 
             {!showTitle && (
-                <div className="flex justify-end gap-2 mb-2">
+                <div className="flex justify-end gap-2 mb-2 hidden">
                     <Button variant="outline" size="sm" onClick={() => setOpenInvoice(true)}>
                         <FileText className="mr-2 h-4 w-4" /> Factura Mensual
                     </Button>
@@ -165,16 +191,23 @@ export function TerminalBatchesManagement({ showTitle = true }: { showTitle?: bo
 
             <TerminalBatchDialog
                 open={openCreate}
-                onOpenChange={setOpenCreate}
+                onOpenChange={(open) => {
+                    setOpenCreate(open)
+                    if (!open) onExternalOpenBatchChange?.(false)
+                }}
                 onSuccess={() => {
                     setOpenCreate(false)
+                    onExternalOpenBatchChange?.(false)
                     fetchBatches()
                 }}
             />
 
             <MonthlyInvoiceDialog
                 open={openInvoice}
-                onOpenChange={setOpenInvoice}
+                onOpenChange={(open) => {
+                    setOpenInvoice(open)
+                    if (!open) onExternalOpenInvoiceChange?.(false)
+                }}
             />
         </div>
     )

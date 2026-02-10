@@ -45,7 +45,12 @@ interface Product {
     variants?: Product[]
 }
 
-export function ProductList() {
+interface ProductListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function ProductList({ externalOpen, onExternalOpenChange }: ProductListProps) {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -148,6 +153,13 @@ export function ProductList() {
     useEffect(() => {
         fetchProducts()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setEditingProduct(null)
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
 
     const columns: ColumnDef<Product>[] = [
         {
@@ -319,13 +331,6 @@ export function ProductList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-lg font-semibold">Catálogo de Productos</h3>
-                <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsFormOpen(true)} title="Nuevo Producto">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <div className="">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
@@ -371,7 +376,10 @@ export function ProductList() {
                 open={isFormOpen}
                 onOpenChange={(open) => {
                     setIsFormOpen(open)
-                    if (!open) setEditingProduct(null)
+                    if (!open) {
+                        setEditingProduct(null)
+                        onExternalOpenChange?.(false)
+                    }
                 }}
                 initialData={editingProduct}
                 onSuccess={fetchProducts}

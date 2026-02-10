@@ -211,9 +211,10 @@ export default function EntriesPage() {
             <PageHeader
                 title="Asientos Contables"
                 description="Registro cronológico de todas las transacciones contables del sistema."
-            >
-                <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
-            </PageHeader>
+                titleActions={
+                    <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
+                }
+            />
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">

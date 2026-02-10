@@ -24,7 +24,12 @@ interface Category {
 
 import * as LucideIcons from "lucide-react"
 
-export function CategoryList() {
+interface CategoryListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryListProps) {
     const [categories, setCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(true)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
@@ -67,6 +72,13 @@ export function CategoryList() {
     useEffect(() => {
         fetchCategories()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setEditingCategory(null)
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
 
     const columns: ColumnDef<Category>[] = [
         {
@@ -113,13 +125,6 @@ export function CategoryList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Categorías de Producto</h3>
-                <Button onClick={() => setIsFormOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Nueva Categoría">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <DataTable
                 columns={columns}
                 data={categories}
@@ -134,7 +139,10 @@ export function CategoryList() {
                 open={isFormOpen}
                 onOpenChange={(open) => {
                     setIsFormOpen(open)
-                    if (!open) setEditingCategory(null)
+                    if (!open) {
+                        setEditingCategory(null)
+                        onExternalOpenChange?.(false)
+                    }
                 }}
                 initialData={editingCategory}
             />

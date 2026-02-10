@@ -166,18 +166,18 @@ export default function AccountsPage() {
             <PageHeader
                 title="Plan de Cuentas"
                 description="Administra la estructura de cuentas contables y su jerarquía."
-            >
-                <div className="flex items-center gap-2">
+                titleActions={
                     <AccountForm accounts={accounts} onSuccess={fetchAccounts} triggerVariant="circular" />
-                    <DataManagement
-                        endpoint="/accounting/accounts/"
-                        onImportSuccess={fetchAccounts}
-                        exportFilename="plan-de-cuentas.csv"
-                        templateData={[
-                            { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
-                        ]}
-                    />
-                </div>
+                }
+            >
+                <DataManagement
+                    endpoint="/accounting/accounts/"
+                    onImportSuccess={fetchAccounts}
+                    exportFilename="plan-de-cuentas.csv"
+                    templateData={[
+                        { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
+                    ]}
+                />
             </PageHeader>
             <DataTable
                 columns={columns}

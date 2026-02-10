@@ -29,7 +29,12 @@ interface ProductAttributeValue {
     value: string
 }
 
-export function AttributeManager() {
+interface AttributeManagerProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function AttributeManager({ externalOpen, onExternalOpenChange }: AttributeManagerProps) {
     const [attributes, setAttributes] = useState<ProductAttribute[]>([])
     const [loading, setLoading] = useState(true)
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
@@ -37,6 +42,13 @@ export function AttributeManager() {
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newValueName, setNewValueName] = useState("")
+
+    useEffect(() => {
+        if (externalOpen) {
+            setIsAttrModalOpen(true)
+            onExternalOpenChange?.(false)
+        }
+    }, [externalOpen, onExternalOpenChange])
 
     useEffect(() => {
         fetchAttributes()
@@ -118,16 +130,6 @@ export function AttributeManager() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Atributos de Variantes</h2>
-                    <p className="text-muted-foreground">Gestiona las propiedades comunes para tus variantes (ej: Color, Talla, Material).</p>
-                </div>
-                <Button onClick={() => setIsAttrModalOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nuevo Atributo
-                </Button>
-            </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {attributes.map((attr) => (

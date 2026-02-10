@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { FacetedFilter } from "@/components/shared/FacetedFilter"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
@@ -219,16 +220,16 @@ export default function WorkOrdersPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-3xl font-bold tracking-tight">Ordenes de Trabajo (OT)</h2>
+            <PageHeader
+                title="Ordenes de Trabajo (OT)"
+                description="Seguimiento y control de procesos productivos."
+                titleActions={
                     <WorkOrderForm
                         onSuccess={fetchOrders}
                         triggerVariant="circular"
                     />
-                </div>
-                {/* Secondary title/info if needed */}
-            </div>
+                }
+            />
 
             {/* Hidden Forms */}
             {editingOrder && (

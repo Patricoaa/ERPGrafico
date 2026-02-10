@@ -268,14 +268,15 @@ export default function TreasuryMovementsPage() {
             <PageHeader
                 title="Movimientos de Tesorería"
                 description="Registro histórico de ingresos, egresos y traslados de fondos."
-            >
-                <PageHeaderButton
-                    onClick={() => setOpenModal(true)}
-                    icon={Plus}
-                    circular
-                    title="Nuevo Movimiento"
-                />
-            </PageHeader>
+                titleActions={
+                    <PageHeaderButton
+                        onClick={() => setOpenModal(true)}
+                        icon={Plus}
+                        circular
+                        title="Nuevo Movimiento"
+                    />
+                }
+            />
 
             <CashMovementModal
                 open={openModal}

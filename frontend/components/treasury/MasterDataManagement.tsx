@@ -33,7 +33,12 @@ interface Bank {
     is_active: boolean
 }
 
-export function BankManagement() {
+interface BankManagementProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function BankManagement({ externalOpen, onExternalOpenChange }: BankManagementProps) {
     const [banks, setBanks] = useState<Bank[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -54,6 +59,12 @@ export function BankManagement() {
     useEffect(() => {
         fetchBanks()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            openCreate()
+        }
+    }, [externalOpen])
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este banco?")) return
@@ -109,7 +120,7 @@ export function BankManagement() {
 
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10">
+            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
                         <Landmark className="h-5 w-5" /> Gestión de Bancos
@@ -130,10 +141,14 @@ export function BankManagement() {
 
             <BankDialog
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
+                onOpenChange={(open: boolean) => {
+                    setDialogOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
                 bank={selectedBank}
                 onSuccess={() => {
                     setDialogOpen(false)
+                    onExternalOpenChange?.(false)
                     fetchBanks()
                 }}
             />
@@ -265,7 +280,12 @@ interface PaymentMethod {
     commission_expense_account_name: string | null
 }
 
-export function PaymentMethodManagement() {
+interface PaymentMethodManagementProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: PaymentMethodManagementProps) {
     const [methods, setMethods] = useState<PaymentMethod[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -286,6 +306,12 @@ export function PaymentMethodManagement() {
     useEffect(() => {
         fetchMethods()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            openCreate()
+        }
+    }, [externalOpen])
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este método de pago?")) return
@@ -363,7 +389,7 @@ export function PaymentMethodManagement() {
 
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10">
+            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
                         <CreditCard className="h-5 w-5" /> Métodos de Pago
@@ -384,10 +410,14 @@ export function PaymentMethodManagement() {
 
             <PaymentMethodDialog
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
+                onOpenChange={(open: boolean) => {
+                    setDialogOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
                 method={selectedMethod}
                 onSuccess={() => {
                     setDialogOpen(false)
+                    onExternalOpenChange?.(false)
                     fetchMethods()
                 }}
             />

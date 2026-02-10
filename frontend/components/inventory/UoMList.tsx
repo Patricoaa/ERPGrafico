@@ -42,7 +42,12 @@ interface UoM {
     active: boolean
 }
 
-export function UoMList() {
+interface UoMListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
     const [uoms, setUoMs] = useState<UoM[]>([])
     const [categories, setCategories] = useState<UoMCategory[]>([])
     const [loading, setLoading] = useState(true)
@@ -72,6 +77,13 @@ export function UoMList() {
     useEffect(() => {
         fetchData()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" })
+            setIsUoMModalOpen(true)
+        }
+    }, [externalOpen])
 
     const handleSaveUoM = async () => {
         setIsSaving(true)
@@ -152,18 +164,6 @@ export function UoMList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Unidades de Medida</h3>
-                <Button
-                    onClick={() => { setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" }); setIsUoMModalOpen(true) }}
-                    size="icon"
-                    className="rounded-full h-8 w-8"
-                    title="Nueva Unidad"
-                >
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <DataTable
                 columns={columns}
                 data={uoms}
@@ -184,7 +184,13 @@ export function UoMList() {
                 useAdvancedFilter={true}
             />
 
-            <Dialog open={isUoMModalOpen} onOpenChange={setIsUoMModalOpen}>
+            <Dialog
+                open={isUoMModalOpen}
+                onOpenChange={(open) => {
+                    setIsUoMModalOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
+            >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{currentUoM.id ? 'Editar' : 'Crear'} Unidad de Medida</DialogTitle>

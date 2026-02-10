@@ -30,6 +30,7 @@ import { SubscriptionHistoryModal } from "@/components/inventory/SubscriptionHis
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface Subscription {
     id: number
@@ -338,9 +339,10 @@ export default function SubscriptionsPage() {
 
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-bold">Gestión de Suscripciones</h1>
-                <div className="flex items-center gap-2">
+            <PageHeader
+                title="Suscripciones y Recurrentes"
+                description="Gestión de servicios mensuales, contratos y facturación automática."
+                titleActions={
                     <Button
                         size="icon"
                         className="rounded-full h-8 w-8"
@@ -352,6 +354,18 @@ export default function SubscriptionsPage() {
                     >
                         <Plus className="h-4 w-4" />
                     </Button>
+                }
+            >
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-full"
+                        onClick={() => toast.info("Funcionalidad de planificación en desarrollo")}
+                    >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Planificación
+                    </Button>
                     <Button
                         variant="outline"
                         size="sm"
@@ -362,7 +376,7 @@ export default function SubscriptionsPage() {
                         Ejecutar Inspección
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             <div className="space-y-4">
                 {loading ? (

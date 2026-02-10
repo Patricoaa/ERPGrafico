@@ -179,26 +179,23 @@ export default function AccountingSettingsPage() {
     }, [form])
 
     const watchedValues = form.watch()
+    const { isDirty } = form.formState
 
     useEffect(() => {
-        if (!loading) {
+        if (!loading && isDirty) {
             const timer = setTimeout(() => {
-                const isDirty = Object.keys(form.control._names.mount).some(
-                    (name) => form.getFieldState(name as any).isDirty
-                )
-                if (isDirty) {
-                    form.handleSubmit(onSubmit)()
-                }
+                form.handleSubmit(onSubmit)()
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading])
+    }, [watchedValues, loading, isDirty])
 
     async function onSubmit(data: AccountingFormValues) {
         setSaving(true)
         try {
             await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración contable guardada")
+            toast.success("Configuración guardada automáticamene")
+            form.reset(data)
         } catch (error) {
             toast.error("Error al guardar")
         } finally {
@@ -243,6 +240,13 @@ export default function AccountingSettingsPage() {
                 description="Configura los mapeos de cuentas, prefijos y reglas de negocio para la contabilidad automatizada."
             >
                 <div className="flex items-center gap-3">
+                    <PageHeaderButton
+                        onClick={handlePopulateIFRS}
+                        disabled={populating}
+                        icon={populating ? Loader2 : Database}
+                        label={populating ? "Poblando..." : "Poblar Cuentas IFRS"}
+                        variant="outline"
+                    />
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                         {saving ? (
                             <>
@@ -256,13 +260,6 @@ export default function AccountingSettingsPage() {
                             </>
                         )}
                     </div>
-                    <PageHeaderButton
-                        onClick={handlePopulateIFRS}
-                        disabled={populating}
-                        icon={populating ? Loader2 : Database}
-                        label={populating ? "Poblando..." : "Poblar Cuentas IFRS"}
-                        variant="outline"
-                    />
                 </div>
             </PageHeader>
 

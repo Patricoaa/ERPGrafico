@@ -62,6 +62,11 @@ interface TreasuryAccount {
 }
 
 export default function TreasuryAccountsPage() {
+    const [activeTab, setActiveTab] = useState("accounts")
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
+    const [isBankModalOpen, setIsBankModalOpen] = useState(false)
+    const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
+
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -100,12 +105,20 @@ export default function TreasuryAccountsPage() {
         setDialogOpen(true)
     }
 
+    // Effect for external creation trigger
+    useEffect(() => {
+        if (isAccountModalOpen) {
+            openCreate()
+        }
+    }, [isAccountModalOpen])
+
     const openEdit = (account: TreasuryAccount) => {
         setCurrentAccount(account)
         setDialogOpen(true)
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [
+        // ... (columns remain same)
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -225,32 +238,57 @@ export default function TreasuryAccountsPage() {
         { value: "methods", label: "Métodos", icon: CreditCard },
     ]
 
+    const getHeaderConfig = () => {
+        switch (activeTab) {
+            case "accounts":
+                return {
+                    title: "Cuentas de Tesorería",
+                    description: "Registre y configure sus cuentas bancarias y de efectivo.",
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsAccountModalOpen(true)} title="Nueva Cuenta">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )
+                }
+            case "banks":
+                return {
+                    title: "Gestión de Bancos",
+                    description: "Administre las entidades bancarias globales del sistema.",
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsBankModalOpen(true)} title="Nuevo Banco">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )
+                }
+            case "methods":
+                return {
+                    title: "Métodos de Pago",
+                    description: "Configure los medios de pago aceptados y sus cuentas vinculadas.",
+                    actions: (
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsMethodModalOpen(true)} title="Nuevo Método">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    )
+                }
+            default:
+                return { title: "Tesorería", description: "", actions: null }
+        }
+    }
+
+    const { title, description, actions } = getHeaderConfig()
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Tesorería"
-                description="Administración de cuentas, bancos y métodos de pago."
-            />
-
-            <Tabs defaultValue="accounts" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <PageTabs tabs={tabs} />
 
-                <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
-                        <div>
-                            <h2 className="text-xl font-bold tracking-tight text-primary">Cuentas de Tesorería</h2>
-                            <p className="text-sm text-muted-foreground">Registre y configure sus cuentas bancarias de tesorería.</p>
-                        </div>
-                        <Button
-                            onClick={openCreate}
-                            size="icon"
-                            className="rounded-full h-10 w-10 shadow-md hover:shadow-lg transition-all duration-300"
-                            title="Nueva Cuenta"
-                        >
-                            <Plus className="h-5 w-5" />
-                        </Button>
-                    </div>
+                <PageHeader
+                    title={title}
+                    description={description}
+                    titleActions={actions}
+                />
 
+                <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <DataTable
                         columns={columns}
                         data={accounts}
@@ -274,24 +312,28 @@ export default function TreasuryAccountsPage() {
                 </TabsContent>
 
                 <TabsContent value="banks">
-                    <BankManagement />
+                    <BankManagement externalOpen={isBankModalOpen} onExternalOpenChange={setIsBankModalOpen} />
                 </TabsContent>
 
                 <TabsContent value="methods">
-                    <PaymentMethodManagement />
+                    <PaymentMethodManagement externalOpen={isMethodModalOpen} onExternalOpenChange={setIsMethodModalOpen} />
                 </TabsContent>
             </Tabs>
 
             <AccountDialog
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
+                onOpenChange={(open) => {
+                    setDialogOpen(open)
+                    if (!open) setIsAccountModalOpen(false)
+                }}
                 account={currentAccount}
                 onSuccess={() => {
                     setDialogOpen(false)
+                    setIsAccountModalOpen(false)
                     fetchAccounts()
                 }}
             />
-        </div >
+        </div>
     )
 }
 

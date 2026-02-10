@@ -19,7 +19,12 @@ interface Warehouse {
     address: string
 }
 
-export function WarehouseList() {
+interface WarehouseListProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseListProps) {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [loading, setLoading] = useState(true)
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
@@ -63,6 +68,13 @@ export function WarehouseList() {
         fetchWarehouses()
     }, [])
 
+    useEffect(() => {
+        if (externalOpen) {
+            setEditingWarehouse(null)
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
+
     const columns: ColumnDef<Warehouse>[] = [
         {
             accessorKey: "name",
@@ -97,13 +109,6 @@ export function WarehouseList() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold">Gestión de Almacenes</h3>
-                <Button onClick={() => setIsFormOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Nuevo Almacén">
-                    <Plus className="h-4 w-4" />
-                </Button>
-            </div>
-
             <DataTable
                 columns={columns}
                 data={warehouses}
@@ -118,7 +123,10 @@ export function WarehouseList() {
                 open={isFormOpen}
                 onOpenChange={(open) => {
                     setIsFormOpen(open)
-                    if (!open) setEditingWarehouse(null)
+                    if (!open) {
+                        setEditingWarehouse(null)
+                        onExternalOpenChange?.(false)
+                    }
                 }}
                 initialData={editingWarehouse}
             />

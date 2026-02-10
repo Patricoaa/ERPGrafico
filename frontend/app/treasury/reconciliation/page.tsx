@@ -14,6 +14,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { Progress } from "@/components/ui/progress"
 
 interface BankStatement {
@@ -159,29 +160,26 @@ export default function ReconciliationPage() {
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground/90">Conciliación Bancaria</h2>
-                    <p className="text-muted-foreground">
-                        Gestión de cartolas y cuadratura de movimientos bancarios.
-                    </p>
-                </div>
+            <PageHeader
+                title="Conciliación Bancaria"
+                description="Gestión de cartolas y cuadratura de movimientos bancarios."
+                titleActions={
+                    <Button onClick={() => setImportDialogOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Importar cartola">
+                        <Upload className="h-4 w-4" />
+                    </Button>
+                }
+            >
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => router.push('/treasury/reconciliation/dashboard')}>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/treasury/reconciliation/dashboard')}>
                         <BarChart3 className="mr-2 h-4 w-4" />
                         Dashboard
                     </Button>
-                    <Button variant="outline" onClick={() => router.push('/treasury/reconciliation/rules')}>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/treasury/reconciliation/rules')}>
                         <Wand2 className="mr-2 h-4 w-4" />
                         Reglas
                     </Button>
-                    <Button onClick={() => setImportDialogOpen(true)} className="bg-primary hover:bg-primary/90">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Importar cartola
-                    </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-4">

@@ -46,7 +46,12 @@ interface Terminal {
     ip_address?: string
 }
 
-export function TerminalManagement() {
+interface TerminalManagementProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
     const [terminals, setTerminals] = useState<Terminal[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -68,6 +73,12 @@ export function TerminalManagement() {
     useEffect(() => {
         fetchTerminals()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            handleCreate()
+        }
+    }, [externalOpen])
 
     const handleEdit = (terminal: Terminal) => {
         setEditingTerminal(terminal)
@@ -107,7 +118,7 @@ export function TerminalManagement() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm">
+            <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary">Terminales POS</h2>
                     <p className="text-sm text-muted-foreground">Administre los puntos de venta y sus métodos de pago autorizados.</p>
@@ -146,7 +157,10 @@ export function TerminalManagement() {
 
             <TerminalDialog
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
+                onOpenChange={(open) => {
+                    setDialogOpen(open)
+                    if (!open) onExternalOpenChange?.(false)
+                }}
                 terminal={editingTerminal}
                 onSuccess={fetchTerminals}
             />
