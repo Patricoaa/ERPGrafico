@@ -77,6 +77,14 @@ export function SalesCheckoutWizard({
         }
     }, [open, initialOrderLines])
 
+    const [dteData, setDteData] = useState(initialDteData || {
+        type: 'BOLETA',
+        number: '',
+        date: new Date().toISOString().split('T')[0],
+        attachment: null,
+        isPending: false
+    })
+
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = useMemo(() => {
         const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
@@ -92,14 +100,6 @@ export function SalesCheckoutWizard({
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
-
-    const [dteData, setDteData] = useState(initialDteData || {
-        type: 'BOLETA',
-        number: '',
-        date: new Date().toISOString().split('T')[0],
-        attachment: null,
-        isPending: false
-    })
 
     const [paymentData, setPaymentData] = useState(initialPaymentData || {
         method: '',
