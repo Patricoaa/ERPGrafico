@@ -198,3 +198,23 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=7, minute=0), # Run daily at 7:00 AM
     },
 }
+
+# --- TIME TRAVEL PATCH FOR TESTING ---
+# Para simular otra fecha, descomenta el bloque de abajo y cambia MOCK_DATE.
+# Esto engañará a todo el sistema (IVA, periodos, cierres).
+
+
+import datetime
+from django.utils import timezone
+from unittest.mock import patch
+
+# FECHA DE PRUEBA: Cambia esto a la fecha que quieras simular
+# Ejemplo: 15 de Abril de 2026
+MOCK_DATE = datetime.datetime(2026, 4, 15, tzinfo=datetime.timezone.utc)
+
+# Activa el "Viaje en el tiempo"
+patcher = patch('django.utils.timezone.now', return_value=MOCK_DATE)
+patcher.start()
+
+print(f"\n⚠️  TESTING MODE ACTIVE: El reloj del sistema ha sido fijado en {MOCK_DATE}\n")
+
