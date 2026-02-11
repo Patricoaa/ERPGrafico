@@ -6,7 +6,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus } from "lucide-react"
+import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus, ArrowRight, Calendar, Search, Filter } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -17,10 +17,13 @@ import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionM
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
+import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
+import { es } from "date-fns/locale"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { PurchaseOrderHubStatus } from "./components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 interface PurchaseOrder {
     id: number
@@ -381,12 +384,16 @@ export default function PurchaseOrdersPage() {
     })
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center gap-4 space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Ordenes de Compra</h2>
-                <div className="flex items-center space-x-2 pt-1">
-                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setCheckoutOpen(true)} title="Nueva Orden de Compra">
-                        <Plus className="h-4 w-4" />
+        <div className="space-y-6">
+            <PageHeader
+                title="Gestión de Compras"
+                description="Gestión integral de órdenes de compra, recepciones y facturas de proveedores"
+                icon={ShoppingCart}
+            >
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setCheckoutOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nueva Orden
                     </Button>
                     {editingOrder && (
                         <PurchaseOrderForm
@@ -399,7 +406,8 @@ export default function PurchaseOrdersPage() {
                         />
                     )}
                 </div>
-            </div>
+            </PageHeader>
+
             {loading ? (
                 <div className="flex items-center justify-center h-64">
                     <div className="text-muted-foreground">Cargando datos...</div>
@@ -468,6 +476,122 @@ export default function PurchaseOrdersPage() {
                                 <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
                             </TabsList>
                         }
+                        renderCustomView={(table) => {
+                            const rows = table.getRowModel().rows
+                            if (rows.length === 0) {
+                                return (
+                                    <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
+                                        <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                        <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
+                                    </div>
+                                )
+                            }
+                            return (
+                                <div className="grid gap-3 pt-2">
+                                    {rows.map((row: any) => {
+                                        const item = row.original
+                                        return viewMode === 'orders' ? (
+                                            <div
+                                                key={item.id}
+                                                className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
+                                                onClick={() => setSelectedOrderId(item.id)}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
+                                                        <ShoppingCart className="h-6 w-6 text-primary/60" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                                OCS-{item.number}
+                                                            </span>
+                                                            <h4 className="font-bold text-foreground">
+                                                                {item.supplier_name}
+                                                            </h4>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                <Package className="h-3 w-3" />
+                                                                {item.warehouse_name}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-6">
+                                                    <div className="hidden sm:flex flex-col items-end">
+                                                        <PurchaseOrderHubStatus order={item} />
+                                                    </div>
+
+                                                    <div className="text-right min-w-[100px]">
+                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total</div>
+                                                        <div className="text-sm font-bold text-primary">
+                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(item.total))}
+                                                        </div>
+                                                    </div>
+
+                                                    <Button variant="ghost" size="icon" className="group-hover:translate-x-1 transition-transform">
+                                                        <ArrowRight className="h-5 w-5 text-primary" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                key={item.id}
+                                                className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
+                                                onClick={() => setSelectedInvoiceId(item.id)}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-amber-500/5 flex flex-col items-center justify-center border border-amber-500/10">
+                                                        <FileBadge className="h-6 w-6 text-amber-500/60" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                                {item.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-'}{item.number || '---'}
+                                                            </span>
+                                                            <h4 className="font-bold text-foreground">
+                                                                {item.supplier_name || item.partner_name}
+                                                            </h4>
+                                                            <Badge variant="outline" className="text-[10px] uppercase">
+                                                                {item.dte_type_display}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3" />
+                                                                {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-6">
+                                                    <div className="hidden sm:flex flex-col items-end">
+                                                        <NoteHubStatus note={item} />
+                                                    </div>
+
+                                                    <div className="text-right min-w-[100px]">
+                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total</div>
+                                                        <div className="text-sm font-bold text-primary">
+                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(item.total))}
+                                                        </div>
+                                                    </div>
+
+                                                    <Button variant="ghost" size="icon" className="group-hover:translate-x-1 transition-transform">
+                                                        <ArrowRight className="h-5 w-5 text-primary" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        }}
                     />
                 </Tabs>
             )}
