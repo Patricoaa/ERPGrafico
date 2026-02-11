@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView, CurrentUserView, GroupViewSet
+from .views import UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView, CurrentUserView, GroupViewSet, server_time
 # from .dashboard_view import DashboardMetricsView  # Deleted
 
 router = DefaultRouter()
@@ -14,4 +14,5 @@ urlpatterns = [
     # path('dashboard/metrics/', DashboardMetricsView.as_view(), name='dashboard-metrics'),  # Removed
     path('auth/me/', CurrentUserView.as_view(), name='current-user'),
     path('audit/global/', GlobalAuditLogView.as_view(), name='global-audit-log'),
+    path('server-time/', server_time, name='server-time'),
 ]

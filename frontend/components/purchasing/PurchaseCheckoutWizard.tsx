@@ -22,6 +22,7 @@ import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -51,6 +52,7 @@ export function PurchaseCheckoutWizard({
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState<any[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
+    const { dateString } = useServerDate()
 
     // Sync internal order if prop changes
     useEffect(() => {
@@ -112,6 +114,13 @@ export function PurchaseCheckoutWizard({
         attachment: null,
         isPending: false
     })
+
+    // Sync DTE date with server date
+    useEffect(() => {
+        if (dateString) {
+            setDteData(prev => ({ ...prev, date: dateString }))
+        }
+    }, [dateString])
 
     useEffect(() => {
         const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';

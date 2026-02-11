@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -11,11 +11,13 @@ import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PieChart, Activity } from "lucide-react"
+import { useServerDate } from "@/hooks/useServerDate"
 
 export default function AnalysisPage() {
     const [showComparison, setShowComparison] = useState(false);
 
     // Date State
+    const { serverDate } = useServerDate()
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfYear(new Date()),
         to: new Date(),
@@ -25,6 +27,20 @@ export default function AnalysisPage() {
         from: startOfYear(subYears(new Date(), 1)),
         to: subYears(new Date(), 1),
     })
+
+    // Sync with server date
+    useEffect(() => {
+        if (serverDate) {
+            setDate({
+                from: startOfYear(serverDate),
+                to: serverDate,
+            })
+            setCompDate({
+                from: startOfYear(subYears(serverDate, 1)),
+                to: subYears(serverDate, 1),
+            })
+        }
+    }, [serverDate])
 
     const tabs = [
         { value: "ratios", label: "Ratios Financieros", icon: PieChart },

@@ -17,6 +17,7 @@ import { format, startOfYear, subMonths, subYears, startOfMonth, endOfMonth } fr
 import { es } from 'date-fns/locale'
 import { cn } from "@/lib/utils"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { useServerDate } from "@/hooks/useServerDate"
 
 export default function StatementsPage() {
     const [loading, setLoading] = useState(false);
@@ -30,6 +31,7 @@ export default function StatementsPage() {
     ]
 
     // Date State
+    const { serverDate } = useServerDate()
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfYear(new Date()),
         to: new Date(),
@@ -39,6 +41,20 @@ export default function StatementsPage() {
         from: startOfYear(subYears(new Date(), 1)),
         to: subYears(new Date(), 1),
     })
+
+    // Sync with server date
+    useEffect(() => {
+        if (serverDate) {
+            setDate({
+                from: startOfYear(serverDate),
+                to: serverDate,
+            })
+            setCompDate({
+                from: startOfYear(subYears(serverDate, 1)),
+                to: subYears(serverDate, 1),
+            })
+        }
+    }, [serverDate])
 
     // Data States
     const [bsData, setBsData] = useState<any>(null);

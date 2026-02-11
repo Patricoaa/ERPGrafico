@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
 import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart } from "lucide-react"
+import { useServerDate } from "@/hooks/useServerDate"
 
 // ... other imports
 
@@ -69,6 +70,7 @@ export function SalesCheckoutWizard({
     const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
+    const { dateString, serverDate } = useServerDate()
 
     // Sync order lines when opening the wizard
     useEffect(() => {
@@ -84,6 +86,13 @@ export function SalesCheckoutWizard({
         attachment: null,
         isPending: false
     })
+
+    // Sync DTE date with server date
+    useEffect(() => {
+        if (dateString && !initialDteData) {
+            setDteData(prev => ({ ...prev, date: dateString }))
+        }
+    }, [dateString, initialDteData])
 
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = useMemo(() => {
@@ -142,11 +151,13 @@ export function SalesCheckoutWizard({
             }, 0);
 
             // Suggest +maxDays
-            const suggestedDate = new Date();
-            suggestedDate.setDate(suggestedDate.getDate() + maxDays);
-            setDeliveryData((prev: any) => ({ ...prev, date: suggestedDate.toISOString().split('T')[0] }));
+            if (serverDate) {
+                const suggestedDate = new Date(serverDate);
+                suggestedDate.setDate(suggestedDate.getDate() + maxDays);
+                setDeliveryData((prev: any) => ({ ...prev, date: suggestedDate.toISOString().split('T')[0] }));
+            }
         }
-    }, [currentOrderLines]);
+    }, [currentOrderLines, serverDate]);
 
     // Fetch default customer if none provided
     useEffect(() => {

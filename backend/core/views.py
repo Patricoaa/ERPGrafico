@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from django.contrib.auth.models import Group
@@ -11,6 +11,7 @@ from .serializers import (
     ActionLogSerializer, HistoricalRecordSerializer, GroupSerializer
 )
 from .services import ActionLoggingService
+from django.utils import timezone
 from inventory.models import Product, StockMove
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
@@ -211,3 +212,16 @@ class GlobalAuditLogView(APIView):
         combined.sort(key=lambda x: x['date'], reverse=True)
         
         return Response(combined[:limit])
+
+@api_view(['GET'])
+def server_time(request):
+    """Return current server date and time"""
+    now = timezone.now()
+    return Response({
+        'datetime': now.isoformat(),
+        'date': now.date().isoformat(),
+        'year': now.year,
+        'month': now.month,
+        'day': now.day,
+        'timezone': str(timezone.get_current_timezone())
+    })

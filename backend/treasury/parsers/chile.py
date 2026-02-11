@@ -2,6 +2,7 @@ from typing import Dict, Any, List
 from decimal import Decimal
 import pandas as pd
 from datetime import datetime
+from django.utils import timezone
 from .base import BaseParser
 
 class BancoChileParser(BaseParser):
@@ -140,7 +141,7 @@ class BancoChileParser(BaseParser):
                 line_number += 1
                 
             return {
-                'statement_date': lines[0]['transaction_date'] if lines else datetime.now().date(),
+                'statement_date': lines[0]['transaction_date'] if lines else timezone.now().date(),
                 'opening_balance': opening_balance,
                 'closing_balance': lines[-1]['balance'] if lines else opening_balance,
                 'lines': lines,

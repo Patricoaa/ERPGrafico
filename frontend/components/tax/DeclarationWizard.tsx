@@ -29,6 +29,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -38,6 +39,7 @@ interface DeclarationWizardProps {
 }
 
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }: DeclarationWizardProps) {
+    const { year, month, dateString, serverDate } = useServerDate()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<any>(null)
@@ -79,11 +81,18 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
 
     useEffect(() => {
         if (isOpen) {
+            // Sync with server date on open if available
+            if (serverDate) {
+                setPeriod({
+                    year: year,
+                    month: month
+                })
+            }
             // Initial load for the suggested period
             calculateData()
             setStep(1)
         }
-    }, [isOpen])
+    }, [isOpen, serverDate])
 
     // Re-calculate when period changes
     useEffect(() => {
@@ -107,7 +116,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
             // 2. Register it officially
             await api.post(`/tax/declarations/${declarationId}/register/`, {
                 folio_number: "", // Could be added to manual fields
-                declaration_date: new Date().toISOString().split('T')[0]
+                declaration_date: dateString || new Date().toISOString().split('T')[0]
             })
 
             toast.success("Declaración registrada y asiento contable generado")

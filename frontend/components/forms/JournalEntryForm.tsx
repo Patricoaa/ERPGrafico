@@ -46,6 +46,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
+import { useServerDate } from "@/hooks/useServerDate"
 
 const journalItemSchema = z.object({
     id: z.number().optional(),
@@ -114,25 +115,35 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
         }
     }, [accountsProp])
 
+    const { serverDate } = useServerDate()
+
     // Convert string date to Date object if editing
-    const defaultValues: Partial<JournalEntryFormValues> = initialData ? {
-        ...initialData,
-        date: new Date(initialData.date),
-        items: initialData.items.map((item: any) => ({
-            ...item,
-            account: item.account.toString(),
-            debit: parseFloat(item.debit),
-            credit: parseFloat(item.credit),
-        }))
-    } : {
-        date: new Date(),
-        description: "",
-        reference: "",
-        items: [
-            { account: "", label: "", debit: 0, credit: 0 },
-            { account: "", label: "", debit: 0, credit: 0 },
-        ],
+    const getDefaultValues = () => {
+        if (initialData) {
+            return {
+                ...initialData,
+                date: new Date(initialData.date),
+                items: initialData.items.map((item: any) => ({
+                    ...item,
+                    account: item.account.toString(),
+                    debit: parseFloat(item.debit),
+                    credit: parseFloat(item.credit),
+                }))
+            }
+        } else {
+            return {
+                date: serverDate || new Date(),
+                description: "",
+                reference: "",
+                items: [
+                    { account: "", label: "", debit: 0, credit: 0 },
+                    { account: "", label: "", debit: 0, credit: 0 },
+                ],
+            }
+        }
     }
+
+    const defaultValues: Partial<JournalEntryFormValues> = getDefaultValues()
 
     const form = useForm<JournalEntryFormValues>({
         resolver: zodResolver(journalEntrySchema),
@@ -160,7 +171,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
             }
             if (!initialData) {
                 form.reset({
-                    date: new Date(),
+                    date: serverDate || new Date(),
                     description: "",
                     items: [
                         { account: "", label: "", debit: 0, credit: 0 },
@@ -172,7 +183,7 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                 form.reset(defaultValues)
             }
         }
-    }, [open, initialData, accountsProp])
+    }, [open, initialData, accountsProp, serverDate])
 
     async function onSubmit(data: JournalEntryFormValues) {
         setLoading(true)

@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface PaymentWizardProps {
     isOpen: boolean
@@ -38,6 +39,7 @@ interface PaymentWizardProps {
 }
 
 export function PaymentWizard({ isOpen, onOpenChange, declaration, onSuccess }: PaymentWizardProps) {
+    const { dateString, serverDate } = useServerDate()
     const [isLoading, setIsLoading] = useState(false)
     const [treasuryAccounts, setTreasuryAccounts] = useState<any[]>([])
     const [formData, setFormData] = useState({
@@ -48,6 +50,13 @@ export function PaymentWizard({ isOpen, onOpenChange, declaration, onSuccess }: 
         treasury_account: '',
         notes: ''
     })
+
+    // Update form date when server date loads/changes
+    useEffect(() => {
+        if (dateString) {
+            setFormData(prev => ({ ...prev, payment_date: dateString }))
+        }
+    }, [dateString])
 
     useEffect(() => {
         if (declaration) {
@@ -135,8 +144,8 @@ export function PaymentWizard({ isOpen, onOpenChange, declaration, onSuccess }: 
 
                         <div className="grid gap-2">
                             <Label htmlFor="account">Cuenta de Origen</Label>
-                            <Select 
-                                value={formData.treasury_account} 
+                            <Select
+                                value={formData.treasury_account}
                                 onValueChange={(val) => setFormData({ ...formData, treasury_account: val })}
                             >
                                 <SelectTrigger className="rounded-xl">
@@ -154,8 +163,8 @@ export function PaymentWizard({ isOpen, onOpenChange, declaration, onSuccess }: 
 
                         <div className="grid gap-2">
                             <Label htmlFor="method">Método de Pago</Label>
-                            <Select 
-                                value={formData.payment_method} 
+                            <Select
+                                value={formData.payment_method}
                                 onValueChange={(val) => setFormData({ ...formData, payment_method: val })}
                             >
                                 <SelectTrigger className="rounded-xl">

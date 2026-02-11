@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DeclarationWizard } from "@/components/tax/DeclarationWizard"
 import { PeriodChecklist } from "@/components/tax/PeriodChecklist"
 import { PaymentWizard } from "@/components/tax/PaymentWizard"
+import { useServerDate } from "@/hooks/useServerDate"
 
 export default function TaxDeclarationsPage() {
     const [periods, setPeriods] = useState<any[]>([])
@@ -101,10 +102,13 @@ export default function TaxDeclarationsPage() {
     }
 
     // Determine current logical period to show in dashboard
+    const { serverDate } = useServerDate()
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
         ? `${latestPeriod.month_display} ${latestPeriod.year}`.toUpperCase()
-        : format(new Date(), "MMMM yyyy", { locale: es }).toUpperCase()
+        : (serverDate
+            ? format(serverDate, "MMMM yyyy", { locale: es }).toUpperCase()
+            : format(new Date(), "MMMM yyyy", { locale: es }).toUpperCase())
 
     const isLatestClosed = latestPeriod?.status === "CLOSED"
 
@@ -120,7 +124,7 @@ export default function TaxDeclarationsPage() {
                         <Filter className="h-4 w-4 mr-2" />
                         Filtros
                     </Button>
-                    <Button size="sm" onClick={handleOpenWizard} disabled={isLatestClosed && latestPeriod?.month === new Date().getMonth() + 1}>
+                    <Button size="sm" onClick={handleOpenWizard} disabled={!!(isLatestClosed && serverDate && latestPeriod?.month === serverDate.getMonth() + 1)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Declaración
                     </Button>
