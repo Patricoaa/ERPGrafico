@@ -316,19 +316,46 @@ class BillingService:
 
         if 'id' in order_data:
             order = SaleOrder.objects.get(id=order_data['id'])
+            
+            # Update tax rate for existing order if needed based on DTE type
+            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else Decimal('19')
+            lines_updated = False
+            for line in order.lines.all():
+                if line.tax_rate != target_tax:
+                    line.tax_rate = target_tax
+                    line.save()
+                    lines_updated = True
+            
+            if lines_updated:
+                order.recalculate_totals()
         else:
             if 'payment_method' not in order_data:
                 order_data['payment_method'] = payment_method
-                
+            
+            # Enforce tax rate for new orders based on DTE type
+            target_tax = 0 if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else 19
+            if 'lines' in order_data:
+                for line in order_data['lines']:
+                    line['tax_rate'] = target_tax
+
             order_serializer = CreateSaleOrderSerializer(data=order_data)
-            print(f"DEBUG: order_data before validation: {order_data}")
             if not order_serializer.is_valid():
-                print(f"DEBUG: serializer errors: {order_serializer.errors}")
                 raise ValidationError(order_serializer.errors)
             
             # Use provided channel or default to POS
             channel = order_data.get('channel', 'POS')
             order = order_serializer.save(channel=channel)
+            
+            # Enforce tax rate on created lines (Safety net against serializer dropping it)
+            # This logic mirrors the existing order update logic
+            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else Decimal('19')
+            # Forcing refresh from DB to avoid any stale data issues
+            for line in order.lines.all():
+                line.tax_rate = target_tax
+                line.save()
+            
+            order.recalculate_totals()
+            order.save()
         
         # 2. Confirm Order
         from sales.services import SalesService

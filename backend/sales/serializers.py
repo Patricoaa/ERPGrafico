@@ -27,6 +27,9 @@ class SaleLineSerializer(serializers.ModelSerializer):
     uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True)
     
+    # Explicitly define tax_rate to ensure it is writable and passed to validated_data
+    tax_rate = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=19.00)
+
     class Meta:
         model = SaleLine
         fields = [
