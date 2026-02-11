@@ -72,6 +72,40 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
     ordering_fields = ['tax_period__year', 'tax_period__month', 'declaration_date']
     ordering = ['-tax_period__year', '-tax_period__month']
 
+    def create(self, request, *args, **kwargs):
+        """
+        Create or update an F29 declaration.
+        Handles tax_period_year and tax_period_month from the request.
+        """
+        year = request.data.get('tax_period_year')
+        month = request.data.get('tax_period_month')
+        
+        if not year or not month:
+            # Fallback to current year/month if not provided
+            now = timezone.now()
+            year = year or now.year
+            month = month or now.month
+
+        try:
+            # The service handles finding/creating the TaxPeriod and calculation
+            declaration = F29CalculationService.create_or_update_declaration(
+                year=int(year),
+                month=int(month),
+                manual_fields=request.data
+            )
+            serializer = self.get_serializer(declaration)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except (ValueError, TypeError) as e:
+            return Response(
+                {'error': f"Año o mes inválidos: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except DjangoValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
     @action(detail=False, methods=['post'])
     def calculate(self, request):
         """Calculate F29 values for a period"""

@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Settings, User, Building2, Bell, Shield, Database, ShoppingCart, History } from "lucide-react"
+import { Settings, User, Building2, Bell, Shield, Database, ShoppingCart, History, FileText } from "lucide-react"
 import Link from "next/link"
 
 export default function SettingsPage() {
@@ -30,7 +30,19 @@ export default function SettingsPage() {
                             <Database className="h-8 w-8 text-primary" />
                             <div>
                                 <CardTitle>Contabilidad</CardTitle>
-                                <CardDescription>Cuentas predeterminadas e impuestos.</CardDescription>
+                                <CardDescription>Cuentas predeterminadas y flujos base.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
+
+                <Link href="/settings/tax">
+                    <Card className="cursor-pointer hover:border-primary">
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <FileText className="h-8 w-8 text-primary" />
+                            <div>
+                                <CardTitle>Impuestos</CardTitle>
+                                <CardDescription>Tasas IVA, PPM y cuentas de cumplimiento.</CardDescription>
                             </div>
                         </CardHeader>
                     </Card>

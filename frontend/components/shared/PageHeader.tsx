@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 interface PageHeaderProps {
     title: string
     description?: string
+    icon?: LucideIcon
     titleActions?: React.ReactNode // For buttons next to the title
     children?: React.ReactNode // For actions/buttons on the right
     className?: string
@@ -17,12 +18,15 @@ interface PageHeaderProps {
  * Reusable Page Header component for consistent titles and descriptions.
  * Supports an optional action area on the right and actions next to the title.
  */
-export function PageHeader({ title, description, titleActions, children, className }: PageHeaderProps) {
+export function PageHeader({ title, description, icon: Icon, titleActions, children, className }: PageHeaderProps) {
     return (
         <div className={cn("flex flex-col md:flex-row md:items-center justify-between gap-4 py-2", className)}>
             <div className="space-y-1">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h2>
+                    <div className="flex items-center gap-3">
+                        {Icon && <Icon className="h-8 w-8 text-primary/80" />}
+                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h2>
+                    </div>
                     {titleActions && (
                         <div className="flex items-center pt-1">
                             {titleActions}
