@@ -13,7 +13,7 @@ from inventory.models import (
     PricingRule, Subscription, ProductAttribute, ProductAttributeValue
 )
 from contacts.models import Contact
-from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
+from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
     TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
@@ -25,7 +25,7 @@ from treasury.models import (
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, F29Declaration, F29Payment
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
-from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
+from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
 from core.models import User
 from workflow.models import Task, Notification, TaskAssignmentRule
 
@@ -337,83 +337,90 @@ class Command(BaseCommand):
                 # We don't raise here to allow the rest of the purge to continue
                 # if we are in a fresh system state.
 
-        # Workflow models
+        # 1. Workflows & Transients
+        _safe_delete(NoteWorkflow, "NoteWorkflow")
+        _safe_delete(Subscription, "Subscription")
+        _safe_delete(DraftCart, "DraftCart")
         _safe_delete(Task, "Task")
         _safe_delete(Notification, "Notification")
         _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
 
-        # Production child records
+        # 2. Production
         _safe_delete(ProductionConsumption, "ProductionConsumption")
-        _safe_delete(WorkOrder, "WorkOrder")
+        _safe_delete(WorkOrderMaterial, "WorkOrderMaterial")
         _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
         _safe_delete(BillOfMaterials, "BillOfMaterials")
+        _safe_delete(WorkOrderHistory, "WorkOrderHistory")
+        _safe_delete(WorkOrder, "WorkOrder")
 
-        _safe_delete(BudgetItem, "BudgetItem")
-        _safe_delete(Budget, "Budget")
-
-        # 2. Note Workflows (Reference Invoices)
-        _safe_delete(NoteWorkflow, "NoteWorkflow")
-
-        # 3. Subscriptions
-        _safe_delete(Subscription, "Subscription")
-
-        # 3. Transactional documents
-        _safe_delete(StockMove, "StockMove")
-        _safe_delete(Invoice, "Invoice")
-        _safe_delete(TreasuryMovement, "TreasuryMovement")
-        _safe_delete(TerminalBatch, "TerminalBatch")
-        _safe_delete(JournalEntry, "JournalEntry")
-        
-        # 4. Purchasing
-        _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
-        _safe_delete(PurchaseReturn, "PurchaseReturn")
-        _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
-        _safe_delete(PurchaseReceipt, "PurchaseReceipt")
-        _safe_delete(PurchaseLine, "PurchaseLine")
-        _safe_delete(PurchaseOrder, "PurchaseOrder")
-        
-        # 5. Sales
-        _safe_delete(SaleReturnLine, "SaleReturnLine")
-        _safe_delete(SaleReturn, "SaleReturn")
-        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
-        _safe_delete(SaleDelivery, "SaleDelivery")
-        _safe_delete(SaleLine, "SaleLine")
-        _safe_delete(SaleOrder, "SaleOrder")
-
-        # 6. POS & Treasury Infrastructure
-        _safe_delete(CashDifference, "CashDifference")
-        _safe_delete(POSSessionAudit, "POSSessionAudit")
-        _safe_delete(POSSession, "POSSession")
-        _safe_delete(POSTerminal, "POSTerminal")
-
-        # 7. Tax Module (F29)
+        # 3. Tax Module
         _safe_delete(F29Payment, "F29Payment")
         _safe_delete(F29Declaration, "F29Declaration")
-        _safe_delete(TaxPeriod, "TaxPeriod")
 
-        # 8. Treasury & Reconciliation
-        _safe_delete(BankStatement, "BankStatement") # Cascades to lines
+        # 4. Logistics Detail
+        _safe_delete(SaleReturnLine, "SaleReturnLine")
+        _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
+        _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
+        _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
+
+        # 5. Transactional Documents
+        _safe_delete(SaleReturn, "SaleReturn")
+        _safe_delete(SaleDelivery, "SaleDelivery")
+        _safe_delete(PurchaseReturn, "PurchaseReturn")
+        _safe_delete(PurchaseReceipt, "PurchaseReceipt")
+        _safe_delete(Invoice, "Invoice")
+        _safe_delete(TreasuryMovement, "TreasuryMovement")
+        _safe_delete(StockMove, "StockMove")
+
+        # 6. Orders
+        _safe_delete(SaleLine, "SaleLine")
+        _safe_delete(SaleOrder, "SaleOrder")
+        _safe_delete(PurchaseLine, "PurchaseLine")
+        _safe_delete(PurchaseOrder, "PurchaseOrder")
+
+        # 7. POS & Infrastructure
+        _safe_delete(POSSessionAudit, "POSSessionAudit")
+        _safe_delete(CashDifference, "CashDifference")
+        _safe_delete(POSSession, "POSSession")
+        _safe_delete(POSTerminal, "POSTerminal")
+        _safe_delete(TerminalBatch, "TerminalBatch")
+        _safe_delete(PaymentMethod, "PaymentMethod")
+
+        # 8. Banking
+        _safe_delete(BankStatementLine, "BankStatementLine")
+        _safe_delete(BankStatement, "BankStatement")
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationRule, "ReconciliationRule")
-        
-        # Payment Methods must be deleted before accounts if they have protecting constraints
-        _safe_delete(PaymentMethod, "PaymentMethod")
-        _safe_delete(Bank, "Bank")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
+        _safe_delete(Bank, "Bank")
+
+        # 9. Financial Core
+        _safe_delete(JournalEntry, "JournalEntry")
+        _safe_delete(BudgetItem, "BudgetItem")
+        _safe_delete(Budget, "Budget")
         
-        # 8. Master Data (Links to almost everything above)
+        # Reset AccountingSettings if possible (SET_NULL fields)
+        try:
+            settings = AccountingSettings.objects.first()
+            if settings:
+                # We don't delete settings, just clear protected-like refs if any
+                # But mostly we delete Account in the next step which has SET_NULL in settings
+                pass
+        except:
+            pass
+
+        # 10. Master Data & Basics
         _safe_delete(PricingRule, "PricingRule")
-        _safe_delete(Product, "Product")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
+        _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(Contact, "Contact")
-
-        # 9. Foundations
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
         _safe_delete(Account, "Account")
+        _safe_delete(TaxPeriod, "TaxPeriod")
 
     def _get_account_references(self):
         # We fetch accounts by code as defined in the modernize IFRS service

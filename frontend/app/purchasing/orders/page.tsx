@@ -19,7 +19,7 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { PurchaseOrderHubStatus } from "./components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
@@ -389,12 +389,16 @@ export default function PurchaseOrdersPage() {
                 title="Gestión de Compras"
                 description="Gestión integral de órdenes de compra, recepciones y facturas de proveedores"
                 icon={ShoppingCart}
+                titleActions={
+                    <PageHeaderButton
+                        onClick={() => setCheckoutOpen(true)}
+                        icon={Plus}
+                        circular
+                        title="Nueva Orden"
+                    />
+                }
             >
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setCheckoutOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nueva Orden
-                    </Button>
                     {editingOrder && (
                         <PurchaseOrderForm
                             initialData={editingOrder}
