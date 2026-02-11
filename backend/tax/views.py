@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
-from .models import TaxPeriod, F29Declaration, F29Payment
+from .models import TaxPeriod, F29Declaration, F29Payment, AccountingPeriod
 from .serializers import (
     TaxPeriodSerializer, F29DeclarationSerializer, F29PaymentSerializer,
-    F29CalculationRequestSerializer, F29RegistrationSerializer
+    F29CalculationRequestSerializer, F29RegistrationSerializer, AccountingPeriodSerializer
 )
-from .services import F29CalculationService, TaxPeriodService, F29PaymentService
+from .services import F29CalculationService, TaxPeriodService, F29PaymentService, AccountingPeriodService
 from billing.models import Invoice
 
 
@@ -202,3 +202,71 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class AccountingPeriodViewSet(viewsets.ModelViewSet):
+    queryset = AccountingPeriod.objects.all()
+    serializer_class = AccountingPeriodSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['year', 'month', 'status']
+    ordering_fields = ['year', 'month', 'status']
+    ordering = ['-year', '-month']
+
+    @action(detail=True, methods=['post'])
+    def close(self, request, pk=None):
+        """Close an accounting period"""
+        # Check permission
+        if not request.user.has_perm('tax.can_close_accounting_period'):
+            return Response(
+                {'error': 'No tiene permisos para cerrar periodos contables.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        period = self.get_object()
+        try:
+            updated_period = AccountingPeriodService.close_period(
+                period.year,
+                period.month,
+                request.user
+            )
+            serializer = self.get_serializer(updated_period)
+            return Response(serializer.data)
+        except DjangoValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def reopen(self, request, pk=None):
+        """Reopen a closed accounting period"""
+        # Check permission
+        if not request.user.has_perm('tax.can_reopen_accounting_period'):
+            return Response(
+                {'error': 'No tiene permisos para reabrir periodos contables.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        period = self.get_object()
+        try:
+            updated_period = AccountingPeriodService.reopen_period(
+                period.year,
+                period.month,
+                request.user
+            )
+            serializer = self.get_serializer(updated_period)
+            return Response(serializer.data)
+        except DjangoValidationError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['get'])
+    def status_check(self, request, pk=None):
+        """Get status and checklist for an accounting period"""
+        period = self.get_object()
+        status_data = AccountingPeriodService.get_period_status(period.year, period.month)
+        return Response(status_data)
+
+

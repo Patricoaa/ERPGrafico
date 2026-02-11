@@ -73,6 +73,89 @@ class TaxPeriod(models.Model):
         return months.get(self.month, str(self.month))
 
 
+class AccountingPeriod(models.Model):
+    """
+    Represents a monthly accounting period.
+    Controls the state (open/under review/closed) and prevents modifications to
+    journal entries and inventory movements in closed periods.
+    
+    This is separate from TaxPeriod to allow independent closure cycles:
+    - Accounting periods can be closed before tax periods
+    - Tax period closure automatically closes the accounting period
+    - Accounting periods cannot be reopened if tax period is closed
+    """
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', _('Abierto')
+        UNDER_REVIEW = 'UNDER_REVIEW', _('En Revisión')
+        CLOSED = 'CLOSED', _('Cerrado')
+
+    year = models.IntegerField(
+        _("Año"),
+        validators=[MinValueValidator(2000), MaxValueValidator(2100)]
+    )
+    month = models.IntegerField(
+        _("Mes"),
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    status = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN
+    )
+    closed_at = models.DateTimeField(
+        _("Fecha de Cierre"),
+        null=True,
+        blank=True
+    )
+    closed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='closed_accounting_periods',
+        verbose_name=_("Cerrado por")
+    )
+    
+    # Relationship to tax period (optional, for synchronization)
+    tax_period = models.OneToOneField(
+        TaxPeriod,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accounting_period',
+        verbose_name=_("Periodo Tributario Asociado")
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Periodo Contable")
+        verbose_name_plural = _("Periodos Contables")
+        ordering = ['-year', '-month']
+        unique_together = [['year', 'month']]
+        indexes = [
+            models.Index(fields=['year', 'month']),
+            models.Index(fields=['status']),
+        ]
+        permissions = [
+            ("can_close_accounting_period", "Can close accounting periods"),
+            ("can_reopen_accounting_period", "Can reopen closed accounting periods"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_month_display()} {self.year}"
+
+    def get_month_display(self):
+        months = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        return months.get(self.month, str(self.month))
+
+
 class F29Declaration(models.Model):
     """
     Chilean F29 Monthly Tax Declaration.

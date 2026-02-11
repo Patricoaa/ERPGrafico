@@ -170,6 +170,22 @@ class JournalEntry(models.Model):
     description = models.CharField(_("Descripción"), max_length=255)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     state = models.CharField(_("Estado"), max_length=20, choices=State.choices, default=State.DRAFT)
+    
+    # Accounting Period Control
+    accounting_period = models.ForeignKey(
+        'tax.AccountingPeriod',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='journal_entries',
+        verbose_name=_("Periodo Contable")
+    )
+    period_closed = models.BooleanField(
+        _("Periodo Cerrado"),
+        default=False,
+        help_text=_("Indica si el asiento pertenece a un periodo cerrado")
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
@@ -194,6 +210,35 @@ class JournalEntry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
+        # Validate period is not closed (only for existing entries being modified)
+        if self.pk and self.period_closed:
+            raise ValidationError(
+                _("No se puede modificar un asiento de un periodo cerrado.")
+            )
+        
+        # Auto-assign accounting period based on date
+        if self.date and not self.accounting_period_id:
+            from tax.models import AccountingPeriod
+            try:
+                period, _ = AccountingPeriod.objects.get_or_create(
+                    year=self.date.year,
+                    month=self.date.month
+                )
+                self.accounting_period = period
+                self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
+            except Exception:
+                # If period creation fails, continue without it
+                pass
+        
+        # Update period_closed flag if period exists
+        if self.accounting_period_id:
+            from tax.models import AccountingPeriod
+            try:
+                period = AccountingPeriod.objects.get(id=self.accounting_period_id)
+                self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
+            except AccountingPeriod.DoesNotExist:
+                pass
+        
         if not self.number:
             # Simple auto-numbering
             last_entry = JournalEntry.objects.all().order_by('id').last()

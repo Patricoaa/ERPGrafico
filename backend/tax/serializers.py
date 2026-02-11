@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TaxPeriod, F29Declaration, F29Payment
+from .models import TaxPeriod, F29Declaration, F29Payment, AccountingPeriod
 
 
 class TaxPeriodSerializer(serializers.ModelSerializer):
@@ -15,6 +15,24 @@ class TaxPeriodSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['closed_at', 'closed_by', 'created_at', 'updated_at']
+
+
+class AccountingPeriodSerializer(serializers.ModelSerializer):
+    month_display = serializers.CharField(source='get_month_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
+    tax_period_id = serializers.IntegerField(source='tax_period.id', read_only=True, allow_null=True)
+    tax_period_status = serializers.CharField(source='tax_period.status', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = AccountingPeriod
+        fields = [
+            'id', 'year', 'month', 'month_display', 'status', 'status_display',
+            'closed_at', 'closed_by', 'closed_by_name',
+            'tax_period', 'tax_period_id', 'tax_period_status',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['closed_at', 'closed_by', 'tax_period', 'created_at', 'updated_at']
 
 
 class F29DeclarationSerializer(serializers.ModelSerializer):

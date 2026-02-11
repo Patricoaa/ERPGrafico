@@ -556,3 +556,140 @@ class F29PaymentService:
         payment.save()
         
         return payment
+
+
+class AccountingPeriodService:
+    """
+    Service for managing accounting periods and their lifecycle.
+    """
+
+    @staticmethod
+    def get_or_create_period(year: int, month: int):
+        """Get or create an accounting period."""
+        from .models import AccountingPeriod
+        period, _ = AccountingPeriod.objects.get_or_create(
+            year=year, 
+            month=month
+        )
+        return period
+
+    @staticmethod
+    @transaction.atomic
+    def close_period(year: int, month: int, user):
+        """
+        Close an accounting period after validations.
+        
+        Validations:
+        - All journal entries must be posted (no drafts)
+        - Must not be already closed
+        
+        Returns:
+            AccountingPeriod instance
+        """
+        from .models import AccountingPeriod
+        from accounting.models import JournalEntry
+        
+        period = AccountingPeriod.objects.get(year=year, month=month)
+        
+        if period.status == AccountingPeriod.Status.CLOSED:
+            raise ValidationError("El período contable ya está cerrado.")
+        
+        # Validate no draft entries in this period
+        draft_count = period.journal_entries.filter(
+            state=JournalEntry.State.DRAFT
+        ).count()
+        
+        if draft_count > 0:
+            raise ValidationError(
+                f"Hay {draft_count} asientos en borrador. "
+                "Todos los asientos deben estar publicados antes de cerrar el periodo."
+            )
+        
+        # Close the period
+        period.status = AccountingPeriod.Status.CLOSED
+        period.closed_at = timezone.now()
+        period.closed_by = user
+        period.save()
+        
+        # Signal will handle marking entries as closed
+        
+        return period
+
+    @staticmethod
+    @transaction.atomic
+    def reopen_period(year: int, month: int, user):
+        """
+        Reopen a closed accounting period.
+        
+        This should be restricted to users with special permissions.
+        Cannot reopen if the corresponding tax period is closed.
+        
+        Returns:
+            AccountingPeriod instance
+        """
+        from .models import AccountingPeriod, TaxPeriod
+        
+        period = AccountingPeriod.objects.get(year=year, month=month)
+        
+        if period.status != AccountingPeriod.Status.CLOSED:
+            raise ValidationError("El período contable no está cerrado.")
+        
+        # Check if tax period is closed
+        try:
+            tax_period = TaxPeriod.objects.get(year=year, month=month)
+            if tax_period.status == TaxPeriod.Status.CLOSED:
+                raise ValidationError(
+                    "No se puede reabrir el periodo contable porque "
+                    "el periodo tributario está cerrado. Primero debe reabrir el periodo tributario."
+                )
+        except TaxPeriod.DoesNotExist:
+            # No tax period exists, safe to reopen
+            pass
+        
+        # Reopen the period
+        period.status = AccountingPeriod.Status.OPEN
+        period.closed_at = None
+        period.closed_by = None
+        period.save()
+        
+        # Signal will handle unmarking entries
+        
+        return period
+
+    @staticmethod
+    def get_period_status(year: int, month: int) -> dict:
+        """
+        Get status and checklist for an accounting period.
+        
+        Returns:
+            dict with status info and checklist items
+        """
+        from .models import AccountingPeriod
+        from accounting.models import JournalEntry
+        
+        try:
+            period = AccountingPeriod.objects.get(year=year, month=month)
+        except AccountingPeriod.DoesNotExist:
+            period = None
+        
+        # Build checklist
+        checklist = {
+            'period_exists': period is not None,
+            'period_status': period.status if period else 'NOT_CREATED',
+            'has_draft_entries': False,
+            'total_entries': 0,
+            'draft_entries': 0,
+        }
+        
+        if period:
+            draft_entries = period.journal_entries.filter(
+                state=JournalEntry.State.DRAFT
+            ).count()
+            total_entries = period.journal_entries.count()
+            
+            checklist['has_draft_entries'] = draft_entries > 0
+            checklist['total_entries'] = total_entries
+            checklist['draft_entries'] = draft_entries
+        
+        return checklist
+
