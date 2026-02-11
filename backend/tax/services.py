@@ -216,7 +216,7 @@ class F29CalculationService:
         
         # Create journal entry
         entry_desc = f"Declaración F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
-        journal_entry = JournalEntryService.create_entry(
+        journal_entry = JournalEntry.objects.create(
             date=declaration_date,
             description=entry_desc,
             reference=f"F29-{folio_number}" if folio_number else ""
@@ -522,7 +522,7 @@ class F29PaymentService:
         
         # Create journal entry for payment
         entry_desc = f"Pago F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
-        journal_entry = JournalEntryService.create_entry(
+        journal_entry = JournalEntry.objects.create(
             date=payment.payment_date,
             description=entry_desc,
             reference=f"Pago-{payment.reference}"

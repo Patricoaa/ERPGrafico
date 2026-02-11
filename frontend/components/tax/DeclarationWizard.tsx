@@ -41,6 +41,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<any>(null)
+    const [period, setPeriod] = useState({
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1
+    })
     const [manualFields, setManualFields] = useState({
         ppm_amount: 0,
         withholding_tax: 0,
@@ -55,14 +59,9 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
     const calculateData = async () => {
         setIsLoading(true)
         try {
-            // Use current year/month for calculation
-            const now = new Date()
-            const year = now.getFullYear()
-            const month = now.getMonth() + 1 // getCurrentMonth
-
             const response = await api.post("/tax/declarations/calculate/", {
-                year: year,
-                month: month
+                year: period.year,
+                month: period.month
             })
             setCalcData(response.data)
 
@@ -80,19 +79,26 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
 
     useEffect(() => {
         if (isOpen) {
+            // Initial load for the suggested period
             calculateData()
             setStep(1)
         }
     }, [isOpen])
 
+    // Re-calculate when period changes
+    useEffect(() => {
+        if (isOpen && step === 1) {
+            calculateData()
+        }
+    }, [period.year, period.month])
+
     const handleSave = async () => {
         setIsLoading(true)
         try {
-            const now = new Date()
             // 1. Create declaration
             const createResponse = await api.post("/tax/declarations/", {
-                tax_period_year: now.getFullYear(),
-                tax_period_month: now.getMonth() + 1,
+                tax_period_year: period.year,
+                tax_period_month: period.month,
                 ...manualFields
             })
 
@@ -137,9 +143,28 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                         <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">Paso {step} de 3</Badge>
                     </div>
                     <DialogTitle className="text-2xl font-bold">Asistente de Declaración F29</DialogTitle>
-                    <DialogDescription>
-                        Revise su débito y crédito fiscal antes de generar la declaración oficial.
-                    </DialogDescription>
+                    <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground mr-1">Año</Label>
+                            <Input
+                                type="number"
+                                className="w-24 h-8 rounded-lg text-sm"
+                                value={period.year}
+                                onChange={(e) => setPeriod(p => ({ ...p, year: Number(e.target.value) }))}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground mr-1">Mes</Label>
+                            <input
+                                type="number"
+                                min="1"
+                                max="12"
+                                className="w-16 h-8 rounded-lg text-sm bg-background border focus:ring-1 focus:ring-primary px-2"
+                                value={period.month}
+                                onChange={(e) => setPeriod(p => ({ ...p, month: Number(e.target.value) }))}
+                            />
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 <div className="py-6">
@@ -285,7 +310,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-2xl font-bold">Resumen de Declaración</h3>
-                                <p className="text-muted-foreground">Período: {new Date().toLocaleString('es-CL', { month: 'long', year: 'numeric' })}</p>
+                                <p className="text-muted-foreground">Período: {period.month}/{period.year}</p>
                             </div>
 
                             <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
