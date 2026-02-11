@@ -23,6 +23,7 @@ from treasury.models import (
     Bank, PaymentMethod, TerminalBatch
 )
 from billing.models import Invoice, NoteWorkflow
+from tax.models import TaxPeriod, F29Declaration, F29Payment
 # from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
 from core.models import User
@@ -274,7 +275,8 @@ class Command(BaseCommand):
             self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas (incluye Comisión Tarjeta)")
 
             settings.pos_cash_difference_approval_threshold = Decimal('5000') # $5.000 CLP
-            self.stdout.write("  ✓ Umbral de aprobación de diferencias POS configurado ($5.000)")
+            settings.default_vat_rate = Decimal('19.00')
+            self.stdout.write("  ✓ Configuración de IVA (19%) y umbral POS establecida")
 
             # NUEVO: Mapeo de movimientos de caja POS hardcodeados y motivos especializados
             settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.01.03').first() # Using specialized withdrawal if exists
@@ -384,7 +386,12 @@ class Command(BaseCommand):
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
 
-        # 7. Treasury & Reconciliation
+        # 7. Tax Module (F29)
+        _safe_delete(F29Payment, "F29Payment")
+        _safe_delete(F29Declaration, "F29Declaration")
+        _safe_delete(TaxPeriod, "TaxPeriod")
+
+        # 8. Treasury & Reconciliation
         _safe_delete(BankStatement, "BankStatement") # Cascades to lines
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationRule, "ReconciliationRule")
@@ -428,6 +435,9 @@ class Command(BaseCommand):
             'expense_general': Account.objects.get(code='5.2.06'),
             'expense_utilities': Account.objects.get(code='5.2.03'),
             'expense_rent': Account.objects.get(code='5.2.02'),
+            'vat_carryforward': Account.objects.get(code='1.1.04.02'),
+            'vat_payable': Account.objects.get(code='2.1.02.02'),
+            'correction_income': Account.objects.get(code='4.2.07'),
         }
 
     def _create_partners(self, accounts):

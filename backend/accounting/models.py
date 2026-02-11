@@ -639,6 +639,51 @@ class AccountingSettings(models.Model):
     income_prefix = models.CharField(_("Prefijo Ingresos"), max_length=5, default="4")
     expense_prefix = models.CharField(_("Prefijo Gastos"), max_length=5, default="5")
 
+    # Tax Accounts (F29 Module)
+    vat_payable_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_vat_payable',
+        verbose_name=_("Cuenta IVA por Pagar"),
+        help_text=_("Cuenta 2.1.02.02 - IVA resultante a pagar al SII")
+    )
+    vat_carryforward_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_vat_carryforward',
+        verbose_name=_("Cuenta IVA Remanente"),
+        help_text=_("Cuenta 1.1.04.02 - Crédito fiscal a favor para próximo período")
+    )
+    withholding_tax_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_withholding_tax',
+        verbose_name=_("Cuenta Retenciones de Impuestos"),
+        help_text=_("Cuenta 1.1.04.03 - Retenciones de honorarios (2da categoría)")
+    )
+    ppm_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_ppm',
+        verbose_name=_("Cuenta PPM por Recuperar"),
+        help_text=_("Cuenta 1.1.04.04 - Pagos Provisionales Mensuales")
+    )
+    second_category_tax_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_second_category_tax',
+        verbose_name=_("Cuenta Impuesto Único 2da Categoría"),
+        help_text=_("Cuenta 2.1.02.04 - Impuesto único a los trabajadores por pagar")
+    )
+    default_vat_rate = models.DecimalField(
+        _("Tasa de IVA por Defecto"),
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('19.00'),
+        help_text=_("Porcentaje de IVA usado en cálculos generales.")
+    )
+    correction_income_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_correction_income',
+        verbose_name=_("Cuenta Ingreso por Corrección Monetaria"),
+        help_text=_("Cuenta para registrar aumentos de remanente por reajuste")
+    )
+
     class Meta:
         verbose_name = _("Configuración Contable")
         verbose_name_plural = _("Configuración Contable")

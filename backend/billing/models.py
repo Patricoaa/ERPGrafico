@@ -86,6 +86,13 @@ class Invoice(models.Model):
         related_name='invoice'
     )
 
+    # Tax Period Control
+    tax_period_closed = models.BooleanField(
+        _("Período Cerrado"),
+        default=False,
+        help_text=_("Indica si el período tributario de este documento está cerrado")
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

@@ -80,6 +80,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         "treasury": "/treasury/movements",
         "purchasing": "/purchasing/orders",
         "finances": "/finances/statements",
+        "tax": "/tax/declarations",
     }
 
     const displayCategory = hoveredCategory || activeCategory

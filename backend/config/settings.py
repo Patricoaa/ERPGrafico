@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'finances',
     'billing',
     'workflow',
+    'tax',
     'simple_history',
 ]
 

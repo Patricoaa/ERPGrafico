@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -38,6 +38,7 @@ const mainItems = [
     { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
     { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
     { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
+    { id: "tax", icon: FileText, label: "Impuestos", permission: "tax.view_f29declaration" },
 ]
 // Note: original list ended at finances. Did I miss billing in original file?
 // Original: 

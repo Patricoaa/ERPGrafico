@@ -115,7 +115,9 @@ class AccountingService:
             
             ('1.1.04', 'Impuestos por Recuperar', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.04.01', 'IVA Crédito Fiscal', AccountType.ASSET, '1.1.04', None, None, None),
-            ('1.1.04.02', 'PPM por Recuperar', AccountType.ASSET, '1.1.04', None, None, None),
+            ('1.1.04.02', 'IVA Remanente (Crédito Fiscal)', AccountType.ASSET, '1.1.04', None, None, None),
+            ('1.1.04.03', 'Retenciones de Impuestos (Activo)', AccountType.ASSET, '1.1.04', None, None, None),
+            ('1.1.04.04', 'PPM por Recuperar', AccountType.ASSET, '1.1.04', None, None, None),
             
             ('1.1.06', 'Cuentas Puente Activo', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.06.01', 'Salida de Stock (Pendiente de Facturar)', AccountType.ASSET, '1.1.06', None, None, None),
@@ -139,7 +141,9 @@ class AccountingService:
             
             ('2.1.02', 'Obligaciones por Impuestos', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.02.01', 'IVA Débito Fiscal', AccountType.LIABILITY, '2.1.02', None, None, None),
-            ('2.1.02.02', 'Retenciones de Impuestos', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.02', 'IVA por Pagar (Neto)', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.03', 'Retenciones Honorarios por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.04', 'Impuesto Único 2da Categoría', AccountType.LIABILITY, '2.1.02', None, None, None),
             
             ('2.1.03', 'Obligaciones Laborales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.03.01', 'Remuneraciones por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
@@ -164,6 +168,7 @@ class AccountingService:
             ('4.2.01', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.05', 'Otros Ingresos POS', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.06', 'Propinas POS', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.07', 'Ingreso por Corrección Monetaria', AccountType.INCOME, '4.2', None, None, None),
 
             # 5.1 Cost of Sales
             ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
@@ -274,6 +279,14 @@ class AccountingService:
             # Terminal Bridge
             'terminal_commission_bridge_account': '1.1.06.02',
             'terminal_iva_bridge_account': '1.1.06.03',
+            
+            # F29 Tax Module
+            'vat_payable_account': '2.1.02.02',
+            'vat_carryforward_account': '1.1.04.02',
+            'withholding_tax_account': '2.1.02.03',
+            'ppm_account': '1.1.04.04',
+            'second_category_tax_account': '2.1.02.04',
+            'correction_income_account': '4.2.07',
         }
 
         for field, code in mapping.items():
