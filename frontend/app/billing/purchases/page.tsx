@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { formatPlainDate } from "@/lib/utils"
 
 interface PurchaseDocument {
     id: number
@@ -176,7 +177,7 @@ export default function PurchaseInvoicesPage() {
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => (
-                <span>{new Date(row.getValue("date")).toLocaleDateString()}</span>
+                <span>{formatPlainDate(row.getValue("date"))}</span>
             ),
         },
         {

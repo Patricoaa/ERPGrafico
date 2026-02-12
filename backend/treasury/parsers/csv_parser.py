@@ -10,6 +10,7 @@ import csv
 import io
 from typing import Dict, List, Any, Optional
 from datetime import date
+from django.utils import timezone
 from decimal import Decimal
 from .base import BaseParser
 
@@ -179,7 +180,7 @@ class GenericCSVParser(BaseParser):
         
         if not lines:
             return {
-                'statement_date': statement_date or date.today(),
+                'statement_date': statement_date or timezone.now().date(),
                 'opening_balance': opening_balance or Decimal('0'),
                 'closing_balance': closing_balance or Decimal('0'),
                 'lines': [],

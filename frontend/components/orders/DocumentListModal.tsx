@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Package, Truck, ClipboardList, Download, ExternalLink, Hash } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatPlainDate } from "@/lib/utils"
 
 interface DocumentListModalProps {
     open: boolean
@@ -107,7 +107,7 @@ export function DocumentListModal({
                                                     <>
                                                         <TableCell className="font-bold">{item.number || 'Borrador'}</TableCell>
                                                         <TableCell className="text-xs">{item.type_display || 'Factura'}</TableCell>
-                                                        <TableCell className="text-xs">{new Date(item.date || item.created_at).toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-xs">{formatPlainDate(item.date || item.created_at)}</TableCell>
                                                         <TableCell className="font-bold text-primary">{formatCurrency(item.total)}</TableCell>
                                                         <TableCell>
                                                             <Badge variant={item.status === 'PAID' ? 'success' : 'outline'} className="text-[9px]">
@@ -122,7 +122,7 @@ export function DocumentListModal({
                                                         <TableCell className="font-bold">OT-{item.number}</TableCell>
                                                         <TableCell className="text-xs truncate max-w-[200px]">{item.product_name}</TableCell>
                                                         <TableCell className="font-bold">{item.quantity} {item.unit}</TableCell>
-                                                        <TableCell className="text-xs">{item.due_date ? new Date(item.due_date).toLocaleDateString() : '--'}</TableCell>
+                                                        <TableCell className="text-xs">{formatPlainDate(item.due_date)}</TableCell>
                                                         <TableCell>
                                                             <Badge variant="outline" className="text-[9px] uppercase font-bold">
                                                                 {item.status_display || item.status}
@@ -136,7 +136,7 @@ export function DocumentListModal({
                                                     <>
                                                         <TableCell className="font-bold">SM-{item.id}</TableCell>
                                                         <TableCell className="text-xs font-mono">{item.reference || '--'}</TableCell>
-                                                        <TableCell className="text-xs">{new Date(item.date).toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-xs">{formatPlainDate(item.date)}</TableCell>
                                                         <TableCell className="text-xs">{item.items_count || 0} ítems</TableCell>
                                                         <TableCell>
                                                             <Badge variant="success" className="text-[9px]">COMPLETADO</Badge>

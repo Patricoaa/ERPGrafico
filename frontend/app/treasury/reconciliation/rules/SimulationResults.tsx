@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2 } from "lucide-react"
+import { formatPlainDate } from "@/lib/utils"
 
 export function SimulationResults({ rule }: { rule: any }) {
     const [results, setResults] = useState<any[]>([])
@@ -59,7 +60,7 @@ export function SimulationResults({ rule }: { rule: any }) {
                             <TableCell className="text-sm">
                                 <div className="font-medium">{res.line.description}</div>
                                 <div className="text-muted-foreground">
-                                    {new Date(res.line.date).toLocaleDateString()} • ${res.line.amount}
+                                    {formatPlainDate(res.line.date)} • ${res.line.amount}
                                 </div>
                             </TableCell>
                             <TableCell className="text-sm">

@@ -4,7 +4,7 @@ import React from "react"
 import { Paperclip, FileText, Download, ExternalLink, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 
 interface Attachment {
     id: number
@@ -59,7 +59,7 @@ export function AttachmentList({
                             </span>
                             <span className="text-[10px] text-muted-foreground/50 h-1 w-1 rounded-full bg-muted-foreground/30" />
                             <span className="text-[10px] text-muted-foreground font-medium">
-                                {new Date(file.uploaded_at).toLocaleDateString()}
+                                {formatPlainDate(file.uploaded_at)}
                             </span>
                         </div>
                     </div>

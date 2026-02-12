@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Lock, LockOpen, Calendar, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPlainDate } from '@/lib/utils';
 
 interface AccountingPeriod {
     id: number;
@@ -167,7 +168,7 @@ export default function AccountingPeriodsPage() {
                                         <div className="flex items-center gap-2">
                                             <Lock className="w-4 h-4" />
                                             <span>
-                                                Cerrado el {new Date(period.closed_at).toLocaleDateString('es-CL')}
+                                                Cerrado el {formatPlainDate(period.closed_at)}
                                                 {period.closed_by_name && ` por ${period.closed_by_name}`}
                                             </span>
                                         </div>

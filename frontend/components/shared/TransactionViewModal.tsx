@@ -657,7 +657,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                                         <div>
                                                             <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Fecha Despacho</h4>
-                                                            <p className="font-black text-base">{new Date(data.delivery_date).toLocaleDateString()}</p>
+                                                            <p className="font-black text-base">{formatPlainDate(data.delivery_date)}</p>
                                                         </div>
                                                     </div>
 

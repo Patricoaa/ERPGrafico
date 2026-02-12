@@ -14,6 +14,7 @@ import { Trash2, CheckCircle, Eye } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { formatPlainDate } from "@/lib/utils"
 
 interface JournalEntry {
     id: number
@@ -102,7 +103,7 @@ export default function EntriesPage() {
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => {
-                return new Date(row.getValue("date")).toLocaleDateString()
+                return formatPlainDate(row.getValue("date"))
             },
         },
         {

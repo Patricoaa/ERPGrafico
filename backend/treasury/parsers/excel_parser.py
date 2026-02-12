@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Optional
 import pandas as pd
 from decimal import Decimal
 from datetime import date
+from django.utils import timezone
 from .base import BaseParser
 
 class GenericExcelParser(BaseParser):
@@ -134,7 +135,7 @@ class GenericExcelParser(BaseParser):
             # Determine direction and balances
             if not lines:
                 return {
-                    'statement_date': date.today(),
+                    'statement_date': timezone.now().date(),
                     'opening_balance': Decimal('0'),
                     'closing_balance': Decimal('0'),
                     'lines': [],

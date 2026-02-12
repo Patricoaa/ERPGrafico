@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { formatPlainDate } from "@/lib/utils"
 
 interface WizardHeaderProps {
     order: any
@@ -27,11 +28,7 @@ export function WizardHeader({
 }: WizardHeaderProps) {
     const canEditOrDelete = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage)
     const customerName = order?.sale_customer_name || "Manual"
-    const creationDate = order?.created_at ? new Date(order.created_at).toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }) : '-'
+    const creationDate = formatPlainDate(order?.created_at)
 
     return (
         <div className="flex items-center justify-between w-full pr-8">

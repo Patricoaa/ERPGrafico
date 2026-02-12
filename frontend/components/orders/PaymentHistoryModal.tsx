@@ -15,7 +15,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
 
 interface Payment {
@@ -74,7 +74,7 @@ export function PaymentHistoryModal({
                                     <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell>
                                             <div className="flex flex-col gap-0.5">
-                                                <span className="font-bold">{new Date(payment.date).toLocaleDateString()}</span>
+                                                <span className="font-bold">{formatPlainDate(payment.date)}</span>
                                                 {payment.created_by_name && (
                                                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                                         <User className="h-3 w-3" /> {payment.created_by_name}

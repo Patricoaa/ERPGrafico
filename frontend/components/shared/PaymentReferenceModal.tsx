@@ -10,7 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 
 interface PaymentReferenceModalProps {
     open: boolean
@@ -89,7 +89,7 @@ export function PaymentReferenceModal({
                                                 {p.payment_method === 'BANK' || p.payment_method === 'TRANSFER' ? 'Transferencia' : 'Tarjeta'}
                                             </Badge>
                                         </div>
-                                        <span className="text-[10px] opacity-70">{new Date(p.date || p.created_at).toLocaleDateString()}</span>
+                                        <span className="text-[10px] opacity-70">{formatPlainDate(p.date || p.created_at)}</span>
                                     </Button>
                                 ))}
                             </div>
@@ -109,7 +109,7 @@ export function PaymentReferenceModal({
                                 <div>
                                     <div className="text-lg font-black">${Number(selectedPayment.amount).toLocaleString()}</div>
                                     <div className="text-xs text-muted-foreground uppercase font-bold">
-                                        Pago de {new Date(selectedPayment.date || selectedPayment.created_at).toLocaleDateString()}
+                                        Pago de {formatPlainDate(selectedPayment.date || selectedPayment.created_at)}
                                     </div>
                                 </div>
                             </div>

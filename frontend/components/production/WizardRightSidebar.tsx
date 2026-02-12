@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CommentSystem } from "@/components/shared/CommentSystem"
+import { formatPlainDate } from "@/lib/utils"
 
 interface Comment {
     user: string
@@ -75,7 +76,7 @@ export function WizardRightSidebar({
                                         <div className="flex items-center gap-2">
                                             <CalendarIcon className="h-3.5 w-3.5 text-primary" />
                                             <p className="text-sm font-medium">
-                                                {new Date(order.start_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                {formatPlainDate(order.start_date)}
                                             </p>
                                         </div>
                                     </div>
@@ -87,7 +88,7 @@ export function WizardRightSidebar({
                                         <div className="flex items-center gap-2">
                                             <CalendarIcon className="h-3.5 w-3.5 text-primary" />
                                             <p className="text-sm font-medium">
-                                                {new Date(order.sale_order_delivery_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                {formatPlainDate(order.sale_order_delivery_date)}
                                             </p>
                                         </div>
                                     </div>

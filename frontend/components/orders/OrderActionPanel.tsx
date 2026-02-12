@@ -17,6 +17,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions, getStatusVariant, getStatusLabel } from '@/lib/actions/utils'
+import { formatPlainDate } from '@/lib/utils'
 import { purchaseOrderActions } from '@/lib/actions/purchase-actions'
 import { saleOrderActions } from '@/lib/actions/sale-actions'
 import type { UserPermissions } from '@/types/actions'
@@ -131,11 +132,7 @@ export function OrderActionPanel({
                                     {orderType === 'purchase' ? order?.supplier?.name : order?.customer?.name}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {new Date(order?.date).toLocaleDateString('es-CL', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    })}
+                                    {formatPlainDate(order?.date)}
                                 </span>
                             </div>
                         )}

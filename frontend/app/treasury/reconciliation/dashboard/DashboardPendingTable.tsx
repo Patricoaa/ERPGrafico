@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { formatPlainDate } from "@/lib/utils"
 
 interface DashboardPendingTableProps {
     data: any[]
@@ -43,7 +44,7 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
                             data.map((line) => (
                                 <TableRow key={line.id}>
                                     <TableCell className="font-medium text-xs">
-                                        {new Date(line.date).toLocaleDateString()}
+                                        {formatPlainDate(line.date)}
                                         <div className="text-muted-foreground text-[10px]">{line.days_pending} días</div>
                                     </TableCell>
                                     <TableCell className="text-xs">{line.account}</TableCell>

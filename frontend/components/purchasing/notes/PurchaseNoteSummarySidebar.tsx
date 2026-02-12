@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/currency"
+import { formatPlainDate } from "@/lib/utils"
 import {
     FileText,
     Box,
@@ -113,7 +114,7 @@ export function PurchaseNoteSummarySidebar({
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-muted-foreground">Fecha Emisión</p>
                                 <p className="text-sm font-semibold text-foreground leading-tight">
-                                    {new Date().toLocaleDateString()}
+                                    {formatPlainDate(new Date())}
                                 </p>
                             </div>
                         </div>

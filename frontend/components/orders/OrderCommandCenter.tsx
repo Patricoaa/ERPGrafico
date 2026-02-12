@@ -21,7 +21,7 @@ import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { cn, translateStatus } from "@/lib/utils"
+import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
 import { toast } from "sonner"
 import { getNoteHubStatuses, getHubStatuses } from "@/lib/order-status-utils"
 import { OriginPhase } from "./phases/OriginPhase"
@@ -303,7 +303,7 @@ export function OrderCommandCenter({
                                 -{activeDoc.number || activeDoc.id}
                             </span>
                             <span className="text-muted-foreground/30">|</span>
-                            {new Date(activeDoc.created_at || activeDoc.date).toLocaleDateString()}
+                            {formatPlainDate(activeDoc.created_at || activeDoc.date)}
                             <span className="text-muted-foreground/30 ml-2">|</span>
                             <span className="text-foreground tracking-tight font-semibold ml-1">
                                 {isNoteMode ? (activeDoc.contact_name || activeDoc.contact?.name) : (type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name)}

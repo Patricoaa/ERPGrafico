@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, Notification } from "@/lib/workflow/api"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import Link from "next/link"
 
 export function NotificationBell() {
@@ -118,7 +118,7 @@ export function NotificationBell() {
                                             {notif.title}
                                         </p>
                                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                            {new Date(notif.created_at).toLocaleDateString()}
+                                            {formatPlainDate(notif.created_at)}
                                         </span>
                                     </div>
                                     <p className="text-xs text-muted-foreground line-clamp-2">

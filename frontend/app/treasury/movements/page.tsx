@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, ArrowRight, Eye, RefreshCw } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { formatCurrency, formatPlainDate } from "@/lib/utils"
 // import { CashMovementModal } from "@/components/treasury/CashMovementModal" // Pending Refactor
 import { CashMovementModal } from "@/components/treasury/CashMovementModal"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -92,13 +92,10 @@ export default function TreasuryMovementsPage() {
             accessorKey: "date", // Use logical date, or created_at
             header: "Fecha",
             cell: ({ row }) => {
-                const date = new Date(row.getValue("date"))
-                return (
-                    <div className="flex flex-col">
-                        <span className="font-medium text-xs">{date.toLocaleDateString()}</span>
-                        {/* <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span> */}
-                    </div>
-                )
+                <div className="flex flex-col">
+                    <span className="font-medium text-xs">{formatPlainDate(row.getValue("date"))}</span>
+                    {/* <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span> */}
+                </div>
             },
         },
         {

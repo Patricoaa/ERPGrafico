@@ -1,7 +1,7 @@
 "use client"
 
 import { FileText, User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 
 interface ProcessSummarySidebarProps {
     currentStep: number
@@ -120,7 +120,7 @@ export function ProcessSummarySidebar({
                                         </p>
                                         {deliveryData.date && (
                                             <p className="text-[10px]">
-                                                {new Date(deliveryData.date).toLocaleDateString('es-CL')}
+                                                {formatPlainDate(deliveryData.date)}
                                             </p>
                                         )}
                                     </div>

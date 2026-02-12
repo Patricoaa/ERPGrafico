@@ -7,6 +7,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { formatPlainDate } from "@/lib/utils"
 
 interface Step4_CompletionProps {
     workflow: any
@@ -84,7 +85,7 @@ export function Step4_Completion({
                             </div>
                             <div className="bg-muted/20 p-4 rounded-xl space-y-1">
                                 <p className="text-[10px] font-black uppercase text-muted-foreground/60">Fecha</p>
-                                <p className="text-sm font-bold">{new Date(invoice.date).toLocaleDateString('es-CL')}</p>
+                                <p className="text-sm font-bold">{formatPlainDate(invoice.date)}</p>
                             </div>
                         </div>
                     </div>

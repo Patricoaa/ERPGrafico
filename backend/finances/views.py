@@ -5,6 +5,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from accounting.models import Account, AccountType, JournalItem
 from datetime import date
+from django.utils import timezone
 from io import BytesIO
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -24,7 +25,7 @@ class PDFReport:
         self.p.drawString(50, self.y, self.title)
         self.y -= 30
         self.p.setFont("Helvetica", 10)
-        self.p.drawString(50, self.y, f"Generado el: {date.today().strftime('%d/%m/%Y')}")
+        self.p.drawString(50, self.y, f"Generado el: {timezone.now().date().strftime('%d/%m/%Y')}")
         self.y -= 40
 
     def add_line(self, text, value, is_bold=False):
@@ -156,7 +157,7 @@ def get_balance_sheet_data(request):
     Returns the Balance Sheet data as JSON.
     Query Params: end_date (YYYY-MM-DD), start_date (YYYY-MM-DD)
     """
-    end_date = request.query_params.get('end_date', date.today())
+    end_date = request.query_params.get('end_date', timezone.now().date())
     # Allow legacy 'date' param too
     if request.query_params.get('date'):
         end_date = request.query_params.get('date')
@@ -189,8 +190,8 @@ def get_income_statement_data(request):
     Returns the Income Statement data as JSON.
     Query Params: start_date, end_date (YYYY-MM-DD)
     """
-    end_date = request.query_params.get('end_date', date.today())
-    default_start = date(date.today().year, 1, 1)
+    end_date = request.query_params.get('end_date', timezone.now().date())
+    default_start = date(timezone.now().date().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
     comp_end = request.query_params.get('comp_end_date')
@@ -219,8 +220,8 @@ def get_cash_flow_data(request):
     Returns the Cash Flow data as JSON.
     Query Params: start_date, end_date, comp_start_date, comp_end_date (YYYY-MM-DD)
     """
-    end_date = request.query_params.get('end_date', date.today())
-    default_start = date(date.today().year, 1, 1)
+    end_date = request.query_params.get('end_date', timezone.now().date())
+    default_start = date(timezone.now().date().year, 1, 1)
     start_date = request.query_params.get('start_date', default_start)
     
     # Get comparison dates if provided
@@ -235,7 +236,7 @@ def get_financial_analysis_data(request):
     """
     Returns key financial ratios and structure for dashboards.
     """
-    end_date = request.query_params.get('end_date', date.today())
+    end_date = request.query_params.get('end_date', timezone.now().date())
     if request.query_params.get('date'):
          end_date = request.query_params.get('date')
     
