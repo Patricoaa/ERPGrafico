@@ -88,8 +88,14 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 # Has both sale and purchase orders
                 queryset = queryset.filter(sale_orders__isnull=False, purchase_orders__isnull=False).distinct()
             elif contact_type == 'NONE':
-                # Has neither sale nor purchase orders
                 queryset = queryset.filter(sale_orders__isnull=True, purchase_orders__isnull=True)
+
+        has_terminal_payment_method = self.request.query_params.get('has_terminal_payment_method', None)
+        if has_terminal_payment_method == 'true':
+            queryset = queryset.filter(
+                terminal_payment_methods__is_terminal=True,
+                terminal_payment_methods__is_active=True
+            ).distinct()
         
         return queryset
     

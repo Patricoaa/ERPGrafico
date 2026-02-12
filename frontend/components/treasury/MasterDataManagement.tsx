@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 // --- Bank Management ---
 
@@ -439,6 +440,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     const [isTerminal, setIsTerminal] = useState(false)
     const [terminalReceivableAccount, setTerminalReceivableAccount] = useState<string | null>(null)
     const [commissionExpenseAccount, setCommissionExpenseAccount] = useState<string | null>(null)
+    const [commissionProductId, setCommissionProductId] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -470,6 +472,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             setIsTerminal(method?.is_terminal || false)
             setTerminalReceivableAccount(method?.terminal_receivable_account ? method.terminal_receivable_account.toString() : null)
             setCommissionExpenseAccount(method?.commission_expense_account ? method.commission_expense_account.toString() : null)
+            setCommissionProductId(method?.commission_product ? method.commission_product.toString() : null)
         }
     }, [open, method])
 
@@ -508,7 +511,8 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                 is_terminal: isTerminal,
                 supplier: isTerminal ? cardProviderId : null,
                 terminal_receivable_account: isTerminal ? terminalReceivableAccount : null,
-                commission_expense_account: isTerminal ? commissionExpenseAccount : null
+                commission_expense_account: isTerminal ? commissionExpenseAccount : null,
+                commission_product: isTerminal ? commissionProductId : null
             }
             if (method) {
                 await api.patch(`/treasury/payment-methods/${method.id}/`, payload)
@@ -584,7 +588,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                             }
                                             setAllowSales(!!v)
                                         }} />
-                                        <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir Ventas</Label>
+                                        <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir para ventas</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => {
@@ -594,9 +598,9 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                             }
                                             setAllowPurchases(!!v)
                                         }} />
-                                        <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir Compras</Label>
+                                        <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir para compras</Label>
                                     </div>
-                                    <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1">
+                                    <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1 hidden">
                                         <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
                                         <Label htmlFor="req-ref" className="text-sm cursor-pointer">¿Requiere N° Transacción?</Label>
                                     </div>
@@ -650,6 +654,19 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                         <p className="text-[10px] text-muted-foreground">
                                             Cuenta de gasto donde se registrarán las comisiones.
                                             (Ej: 5-1-003 Comisiones Transbank)
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs">Producto de Servicio (Comisión)</Label>
+                                        <ProductSelector
+                                            value={commissionProductId}
+                                            onChange={(val) => setCommissionProductId(val)}
+                                            placeholder="Seleccione servicio de comisión..."
+                                            productType="SERVICE"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Servicio utilizado para facturar las comisiones en la factura mensual.
                                         </p>
                                     </div>
 

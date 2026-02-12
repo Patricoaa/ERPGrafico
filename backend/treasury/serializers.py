@@ -406,6 +406,17 @@ class BankStatementListSerializer(serializers.ModelSerializer):
         ]
 
 
+class PaymentMethodSerializer(serializers.ModelSerializer):
+    from .models import PaymentMethod
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    contact_id = serializers.IntegerField(source='supplier.id', read_only=True)
+    
+    class Meta:
+        model = PaymentMethod
+        fields = '__all__'
+        read_only_fields = ['times_applied', 'success_rate', 'created_by']
+
+
 class ReconciliationRuleSerializer(serializers.ModelSerializer):
     treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)

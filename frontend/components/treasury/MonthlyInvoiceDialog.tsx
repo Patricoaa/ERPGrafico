@@ -40,7 +40,7 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
     useEffect(() => {
         if (open) {
             // Load suppliers (providers)
-            api.get("/contacts/?is_supplier=true").then(res => {
+            api.get("/contacts/?is_supplier=true&has_terminal_payment_method=true").then(res => {
                 setSuppliers(res.data)
             }).catch(() => toast.error("Error al cargar proveedores"))
         }

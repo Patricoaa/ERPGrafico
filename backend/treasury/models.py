@@ -957,6 +957,15 @@ class PaymentMethod(models.Model):
             "Ejemplo: '5-1-003 Comisiones Transbank' o '5-1-004 Comisiones Mercado Pago'"
         )
     )
+
+    commission_product = models.ForeignKey(
+        'inventory.Product',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='payment_methods',
+        verbose_name=_("Producto de Servicio (Comisión)"),
+        help_text=_("Producto de servicio utilizado para facturar las comisiones en la factura mensual.")
+    )
     
     # Optional settings per method
     requires_reference = models.BooleanField(_("Requiere Referencia"), default=False)

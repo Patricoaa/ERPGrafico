@@ -495,6 +495,13 @@ class TerminalBatchService:
         """
         Aggregates SETTLED batches for a month/supplier and generates a Supplier Invoice.
         Status -> INVOICED.
+        
+        NEW FLOW:
+        1. Find Commission Product from Supplier's Payment Method
+        2. Create Purchase Order (Service)
+        3. Confirm Purchase Order
+        4. Generate Invoice from Purchase Order
+        5. Link Batches to Invoice
         """
         # Find batches
         batches = TerminalBatch.objects.filter(
@@ -509,61 +516,66 @@ class TerminalBatchService:
             return None
             
         total_commission_net = sum(b.commission_base for b in batches)
-        total_commission_tax = sum(b.commission_tax for b in batches)
-        total_commission = total_commission_net + total_commission_tax
         
-        # Create Invoice (Billing Module)
-        from billing.models import Invoice
+        # 1. Find Commission Product
+        from .models import PaymentMethod
+        # Assuming supplier has at least one active terminal payment method used in these batches
+        # We try to get the product from the method associated with the batches, or the first one found for the supplier
+        payment_method = PaymentMethod.objects.filter(
+            supplier=supplier, 
+            is_terminal=True, 
+            is_active=True
+        ).first()
         
-        # Get Accounts needed
-        settings = AccountingSettings.objects.first()
-        comm_bridge = settings.terminal_commission_bridge_account if settings else None
-        iva_bridge = settings.terminal_iva_bridge_account if settings else None
-        vat_account = settings.default_tax_receivable_account if settings else None
+        commission_product = payment_method.commission_product if payment_method else None
         
-        # Grab first batch to get the supplier's terminal configuration (for specific expense account)
-        first_batch = batches.first()
-        expense_acc = first_batch.payment_method.commission_expense_account if first_batch.payment_method else None
-        payable_acc = supplier.account_payable or settings.default_payable_account if settings else None
+        if not commission_product:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(f"El proveedor {supplier.name} no tiene un método de pago terminal con 'Producto de Comisión' configurado.")
 
-        if not (comm_bridge and iva_bridge and vat_account and expense_acc and payable_acc):
-             raise ValidationError("Falta configuración de cuentas (Puente, IVA, Gasto o Por Pagar) para generar la factura.")
-
-        invoice = Invoice.objects.create(
-            contact=supplier,
-            dte_type=Invoice.DTEType.PURCHASE_INV,
-            number=number or "",
-            document_attachment=document_attachment,
+        # 2. Create Purchase Order
+        from purchasing.models import PurchaseOrder, PurchaseLine
+        from purchasing.services import PurchasingService
+        
+        po = PurchaseOrder.objects.create(
+            supplier=supplier,
             date=date or timezone.now().date(),
-            total_net=total_commission_net.quantize(Decimal('1')),
-            total_tax=total_commission_tax.quantize(Decimal('1')),
-            total=total_commission.quantize(Decimal('1')),
-            status=Invoice.Status.PAID,
-            payment_method=Invoice.PaymentMethod.TRANSFER
+            notes=f"Comisiones Terminales {month}/{year}",
+            payment_method=PurchaseOrder.PaymentMethod.CREDIT 
         )
         
-        # 1. Invoice Entry (Expense/IVA vs Bridge Accounts)
-        # This directly clears the bridge accounts and recognizes the final expense/VAT
-        description_inv = f"Compensación Retenciones Terminal {supplier.name} - {month}/{year}"
-        entry_inv = JournalEntry.objects.create(
-            date=invoice.date,
-            description=description_inv,
-            reference=f"COMM-{invoice.id}",
-            state=JournalEntry.State.POSTED
+        # Create Line
+        PurchaseLine.objects.create(
+            order=po,
+            product=commission_product,
+            quantity=1,
+            unit_cost=total_commission_net,
+            uom=commission_product.uom 
         )
-        # Debit REAL Expense
-        JournalItem.objects.create(entry=entry_inv, account=expense_acc, debit=total_commission_net, credit=0, partner=supplier.name)
-        # Debit REAL IVA
-        JournalItem.objects.create(entry=entry_inv, account=vat_account, debit=total_commission_tax, credit=0, partner=supplier.name)
-        # Credit BRIDGE Commission
-        JournalItem.objects.create(entry=entry_inv, account=comm_bridge, debit=0, credit=total_commission_net, partner=supplier.name)
-        # Credit BRIDGE IVA
-        JournalItem.objects.create(entry=entry_inv, account=iva_bridge, debit=0, credit=total_commission_tax, partner=supplier.name)
         
-        invoice.journal_entry = entry_inv
+        # 3. Confirm PO
+        PurchasingService.confirm_order(po, user)
+        
+        # 4. Generate Invoice (using PurchasingService)
+        # This service usually creates a JournalEntry or Invoice depending on the flow. 
+        # Assuming it creates an Invoice and links it to the PO.
+        PurchasingService.create_invoice_from_order(po, user=user) 
+        
+        # Re-fetch invoice linked to PO
+        invoice = po.invoices.first()
+        if not invoice:
+             raise ValidationError("Error generando factura desde la orden de compra.")
+             
+        # Update Invoice details
+        if number:
+            invoice.number = number
+        if document_attachment:
+            invoice.document_attachment = document_attachment
+        if date:
+            invoice.date = date
         invoice.save()
 
-        # Link batches
+        # 5. Link Batches
         batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
         
         return invoice
