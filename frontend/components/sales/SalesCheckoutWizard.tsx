@@ -82,7 +82,7 @@ export function SalesCheckoutWizard({
     const [dteData, setDteData] = useState(initialDteData || {
         type: 'BOLETA',
         number: '',
-        date: new Date().toISOString().split('T')[0],
+        date: '',
         attachment: null,
         isPending: false
     })

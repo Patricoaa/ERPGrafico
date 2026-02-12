@@ -302,7 +302,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             <TableBody>
                                 {orderLines.filter(line => line.product_type === 'SUBSCRIPTION').map((line, idx) => {
                                     const productId = line.product || line.id
-                                    const currentDate = receiptData.subscriptionDates?.[productId] || new Date().toISOString().split('T')[0]
+                                    const currentDate = receiptData.subscriptionDates?.[productId] || dateString || ''
 
                                     return (
                                         <TableRow key={productId || idx}>

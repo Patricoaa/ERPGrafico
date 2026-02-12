@@ -6,6 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Calendar, Hash, Upload, X, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useServerDate } from "@/hooks/useServerDate"
+import { useEffect } from "react"
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean
@@ -19,12 +21,20 @@ export function Step3_Registration({
     setData
 }: Step3_RegistrationProps) {
 
+    const { dateString } = useServerDate()
     const formData = data || {
         document_number: "",
-        document_date: new Date().toISOString().split('T')[0],
+        document_date: "",
         is_pending: false,
         attachment: null
     }
+
+    // Sync date when server date arrives
+    useEffect(() => {
+        if (dateString && !formData.document_date) {
+            setData({ ...formData, document_date: dateString })
+        }
+    }, [dateString])
 
     return (
         <div className="space-y-6">

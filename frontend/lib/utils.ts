@@ -141,14 +141,26 @@ export function formatBytes(bytes: number, decimals = 2) {
 }
 export function formatPlainDate(value: string | Date | null | undefined): string {
   if (!value) return '-'
+
+  let dateStr = ''
   if (typeof value === 'string') {
-    // If it's YYYY-MM-DD (length 10), parse manually to avoid timezone shift
-    const matches = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    // Handle full ISO strings (2024-04-15T...) by taking only the date part
+    // This prevents the browser from applying local timezone offsets
+    dateStr = value.split('T')[0]
+  } else if (value instanceof Date) {
+    // For Date objects, use ISO format but strip time/tz to remain "plain"
+    dateStr = value.toISOString().split('T')[0]
+  }
+
+  if (dateStr) {
+    const matches = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/)
     if (matches) {
       const [, year, month, day] = matches
       return `${day}/${month}/${year}`
     }
   }
+
+  // Fallback for non-standard formats
   const date = new Date(value)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })

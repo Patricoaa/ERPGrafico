@@ -45,6 +45,7 @@ export function NoteCheckoutWizard({
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [initializing, setInitializing] = useState(true)
+    const { dateString } = useServerDate()
 
     // Original Data
     const [originalInvoice, setOriginalInvoice] = useState<any>(null)
@@ -54,7 +55,7 @@ export function NoteCheckoutWizard({
     const [logisticsData, setLogisticsData] = useState<any>(null)
     const [registrationData, setRegistrationData] = useState<any>({
         document_number: '',
-        document_date: new Date().toISOString().split('T')[0],
+        document_date: '',
         is_pending: false,
         attachment: null
     })
@@ -99,7 +100,7 @@ export function NoteCheckoutWizard({
             setLogisticsData(null)
             setRegistrationData({
                 document_number: '',
-                document_date: new Date().toISOString().split('T')[0],
+                document_date: dateString || '',
                 is_pending: false,
                 attachment: null
             })
@@ -125,6 +126,13 @@ export function NoteCheckoutWizard({
             setInitializing(false)
         }
     }
+
+    // Sync date when server date arrives
+    useEffect(() => {
+        if (dateString && !registrationData.document_date) {
+            setRegistrationData((prev: any) => ({ ...prev, document_date: dateString }))
+        }
+    }, [dateString])
 
     // Update payment amount when totals change
     useEffect(() => {

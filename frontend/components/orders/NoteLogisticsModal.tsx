@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface InvoiceLine {
     product_id: number
@@ -36,14 +37,22 @@ interface NoteLogisticsModalProps {
 }
 
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
+    const { dateString } = useServerDate()
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
     const [displayLines, setDisplayLines] = useState<InvoiceLine[]>(invoice?.lines || [])
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [date, setDate] = useState("")
     const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
+
+    // Sync date with server date
+    useEffect(() => {
+        if (dateString && !date) {
+            setDate(dateString)
+        }
+    }, [dateString])
 
     const isSale = !!invoice?.sale_order || !!invoice?.sale_order_number
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'

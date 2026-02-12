@@ -92,7 +92,7 @@ export default function TaxDeclarationsPage() {
         try {
             await api.post("/tax/payments/", {
                 declaration: selectedDeclaration.id,
-                payment_date: data.documentDate || new Date().toISOString().split('T')[0],
+                payment_date: data.documentDate || dateString || "",
                 amount: data.amount,
                 payment_method: data.paymentMethod,
                 reference: data.reference || data.transaction_number || '',
@@ -123,7 +123,7 @@ export default function TaxDeclarationsPage() {
     }
 
     // Determine current logical period to show in dashboard
-    const { serverDate } = useServerDate()
+    const { serverDate, dateString } = useServerDate()
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
         ? `${latestPeriod.month_display} ${latestPeriod.year}`.toUpperCase()

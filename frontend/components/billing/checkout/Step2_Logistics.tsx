@@ -10,6 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useServerDate } from "@/hooks/useServerDate"
 import {
     Table,
     TableBody,
@@ -74,6 +75,7 @@ export function Step2_Logistics({
 }: Step2_LogisticsProps) {
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
+    const { dateString } = useServerDate()
 
     // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
     const restrictedItems = selectedItems.filter(item =>
@@ -88,7 +90,7 @@ export function Step2_Logistics({
             const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
             setData({
                 warehouse_id: data?.warehouse_id || "",
-                date: data?.date || new Date().toISOString().split('T')[0],
+                date: data?.date || dateString || "",
                 delivery_type: initialType,
                 line_data: [],
                 notes: data?.notes || ""
@@ -106,7 +108,7 @@ export function Step2_Logistics({
 
             if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
                 setData({
-                    ...(data || { date: new Date().toISOString().split('T')[0], notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
+                    ...(data || { date: dateString || "", notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
                     warehouse_id: list[0].id.toString()
                 })
             }
@@ -120,11 +122,18 @@ export function Step2_Logistics({
 
     const formData = data || {
         warehouse_id: "",
-        date: new Date().toISOString().split('T')[0],
+        date: dateString || "",
         delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE',
         line_data: [],
         notes: ""
     }
+
+    // Sync date when server date arrives if not already set
+    useEffect(() => {
+        if (dateString && !formData.date) {
+            setData({ ...formData, date: dateString })
+        }
+    }, [dateString])
 
     // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
     if (hasRestrictedItems && formData.delivery_type === 'IMMEDIATE') {

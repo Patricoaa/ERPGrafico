@@ -25,8 +25,9 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface SaleOrderLine {
     id: number
@@ -70,15 +71,23 @@ interface DeliveryModalProps {
 }
 
 export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
+    const { dateString } = useServerDate()
     const [order, setOrder] = useState<SaleOrder | null>(null)
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [stockLevels, setStockLevels] = useState<StockLevel>({})
     const [deliveryQuantities, setDeliveryQuantities] = useState<{ [lineId: number]: number }>({})
-    const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0])
+    const [deliveryDate, setDeliveryDate] = useState('')
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [isPartialDispatch, setIsPartialDispatch] = useState(false)
+
+    // Sync delivery date with server date
+    useEffect(() => {
+        if (dateString && !deliveryDate) {
+            setDeliveryDate(dateString)
+        }
+    }, [dateString])
 
     useEffect(() => {
         if (open && orderId) {

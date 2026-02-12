@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,10 +25,17 @@ export function DocumentCompletionModal({
     invoiceType,
     onSuccess
 }: DocumentCompletionModalProps) {
+    const { dateString } = useServerDate()
     const [reference, setReference] = useState("")
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [date, setDate] = useState("")
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
+
+    useEffect(() => {
+        if (dateString && !date) {
+            setDate(dateString)
+        }
+    }, [dateString])
 
     const handleSubmit = async () => {
         if (!reference) {

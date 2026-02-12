@@ -116,7 +116,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
             // 2. Register it officially
             await api.post(`/tax/declarations/${declarationId}/register/`, {
                 folio_number: "", // Could be added to manual fields
-                declaration_date: dateString || new Date().toISOString().split('T')[0]
+                declaration_date: dateString || ""
             })
 
             toast.success("Declaración registrada y asiento contable generado")

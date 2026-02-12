@@ -11,7 +11,7 @@ import { Eye } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus } from "lucide-react"
+import { formatPlainDate } from "@/lib/utils"
 
 interface StockMove {
     id: number
@@ -77,7 +77,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
-            cell: ({ row }) => <div className="text-sm whitespace-nowrap">{new Date(row.getValue("date")).toLocaleDateString()}</div>,
+            cell: ({ row }) => <div className="text-sm whitespace-nowrap">{formatPlainDate(row.getValue("date"))}</div>,
         },
         {
             accessorKey: "product_name",
