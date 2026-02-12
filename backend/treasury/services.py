@@ -29,7 +29,7 @@ class TreasuryService:
             raise ValidationError("El monto debe ser mayor a cero.")
         
         if not date:
-            date = timezone.now()
+            date = timezone.now().date()
 
         # 1. Account Logic Resolution
         # Ensure we have valid accounts for the movement type

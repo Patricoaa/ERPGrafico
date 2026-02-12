@@ -214,7 +214,7 @@ export function PaymentMethodCardSelector({
                     </div>
                 </div>
 
-                {paymentData.amount > 0 && showChangeCard && (
+                {(paymentData.amount > 0 || difference < 0) && showChangeCard && (
                     <div className={cn(
                         "rounded-xl border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
                         compactMode ? "p-3 h-20" : "p-4 h-24",

@@ -122,7 +122,7 @@ export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = (
     if (embedded) return tableContent;
 
     return (
-        <div className="rounded-md border bg-white dark:bg-zinc-950 shadow-sm">
+        <div className="rounded-md border bg-card shadow-sm">
             <div className="p-4 border-b bg-muted/30">
                 <h3 className="font-semibold text-lg">{title}</h3>
             </div>

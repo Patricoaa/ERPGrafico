@@ -672,7 +672,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 <div className="space-y-1">
                                     <Label className="text-xs">Motivo (Requerido)</Label>
                                     <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
-                                        <SelectTrigger className="bg-white dark:bg-black/20 h-9">
+                                        <SelectTrigger className="bg-background h-9">
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>

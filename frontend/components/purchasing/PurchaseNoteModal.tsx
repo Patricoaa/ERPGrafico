@@ -1,31 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { FileBadge, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+    ChevronRight,
+    ChevronLeft,
+    Check,
+    Loader2,
+    FileBadge,
+    X
+} from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
+// Components
+import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"
+import { Step1_GeneralInfo, Step2_LineItems, Step3_Review, Step4_Payment } from "./notes/PurchaseNoteWizardSteps"
+import { PaymentData } from "@/components/shared/PaymentMethodCardSelector"
 
 interface PurchaseNoteModalProps {
     open: boolean
@@ -46,28 +40,56 @@ export function PurchaseNoteModal({
     onSuccess,
     initialType = "NOTA_CREDITO"
 }: PurchaseNoteModalProps) {
-    const [noteType, setNoteType] = useState(initialType)
-    const [documentNumber, setDocumentNumber] = useState("")
-    const [lines, setLines] = useState<any[]>([])
-    const [attachment, setAttachment] = useState<File | null>(null)
+    // -- State --
+    const [step, setStep] = useState(1)
+    const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-    const [loadingOrder, setLoadingOrder] = useState(false)
 
+    // Data State
+    const [noteType, setNoteType] = useState<"NOTA_CREDITO" | "NOTA_DEBITO">(initialType)
+    const [documentNumber, setDocumentNumber] = useState("")
+    const [attachment, setAttachment] = useState<File | null>(null)
+    const [lines, setLines] = useState<any[]>([])
+    const [orderDetails, setOrderDetails] = useState<any>(null)
+    const [paymentData, setPaymentData] = useState<PaymentData>({
+        method: null,
+        amount: 0,
+        treasuryAccountId: null,
+        paymentMethodId: null,
+        transactionNumber: '',
+        isPending: false
+    })
+
+    // -- Effects --
     useEffect(() => {
         if (open) {
+            // Reset state
+            setStep(1)
             setDocumentNumber("")
             setAttachment(null)
+            setLines([])
+            setNoteType(initialType)
             fetchOrderDetails()
         }
     }, [open])
 
     const fetchOrderDetails = async () => {
-        setLoadingOrder(true)
+        setLoading(true)
         try {
             const response = await api.get(`/purchasing/orders/${orderId}/`)
+            setOrderDetails(response.data)
+
             // Initializing lines with 0 quantity but original unit cost
             const initialLines = (response.data.lines || []).map((line: any) => ({
-                ...line,
+                id: line.id,
+                product: line.product,
+                product_name: line.product_name,
+                product_code: line.product_code,
+                uom_name: line.uom_name,
+                quantity: line.quantity, // Original qty
+                unit_cost: parseFloat(line.unit_cost),
+
+                // Editable fields for note
                 note_quantity: 0,
                 note_unit_cost: parseFloat(line.unit_cost)
             }))
@@ -76,30 +98,53 @@ export function PurchaseNoteModal({
             console.error("Error fetching order details:", error)
             toast.error("No se pudieron cargar los detalles de la orden")
         } finally {
-            setLoadingOrder(false)
+            setLoading(false)
         }
     }
 
-    const handleLineChange = (index: number, field: string, value: string) => {
-        const newLines = [...lines]
-        newLines[index][field] = parseFloat(value) || 0
-        setLines(newLines)
-    }
-
+    // -- Calculations --
     const amountNet = lines.reduce((acc, line) => acc + (line.note_quantity * line.note_unit_cost), 0)
+    // Assuming simple tax calc for now - could be enhanced based on product tax type if needed
     const amountTax = PricingUtils.calculateTax(amountNet)
     const total = amountNet + amountTax
 
-    const handleSubmit = async () => {
-        if (!documentNumber) {
-            toast.error("El número de documento es obligatorio")
-            return
-        }
-        if (amountNet <= 0) {
-            toast.error("El monto total de la nota debe ser mayor a 0")
-            return
-        }
+    useEffect(() => {
+        setPaymentData(prev => ({ ...prev, amount: total }))
+    }, [total])
 
+    // -- Handlers --
+    const validateStep = (currentStep: number): boolean => {
+        if (currentStep === 1) {
+            if (!documentNumber.trim()) {
+                toast.error("Debe ingresar el número de folio del documento")
+                return false
+            }
+        }
+        if (currentStep === 2) {
+            const hasItems = lines.some(l => l.note_quantity > 0)
+            if (!hasItems) {
+                toast.error("Debe seleccionar al menos un producto (cantidad > 0)")
+                return false
+            }
+            if (amountNet <= 0) {
+                toast.error("El monto total debe ser mayor a 0")
+                return false
+            }
+        }
+        return true
+    }
+
+    const handleNext = () => {
+        if (validateStep(step)) {
+            setStep(prev => prev + 1)
+        }
+    }
+
+    const handleBack = () => {
+        setStep(prev => prev - 1)
+    }
+
+    const handleSubmit = async () => {
         setSubmitting(true)
         try {
             const formData = new FormData()
@@ -126,6 +171,10 @@ export function PurchaseNoteModal({
                 formData.append('document_attachment', attachment)
             }
 
+            if (paymentData.method || paymentData.amount > 0) {
+                formData.append('payment_data', JSON.stringify(paymentData))
+            }
+
             await api.post(`/purchasing/orders/${orderId}/register_note/`, formData)
 
             toast.success("Nota registrada correctamente")
@@ -139,163 +188,155 @@ export function PurchaseNoteModal({
         }
     }
 
+    // -- Render --
+    const totalSteps = 4
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="lg">
-                <DialogHeader className="border-b pb-4">
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                        <FileBadge className="h-6 w-6 text-amber-500" />
-                        Registrar Nota Crédito/Débito - OCS-{orderNumber}
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-6 py-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Tipo de Nota</Label>
-                            <Select value={noteType} onValueChange={(val: any) => setNoteType(val)}>
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="NOTA_CREDITO">Nota de Crédito (Devolución)</SelectItem>
-                                    <SelectItem value="NOTA_DEBITO">Nota de Débito (Agregación)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Número Documento</Label>
-                            <Input
-                                placeholder="Ej: NC-12345"
-                                className={FORM_STYLES.input}
-                                value={documentNumber}
-                                onChange={(e) => setDocumentNumber(e.target.value)}
-                            />
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            hideScrollArea
+            className="h-[90vh]"
+            contentClassName="p-0"
+            title={
+                <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-2xl ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                        <FileBadge className={`h-6 w-6 ${noteType === 'NOTA_CREDITO' ? 'text-amber-600' : 'text-blue-600'}`} />
+                    </div>
+                    <div>
+                        <span className="font-black tracking-tighter uppercase block text-lg">
+                            Registrar {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
+                        </span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                            <span>Ref: OCS-{orderNumber}</span>
                         </div>
                     </div>
+                </div>
+            }
+            footer={
+                <div className="w-full flex justify-between items-center">
+                    <Button
+                        variant="ghost"
+                        onClick={handleBack}
+                        disabled={step === 1 || submitting}
+                        className="h-12 px-6 font-bold text-muted-foreground hover:text-foreground"
+                    >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Atrás
+                    </Button>
 
-                    <div className="rounded-md border overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 border-b">
-                                <tr>
-                                    <th className="px-3 py-2 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground">Producto</th>
-                                    <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Cant. Orig.</th>
-                                    <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">Cant. Nota</th>
-                                    <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Costo Unit.</th>
-                                    <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y">
-                                {loadingOrder ? (
-                                    <tr>
-                                        <td colSpan={5} className="py-4 text-center text-muted-foreground italic">Cargando productos...</td>
-                                    </tr>
-                                ) : lines.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="py-4 text-center text-muted-foreground italic">No se encontraron productos en la orden</td>
-                                    </tr>
-                                ) : lines.map((line, idx) => (
-                                    <tr key={line.id} className={line.note_quantity > 0 ? "bg-amber-50/30" : ""}>
-                                        <td className="px-3 py-2 font-medium">{line.product_name}</td>
-                                        <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>
-                                        <td className="px-3 py-2">
-                                            <Input
-                                                type="number"
-                                                className="h-8 text-center font-bold"
-                                                value={line.note_quantity}
-                                                min={0}
-                                                max={noteType === 'NOTA_CREDITO' ? line.quantity : undefined}
-                                                onChange={(e) => {
-                                                    const val = parseFloat(e.target.value) || 0;
-                                                    if (noteType === 'NOTA_DEBITO' || val <= line.quantity) {
-                                                        handleLineChange(idx, 'note_quantity', e.target.value)
-                                                    }
-                                                }}
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <div className="relative">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]">$</span>
-                                                <Input
-                                                    type="number"
-                                                    className={`h-8 pl-5 text-right font-bold ${noteType === 'NOTA_CREDITO' ? 'bg-muted text-muted-foreground' : ''}`}
-                                                    value={line.note_unit_cost}
-                                                    readOnly={noteType === 'NOTA_CREDITO'}
-                                                    disabled={noteType === 'NOTA_CREDITO'}
-                                                    onChange={(e) => handleLineChange(idx, 'note_unit_cost', e.target.value)}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-2 text-right font-black">
-                                            {formatCurrency(line.note_quantity * line.note_unit_cost)}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            onClick={() => onOpenChange(false)}
+                            disabled={submitting}
+                            className="h-12 px-6 font-bold text-muted-foreground"
+                        >
+                            Cancelar
+                        </Button>
+
+                        {step < totalSteps ? (
+                            <Button
+                                onClick={handleNext}
+                                className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
+                            >
+                                Siguiente
+                                <ChevronRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={handleSubmit}
+                                className={`w-48 h-12 font-bold shadow-lg hover:shadow-xl transition-all ${noteType === 'NOTA_CREDITO'
+                                    ? 'bg-amber-600 hover:bg-amber-700'
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                                    }`}
+                                disabled={submitting}
+                            >
+                                {submitting ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Check className="mr-2 h-4 w-4" />
+                                )}
+                                Confirmar Registro
+                            </Button>
+                        )}
                     </div>
+                </div>
+            }
+        >
+            <div className="flex flex-1 overflow-hidden h-full">
+                {/* Left Sidebar - Summary */}
+                <PurchaseNoteSummarySidebar
+                    currentStep={step}
+                    totalSteps={totalSteps}
+                    orderNumber={orderNumber}
+                    supplierName={orderDetails?.supplier_name}
+                    warehouseName={orderDetails?.warehouse_name}
+                    noteType={noteType}
+                    totals={{
+                        net: amountNet,
+                        tax: amountTax,
+                        total: total
+                    }}
+                    isProcessing={submitting}
+                />
 
-                    <div className="flex justify-between items-start gap-8">
-                        <div className="flex-1 space-y-2">
-                            <Label className={FORM_STYLES.label}>Adjuntar Documento (Opcional)</Label>
-                            <Input
-                                type="file"
-                                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                className={cn(FORM_STYLES.input, "cursor-pointer h-10")}
-                            />
-                            {attachment && (
-                                <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                                    <CheckCircle2 className="h-3 w-3" /> {attachment.name}
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-w-0 bg-muted/5">
+                    <div className="flex-1 p-8 overflow-y-auto">
+                        <div className="max-w-5xl mx-auto">
+                            {loading ? (
+                                <div className="h-64 flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                                    <Loader2 className="h-8 w-8 animate-spin" />
+                                    <p>Cargando información de la orden...</p>
                                 </div>
+                            ) : (
+                                <>
+                                    {step === 1 && (
+                                        <Step1_GeneralInfo
+                                            noteType={noteType}
+                                            setNoteType={setNoteType}
+                                            documentNumber={documentNumber}
+                                            setDocumentNumber={setDocumentNumber}
+                                            attachment={attachment}
+                                            setAttachment={setAttachment}
+                                        />
+                                    )}
+                                    {step === 2 && (
+                                        <Step2_LineItems
+                                            lines={lines}
+                                            setLines={setLines}
+                                            noteType={noteType}
+                                        />
+                                    )}
+                                    {step === 3 && (
+                                        <Step3_Review
+                                            noteType={noteType}
+                                            documentNumber={documentNumber}
+                                            attachment={attachment}
+                                            lines={lines}
+                                            totals={{
+                                                net: amountNet,
+                                                tax: amountTax,
+                                                total: total
+                                            }}
+                                        />
+                                    )}
+                                    {step === 4 && (
+                                        <Step4_Payment
+                                            noteType={noteType}
+                                            total={total}
+                                            paymentData={paymentData}
+                                            setPaymentData={setPaymentData}
+                                        />
+                                    )}
+                                </>
                             )}
                         </div>
-
-                        <div className={FORM_STYLES.card + " w-64 space-y-2"}>
-                            <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
-                                <span>Neto:</span>
-                                <span>{formatCurrency(amountNet)}</span>
-                            </div>
-                            <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
-                                <span>IVA (19%):</span>
-                                <span>{formatCurrency(amountTax)}</span>
-                            </div>
-                            <div className="flex justify-between items-center pt-2 border-t font-black">
-                                <span className="text-sm">TOTAL:</span>
-                                <span className="text-xl text-primary">{formatCurrency(total)}</span>
-                            </div>
-                        </div>
                     </div>
-
-                    {noteType === 'NOTA_CREDITO' && (
-                        <div className="flex gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded border border-blue-100 dark:border-blue-900/30 text-[10px] text-blue-700 dark:text-blue-400">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <p>Si la nota implica devolución física de mercadería, el sistema registrará una salida de inventario automática (Stock OUT) para los productos con cantidad mayor a cero.</p>
-                        </div>
-                    )}
-
-                    {noteType === 'NOTA_DEBITO' && (
-                        <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/10 rounded border border-amber-100 dark:border-amber-900/30 text-[10px] text-amber-700 dark:text-amber-400">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <p>Si la nota implica recepción física de mercadería adicional o aumento de valor, el sistema registrará una entrada de inventario automática (Stock IN) para los productos con cantidad mayor a cero.</p>
-                        </div>
-                    )}
                 </div>
-
-                <DialogFooter className="border-t pt-4">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0}
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-11 px-8"
-                    >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirmar Registro de Nota
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal>
     )
 }

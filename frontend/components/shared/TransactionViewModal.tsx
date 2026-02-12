@@ -1325,13 +1325,12 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
                                 {/* Sidebar or Side info could go here if needed */}
                             </div>
-                            </div>
                         ) : null}
+                    </div>
                 </div>
-            </div>
-        </BaseModal >
+            </BaseModal>
 
-            { editingPayment && (
+            {editingPayment && (
                 <PaymentForm
                     open={!!editingPayment}
                     onOpenChange={(open) => !open && setEditingPayment(null)}
@@ -1347,7 +1346,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                     }}
                 />
             )
-}
+            }
         </>
     )
 }
