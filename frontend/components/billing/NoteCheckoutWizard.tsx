@@ -380,8 +380,9 @@ export function NoteCheckoutWizard({
         <BaseModal
             open={open}
             onOpenChange={(val) => !isStepLoading && onOpenChange(val)}
-            size="2xl"
-            hideScrollArea
+            size="full"
+            className="h-[90vh]"
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-4">
                     <div className="p-2 bg-primary/10 rounded-xl">
@@ -397,6 +398,43 @@ export function NoteCheckoutWizard({
                             </p>
                         )}
                     </div>
+                </div>
+            }
+            footer={
+                <div className="w-full flex justify-between items-center">
+                    <Button
+                        variant="outline"
+                        onClick={handleBack}
+                        disabled={step === 1 || isStepLoading}
+                        className="h-12 px-6 font-bold"
+                    >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Atrás
+                    </Button>
+
+                    {!isLastStep ? (
+                        <Button
+                            onClick={handleNext}
+                            className="w-40 h-12 font-bold shadow-lg hover:shadow-xl transition-all"
+                            disabled={isStepLoading}
+                        >
+                            Siguiente
+                            <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleFinish}
+                            className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg hover:shadow-xl transition-all"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                            )}
+                            Finalizar Proceso
+                        </Button>
+                    )}
                 </div>
             }
         >
@@ -422,39 +460,6 @@ export function NoteCheckoutWizard({
                             {renderStep()}
                         </div>
                     </div>
-
-                    {/* Footer - Moved into specific layout if needed, but BaseModal content can handle it */}
-                    <div className="p-6 border-t bg-background flex justify-between z-10 shrink-0">
-                        <Button
-                            variant="outline"
-                            onClick={handleBack}
-                            disabled={step === 1 || isStepLoading}
-                            className="h-12 px-6 font-bold"
-                        >
-                            <ChevronLeft className="mr-2 h-4 w-4" />
-                            Atrás
-                        </Button>
-
-                        {!isLastStep ? (
-                            <Button onClick={handleNext} className="w-40 h-12 font-bold" disabled={isStepLoading}>
-                                Siguiente
-                                <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleFinish}
-                                className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                )}
-                                Finalizar Proceso
-                            </Button>
-                        )}
-                    </div>
                 </div>
 
                 {/* Right Sidebar */}
@@ -472,3 +477,4 @@ export function NoteCheckoutWizard({
         </BaseModal>
     )
 }
+

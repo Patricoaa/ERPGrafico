@@ -427,50 +427,37 @@ export function Step4_Payment({
     // User requested logic:
     // Debit Notes (Issued) -> Sales Methods (Receiving money?)
     // Credit Notes -> Purchase Methods (Paying money / Outbound?)
-    // This mapping ensures the selector shows the correct options per user request.
     const operation = noteType === 'NOTA_DEBITO' ? 'sales' : 'purchases'
 
     return (
-        <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center space-y-2 mb-8">
-                <div className="inline-flex items-center justify-center p-4 bg-muted/30 rounded-full mb-4">
-                    <CheckCircle2 className="h-8 w-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-black tracking-tight">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col gap-1">
+                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3 text-xl">
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
                     {noteType === 'NOTA_CREDITO' ? 'Método de Reembolso' : 'Método de Pago'}
-                </h2>
-                <p className="text-muted-foreground">
+                </h3>
+                <p className="text-sm text-muted-foreground">
                     {noteType === 'NOTA_CREDITO'
                         ? 'Seleccione cómo recibió la devolución de dinero (o deje pendiente para crédito a favor).'
                         : 'Seleccione cómo realizará el pago de esta nota de débito.'}
                 </p>
             </div>
 
-            <Card>
-                <CardContent className="p-6">
-                    <PaymentMethodCardSelector
-                        operation={operation}
-                        total={total}
-                        paymentData={paymentData}
-                        onPaymentDataChange={setPaymentData}
-                        compactMode={false}
-                        labels={{
-                            totalLabel: "Monto Total Nota",
-                            amountLabel: noteType === 'NOTA_CREDITO' ? "Monto Reembolsado" : "Monto a Pagar",
-                            differencePositiveLabel: "Por Pagar / Crédito",
-                            differenceNegativeLabel: "Excedente"
-                        }}
-                    />
-                </CardContent>
-            </Card>
-
-            <div className="text-center text-xs text-muted-foreground">
-                <p>
-                    {paymentData.method
-                        ? "Se registrará el movimiento de tesorería correspondiente."
-                        : "Al no seleccionar método, el monto quedará como crédito/deuda pendiente en la cuenta corriente."}
-                </p>
-            </div>
+            <PaymentMethodCardSelector
+                operation={operation}
+                total={total}
+                paymentData={paymentData}
+                onPaymentDataChange={setPaymentData}
+                compactMode={false}
+                labels={{
+                    totalLabel: "Monto Total Nota",
+                    amountLabel: noteType === 'NOTA_CREDITO' ? "Monto Reembolsado" : "Monto a Pagar",
+                    differencePositiveLabel: "Excedente / Vuelto",
+                    differenceNegativeLabel: noteType === 'NOTA_CREDITO' ? "Saldo Pendiente" : "Deuda Pendiente",
+                    amountModalTitle: noteType === 'NOTA_CREDITO' ? "Monto a Reembolsar" : "Monto a Pagar",
+                    amountModalDescription: "Ingrese el monto asociado al movimiento de tesorería."
+                }}
+            />
         </div>
     )
 }

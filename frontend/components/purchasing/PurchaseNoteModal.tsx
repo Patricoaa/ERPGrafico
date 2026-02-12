@@ -217,51 +217,40 @@ export function PurchaseNoteModal({
             footer={
                 <div className="w-full flex justify-between items-center">
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         onClick={handleBack}
                         disabled={step === 1 || submitting}
-                        className="h-12 px-6 font-bold text-muted-foreground hover:text-foreground"
+                        className="h-12 px-6 font-bold"
                     >
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Atrás
                     </Button>
 
-                    <div className="flex items-center gap-2">
+                    {step < totalSteps ? (
                         <Button
-                            variant="ghost"
-                            onClick={() => onOpenChange(false)}
-                            disabled={submitting}
-                            className="h-12 px-6 font-bold text-muted-foreground"
+                            onClick={handleNext}
+                            className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                         >
-                            Cancelar
+                            Siguiente
+                            <ChevronRight className="ml-2 h-4 w-4" />
                         </Button>
-
-                        {step < totalSteps ? (
-                            <Button
-                                onClick={handleNext}
-                                className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
-                            >
-                                Siguiente
-                                <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleSubmit}
-                                className={`w-48 h-12 font-bold shadow-lg hover:shadow-xl transition-all ${noteType === 'NOTA_CREDITO'
-                                    ? 'bg-amber-600 hover:bg-amber-700'
-                                    : 'bg-blue-600 hover:bg-blue-700'
-                                    }`}
-                                disabled={submitting}
-                            >
-                                {submitting ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Check className="mr-2 h-4 w-4" />
-                                )}
-                                Confirmar Registro
-                            </Button>
-                        )}
-                    </div>
+                    ) : (
+                        <Button
+                            onClick={handleSubmit}
+                            className={`w-48 h-12 font-bold shadow-lg hover:shadow-xl transition-all ${noteType === 'NOTA_CREDITO'
+                                ? 'bg-amber-600 hover:bg-amber-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                                }`}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Check className="mr-2 h-4 w-4" />
+                            )}
+                            Confirmar Registro
+                        </Button>
+                    )}
                 </div>
             }
         >
