@@ -23,6 +23,7 @@ const categoryItems: Record<string, any> = {
     "accounting": [
         { title: "Plan de Cuentas", url: "/accounting/accounts" },
         { title: "Asientos Contables", url: "/accounting/entries" },
+        { title: "Periodos Contables", url: "/accounting/periods" },
         { title: "Documentos Emitidos", url: "/billing/sales" },
         { title: "Documentos Recibidos", url: "/billing/purchases" },
     ],

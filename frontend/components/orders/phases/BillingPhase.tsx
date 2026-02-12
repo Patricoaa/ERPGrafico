@@ -131,7 +131,10 @@ export function BillingPhase({
                     ]
                 }))}
                 onViewDetail={openDetails}
-                actions={(isNoteMode ? [] : registry.documents?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                actions={[
+                    ...(isNoteMode ? [] : registry.documents?.actions || []),
+                    ...(isNoteMode ? [] : registry.notes?.actions || [])
+                ].filter((a: any) => !a.id.includes('view-'))}
                 emptyMessage="Sin documentos emitidos"
                 order={activeDoc}
                 userPermissions={userPermissions}

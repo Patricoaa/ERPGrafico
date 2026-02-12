@@ -326,7 +326,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                                                                     {item.customer_name}
                                                                 </h4>
                                                                 {item.pos_session && (
-                                                                    <Badge variant="outline" className="text-[10px] h-4">
+                                                                    <Badge variant="secondary" className="text-[10px] h-4 bg-primary/10 text-primary border-primary/20">
                                                                         POS #{item.pos_session}
                                                                     </Badge>
                                                                 )}
@@ -385,6 +385,11 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                                                                 <Badge variant="outline" className="text-[10px] uppercase">
                                                                     {item.dte_type_display}
                                                                 </Badge>
+                                                                {item.pos_session && (
+                                                                    <Badge variant="secondary" className="text-[10px] h-4 bg-primary/10 text-primary border-primary/20">
+                                                                        POS #{item.pos_session}
+                                                                    </Badge>
+                                                                )}
                                                             </div>
                                                             <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                                 <span className="flex items-center gap-1">

@@ -26,6 +26,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     order_delivery_status = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
+    pos_session = serializers.IntegerField(source='sale_order.pos_session', read_only=True, allow_null=True)
 
     class Meta:
         model = Invoice
