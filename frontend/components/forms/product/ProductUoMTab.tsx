@@ -79,24 +79,38 @@ export function ProductUoMTab({ form, uoms, canBeSold, canBePurchased }: Product
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="uom"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Unidad de Medida de Stock (Interna)</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Seleccionar unidad base" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {uoms.map((u) => (
-                                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                    render={({ field }) => {
+                                        const isOptional = ['SERVICE', 'SUBSCRIPTION'].includes(productType) && !canBeSold;
+
+                                        return (
+                                            <FormItem>
+                                                <FormLabel className="flex items-center gap-2">
+                                                    Unidad de Medida de Stock (Interna)
+                                                    {isOptional && (
+                                                        <Badge variant="outline" className="text-[10px] font-normal py-0">Opcional</Badge>
+                                                    )}
+                                                </FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccionar unidad base" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {uoms.map((u) => (
+                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                {isOptional && (
+                                                    <FormDescription className="text-[10px]">
+                                                        Para servicios de compra, la unidad de medida es opcional.
+                                                    </FormDescription>
+                                                )}
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
                                 />
                             )}
 

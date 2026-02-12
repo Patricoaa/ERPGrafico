@@ -9,7 +9,7 @@ export const productSchema = z.object({
     is_dynamic_pricing: z.boolean().default(false),
     sale_price: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
     sale_price_gross: z.preprocess((v) => Number(v) || 0, z.number().min(0, "Mínimo 0")),
-    uom: z.string().min(1, "Unidad base requerida"),
+    uom: z.string().optional().or(z.literal("")),
     sale_uom: z.string().optional().or(z.literal("")),
     purchase_uom: z.string().optional().or(z.literal("")),
     allowed_sale_uoms: z.array(z.string()).default([]),
@@ -88,6 +88,20 @@ export const productSchema = z.object({
 }, {
     message: "El precio de venta debe ser mayor a 0",
     path: ["sale_price"]
+}).refine((data) => {
+    // UoM is required for inventory-tracked products (STORABLE, CONSUMABLE, MANUFACTURABLE)
+    // and for SERVICE/SUBSCRIPTION when can_be_sold is true
+    const requiresUom =
+        ['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE'].includes(data.product_type) ||
+        (['SERVICE', 'SUBSCRIPTION'].includes(data.product_type) && data.can_be_sold);
+
+    if (requiresUom && (!data.uom || data.uom === "")) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Unidad de Medida Stock requerida",
+    path: ["uom"]
 }).refine((data) => {
     // If can_be_sold is true, sale_uom must be selected
     // EXCEPTION: If has_variants is true, sale_uom might be defined per variant
