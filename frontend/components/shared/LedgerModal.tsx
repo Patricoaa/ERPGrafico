@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Book, Calendar, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
@@ -24,18 +25,27 @@ interface LedgerModalProps {
 }
 
 export function LedgerModal({ accountId, accountName, accountCode, trigger }: LedgerModalProps) {
+    const { serverDate } = useServerDate()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<any>(null)
-    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Start of current month
-        to: new Date()
-    })
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
+
+    // Initialize date range with server date
+    useEffect(() => {
+        if (serverDate && !dateRange) {
+            setDateRange({
+                from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                to: serverDate
+            })
+        }
+    }, [serverDate])
 
     const fetchLedger = useCallback(async () => {
         setLoading(true)
         try {
+            if (!dateRange) return
             const startStr = format(dateRange.from, 'yyyy-MM-dd')
             const endStr = format(dateRange.to, 'yyyy-MM-dd')
             const res = await api.get(`/accounting/accounts/${accountId}/ledger/?start_date=${startStr}&end_date=${endStr}`)
@@ -49,10 +59,10 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     }, [accountId, dateRange])
 
     useEffect(() => {
-        if (open) {
+        if (open && dateRange) {
             fetchLedger()
         }
-    }, [open, fetchLedger])
+    }, [open, fetchLedger, dateRange])
 
     const handleDeleteEntry = async (entryId: number) => {
         if (!confirm("¿Está seguro de eliminar este asiento contable? Esta acción revertirá todos los movimientos asociados.")) return
@@ -199,7 +209,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                 setDateRange({ from: range.from, to: range.to })
                             }
                         }}
-                        defaultRange={dateRange}
+                        defaultRange={dateRange || undefined}
                     />
                 }
             >
@@ -218,7 +228,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                         ${data.opening_balance.toLocaleString()}
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-1">
-                                        Al {format(dateRange.from, "PPP", { locale: es })}
+                                        Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -256,7 +266,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                         ${data.closing_balance.toLocaleString()}
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-1">
-                                        Al {format(dateRange.to, "PPP", { locale: es })}
+                                        Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
                                     </p>
                                 </CardContent>
                             </Card>

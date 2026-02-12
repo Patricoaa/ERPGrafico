@@ -20,6 +20,7 @@ import { CalendarIcon, ArrowRight, Landmark, Banknote, ArrowLeftRight } from "lu
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface TreasuryAccount {
     id: number
@@ -42,9 +43,16 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
     // Form state
     const [fromAccount, setFromAccount] = useState<string>("")
     const [toAccount, setToAccount] = useState<string>("")
+    const { serverDate } = useServerDate()
     const [amount, setAmount] = useState<string>("")
-    const [date, setDate] = useState<Date>(new Date())
+    const [date, setDate] = useState<Date | undefined>(undefined)
     const [notes, setNotes] = useState("")
+
+    useEffect(() => {
+        if (serverDate && !date) {
+            setDate(serverDate)
+        }
+    }, [serverDate])
 
     useEffect(() => {
         if (open) {
@@ -82,7 +90,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 to_account_id: toAccount,
                 amount: parseFloat(amount),
                 notes,
-                date: format(date, "yyyy-MM-dd'T'HH:mm:ss")
+                date: date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : undefined
             })
 
             toast.success("Traspaso registrado correctamente.")

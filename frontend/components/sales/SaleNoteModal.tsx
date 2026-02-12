@@ -30,8 +30,8 @@ import { FORM_STYLES } from "@/lib/styles"
 interface SaleNoteModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    orderId: number
-    orderNumber: string
+    orderId?: number
+    orderNumber?: string
     invoiceId?: number
     onSuccess?: () => void
     initialType?: "NOTA_CREDITO" | "NOTA_DEBITO"
@@ -57,24 +57,36 @@ export function SaleNoteModal({
         if (open) {
             setDocumentNumber("")
             setAttachment(null)
-            fetchOrderDetails()
+            fetchDetails()
         }
     }, [open])
 
-    const fetchOrderDetails = async () => {
+    const fetchDetails = async () => {
         setLoadingOrder(true)
         try {
-            const response = await api.get(`/sales/orders/${orderId}/`)
+            let data: any = {}
+            let fetchedLines: any[] = []
+
+            if (orderId) {
+                const response = await api.get(`/sales/orders/${orderId}/`)
+                data = response.data
+                fetchedLines = data.lines || []
+            } else if (invoiceId) {
+                const response = await api.get(`/billing/invoices/${invoiceId}/`)
+                data = response.data
+                fetchedLines = data.lines || []
+            }
+
             // Initializing lines with 0 quantity but original unit price
-            const initialLines = (response.data.lines || []).map((line: any) => ({
+            const initialLines = fetchedLines.map((line: any) => ({
                 ...line,
                 note_quantity: 0,
                 note_unit_price: parseFloat(line.unit_price)
             }))
             setLines(initialLines)
         } catch (error) {
-            console.error("Error fetching order details:", error)
-            toast.error("No se pudieron cargar los detalles de la nota de venta")
+            console.error("Error fetching details:", error)
+            toast.error("No se pudieron cargar los detalles del documento")
         } finally {
             setLoadingOrder(false)
         }
@@ -126,7 +138,20 @@ export function SaleNoteModal({
                 formData.append('document_attachment', attachment)
             }
 
-            await api.post(`/sales/orders/${orderId}/register_note/`, formData)
+            if (attachment) {
+                formData.append('document_attachment', attachment)
+            }
+
+            let endpoint = ""
+            if (orderId) {
+                endpoint = `/sales/orders/${orderId}/register_note/`
+            } else if (invoiceId) {
+                endpoint = `/billing/invoices/${invoiceId}/register_note/`
+            } else {
+                throw new Error("No Order ID or Invoice ID provided")
+            }
+
+            await api.post(endpoint, formData)
 
             toast.success("Nota registrada correctamente")
             onOpenChange(false)
@@ -145,7 +170,7 @@ export function SaleNoteModal({
                 <DialogHeader className="border-b pb-4">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <FileBadge className="h-6 w-6 text-purple-600" />
-                        Registrar Nota Crédito/Débito - NV-{orderNumber}
+                        Registrar Nota Crédito/Débito - {orderNumber ? `NV-${orderNumber}` : `Doc #${invoiceId}`}
                     </DialogTitle>
                 </DialogHeader>
 

@@ -18,9 +18,10 @@ import {
 interface PurchaseNoteSummarySidebarProps {
     currentStep: number
     totalSteps: number
-    orderNumber: string
+    orderNumber?: string
     supplierName?: string
     warehouseName?: string
+    referenceText?: string
     noteType: "NOTA_CREDITO" | "NOTA_DEBITO"
     totals: {
         net: number
@@ -36,6 +37,7 @@ export function PurchaseNoteSummarySidebar({
     orderNumber,
     supplierName,
     warehouseName,
+    referenceText,
     noteType,
     totals,
     isProcessing
@@ -69,7 +71,7 @@ export function PurchaseNoteSummarySidebar({
                             {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
                         </h3>
                         <p className="text-xs text-muted-foreground font-medium">
-                            Sobre OCS-{orderNumber}
+                            {referenceText || (orderNumber ? `Sobre OCS-${orderNumber}` : 'Sobre Documento')}
                         </p>
                     </div>
                 </div>
@@ -122,8 +124,8 @@ export function PurchaseNoteSummarySidebar({
 
                 {/* Impact Info */}
                 <div className={`p-4 rounded-lg border text-xs leading-relaxed ${noteType === 'NOTA_CREDITO'
-                        ? 'bg-amber-50 border-amber-100 text-amber-800'
-                        : 'bg-blue-50 border-blue-100 text-blue-800'
+                    ? 'bg-amber-50 border-amber-100 text-amber-800'
+                    : 'bg-blue-50 border-blue-100 text-blue-800'
                     }`}>
                     <div className="flex items-center gap-2 mb-2 font-bold">
                         <AlertCircle className="h-4 w-4" />

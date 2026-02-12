@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface MonthlyInvoiceDialogProps {
     open: boolean
@@ -16,14 +17,25 @@ interface MonthlyInvoiceDialogProps {
 }
 
 export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialogProps) {
+    const { dateString, year: serverYear, month: serverMonth } = useServerDate()
+
     const [loading, setLoading] = useState(false)
     const [suppliers, setSuppliers] = useState<any[]>([])
     const [supplierId, setSupplierId] = useState<string>("")
-    const [month, setMonth] = useState<string>(new Date().getMonth() + 1 + "")
-    const [year, setYear] = useState<string>(new Date().getFullYear() + "")
+    const [month, setMonth] = useState<string>("")
+    const [year, setYear] = useState<string>("")
     const [number, setNumber] = useState("")
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [date, setDate] = useState("")
     const [attachment, setAttachment] = useState<File | null>(null)
+
+    // Sync with server date
+    useEffect(() => {
+        if (serverYear && serverMonth && dateString) {
+            if (!year) setYear(serverYear.toString())
+            if (!month) setMonth(serverMonth.toString())
+            if (!date) setDate(dateString)
+        }
+    }, [serverYear, serverMonth, dateString])
 
     useEffect(() => {
         if (open) {

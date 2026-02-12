@@ -16,6 +16,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface PaymentDialogProps {
     open: boolean
@@ -62,9 +63,17 @@ export function PaymentDialog({
     title,
     posSessionId = null
 }: PaymentDialogProps) {
+    const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("NONE")
     const [documentReference, setDocumentReference] = useState("")
-    const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0])
+    const [documentDate, setDocumentDate] = useState("")
+
+    // Sync document date with server date
+    useEffect(() => {
+        if (dateString && !documentDate) {
+            setDocumentDate(dateString)
+        }
+    }, [dateString])
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isDocumentPending, setIsDocumentPending] = useState(false)
 
@@ -92,7 +101,7 @@ export function PaymentDialog({
                 isPending: false
             })
             setDocumentReference(existingInvoice?.number || "")
-            setDocumentDate(new Date().toISOString().split('T')[0])
+            if (dateString) setDocumentDate(dateString)
             setDocumentAttachment(null)
             setIsDocumentPending(false)
 

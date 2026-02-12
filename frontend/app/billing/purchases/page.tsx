@@ -412,7 +412,7 @@ export default function PurchaseInvoicesPage() {
 
 
                                 {/* Credit/Debit Note (Only for primary documents with folio) */}
-                                {doc.purchase_order && !isNote && doc.number && doc.status !== 'DRAFT' && (
+                                {!isNote && doc.number && doc.status !== 'DRAFT' && (
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -560,12 +560,12 @@ export default function PurchaseInvoicesPage() {
 
 
             {
-                notingDoc && notingDoc.purchase_order && (
+                notingDoc && (
                     <PurchaseNoteModal
                         open={!!notingDoc}
                         onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
                         orderId={notingDoc.purchase_order}
-                        orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order.toString()}
+                        orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()}
                         invoiceId={notingDoc.id}
                         onSuccess={fetchDocuments}
                     />

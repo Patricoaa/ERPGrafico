@@ -24,8 +24,8 @@ import { PaymentData } from "@/components/shared/PaymentMethodCardSelector"
 interface PurchaseNoteModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    orderId: number
-    orderNumber: string
+    orderId?: number
+    orderNumber?: string
     invoiceId?: number
     onSuccess?: () => void
     initialType?: "NOTA_CREDITO" | "NOTA_DEBITO"
@@ -69,34 +69,52 @@ export function PurchaseNoteModal({
             setAttachment(null)
             setLines([])
             setNoteType(initialType)
-            fetchOrderDetails()
+            fetchDetails()
         }
     }, [open])
 
-    const fetchOrderDetails = async () => {
+    const fetchDetails = async () => {
         setLoading(true)
         try {
-            const response = await api.get(`/purchasing/orders/${orderId}/`)
-            setOrderDetails(response.data)
+            let data: any = {}
+            let fetchedLines: any[] = []
+
+            if (orderId) {
+                const response = await api.get(`/purchasing/orders/${orderId}/`)
+                data = response.data
+                fetchedLines = data.lines || []
+            } else if (invoiceId) {
+                const response = await api.get(`/billing/invoices/${invoiceId}/`)
+                data = response.data
+                // Map invoice lines to expected structure
+                fetchedLines = (data.lines || []).map((l: any) => ({
+                    ...l,
+                    // If invoice lines differ, map them here. Assuming similar structure:
+                    // product, quantity, unit_price/unit_cost
+                    unit_cost: l.unit_price || l.unit_cost // Invoice usually has unit_price
+                }))
+            }
+
+            setOrderDetails(data)
 
             // Initializing lines with 0 quantity but original unit cost
-            const initialLines = (response.data.lines || []).map((line: any) => ({
+            const initialLines = fetchedLines.map((line: any) => ({
                 id: line.id,
                 product: line.product,
-                product_name: line.product_name,
+                product_name: line.product_name || line.description, // Fallback
                 product_code: line.product_code,
                 uom_name: line.uom_name,
                 quantity: line.quantity, // Original qty
-                unit_cost: parseFloat(line.unit_cost),
+                unit_cost: parseFloat(line.unit_cost || line.unit_price || 0),
 
                 // Editable fields for note
                 note_quantity: 0,
-                note_unit_cost: parseFloat(line.unit_cost)
+                note_unit_cost: parseFloat(line.unit_cost || line.unit_price || 0)
             }))
             setLines(initialLines)
         } catch (error) {
-            console.error("Error fetching order details:", error)
-            toast.error("No se pudieron cargar los detalles de la orden")
+            console.error("Error fetching details:", error)
+            toast.error("No se pudieron cargar los detalles del documento")
         } finally {
             setLoading(false)
         }
@@ -175,7 +193,17 @@ export function PurchaseNoteModal({
                 formData.append('payment_data', JSON.stringify(paymentData))
             }
 
-            await api.post(`/purchasing/orders/${orderId}/register_note/`, formData)
+            let endpoint = ""
+            if (orderId) {
+                endpoint = `/purchasing/orders/${orderId}/register_note/`
+            } else if (invoiceId) {
+                // Standalone invoice note
+                endpoint = `/billing/invoices/${invoiceId}/register_note/`
+            } else {
+                throw new Error("No Order ID or Invoice ID provided")
+            }
+
+            await api.post(endpoint, formData)
 
             toast.success("Nota registrada correctamente")
             onOpenChange(false)
@@ -209,7 +237,13 @@ export function PurchaseNoteModal({
                             Registrar {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
                         </span>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-                            <span>Ref: OCS-{orderNumber}</span>
+                            {orderNumber ? (
+                                <span>Ref: OCS-{orderNumber}</span>
+                            ) : orderDetails?.number ? (
+                                <span>Ref: DOC-{orderDetails.number}</span>
+                            ) : (
+                                <span>Ref: Documento #{invoiceId}</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -260,6 +294,7 @@ export function PurchaseNoteModal({
                     currentStep={step}
                     totalSteps={totalSteps}
                     orderNumber={orderNumber}
+                    referenceText={orderNumber ? undefined : (orderDetails?.number ? `Sobre DOC-${orderDetails.number}` : `Sobre Documento #${invoiceId}`)}
                     supplierName={orderDetails?.supplier_name}
                     warehouseName={orderDetails?.warehouse_name}
                     noteType={noteType}

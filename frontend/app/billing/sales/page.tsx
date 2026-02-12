@@ -352,8 +352,8 @@ export default function SalesInvoicesPage() {
                 <SaleNoteModal
                     open={!!notingInvoice}
                     onOpenChange={(open) => !open && setNotingInvoice(null)}
-                    orderId={notingInvoice.sale_order}
-                    orderNumber={notingInvoice.sale_order_number}
+                    orderId={notingInvoice.sale_order || undefined}
+                    orderNumber={notingInvoice.sale_order_number || undefined}
                     invoiceId={notingInvoice.id}
                     onSuccess={fetchInvoices}
                 />

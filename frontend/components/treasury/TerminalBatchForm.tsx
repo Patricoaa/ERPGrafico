@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,7 +30,15 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     // Form State
     const [paymentMethodId, setPaymentMethodId] = useState<string>("")
-    const [date, setDate] = useState<Date | undefined>(new Date())
+    const { serverDate } = useServerDate()
+    const [date, setDate] = useState<Date | undefined>(undefined)
+
+    // Sync state with server date when available and not yet set
+    useEffect(() => {
+        if (serverDate && !date) {
+            setDate(serverDate)
+        }
+    }, [serverDate])
     const [grossAmount, setGrossAmount] = useState<string>("0")
     const [commissionNet, setCommissionNet] = useState<string>("0")
     const [commissionTax, setCommissionTax] = useState<string>("0")
