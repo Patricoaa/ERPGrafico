@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { FileText, Receipt, FileCheck, Package } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
+import { useServerDate } from "@/hooks/useServerDate"
 import {
     Select,
     SelectContent,
@@ -143,21 +144,23 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         }
     }, [receiptData.type, receiptData.partialQuantities?.length, orderLines, setReceiptData, receiptData])
 
+    const { dateString } = useServerDate()
+
     // Initialize subscription dates if not set
     useEffect(() => {
-        if (hasSubscriptions && (!receiptData.subscriptionDates || Object.keys(receiptData.subscriptionDates).length === 0)) {
+        if (hasSubscriptions && dateString && (!receiptData.subscriptionDates || Object.keys(receiptData.subscriptionDates).length === 0)) {
             const defaultDates: Record<string, string> = {}
             orderLines.forEach(line => {
                 if (line.product_type === 'SUBSCRIPTION') {
                     const productId = line.product || line.id
                     if (productId) {
-                        defaultDates[productId] = new Date().toISOString().split('T')[0]
+                        defaultDates[productId] = dateString
                     }
                 }
             })
             setReceiptData({ ...receiptData, subscriptionDates: defaultDates })
         }
-    }, [hasSubscriptions, orderLines, receiptData, setReceiptData])
+    }, [hasSubscriptions, orderLines, receiptData, setReceiptData, dateString])
 
     const updateSubscriptionDate = (productId: string, date: string) => {
         setReceiptData((prev: any) => ({

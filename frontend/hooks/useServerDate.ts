@@ -12,6 +12,7 @@ interface ServerDateResponse {
 
 export function useServerDate() {
     const [serverDate, setServerDate] = useState<Date | null>(null)
+    const [rawDate, setRawDate] = useState<string>('')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
 
@@ -20,13 +21,14 @@ export function useServerDate() {
             try {
                 const response = await api.get<ServerDateResponse>('/core/server-time/')
                 setServerDate(new Date(response.data.datetime))
+                setRawDate(response.data.date)
                 setError(null)
             } catch (err) {
                 console.error('Error fetching server date:', err)
                 setError(err as Error)
-                // Fallback to client date with simple warning logs, 
-                // but application continues using client date.
-                setServerDate(new Date())
+                const now = new Date()
+                setServerDate(now)
+                setRawDate(now.toISOString().split('T')[0])
             } finally {
                 setIsLoading(false)
             }
@@ -38,7 +40,7 @@ export function useServerDate() {
         serverDate,
         isLoading,
         error,
-        dateString: serverDate?.toISOString().split('T')[0] || '',
+        dateString: rawDate,
         year: serverDate?.getFullYear() || new Date().getFullYear(),
         month: serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1
     }

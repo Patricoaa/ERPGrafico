@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     Dialog,
     DialogContent,
@@ -22,6 +22,7 @@ import {
 import { FileText, Loader2, Upload } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface DocumentRegistrationModalProps {
     open: boolean
@@ -38,9 +39,17 @@ export function DocumentRegistrationModal({
     orderNumber,
     onSuccess
 }: DocumentRegistrationModalProps) {
+    const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("FACTURA")
     const [reference, setReference] = useState("")
-    const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
+    const [issueDate, setIssueDate] = useState("")
+
+    // Sync with server date
+    useEffect(() => {
+        if (dateString && !issueDate) {
+            setIssueDate(dateString)
+        }
+    }, [dateString])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [submitting, setSubmitting] = useState(false)

@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { cn, formatCurrency, translateStatus } from "@/lib/utils"
+import { cn, formatCurrency, translateStatus, formatPlainDate } from "@/lib/utils"
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
@@ -117,11 +117,13 @@ export const DataCell = {
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
         if (!value) return <div className={cn("text-muted-foreground text-xs", className)} {...props}>-</div>
-        const date = new Date(value)
         return (
             <div className={cn("text-sm", className)} {...props}>
-                {date.toLocaleDateString('es-CL', { year: '2-digit', month: '2-digit', day: '2-digit' })}
-                {showTime && <span className="text-xs text-muted-foreground ml-1">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>}
+                {formatPlainDate(value)}
+                {showTime && (() => {
+                    const date = new Date(value)
+                    return <span className="text-xs text-muted-foreground ml-1">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                })()}
             </div>
         )
     },

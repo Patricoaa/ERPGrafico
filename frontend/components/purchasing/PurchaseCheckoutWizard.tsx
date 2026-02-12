@@ -110,7 +110,7 @@ export function PurchaseCheckoutWizard({
     const [dteData, setDteData] = useState({
         type: 'FACTURA',
         number: '',
-        date: new Date().toISOString().split('T')[0],
+        date: '',
         attachment: null,
         isPending: false
     })

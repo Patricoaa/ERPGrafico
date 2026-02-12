@@ -139,3 +139,17 @@ export function formatBytes(bytes: number, decimals = 2) {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+export function formatPlainDate(value: string | Date | null | undefined): string {
+  if (!value) return '-'
+  if (typeof value === 'string') {
+    // If it's YYYY-MM-DD (length 10), parse manually to avoid timezone shift
+    const matches = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (matches) {
+      const [, year, month, day] = matches
+      return `${day}/${month}/${year}`
+    }
+  }
+  const date = new Date(value)
+  if (isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}

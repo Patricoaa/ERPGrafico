@@ -24,6 +24,7 @@ import { PurchaseOrderHubStatus } from "./components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { formatPlainDate } from "@/lib/utils"
 
 interface PurchaseOrder {
     id: number
@@ -516,7 +517,7 @@ export default function PurchaseOrdersPage() {
                                                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                             <span className="flex items-center gap-1">
                                                                 <Calendar className="h-3 w-3" />
-                                                                {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                                {formatPlainDate(item.date)}
                                                             </span>
                                                             <span className="flex items-center gap-1">
                                                                 <Package className="h-3 w-3" />
@@ -568,7 +569,7 @@ export default function PurchaseOrdersPage() {
                                                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                             <span className="flex items-center gap-1">
                                                                 <Calendar className="h-3 w-3" />
-                                                                {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                                {formatPlainDate(item.date)}
                                                             </span>
                                                         </div>
                                                     </div>

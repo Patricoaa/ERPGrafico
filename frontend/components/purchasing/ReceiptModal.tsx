@@ -26,6 +26,7 @@ import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FORM_STYLES } from "@/lib/styles"
+import { useServerDate } from "@/hooks/useServerDate"
 
 interface PurchaseOrderLine {
     id: number
@@ -71,17 +72,25 @@ export function ReceiptModal({
     isRefund = false,
     filterType = 'ALL'
 }: ReceiptModalProps) {
+    const { dateString } = useServerDate()
     const [order, setOrder] = useState<PurchaseOrder | null>(null)
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [receiptQuantities, setReceiptQuantities] = useState<{ [lineId: number]: number }>({})
     const [receiptCosts, setReceiptCosts] = useState<{ [lineId: number]: number }>({})
-    const [receiptDate, setReceiptDate] = useState(new Date().toISOString().split('T')[0])
+    const [receiptDate, setReceiptDate] = useState("")
     const [deliveryReference, setDeliveryReference] = useState("")
     const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [isPartialReceipt, setIsPartialReceipt] = useState(false)
+
+    // Sync with server date
+    useEffect(() => {
+        if (dateString && !receiptDate) {
+            setReceiptDate(dateString)
+        }
+    }, [dateString])
 
     useEffect(() => {
         if (open && orderId) {

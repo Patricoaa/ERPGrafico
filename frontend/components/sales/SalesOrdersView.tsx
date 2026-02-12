@@ -18,7 +18,7 @@ import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-f
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { translateSalesChannel } from "@/lib/utils"
+import { translateSalesChannel, formatPlainDate } from "@/lib/utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -334,7 +334,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                                                             <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                                 <span className="flex items-center gap-1">
                                                                     <Calendar className="h-3 w-3" />
-                                                                    {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                                    {formatPlainDate(item.date)}
                                                                 </span>
                                                                 <span className="flex items-center gap-1">
                                                                     <DataCell.Badge variant="outline" className="text-[10px] hover:bg-transparent">
@@ -394,7 +394,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                                                             <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                                                                 <span className="flex items-center gap-1">
                                                                     <Calendar className="h-3 w-3" />
-                                                                    {format(parseISO(item.date), "dd/MM/yyyy")}
+                                                                    {formatPlainDate(item.date)}
                                                                 </span>
                                                             </div>
                                                         </div>

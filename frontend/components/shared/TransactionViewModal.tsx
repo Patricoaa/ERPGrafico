@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency } from "@/lib/utils"
+import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { PaymentForm } from "@/components/forms/PaymentForm"
@@ -328,7 +328,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <CardContent className="p-3">
                                                             <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
                                                             <div className="font-bold text-sm">
-                                                                {new Date(data.date).toLocaleDateString()}
+                                                                {formatPlainDate(data.date)}
                                                             </div>
                                                         </CardContent>
                                                     </Card>
@@ -366,7 +366,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 <CardContent className="p-3">
                                                                     <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
                                                                     <div className="font-bold text-sm">
-                                                                        {new Date(data.created_at).toLocaleDateString()}
+                                                                        {formatPlainDate(data.created_at)}
                                                                     </div>
                                                                     <div className="text-[10px] text-muted-foreground">
                                                                         {new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -456,7 +456,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 {currentType === 'inventory' ? 'Fecha Mov.' : 'Fecha'}
                                                             </div>
                                                             <div className="font-bold text-base truncate">
-                                                                {new Date(data.date || data.created_at).toLocaleDateString()}
+                                                                {formatPlainDate(data.date || data.created_at)}
                                                             </div>
                                                         </CardContent>
                                                     </Card>
@@ -910,7 +910,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             {data.planned_delivery_date && (
                                                 <div>
                                                     <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Entrega Planificada</h4>
-                                                    <p className="text-sm font-bold">{new Date(data.planned_delivery_date).toLocaleDateString()}</p>
+                                                    <p className="text-sm font-bold">{formatPlainDate(data.planned_delivery_date)}</p>
                                                 </div>
                                             )}
                                             {data.immediate_delivery !== undefined && (
@@ -960,7 +960,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             {data.planned_receipt_date && (
                                                 <div>
                                                     <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Recepción Planificada</h4>
-                                                    <p className="text-sm font-bold">{new Date(data.planned_receipt_date).toLocaleDateString()}</p>
+                                                    <p className="text-sm font-bold">{formatPlainDate(data.planned_receipt_date)}</p>
                                                 </div>
                                             )}
                                             {data.effective_total && data.effective_total !== data.total && (
@@ -1224,7 +1224,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <TableBody>
                                                             {data.related_stock_moves.map((move: any) => (
                                                                 <TableRow key={move.id}>
-                                                                    <TableCell>{new Date(move.date).toLocaleDateString()}</TableCell>
+                                                                    <TableCell>{formatPlainDate(move.date)}</TableCell>
                                                                     <TableCell className="text-xs">{move.warehouse}</TableCell>
                                                                     <TableCell className="font-medium">{move.product}</TableCell>
                                                                     <TableCell className="text-center">
@@ -1279,7 +1279,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                         <TableBody>
                                                             {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
                                                                 <TableRow key={pay.id}>
-                                                                    <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
+                                                                    <TableCell>{formatPlainDate(pay.date || pay.created_at)}</TableCell>
                                                                     <TableCell>
                                                                         <Badge variant="outline" className="uppercase text-[10px]">
                                                                             {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
