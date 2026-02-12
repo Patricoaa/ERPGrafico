@@ -90,7 +90,7 @@ export function SalesCheckoutWizard({
     // Sync DTE date with server date
     useEffect(() => {
         if (dateString && !initialDteData) {
-            setDteData(prev => ({ ...prev, date: dateString }))
+            setDteData((prev: any) => ({ ...prev, date: dateString }))
         }
     }, [dateString, initialDteData])
 
