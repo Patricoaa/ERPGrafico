@@ -255,6 +255,45 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                 {/* Section 1: Summary Cards (Always visible if data exists) */}
                                 {(view === 'all' || view === 'details' || view === 'history') && (
                                     <div className="space-y-4">
+                                        {/* Special header for invoices with SII code and tax exempt badge */}
+                                        {currentType === 'invoice' && (
+                                            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20">
+                                                <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/5">
+                                                    <Receipt className="h-6 w-6 text-muted-foreground" />
+                                                </div>
+                                                <div className="flex flex-col flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-lg font-black tracking-tight">{data.contact_name || data.customer_name || data.supplier_name || '-'}</span>
+                                                        {data.is_tax_exempt && (
+                                                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 font-bold">
+                                                                EXENTO
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest leading-none">
+                                                            {data.sale_order ? 'Cliente' : data.purchase_order ? 'Proveedor' : 'Contacto'}
+                                                        </span>
+                                                        {data.sii_document_code && (
+                                                            <>
+                                                                <span className="text-muted-foreground">•</span>
+                                                                <span className="text-[10px] text-primary uppercase font-bold tracking-widest">
+                                                                    SII: {data.sii_document_code}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                        {data.tax_period_closed && (
+                                                            <>
+                                                                <span className="text-muted-foreground">•</span>
+                                                                <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 text-[9px] h-5">
+                                                                    PERÍODO CERRADO
+                                                                </Badge>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         {currentType === 'payment' && (
                                             <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20">
                                                 <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/5">
@@ -269,8 +308,48 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                             </div>
                                         )}
 
-                                        <div className={`grid grid-cols-2 ${currentType === 'payment' || currentType === 'cash_movement' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
-                                            {currentType === 'payment' || currentType === 'cash_movement' ? (
+                                        <div className={`grid grid-cols-2 ${currentType === 'payment' || currentType === 'cash_movement' || currentType === 'invoice' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
+                                            {currentType === 'invoice' ? (
+                                                <>
+                                                    <Card className="border-none shadow-sm bg-muted/30">
+                                                        <CardContent className="p-3">
+                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Tipo DTE</div>
+                                                            <div className="font-bold text-xs truncate">
+                                                                {data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
+                                                                    data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
+                                                                        data.dte_type === 'BOLETA' ? 'Boleta' :
+                                                                            data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
+                                                                                data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' :
+                                                                                    data.dte_type === 'PURCHASE_INV' ? 'Factura Compra' : 'Factura'}
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                    <Card className="border-none shadow-sm bg-muted/30">
+                                                        <CardContent className="p-3">
+                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
+                                                            <div className="font-bold text-sm">
+                                                                {new Date(data.date).toLocaleDateString()}
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                    <Card className="border-none shadow-sm bg-muted/30">
+                                                        <CardContent className="p-3">
+                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Estado</div>
+                                                            <Badge variant={data.status === 'PAID' ? 'default' : 'secondary'} className="mt-1">
+                                                                {translateStatus(data.status)}
+                                                            </Badge>
+                                                        </CardContent>
+                                                    </Card>
+                                                    <Card className="border-none shadow-sm bg-muted/30">
+                                                        <CardContent className="p-3">
+                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Total</div>
+                                                            <div className="font-black text-sm">
+                                                                {formatCurrency(data.total)}
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                </>
+                                            ) : currentType === 'payment' || currentType === 'cash_movement' ? (
                                                 <>
                                                     {currentType === 'cash_movement' ? (
                                                         <>
@@ -794,12 +873,332 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         </div>
                                     )}
 
+                                    {/* Section 2: Additional Metadata for Sale Orders */}
+                                    {currentType === 'sale_order' && (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t">
+                                            {data.delivery_status && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Estado de Despacho</h4>
+                                                    <Badge variant={data.delivery_status === 'DELIVERED' ? 'default' : data.delivery_status === 'PARTIAL' ? 'secondary' : 'outline'} className="font-bold">
+                                                        {translateReceivingStatus(data.delivery_status)}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                            {data.channel && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Canal de Venta</h4>
+                                                    <Badge variant="outline" className="font-bold bg-blue-50 text-blue-600 border-blue-200">
+                                                        {data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                            {data.pos_session && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Sesión POS</h4>
+                                                    <p className="text-sm font-bold font-mono text-primary">Sesión #{data.pos_session}</p>
+                                                </div>
+                                            )}
+                                            {data.salesperson_name && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Vendedor</h4>
+                                                    <p className="text-sm font-bold flex items-center gap-2">
+                                                        <User className="h-3.5 w-3.5" />
+                                                        {data.salesperson_name}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {data.planned_delivery_date && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Entrega Planificada</h4>
+                                                    <p className="text-sm font-bold">{new Date(data.planned_delivery_date).toLocaleDateString()}</p>
+                                                </div>
+                                            )}
+                                            {data.immediate_delivery !== undefined && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Tipo de Despacho</h4>
+                                                    <Badge variant={data.immediate_delivery ? 'default' : 'outline'} className="font-bold">
+                                                        {data.immediate_delivery ? 'Inmediato' : 'Programado'}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                            {data.effective_total && data.effective_total !== data.total && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Total Efectivo</h4>
+                                                    <p className="text-sm font-black text-primary">{formatCurrency(data.effective_total)}</p>
+                                                    <p className="text-[10px] text-muted-foreground">Incluye notas de crédito/débito</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Section 2: Additional Metadata for Purchase Orders */}
+                                    {currentType === 'purchase_order' && (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t">
+                                            {data.supplier_reference && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Referencia Proveedor</h4>
+                                                    <p className="text-sm font-bold font-mono text-blue-600">{data.supplier_reference}</p>
+                                                </div>
+                                            )}
+                                            {data.warehouse_name && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Bodega de Recepción</h4>
+                                                    <p className="text-sm font-bold flex items-center gap-2">
+                                                        <Package className="h-3.5 w-3.5" />
+                                                        {data.warehouse_name}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {data.receiving_status && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Estado de Recepción</h4>
+                                                    <Badge variant={data.receiving_status === 'RECEIVED' ? 'default' : data.receiving_status === 'PARTIAL' ? 'secondary' : 'outline'} className="font-bold">
+                                                        {translateReceivingStatus(data.receiving_status)}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                            {data.planned_receipt_date && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Recepción Planificada</h4>
+                                                    <p className="text-sm font-bold">{new Date(data.planned_receipt_date).toLocaleDateString()}</p>
+                                                </div>
+                                            )}
+                                            {data.effective_total && data.effective_total !== data.total && (
+                                                <div>
+                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Total Efectivo</h4>
+                                                    <p className="text-sm font-black text-primary">{formatCurrency(data.effective_total)}</p>
+                                                    <p className="text-[10px] text-muted-foreground">Incluye notas de crédito/débito</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     {/* Section 3: Attachments */}
                                     {(view === 'all' || view === 'details') && data.attachments?.length > 0 && (currentType === 'invoice' || currentType === 'work_order') && (
                                         <div className="pt-6 border-t">
                                             <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Archivos Adjuntos</h4>
                                             <AttachmentList attachments={data.attachments} />
                                         </div>
+                                    )}
+
+                                    {/* Section 3.5: Related Documents */}
+                                    {(view === 'all' || view === 'details') && (
+                                        <>
+                                            {/* Invoice Related Documents */}
+                                            {currentType === 'invoice' && (data.sale_order || data.purchase_order || data.corrected_invoice || data.journal_entry) && (
+                                                <div className="space-y-4 pt-6 border-t">
+                                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
+                                                        Documentos Relacionados
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {data.sale_order && (
+                                                            <Card className="border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => navigateTo('sale_order', data.sale_order)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                                                            <ShoppingBag className="h-5 w-5 text-blue-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Nota de Venta Origen</div>
+                                                                            <div className="font-bold text-sm text-blue-600">NV-{data.sale_order_number || data.sale_order}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-blue-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                        {data.purchase_order && (
+                                                            <Card className="border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => navigateTo('purchase_order', data.purchase_order)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                                                            <FileText className="h-5 w-5 text-blue-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Orden de Compra Origen</div>
+                                                                            <div className="font-bold text-sm text-blue-600">OCS-{data.purchase_order_number || data.purchase_order}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-blue-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                        {data.corrected_invoice && (
+                                                            <Card className="border-amber-200 bg-amber-50/50 hover:bg-amber-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', data.corrected_invoice)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-amber-100 rounded-lg">
+                                                                            <Receipt className="h-5 w-5 text-amber-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Documento Rectificado</div>
+                                                                            <div className="font-bold text-sm text-amber-600">{data.corrected_invoice_display || `FACT-${data.corrected_invoice}`}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-amber-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                        {data.journal_entry && (
+                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-purple-100 rounded-lg">
+                                                                            <Hash className="h-5 w-5 text-purple-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
+                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-purple-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Sale Order Related Documents */}
+                                            {currentType === 'sale_order' && (data.invoices?.length > 0 || data.deliveries?.length > 0 || data.journal_entry) && (
+                                                <div className="space-y-4 pt-6 border-t">
+                                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
+                                                        Documentos Relacionados
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {data.invoices?.map((inv: any) => (
+                                                            <Card key={inv.id} className="border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', inv.id)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-emerald-100 rounded-lg">
+                                                                            <Receipt className="h-5 w-5 text-emerald-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">{inv.dte_type_display || 'Factura'}</div>
+                                                                            <div className="font-bold text-sm text-emerald-600">{inv.display_id}</div>
+                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(inv.status)}</Badge>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-emerald-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+                                                        {data.deliveries?.map((del: any) => (
+                                                            <Card key={del.id} className="border-orange-200 bg-orange-50/50 hover:bg-orange-50 transition-colors cursor-pointer" onClick={() => navigateTo('sale_delivery', del.id)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-orange-100 rounded-lg">
+                                                                            <Package className="h-5 w-5 text-orange-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Despacho</div>
+                                                                            <div className="font-bold text-sm text-orange-600">{del.display_id}</div>
+                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(del.status)}</Badge>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-orange-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+                                                        {data.journal_entry && (
+                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-purple-100 rounded-lg">
+                                                                            <Hash className="h-5 w-5 text-purple-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
+                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-purple-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Purchase Order Related Documents */}
+                                            {currentType === 'purchase_order' && (data.invoices?.length > 0 || data.receipts?.length > 0 || data.work_order || data.journal_entry) && (
+                                                <div className="space-y-4 pt-6 border-t">
+                                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
+                                                        Documentos Relacionados
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {data.work_order && (
+                                                            <Card className="border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer" onClick={() => navigateTo('work_order', data.work_order)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-indigo-100 rounded-lg">
+                                                                            <ClipboardList className="h-5 w-5 text-indigo-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Orden de Trabajo Origen</div>
+                                                                            <div className="font-bold text-sm text-indigo-600">OT-{data.work_order_number || data.work_order}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-indigo-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                        {data.invoices?.map((inv: any) => (
+                                                            <Card key={inv.id} className="border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', inv.id)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-emerald-100 rounded-lg">
+                                                                            <Receipt className="h-5 w-5 text-emerald-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">{inv.dte_type_display || 'Factura'}</div>
+                                                                            <div className="font-bold text-sm text-emerald-600">{inv.display_id}</div>
+                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(inv.status)}</Badge>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-emerald-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+                                                        {data.receipts?.map((rec: any) => (
+                                                            <Card key={rec.id} className="border-orange-200 bg-orange-50/50 hover:bg-orange-50 transition-colors cursor-pointer" onClick={() => navigateTo('purchase_receipt', rec.id)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-orange-100 rounded-lg">
+                                                                            <Package className="h-5 w-5 text-orange-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Recepción</div>
+                                                                            <div className="font-bold text-sm text-orange-600">{rec.display_id}</div>
+                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(rec.status)}</Badge>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-orange-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+                                                        {data.journal_entry && (
+                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
+                                                                <CardContent className="p-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="p-2 bg-purple-100 rounded-lg">
+                                                                            <Hash className="h-5 w-5 text-purple-600" />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
+                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
+                                                                        </div>
+                                                                        <Eye className="h-4 w-4 text-purple-600" />
+                                                                    </div>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Section 4: Stock Movements / Receipts */}
@@ -855,80 +1254,84 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                 </div>
                                             </div>
                                         )}
-
-                                    {/* Section 5: Payment History */}
-                                    {(view === 'all' || view === 'history') &&
-                                        (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
-                                            <div className="space-y-4 pt-6 border-t">
-                                                <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
-                                                    <Banknote className="h-5 w-5" />
-                                                    Historial de Pagos
-                                                </h3>
-                                                {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
-                                                    <div className="border rounded-md">
-                                                        <Table>
-                                                            <TableHeader className="bg-muted/50">
-                                                                <TableRow>
-                                                                    <TableHead>Fecha</TableHead>
-                                                                    <TableHead>Método</TableHead>
-                                                                    <TableHead>Referencia / Transacción</TableHead>
-                                                                    <TableHead className="text-right">Monto</TableHead>
-                                                                    <TableHead className="text-right">Acción</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
-                                                                    <TableRow key={pay.id}>
-                                                                        <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
-                                                                        <TableCell>
-                                                                            <Badge variant="outline" className="uppercase text-[10px]">
-                                                                                {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
-                                                                            </Badge>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-sm font-mono">
-                                                                            {pay.transaction_number ? (
-                                                                                <div className="flex flex-col">
-                                                                                    <span>{pay.transaction_number}</span>
-                                                                                    {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
-                                                                                </div>
-                                                                            ) : (
-                                                                                <span className="text-muted-foreground">{pay.reference || '-'}</span>
-                                                                            )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right font-bold text-emerald-600">
-                                                                            {formatCurrency(pay.amount)}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            <div className="flex justify-end gap-1">
-                                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
-                                                                                    <Eye className="h-4 w-4 text-blue-600" />
-                                                                                </Button>
-                                                                                {pay.is_pending_registration && (
-                                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeletePayment(pay.id)} title="Eliminar Pago">
-                                                                                        <Trash2 className="h-4 w-4" />
-                                                                                    </Button>
-                                                                                )}
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </div>
-                                                ) : (
-                                                    <div className="bg-muted/50 p-6 rounded-lg text-center text-muted-foreground text-sm border border-dashed">
-                                                        No se han registrado pagos para esta transacción.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
                                 </div>
+
+                                {/* Section 5: Payment History */}
+                                {(view === 'all' || view === 'history') &&
+                                    (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
+                                        <div className="space-y-4 pt-6 border-t">
+                                            <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
+                                                <Banknote className="h-5 w-5" />
+                                                Historial de Pagos
+                                            </h3>
+                                            {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
+                                                <div className="border rounded-md">
+                                                    <Table>
+                                                        <TableHeader className="bg-muted/50">
+                                                            <TableRow>
+                                                                <TableHead>Fecha</TableHead>
+                                                                <TableHead>Método</TableHead>
+                                                                <TableHead>Referencia / Transacción</TableHead>
+                                                                <TableHead className="text-right">Monto</TableHead>
+                                                                <TableHead className="text-right">Acción</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
+                                                                <TableRow key={pay.id}>
+                                                                    <TableCell>{new Date(pay.date || pay.created_at).toLocaleDateString()}</TableCell>
+                                                                    <TableCell>
+                                                                        <Badge variant="outline" className="uppercase text-[10px]">
+                                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell className="text-sm font-mono">
+                                                                        {pay.transaction_number ? (
+                                                                            <div className="flex flex-col">
+                                                                                <span>{pay.transaction_number}</span>
+                                                                                {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-muted-foreground">{pay.reference || '-'}</span>
+                                                                        )}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right font-bold text-emerald-600">
+                                                                        {formatCurrency(pay.amount)}
+                                                                    </TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <div className="flex justify-end gap-1">
+                                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
+                                                                                <Eye className="h-4 w-4 text-blue-600" />
+                                                                            </Button>
+                                                                            {pay.is_pending_registration && (
+                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeletePayment(pay.id)} title="Eliminar Pago">
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-muted/50 p-6 rounded-lg text-center text-muted-foreground text-sm border border-dashed">
+                                                    No se han registrado pagos para esta transacción.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                {/* Sidebar or Side info could go here if needed */}
+                            </div>
                             </div>
                         ) : null}
-                    </div>
                 </div>
-            </BaseModal>
-            {editingPayment && (
+            </div>
+        </BaseModal >
+
+            { editingPayment && (
                 <PaymentForm
                     open={!!editingPayment}
                     onOpenChange={(open) => !open && setEditingPayment(null)}
@@ -943,7 +1346,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         fetchData()
                     }}
                 />
-            )}
+            )
+}
         </>
     )
 }

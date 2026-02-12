@@ -388,7 +388,7 @@ export default function PurchaseOrdersPage() {
             <PageHeader
                 title="Gestión de Compras"
                 description="Gestión integral de órdenes de compra, recepciones y facturas de proveedores"
-                icon={ShoppingCart}
+
                 titleActions={
                     <PageHeaderButton
                         onClick={() => setCheckoutOpen(true)}

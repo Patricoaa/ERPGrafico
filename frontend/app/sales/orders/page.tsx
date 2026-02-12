@@ -31,7 +31,7 @@ export default function SalesOrdersPage() {
             <PageHeader
                 title="Notas de Venta"
                 description="Gestiona tus pedidos, facturación y estados de entrega de forma centralizada."
-                icon={ShoppingCart}
+
             >
                 {editingOrder && (
                     <SaleOrderForm
