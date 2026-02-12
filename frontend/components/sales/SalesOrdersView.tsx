@@ -124,26 +124,31 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
             cell: ({ row }) => <DataCell.Code>NV-{row.getValue("number")}</DataCell.Code>,
+            meta: { title: "Número" },
         },
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+            meta: { title: "Fecha" },
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
             cell: ({ row }) => <DataCell.Text>{row.getValue("customer_name")}</DataCell.Text>,
+            meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
+            meta: { title: "Total" },
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Hub" />,
             cell: ({ row }) => <OrderHubStatus order={row.original} />,
+            meta: { title: "Estado" },
         },
         // Hidden filter columns
         {
@@ -173,6 +178,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" />,
             cell: ({ row }) => <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>,
+            meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
@@ -182,21 +188,25 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                     {row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}
                 </span>
             ),
+            meta: { title: "Número" },
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
             cell: ({ row }) => <DataCell.Text>{row.original.customer_name || row.original.partner_name}</DataCell.Text>,
+            meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
+            meta: { title: "Total" },
         },
         {
             id: "status_hub",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Hub" />,
             cell: ({ row }) => <NoteHubStatus note={row.original} />,
+            meta: { title: "Estado" },
         },
         {
             id: "status",

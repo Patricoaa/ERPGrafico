@@ -206,6 +206,7 @@ export default function PurchaseOrdersPage() {
             cell: ({ row }) => (
                 <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
             ),
+            meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
@@ -219,6 +220,7 @@ export default function PurchaseOrdersPage() {
                     </span>
                 </div>
             ),
+            meta: { title: "Número" },
         },
         {
             accessorKey: "date",
@@ -226,6 +228,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+            meta: { title: "Fecha" },
         },
         {
             accessorKey: "supplier_name", // Try supplier_name, fallback to partner_name
@@ -233,6 +236,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Proveedor" />
             ),
             cell: ({ row }) => <DataCell.Text>{row.original.supplier_name || row.original.partner_name}</DataCell.Text>,
+            meta: { title: "Proveedor" },
         },
         {
             accessorKey: "total",
@@ -242,6 +246,7 @@ export default function PurchaseOrdersPage() {
             cell: ({ row }) => (
                 <DataCell.Currency value={row.getValue("total")} />
             ),
+            meta: { title: "Total" },
         },
         {
             id: "status_hub",
@@ -249,6 +254,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
             cell: ({ row }) => <NoteHubStatus note={row.original} />,
+            meta: { title: "Estado" },
         },
         // Filters for Notes (Hidden)
         {
@@ -285,6 +291,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Número" />
             ),
             cell: ({ row }) => <DataCell.Code>OCS-{row.getValue("number")}</DataCell.Code>,
+            meta: { title: "Número" },
         },
         {
             accessorKey: "date",
@@ -292,6 +299,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+            meta: { title: "Fecha" },
         },
         {
             accessorKey: "supplier_name",
@@ -299,6 +307,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Proveedor" />
             ),
             cell: ({ row }) => <DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text>,
+            meta: { title: "Proveedor" },
         },
         {
             accessorKey: "warehouse_name",
@@ -306,6 +315,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Almacén" />
             ),
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
+            meta: { title: "Almacén" },
         },
         {
             accessorKey: "total",
@@ -313,6 +323,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Total" />
             ),
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
+            meta: { title: "Total" },
         },
         {
             accessorKey: "status",
@@ -320,6 +331,7 @@ export default function PurchaseOrdersPage() {
                 <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
             cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
+            meta: { title: "Estado" },
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
