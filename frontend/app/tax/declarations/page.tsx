@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DeclarationWizard } from "@/components/tax/DeclarationWizard"
 import { PeriodChecklist } from "@/components/tax/PeriodChecklist"
-import { PaymentWizard } from "@/components/tax/PaymentWizard"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { useServerDate } from "@/hooks/useServerDate"
 
 export default function TaxDeclarationsPage() {
@@ -85,6 +85,27 @@ export default function TaxDeclarationsPage() {
             }
         } catch (error) {
             toast.error("Error al buscar la declaración")
+        }
+    }
+
+    const handlePaymentConfirm = async (data: any) => {
+        try {
+            await api.post("/tax/payments/", {
+                declaration: selectedDeclaration.id,
+                payment_date: data.documentDate || new Date().toISOString().split('T')[0],
+                amount: data.amount,
+                payment_method: data.paymentMethod,
+                reference: data.reference || data.transaction_number || '',
+                treasury_account: data.treasury_account_id,
+                notes: `Pago F29 - ${selectedDeclaration.tax_period_display}`
+            })
+
+            toast.success("Pago de impuestos registrado correctamente")
+            fetchPeriods()
+            setIsPaymentOpen(false)
+        } catch (error: any) {
+            console.error("Error saving payment:", error)
+            toast.error(error.response?.data?.error || "Error al registrar el pago")
         }
     }
 
@@ -288,12 +309,18 @@ export default function TaxDeclarationsPage() {
                 onSuccess={fetchPeriods}
             />
 
-            <PaymentWizard
-                isOpen={isPaymentOpen}
-                onOpenChange={setIsPaymentOpen}
-                declaration={selectedDeclaration}
-                onSuccess={fetchPeriods}
-            />
+            {selectedDeclaration && (
+                <PaymentDialog
+                    open={isPaymentOpen}
+                    onOpenChange={setIsPaymentOpen}
+                    total={Number(selectedDeclaration.vat_to_pay || 0)}
+                    pendingAmount={Number(selectedDeclaration.vat_to_pay || 0)}
+                    onConfirm={handlePaymentConfirm}
+                    title="Pagar Impuestos F29"
+                    isPurchase={true}
+                    hideDteFields={true}
+                />
+            )}
         </div>
     )
 }

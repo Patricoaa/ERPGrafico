@@ -200,7 +200,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                                         </div>
                                         <Separator />
                                         <div className="flex justify-between font-bold text-base pt-1">
-                                            <span>Total Neto Sales</span>
+                                            <span>Total Neto Ventas</span>
                                             <span>{formatCurrency(calcData?.net_taxed_sales)}</span>
                                         </div>
                                         <div className="flex justify-between font-bold text-primary text-lg">

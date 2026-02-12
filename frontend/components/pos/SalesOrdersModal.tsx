@@ -17,14 +17,13 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                 <DialogHeader className="pb-2">
                     <DialogTitle className="flex items-center gap-2">
                         <ShoppingCart className="h-5 w-5" />
-                        Notas de Venta y Documentos
+                        Notas de Ventas
                     </DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
                     {open && (
                         <SalesOrdersView
                             posSessionId={posSessionId}
-                            hideStatusInCards={true}
                         />
                     )}
                 </div>
