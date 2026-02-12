@@ -34,7 +34,7 @@ export function useProducts() {
             setLoading(true)
             try {
                 const [productsRes, categoriesRes, uomsRes] = await Promise.all([
-                    api.get('/inventory/products/?is_active=true&is_saleable=true&include_boms=true'),
+                    api.get('/inventory/products/?is_active=true&can_be_sold=true&include_boms=true'),
                     api.get('/inventory/categories/?page_size=9999'),
                     api.get('/inventory/uoms/?page_size=9999')
                 ])
@@ -95,7 +95,7 @@ export function useProducts() {
     const refreshProducts = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await api.get('/inventory/products/?is_active=true&is_saleable=true&include_boms=true')
+            const res = await api.get('/inventory/products/?is_active=true&can_be_sold=true&include_boms=true')
             setProducts(res.data.results || res.data)
             toast.success("Productos actualizados")
         } catch (error) {
