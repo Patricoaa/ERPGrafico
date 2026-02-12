@@ -489,7 +489,7 @@ class PurchasingService:
         description, reference, items = AccountingMapper.get_entries_for_receipt(receipt, settings)
         entry = JournalEntryService.create_entry(
             {
-                'date': receipt.receipt_date,
+                'date': invoice.date,
                 'description': description,
                 'reference': reference,
                 'state': JournalEntry.State.DRAFT

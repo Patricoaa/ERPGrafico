@@ -75,7 +75,7 @@ class BillingService:
     
     @staticmethod
     @transaction.atomic
-    def create_sale_invoice(order: SaleOrder, dte_type: str, payment_method: str = 'CREDIT', status: str = Invoice.Status.POSTED, number: str = None):
+    def create_sale_invoice(order: SaleOrder, dte_type: str, payment_method: str = 'CREDIT', status: str = Invoice.Status.POSTED, number: str = None, date=None):
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
         """
@@ -100,7 +100,7 @@ class BillingService:
         invoice = Invoice.objects.create(
             dte_type=dte_type,
             number=number or '',
-            date=timezone.now().date(),
+            date=date or timezone.now().date(),
             sale_order=order,
             payment_method=payment_method,
             total_net=order.total_net,
@@ -114,7 +114,7 @@ class BillingService:
         description, reference, items = AccountingMapper.get_entries_for_sale_invoice(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
-                'date': timezone.now().date(),
+                'date': invoice.date,
                 'description': description,
                 'reference': reference,
                 'state': JournalEntry.State.DRAFT
@@ -213,7 +213,7 @@ class BillingService:
         description, reference, items = AccountingMapper.get_entries_for_purchase_bill(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
-                'date': timezone.now().date(),
+                'date': invoice.date,
                 'description': description,
                 'reference': reference,
                 'state': JournalEntry.State.DRAFT
@@ -460,7 +460,7 @@ class BillingService:
             if document_number:
                 BillingService._validate_document_uniqueness(document_number, dte_type)
                 
-            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number)
+            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number, date=document_date)
             if document_date:
                 invoice.date = document_date
             if document_attachment:
@@ -500,6 +500,7 @@ class BillingService:
                 reference=f"NV-{order.number}",
                 partner=order.customer,
                 invoice=invoice,
+                date=invoice.date, # Ensure payment date matches invoice date
                 sale_order=order,
                 from_account=from_acc,
                 to_account=to_acc,

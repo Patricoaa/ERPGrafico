@@ -9,6 +9,9 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 
 
+def get_default_date():
+    return timezone.now().date()
+
 class ReconciliationMatch(models.Model):
     """Agrupador para conciliaciones N:M"""
     treasury_account = models.ForeignKey(
@@ -129,7 +132,7 @@ class TreasuryMovement(models.Model):
     )
 
     amount = models.DecimalField(_("Monto"), max_digits=12, decimal_places=2)
-    date = models.DateField(_("Fecha"), auto_now_add=True) # Check if we want auto_now_add or editable default? Service usually sets it.
+    date = models.DateField(_("Fecha"), default=get_default_date) # Changed from auto_now_add to allow manual date setting
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     notes = models.TextField(_("Notas"), blank=True) # Added from CashMovement
     
