@@ -6,11 +6,14 @@ from accounting.models import Account, AccountType
 from simple_history.models import HistoricalRecords
 from django.conf import settings
 from django.utils import timezone
+from core.utils import get_current_date
 from django.core.validators import MinValueValidator
 
 
 def get_default_date():
-    return timezone.now().date()
+    """Compatibility wrapper for migrations."""
+    return get_current_date()
+
 
 class ReconciliationMatch(models.Model):
     """Agrupador para conciliaciones N:M"""
@@ -132,7 +135,7 @@ class TreasuryMovement(models.Model):
     )
 
     amount = models.DecimalField(_("Monto"), max_digits=12, decimal_places=2)
-    date = models.DateField(_("Fecha"), default=get_default_date) # Changed from auto_now_add to allow manual date setting
+    date = models.DateField(_("Fecha"), default=get_current_date) # Changed from auto_now_add to allow manual date setting
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     notes = models.TextField(_("Notas"), blank=True) # Added from CashMovement
     

@@ -82,7 +82,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
     useEffect(() => {
         if (isOpen) {
             // Sync with server date on open if available
-            if (serverDate) {
+            if (serverDate && year !== null && month !== null) {
                 setPeriod({
                     year: year,
                     month: month

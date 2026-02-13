@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator
 from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
 from core.validators import validate_file_size, validate_image_extension
-from core.utils import generic_upload_path
+from core.utils import generic_upload_path, get_current_date
 
 
 class ProductCategory(models.Model):
@@ -880,7 +880,7 @@ class StockMove(models.Model):
         REVALUATION = 'REVALUATION', _('Revalorización')
         CORRECTION = 'CORRECTION', _('Corrección de Inventario')
 
-    date = models.DateField(_("Fecha"), default=timezone.now)
+    date = models.DateField(_("Fecha"), default=get_current_date)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='warehouse_moves')
     uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='stock_moves_uom', null=True, blank=True)

@@ -4,6 +4,14 @@ from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.utils.deconstruct import deconstructible
+from django.utils import timezone
+
+def get_current_date():
+    """
+    Returns the current date from the server (respects mock time).
+    Used as default for DateFields to avoid AssertionError with DRF serialization.
+    """
+    return timezone.now().date()
 
 @deconstructible
 class UploadPath:

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from core.models import User
@@ -34,7 +35,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     customer = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='sale_orders')
-    date = models.DateField(_("Fecha"), default=timezone.now)
+    date = models.DateField(_("Fecha"), default=get_current_date)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)

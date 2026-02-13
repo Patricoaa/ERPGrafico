@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
@@ -167,7 +168,7 @@ class JournalEntry(models.Model):
         CANCELLED = 'CANCELLED', _('Anulado')
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False, null=True, blank=True)
-    date = models.DateField(_("Fecha"), default=timezone.now)
+    date = models.DateField(_("Fecha"), default=get_current_date)
     description = models.CharField(_("Descripción"), max_length=255)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     state = models.CharField(_("Estado"), max_length=20, choices=State.choices, default=State.DRAFT)

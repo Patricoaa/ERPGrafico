@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from core.utils import get_current_date
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
@@ -231,7 +232,7 @@ class ProductionConsumption(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='production_usages')
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4, validators=[MinValueValidator(0)])
     
-    date = models.DateField(_("Fecha"), default=timezone.now)
+    date = models.DateField(_("Fecha"), default=get_current_date)
     
     # Link to Stock Move
     stock_move = models.OneToOneField(

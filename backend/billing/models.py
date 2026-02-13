@@ -7,7 +7,7 @@ from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
 from core.validators import validate_file_size, validate_file_extension
-from core.utils import generic_upload_path
+from core.utils import generic_upload_path, get_current_date
 from .note_workflow import NoteWorkflow  # Import workflow model
 
 class Invoice(models.Model):
@@ -54,7 +54,7 @@ class Invoice(models.Model):
         null=True, blank=True,
         validators=[validate_file_size, validate_file_extension]
     )
-    date = models.DateField(_("Fecha"), default=timezone.now)
+    date = models.DateField(_("Fecha"), default=get_current_date)
     
     # Links
     sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
