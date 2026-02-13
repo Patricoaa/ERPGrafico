@@ -26,9 +26,8 @@ export function useServerDate() {
             } catch (err) {
                 console.error('Error fetching server date:', err)
                 setError(err as Error)
-                const now = new Date()
-                setServerDate(now)
-                setRawDate(now.toISOString().split('T')[0])
+                setServerDate(null)
+                setRawDate('')
             } finally {
                 setIsLoading(false)
             }
@@ -41,7 +40,7 @@ export function useServerDate() {
         isLoading,
         error,
         dateString: rawDate,
-        year: serverDate?.getFullYear() || new Date().getFullYear(),
-        month: serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1
+        year: serverDate?.getFullYear() || null,
+        month: serverDate ? serverDate.getMonth() + 1 : null
     }
 }
