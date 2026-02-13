@@ -66,32 +66,107 @@ const SidebarSection = ({ title, children }: { title: string, children: React.Re
 const SidebarContent = ({ data, currentType }: { data: any, currentType: string }) => {
     if (!data) return null
 
+    // Document-specific sidebar content
+    const renderContent = () => {
+        switch (currentType) {
+            case 'sale_order':
+                return (
+                    <>
+                        <SidebarSection title="Información Comercial">
+                            <MetadataItem label="Vendedor" value={data.salesperson_name || data.seller_name} icon={User} />
+                            <MetadataItem label="Canal" value={data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'} />
+                            <MetadataItem label="Almacén" value={data.warehouse_name} icon={Package} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
+                            <MetadataItem label="Entrega Planificada" value={formatPlainDate(data.planned_delivery_date)} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'purchase_order':
+                return (
+                    <>
+                        <SidebarSection title="Información de Compra">
+                            <MetadataItem label="Almacén Destino" value={data.warehouse_name} icon={Package} />
+                            <MetadataItem label="Estado Recepción" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
+                            <MetadataItem label="Recepción Planificada" value={formatPlainDate(data.planned_receipt_date)} />
+                        </SidebarSection>
+                        <SidebarSection title="Referencias">
+                            <MetadataItem label="Ref. Proveedor" value={data.supplier_reference} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'invoice':
+                return (
+                    <>
+                        <SidebarSection title="Información Tributaria">
+                            <MetadataItem label="Tipo DTE" value={data.dte_type} />
+                            <MetadataItem label="Folio" value={data.folio_number} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
+                            <MetadataItem label="Vencimiento" value={formatPlainDate(data.due_date)} />
+                        </SidebarSection>
+                        {data.attachments?.length > 0 && (
+                            <SidebarSection title="Archivos">
+                                <AttachmentList attachments={data.attachments} />
+                            </SidebarSection>
+                        )}
+                    </>
+                )
+            case 'payment':
+                return (
+                    <>
+                        <SidebarSection title="Información de Pago">
+                            <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} />
+                            <MetadataItem label="Referencia" value={data.transaction_number || data.reference} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Fecha Pago" value={formatPlainDate(data.date)} icon={Calendar} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'journal_entry':
+                return (
+                    <>
+                        <SidebarSection title="Información Contable">
+                            <MetadataItem label="Período" value={data.period_name} />
+                            <MetadataItem label="Diario" value={data.journal_name} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Fecha" value={formatPlainDate(data.date)} icon={Calendar} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'cash_movement':
+                return (
+                    <>
+                        <SidebarSection title="Información del Movimiento">
+                            <MetadataItem label="Tipo" value={data.movement_type} />
+                            <MetadataItem label="Contenedor Origen" value={data.from_container_name} />
+                            <MetadataItem label="Contenedor Destino" value={data.to_container_name} />
+                        </SidebarSection>
+                        <SidebarSection title="Fechas">
+                            <MetadataItem label="Fecha" value={formatPlainDate(data.date)} icon={Calendar} />
+                        </SidebarSection>
+                    </>
+                )
+            default:
+                return (
+                    <SidebarSection title="Información General">
+                        <MetadataItem label="Fecha" value={formatPlainDate(data.date || data.created_at)} icon={Calendar} />
+                        <MetadataItem label="ID" value={data.id} className="font-mono text-[11px]" />
+                    </SidebarSection>
+                )
+        }
+    }
+
     return (
         <div className="space-y-8 divide-y divide-border/20">
-            <SidebarSection title="Información Logística">
-                <MetadataItem label="Almacén / Bodega" value={data.warehouse_name || data.warehouse} icon={Package} />
-                <MetadataItem label="Estado de Despacho" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} />
-                <MetadataItem label="Vendedor" value={data.salesperson_name || data.seller_name} icon={User} />
-                <MetadataItem label="Canal de Venta" value={data.channel === 'POS' ? 'Punto de Venta' : (data.channel || 'Sistema')} />
-            </SidebarSection>
-
-            <SidebarSection title="Fechas y Plazos">
-                <MetadataItem label="Fecha Emisión" value={formatPlainDate(data.date || data.created_at)} />
-                <MetadataItem label="Fecha Vencimiento" value={formatPlainDate(data.due_date)} />
-                <MetadataItem label="Entrega Planificada" value={formatPlainDate(data.planned_delivery_date || data.planned_receipt_date)} />
-            </SidebarSection>
-
-            <SidebarSection title="Identificadores">
-                <MetadataItem label="Referencia Externa" value={data.external_reference || data.supplier_reference} />
-                <MetadataItem label="ID de Transacción" value={data.id} className="font-mono text-[11px]" />
-                {data.pos_session && <MetadataItem label="Sesión POS" value={`#${data.pos_session}`} />}
-            </SidebarSection>
-
-            {data.attachments?.length > 0 && (
-                <SidebarSection title="Archivos">
-                    <AttachmentList attachments={data.attachments} />
-                </SidebarSection>
-            )}
+            {renderContent()}
         </div>
     )
 }
@@ -299,9 +374,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
         switch (currentType) {
             case 'sale_order':
-                return { main: "Comprobante de Venta", sub: `NV-${data.number || data.id}` }
+                return { main: "Nota de Venta", sub: `NV-${data.number || data.id}` }
             case 'purchase_order':
-                return { main: "Comprobante de Compra", sub: `OCS-${data.number || data.id}` }
+                return { main: "Orden de Compra y Servicios", sub: `OCS-${data.number || data.id}` }
             case 'invoice':
                 const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
                     data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
@@ -385,7 +460,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             >
                 <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background">
                     {/* Header Banner */}
-                    <div className="bg-primary/[0.03] border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 relative">
+                    <div className="border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 relative">
                         {/* Back button and Basic Info */}
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4">
@@ -407,34 +482,12 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                             </div>
                         </div>
 
-                        {/* Totals & Status Banner */}
+                        {/* Status Banner */}
                         {data && (
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-4">
                                 <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monto Total</span>
-                                    <span className="text-3xl font-black tracking-tighter text-primary">
-                                        {formatCurrency(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0))}
-                                    </span>
-                                </div>
-                                <div className="h-10 w-[1.5px] bg-border/50 hidden md:block" />
-                                <div className="flex flex-col items-end min-w-[120px]">
                                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado</span>
                                     <BannerStatus status={data.status || data.state} type={currentType} />
-                                </div>
-                                <div className="flex items-center gap-2 ml-2">
-                                    {(currentType === 'sale_order' || currentType === 'invoice' || currentType === 'purchase_order') && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="font-black text-[10px] uppercase tracking-wider h-10 px-4 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 rounded-xl"
-                                            onClick={() => setEditingPayment(data)}
-                                        >
-                                            <Plus className="h-3.5 w-3.5 mr-2" /> Registrar Pago
-                                        </Button>
-                                    )}
-                                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
-                                        <X className="h-5 w-5" />
-                                    </Button>
                                 </div>
                             </div>
                         )}
@@ -460,21 +513,14 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         <div className="space-y-2">
                                             <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                                 <User className="h-3 w-3" />
-                                                Entidad Relacionada
+                                                Contacto Relacionado
                                             </h4>
                                             <p className="text-3xl font-black text-primary leading-none tracking-tight">
                                                 {data.customer_name || data.supplier_name || data.partner_name || data.contact_name || (currentType === 'journal_entry' ? 'Asiento Contable' : 'N/A')}
                                             </p>
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant="outline" className="font-mono text-[10px] font-bold py-0 h-5 px-1.5 uppercase bg-muted/30">
-                                                    {data.customer_code || data.supplier_code || data.partner_id || 'ID-EXTERNO'}
-                                                </Badge>
-                                                <div className="h-1 w-1 rounded-full bg-border" />
-                                                <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                                                    <Calendar className="h-3.5 w-3.5" />
-                                                    {formatPlainDate(data.date || data.created_at)}
-                                                </p>
-                                            </div>
+                                            <p className="text-sm font-mono text-muted-foreground">
+                                                {data.customer_rut || data.supplier_rut || data.partner_rut || '-'}
+                                            </p>
                                         </div>
 
                                         {/* Quick Data for Inventory/Works */}
@@ -640,16 +686,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         />
                                     )}
 
-                                    {/* Section 4: Payment History */}
-                                    {(view === 'all' || view === 'history') &&
-                                        (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
-                                            <PaymentHistorySection
-                                                currentType={currentType}
-                                                data={data}
-                                                navigateTo={navigateTo}
-                                                handleDeletePayment={handleDeletePayment}
-                                            />
-                                        )}
+
                                 </div>
 
                                 {/* Right Content Area (25%) - Metadata Sidebar */}
