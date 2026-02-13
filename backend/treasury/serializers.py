@@ -200,6 +200,14 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     justify_reason_display = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     terminal_batch_display = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, obj):
+        if obj.is_reconciled:
+            return 'RECONCILED'
+        if obj.is_pending_registration:
+            return 'PENDING'
+        return 'POSTED'
 
     def get_is_inbound(self, obj):
         # Determine if it's an inflow to the account being considered

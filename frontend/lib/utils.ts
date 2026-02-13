@@ -25,6 +25,7 @@ export function translateStatus(status: string | null | undefined): string {
     'IN_PROGRESS': 'En Proceso',
     'FINISHED': 'Terminada',
     'REJECTED': 'Rechazado',
+    'RECONCILED': 'Conciliado',
     'VOID': 'Anulado',
     // Production Stages (some might be used as status)
     'MATERIAL_ASSIGNMENT': 'Asignación de Materiales',

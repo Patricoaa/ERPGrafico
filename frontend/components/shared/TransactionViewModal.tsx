@@ -29,6 +29,18 @@ interface TransactionViewModalProps {
 // --- Helper Components for the Modular Layout ---
 
 const BannerStatus = ({ status, type }: { status: string, type: string }) => {
+    // Payment-specific status handling
+    if (type === 'payment' || type === 'cash_movement') {
+        const variant = status === 'RECONCILED' || status === 'POSTED' ? 'default' :
+            status === 'PENDING' ? 'secondary' : 'outline'
+        return (
+            <Badge variant={variant} className="font-bold text-xs px-3 py-1 uppercase tracking-wider">
+                {translateStatus(status)}
+            </Badge>
+        )
+    }
+
+    // General status handling
     const variant = status === 'DELIVERED' || status === 'PAID' || status === 'COMPLETED' || status === 'RECEIVED' ? 'default' :
         status === 'PARTIAL' || status === 'READY' || status === 'APPROVED' ? 'secondary' : 'outline'
 
@@ -68,10 +80,24 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
 
     // Document-specific sidebar content
     const renderContent = () => {
+        // Helper to render the common contact section
+        const renderContactSection = (title: string, name: string, rut?: string) => {
+            if (!name) return null
+            return (
+                <SidebarSection title={title}>
+                    <div className="space-y-1">
+                        <div className="text-sm font-black text-primary leading-tight">{name}</div>
+                        {rut && <div className="text-xs font-mono text-muted-foreground">{rut}</div>}
+                    </div>
+                </SidebarSection>
+            )
+        }
+
         switch (currentType) {
             case 'sale_order':
                 return (
                     <>
+                        {renderContactSection('Cliente', data.customer_name || data.contact_name, data.customer_rut)}
                         <SidebarSection title="Información Comercial">
                             <MetadataItem label="Vendedor" value={data.salesperson_name || data.seller_name} icon={User} />
                             <MetadataItem label="Canal" value={data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'} />
@@ -86,6 +112,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'purchase_order':
                 return (
                     <>
+                        {renderContactSection('Proveedor', data.supplier_name || data.contact_name, data.supplier_rut)}
                         <SidebarSection title="Información de Compra">
                             <MetadataItem label="Almacén Destino" value={data.warehouse_name} icon={Package} />
                             <MetadataItem label="Estado Recepción" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} />
@@ -94,14 +121,23 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
                             <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
                             <MetadataItem label="Recepción Planificada" value={formatPlainDate(data.planned_receipt_date)} />
                         </SidebarSection>
-                        <SidebarSection title="Referencias">
-                            <MetadataItem label="Ref. Proveedor" value={data.supplier_reference} />
-                        </SidebarSection>
                     </>
                 )
             case 'invoice':
+                const isSale = data.dte_type === 'FACTURA' || data.dte_type === 'BOLETA' || data.dte_type === 'NOTA_DEBITO' || data.dte_type === 'NOTA_CREDITO'
+                // Note: Logic for 'Cliente' vs 'Proveedor' might need refinement depending on exact Invoice flows, but usually Invoice = Sale, Bill = Purchase.
+                // Assuming 'invoice' type covers both sales and purchase invoices (bills)? 
+                // Creating a generic title if unsure, or checking fields.
+                // Usually ERPGrafico separates 'invoice' (Sales) from 'bill' (Purchases)? 
+                // Based on previous context, 'invoice' model has dte_type. 
+                // Let's assume 'Cliente' for now as it's typically Sales. If `supplier_name` exists, it's likely a Purchase Invoice?
+                const contactTitle = data.supplier_name ? 'Proveedor' : 'Cliente'
+                const contactName = data.supplier_name || data.customer_name || data.contact_name
+                const contactRut = data.supplier_rut || data.customer_rut
+
                 return (
                     <>
+                        {renderContactSection(contactTitle, contactName, contactRut)}
                         <SidebarSection title="Información Tributaria">
                             <MetadataItem label="Tipo DTE" value={data.dte_type} />
                             <MetadataItem label="Folio" value={data.folio_number} />
@@ -118,8 +154,11 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
                     </>
                 )
             case 'payment':
+                const payTitle = data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'
+                const payName = data.partner_name || data.contact_name
                 return (
                     <>
+                        {renderContactSection(payTitle, payName)}
                         <SidebarSection title="Información de Pago">
                             <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} />
                             <MetadataItem label="Referencia" value={data.transaction_number || data.reference} />
@@ -132,6 +171,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'journal_entry':
                 return (
                     <>
+                        {renderContactSection('Entidad Relacionada', data.partner_name || data.contact_name)}
                         <SidebarSection title="Información Contable">
                             <MetadataItem label="Período" value={data.period_name} />
                             <MetadataItem label="Diario" value={data.journal_name} />
@@ -144,6 +184,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'cash_movement':
                 return (
                     <>
+                        {renderContactSection('Entidad', data.partner_name || data.contact_name)}
                         <SidebarSection title="Información del Movimiento">
                             <MetadataItem label="Tipo" value={data.movement_type} />
                             <MetadataItem label="Contenedor Origen" value={data.from_container_name} />
@@ -151,6 +192,22 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Fecha" value={formatPlainDate(data.date)} icon={Calendar} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'work_order':
+                return (
+                    <>
+                        {renderContactSection('Cliente', data.customer_name || data.contact_name)}
+                        <SidebarSection title="Progreso">
+                            <div className="flex items-center gap-3">
+                                <Progress value={data.production_progress || 0} className="h-2 flex-1" />
+                                <span className="font-black text-xs">{Math.round(data.production_progress || 0)}%</span>
+                            </div>
+                        </SidebarSection>
+                        <SidebarSection title="Información General">
+                            <MetadataItem label="Fecha" value={formatPlainDate(data.date || data.created_at)} icon={Calendar} />
+                            <MetadataItem label="ID" value={data.display_id || data.id} className="font-mono text-[11px]" />
                         </SidebarSection>
                     </>
                 )
@@ -554,7 +611,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                     <h2 className="text-2xl font-black tracking-tight text-primary uppercase leading-none">{mainTitle}</h2>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-xs font-mono font-black text-muted-foreground bg-muted/50 px-2 py-0.5 rounded border border-dashed uppercase tracking-wider">{subTitle}</span>
-                                        {data?.reference && <span className="text-[10px] font-mono text-muted-foreground font-bold">Ref: {data.reference}</span>}
                                     </div>
                                 </div>
                             </div>
@@ -586,34 +642,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                 {/* Left Content Area (75%) */}
                                 <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-12">
 
-                                    {/* Section: Main Header Info (Customer/Partner) */}
-                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 pb-8 border-b border-border/50">
-                                        <div className="space-y-2">
-                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                                <User className="h-3 w-3" />
-                                                Contacto Relacionado
-                                            </h4>
-                                            <p className="text-3xl font-black text-primary leading-none tracking-tight">
-                                                {data.customer_name || data.supplier_name || data.partner_name || data.contact_name || (currentType === 'journal_entry' ? 'Asiento Contable' : 'N/A')}
-                                            </p>
-                                            <p className="text-sm font-mono text-muted-foreground">
-                                                {data.customer_rut || data.supplier_rut || data.partner_rut || '-'}
-                                            </p>
-                                        </div>
-
-                                        {/* Quick Data for Inventory/Works */}
-                                        {currentType === 'work_order' && (
-                                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center gap-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-black text-muted-foreground uppercase">Progreso</span>
-                                                    <div className="flex items-center gap-3 mt-1">
-                                                        <Progress value={data.production_progress || 0} className="h-2 w-24" />
-                                                        <span className="font-black text-sm">{Math.round(data.production_progress || 0)}%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* Section: Main Header Info (Moved to Sidebar) */}
+                                    {/* Content removed */}
                                     {/* Section 1: Summary Cards (Always visible if data exists) */}
                                     {(view === 'all' || view === 'details' || view === 'history') && (
                                         <div className="space-y-4">
@@ -628,7 +658,46 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     </div>
 
                                                     <div className="border border-border/60 rounded-3xl overflow-hidden bg-background shadow-sm">
-                                                        {currentType === 'journal_entry' ? (
+                                                        {currentType === 'payment' || currentType === 'cash_movement' ? (
+                                                            <Table>
+                                                                <TableHeader className="bg-muted/30">
+                                                                    <TableRow className="hover:bg-transparent border-none">
+                                                                        <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Concepto</TableHead>
+                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[160px]">Método</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[180px] px-6">Monto</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    <TableRow className="hover:bg-muted/5 border-border/40">
+                                                                        <TableCell className="px-6 py-4">
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-bold text-[13px] tracking-tight">
+                                                                                    {currentType === 'payment'
+                                                                                        ? (data.payment_type === 'INBOUND' ? 'Ingreso de Efectivo' : 'Egreso de Efectivo')
+                                                                                        : data.movement_type === 'DEPOSIT' ? 'Depósito'
+                                                                                            : data.movement_type === 'WITHDRAWAL' ? 'Retiro' : 'Traspaso'
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">
+                                                                                    {data.reference || data.transaction_number || '-'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-center font-black text-[11px] uppercase text-muted-foreground">
+                                                                            {currentType === 'payment'
+                                                                                ? translatePaymentMethod(data.payment_method)
+                                                                                : currentType === 'cash_movement'
+                                                                                    ? (data.from_container_name ? `${data.from_container_name} → ${data.to_container_name}` : 'Efectivo')
+                                                                                    : '-'
+                                                                            }
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right font-black text-lg text-emerald-600 font-mono tracking-tighter px-6">
+                                                                            {formatCurrency(data.amount)}
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                </TableBody>
+                                                            </Table>
+                                                        ) : currentType === 'journal_entry' ? (
                                                             <Table>
                                                                 <TableHeader className="bg-muted/30 backdrop-blur-sm">
                                                                     <TableRow className="hover:bg-transparent border-none">
