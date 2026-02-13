@@ -144,6 +144,8 @@ export default function TaxDeclarationsPage() {
     // For now assuming 0 or fetching separate if critical. User asked to sync "Impuesto Determinado".
 
 
+    // ... (previous code)
+
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "period_display",
@@ -160,26 +162,29 @@ export default function TaxDeclarationsPage() {
                 </div>
             ),
             sortingFn: (rowA, rowB, columnId) => {
-                // Custom sort by year and month
                 if (rowA.original.year !== rowB.original.year) {
                     return rowA.original.year - rowB.original.year
                 }
                 return rowA.original.month - rowB.original.month
-            }
+            },
+            meta: { title: "Período" }
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => getStatusBadge(row.original.status),
-            filterFn: (row, id, value) => value.includes(row.getValue(id))
+            filterFn: (row, id, value) => value.includes(row.getValue(id)),
+            meta: { title: "Estado" }
         },
         {
-            accessorKey: "vat_to_pay",
+            id: "vat_to_pay",
+            accessorFn: (row) => row.declaration_summary?.vat_to_pay || 0,
             header: ({ column }) => <DataTableColumnHeader column={column} title="Impuesto Determinado" />,
             cell: ({ row }) => {
-                const amount = row.original.declaration_summary?.vat_to_pay || 0
+                const amount = row.getValue("vat_to_pay") as number
                 return <div className="font-mono">{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}</div>
-            }
+            },
+            meta: { title: "Impuesto" }
         },
         {
             accessorKey: "payment_status",
@@ -194,7 +199,8 @@ export default function TaxDeclarationsPage() {
                     return <Badge variant="outline" className="border-red-500 text-red-600 bg-red-50">Pendiente</Badge>
                 }
                 return <span className="text-muted-foreground">-</span>
-            }
+            },
+            meta: { title: "Pago" }
         },
         {
             id: "actions",
@@ -202,12 +208,9 @@ export default function TaxDeclarationsPage() {
                 const period = row.original
                 const summary = period.declaration_summary
                 const showPayButton = period.status !== 'CLOSED' && summary && !summary.is_fully_paid && summary.vat_to_pay > 0
-                // User asked: "El boton de pagar debería dejar visbilizarse si ya se ha pagado completamente"
-                // Actually if it IS closed, we might still want to pay if it wasn't paid? 
-                // Usually you pay F29 around the same time you declare. 
-                // Let's allow payment if there is debt, regardless of closed status (maybe they closed it but haven't paid?)
-                // Or user said: "El boton de pagar debería dejar visbilizarse si ya se ha pagado completamente el impuesto."
-                // So show if NOT fully paid.
+
+                // Checklist only available if OPEN
+                const canOpenChecklist = period.status === 'OPEN'
 
                 return (
                     <div className="flex justify-end gap-2">
@@ -225,17 +228,20 @@ export default function TaxDeclarationsPage() {
                                 Pagar
                             </Button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenChecklist(period);
-                            }}
-                        >
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        </Button>
+                        {canOpenChecklist && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenChecklist(period);
+                                }}
+                                title="Abrir checklist de cierre"
+                            >
+                                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                        )}
                     </div>
                 )
             }
@@ -294,12 +300,11 @@ export default function TaxDeclarationsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Kept simplistic for now as we don't have this data in summary yet, but keeping structure */}
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
                         <CardDescription className="text-2xl font-bold text-foreground">
-                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(0)}
+                            -
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -310,130 +315,35 @@ export default function TaxDeclarationsPage() {
                 </Card>
             </div>
 
-            <Card className="border-none shadow-none bg-transparent">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        Historial de Períodos
-                    </h3>
-                </div>
-
-                {isLoading ? (
-                    <div className="space-y-3">
-                        {/* Skeleton loader */}
-                        <div className="h-12 w-full bg-muted/20 rounded-lg animate-pulse" />
-                        <div className="h-12 w-full bg-muted/20 rounded-lg animate-pulse" />
-                        <div className="h-12 w-full bg-muted/20 rounded-lg animate-pulse" />
-                    </div>
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={periods}
-                        filterColumn="period_display" // This virtual column doesn't exist in data, but we filter by month_display usually. DataTable might need adjusting or we use year.
-                        // Actually standard DataTable filters by string accessors. "status" is faceted.
-                        searchPlaceholder="Buscar períodos..."
-                        facetedFilters={[
-                            {
-                                column: "status",
-                                title: "Estado",
-                                options: [
-                                    { label: "Abierto", value: "OPEN" },
-                                    { label: "En Revisión", value: "UNDER_REVIEW" },
-                                    { label: "Cerrado", value: "CLOSED" },
-                                ]
-                            }
-                        ]}
-                        renderCustomView={(table) => {
-                            // Render same list style but using table model for pagination/filtering
-                            const rows = table.getRowModel().rows
-                            if (rows.length === 0) {
-                                return (
-                                    <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
-                                        <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                        <p className="text-muted-foreground font-medium">No hay períodos encontrados</p>
-                                    </div>
-                                )
-                            }
-
-                            return (
-                                <div className="grid gap-3">
-                                    {rows.map((row: Row<any>) => {
-                                        const period = row.original
-                                        const summary = period.declaration_summary
-                                        // Reconstruct the Card UI here using row data
-                                        return (
-                                            <div
-                                                key={period.id}
-                                                className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
-                                                onClick={() => handleOpenChecklist(period)}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
-                                                        <span className="text-[10px] font-bold text-primary/60">{period.year}</span>
-                                                        <span className="text-sm font-bold text-primary">{period.month_display.substring(0, 3)}</span>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-foreground flex items-center gap-2">
-                                                            {period.month_display} {period.year}
-                                                            {getStatusBadge(period.status)}
-                                                        </h4>
-                                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                                            <span className="flex items-center gap-1">
-                                                                <FileText className="h-3 w-3" />
-                                                                {summary ? `Folio ${summary.folio_number || 'N/A'}` : 'Sin Declaración'}
-                                                            </span>
-                                                            {period.closed_at && (
-                                                                <span className="flex items-center gap-1">
-                                                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                                                    Cerrado el {format(new Date(period.closed_at), "dd/MM/yyyy")}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-6">
-                                                    <div className="text-right hidden sm:block">
-                                                        <div className="text-xs text-muted-foreground mb-1 uppercase tracking-wider font-bold">Impuesto Determinado</div>
-                                                        <div className="text-sm font-bold">
-                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary?.vat_to_pay || 0)}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-2">
-                                                        {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0)) && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleOpenPayment(period);
-                                                                }}
-                                                            >
-                                                                <DollarSign className="h-4 w-4 mr-1" />
-                                                                Pagar
-                                                            </Button>
-                                                        )}
-                                                        <Button variant="ghost" size="icon" className="group-hover:translate-x-1 transition-transform">
-                                                            <ArrowRight className="h-5 w-5 text-primary" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )
-                        }}
-                    />
-                )}
-            </Card>
+            <div className="bg-card rounded-xl border shadow-sm">
+                <DataTable
+                    columns={columns}
+                    data={periods}
+                    filterColumn="period_display"
+                    searchPlaceholder="Buscar período..."
+                    useAdvancedFilter={true}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Abierto", value: "OPEN" },
+                                { label: "Cerrado", value: "CLOSED" },
+                                { label: "En Revisión", value: "UNDER_REVIEW" },
+                            ]
+                        }
+                    ]}
+                />
+            </div>
 
             <DeclarationWizard
                 isOpen={isWizardOpen}
                 onOpenChange={setIsWizardOpen}
-                onSuccess={fetchPeriods}
+                onSuccess={() => {
+                    fetchPeriods()
+                    setIsWizardOpen(false)
+                }}
+                existingPeriods={periods}
             />
 
             <PeriodChecklist

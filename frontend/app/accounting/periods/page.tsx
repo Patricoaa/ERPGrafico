@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Lock, LockOpen, Calendar, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPlainDate } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface AccountingPeriod {
     id: number;
@@ -46,12 +47,11 @@ export default function AccountingPeriodsPage() {
 
     const fetchPeriods = async () => {
         try {
-            const response = await fetch('/api/tax/accounting-periods/?ordering=-year,-month');
-            if (response.ok) {
-                const data = await response.json();
-                setPeriods(data);
-            }
+            const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
+            const data = response.data.results || response.data;
+            setPeriods(data);
         } catch (error) {
+            console.error('Error fetching periods:', error);
             toast.error('Error al cargar los periodos contables');
         } finally {
             setLoading(false);

@@ -36,9 +36,10 @@ interface DeclarationWizardProps {
     onOpenChange: (open: boolean) => void
     periodId?: number
     onSuccess: () => void
+    existingPeriods?: any[]
 }
 
-export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }: DeclarationWizardProps) {
+export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
     const { year, month, dateString, serverDate } = useServerDate()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
@@ -56,6 +57,33 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
         tax_rate: 19,
         notes: ""
     })
+
+    // Helper to determine if a period should be disabled
+    const isPeriodDisabled = (y: number, m: number) => {
+        const targetDate = new Date(y, m - 1)
+        const currentDate = serverDate || new Date()
+
+        // 1. Future periods (strictly future relative to server/current date)
+        if (targetDate > currentDate) return true;
+
+        // 2. Closed periods
+        // Find the latest closed period from existing data
+        const closedPeriods = existingPeriods.filter(p => p.status === 'CLOSED')
+        if (closedPeriods.length > 0) {
+            // Sort to find the most recent closed period
+            closedPeriods.sort((a, b) => {
+                if (a.year !== b.year) return b.year - a.year
+                return b.month - a.month
+            })
+            const lastClosed = closedPeriods[0]
+            const lastClosedDate = new Date(lastClosed.year, lastClosed.month - 1)
+
+            // If target is BEFORE or EQUAL to last closed, it's restricted
+            if (targetDate <= lastClosedDate) return true;
+        }
+
+        return false;
+    }
 
     // Updated calculation data fetching
     const calculateData = async () => {
@@ -198,18 +226,24 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                                 <div className="space-y-2">
                                     <Label>Mes</Label>
                                     <div className="grid grid-cols-4 gap-2">
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                            <div
-                                                key={m}
-                                                className={cn(
-                                                    "cursor-pointer rounded-lg border px-2 py-2 text-center text-sm transition-all hover:border-primary/50",
-                                                    period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
-                                                )}
-                                                onClick={() => setPeriod(p => ({ ...p, month: m }))}
-                                            >
-                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
-                                            </div>
-                                        ))}
+                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                                            const disabled = isPeriodDisabled(period.year, m)
+                                            return (
+                                                <div
+                                                    key={m}
+                                                    className={cn(
+                                                        "rounded-lg border px-2 py-2 text-center text-sm transition-all",
+                                                        disabled
+                                                            ? "opacity-30 cursor-not-allowed bg-muted border-transparent"
+                                                            : "cursor-pointer hover:border-primary/50",
+                                                        !disabled && period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : (!disabled ? "border-muted bg-background" : "")
+                                                    )}
+                                                    onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
+                                                >
+                                                    {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 
