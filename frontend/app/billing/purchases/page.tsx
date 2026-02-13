@@ -18,6 +18,7 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface PurchaseDocument {
     id: number
@@ -482,9 +483,11 @@ export default function PurchaseInvoicesPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold tracking-tight">Documentos Recibidos</h1>
-            </div>
+            <PageHeader
+                title="Documentos Recibidos"
+                description="Gestión de facturas y boletas de compra"
+                icon={FileBadge}
+            />
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">

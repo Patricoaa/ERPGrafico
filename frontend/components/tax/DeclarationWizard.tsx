@@ -207,19 +207,22 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Año Tributario</Label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(y => (
-                                            <div
-                                                key={y}
-                                                className={cn(
-                                                    "cursor-pointer rounded-xl border-2 px-4 py-3 text-center transition-all hover:border-primary/50",
-                                                    period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
-                                                )}
-                                                onClick={() => setPeriod(p => ({ ...p, year: y }))}
-                                            >
-                                                {y}
-                                            </div>
-                                        ))}
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {(() => {
+                                            const baseYear = year || new Date().getFullYear();
+                                            return [baseYear - 2, baseYear - 1, baseYear, baseYear + 1].map(y => (
+                                                <div
+                                                    key={y}
+                                                    className={cn(
+                                                        "cursor-pointer rounded-xl border-2 px-2 py-3 text-center transition-all hover:border-primary/50",
+                                                        period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
+                                                    )}
+                                                    onClick={() => setPeriod(p => ({ ...p, year: y }))}
+                                                >
+                                                    {y}
+                                                </div>
+                                            ));
+                                        })()}
                                     </div>
                                 </div>
 

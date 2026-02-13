@@ -315,26 +315,126 @@ export default function TaxDeclarationsPage() {
                 </Card>
             </div>
 
-            <div className="bg-card rounded-xl border shadow-sm">
-                <DataTable
-                    columns={columns}
-                    data={periods}
-                    filterColumn="period_display"
-                    searchPlaceholder="Buscar período..."
-                    useAdvancedFilter={true}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Abierto", value: "OPEN" },
-                                { label: "Cerrado", value: "CLOSED" },
-                                { label: "En Revisión", value: "UNDER_REVIEW" },
-                            ]
-                        }
-                    ]}
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={periods}
+                filterColumn="period_display"
+                searchPlaceholder="Buscar período..."
+                useAdvancedFilter={true}
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Abierto", value: "OPEN" },
+                            { label: "Cerrado", value: "CLOSED" },
+                            { label: "En Revisión", value: "UNDER_REVIEW" },
+                        ]
+                    }
+                ]}
+                renderCustomView={(table) => {
+                    const rows = table.getRowModel().rows
+                    if (rows.length === 0) {
+                        return (
+                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
+                                <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
+                            </div>
+                        )
+                    }
+                    return (
+                        <div className="grid gap-3 pt-2">
+                            {rows.map((row: any) => {
+                                const period = row.original
+                                const summary = period.declaration_summary
+                                const canOpenChecklist = period.status === 'OPEN'
+
+                                return (
+                                    <div
+                                        key={period.id}
+                                        className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
+                                        onClick={() => canOpenChecklist ? handleOpenChecklist(period) : null}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
+                                                <span className="text-[10px] font-bold text-primary/60">{period.year}</span>
+                                                <span className="text-sm font-bold text-primary">{period.month_display.substring(0, 3).toUpperCase()}</span>
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-lg text-foreground">
+                                                        {period.month_display} {period.year}
+                                                    </h4>
+                                                    {getStatusBadge(period.status)}
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    {summary ? (
+                                                        <>
+                                                            {summary.is_fully_paid ? (
+                                                                <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50 text-[10px] h-5">
+                                                                    Pagado
+                                                                </Badge>
+                                                            ) : (
+                                                                summary.vat_to_pay > 0 && period.status === 'CLOSED' && (
+                                                                    <Badge variant="outline" className="border-red-500 text-red-600 bg-red-50 text-[10px] h-5">
+                                                                        Pago Pendiente
+                                                                    </Badge>
+                                                                )
+                                                            )}
+                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                                                                <DollarSign className="h-3 w-3" />
+                                                                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">Sin declaración registrada</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0 || !summary)) && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenPayment(period);
+                                                    }}
+                                                >
+                                                    <DollarSign className="h-4 w-4 mr-2" />
+                                                    Pagar
+                                                </Button>
+                                            )}
+                                            {canOpenChecklist && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-10 w-10 rounded-xl group-hover:translate-x-1 transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenChecklist(period);
+                                                    }}
+                                                >
+                                                    <ArrowRight className="h-5 w-5 text-primary" />
+                                                </Button>
+                                            )}
+                                            {!canOpenChecklist && (
+                                                <div className="w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                }}
+            />
+
 
             <DeclarationWizard
                 isOpen={isWizardOpen}

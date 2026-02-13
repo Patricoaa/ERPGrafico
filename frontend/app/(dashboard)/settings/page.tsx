@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Settings, User, Building2, Bell, Shield, Database, ShoppingCart, History, FileText } from "lucide-react"
 import Link from "next/link"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function SettingsPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
-            <h2 className="text-3xl font-bold tracking-tight">Configuración del Sistema</h2>
+            <PageHeader title="Configuración del Sistema" icon={Settings} />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Link href="/settings/company">

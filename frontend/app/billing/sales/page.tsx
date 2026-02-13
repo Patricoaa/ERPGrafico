@@ -18,6 +18,7 @@ import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function SalesInvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([])
@@ -305,9 +306,11 @@ export default function SalesInvoicesPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold tracking-tight">Documentos Emitidos</h1>
-            </div>
+            <PageHeader
+                title="Documentos Emitidos"
+                description="Gestión de facturas y boletas de venta"
+                icon={Receipt}
+            />
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
