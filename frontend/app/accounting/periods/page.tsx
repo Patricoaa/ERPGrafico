@@ -38,6 +38,10 @@ export default function AccountingPeriodsPage() {
 
     useEffect(() => {
         fetchPeriods();
+
+        // Poll every 10 seconds
+        const interval = setInterval(fetchPeriods, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const fetchPeriods = async () => {
@@ -128,12 +132,7 @@ export default function AccountingPeriodsPage() {
             <PageHeader
                 title="Periodos Contables"
                 description="Gestión de periodos contables mensuales"
-            >
-                <Button variant="outline" onClick={fetchPeriods}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Actualizar
-                </Button>
-            </PageHeader>
+            />
 
             <div className="grid gap-4">
                 {periods.map((period) => (

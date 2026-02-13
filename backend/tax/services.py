@@ -484,6 +484,7 @@ class F29PaymentService:
             F29Payment instance
         """
         from treasury.services import TreasuryService
+        from treasury.models import TreasuryAccount, TreasuryMovement
         
         declaration = F29Declaration.objects.get(id=declaration_id)
         
@@ -509,15 +510,18 @@ class F29PaymentService:
             notes=payment_data.get('notes', '')
         )
         
+        # Get Treasury Account instance
+        treasury_account = TreasuryAccount.objects.get(id=payment_data['treasury_account_id'])
+
         # Create treasury movement (outflow)
         treasury_movement = TreasuryService.create_movement(
-            account_id=payment_data['treasury_account_id'],
-            movement_type='OUTFLOW',
+            from_account=treasury_account,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
             amount=payment_data['amount'],
             date=payment.payment_date,
-            description=f"Pago F29 {declaration.tax_period}",
+            notes=f"Pago F29 {declaration.tax_period}",
             reference=payment_data.get('reference', ''),
-            user=user
+            created_by=user
         )
         
         # Create journal entry for payment
