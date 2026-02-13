@@ -499,6 +499,16 @@ class F29PaymentService:
         if not settings or not settings.vat_payable_account:
             raise ValidationError("Falta configurar cuenta IVA por Pagar.")
         
+        # Handle treasury_account - can be object (from serializer) or ID
+        if 'treasury_account' in payment_data and isinstance(payment_data['treasury_account'], TreasuryAccount):
+            treasury_account = payment_data['treasury_account']
+            treasury_account_id = treasury_account.id
+        elif 'treasury_account_id' in payment_data:
+            treasury_account_id = payment_data['treasury_account_id']
+            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+        else:
+            raise ValidationError("Se requiere treasury_account o treasury_account_id")
+        
         # Create payment record
         payment = F29Payment.objects.create(
             declaration=declaration,
@@ -506,12 +516,9 @@ class F29PaymentService:
             amount=payment_data['amount'],
             payment_method=payment_data.get('payment_method', F29Payment.PaymentMethod.TRANSFER),
             reference=payment_data.get('reference', ''),
-            treasury_account_id=payment_data['treasury_account_id'],
+            treasury_account=treasury_account,
             notes=payment_data.get('notes', '')
         )
-        
-        # Get Treasury Account instance
-        treasury_account = TreasuryAccount.objects.get(id=payment_data['treasury_account_id'])
 
         # Create treasury movement (outflow)
         treasury_movement = TreasuryService.create_movement(

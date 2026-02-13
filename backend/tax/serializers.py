@@ -6,15 +6,54 @@ class TaxPeriodSerializer(serializers.ModelSerializer):
     month_display = serializers.CharField(source='get_month_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     closed_by_name = serializers.CharField(source='closed_by.username', read_only=True, allow_null=True)
+    declaration_summary = serializers.SerializerMethodField()
     
     class Meta:
         model = TaxPeriod
         fields = [
             'id', 'year', 'month', 'month_display', 'status', 'status_display',
             'closed_at', 'closed_by', 'closed_by_name',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'declaration_summary'
         ]
         read_only_fields = ['closed_at', 'closed_by', 'created_at', 'updated_at']
+
+    def get_declaration_summary(self, obj):
+        declaration = obj.declarations.first()
+        if not declaration:
+            return None
+            
+        # Check if fully paid
+        total_paid = sum(p.amount for p in declaration.payments.all())
+        
+        # Calculate final tax to pay (logic simplified from frontend)
+        # Total Debits - Total Credits
+        vat_debit = (declaration.sales_taxed * getattr(declaration, 'tax_rate', 19) / 100)
+        vat_credit = (declaration.purchases_taxed * getattr(declaration, 'tax_rate', 19) / 100)
+        
+        # Add other taxes/retentions if necessary, but keep it simple for now or fetch exact logic
+        # Ideally, we should reuse a service or property, but let's approximate or use stored fields if we had them.
+        # Wait, F29Declaration DOES NOT store the final calculated 'vat_to_pay' separately, it's calculated on fly.
+        
+        # Let's use the same logic as frontend wizard for consistency:
+        # Debits
+        debits = declaration.net_taxed_sales * declaration.tax_rate / 100
+        total_due = debits + declaration.withholding_tax + declaration.second_category_tax
+        
+        # Credits
+        credits = (declaration.net_taxed_purchases * declaration.tax_rate / 100) + \
+                 declaration.vat_credit_carryforward + \
+                 declaration.vat_correction_amount + \
+                 declaration.ppm_amount
+                 
+        vat_to_pay = max(0, total_due - credits)
+        
+        return {
+            'id': declaration.id,
+            'vat_to_pay': vat_to_pay,
+            'total_paid': total_paid,
+            'is_fully_paid': total_paid >= vat_to_pay and vat_to_pay > 0 or (vat_to_pay == 0),
+            'folio_number': declaration.folio_number
+        }
 
 
 class AccountingPeriodSerializer(serializers.ModelSerializer):

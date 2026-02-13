@@ -71,9 +71,11 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
             if (response.data.tax_rate) {
                 setManualFields(prev => ({ ...prev, tax_rate: response.data.tax_rate }))
             }
+            return true
         } catch (error) {
             console.error("Error calculating tax data:", error)
             toast.error("Error al calcular datos tributarios")
+            return false
         } finally {
             setIsLoading(false)
         }
@@ -88,18 +90,12 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                     month: month
                 })
             }
-            // Initial load for the suggested period
-            calculateData()
+
             setStep(1)
         }
     }, [isOpen, serverDate])
 
-    // Re-calculate when period changes
-    useEffect(() => {
-        if (isOpen && step === 1) {
-            calculateData()
-        }
-    }, [period.year, period.month])
+
 
     const handleSave = async () => {
         setIsLoading(true)
@@ -130,7 +126,17 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
         }
     }
 
-    const nextStep = () => setStep(s => s + 1)
+    const nextStep = async () => {
+        if (step === 1) {
+            // Validate period and perform calculation
+            const success = await calculateData();
+            if (success) {
+                setStep(s => s + 1)
+            }
+        } else {
+            setStep(s => s + 1)
+        }
+    }
     const prevStep = () => setStep(s => s - 1)
 
     const formatCurrency = (val: number) =>
@@ -149,35 +155,75 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
                             <Calculator className="h-5 w-5" />
                         </div>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">Paso {step} de 3</Badge>
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">Paso {step} de 4</Badge>
                     </div>
                     <DialogTitle className="text-2xl font-bold">Asistente de Declaración F29</DialogTitle>
-                    <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground mr-1">Año</Label>
-                            <Input
-                                type="number"
-                                className="w-24 h-8 rounded-lg text-sm"
-                                value={period.year}
-                                onChange={(e) => setPeriod(p => ({ ...p, year: Number(e.target.value) }))}
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground mr-1">Mes</Label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="12"
-                                className="w-16 h-8 rounded-lg text-sm bg-background border focus:ring-1 focus:ring-primary px-2"
-                                value={period.month}
-                                onChange={(e) => setPeriod(p => ({ ...p, month: Number(e.target.value) }))}
-                            />
-                        </div>
+                    <div className="text-muted-foreground text-sm mt-1">
+                        {period.month && period.year && (
+                            <span>Período: {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                        )}
                     </div>
                 </DialogHeader>
 
                 <div className="py-6">
+
                     {step === 1 && (
+                        <div className="space-y-6 max-w-md mx-auto py-8">
+                            <div className="text-center space-y-2 mb-8">
+                                <h3 className="text-xl font-semibold">Selecciona el Período a Declarar</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Elige el mes y año para calcular el IVA y generar el formulario F29.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Año Tributario</Label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(y => (
+                                            <div
+                                                key={y}
+                                                className={cn(
+                                                    "cursor-pointer rounded-xl border-2 px-4 py-3 text-center transition-all hover:border-primary/50",
+                                                    period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
+                                                )}
+                                                onClick={() => setPeriod(p => ({ ...p, year: y }))}
+                                            >
+                                                {y}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Mes</Label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                            <div
+                                                key={m}
+                                                className={cn(
+                                                    "cursor-pointer rounded-lg border px-2 py-2 text-center text-sm transition-all hover:border-primary/50",
+                                                    period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
+                                                )}
+                                                onClick={() => setPeriod(p => ({ ...p, month: m }))}
+                                            >
+                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex justify-center">
+                                    <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                                        <Info className="h-4 w-4" />
+                                        Al continuar, se buscarán todos los documentos del período seleccionado.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 2 && (
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-8">
                                 <section className="space-y-4">
@@ -250,7 +296,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                         </div>
                     )}
 
-                    {step === 2 && (
+                    {step === 3 && (
                         <div className="space-y-6">
                             <h3 className="font-bold text-lg flex items-center gap-2">
                                 <HandCoins className="h-5 w-5 text-amber-500" />
@@ -312,7 +358,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {step === 4 && (
                         <div className="flex flex-col items-center justify-center py-8 text-center space-y-6">
                             <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
                                 <CheckCircle2 className="h-10 w-10 animate-pulse" />
@@ -363,7 +409,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess }:
                         >
                             Cancelar
                         </Button>
-                        {step < 3 ? (
+                        {step < 4 ? (
                             <Button
                                 onClick={nextStep}
                                 disabled={isLoading}

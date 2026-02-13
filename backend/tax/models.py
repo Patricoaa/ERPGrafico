@@ -378,6 +378,7 @@ class F29Payment(models.Model):
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
         CASH = 'CASH', _('Efectivo')
+        CARD = 'CARD', _('Tarjeta')
         OTHER = 'OTHER', _('Otro')
 
     declaration = models.ForeignKey(

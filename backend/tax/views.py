@@ -183,10 +183,17 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Create a new tax payment"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         
         try:
+            serializer.is_valid(raise_exception=True)
+            
+            logger.info(f"F29 Payment request data: {request.data}")
+            logger.info(f"F29 Payment validated data: {serializer.validated_data}")
+            
             payment = F29PaymentService.register_payment(
                 serializer.validated_data['declaration'].id,
                 serializer.validated_data,
@@ -198,8 +205,18 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED
             )
         except DjangoValidationError as e:
+            logger.error(f"F29 Payment ValidationError: {str(e)}")
+            # If it's a serializer error, it might be a dict
+            if hasattr(e, 'detail'):
+                 logger.error(f"F29 Payment Validation Detail: {e.detail}")
             return Response(
-                {'error': str(e)},
+                {'error': e.detail if hasattr(e, 'detail') else str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"F29 Payment unexpected error: {str(e)}", exc_info=True)
+            return Response(
+                {'error': f"Error inesperado: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
