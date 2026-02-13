@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -21,9 +21,184 @@ type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'inv
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'service_obligation' | 'work_order' | 'sale_delivery' | 'purchase_receipt' | 'cash_movement'
+    type: 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'journal_entry' | 'inventory' | 'work_order' | 'sale_delivery' | 'purchase_receipt' | 'cash_movement'
     id: number | string
     view?: 'details' | 'history' | 'all'
+}
+
+// --- Helper Components for the Modular Layout ---
+
+const BannerStatus = ({ status, type }: { status: string, type: string }) => {
+    const variant = status === 'DELIVERED' || status === 'PAID' || status === 'COMPLETED' || status === 'RECEIVED' ? 'default' :
+        status === 'PARTIAL' || status === 'READY' || status === 'APPROVED' ? 'secondary' : 'outline'
+
+    return (
+        <Badge variant={variant} className="font-bold text-xs px-3 py-1 uppercase tracking-wider">
+            {translateStatus(status)}
+        </Badge>
+    )
+}
+
+const MetadataItem = ({ label, value, icon: Icon, className = "" }: { label: string, value: any, icon?: any, className?: string }) => {
+    if (value === undefined || value === null || value === "") return null
+    return (
+        <div className={`space-y-1 ${className}`}>
+            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                {Icon && <Icon className="h-3 w-3" />}
+                {label}
+            </h4>
+            <div className="text-sm font-semibold truncate">
+                {typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value}
+            </div>
+        </div>
+    )
+}
+
+const SidebarSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="space-y-4 pt-4 first:pt-0">
+        <h3 className="text-[11px] font-black text-primary/80 uppercase tracking-tighter border-b pb-2">{title}</h3>
+        <div className="space-y-4">
+            {children}
+        </div>
+    </div>
+)
+
+const SidebarContent = ({ data, currentType }: { data: any, currentType: string }) => {
+    if (!data) return null
+
+    return (
+        <div className="space-y-8 divide-y divide-border/20">
+            <SidebarSection title="Información Logística">
+                <MetadataItem label="Almacén / Bodega" value={data.warehouse_name || data.warehouse} icon={Package} />
+                <MetadataItem label="Estado de Despacho" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} />
+                <MetadataItem label="Vendedor" value={data.salesperson_name || data.seller_name} icon={User} />
+                <MetadataItem label="Canal de Venta" value={data.channel === 'POS' ? 'Punto de Venta' : (data.channel || 'Sistema')} />
+            </SidebarSection>
+
+            <SidebarSection title="Fechas y Plazos">
+                <MetadataItem label="Fecha Emisión" value={formatPlainDate(data.date || data.created_at)} />
+                <MetadataItem label="Fecha Vencimiento" value={formatPlainDate(data.due_date)} />
+                <MetadataItem label="Entrega Planificada" value={formatPlainDate(data.planned_delivery_date || data.planned_receipt_date)} />
+            </SidebarSection>
+
+            <SidebarSection title="Identificadores">
+                <MetadataItem label="Referencia Externa" value={data.external_reference || data.supplier_reference} />
+                <MetadataItem label="ID de Transacción" value={data.id} className="font-mono text-[11px]" />
+                {data.pos_session && <MetadataItem label="Sesión POS" value={`#${data.pos_session}`} />}
+            </SidebarSection>
+
+            {data.attachments?.length > 0 && (
+                <SidebarSection title="Archivos">
+                    <AttachmentList attachments={data.attachments} />
+                </SidebarSection>
+            )}
+        </div>
+    )
+}
+
+const RelatedDocumentsSection = ({ data, currentType, navigateTo }: { data: any, currentType: string, navigateTo: any }) => {
+    if (!data) return null;
+
+    const renderCard = (type: string, id: any, title: string, subtitle: string, icon: any, color: string, colorBg: string, colorBorder: string) => (
+        <Card className={`border-${colorBorder} bg-${colorBg}/30 hover:opacity-80 transition-all cursor-pointer shadow-sm`} onClick={() => navigateTo(type, id)}>
+            <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 bg-${colorBorder}/20 rounded-lg`}>
+                        {icon}
+                    </div>
+                    <div className="flex-1">
+                        <div className="text-[10px] text-muted-foreground uppercase font-black">{title}</div>
+                        <div className={`font-black text-sm text-${color}-600`}>{subtitle}</div>
+                    </div>
+                    <Eye className={`h-4 w-4 text-${color}-600`} />
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    return (
+        <div className="space-y-4 pt-6">
+            <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2">
+                <ArrowLeft className="h-5 w-5 rotate-180 text-primary" />
+                Documentos Relacionados
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {currentType === 'invoice' && (
+                    <>
+                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', `NV-${data.sale_order_number || data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', `OCS-${data.purchase_order_number || data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.corrected_invoice && renderCard('invoice', data.corrected_invoice, 'Documento Rectificado', data.corrected_invoice_display || `FACT-${data.corrected_invoice}`, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200')}
+                    </>
+                )}
+
+                {currentType === 'sale_order' && (
+                    <>
+                        {data.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.dte_type_display || 'Factura', inv.display_id, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
+                        {data.deliveries?.map((del: any) => renderCard('sale_delivery', del.id, 'Despacho', del.display_id, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200'))}
+                    </>
+                )}
+
+                {currentType === 'purchase_order' && (
+                    <>
+                        {data.work_order && renderCard('work_order', data.work_order, 'Orden de Trabajo Origen', `OT-${data.work_order_number || data.work_order}`, <ClipboardList className="h-5 w-5 text-indigo-600" />, 'indigo', 'indigo-50', 'indigo-200')}
+                        {data.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.dte_type_display || 'Factura', inv.display_id, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
+                        {data.receipts?.map((rec: any) => renderCard('purchase_receipt', rec.id, 'Recepción', rec.display_id, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200'))}
+                    </>
+                )}
+
+                {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
+            </div>
+        </div>
+    );
+}
+
+const PaymentHistorySection = ({ data, currentType, navigateTo, handleDeletePayment }: { data: any, currentType: string, navigateTo: any, handleDeletePayment: any }) => {
+    const payments = data?.serialized_payments || data?.payments_detail || [];
+    if (payments.length === 0) return null;
+
+    return (
+        <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-emerald-600">
+                <Banknote className="h-5 w-5" />
+                Historial de Pagos
+            </h3>
+            <div className="border rounded-2xl overflow-hidden bg-background shadow-sm">
+                <Table>
+                    <TableHeader className="bg-muted/10">
+                        <TableRow className="hover:bg-transparent tracking-widest text-[10px] font-black uppercase">
+                            <TableHead className="h-10">Fecha</TableHead>
+                            <TableHead className="h-10">Método / Referencia</TableHead>
+                            <TableHead className="text-right h-10 w-[140px]">Monto</TableHead>
+                            <TableHead className="text-right h-10 w-[80px]">Acción</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {payments.map((pay: any) => (
+                            <TableRow key={pay.id} className="hover:bg-muted/10 transition-colors">
+                                <TableCell className="text-xs font-semibold">{formatPlainDate(pay.date || pay.created_at)}</TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold uppercase">{translatePaymentMethod(pay.payment_method || pay.journal_name)}</span>
+                                        <span className="text-[9px] font-mono text-muted-foreground">{pay.transaction_number || pay.reference || '-'}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right font-black text-sm text-emerald-600">
+                                    {formatCurrency(pay.amount)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 rounded-lg hover:bg-blue-50" onClick={() => navigateTo('payment', pay.id)}>
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    );
 }
 
 export function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
@@ -66,7 +241,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             else if (type === 'payment') endpoint = `/treasury/payments/${currentId}/`
             else if (type === 'journal_entry') endpoint = `/accounting/entries/${currentId}/`
             else if (type === 'inventory' || type === 'stock_move') endpoint = `/inventory/moves/${currentId}/`
-            else if (type === 'service_obligation') endpoint = `/services/obligations/${currentId}/`
             else if (type === 'work_order') endpoint = `/production/orders/${currentId}/`
             else if (type === 'sale_delivery') endpoint = `/sales/deliveries/${currentId}/`
             else if (type === 'purchase_receipt') endpoint = `/purchasing/receipts/${currentId}/`
@@ -148,8 +322,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 return { main: "Asiento Contable", sub: `AS-${data.number || data.id}` }
             case 'inventory':
                 return { main: "Movimiento de Inventario", sub: data.reference_code || `MOV-${data.id}` }
-            case 'service_obligation':
-                return { main: "Obligación de Servicio", sub: `OB-${data.id}` }
             case 'work_order':
                 return { main: "Orden de Trabajo", sub: data.code || `OT-${data.id}` }
             case 'sale_delivery':
@@ -195,7 +367,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'journal_entry') return <Hash className="h-5 w-5" />
         if (currentType === 'inventory') return <Package className="h-5 w-5 text-blue-600" />
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
-        if (currentType === 'service_obligation') return <Building2 className="h-5 w-5 text-indigo-600" />
         if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
         if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') return <Package className="h-5 w-5 text-orange-600" />
         if (currentType === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-blue-600" />
@@ -207,1146 +378,311 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             <BaseModal
                 open={open}
                 onOpenChange={onOpenChange}
-                size="2xl"
+                title=""
+                size="xl"
                 hideScrollArea={true}
-                className="h-[90vh] lg:h-[80vh]"
-                title={
-                    <div className="flex items-center gap-2">
-                        {history.length > 0 && (
-                            <Button variant="ghost" size="icon" onClick={goBack} className="mr-2 h-8 w-8">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                        )}
-                        <div className="flex items-center gap-2">
-                            {getIcon()}
-                            <span className="uppercase truncate max-w-[300px] lg:max-w-none">{mainTitle}</span>
-                            {data?.document_attachment && view !== 'history' && (
-                                <a
-                                    href={data.document_attachment}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ml-2 text-muted-foreground hover:text-primary transition-colors"
-                                    title="Ver adjunto"
-                                >
-                                    <Paperclip className="h-5 w-5" />
-                                </a>
-                            )}
-                        </div>
-                    </div>
-                }
-                description={
-                    subTitle && (
-                        <span className="text-sm font-bold text-muted-foreground font-mono block mt-1">
-                            {subTitle}
-                        </span>
-                    )
-                }
+                className="overflow-hidden p-0 gap-0"
             >
+                <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background">
+                    {/* Header Banner */}
+                    <div className="bg-primary/[0.03] border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 relative">
+                        {/* Back button and Basic Info */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-4">
+                                {history.length > 0 && (
+                                    <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50">
+                                        <ArrowLeft className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                <div className="p-3 bg-background rounded-2xl shadow-sm border border-primary/10">
+                                    {getIcon()}
+                                </div>
+                                <div className="flex flex-col">
+                                    <h2 className="text-2xl font-black tracking-tight text-primary uppercase leading-none">{mainTitle}</h2>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs font-mono font-black text-muted-foreground bg-muted/50 px-2 py-0.5 rounded border border-dashed uppercase tracking-wider">{subTitle}</span>
+                                        {data?.reference && <span className="text-[10px] font-mono text-muted-foreground font-bold">Ref: {data.reference}</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Main content area */}
-                    <div className="flex-1 overflow-y-auto">
+                        {/* Totals & Status Banner */}
+                        {data && (
+                            <div className="flex items-center gap-6">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Monto Total</span>
+                                    <span className="text-3xl font-black tracking-tighter text-primary">
+                                        {formatCurrency(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0))}
+                                    </span>
+                                </div>
+                                <div className="h-10 w-[1.5px] bg-border/50 hidden md:block" />
+                                <div className="flex flex-col items-end min-w-[120px]">
+                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado</span>
+                                    <BannerStatus status={data.status || data.state} type={currentType} />
+                                </div>
+                                <div className="flex items-center gap-2 ml-2">
+                                    {(currentType === 'sale_order' || currentType === 'invoice' || currentType === 'purchase_order') && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="font-black text-[10px] uppercase tracking-wider h-10 px-4 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 rounded-xl"
+                                            onClick={() => setEditingPayment(data)}
+                                        >
+                                            <Plus className="h-3.5 w-3.5 mr-2" /> Registrar Pago
+                                        </Button>
+                                    )}
+                                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors">
+                                        <X className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Main Scrollable Area */}
+                    <div className="flex-1 overflow-hidden flex flex-col">
                         {loading ? (
-                            <div className="flex h-64 items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <div className="h-full flex flex-col items-center justify-center gap-4">
+                                <div className="relative">
+                                    <Loader2 className="h-12 w-12 animate-spin text-primary/20" />
+                                    <Loader2 className="h-12 w-12 animate-spin text-primary absolute top-0 left-0 [animation-delay:-0.2s]" />
+                                </div>
+                                <p className="text-[11px] font-black text-primary/40 uppercase tracking-[0.2em] animate-pulse">Procesando Información</p>
                             </div>
                         ) : data ? (
-                            <div className="space-y-6 py-4">
-                                {/* Section 1: Summary Cards (Always visible if data exists) */}
-                                {(view === 'all' || view === 'details' || view === 'history') && (
-                                    <div className="space-y-4">
-                                        {/* Special header for invoices with SII code and tax exempt badge */}
-                                        {currentType === 'invoice' && (
-                                            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20">
-                                                <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/5">
-                                                    <Receipt className="h-6 w-6 text-muted-foreground" />
-                                                </div>
-                                                <div className="flex flex-col flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-lg font-black tracking-tight">{data.contact_name || data.customer_name || data.supplier_name || '-'}</span>
-                                                        {data.is_tax_exempt && (
-                                                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 font-bold">
-                                                                EXENTO
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 mt-1">
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest leading-none">
-                                                            {data.sale_order ? 'Cliente' : data.purchase_order ? 'Proveedor' : 'Contacto'}
-                                                        </span>
-                                                        {data.sii_document_code && (
-                                                            <>
-                                                                <span className="text-muted-foreground">•</span>
-                                                                <span className="text-[10px] text-primary uppercase font-bold tracking-widest">
-                                                                    SII: {data.sii_document_code}
-                                                                </span>
-                                                            </>
-                                                        )}
-                                                        {data.tax_period_closed && (
-                                                            <>
-                                                                <span className="text-muted-foreground">•</span>
-                                                                <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 text-[9px] h-5">
-                                                                    PERÍODO CERRADO
-                                                                </Badge>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {currentType === 'payment' && (
-                                            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20">
-                                                <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-black/5">
-                                                    <User className="h-6 w-6 text-muted-foreground" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-lg font-black tracking-tight">{data.partner_name || '-'}</span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest leading-none">
-                                                        {data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
+                            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+                                {/* Left Content Area (75%) */}
+                                <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-12">
 
-                                        <div className={`grid grid-cols-2 ${currentType === 'payment' || currentType === 'cash_movement' || currentType === 'invoice' ? 'lg:grid-cols-4' : 'md:grid-cols-4'} gap-4`}>
-                                            {currentType === 'invoice' ? (
-                                                <>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Tipo DTE</div>
-                                                            <div className="font-bold text-xs truncate">
-                                                                {data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
-                                                                    data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
-                                                                        data.dte_type === 'BOLETA' ? 'Boleta' :
-                                                                            data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
-                                                                                data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' :
-                                                                                    data.dte_type === 'PURCHASE_INV' ? 'Factura Compra' : 'Factura'}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
-                                                            <div className="font-bold text-sm">
-                                                                {formatPlainDate(data.date)}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Estado</div>
-                                                            <Badge variant={data.status === 'PAID' ? 'default' : 'secondary'} className="mt-1">
-                                                                {translateStatus(data.status)}
-                                                            </Badge>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-3">
-                                                            <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Total</div>
-                                                            <div className="font-black text-sm">
-                                                                {formatCurrency(data.total)}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </>
-                                            ) : currentType === 'payment' || currentType === 'cash_movement' ? (
-                                                <>
-                                                    {currentType === 'cash_movement' ? (
-                                                        <>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Tipo</div>
-                                                                    <Badge variant="outline" className="font-bold">
-                                                                        {data.movement_type === 'TRANSFER' ? 'Traspaso' :
-                                                                            data.movement_type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
-                                                                    </Badge>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Fecha</div>
-                                                                    <div className="font-bold text-sm">
-                                                                        {formatPlainDate(data.created_at)}
-                                                                    </div>
-                                                                    <div className="text-[10px] text-muted-foreground">
-                                                                        {new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Usuario</div>
-                                                                    <div className="font-bold text-xs truncate flex items-center gap-1.5">
-                                                                        <User className="h-3 w-3" />
-                                                                        {data.created_by_name || 'Sistema'}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
-                                                                    <div className={`font-black text-sm ${data.movement_type === 'DEPOSIT' || (data.movement_type === 'TRANSFER' && !data.from_account) ? 'text-green-600' : 'text-red-600'}`}>
-                                                                        {formatCurrency(data.amount)}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Caja / Banco</div>
-                                                                    <div className="font-bold flex items-center gap-1.5">
-                                                                        {data.treasury_account_type === 'BANK' ? <Building2 className="h-3.5 w-3.5 text-blue-500" /> : <Banknote className="h-3.5 w-3.5 text-green-500" />}
-                                                                        <span className="truncate text-xs">{data.journal_name}</span>
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Método de Pago</div>
-                                                                    <div className="font-bold text-xs truncate uppercase">
-                                                                        {translatePaymentMethod(data.payment_method_display || data.payment_method || '-')}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30 relative group">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">N° de Transacción</div>
-                                                                    <div className="font-bold text-xs font-mono flex items-center gap-2">
-                                                                        <span className={data.transaction_number ? "" : "text-muted-foreground italic font-normal"}>
-                                                                            {data.transaction_number || 'No registrado'}
-                                                                        </span>
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                            <Card className="border-none shadow-sm bg-muted/30">
-                                                                <CardContent className="p-3">
-                                                                    <div className="text-[9px] text-muted-foreground uppercase font-black mb-1">Monto</div>
-                                                                    <div className={`font-black text-sm ${data.payment_type === 'INBOUND' ? 'text-green-600' : 'text-red-700'}`}>
-                                                                        {formatCurrency(data.amount)}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        </>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-4">
-                                                            <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                                {currentType === 'inventory' ? 'Tipo Mov.' :
-                                                                    (currentType === 'purchase_order' ? 'Proveedor' :
-                                                                        (currentType === 'journal_entry' ? 'Descripción' : 'Cliente'))}
-                                                            </div>
-                                                            <div className="font-bold text-base truncate">
-                                                                {currentType === 'inventory' ? (
-                                                                    <Badge variant={data.move_type === 'IN' ? 'default' : data.move_type === 'OUT' ? 'destructive' : 'outline'} className="mt-1">
-                                                                        {data.move_type_display}
-                                                                    </Badge>
-                                                                ) : (currentType === 'journal_entry' ? (data.description || data.reference || '-') :
-                                                                    (data.customer_name || data.supplier_name || data.partner_name || 'N/A'))}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-4">
-                                                            <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                                {currentType === 'inventory' ? 'Fecha Mov.' : 'Fecha'}
-                                                            </div>
-                                                            <div className="font-bold text-base truncate">
-                                                                {formatPlainDate(data.date || data.created_at)}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-4">
-                                                            <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                                {currentType === 'inventory' ? 'Almacén' : 'Estado'}
-                                                            </div>
-                                                            <div className="font-bold text-base truncate">
-                                                                {currentType === 'inventory' ? data.warehouse_name : (
-                                                                    <Badge variant={data.status === 'PAID' || data.state === 'POSTED' ? 'default' : 'secondary'} className="mt-1">
-                                                                        {translateStatus(data.status || data.state)}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                    <Card className="border-none shadow-sm bg-muted/30">
-                                                        <CardContent className="p-4">
-                                                            <div className="text-sm text-muted-foreground uppercase font-semibold text-[10px]">
-                                                                {currentType === 'inventory' ? 'Cantidad' : 'Total'}
-                                                            </div>
-                                                            <div className={`font-bold text-base truncate ${currentType === 'inventory' ? ((Number(data.quantity) || 0) > 0 ? 'text-green-600' : 'text-red-600') : ''}`}>
-                                                                {currentType === 'inventory' ? Math.round(Math.abs(Number(data.quantity) || 0)) : formatCurrency(currentType === 'journal_entry' ? (data.items || []).reduce((acc: number, i: any) => acc + (Number(i.debit) || 0), 0) : (data.total || 0))}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </>
-                                            )}
+                                    {/* Section: Main Header Info (Customer/Partner) */}
+                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 pb-8 border-b border-border/50">
+                                        <div className="space-y-2">
+                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                                <User className="h-3 w-3" />
+                                                Entidad Relacionada
+                                            </h4>
+                                            <p className="text-3xl font-black text-primary leading-none tracking-tight">
+                                                {data.customer_name || data.supplier_name || data.partner_name || data.contact_name || (currentType === 'journal_entry' ? 'Asiento Contable' : 'N/A')}
+                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                <Badge variant="outline" className="font-mono text-[10px] font-bold py-0 h-5 px-1.5 uppercase bg-muted/30">
+                                                    {data.customer_code || data.supplier_code || data.partner_id || 'ID-EXTERNO'}
+                                                </Badge>
+                                                <div className="h-1 w-1 rounded-full bg-border" />
+                                                <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                                                    <Calendar className="h-3.5 w-3.5" />
+                                                    {formatPlainDate(data.date || data.created_at)}
+                                                </p>
+                                            </div>
                                         </div>
+
+                                        {/* Quick Data for Inventory/Works */}
+                                        {currentType === 'work_order' && (
+                                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center gap-6">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-black text-muted-foreground uppercase">Progreso</span>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <Progress value={data.production_progress || 0} className="h-2 w-24" />
+                                                        <span className="font-black text-sm">{Math.round(data.production_progress || 0)}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-
-                                {/* Main Content Sections */}
-                                <div className="space-y-6">
-                                    {/* Section 2: Details / Lines */}
-                                    {(view === 'all' || view === 'details') && (
-                                        <div className="space-y-4 pt-4">
-                                            {currentType === 'payment' ? (
+                                    {/* Section 1: Summary Cards (Always visible if data exists) */}
+                                    {(view === 'all' || view === 'details' || view === 'history') && (
+                                        <div className="space-y-4">
+                                            {/* Section: Detail Lines Table */}
+                                            {(view === 'all' || view === 'details') && (
                                                 <div className="space-y-6">
-                                                    {data.notes && (
-                                                        <div className="pt-2 border-t mt-4">
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
-                                                            <p className="text-sm bg-muted p-4 rounded-xl border border-dashed italic">
-                                                                {data.notes}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : currentType === 'cash_movement' ? (
-                                                <div className="space-y-6 pt-4 border-t">
-                                                    {/* Flow Visualization */}
-                                                    <div className="bg-muted/30 p-6 rounded-xl border border-dashed flex items-center justify-between gap-4">
-                                                        <div className="flex-1 text-center">
-                                                            <div className="text-[10px] font-black text-muted-foreground uppercase mb-1">Origen</div>
-                                                            <div className="font-bold text-sm truncate px-2">
-                                                                {data.from_container_name || (data.movement_type === 'DEPOSIT' ? 'Exterior' : '-')}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex flex-col items-center flex-shrink-0 text-muted-foreground">
-                                                            <span className="text-[9px] font-mono uppercase mb-1">{data.movement_type === 'TRANSFER' ? 'TRASPASO' : data.movement_type === 'DEPOSIT' ? 'ENTRADA' : 'SALIDA'}</span>
-                                                            <div className="h-[1px] w-20 bg-border relative">
-                                                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t border-r border-border rotate-45 transform" />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex-1 text-center">
-                                                            <div className="text-[10px] font-black text-muted-foreground uppercase mb-1">Destino</div>
-                                                            <div className="font-bold text-sm truncate px-2">
-                                                                {data.to_container_name || (data.movement_type === 'WITHDRAWAL' ? 'Exterior' : '-')}
-                                                            </div>
-                                                        </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2.5">
+                                                            <div className="h-8 w-1 bg-primary rounded-full" />
+                                                            Detalle de Ítems
+                                                        </h3>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-8">
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Motivo / Causal</h4>
-                                                            <Badge variant="secondary" className="font-bold">
-                                                                {data.justify_reason_display || data.justify_reason || 'General'}
-                                                            </Badge>
-                                                        </div>
-                                                        {data.pos_session && (
-                                                            <div>
-                                                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Sesión POS Relacionada</h4>
-                                                                <p className="font-bold text-primary font-mono cursor-pointer hover:underline" onClick={() => navigateTo('pos_session', data.pos_session)}>
-                                                                    Sesión #{data.pos_session}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {data.notes && (
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Observaciones</h4>
-                                                            <p className="text-sm italic text-muted-foreground bg-muted p-3 rounded-lg border border-dashed">
-                                                                {data.notes}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : currentType === 'inventory' ? (
-                                                <div className="grid grid-cols-2 gap-8 py-2 border-t pt-6">
-                                                    <div>
-                                                        <h4 className="text-xs font-semibold text-muted-foreground uppercase">N° Comprobante / Guía</h4>
-                                                        <p className="text-sm font-bold font-mono text-blue-600">{data.reference || data.reference_code || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Producto</h4>
-                                                            <div className="flex flex-col">
-                                                                <span className="text-sm font-bold">{data.product_name}</span>
-                                                                <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">{data.product_code}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Notas / Observaciones</h4>
-                                                            <p className="text-sm italic text-muted-foreground">{data.notes || data.observation || '-'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : currentType === 'service_obligation' ? (
-                                                <div className="grid grid-cols-2 gap-8 py-4 border-t">
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Proveedor</h4>
-                                                            <p className="font-bold">{data.contract_data?.supplier_name}</p>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Contrato</h4>
-                                                            <p className="text-sm">{data.contract_data?.name}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Periodo</h4>
-                                                            <p className="text-sm font-mono">{data.period_start} - {data.period_end}</p>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-xs font-semibold text-muted-foreground uppercase">Vencimiento</h4>
-                                                            <p className="text-sm">{data.due_date}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : currentType === 'work_order' ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-t">
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Producto a Fabricar</h4>
-                                                            <p className="font-black text-lg leading-tight">{data.product_name}</p>
-                                                            <p className="text-xs text-muted-foreground font-mono">{data.product_code}</p>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Cantidad</h4>
-                                                            <p className="text-2xl font-black">{Math.round(data.quantity)} {data.uom_name || 'UN'}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado Producción</h4>
-                                                            <Badge className="mt-1 font-black px-3 py-1 text-sm">
-                                                                {translateStatus(data.status)}
-                                                            </Badge>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Progreso</h4>
-                                                            <div className="flex items-center gap-3">
-                                                                <Progress value={data.production_progress || 0} className="h-2 flex-1" />
-                                                                <span className="font-black text-sm">{Math.round(data.production_progress || 0)}%</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Nota de Venta Origen</h4>
-                                                            <Button
-                                                                variant="outline"
-                                                                className="w-full justify-start gap-2 font-bold h-12"
-                                                                onClick={() => navigateTo('sale_order', data.sale_order)}
-                                                            >
-                                                                <ShoppingBag className="h-4 w-4 text-primary" />
-                                                                NV-{data.sale_order_number || data.sale_order}
-                                                            </Button>
-                                                        </div>
-                                                        {data.assigned_to_name && (
-                                                            <div>
-                                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Asignado a</h4>
-                                                                <p className="text-sm font-bold flex items-center gap-2">
-                                                                    <User className="h-3.5 w-3.5" />
-                                                                    {data.assigned_to_name}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : currentType === 'sale_delivery' ? (
-                                                <div className="space-y-6 pt-4 border-t">
-                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Fecha Despacho</h4>
-                                                            <p className="font-black text-base">{formatPlainDate(data.delivery_date)}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="border rounded-2xl overflow-hidden bg-muted/5">
-                                                        <Table>
-                                                            <TableHeader className="bg-muted/10">
-                                                                <TableRow className="hover:bg-transparent border-muted/20">
-                                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider h-10">Producto</TableHead>
-                                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Cant. Orden</TableHead>
-                                                                    <TableHead className="text-center text-[10px] font-black uppercase tracking-wider h-10 w-[80px]">UOM</TableHead>
-                                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Despachado</TableHead>
-                                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-wider h-10 w-[120px]">Movimiento</TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {(data.lines || []).map((line: any) => (
-                                                                    <TableRow key={line.id} className="hover:bg-muted/10 border-muted/10">
-                                                                        <TableCell>
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-black text-sm">{line.product_name}</span>
-                                                                                <span className="text-[9px] text-muted-foreground font-mono tracking-tighter uppercase">{line.product_code}</span>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right font-bold text-sm text-muted-foreground">
-                                                                            {Number(line.order_quantity).toLocaleString()}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-center font-bold text-[10px] uppercase">
-                                                                            {line.uom_name || 'UN'}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right font-black text-base text-orange-600">
-                                                                            {Number(line.quantity).toLocaleString()}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
-                                                                            {line.stock_move ? (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="h-8 px-2 font-mono text-[10px] font-bold text-blue-600 gap-1.5"
-                                                                                    onClick={() => navigateTo('inventory', line.stock_move)}
-                                                                                >
-                                                                                    <Eye className="h-3 w-3" />
-                                                                                    MOV-{String(line.stock_move).padStart(6, '0')}
-                                                                                </Button>
-                                                                            ) : (
-                                                                                <span className="text-[10px] text-muted-foreground italic px-2">Sin mov.</span>
-                                                                            )}
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))}
-                                                            </TableBody>
-                                                        </Table>
-                                                    </div>
-                                                </div>
-                                            ) : currentType === 'purchase_order' ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-t">
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Proveedor</h4>
-                                                            <p className="font-black text-lg leading-tight">{data.supplier_name}</p>
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Bodega</h4>
-                                                            <p className="text-sm font-bold">{data.warehouse_name}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado Recepción</h4>
-                                                            <Badge className="mt-1 font-black px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 border-none">
-                                                                {translateReceivingStatus(data.receiving_status || (data.status === 'CONFIRMED' ? 'PENDING' : '-'))}
-                                                            </Badge>
-                                                        </div>
-                                                        {data.work_order && (
-                                                            <div>
-                                                                <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 text-indigo-600">Origen: Orden de Trabajo</h4>
-                                                                <Button
-                                                                    variant="outline"
-                                                                    className="w-full justify-start gap-2 font-bold h-12 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50"
-                                                                    onClick={() => navigateTo('work_order', data.work_order)}
-                                                                >
-                                                                    <Package className="h-4 w-4 text-indigo-600" />
-                                                                    OT-{data.work_order_number || data.work_order}
-                                                                </Button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Resumen de Totales</h4>
-                                                            <div className="space-y-1">
-                                                                <div className="flex justify-between text-xs">
-                                                                    <span className="text-muted-foreground">Pagado:</span>
-                                                                    <span className="font-bold text-emerald-600">{formatCurrency(data.total_paid)}</span>
-                                                                </div>
-                                                                <div className="flex justify-between text-xs">
-                                                                    <span className="text-muted-foreground">Pendiente:</span>
-                                                                    <span className="font-bold text-red-600">{formatCurrency(data.pending_amount)}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-6 pt-4 border-t">
-                                                    {currentType === 'journal_entry' ? (
-                                                        <>
+                                                    <div className="border border-border/60 rounded-3xl overflow-hidden bg-background shadow-sm">
+                                                        {currentType === 'journal_entry' ? (
                                                             <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>Cuenta</TableHead>
-                                                                        <TableHead>Glosa</TableHead>
-                                                                        <TableHead className="text-right w-[120px]">Debe</TableHead>
-                                                                        <TableHead className="text-right w-[120px]">Haber</TableHead>
+                                                                <TableHeader className="bg-muted/30 backdrop-blur-sm">
+                                                                    <TableRow className="hover:bg-transparent border-none">
+                                                                        <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Cuenta Contable</TableHead>
+                                                                        <TableHead className="text-[10px] font-black uppercase tracking-widest h-12">Glosa</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[160px]">Debe</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[160px] px-6">Haber</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.items || []).map((item: any) => (
-                                                                        <TableRow key={item.id}>
-                                                                            <TableCell>
+                                                                    {(data.items || []).map((item: any, idx: number) => (
+                                                                        <TableRow key={item.id || idx} className="hover:bg-muted/5 transition-colors border-border/40">
+                                                                            <TableCell className="px-6 py-4">
                                                                                 <div className="flex flex-col">
-                                                                                    <span className="font-bold text-[10px] font-mono">{item.account_code}</span>
-                                                                                    <span className="text-xs">{item.account_name}</span>
+                                                                                    <span className="font-bold text-[13px] tracking-tight">{item.account_name}</span>
+                                                                                    <span className="text-[9px] font-mono text-muted-foreground tracking-widest uppercase font-bold mt-0.5">{item.account_code}</span>
                                                                                 </div>
                                                                             </TableCell>
-                                                                            <TableCell className="text-xs italic text-muted-foreground">{item.label}</TableCell>
-                                                                            <TableCell className="text-right text-sm">
-                                                                                {Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}
+                                                                            <TableCell className="text-xs italic text-muted-foreground leading-snug">{item.label || '-'}</TableCell>
+                                                                            <TableCell className="text-right font-black text-[13px] text-blue-600 font-mono tracking-tighter">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</TableCell>
+                                                                            <TableCell className="text-right font-black text-[13px] text-emerald-600 font-mono tracking-tighter px-6">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        ) : currentType === 'sale_delivery' || currentType === 'purchase_receipt' ? (
+                                                            <Table>
+                                                                <TableHeader className="bg-muted/30">
+                                                                    <TableRow className="hover:bg-transparent border-none">
+                                                                        <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Producto</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">Cant. Orden</TableHead>
+                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[100px]">UOM</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px] px-6">Procesado</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {(data.lines || []).map((line: any) => (
+                                                                        <TableRow key={line.id} className="hover:bg-muted/5 border-border/40">
+                                                                            <TableCell className="px-6 py-4">
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="font-bold text-[13px] tracking-tight">{line.product_name}</span>
+                                                                                    <span className="text-[9px] font-mono text-muted-foreground uppercase">{line.product_code}</span>
+                                                                                </div>
                                                                             </TableCell>
-                                                                            <TableCell className="text-right text-sm">
-                                                                                {Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}
+                                                                            <TableCell className="text-right font-bold text-[13px] text-muted-foreground font-mono">
+                                                                                {Number(line.order_quantity).toLocaleString()}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-center font-black text-[10px] uppercase text-muted-foreground/60">
+                                                                                {line.uom_name || 'UN'}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-right font-black text-base text-orange-600 font-mono tracking-tighter px-6">
+                                                                                {Number(line.quantity).toLocaleString()}
                                                                             </TableCell>
                                                                         </TableRow>
                                                                     ))}
                                                                 </TableBody>
                                                             </Table>
-
-                                                            <div className="flex justify-end pt-4">
-                                                                <div className="w-full max-w-md pt-2 border-t space-y-1">
-                                                                    <div className="flex justify-between items-end">
-                                                                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Totales</span>
-                                                                        <div className="flex gap-12">
-                                                                            <div className="flex flex-col items-end">
-                                                                                <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Debe</span>
-                                                                                <span className="font-bold text-base text-blue-600">
-                                                                                    {formatCurrency((data.items || []).reduce((acc: number, i: any) => acc + Number(i.debit), 0))}
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="flex flex-col items-end">
-                                                                                <span className="text-[9px] uppercase text-muted-foreground font-semibold">Total Haber</span>
-                                                                                <span className="font-bold text-base text-emerald-600">
-                                                                                    {formatCurrency((data.items || []).reduce((acc: number, i: any) => acc + Number(i.credit), 0))}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <>
+                                                        ) : (
                                                             <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>Descripción</TableHead>
-                                                                        <TableHead className="text-center w-[100px]">Cant.</TableHead>
-                                                                        <TableHead className="text-right w-[150px]">Precio Unit.</TableHead>
-                                                                        <TableHead className="text-right w-[150px]">Subtotal</TableHead>
+                                                                <TableHeader className="bg-muted/30">
+                                                                    <TableRow className="hover:bg-transparent border-none">
+                                                                        <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Descripción del Producto</TableHead>
+                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[100px]">Cant.</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">P. Unit.</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[160px] px-6">Subtotal</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {(data.lines || data.items || []).map((item: any, idx: number) => (
-                                                                        <TableRow key={item.id || idx}>
-                                                                            <TableCell className="font-medium text-sm">
+                                                                        <TableRow key={item.id || idx} className="hover:bg-muted/5 border-border/40">
+                                                                            <TableCell className="px-6 py-4">
                                                                                 <div className="flex flex-col">
-                                                                                    <span>{item.description || item.product_name}</span>
-                                                                                    <span className="text-[8px] text-muted-foreground font-mono uppercase">{item.product_code}</span>
+                                                                                    <span className="font-bold text-[13px] tracking-tight leading-tight">{item.description || item.product_name}</span>
+                                                                                    <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">{item.product_code}</span>
                                                                                 </div>
                                                                             </TableCell>
-                                                                            <TableCell className="text-center text-sm">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
-                                                                            <TableCell className="text-right text-sm">{formatCurrency(item.unit_price || item.unit_cost)}</TableCell>
-                                                                            <TableCell className="text-right font-bold text-sm">{formatCurrency(item.subtotal)}</TableCell>
+                                                                            <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
+                                                                            <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price || item.unit_cost)}</TableCell>
+                                                                            <TableCell className="text-right font-black text-[14px] text-primary font-mono tracking-tighter px-6">{formatCurrency(item.subtotal)}</TableCell>
                                                                         </TableRow>
                                                                     ))}
-                                                                    {(!data.lines && !data.items) && (
-                                                                        <TableRow>
-                                                                            <TableCell colSpan={4} className="text-center py-4 text-muted-foreground italic text-xs">No se encontraron líneas de detalle</TableCell>
-                                                                        </TableRow>
-                                                                    )}
                                                                 </TableBody>
                                                             </Table>
-
-                                                            {/* Totals Section */}
-                                                            <div className="flex justify-end pt-4">
-                                                                <div className="w-64 space-y-2">
-                                                                    <div className="flex justify-between text-sm">
-                                                                        <span className="text-muted-foreground">Neto</span>
-                                                                        <span>{formatCurrency(data.total_net)}</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between text-sm">
-                                                                        <span className="text-muted-foreground">IVA (19%)</span>
-                                                                        <span>{formatCurrency(data.total_tax)}</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
-                                                                        <span>Total</span>
-                                                                        <span>{formatCurrency(data.total)}</span>
-                                                                    </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Main Content Sections Continued */}
+                                            <div className="space-y-12">
+                                                {/* Cash Movement Visualization */}
+                                                {currentType === 'cash_movement' && (
+                                                    <div className="space-y-6">
+                                                        <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2.5">
+                                                            <div className="h-8 w-1 bg-primary rounded-full" />
+                                                            Flujo de Fondos
+                                                        </h3>
+                                                        <div className="bg-muted/30 p-8 rounded-3xl border border-dashed flex items-center justify-between gap-6 font-medium">
+                                                            <div className="flex-1 text-center space-y-2">
+                                                                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Origen</div>
+                                                                <div className="font-black text-lg truncate px-2 text-primary tracking-tight">
+                                                                    {data.from_container_name || (data.movement_type === 'DEPOSIT' ? 'Exterior' : '-')}
                                                                 </div>
                                                             </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
 
-                                    {/* Section 2: Additional Metadata for Sale Orders */}
-                                    {currentType === 'sale_order' && (
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t">
-                                            {data.delivery_status && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Estado de Despacho</h4>
-                                                    <Badge variant={data.delivery_status === 'DELIVERED' ? 'default' : data.delivery_status === 'PARTIAL' ? 'secondary' : 'outline'} className="font-bold">
-                                                        {translateReceivingStatus(data.delivery_status)}
-                                                    </Badge>
-                                                </div>
-                                            )}
-                                            {data.channel && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Canal de Venta</h4>
-                                                    <Badge variant="outline" className="font-bold bg-blue-50 text-blue-600 border-blue-200">
-                                                        {data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'}
-                                                    </Badge>
-                                                </div>
-                                            )}
-                                            {data.pos_session && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Sesión POS</h4>
-                                                    <p className="text-sm font-bold font-mono text-primary">Sesión #{data.pos_session}</p>
-                                                </div>
-                                            )}
-                                            {data.salesperson_name && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Vendedor</h4>
-                                                    <p className="text-sm font-bold flex items-center gap-2">
-                                                        <User className="h-3.5 w-3.5" />
-                                                        {data.salesperson_name}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {data.planned_delivery_date && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Entrega Planificada</h4>
-                                                    <p className="text-sm font-bold">{formatPlainDate(data.planned_delivery_date)}</p>
-                                                </div>
-                                            )}
-                                            {data.immediate_delivery !== undefined && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Tipo de Despacho</h4>
-                                                    <Badge variant={data.immediate_delivery ? 'default' : 'outline'} className="font-bold">
-                                                        {data.immediate_delivery ? 'Inmediato' : 'Programado'}
-                                                    </Badge>
-                                                </div>
-                                            )}
-                                            {data.effective_total && data.effective_total !== data.total && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Total Efectivo</h4>
-                                                    <p className="text-sm font-black text-primary">{formatCurrency(data.effective_total)}</p>
-                                                    <p className="text-[10px] text-muted-foreground">Incluye notas de crédito/débito</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                            <div className="flex flex-col items-center flex-shrink-0 text-muted-foreground">
+                                                                <span className="text-[9px] font-black tracking-[0.2em] uppercase mb-2 opacity-40">
+                                                                    {data.movement_type === 'TRANSFER' ? 'TRASPASO' : data.movement_type === 'DEPOSIT' ? 'ENTRADA' : 'SALIDA'}
+                                                                </span>
+                                                                <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-border to-transparent relative">
+                                                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t-2 border-r-2 border-border rotate-45 transform" />
+                                                                </div>
+                                                            </div>
 
-                                    {/* Section 2: Additional Metadata for Purchase Orders */}
-                                    {currentType === 'purchase_order' && (
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t">
-                                            {data.supplier_reference && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Referencia Proveedor</h4>
-                                                    <p className="text-sm font-bold font-mono text-blue-600">{data.supplier_reference}</p>
-                                                </div>
-                                            )}
-                                            {data.warehouse_name && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Bodega de Recepción</h4>
-                                                    <p className="text-sm font-bold flex items-center gap-2">
-                                                        <Package className="h-3.5 w-3.5" />
-                                                        {data.warehouse_name}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {data.receiving_status && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Estado de Recepción</h4>
-                                                    <Badge variant={data.receiving_status === 'RECEIVED' ? 'default' : data.receiving_status === 'PARTIAL' ? 'secondary' : 'outline'} className="font-bold">
-                                                        {translateReceivingStatus(data.receiving_status)}
-                                                    </Badge>
-                                                </div>
-                                            )}
-                                            {data.planned_receipt_date && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Fecha Recepción Planificada</h4>
-                                                    <p className="text-sm font-bold">{formatPlainDate(data.planned_receipt_date)}</p>
-                                                </div>
-                                            )}
-                                            {data.effective_total && data.effective_total !== data.total && (
-                                                <div>
-                                                    <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Total Efectivo</h4>
-                                                    <p className="text-sm font-black text-primary">{formatCurrency(data.effective_total)}</p>
-                                                    <p className="text-[10px] text-muted-foreground">Incluye notas de crédito/débito</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {/* Section 3: Attachments */}
-                                    {(view === 'all' || view === 'details') && data.attachments?.length > 0 && (currentType === 'invoice' || currentType === 'work_order') && (
-                                        <div className="pt-6 border-t">
-                                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Archivos Adjuntos</h4>
-                                            <AttachmentList attachments={data.attachments} />
-                                        </div>
-                                    )}
-
-                                    {/* Section 3.5: Related Documents */}
-                                    {(view === 'all' || view === 'details') && (
-                                        <>
-                                            {/* Invoice Related Documents */}
-                                            {currentType === 'invoice' && (data.sale_order || data.purchase_order || data.corrected_invoice || data.journal_entry) && (
-                                                <div className="space-y-4 pt-6 border-t">
-                                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
-                                                        Documentos Relacionados
-                                                    </h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                        {data.sale_order && (
-                                                            <Card className="border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => navigateTo('sale_order', data.sale_order)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-blue-100 rounded-lg">
-                                                                            <ShoppingBag className="h-5 w-5 text-blue-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Nota de Venta Origen</div>
-                                                                            <div className="font-bold text-sm text-blue-600">NV-{data.sale_order_number || data.sale_order}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-blue-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                        {data.purchase_order && (
-                                                            <Card className="border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer" onClick={() => navigateTo('purchase_order', data.purchase_order)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-blue-100 rounded-lg">
-                                                                            <FileText className="h-5 w-5 text-blue-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Orden de Compra Origen</div>
-                                                                            <div className="font-bold text-sm text-blue-600">OCS-{data.purchase_order_number || data.purchase_order}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-blue-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                        {data.corrected_invoice && (
-                                                            <Card className="border-amber-200 bg-amber-50/50 hover:bg-amber-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', data.corrected_invoice)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-amber-100 rounded-lg">
-                                                                            <Receipt className="h-5 w-5 text-amber-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Documento Rectificado</div>
-                                                                            <div className="font-bold text-sm text-amber-600">{data.corrected_invoice_display || `FACT-${data.corrected_invoice}`}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-amber-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                        {data.journal_entry && (
-                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-purple-100 rounded-lg">
-                                                                            <Hash className="h-5 w-5 text-purple-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
-                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-purple-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
+                                                            <div className="flex-1 text-center space-y-2">
+                                                                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Destino</div>
+                                                                <div className="font-black text-lg truncate px-2 text-primary tracking-tight">
+                                                                    {data.to_container_name || (data.movement_type === 'WITHDRAWAL' ? 'Exterior' : '-')}
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-
-                                            {/* Sale Order Related Documents */}
-                                            {currentType === 'sale_order' && (data.invoices?.length > 0 || data.deliveries?.length > 0 || data.journal_entry) && (
-                                                <div className="space-y-4 pt-6 border-t">
-                                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
-                                                        Documentos Relacionados
-                                                    </h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                        {data.invoices?.map((inv: any) => (
-                                                            <Card key={inv.id} className="border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', inv.id)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-emerald-100 rounded-lg">
-                                                                            <Receipt className="h-5 w-5 text-emerald-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">{inv.dte_type_display || 'Factura'}</div>
-                                                                            <div className="font-bold text-sm text-emerald-600">{inv.display_id}</div>
-                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(inv.status)}</Badge>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-emerald-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))}
-                                                        {data.deliveries?.map((del: any) => (
-                                                            <Card key={del.id} className="border-orange-200 bg-orange-50/50 hover:bg-orange-50 transition-colors cursor-pointer" onClick={() => navigateTo('sale_delivery', del.id)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-orange-100 rounded-lg">
-                                                                            <Package className="h-5 w-5 text-orange-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Despacho</div>
-                                                                            <div className="font-bold text-sm text-orange-600">{del.display_id}</div>
-                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(del.status)}</Badge>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-orange-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))}
-                                                        {data.journal_entry && (
-                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-purple-100 rounded-lg">
-                                                                            <Hash className="h-5 w-5 text-purple-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
-                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-purple-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Purchase Order Related Documents */}
-                                            {currentType === 'purchase_order' && (data.invoices?.length > 0 || data.receipts?.length > 0 || data.work_order || data.journal_entry) && (
-                                                <div className="space-y-4 pt-6 border-t">
-                                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                                        <ArrowLeft className="h-5 w-5 text-blue-600 rotate-180" />
-                                                        Documentos Relacionados
-                                                    </h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                        {data.work_order && (
-                                                            <Card className="border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 transition-colors cursor-pointer" onClick={() => navigateTo('work_order', data.work_order)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-indigo-100 rounded-lg">
-                                                                            <ClipboardList className="h-5 w-5 text-indigo-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Orden de Trabajo Origen</div>
-                                                                            <div className="font-bold text-sm text-indigo-600">OT-{data.work_order_number || data.work_order}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-indigo-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                        {data.invoices?.map((inv: any) => (
-                                                            <Card key={inv.id} className="border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 transition-colors cursor-pointer" onClick={() => navigateTo('invoice', inv.id)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-emerald-100 rounded-lg">
-                                                                            <Receipt className="h-5 w-5 text-emerald-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">{inv.dte_type_display || 'Factura'}</div>
-                                                                            <div className="font-bold text-sm text-emerald-600">{inv.display_id}</div>
-                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(inv.status)}</Badge>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-emerald-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))}
-                                                        {data.receipts?.map((rec: any) => (
-                                                            <Card key={rec.id} className="border-orange-200 bg-orange-50/50 hover:bg-orange-50 transition-colors cursor-pointer" onClick={() => navigateTo('purchase_receipt', rec.id)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-orange-100 rounded-lg">
-                                                                            <Package className="h-5 w-5 text-orange-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Recepción</div>
-                                                                            <div className="font-bold text-sm text-orange-600">{rec.display_id}</div>
-                                                                            <Badge variant="outline" className="text-[9px] mt-1">{translateStatus(rec.status)}</Badge>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-orange-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))}
-                                                        {data.journal_entry && (
-                                                            <Card className="border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onClick={() => navigateTo('journal_entry', data.journal_entry)}>
-                                                                <CardContent className="p-4">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="p-2 bg-purple-100 rounded-lg">
-                                                                            <Hash className="h-5 w-5 text-purple-600" />
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <div className="text-[10px] text-muted-foreground uppercase font-bold">Asiento Contable</div>
-                                                                            <div className="font-bold text-sm text-purple-600">AS-{data.journal_entry_number || data.journal_entry}</div>
-                                                                        </div>
-                                                                        <Eye className="h-4 w-4 text-purple-600" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-
-                                    {/* Section 4: Stock Movements / Receipts */}
-                                    {(view === 'all' || view === 'details') && currentType === 'invoice' && data.related_stock_moves?.length > 0 &&
-                                        !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type) && (
-                                            <div className="space-y-4 pt-6 border-t">
-                                                <h3 className="font-bold text-lg flex items-center gap-2">
-                                                    <Package className="h-5 w-5 text-orange-600" />
-                                                    Movimientos de Stock
-                                                </h3>
-                                                <div className="border rounded-md">
-                                                    <Table>
-                                                        <TableHeader className="bg-muted/50">
-                                                            <TableRow>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Almacén</TableHead>
-                                                                <TableHead>Producto</TableHead>
-                                                                <TableHead className="text-center">Tipo</TableHead>
-                                                                <TableHead className="text-right">Cantidad</TableHead>
-                                                                <TableHead className="text-right">Acción</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {data.related_stock_moves.map((move: any) => (
-                                                                <TableRow key={move.id}>
-                                                                    <TableCell>{formatPlainDate(move.date)}</TableCell>
-                                                                    <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                                    <TableCell className="font-medium">{move.product}</TableCell>
-                                                                    <TableCell className="text-center">
-                                                                        <Badge variant="outline" className="text-[10px]">
-                                                                            {move.move_type_display}
-                                                                        </Badge>
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right font-bold">
-                                                                        <span className={move.quantity > 0 ? "text-green-600" : "text-red-600"}>
-                                                                            {move.quantity}
-                                                                        </span>
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6"
-                                                                            onClick={() => navigateTo('inventory', move.id)}
-                                                                        >
-                                                                            <Eye className="h-3 w-3 text-blue-600" />
-                                                                        </Button>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
+                                                )}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* Section 3: Related Documents */}
+                                    {(view === 'all' || view === 'details') && (
+                                        <RelatedDocumentsSection
+                                            currentType={currentType}
+                                            data={data}
+                                            navigateTo={navigateTo}
+                                        />
+                                    )}
+
+                                    {/* Section 4: Payment History */}
+                                    {(view === 'all' || view === 'history') &&
+                                        (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
+                                            <PaymentHistorySection
+                                                currentType={currentType}
+                                                data={data}
+                                                navigateTo={navigateTo}
+                                                handleDeletePayment={handleDeletePayment}
+                                            />
                                         )}
                                 </div>
 
-                                {/* Section 5: Payment History */}
-                                {(view === 'all' || view === 'history') &&
-                                    (currentType === 'sale_order' || currentType === 'purchase_order' || currentType === 'invoice') && (
-                                        <div className="space-y-4 pt-6 border-t">
-                                            <h3 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
-                                                <Banknote className="h-5 w-5" />
-                                                Historial de Pagos
-                                            </h3>
-                                            {(data.serialized_payments || data.payments_detail)?.length > 0 ? (
-                                                <div className="border rounded-md">
-                                                    <Table>
-                                                        <TableHeader className="bg-muted/50">
-                                                            <TableRow>
-                                                                <TableHead>Fecha</TableHead>
-                                                                <TableHead>Método</TableHead>
-                                                                <TableHead>Referencia / Transacción</TableHead>
-                                                                <TableHead className="text-right">Monto</TableHead>
-                                                                <TableHead className="text-right">Acción</TableHead>
-                                                            </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                            {(data.serialized_payments || data.payments_detail || []).map((pay: any) => (
-                                                                <TableRow key={pay.id}>
-                                                                    <TableCell>{formatPlainDate(pay.date || pay.created_at)}</TableCell>
-                                                                    <TableCell>
-                                                                        <Badge variant="outline" className="uppercase text-[10px]">
-                                                                            {pay.payment_type === 'INBOUND' ? 'Cobro' : 'Pago'} ({translatePaymentMethod(pay.payment_method || pay.journal_name)})
-                                                                        </Badge>
-                                                                    </TableCell>
-                                                                    <TableCell className="text-sm font-mono">
-                                                                        {pay.transaction_number ? (
-                                                                            <div className="flex flex-col">
-                                                                                <span>{pay.transaction_number}</span>
-                                                                                {pay.is_pending_registration && <span className="text-[9px] text-orange-500 font-bold uppercase">(Pendiente Registro)</span>}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <span className="text-muted-foreground">{pay.reference || '-'}</span>
-                                                                        )}
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right font-bold text-emerald-600">
-                                                                        {formatCurrency(pay.amount)}
-                                                                    </TableCell>
-                                                                    <TableCell className="text-right">
-                                                                        <div className="flex justify-end gap-1">
-                                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateTo('payment', pay.id)} title="Ver Detalle">
-                                                                                <Eye className="h-4 w-4 text-blue-600" />
-                                                                            </Button>
-                                                                            {pay.is_pending_registration && (
-                                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeletePayment(pay.id)} title="Eliminar Pago">
-                                                                                    <Trash2 className="h-4 w-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            ) : (
-                                                <div className="bg-muted/50 p-6 rounded-lg text-center text-muted-foreground text-sm border border-dashed">
-                                                    No se han registrado pagos para esta transacción.
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                {/* Sidebar or Side info could go here if needed */}
+                                {/* Right Content Area (25%) - Metadata Sidebar */}
+                                <div className="w-full lg:w-[320px] bg-muted/20 border-l border-border/50 lg:min-h-full">
+                                    <div className="p-8 lg:p-10 lg:sticky lg:top-0 space-y-10">
+                                        <SidebarContent
+                                            currentType={currentType}
+                                            data={data}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         ) : null}
                     </div>
                 </div>
-            </BaseModal>
 
-            {editingPayment && (
-                <PaymentForm
-                    open={!!editingPayment}
-                    onOpenChange={(open) => !open && setEditingPayment(null)}
-                    initialData={{
-                        payment_type: editingPayment.isReceivable ? "INBOUND" : "OUTBOUND",
-                        amount: editingPayment.amount,
-                        invoice_id: editingPayment.transactionId,
-                        reference: `Pago para ${editingPayment.transactionType} #${editingPayment.transactionId}`
-                    }}
-                    onSuccess={() => {
-                        setEditingPayment(null)
-                        fetchData()
-                    }}
-                />
-            )
-            }
+                {editingPayment && (
+                    <PaymentForm
+                        open={!!editingPayment}
+                        onOpenChange={(open) => !open && setEditingPayment(null)}
+                        initialData={{
+                            payment_type: editingPayment.isReceivable ? "INBOUND" : "OUTBOUND",
+                            amount: editingPayment.amount,
+                            invoice_id: editingPayment.transactionId,
+                            reference: `Pago para ${editingPayment.transactionType} #${editingPayment.transactionId}`
+                        }}
+                        onSuccess={() => {
+                            setEditingPayment(null)
+                            fetchData()
+                        }}
+                    />
+                )}
+            </BaseModal>
         </>
     )
 }
