@@ -367,7 +367,7 @@ export default function TaxDeclarationsPage() {
                                                     </h4>
                                                     {getStatusBadge(period.status)}
                                                 </div>
-                                                <div className="flex items-center gap-4 mt-1">
+                                                <div className="flex items-center gap-2 mt-1">
                                                     {summary ? (
                                                         <>
                                                             {summary.is_fully_paid ? (
@@ -381,7 +381,7 @@ export default function TaxDeclarationsPage() {
                                                                     </Badge>
                                                                 )
                                                             )}
-                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                                                            <div className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground font-mono">
                                                                 <DollarSign className="h-3 w-3" />
                                                                 {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
                                                             </div>
@@ -393,39 +393,50 @@ export default function TaxDeclarationsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4">
-                                            {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0 || !summary)) && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenPayment(period);
-                                                    }}
-                                                >
-                                                    <DollarSign className="h-4 w-4 mr-2" />
-                                                    Pagar
-                                                </Button>
-                                            )}
-                                            {canOpenChecklist && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-10 w-10 rounded-xl group-hover:translate-x-1 transition-transform"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenChecklist(period);
-                                                    }}
-                                                >
-                                                    <ArrowRight className="h-5 w-5 text-primary" />
-                                                </Button>
-                                            )}
-                                            {!canOpenChecklist && (
-                                                <div className="w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                                        <div className="flex items-center gap-6">
+                                            {summary && (
+                                                <div className="text-right min-w-[120px] hidden sm:block">
+                                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Impuesto Det.</div>
+                                                    <div className="text-sm font-bold text-primary">
+                                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
+                                                    </div>
                                                 </div>
                                             )}
+
+                                            <div className="flex items-center gap-2">
+                                                {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0 || !summary)) && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-50"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenPayment(period);
+                                                        }}
+                                                    >
+                                                        <DollarSign className="h-4 w-4 mr-2" />
+                                                        Pagar
+                                                    </Button>
+                                                )}
+                                                {canOpenChecklist && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-10 w-10 rounded-xl group-hover:translate-x-1 transition-transform"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenChecklist(period);
+                                                        }}
+                                                    >
+                                                        <ArrowRight className="h-5 w-5 text-primary" />
+                                                    </Button>
+                                                )}
+                                                {!canOpenChecklist && (
+                                                    <div className="w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 )

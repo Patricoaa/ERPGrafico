@@ -97,7 +97,11 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
             // Sync tax rate from settings
             if (response.data.tax_rate) {
-                setManualFields(prev => ({ ...prev, tax_rate: response.data.tax_rate }))
+                setManualFields(prev => ({
+                    ...prev,
+                    tax_rate: response.data.tax_rate,
+                    vat_credit_carryforward: response.data.vat_credit_carryforward || 0
+                }))
             }
             return true
         } catch (error) {
@@ -365,9 +369,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <Input
                                         id="remanente"
                                         type="number"
+                                        readOnly
                                         value={manualFields.vat_credit_carryforward}
-                                        onChange={(e) => setManualFields({ ...manualFields, vat_credit_carryforward: Number(e.target.value) })}
-                                        className="rounded-xl"
+                                        className="rounded-xl bg-muted/50 cursor-not-allowed"
+                                        title="Este valor se extrae automáticamente de la contabilidad"
                                     />
                                 </div>
                                 <div className="space-y-2">

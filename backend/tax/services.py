@@ -103,6 +103,21 @@ class F29CalculationService:
         vat_credit = (net_taxed_purchases * tax_rate / Decimal('100')).quantize(
             Decimal('1'), rounding='ROUND_HALF_UP'
         )
+
+        # Get Remanente (Carryforward) from Accounting Account Balance
+        vat_credit_carryforward = Decimal('0')
+        if settings and settings.vat_carryforward_account:
+            from django.db.models import Sum
+            # Balance up to (but not including) start_date
+            carryforward_items = JournalItem.objects.filter(
+                account=settings.vat_carryforward_account,
+                entry__state=JournalEntry.State.POSTED,
+                entry__date__lt=start_date
+            )
+            total_debit = carryforward_items.aggregate(Sum('debit'))['debit__sum'] or Decimal('0')
+            total_credit = carryforward_items.aggregate(Sum('credit'))['credit__sum'] or Decimal('0')
+            # Remanente is an asset, so Debit - Credit
+            vat_credit_carryforward = total_debit - total_credit
         
         return {
             'sales_taxed': sales_taxed,
@@ -117,6 +132,7 @@ class F29CalculationService:
             'net_taxed_purchases': net_taxed_purchases,
             'vat_debit': vat_debit,
             'vat_credit': vat_credit,
+            'vat_credit_carryforward': vat_credit_carryforward,
             'tax_rate': tax_rate,
         }
 
