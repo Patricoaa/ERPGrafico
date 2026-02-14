@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,21 +28,12 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const { accounts: allAccounts, loading: accountsLoading } = useAccountingAccounts(!showAll)
-    const [accounts, setAccounts] = useState<any[]>([])
-    const [filteredAccounts, setFilteredAccounts] = useState<any[]>([])
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedAccount, setSelectedAccount] = useState<any>(null)
 
-    useEffect(() => {
-        if (!allAccounts) return
-
-        // Filtering logic:
-        // 1. If showAll is false (standard pick for movements/entries):
-        //    Only show leaf accounts (is_selectable !== false).
-        // 2. If showAll is true (picking a parent for a new account):
-        //    Show category accounts but restrict Level 1 (e.g., "1", "2").
-        //    Level 1 accounts are identified by having no dots in their code.
-        const selectableAccounts = allAccounts.filter((a: any) => {
+    // 1. Filter base accounts (leaf vs parent)
+    const selectableAccounts = useMemo(() => {
+        if (!allAccounts) return []
+        return allAccounts.filter((a: any) => {
             const isReconcilableMatch = isReconcilable !== undefined ? a.is_reconcilable === isReconcilable : true;
 
             if (showAll) {
@@ -52,26 +43,34 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             // For journal entries, only show leaf accounts
             return a.is_selectable !== false && isReconcilableMatch;
         })
+    }, [allAccounts, showAll, isReconcilable])
 
-        // Filter by type if provided
-        const filteredByType = accountType
-            ? selectableAccounts.filter((a: any) => {
-                if (Array.isArray(accountType)) return accountType.includes(a.account_type)
-                return a.account_type === accountType
-            })
-            : selectableAccounts
+    // 2. Filter by type if provided
+    const typedAccounts = useMemo(() => {
+        if (!accountType) return selectableAccounts
+        return selectableAccounts.filter((a: any) => {
+            if (Array.isArray(accountType)) return accountType.includes(a.account_type)
+            return a.account_type === accountType
+        })
+    }, [selectableAccounts, accountType])
 
-        setAccounts(filteredByType)
-        setFilteredAccounts(filteredByType)
+    // 3. Filter by search term
+    const filteredAccounts = useMemo(() => {
+        const lowerVal = searchTerm.toLowerCase()
+        if (!lowerVal) return typedAccounts
+        return typedAccounts.filter(a =>
+            a.code.toLowerCase().includes(lowerVal) ||
+            a.name.toLowerCase().includes(lowerVal)
+        )
+    }, [typedAccounts, searchTerm])
 
-        if (value) {
-            const found = allAccounts.find((a: any) => a.id.toString() === value.toString())
-            setSelectedAccount(found)
-        }
-    }, [allAccounts, accountType, value, showAll, isReconcilable])
+    // 4. Find selected account
+    const selectedAccount = useMemo(() => {
+        if (!value || !allAccounts) return null
+        return allAccounts.find((a: any) => a.id.toString() === value.toString()) || null
+    }, [allAccounts, value])
 
     const handleSelect = (account: any) => {
-        setSelectedAccount(account)
         onChange(account ? account.id.toString() : null)
         setOpen(false)
         setModalOpen(false)
@@ -79,13 +78,6 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     const searchAccounts = (val: string) => {
         setSearchTerm(val)
-        const lowerVal = val.toLowerCase()
-        setFilteredAccounts(
-            accounts.filter(a =>
-                a.code.toLowerCase().includes(lowerVal) ||
-                a.name.toLowerCase().includes(lowerVal)
-            )
-        )
     }
 
     return (

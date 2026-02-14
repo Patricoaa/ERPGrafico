@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -22,9 +21,21 @@ import {
 import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { ColumnDef } from "@tanstack/react-table";
+
+interface GlobalAuditLog {
+    date: string;
+    user_name: string | null;
+    entity_label: string | null;
+    history_type: '+' | '~' | '-' | null;
+    source: 'action_log' | 'history';
+    action_type: string | null;
+    type_label: string | null;
+    description: string;
+}
 
 export default function AuditHubPage() {
-    const [logs, setLogs] = useState<any[]>([]);
+    const [logs, setLogs] = useState<GlobalAuditLog[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchLogs = async () => {
@@ -64,13 +75,13 @@ export default function AuditHubPage() {
         }
     };
 
-    const columns: any[] = [
+    const columns: ColumnDef<GlobalAuditLog>[] = [
         {
             accessorKey: "date",
-            header: ({ column }: any) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha y Hora" />
             ),
-            cell: ({ row }: any) => {
+            cell: ({ row }) => {
                 const date = new Date(row.original.date);
                 return (
                     <div className="flex flex-col">
@@ -86,10 +97,10 @@ export default function AuditHubPage() {
         },
         {
             accessorKey: "user_name",
-            header: ({ column }: any) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
                 <DataCell.Badge variant="outline" className="bg-slate-50 font-normal">
                     {row.original.user_name || "Sistema"}
                 </DataCell.Badge>
@@ -97,10 +108,10 @@ export default function AuditHubPage() {
         },
         {
             accessorKey: "entity_label",
-            header: ({ column }: any) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Entidad" />
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
                 <DataCell.Badge variant="secondary" className="font-normal capitalize">
                     {row.original.entity_label || "Sistema"}
                 </DataCell.Badge>
@@ -109,20 +120,20 @@ export default function AuditHubPage() {
         {
             accessorKey: "action_type_label", // Virtual key for filtering
             id: "action_type_label",
-            header: ({ column }: any) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Acción" />
             ),
-            cell: ({ row }: any) => {
+            cell: ({ row }) => {
                 const hType = row.original.history_type;
                 const source = row.original.source;
-                const icon = getActionIcon(row.original.action_type || hType, source);
+                const icon = getActionIcon((row.original.action_type || hType || 'default'), source);
                 const label = row.original.type_label || (
                     hType === '+' ? 'Creación' :
                         hType === '~' ? 'Edición' :
                             hType === '-' ? 'Eliminación' : 'Cambio'
                 );
 
-                let variant: any = "outline";
+                let variant: "outline" | "success" | "destructive" | "info" | "warning" | "secondary" | "default" = "outline";
                 if (source === 'action_log') {
                     if (row.original.action_type === 'LOGIN') variant = "success";
                     if (row.original.action_type === 'SECURITY') variant = "destructive";
@@ -144,10 +155,10 @@ export default function AuditHubPage() {
         },
         {
             accessorKey: "description",
-            header: ({ column }: any) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Descripción" />
             ),
-            cell: ({ row }: any) => (
+            cell: ({ row }) => (
                 <DataCell.Text className="text-xs text-muted-foreground truncate max-w-[500px]">
                     {row.original.description}
                 </DataCell.Text>
@@ -157,7 +168,7 @@ export default function AuditHubPage() {
             accessorKey: "source",
             header: "Origen",
             id: "source",
-            cell: ({ row }: any) => {
+            cell: ({ row }) => {
                 const source = row.original.source;
                 const label = source === 'action_log' ? 'Sistema' : 'Datos';
                 const variant = source === 'action_log' ? 'default' : 'secondary';
@@ -184,8 +195,8 @@ export default function AuditHubPage() {
             column: "entity_label",
             title: "Entidad",
             options: Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
-                label,
-                value: label
+                label: label as string,
+                value: label as string
             }))
         },
         {
@@ -193,7 +204,7 @@ export default function AuditHubPage() {
             title: "Acción",
             options: Array.from(new Set(logs.map(l => {
                 const hType = l.history_type;
-                if (l.source === 'action_log') return l.action_type;
+                if (l.source === 'action_log') return l.action_type || 'Unknown';
                 if (l.source === 'history') {
                     if (hType === '+') return 'Creación';
                     if (hType === '~') return 'Edición';
@@ -201,13 +212,13 @@ export default function AuditHubPage() {
                 }
                 return 'Cambio';
             }))).filter(Boolean).map(val => ({
-                label: val === 'LOGIN' ? 'Inicio de Sesión' :
+                label: (val === 'LOGIN' ? 'Inicio de Sesión' :
                     val === 'LOGOUT' ? 'Cierre de Sesión' :
                         val === 'SETTINGS_CHANGE' ? 'Configuración' :
                             val === 'SECURITY' ? 'Seguridad' :
                                 val === 'EXPORT' ? 'Exportación' :
-                                    val === 'PRINT' ? 'Impresión' : val,
-                value: val
+                                    val === 'PRINT' ? 'Impresión' : val) as string,
+                value: val as string
             }))
         }
     ];

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -8,27 +8,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
     const { isAuthenticated, isLoading } = useAuth()
-    const [authorized, setAuthorized] = useState(false)
+
+    const isLoginPath = pathname === "/login"
 
     useEffect(() => {
-        // Allow access to login page without token
-        if (pathname === "/login") {
-            setAuthorized(true)
-            return
+        if (!isLoading && !isAuthenticated && !isLoginPath) {
+            router.push("/login")
         }
+    }, [isLoading, isAuthenticated, isLoginPath, router])
 
-        if (!isLoading) {
-            if (!isAuthenticated) {
-                setAuthorized(false)
-                router.push("/login")
-            } else {
-                setAuthorized(true)
-            }
-        }
-    }, [pathname, isAuthenticated, isLoading, router])
-
-    if (!authorized) {
-        return null;
+    // While loading or not authenticated (and not on login page), don't show children
+    if (!isLoginPath && (isLoading || !isAuthenticated)) {
+        return null
     }
 
     return (

@@ -545,7 +545,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Deshacer reconciliación?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción desvinculará la línea del pago y la devolverá al estado "No Reconciliado".
+                            Esta acción desvinculará la línea del pago y la devolverá al estado &quot;No Reconciliado&quot;.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

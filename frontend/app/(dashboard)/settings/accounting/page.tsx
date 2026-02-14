@@ -1,23 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useState, useEffect, useCallback } from "react"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { ChevronLeft, Loader2, Save, Database, Settings2, BarChart3, Calculator, CloudCheck, CloudUpload, AlertCircle as AlertCircleIcon } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Loader2, Database, Settings2, CloudCheck, CloudUpload } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 const accountingSchema = z.object({
@@ -37,7 +30,7 @@ const accountingSchema = z.object({
 type AccountingFormValues = z.infer<typeof accountingSchema>
 
 export default function AccountingSettingsPage() {
-    const router = useRouter()
+    // const router = useRouter() // Not used
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [populating, setPopulating] = useState(false)
@@ -62,20 +55,21 @@ export default function AccountingSettingsPage() {
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
-                Object.keys(form.getValues()).forEach((key: any) => {
-                    const val = (settings as any)[key]
+                const formattedSettings: Partial<AccountingFormValues> = {}
+                const keys = Object.keys(accountingSchema.shape) as (keyof AccountingFormValues)[]
+
+                keys.forEach((key) => {
+                    const val = settings[key]
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key.includes('prefix') || key === 'code_format' || key === 'inventory_valuation_method' ? "" : null)
-                    } else if (key === 'pos_cash_difference_approval_threshold') {
-                        formattedSettings[key] = parseInt(val.toString()) || 0
+                        formattedSettings[key] = (key.includes('prefix') || key === 'code_format' ? "" : null) as never
                     } else {
-                        formattedSettings[key] = val.toString()
+                        formattedSettings[key] = val.toString() as never
                     }
                 })
-                form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
+                form.reset(formattedSettings as AccountingFormValues)
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } }
+                if (err.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }
             } finally {
@@ -88,6 +82,19 @@ export default function AccountingSettingsPage() {
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
+    const onSubmit = useCallback(async (data: AccountingFormValues) => {
+        setSaving(true)
+        try {
+            await api.patch('/accounting/settings/current/', data)
+            toast.success("Configuración guardada automáticamene")
+            form.reset(data)
+        } catch {
+            toast.error("Error al guardar")
+        } finally {
+            setSaving(false)
+        }
+    }, [form])
+
     useEffect(() => {
         if (!loading && isDirty) {
             const timer = setTimeout(() => {
@@ -95,20 +102,7 @@ export default function AccountingSettingsPage() {
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty])
-
-    async function onSubmit(data: AccountingFormValues) {
-        setSaving(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración guardada automáticamene")
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [watchedValues, loading, isDirty, form, onSubmit])
 
     const handlePopulateIFRS = async () => {
         if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
@@ -117,8 +111,9 @@ export default function AccountingSettingsPage() {
             const res = await api.post('/accounting/accounts/populate_ifrs/')
             toast.success(res.data.message)
             window.location.reload()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al poblar plan de cuentas")
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { error?: string } } }
+            toast.error(err.response?.data?.error || "Error al poblar plan de cuentas")
         } finally {
             setPopulating(false)
         }
@@ -221,31 +216,24 @@ export default function AccountingSettingsPage() {
     )
 }
 
-interface AccountFieldProps {
-    form: any
-    name: string
-    label: string
-    accountType: string
-}
-
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    )
-}
+// function AccountField({ form, name, label, accountType }: AccountFieldProps) {
+//     return (
+//         <FormField
+//             control={form.control}
+//             name={name}
+//             render={({ field }) => (
+//                 <FormItem>
+//                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
+//                     <FormControl>
+//                         <AccountSelector
+//                             value={field.value as string}
+//                             onChange={(val) => field.onChange(val)}
+//                             accountType={accountType}
+//                         />
+//                     </FormControl>
+//                     <FormMessage />
+//                 </FormItem>
+//             )}
+//         />
+//     )
+// }

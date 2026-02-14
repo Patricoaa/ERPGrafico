@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useEffect, useCallback } from "react"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -80,23 +80,24 @@ export default function SalesSettingsPage() {
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings: Partial<SalesFormValues> = {}
 
-                const fields = Object.keys(form.getValues())
-                fields.forEach((key: any) => {
-                    const val = (settings as any)[key]
+                const keys = Object.keys(salesSchema.shape) as (keyof SalesFormValues)[]
+                keys.forEach((key) => {
+                    const val = settings[key]
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'pos_cash_difference_approval_threshold' ? 5000 : null)
+                        formattedSettings[key] = (key === 'pos_cash_difference_approval_threshold' ? 5000 : null) as never
                     } else if (key === 'pos_cash_difference_approval_threshold') {
-                        formattedSettings[key] = parseInt(val.toString()) || 0
+                        formattedSettings[key] = (parseInt(val.toString()) || 0) as never
                     } else {
-                        formattedSettings[key] = val.toString()
+                        formattedSettings[key] = val.toString() as never
                     }
                 })
 
-                form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
+                form.reset(formattedSettings as SalesFormValues)
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } }
+                if (err.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }
             } finally {
@@ -109,6 +110,19 @@ export default function SalesSettingsPage() {
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
+    const onSubmit = useCallback(async (data: SalesFormValues) => {
+        setSaving(true)
+        try {
+            await api.patch('/accounting/settings/current/', data)
+            toast.success("Configuración de ventas aplicada")
+            form.reset(data)
+        } catch {
+            toast.error("Error al guardar cambios")
+        } finally {
+            setSaving(false)
+        }
+    }, [form])
+
     useEffect(() => {
         if (!loading && isDirty) {
             const timer = setTimeout(() => {
@@ -116,20 +130,7 @@ export default function SalesSettingsPage() {
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty])
-
-    async function onSubmit(data: SalesFormValues) {
-        setSaving(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de ventas aplicada")
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [watchedValues, loading, isDirty, form, onSubmit])
 
     if (loading) {
         return (
@@ -259,8 +260,8 @@ export default function SalesSettingsPage() {
 }
 
 interface AccountFieldProps {
-    form: any
-    name: string
+    form: UseFormReturn<SalesFormValues>
+    name: Path<SalesFormValues>
     label: string
     accountType: string
 }

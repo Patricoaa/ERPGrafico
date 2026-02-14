@@ -7,7 +7,6 @@ import api from "@/lib/api"
 import { HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
 import { translateFieldName } from "@/lib/utils"
 
 interface ActivitySidebarProps {
@@ -47,31 +46,32 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
+        const fetchHistoryInternal = async () => {
+            setLoading(true)
+            setError(null)
+            try {
+                const endpoint = ENDPOINT_MAP[entityType]
+                if (!endpoint) {
+                    throw new Error(`Unknown entity type: ${entityType}`)
+                }
+                const res = await api.get(`${endpoint}/${entityId}/history/`)
+                setHistory(res.data)
+            } catch (err: unknown) {
+                console.error("Error fetching history:", err)
+                const error = err as { code?: string; response?: { data?: { detail?: string } } }
+                const message = error.code === 'ERR_NETWORK'
+                    ? "Error de conexión con el servidor"
+                    : (error.response?.data?.detail || "Error al cargar el historial")
+                setError(message)
+            } finally {
+                setLoading(false)
+            }
+        }
+
         if (entityId) {
-            fetchHistory()
+            fetchHistoryInternal()
         }
     }, [entityId, entityType])
-
-    const fetchHistory = async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const endpoint = ENDPOINT_MAP[entityType]
-            if (!endpoint) {
-                throw new Error(`Unknown entity type: ${entityType}`)
-            }
-            const res = await api.get(`${endpoint}/${entityId}/history/`)
-            setHistory(res.data)
-        } catch (err: any) {
-            console.error("Error fetching history:", err)
-            const message = err.code === 'ERR_NETWORK'
-                ? "Error de conexión con el servidor"
-                : (err.response?.data?.detail || "Error al cargar el historial")
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const getChangeIcon = (type: string) => {
         switch (type) {
@@ -178,7 +178,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                     const oldValue = history[index + 1][field];
                                                     const newValue = record[field];
 
-                                                    const formatValue = (val: any) => {
+                                                    const formatValue = (val: unknown) => {
                                                         if (val === null || val === undefined) return <span className="italic opacity-50">vacio</span>;
                                                         if (typeof val === 'boolean') return val ? 'Sí' : 'No';
                                                         if (typeof val === 'string' && val.length > 30) return val.substring(0, 27) + '...';

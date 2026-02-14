@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { HistoricalRecord } from "@/types/audit";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +74,7 @@ export function AuditTimeline({
     const findDiff = (current: HistoricalRecord, previous?: HistoricalRecord) => {
         if (!previous) return null;
 
-        const diffs: { field: string; old: any; new: any }[] = [];
+        const diffs: { field: string; old: unknown; new: unknown }[] = [];
 
         Object.keys(current).forEach(key => {
             if (ignoredFields.includes(key)) return;
@@ -131,7 +131,7 @@ export function AuditTimeline({
 
                                         {item.history_change_reason && (
                                             <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded italic">
-                                                "{item.history_change_reason}"
+                                                &quot;{item.history_change_reason}&quot;
                                             </p>
                                         )}
 

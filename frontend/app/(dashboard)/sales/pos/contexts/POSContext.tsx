@@ -4,11 +4,16 @@
 // Centralized state management for the POS system
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
-import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache } from '@/types/pos'
-import { toast } from 'sonner'
+import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM } from '@/types/pos'
 import * as CartUtils from '@/lib/pos/cart-utils'
-import * as Validation from '@/lib/pos/validation'
 import api from '@/lib/api'
+
+export interface WizardState {
+    step: number
+    dte?: any
+    payment?: any
+    delivery?: any
+}
 
 interface POSContextValue {
     // Session
@@ -31,13 +36,13 @@ interface POSContextValue {
     // Draft & Wizard State
     currentDraftId: number | null
     setCurrentDraftId: (id: number | null) => void
-    wizardState: any | null
-    setWizardState: (state: any | null) => void
+    wizardState: WizardState | null
+    setWizardState: (state: WizardState | null) => void
 
     // Caches
     bomCache: BOMCache
     componentCache: ComponentCache
-    updateBomCache: (productId: number, bom: any) => void
+    updateBomCache: (productId: number, bom: BOM) => void
     updateComponentCache: (componentId: number, data: { stock: number, uom: number }) => void
 
     // Cart Actions
@@ -76,7 +81,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
 
     // Draft & Wizard State
     const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
-    const [wizardState, setWizardState] = useState<any | null>(null)
+    const [wizardState, setWizardState] = useState<WizardState | null>(null)
 
     // Fetch default customer on mount
     useEffect(() => {
@@ -84,7 +89,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
             try {
                 const response = await api.get('/contacts/?is_default_customer=true')
                 const results = response.data.results || response.data
-                const defaultCustomer = results.find((c: any) => c.is_default_customer)
+                const defaultCustomer = results.find((c: { id: number; is_default_customer: boolean }) => c.is_default_customer)
                 if (defaultCustomer) {
                     setSelectedCustomerId(defaultCustomer.id)
                 }
@@ -95,13 +100,13 @@ export function POSProvider({ children }: { children: ReactNode }) {
         fetchDefaultCustomer()
     }, [])
 
-    // Reset draft state when session changes
-    useEffect(() => {
-        if (currentSession?.id) {
-            setCurrentDraftId(null)
-            setWizardState(null)
-        }
-    }, [currentSession?.id])
+    // Reset draft state when session changes - Adjust state during render pattern
+    const [handledSessionId, setHandledSessionId] = useState<number | null>(null);
+    if (currentSession?.id && currentSession.id !== handledSessionId) {
+        setHandledSessionId(currentSession.id);
+        setCurrentDraftId(null);
+        setWizardState(null);
+    }
 
     // Caches
     const [bomCache, setBomCache] = useState<BOMCache>({})
@@ -111,7 +116,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false)
 
     // Cache updaters
-    const updateBomCache = useCallback((productId: number, bom: any) => {
+    const updateBomCache = useCallback((productId: number, bom: BOM) => {
         setBomCache(prev => ({ ...prev, [productId]: bom }))
     }, [])
 

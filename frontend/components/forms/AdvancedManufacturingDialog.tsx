@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
-    User, Paintbrush, FileText, Plus, X, Upload, FileIcon, Printer
+    User, Paintbrush, FileText, X, Upload, FileIcon, Printer
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
@@ -19,15 +19,15 @@ import { toast } from "sonner"
 interface AdvancedManufacturingDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    product: any
-    onConfirm: (data: any) => void
+    product: { id: number; manufacturing_data?: any;[key: string]: any } | null | undefined
+    onConfirm: (data: Record<string, unknown>) => void
 }
 
 export function AdvancedManufacturingDialog({
     open, onOpenChange, product, onConfirm
 }: AdvancedManufacturingDialogProps) {
     const [designNeeded, setDesignNeeded] = useState(false)
-    const [contact, setContact] = useState<any>(null)
+    const [contact, setContact] = useState<{ id: number; name: string; tax_id?: string; rut?: string } | null>(null)
     const [description, setDescription] = useState("")
     const [productDescription, setProductDescription] = useState("")
     const [designFiles, setDesignFiles] = useState<File[]>([])
@@ -47,64 +47,72 @@ export function AdvancedManufacturingDialog({
     // Print type
     const [printType, setPrintType] = useState<string | null>(null)
 
-    useEffect(() => {
-        if (open && product) {
-            const mfgData = product.manufacturing_data
+    const [prevOpen, setPrevOpen] = useState(false)
+    const [prevProductId, setPrevProductId] = useState<number | null>(null)
 
-            if (mfgData) {
-                setDesignNeeded(mfgData.design_needed || false)
-                setContact(mfgData.contact || null)
-                setDescription(mfgData.description || "")
-                setProductDescription(mfgData.product_description || "")
-                setDesignFiles(mfgData.design_files || [])
-                setFolioEnabled(mfgData.folio_enabled || false)
-                setFolioStart(mfgData.folio_start || "")
-                setPrintType(mfgData.print_type || null)
+    if (open && (open !== prevOpen || product?.id !== prevProductId)) {
+        setPrevOpen(open)
+        setPrevProductId(product?.id ?? null)
 
-                if (mfgData.phases) {
-                    setEnablePrepress(mfgData.phases.prepress ?? !!product.mfg_enable_prepress)
-                    setEnablePress(mfgData.phases.press ?? !!product.mfg_enable_press)
-                    setEnablePostpress(mfgData.phases.postpress ?? !!product.mfg_enable_postpress)
-                } else {
-                    setEnablePrepress(!!product.mfg_enable_prepress)
-                    setEnablePress(!!product.mfg_enable_press)
-                    setEnablePostpress(!!product.mfg_enable_postpress)
-                }
+        const mfgData = product?.manufacturing_data
 
-                if (mfgData.specifications) {
-                    setPrepressSpecs(mfgData.specifications.prepress || "")
-                    setPressSpecs(mfgData.specifications.press || "")
-                    setPostpressSpecs(mfgData.specifications.postpress || "")
-                } else {
-                    setPrepressSpecs("")
-                    setPressSpecs("")
-                    setPostpressSpecs("")
-                }
+        if (mfgData) {
+            setDesignNeeded(mfgData.design_needed || false)
+            setContact(mfgData.contact || null)
+            setDescription(mfgData.description || "")
+            setProductDescription(mfgData.product_description || "")
+            setDesignFiles(mfgData.design_files || [])
+            setFolioEnabled(mfgData.folio_enabled || false)
+            setFolioStart(mfgData.folio_start || "")
+            setPrintType(mfgData.print_type || null)
+
+            if (mfgData.phases) {
+                setEnablePrepress(mfgData.phases.prepress ?? !!product.mfg_enable_prepress)
+                setEnablePress(mfgData.phases.press ?? !!product.mfg_enable_press)
+                setEnablePostpress(mfgData.phases.postpress ?? !!product.mfg_enable_postpress)
             } else {
-                setDesignNeeded(!!product.mfg_prepress_design)
-                setContact(null)
-                setDescription("")
-                setProductDescription("")
-                setDesignFiles([])
-                setFolioEnabled(!!product.mfg_prepress_folio)
-                setFolioStart("")
-                setPrepressSpecs("")
-                setPressSpecs("")
-                setPostpressSpecs("")
-
-                // Initialize printType from product flags
-                if (product.mfg_press_offset) setPrintType('offset')
-                else if (product.mfg_press_digital) setPrintType('digital')
-                else if (product.mfg_press_special) setPrintType('especial')
-                else setPrintType(null)
-
-                // Initialize switches from product configuration
                 setEnablePrepress(!!product.mfg_enable_prepress)
                 setEnablePress(!!product.mfg_enable_press)
                 setEnablePostpress(!!product.mfg_enable_postpress)
             }
+
+            if (mfgData.specifications) {
+                setPrepressSpecs(mfgData.specifications.prepress || "")
+                setPressSpecs(mfgData.specifications.press || "")
+                setPostpressSpecs(mfgData.specifications.postpress || "")
+            } else {
+                setPrepressSpecs("")
+                setPressSpecs("")
+                setPostpressSpecs("")
+            }
+        } else if (product) {
+            setDesignNeeded(!!product.mfg_prepress_design)
+            setContact(null)
+            setDescription("")
+            setProductDescription("")
+            setDesignFiles([])
+            setFolioEnabled(!!product.mfg_prepress_folio)
+            setFolioStart("")
+            setPrepressSpecs("")
+            setPressSpecs("")
+            setPostpressSpecs("")
+
+            // Initialize printType from product flags
+            if (product.mfg_press_offset) setPrintType('offset')
+            else if (product.mfg_press_digital) setPrintType('digital')
+            else if (product.mfg_press_special) setPrintType('especial')
+            else setPrintType(null)
+
+            // Initialize switches from product configuration
+            setEnablePrepress(!!product.mfg_enable_prepress)
+            setEnablePress(!!product.mfg_enable_press)
+            setEnablePostpress(!!product.mfg_enable_postpress)
         }
-    }, [open, product])
+    }
+
+    if (!open && prevOpen) {
+        setPrevOpen(false)
+    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {

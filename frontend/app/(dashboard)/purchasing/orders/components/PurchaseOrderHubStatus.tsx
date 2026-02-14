@@ -8,6 +8,32 @@ interface PurchaseOrderHubStatusProps {
     order: any
 }
 
+// Helper for rendering badges - defined outside to avoid recreation during render
+const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {
+    const colors: Record<string, string> = {
+        success: "text-green-600 bg-green-500/10 border-green-600/20",
+        active: "text-blue-600 bg-blue-500/10 border-blue-600/20",
+        neutral: "text-muted-foreground bg-muted/50 border-muted-foreground/20",
+        destructive: "text-red-600 bg-red-500/10 border-red-600/20",
+        not_applicable: "hidden"
+    }
+
+    if (status === 'not_applicable') return null
+
+    return (
+        <Tooltip>
+            <TooltipTrigger>
+                <div className={cn("flex items-center justify-center w-6 h-6 rounded-full border", colors[status])}>
+                    <Icon className="h-3 w-3" />
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{tooltip}</p>
+            </TooltipContent>
+        </Tooltip>
+    )
+}
+
 export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
     const statuses = getPurchaseHubStatuses(order)
 
@@ -30,32 +56,6 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
     const pendingAmount = parseFloat(order.pending_amount)
     const total = parseFloat(order.total)
     const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
-
-    // Helper for rendering badges
-    const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {
-        const colors: Record<string, string> = {
-            success: "text-green-600 bg-green-500/10 border-green-600/20",
-            active: "text-blue-600 bg-blue-500/10 border-blue-600/20",
-            neutral: "text-muted-foreground bg-muted/50 border-muted-foreground/20",
-            destructive: "text-red-600 bg-red-500/10 border-red-600/20",
-            not_applicable: "hidden"
-        }
-
-        if (status === 'not_applicable') return null
-
-        return (
-            <Tooltip>
-                <TooltipTrigger>
-                    <div className={cn("flex items-center justify-center w-6 h-6 rounded-full border", colors[status])}>
-                        <Icon className="h-3 w-3" />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{tooltip}</p>
-                </TooltipContent>
-            </Tooltip>
-        )
-    }
 
     return (
         <div className="flex items-center gap-1.5">

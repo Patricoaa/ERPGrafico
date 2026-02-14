@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useEffect, useCallback } from "react"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -74,23 +74,24 @@ export default function BillingSettingsPage() {
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings: Partial<BillingFormValues> = {}
 
-                const fields = Object.keys(form.getValues())
-                fields.forEach((key: any) => {
-                    const val = (settings as any)[key]
+                const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
+                keys.forEach((key) => {
+                    const val = settings[key]
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null)
+                        formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null) as never
                     } else if (key === 'default_vat_rate') {
-                        formattedSettings[key] = parseFloat(val.toString())
+                        formattedSettings[key] = parseFloat(val.toString()) as never
                     } else {
-                        formattedSettings[key] = val.toString()
+                        formattedSettings[key] = val.toString() as never
                     }
                 })
 
-                form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
+                form.reset(formattedSettings as BillingFormValues)
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } }
+                if (err.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }
             } finally {
@@ -103,6 +104,19 @@ export default function BillingSettingsPage() {
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
+    const onSubmit = useCallback(async (data: BillingFormValues) => {
+        setSaving(true)
+        try {
+            await api.patch('/accounting/settings/current/', data)
+            toast.success("Configuración de facturación aplicada")
+            form.reset(data)
+        } catch {
+            toast.error("Error al guardar cambios")
+        } finally {
+            setSaving(false)
+        }
+    }, [form])
+
     useEffect(() => {
         if (!loading && isDirty) {
             const timer = setTimeout(() => {
@@ -110,20 +124,7 @@ export default function BillingSettingsPage() {
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty])
-
-    async function onSubmit(data: BillingFormValues) {
-        setSaving(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de facturación aplicada")
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [watchedValues, loading, isDirty, form, onSubmit])
 
     if (loading) {
         return (
@@ -295,8 +296,8 @@ export default function BillingSettingsPage() {
 }
 
 interface AccountFieldProps {
-    form: any
-    name: string
+    form: UseFormReturn<BillingFormValues>
+    name: Path<BillingFormValues>
     label: string
     accountType: string
 }

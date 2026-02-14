@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -28,19 +28,19 @@ export default function AnalysisPage() {
         to: subYears(new Date(), 1),
     })
 
-    // Sync with server date
-    useEffect(() => {
-        if (serverDate) {
-            setDate({
-                from: startOfYear(serverDate),
-                to: serverDate,
-            })
-            setCompDate({
-                from: startOfYear(subYears(serverDate, 1)),
-                to: subYears(serverDate, 1),
-            })
-        }
-    }, [serverDate])
+    // Sync with server date - Adjust state during render pattern
+    const [handledServerDate, setHandledServerDate] = useState<Date | null>(null);
+    if (serverDate && serverDate !== handledServerDate) {
+        setHandledServerDate(serverDate);
+        setDate({
+            from: startOfYear(serverDate),
+            to: serverDate,
+        });
+        setCompDate({
+            from: startOfYear(subYears(serverDate, 1)),
+            to: subYears(serverDate, 1),
+        });
+    }
 
     const tabs = [
         { value: "ratios", label: "Ratios Financieros", icon: PieChart },

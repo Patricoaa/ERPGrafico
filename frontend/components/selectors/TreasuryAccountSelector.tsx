@@ -41,8 +41,6 @@ export function TreasuryAccountSelector({
     excludeId
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
-    const [selectedAccount, setSelectedAccount] = useState<any>(null)
-
     const { accounts, loading } = useTreasuryAccounts({
         context,
         terminalId,
@@ -55,17 +53,11 @@ export function TreasuryAccountSelector({
         ? accounts.filter(a => a.account_type === type)
         : accounts
 
-    useEffect(() => {
-        if (value && filteredAccounts.length > 0) {
-            const found = filteredAccounts.find(a => a.id.toString() === value.toString())
-            setSelectedAccount(found)
-        } else if (!value) {
-            setSelectedAccount(null)
-        }
-    }, [value, filteredAccounts])
+    const selectedAccount = value && filteredAccounts.length > 0
+        ? filteredAccounts.find(a => a.id.toString() === value.toString()) || null
+        : null
 
     const handleSelect = (account: any) => {
-        setSelectedAccount(account)
         onChange(account ? account.id.toString() : null)
         setOpen(false)
     }

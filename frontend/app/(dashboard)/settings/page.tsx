@@ -1,14 +1,10 @@
-import { Metadata } from "next"
+"use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Settings, Building2, Shield, History, FileText, Database } from "lucide-react"
 import Link from "next/link"
 import { PageHeader } from "@/components/shared/PageHeader"
 
-export const metadata: Metadata = {
-    title: "Configuración | ERPGrafico",
-    description: "Configuración general del sistema, empresa y usuarios.",
-}
 
 export default function SettingsPage() {
     return (

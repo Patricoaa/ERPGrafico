@@ -82,7 +82,6 @@ function POSPageContent() {
         currentSession,
         setCurrentSession,
         selectedCustomerId,
-        setSelectedCustomerId,
         items,
         totals,
         loading,
@@ -92,7 +91,8 @@ function POSPageContent() {
         currentDraftId,
         setCurrentDraftId,
         wizardState,
-        setWizardState
+        setWizardState,
+        updateItem
     } = usePOS()
 
     // Products management
@@ -232,7 +232,6 @@ function POSPageContent() {
         const prices = await fetchEffectivePrice(item, item.qty, uomId)
 
         // Update via context
-        const { updateItem } = usePOS()
         updateItem(cartItemId, {
             uom: uomId,
             uom_name: uomName,
@@ -248,7 +247,6 @@ function POSPageContent() {
         if (!item) return
 
         const newNet = PricingUtils.grossToNet(priceGross)
-        const { updateItem } = usePOS()
         updateItem(cartItemId, {
             unit_price_net: newNet,
             unit_price_gross: priceGross,

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useEffect, useCallback } from "react"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -49,17 +49,18 @@ export default function TreasurySettingsPage() {
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings: Partial<TreasuryFormValues> = {}
 
-                const fields = Object.keys(form.getValues())
-                fields.forEach((key: any) => {
-                    const val = (settings as any)[key]
-                    formattedSettings[key] = val ? val.toString() : null
+                const keys = Object.keys(treasurySchema.shape) as (keyof TreasuryFormValues)[]
+                keys.forEach((key) => {
+                    const val = settings[key]
+                    formattedSettings[key] = (val ? val.toString() : null) as never
                 })
 
-                form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
+                form.reset(formattedSettings as TreasuryFormValues)
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } }
+                if (err.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }
             } finally {
@@ -72,6 +73,19 @@ export default function TreasurySettingsPage() {
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
+    const onSubmit = useCallback(async (data: TreasuryFormValues) => {
+        setSaving(true)
+        try {
+            await api.patch('/accounting/settings/current/', data)
+            toast.success("Configuración de tesorería aplicada")
+            form.reset(data)
+        } catch {
+            toast.error("Error al guardar cambios")
+        } finally {
+            setSaving(false)
+        }
+    }, [form])
+
     useEffect(() => {
         if (!loading && isDirty) {
             const timer = setTimeout(() => {
@@ -79,20 +93,7 @@ export default function TreasurySettingsPage() {
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty])
-
-    async function onSubmit(data: TreasuryFormValues) {
-        setSaving(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de tesorería aplicada")
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [watchedValues, loading, isDirty, form, onSubmit])
 
     if (loading) {
         return (
@@ -147,8 +148,8 @@ export default function TreasurySettingsPage() {
 }
 
 interface AccountFieldProps {
-    form: any
-    name: string
+    form: UseFormReturn<TreasuryFormValues>
+    name: Path<TreasuryFormValues>
     label: string
     accountType: string
 }

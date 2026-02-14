@@ -10,11 +10,11 @@ interface PermissionGuardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function PermissionGuard({ permission, children, fallback = null }: PermissionGuardProps) {
+    const hasAccess = usePermission(permission || "");
+
     if (!permission) {
         return <>{children}</>;
     }
-
-    const hasAccess = usePermission(permission);
 
     if (!hasAccess) {
         return <>{fallback}</>;
