@@ -46,7 +46,7 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
-    const { accounts, loading, deleteAccount, refetch } = useTreasuryAccounts()
+    const { accounts, deleteAccount, refetch } = useTreasuryAccounts()
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)

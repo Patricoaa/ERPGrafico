@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthGuard from "@/components/auth/AuthGuard"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
+import Providers from "./providers"
 
 const syne = Syne({
   variable: "--font-syne",
@@ -31,11 +32,13 @@ export default function RootLayout({
       <body
         className={`${syne.variable} ${onest.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          <GlobalModalProvider>
-            {children}
-          </GlobalModalProvider>
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <GlobalModalProvider>
+              {children}
+            </GlobalModalProvider>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

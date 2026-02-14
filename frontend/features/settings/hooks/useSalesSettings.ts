@@ -1,68 +1,49 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { SalesSettings, SalesSettingsUpdatePayload } from '../types'
 
+export const SALES_SETTINGS_QUERY_KEY = ['settings-sales']
+
 interface UseSalesSettingsReturn {
-    settings: Partial<SalesSettings>
-    loading: boolean
+    settings: SalesSettings
     saving: boolean
-    error: Error | null
     updateSettings: (payload: SalesSettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<void>
+    refetch: () => Promise<any>
 }
 
 /**
- * Custom hook for managing sales settings
- * Handles fetching and updating sales-related accounting settings
+ * Custom hook for managing sales settings using React Query
  */
 export function useSalesSettings(): UseSalesSettingsReturn {
-    const [settings, setSettings] = useState<Partial<SalesSettings>>({})
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
+    const queryClient = useQueryClient()
 
-    const fetchSettings = useCallback(async (): Promise<void> => {
-        try {
-            setLoading(true)
-            setError(null)
-            const data = await settingsApi.getSalesSettings()
-            setSettings(data)
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to fetch sales settings')
-            setError(error)
-            toast.error('Error al cargar configuración de ventas')
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { data: settings, refetch } = useSuspenseQuery({
+        queryKey: SALES_SETTINGS_QUERY_KEY,
+        queryFn: settingsApi.getSalesSettings,
+    })
 
-    useEffect(() => {
-        fetchSettings()
-    }, [fetchSettings])
-
-    const updateSettings = useCallback(async (payload: SalesSettingsUpdatePayload): Promise<void> => {
-        try {
-            setSaving(true)
-            await settingsApi.updateSalesSettings(payload)
+    const updateMutation = useMutation({
+        mutationFn: async (payload: SalesSettingsUpdatePayload) => {
+            return settingsApi.updateSalesSettings(payload)
+        },
+        onSuccess: () => {
             toast.success('Configuración de ventas aplicada')
-            await fetchSettings()
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to update sales settings')
-            setError(error)
+            queryClient.invalidateQueries({ queryKey: SALES_SETTINGS_QUERY_KEY })
+        },
+        onError: () => {
             toast.error('Error al guardar cambios')
-            throw error
-        } finally {
-            setSaving(false)
         }
-    }, [fetchSettings])
+    })
+
+    const updateSettings = async (payload: SalesSettingsUpdatePayload) => {
+        await updateMutation.mutateAsync(payload)
+    }
 
     return {
         settings,
-        loading,
-        saving,
-        error,
+        saving: updateMutation.isPending,
         updateSettings,
-        refetch: fetchSettings,
+        refetch,
     }
 }

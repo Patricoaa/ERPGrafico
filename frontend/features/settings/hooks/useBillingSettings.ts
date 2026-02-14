@@ -1,68 +1,49 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { BillingSettings, BillingSettingsUpdatePayload } from '../types'
 
+export const BILLING_SETTINGS_QUERY_KEY = ['settings-billing']
+
 interface UseBillingSettingsReturn {
-    settings: Partial<BillingSettings>
-    loading: boolean
+    settings: BillingSettings
     saving: boolean
-    error: Error | null
     updateSettings: (payload: BillingSettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<void>
+    refetch: () => Promise<any>
 }
 
 /**
- * Custom hook for managing billing settings
- * Handles fetching and updating billing-related accounting settings
+ * Custom hook for managing billing settings using React Query
  */
 export function useBillingSettings(): UseBillingSettingsReturn {
-    const [settings, setSettings] = useState<Partial<BillingSettings>>({})
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
+    const queryClient = useQueryClient()
 
-    const fetchSettings = useCallback(async (): Promise<void> => {
-        try {
-            setLoading(true)
-            setError(null)
-            const data = await settingsApi.getBillingSettings()
-            setSettings(data)
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to fetch billing settings')
-            setError(error)
-            toast.error('Error al cargar configuración de facturación')
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { data: settings, refetch } = useSuspenseQuery({
+        queryKey: BILLING_SETTINGS_QUERY_KEY,
+        queryFn: settingsApi.getBillingSettings,
+    })
 
-    useEffect(() => {
-        fetchSettings()
-    }, [fetchSettings])
-
-    const updateSettings = useCallback(async (payload: BillingSettingsUpdatePayload): Promise<void> => {
-        try {
-            setSaving(true)
-            await settingsApi.updateBillingSettings(payload)
+    const updateMutation = useMutation({
+        mutationFn: async (payload: BillingSettingsUpdatePayload) => {
+            return settingsApi.updateBillingSettings(payload)
+        },
+        onSuccess: () => {
             toast.success('Configuración de facturación aplicada')
-            await fetchSettings()
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to update billing settings')
-            setError(error)
+            queryClient.invalidateQueries({ queryKey: BILLING_SETTINGS_QUERY_KEY })
+        },
+        onError: () => {
             toast.error('Error al guardar cambios')
-            throw error
-        } finally {
-            setSaving(false)
         }
-    }, [fetchSettings])
+    })
+
+    const updateSettings = async (payload: BillingSettingsUpdatePayload) => {
+        await updateMutation.mutateAsync(payload)
+    }
 
     return {
         settings,
-        loading,
-        saving,
-        error,
+        saving: updateMutation.isPending,
         updateSettings,
-        refetch: fetchSettings,
+        refetch,
     }
 }

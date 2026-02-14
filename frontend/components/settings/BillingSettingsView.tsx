@@ -50,7 +50,7 @@ interface BillingSettingsViewProps {
 }
 
 export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ activeTab }) => {
-    const { settings, loading, saving, updateSettings } = useBillingSettings()
+    const { settings, saving, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
         resolver: zodResolver(billingSchema),
@@ -73,7 +73,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
 
     // Update form when settings are loaded
     useEffect(() => {
-        if (!loading && settings) {
+        if (settings) {
             const formattedSettings: Partial<BillingFormValues> = {}
             const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
 
@@ -90,7 +90,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
 
             form.reset(formattedSettings as BillingFormValues)
         }
-    }, [settings, loading, form])
+    }, [settings, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
@@ -105,21 +105,15 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
     }, [updateSettings, form])
 
     useEffect(() => {
-        if (!loading && isDirty) {
+        if (isDirty) {
             const timer = setTimeout(() => {
                 form.handleSubmit(onSubmit)()
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    }, [watchedValues, isDirty, form, onSubmit])
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+
 
     const tabs = [
         { value: "accounts", label: "Cuentas por Cobrar/Pagar", icon: Users, href: "/settings/billing?tab=accounts" },

@@ -7,6 +7,8 @@ import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatches
 import { Banknote, List, Receipt, Plus, Store } from "lucide-react"
 import POSSessionsPage from "@/app/(dashboard)/sales/sessions/page"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -89,7 +91,9 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </PageHeader>
 
                 <TabsContent value="terminals" className="mt-0 outline-none">
-                    <TerminalManagement externalOpen={isTerminalModalOpen} onExternalOpenChange={setIsTerminalModalOpen} />
+                    <Suspense fallback={<LoadingFallback />}>
+                        <TerminalManagement externalOpen={isTerminalModalOpen} onExternalOpenChange={setIsTerminalModalOpen} />
+                    </Suspense>
                 </TabsContent>
 
                 <TabsContent value="batches" className="mt-0 outline-none">

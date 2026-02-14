@@ -1,3 +1,5 @@
+import { Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { BillingSettingsView } from "@/components/settings/BillingSettingsView"
 
 interface PageProps {
@@ -8,5 +10,9 @@ export default async function BillingSettingsPage({ searchParams }: PageProps) {
     const { tab } = await searchParams
     const activeTab = tab || "accounts"
 
-    return <BillingSettingsView activeTab={activeTab} />
+    return (
+        <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
+            <BillingSettingsView activeTab={activeTab} />
+        </Suspense>
+    )
 }

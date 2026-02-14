@@ -52,7 +52,7 @@ interface SalesSettingsViewProps {
 }
 
 export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab }) => {
-    const { settings, loading, saving, updateSettings } = useSalesSettings()
+    const { settings, saving, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
@@ -79,7 +79,7 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
 
     // Update form when settings are loaded
     useEffect(() => {
-        if (!loading && settings) {
+        if (settings) {
             const formattedSettings: Partial<SalesFormValues> = {}
             const keys = Object.keys(salesSchema.shape) as (keyof SalesFormValues)[]
 
@@ -96,7 +96,7 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
 
             form.reset(formattedSettings as SalesFormValues)
         }
-    }, [settings, loading, form])
+    }, [settings, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
@@ -111,21 +111,15 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
     }, [updateSettings, form])
 
     useEffect(() => {
-        if (!loading && isDirty) {
+        if (isDirty) {
             const timer = setTimeout(() => {
                 form.handleSubmit(onSubmit)()
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    }, [watchedValues, isDirty, form, onSubmit])
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+
 
     const tabs = [
         { value: "revenue", label: "Ingresos", icon: DollarSign, href: "/settings/sales?tab=revenue" },

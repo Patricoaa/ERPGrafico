@@ -48,7 +48,7 @@ interface InventorySettingsViewProps {
 }
 
 export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab }) => {
-    const { settings, loading, saving, updateSettings } = useInventorySettings()
+    const { settings, saving, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
         resolver: zodResolver(inventorySchema),
@@ -70,7 +70,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
     // Update form when settings are loaded
     useEffect(() => {
-        if (!loading && settings) {
+        if (settings) {
             const formattedSettings: Partial<InventoryFormValues> = {}
             const keys = Object.keys(inventorySchema.shape) as (keyof InventoryFormValues)[]
 
@@ -85,7 +85,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
             form.reset(formattedSettings as InventoryFormValues)
         }
-    }, [settings, loading, form])
+    }, [settings, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
@@ -100,21 +100,15 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
     }, [updateSettings, form])
 
     useEffect(() => {
-        if (!loading && isDirty) {
+        if (isDirty) {
             const timer = setTimeout(() => {
                 form.handleSubmit(onSubmit)()
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    }, [watchedValues, isDirty, form, onSubmit])
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+
 
     const tabs = [
         { value: "accounts", label: "Cuentas de Inventario", icon: Package, href: "/settings/inventory?tab=accounts" },

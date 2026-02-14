@@ -30,7 +30,7 @@ interface TerminalManagementProps {
 }
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
-    const { terminals, loading, toggleActive, deleteTerminal, refetch } = useTerminals()
+    const { terminals, toggleActive, deleteTerminal, refetch } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
@@ -78,11 +78,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
                 </Button>
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-                </div>
-            ) : terminals.length === 0 ? (
+            {terminals.length === 0 ? (
                 <Card className="border-dashed">
                     <CardContent className="flex flex-col items-center justify-center py-12">
                         <p className="text-muted-foreground mb-4">No hay terminales configurados</p>

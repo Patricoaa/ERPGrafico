@@ -1,64 +1,50 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { TreasuryAccount } from '../types'
 
+export const ACCOUNTS_QUERY_KEY = ['treasury-accounts']
+
 interface UseTreasuryAccountsReturn {
     accounts: TreasuryAccount[]
-    loading: boolean
-    error: Error | null
-    refetch: () => Promise<void>
+    refetch: () => Promise<any>
     deleteAccount: (id: number) => Promise<void>
 }
 
 /**
- * Custom hook for managing treasury accounts
- * Handles fetching and deleting accounts with automatic state management
+ * Custom hook for managing treasury accounts using React Query
  */
 export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<Error | null>(null)
+    const queryClient = useQueryClient()
 
-    const fetchAccounts = useCallback(async (): Promise<void> => {
-        try {
-            setLoading(true)
-            setError(null)
-            const data = await treasuryApi.getAccounts()
-            setAccounts(data)
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to fetch accounts')
-            setError(error)
-            toast.error('Error al cargar cuentas')
-        } finally {
-            setLoading(false)
+    const { data: accounts, refetch } = useSuspenseQuery({
+        queryKey: ACCOUNTS_QUERY_KEY,
+        queryFn: treasuryApi.getAccounts,
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
+            return treasuryApi.deleteAccount(id)
+        },
+        onSuccess: () => {
+            toast.success('Cuenta eliminada')
+            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+        },
+        onError: () => {
+            toast.error('Error al eliminar')
         }
-    }, [])
+    })
 
-    useEffect(() => {
-        fetchAccounts()
-    }, [fetchAccounts])
-
-    const deleteAccount = useCallback(async (id: number): Promise<void> => {
+    const deleteAccount = async (id: number) => {
         if (!confirm('¿Está seguro de eliminar esta cuenta?')) {
             return
         }
-
-        try {
-            await treasuryApi.deleteAccount(id)
-            toast.success('Cuenta eliminada')
-            await fetchAccounts()
-        } catch (error) {
-            toast.error('Error al eliminar')
-            throw error
-        }
-    }, [fetchAccounts])
+        await deleteMutation.mutateAsync(id)
+    }
 
     return {
         accounts,
-        loading,
-        error,
-        refetch: fetchAccounts,
+        refetch,
         deleteAccount,
     }
 }

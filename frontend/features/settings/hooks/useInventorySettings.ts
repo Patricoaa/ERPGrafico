@@ -1,68 +1,49 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { InventorySettings, InventorySettingsUpdatePayload } from '../types'
 
+export const INVENTORY_SETTINGS_QUERY_KEY = ['settings-inventory']
+
 interface UseInventorySettingsReturn {
-    settings: Partial<InventorySettings>
-    loading: boolean
+    settings: InventorySettings
     saving: boolean
-    error: Error | null
     updateSettings: (payload: InventorySettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<void>
+    refetch: () => Promise<any>
 }
 
 /**
- * Custom hook for managing inventory settings
- * Handles fetching and updating inventory-related accounting settings
+ * Custom hook for managing inventory settings using React Query
  */
 export function useInventorySettings(): UseInventorySettingsReturn {
-    const [settings, setSettings] = useState<Partial<InventorySettings>>({})
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
+    const queryClient = useQueryClient()
 
-    const fetchSettings = useCallback(async (): Promise<void> => {
-        try {
-            setLoading(true)
-            setError(null)
-            const data = await settingsApi.getInventorySettings()
-            setSettings(data)
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to fetch inventory settings')
-            setError(error)
-            toast.error('Error al cargar configuración de inventario')
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { data: settings, refetch } = useSuspenseQuery({
+        queryKey: INVENTORY_SETTINGS_QUERY_KEY,
+        queryFn: settingsApi.getInventorySettings,
+    })
 
-    useEffect(() => {
-        fetchSettings()
-    }, [fetchSettings])
-
-    const updateSettings = useCallback(async (payload: InventorySettingsUpdatePayload): Promise<void> => {
-        try {
-            setSaving(true)
-            await settingsApi.updateInventorySettings(payload)
+    const updateMutation = useMutation({
+        mutationFn: async (payload: InventorySettingsUpdatePayload) => {
+            return settingsApi.updateInventorySettings(payload)
+        },
+        onSuccess: () => {
             toast.success('Configuración de inventario aplicada')
-            await fetchSettings()
-        } catch (err) {
-            const error = err instanceof Error ? err : new Error('Failed to update inventory settings')
-            setError(error)
+            queryClient.invalidateQueries({ queryKey: INVENTORY_SETTINGS_QUERY_KEY })
+        },
+        onError: () => {
             toast.error('Error al guardar cambios')
-            throw error
-        } finally {
-            setSaving(false)
         }
-    }, [fetchSettings])
+    })
+
+    const updateSettings = async (payload: InventorySettingsUpdatePayload) => {
+        await updateMutation.mutateAsync(payload)
+    }
 
     return {
         settings,
-        loading,
-        saving,
-        error,
+        saving: updateMutation.isPending,
         updateSettings,
-        refetch: fetchSettings,
+        refetch,
     }
 }

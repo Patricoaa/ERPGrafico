@@ -37,7 +37,7 @@ export const settingsApi = {
     /**
      * Fetch sales settings
      */
-    getSalesSettings: async (): Promise<Partial<SalesSettings>> => {
+    getSalesSettings: async (): Promise<SalesSettings> => {
         const data = await settingsApi.getCurrentSettings()
         // Extract only sales-related fields
         const salesFields: (keyof SalesSettings)[] = [
@@ -65,7 +65,7 @@ export const settingsApi = {
                 (salesSettings as any)[field] = (data as any)[field]
             }
         })
-        return salesSettings
+        return salesSettings as SalesSettings
     },
 
     /**
@@ -80,7 +80,7 @@ export const settingsApi = {
     /**
      * Fetch billing settings
      */
-    getBillingSettings: async (): Promise<Partial<BillingSettings>> => {
+    getBillingSettings: async (): Promise<BillingSettings> => {
         const data = await settingsApi.getCurrentSettings()
         // Extract only billing-related fields
         const billingFields: (keyof BillingSettings)[] = [
@@ -104,7 +104,7 @@ export const settingsApi = {
                 (billingSettings as any)[field] = (data as any)[field]
             }
         })
-        return billingSettings
+        return billingSettings as BillingSettings
     },
 
     /**
@@ -119,7 +119,7 @@ export const settingsApi = {
     /**
      * Fetch inventory settings
      */
-    getInventorySettings: async (): Promise<Partial<InventorySettings>> => {
+    getInventorySettings: async (): Promise<InventorySettings> => {
         const data = await settingsApi.getCurrentSettings()
         // Extract only inventory-related fields
         const inventoryFields: (keyof InventorySettings)[] = [
@@ -142,7 +142,7 @@ export const settingsApi = {
                 (inventorySettings as any)[field] = (data as any)[field]
             }
         })
-        return inventorySettings
+        return inventorySettings as InventorySettings
     },
 
     /**
