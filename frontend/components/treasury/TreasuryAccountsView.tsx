@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,66 +39,25 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 
-interface TreasuryAccount {
-    id: number
-    name: string
-    code: string | null
-    currency: string
-    account: number | null
-    account_name?: string
-    account_type: 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'
-    allows_cash: boolean
-    allows_card: boolean
-    allows_transfer: boolean
-    location: string
-    custodian: number | null
-    custodian_name?: string
-    is_physical: boolean
-    current_balance?: number
-    bank?: number | null
-    bank_name?: string
-    account_number?: string | null
-}
+
 
 interface TreasuryAccountsViewProps {
     activeTab: string
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
+    const { accounts, loading, deleteAccount, refetch } = useTreasuryAccounts()
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
-
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
-    const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [currentAccount, setCurrentAccount] = useState<TreasuryAccount | null>(null)
 
-    const fetchAccounts = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/treasury/accounts/')
-            setAccounts(res.data.results || res.data)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar cuentas")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchAccounts()
-    }, [])
-
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta cuenta?")) return
         try {
-            await api.delete(`/treasury/accounts/${id}/`)
-            toast.success("Cuenta eliminada")
-            fetchAccounts()
+            await deleteAccount(id)
         } catch (error) {
-            toast.error("Error al eliminar")
+            // Error already handled by hook
         }
     }
 
@@ -322,15 +282,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
             <AccountDialog
                 open={dialogOpen}
-                onOpenChange={(open) => {
-                    setDialogOpen(open)
-                    if (!open) setIsAccountModalOpen(false)
-                }}
+                onOpenChange={setDialogOpen}
                 account={currentAccount}
                 onSuccess={() => {
+                    refetch()
                     setDialogOpen(false)
-                    setIsAccountModalOpen(false)
-                    fetchAccounts()
                 }}
             />
         </div>

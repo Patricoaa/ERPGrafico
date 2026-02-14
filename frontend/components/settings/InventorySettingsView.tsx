@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
-import api from "@/lib/api"
+import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -49,8 +48,7 @@ interface InventorySettingsViewProps {
 }
 
 export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab }) => {
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
+    const { settings, loading, saving, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
         resolver: zodResolver(inventorySchema),
@@ -70,37 +68,36 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         }
     })
 
+    // Update form when settings are loaded
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings: any = {}
+        if (!loading && settings) {
+            const formattedSettings: Partial<InventoryFormValues> = {}
+            const keys = Object.keys(inventorySchema.shape) as (keyof InventoryFormValues)[]
 
-                const fields = Object.keys(form.getValues())
-                fields.forEach((key: any) => {
-                    const val = (settings as any)[key]
-                    if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'inventory_valuation_method' ? "AVERAGE" : null)
-                    } else {
-                        formattedSettings[key] = val.toString()
-                    }
-                })
-
-                form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
-                    toast.error("Error al cargar configuración")
+            keys.forEach((key) => {
+                const val = settings[key as keyof typeof settings]
+                if (val === null || val === undefined) {
+                    formattedSettings[key] = (key === 'inventory_valuation_method' ? "AVERAGE" : null) as never
+                } else {
+                    formattedSettings[key] = val.toString() as never
                 }
-            } finally {
-                setLoading(false)
-            }
+            })
+
+            form.reset(formattedSettings as InventoryFormValues)
         }
-        fetchSettings()
-    }, [form])
+    }, [settings, loading, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
+
+    const onSubmit = useCallback(async (data: InventoryFormValues) => {
+        try {
+            await updateSettings(data)
+            form.reset(data)
+        } catch {
+            // Error already handled by hook
+        }
+    }, [updateSettings, form])
 
     useEffect(() => {
         if (!loading && isDirty) {
@@ -109,20 +106,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             }, 1000)
             return () => clearTimeout(timer)
         }
-    }, [watchedValues, loading, isDirty])
-
-    async function onSubmit(data: InventoryFormValues) {
-        setSaving(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de inventario aplicada")
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
-        }
-    }
+    }, [watchedValues, loading, isDirty, form, onSubmit])
 
     if (loading) {
         return (

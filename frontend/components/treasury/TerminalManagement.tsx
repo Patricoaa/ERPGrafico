@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,30 +22,7 @@ import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, B
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// Types matching backend
-interface PaymentMethod {
-    id: number
-    name: string
-    method_type: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT' | 'OTHER' | 'CARD_TERMINAL'
-    method_type_display: string
-    treasury_account: number
-    treasury_account_name: string
-    is_active: boolean
-    is_terminal: boolean
-    allow_for_sales: boolean
-}
 
-interface Terminal {
-    id: number
-    name: string
-    code: string
-    location: string
-    is_active: boolean
-    allowed_payment_methods: PaymentMethod[]
-    default_treasury_account_name?: string
-    serial_number?: string
-    ip_address?: string
-}
 
 interface TerminalManagementProps {
     externalOpen?: boolean
@@ -52,27 +30,9 @@ interface TerminalManagementProps {
 }
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
-    const [terminals, setTerminals] = useState<Terminal[]>([])
-    const [loading, setLoading] = useState(true)
+    const { terminals, loading, toggleActive, deleteTerminal, refetch } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
-
-    const fetchTerminals = async () => {
-        try {
-            setLoading(true)
-            const res = await api.get('/treasury/pos-terminals/')
-            setTerminals(res.data.results || res.data)
-        } catch (error) {
-            toast.error("Error al cargar terminales")
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchTerminals()
-    }, [])
 
     useEffect(() => {
         if (externalOpen) {
@@ -92,27 +52,17 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
 
     const handleToggleActive = async (terminal: Terminal) => {
         try {
-            await api.patch(`/treasury/pos-terminals/${terminal.id}/`, {
-                is_active: !terminal.is_active
-            })
-            toast.success(terminal.is_active ? "Terminal desactivado" : "Terminal activado")
-            fetchTerminals()
+            await toggleActive(terminal)
         } catch (error) {
-            toast.error("Error al actualizar terminal")
+            // Error already handled by hook
         }
     }
 
     const handleDelete = async (terminal: Terminal) => {
-        if (!confirm(`¿Está seguro que desea eliminar el terminal "${terminal.name}"?`)) {
-            return
-        }
         try {
-            await api.delete(`/treasury/pos-terminals/${terminal.id}/`)
-            toast.success("Terminal eliminado correctamente")
-            fetchTerminals()
-        } catch (error: any) {
-            const errorMsg = error.response?.data?.error || "Error al eliminar terminal"
-            toast.error(errorMsg)
+            await deleteTerminal(terminal)
+        } catch (error) {
+            // Error already handled by hook
         }
     }
 
@@ -162,7 +112,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
                     if (!open) onExternalOpenChange?.(false)
                 }}
                 terminal={editingTerminal}
-                onSuccess={fetchTerminals}
+                onSuccess={refetch}
             />
         </div>
     )

@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useEffect, useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
-import api from "@/lib/api"
+import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -53,8 +52,7 @@ interface SalesSettingsViewProps {
 }
 
 export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab }) => {
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
+    const { settings, loading, saving, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
@@ -79,53 +77,38 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
         }
     })
 
+    // Update form when settings are loaded
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings: Partial<SalesFormValues> = {}
+        if (!loading && settings) {
+            const formattedSettings: Partial<SalesFormValues> = {}
+            const keys = Object.keys(salesSchema.shape) as (keyof SalesFormValues)[]
 
-                const keys = Object.keys(salesSchema.shape) as (keyof SalesFormValues)[]
-                keys.forEach((key) => {
-                    const val = settings[key]
-                    if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'pos_cash_difference_approval_threshold' ? 5000 : null) as never
-                    } else if (key === 'pos_cash_difference_approval_threshold') {
-                        formattedSettings[key] = (parseInt(val.toString()) || 0) as never
-                    } else {
-                        formattedSettings[key] = val.toString() as never
-                    }
-                })
-
-                form.reset(formattedSettings as SalesFormValues)
-            } catch (error: unknown) {
-                const err = error as { response?: { status?: number } }
-                if (err.response?.status !== 404) {
-                    toast.error("Error al cargar configuración")
+            keys.forEach((key) => {
+                const val = settings[key as keyof typeof settings]
+                if (val === null || val === undefined) {
+                    formattedSettings[key] = (key === 'pos_cash_difference_approval_threshold' ? 5000 : null) as never
+                } else if (key === 'pos_cash_difference_approval_threshold') {
+                    formattedSettings[key] = (parseInt(val.toString()) || 0) as never
+                } else {
+                    formattedSettings[key] = val.toString() as never
                 }
-            } finally {
-                setLoading(false)
-            }
+            })
+
+            form.reset(formattedSettings as SalesFormValues)
         }
-        fetchSettings()
-    }, [form])
+    }, [settings, loading, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
     const onSubmit = useCallback(async (data: SalesFormValues) => {
-        setSaving(true)
         try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de ventas aplicada")
+            await updateSettings(data)
             form.reset(data)
         } catch {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
+            // Error already handled by hook
         }
-    }, [form])
+    }, [updateSettings, form])
 
     useEffect(() => {
         if (!loading && isDirty) {

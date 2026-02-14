@@ -1,11 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useEffect, useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
-import api from "@/lib/api"
+import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -51,8 +50,7 @@ interface BillingSettingsViewProps {
 }
 
 export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ activeTab }) => {
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
+    const { settings, loading, saving, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
         resolver: zodResolver(billingSchema),
@@ -73,53 +71,38 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
         }
     })
 
+    // Update form when settings are loaded
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings: Partial<BillingFormValues> = {}
+        if (!loading && settings) {
+            const formattedSettings: Partial<BillingFormValues> = {}
+            const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
 
-                const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
-                keys.forEach((key) => {
-                    const val = settings[key]
-                    if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null) as never
-                    } else if (key === 'default_vat_rate') {
-                        formattedSettings[key] = parseFloat(val.toString()) as never
-                    } else {
-                        formattedSettings[key] = val.toString() as never
-                    }
-                })
-
-                form.reset(formattedSettings as BillingFormValues)
-            } catch (error: unknown) {
-                const err = error as { response?: { status?: number } }
-                if (err.response?.status !== 404) {
-                    toast.error("Error al cargar configuración")
+            keys.forEach((key) => {
+                const val = settings[key as keyof typeof settings]
+                if (val === null || val === undefined) {
+                    formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null) as never
+                } else if (key === 'default_vat_rate') {
+                    formattedSettings[key] = parseFloat(val.toString()) as never
+                } else {
+                    formattedSettings[key] = val.toString() as never
                 }
-            } finally {
-                setLoading(false)
-            }
+            })
+
+            form.reset(formattedSettings as BillingFormValues)
         }
-        fetchSettings()
-    }, [form])
+    }, [settings, loading, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
     const onSubmit = useCallback(async (data: BillingFormValues) => {
-        setSaving(true)
         try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de facturación aplicada")
+            await updateSettings(data)
             form.reset(data)
         } catch {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
+            // Error already handled by hook
         }
-    }, [form])
+    }, [updateSettings, form])
 
     useEffect(() => {
         if (!loading && isDirty) {
