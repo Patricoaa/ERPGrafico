@@ -22,37 +22,30 @@ import { motion } from "framer-motion"
 
 export function PageHeader({ title, description, icon: Icon, titleActions, children, className }: PageHeaderProps) {
     return (
-        <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-6 py-8 pb-12 border-b border-border/40 mb-8 relative overflow-hidden", className)}>
-            {/* Background Decoration */}
-            <div className="absolute top-0 right-0 -mr-20 -mt-20 opacity-[0.03] pointer-events-none select-none">
-                <div className="text-[200px] font-black tracking-tighter leading-none uppercase font-heading">
-                    {title}
-                </div>
-            </div>
-
-            <div className="space-y-4 relative z-10">
-                <div className="flex flex-col gap-2">
+        <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-4 py-4 border-b border-border/40 mb-6 relative overflow-hidden", className)}>
+            <div className="space-y-2 relative z-10">
+                <div className="flex flex-col gap-1">
                     <motion.div
-                        initial={{ y: 20, opacity: 0 }}
+                        initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="flex items-center gap-4"
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="flex items-center gap-3"
                     >
                         {Icon && (
-                            <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-sm border border-primary/5">
-                                <Icon className="h-6 w-6" />
+                            <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
+                                <Icon className="h-5 w-5" />
                             </div>
                         )}
-                        <h1 className="text-4xl md:text-6xl font-black tracking-[-0.04em] leading-[0.9] font-heading">
+                        <h1 className="text-2xl md:text-3xl font-black tracking-[-0.03em] leading-tight font-heading uppercase">
                             {title}
                         </h1>
                     </motion.div>
 
                     {titleActions && (
                         <motion.div
-                            initial={{ x: -10, opacity: 0 }}
+                            initial={{ x: -5, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
+                            transition={{ delay: 0.2 }}
                             className="flex items-center"
                         >
                             {titleActions}
@@ -62,30 +55,22 @@ export function PageHeader({ title, description, icon: Icon, titleActions, child
 
                 {description && (
                     <motion.p
-                        initial={{ y: 10, opacity: 0 }}
+                        initial={{ y: 5, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.2, duration: 0.5 }}
-                        className="text-muted-foreground text-sm md:text-lg max-w-2xl font-medium tracking-tight leading-relaxed"
+                        transition={{ delay: 0.1, duration: 0.4 }}
+                        className="text-muted-foreground text-xs md:text-sm max-w-2xl font-medium tracking-tight leading-snug"
                     >
                         {description}
                     </motion.p>
                 )}
-
-                {/* Decoration line */}
-                <motion.div
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ delay: 0.4, duration: 0.8 }}
-                    className="h-[2px] w-24 bg-accent origin-left"
-                />
             </div>
 
             {children && (
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex items-center gap-3 relative z-10"
+                    transition={{ delay: 0.2 }}
+                    className="flex items-center gap-2 relative z-10"
                 >
                     {children}
                 </motion.div>

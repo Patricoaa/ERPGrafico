@@ -1,5 +1,6 @@
 import AuthGuard from "@/components/auth/AuthGuard"
 import { DashboardShell } from "@/components/layout/DashboardShell"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 
 export default function DashboardLayout({
     children,
@@ -8,9 +9,11 @@ export default function DashboardLayout({
 }) {
     return (
         <AuthGuard>
-            <DashboardShell>
-                {children}
-            </DashboardShell>
+            <ErrorBoundary>
+                <DashboardShell>
+                    {children}
+                </DashboardShell>
+            </ErrorBoundary>
         </AuthGuard>
     )
 }
