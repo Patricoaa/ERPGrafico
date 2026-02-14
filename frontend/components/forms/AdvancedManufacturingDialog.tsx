@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface AdvancedManufacturingDialogProps {
     open: boolean
@@ -168,43 +169,51 @@ export function AdvancedManufacturingDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] border-primary/20 shadow-2xl overflow-y-auto max-h-[90vh]">
-                <DialogHeader className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                            <Paintbrush className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <DialogTitle className="text-xl font-bold">Detalles de Fabricación</DialogTitle>
-                            <p className="text-sm text-muted-foreground">{product.name} ({product.code})</p>
+            <DialogContent className="sm:max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-y-auto max-h-[90vh] p-0 rounded-none border-t-4 border-t-primary">
+                <DialogHeader className="p-8 pb-4 bg-muted/30">
+                    <div className="flex items-center gap-6">
+                        <motion.div
+                            initial={{ rotate: -15, scale: 0.8 }}
+                            animate={{ rotate: 0, scale: 1 }}
+                            className="p-4 rounded-none bg-primary text-primary-foreground shadow-xl"
+                        >
+                            <Paintbrush className="h-8 w-8" />
+                        </motion.div>
+                        <div className="space-y-1">
+                            <DialogTitle className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</DialogTitle>
+                            <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} // REF: {product.code}</p>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <div className="grid gap-6 py-4">
+                <div className="grid gap-8 p-8 py-6">
                     {/* Contact Row */}
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Contacto / Referencia</Label>
+                    <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">01. Contacto / Referencia</Label>
                         {contact ? (
-                            <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
-                                <div className="flex items-center gap-2 overflow-hidden">
+                            <motion.div
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                className="flex items-center justify-between p-4 bg-primary/5 border-l-4 border-primary"
+                            >
+                                <div className="flex items-center gap-3 overflow-hidden">
                                     <User className="h-4 w-4 text-primary shrink-0" />
-                                    <span className="text-sm truncate font-medium">{contact.name}</span>
+                                    <span className="text-sm font-bold tracking-tight">{contact.name}</span>
                                 </div>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
                                     onClick={() => setContact(null)}
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
-                            </div>
+                            </motion.div>
                         ) : (
                             <AdvancedContactSelector
                                 onSelectContact={setContact}
                                 onChange={() => { }}
-                                placeholder="Buscar contacto..."
+                                placeholder="IDENTIFICAR CLIENTE O RESPONSABLE..."
                             />
                         )}
                     </div>
@@ -212,228 +221,186 @@ export function AdvancedManufacturingDialog({
                     {product.product_type === 'MANUFACTURABLE' && (
                         <>
                             {showProductDescription && (
-                                <>
-                                    <div className="space-y-2 pt-2 border-t font-medium text-xs text-primary flex items-center gap-2 uppercase tracking-wider">
-                                        <FileText className="h-3 w-3" /> Descripción del Trabajo
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Descripción del Producto</Label>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="space-y-3"
+                                >
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">02. Descripción del Trabajo</Label>
+                                    <div className="relative">
                                         <Input
-                                            placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..."
-                                            className="h-10"
+                                            placeholder="DETALLES ESPECÍFICOS DEL PRODUCTO..."
+                                            className="h-12 text-sm font-bold border-2 focus-visible:ring-primary rounded-none"
                                             value={productDescription}
                                             onChange={(e) => setProductDescription(e.target.value)}
                                         />
                                     </div>
-                                </>
+                                </motion.div>
                             )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {/* Pre-Press Column */}
-                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePrepress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                            <Paintbrush className="h-3 w-3" /> Pre-Impresión
+                                <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePrepress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                            <div className={cn("w-2 h-2 rounded-full", enablePrepress ? "bg-primary animate-pulse" : "bg-muted")} />
+                                            Pre-Impresión
                                         </h4>
                                         <Switch
                                             checked={enablePrepress}
                                             onCheckedChange={setEnablePrepress}
-                                            className="scale-75"
                                         />
                                     </div>
 
-                                    {enablePrepress && (
-                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium">Especificaciones</Label>
-                                                <Textarea
-                                                    placeholder="Detalles técnicos de pre-impresión..."
-                                                    className="text-xs bg-background min-h-[60px]"
-                                                    value={prepressSpecs}
-                                                    onChange={(e) => setPrepressSpecs(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-2 rounded-md bg-background">
-                                                <Label className="text-xs font-medium">Diseño Requerido</Label>
-                                                <Switch
-                                                    checked={designNeeded}
-                                                    onCheckedChange={setDesignNeeded}
-                                                    className="scale-75"
-                                                />
-                                            </div>
-
-                                            {designNeeded && (
-                                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <Label className="text-[10px] uppercase text-muted-foreground">Adjuntos de Diseño</Label>
-                                                    <div className="space-y-2">
-                                                        <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                                                            <Upload className="h-4 w-4 text-muted-foreground" />
-                                                            <span className="text-xs text-muted-foreground">Cargar archivos</span>
-                                                            <input
-                                                                type="file"
-                                                                multiple
-                                                                className="hidden"
-                                                                onChange={handleFileChange}
-                                                                accept="image/*,.pdf,.ai,.psd,.eps"
-                                                            />
-                                                        </label>
-                                                        <p className="text-[9px] text-muted-foreground italic">
-                                                            Formatos: Imágenes, PDF, AI, PSD, EPS
-                                                        </p>
-                                                        {designFiles.length > 0 && (
-                                                            <div className="space-y-1">
-                                                                {designFiles.map((file, index) => (
-                                                                    <div key={index} className="flex items-center justify-between p-2 bg-background rounded text-xs">
-                                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                                            <FileIcon className="h-3 w-3 shrink-0" />
-                                                                            <span className="truncate">{file.name}</span>
-                                                                        </div>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-5 w-5"
-                                                                            onClick={() => removeFile(index)}
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-
-                                            <div className="flex items-center justify-between p-2 rounded-md bg-background border border-primary/10">
-                                                <Label className="text-xs font-medium">Folio</Label>
-                                                <Switch
-                                                    checked={folioEnabled}
-                                                    onCheckedChange={setFolioEnabled}
-                                                    className="scale-75"
-                                                />
-                                            </div>
-
-                                            {folioEnabled && (
-                                                <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <Label className="text-[10px] uppercase text-muted-foreground">Folio Inicial</Label>
-                                                    <Input
-                                                        placeholder="N° Folio inicial..."
-                                                        className="h-8 text-xs bg-background"
-                                                        value={folioStart}
-                                                        onChange={(e) => setFolioStart(e.target.value)}
-                                                    />
-                                                </div>
-                                            )}
+                                    <div className="space-y-5">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Especificaciones</Label>
+                                            <Textarea
+                                                placeholder="INGRESAR DATOS TÉCNICOS..."
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                value={prepressSpecs}
+                                                onChange={(e) => setPrepressSpecs(e.target.value)}
+                                            />
                                         </div>
-                                    )}
+
+                                        <div className="flex items-center justify-between py-3 border-y border-border/40">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider">Diseño Requerido</Label>
+                                            <Switch
+                                                checked={designNeeded}
+                                                onCheckedChange={setDesignNeeded}
+                                                className="scale-90"
+                                            />
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {designNeeded && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="space-y-3 overflow-hidden"
+                                                >
+                                                    <Label className="text-[9px] font-black uppercase tracking-widest text-accent">Adjuntos de Diseño</Label>
+                                                    <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border hover:border-accent hover:bg-accent/5 transition-all cursor-pointer group">
+                                                        <Upload className="h-6 w-6 text-muted-foreground group-hover:text-accent transition-colors" />
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter">Subir Planos / Arte</span>
+                                                        <input type="file" multiple className="hidden" onChange={handleFileChange} />
+                                                    </label>
+
+                                                    {designFiles.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            {designFiles.map((file, index) => (
+                                                                <div key={index} className="flex items-center justify-between p-2 bg-muted/40 text-[10px] font-mono">
+                                                                    <span className="truncate max-w-[150px]">{file.name}</span>
+                                                                    <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => removeFile(index)} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
 
                                 {/* Press Column */}
-                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                            <Printer className="h-3 w-3" /> Impresión
+                                <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                            <div className={cn("w-2 h-2 rounded-full", enablePress ? "bg-primary animate-pulse" : "bg-muted")} />
+                                            Impresión
                                         </h4>
                                         <Switch
                                             checked={enablePress}
                                             onCheckedChange={setEnablePress}
-                                            className="scale-75"
                                         />
                                     </div>
 
-                                    {enablePress && (
-                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium">Especificaciones</Label>
-                                                <Textarea
-                                                    placeholder="Detalles técnicos de impresión..."
-                                                    className="text-xs bg-background min-h-[60px]"
-                                                    value={pressSpecs}
-                                                    onChange={(e) => setPressSpecs(e.target.value)}
-                                                />
-                                            </div>
+                                    <div className="space-y-5">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Ficha de Prensa</Label>
+                                            <Textarea
+                                                placeholder="DETALLES DE MÁQUINA, TINTAS..."
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                value={pressSpecs}
+                                                onChange={(e) => setPressSpecs(e.target.value)}
+                                            />
+                                        </div>
 
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium">Tipo de Impresión</Label>
-                                                <div className="grid grid-cols-3 gap-1">
+                                        <div className="space-y-3">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider">Sistema de Impresión</Label>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {['offset', 'digital', 'especial'].map((t) => (
                                                     <Button
-                                                        variant={printType === 'offset' ? "default" : "outline"}
+                                                        key={t}
+                                                        variant={printType === t ? "default" : "outline"}
                                                         size="sm"
-                                                        className="h-8 text-[10px]"
-                                                        onClick={() => setPrintType('offset')}>
-                                                        Offset
+                                                        className={cn(
+                                                            "h-9 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2",
+                                                            printType === t ? "border-primary shadow-[4px_4px_0_rgba(var(--primary),0.2)]" : "border-border"
+                                                        )}
+                                                        onClick={() => setPrintType(t)}>
+                                                        {t}
                                                     </Button>
-                                                    <Button
-                                                        variant={printType === 'digital' ? "default" : "outline"}
-                                                        size="sm"
-                                                        className="h-8 text-[10px]"
-                                                        onClick={() => setPrintType('digital')}>
-                                                        Digital
-                                                    </Button>
-                                                    <Button
-                                                        variant={printType === 'especial' ? "default" : "outline"}
-                                                        size="sm"
-                                                        className="h-8 text-[10px]"
-                                                        onClick={() => setPrintType('especial')}>
-                                                        Especial
-                                                    </Button>
-                                                </div>
+                                                ))}
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
 
                                 {/* Post-Press Column */}
-                                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePostpress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                            <FileText className="h-3 w-3" /> Post-Impresión
+                                <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePostpress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                            <div className={cn("w-2 h-2 rounded-full", enablePostpress ? "bg-primary animate-pulse" : "bg-muted")} />
+                                            Post-Impresión
                                         </h4>
                                         <Switch
                                             checked={enablePostpress}
                                             onCheckedChange={setEnablePostpress}
-                                            className="scale-75"
                                         />
                                     </div>
 
-                                    {enablePostpress && (
-                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium">Especificaciones</Label>
-                                                <Textarea
-                                                    placeholder="Acabados, barniz, laminado, encuadernación, troquelado..."
-                                                    className="text-xs bg-background min-h-[60px]"
-                                                    value={postpressSpecs}
-                                                    onChange={(e) => setPostpressSpecs(e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Acabados & Logística</Label>
+                                        <Textarea
+                                            placeholder="LAMINADO, TROQUEL, CORTE..."
+                                            className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                            value={postpressSpecs}
+                                            onChange={(e) => setPostpressSpecs(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </>
                     )}
 
-                    <div className="space-y-2 border-t pt-4">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Instrucciones / Observaciones Internas</Label>
-                        <div className="relative">
-                            <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Textarea
-                                placeholder="Notas internas para producción..."
-                                className="pl-9 min-h-[80px]"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
-                        </div>
+                    <div className="space-y-3 border-t border-border pt-8">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent flex items-center gap-2">
+                            <FileText className="h-4 w-4" /> Observaciones del Taller
+                        </Label>
+                        <Textarea
+                            placeholder="INSTRUCCIONES CRÍTICAS PARA EL EQUIPO DE PRODUCCIÓN..."
+                            className="min-h-[100px] text-sm font-medium border-2 focus-visible:ring-accent rounded-none shadow-inner"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
                     </div>
                 </div>
 
-                <DialogFooter className="bg-muted/10 p-4 -m-6 mt-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button className="px-8 font-bold" onClick={handleConfirm}>Confirmar Detalles</Button>
+                <DialogFooter className="bg-muted p-6 border-t border-border flex flex-row items-center justify-between gap-4">
+                    <div className="hidden md:block text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+                        ESTADO DE FICHA: {enablePrepress || enablePress || enablePostpress ? 'ACTIVA' : 'INCOMPLETA'}
+                    </div>
+                    <div className="flex items-center gap-4 ml-auto">
+                        <Button variant="ghost" className="font-bold text-xs uppercase tracking-widest hover:bg-background" onClick={() => onOpenChange(false)}>Anular</Button>
+                        <Button
+                            className="px-10 h-12 font-black text-xs uppercase tracking-[0.3em] rounded-none shadow-[8px_8px_0_rgba(var(--primary),0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0_rgba(var(--primary),0.3)] transition-all"
+                            onClick={handleConfirm}
+                        >
+                            Validar Producción
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

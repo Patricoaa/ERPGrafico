@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, Onest } from "next/font/google";
 import "./globals.css";
 import AuthGuard from "@/components/auth/AuthGuard"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const onest = Onest({
+  variable: "--font-onest",
   subsets: ["latin"],
 });
 
@@ -28,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${syne.variable} ${onest.variable} font-sans antialiased`}
       >
         <AuthProvider>
           <GlobalModalProvider>

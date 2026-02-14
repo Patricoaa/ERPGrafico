@@ -1,3 +1,5 @@
+"use client"
+
 import { Home, Calculator, Users, ShoppingCart, FileText, Package, Printer, Banknote, ShoppingBag, Calendar, PieChart, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -91,40 +93,70 @@ interface AppSidebarProps {
     onMouseLeave?: () => void
 }
 
+import { motion, AnimatePresence } from "framer-motion"
+
 export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLeave }: AppSidebarProps) {
-    if (!activeCategory || activeCategory === "dashboard") return null
-
-    const items = categoryItems[activeCategory] || []
-    const title = titles[activeCategory] || ""
-
-    if (items.length === 0) return null
+    const items = categoryItems[activeCategory || ""] || []
+    const title = titles[activeCategory || ""] || ""
 
     return (
-        <aside
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className={cn(
-                "w-64 bg-sidebar border-r border-sidebar-border h-screen absolute top-0 left-[70px] flex flex-col pt-8 transition-all duration-300 ease-in-out z-40 shadow-2xl overflow-hidden",
-                isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"
-            )}
-        >
-            <div className="px-6 mb-8">
-                <h2 className="text-xl font-bold text-sidebar-foreground tracking-tight">{title}</h2>
-                <div className="h-0.5 w-6 bg-primary rounded-full mt-2" />
-            </div>
+        <AnimatePresence>
+            {isVisible && activeCategory && activeCategory !== "dashboard" && (
+                <motion.aside
+                    initial={{ x: -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -100, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseLeave}
+                    className={cn(
+                        "w-72 bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border h-screen absolute top-0 left-[75px] flex flex-col pt-12 z-40 shadow-[10px_0_50px_rgba(0,0,0,0.4)] overflow-hidden"
+                    )}
+                >
+                    <div className="px-8 mb-10">
+                        <motion.h2
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-2xl font-black text-sidebar-foreground tracking-[0.2em] uppercase font-heading"
+                        >
+                            {title}
+                        </motion.h2>
+                        <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="h-1 w-8 bg-primary mt-3 origin-left"
+                        />
+                    </div>
 
-            <nav className="flex-1 px-3 space-y-0.5">
-                {items.map((item: any) => (
-                    <Link
-                        key={item.url}
-                        href={item.url}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all group"
-                    >
-                        <div className="h-1 w-1 rounded-full bg-sidebar-foreground/20 group-hover:bg-primary group-hover:scale-150 transition-all" />
-                        {item.title}
-                    </Link>
-                ))}
-            </nav>
-        </aside>
+                    <nav className="flex-1 px-4 space-y-1">
+                        {items.map((item: any, idx: number) => (
+                            <motion.div
+                                key={item.url}
+                                initial={{ x: -10, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 0.15 + (idx * 0.03) }}
+                            >
+                                <Link
+                                    href={item.url}
+                                    className="flex items-center gap-4 px-5 py-3 rounded-[10px] text-[11px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary transition-all group font-mono"
+                                >
+                                    <div className="h-1.5 w-1.5 rounded-full bg-sidebar-foreground/10 group-hover:bg-primary group-hover:scale-150 transition-all duration-300" />
+                                    {item.title}
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </nav>
+
+                    {/* Industrial Decoration at bottom */}
+                    <div className="p-8 opacity-10 pointer-events-none">
+                        <div className="text-[40px] font-black tracking-tighter leading-none select-none uppercase font-heading">
+                            {title}
+                        </div>
+                    </div>
+                </motion.aside>
+            )}
+        </AnimatePresence>
     )
 }
