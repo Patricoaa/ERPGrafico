@@ -18,13 +18,13 @@ export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
                     <BarChart data={data}>
                         <XAxis
                             dataKey="month"
-                            stroke="#888888"
+                            stroke="var(--muted-foreground)"
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
                         />
                         <YAxis
-                            stroke="#888888"
+                            stroke="var(--muted-foreground)"
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
@@ -63,13 +63,13 @@ export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
                         <Bar
                             dataKey="total_lines"
                             name="Total Líneas"
-                            fill="#e5e7eb" // gray-200
+                            fill="var(--muted)" // gray-200
                             radius={[4, 4, 0, 0]}
                         />
                         <Bar
                             dataKey="reconciled_lines"
                             name="Conciliadas"
-                            fill="#16a34a" // green-600
+                            fill="var(--success)" // green-600
                             radius={[4, 4, 0, 0]}
                         />
                     </BarChart>

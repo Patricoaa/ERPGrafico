@@ -219,29 +219,29 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <div className="h-[400px] w-full bg-white rounded-2xl border p-6 shadow-sm">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={filteredPriceHistory}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
                                                 <XAxis
                                                     dataKey="date"
                                                     tickFormatter={(str) => format(new Date(str), 'MMM d', { locale: es })}
                                                     fontSize={10}
                                                     tickMargin={10}
-                                                    stroke="#94a3b8"
+                                                    stroke="var(--muted-foreground)"
                                                 />
-                                                <YAxis fontSize={10} stroke="#94a3b8" tickFormatter={(val) => `$${val.toLocaleString()}`} />
+                                                <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => `$${val.toLocaleString()}`} />
                                                 <RechartsTooltip
                                                     labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
                                                     formatter={(val: number | undefined) => [val !== undefined ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val) : '---', 'Costo Unitario']}
-                                                    contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                                                    contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
                                                 />
                                                 <Bar
                                                     dataKey="unit_cost"
                                                     name="Precio"
-                                                    fill="#3b82f6"
+                                                    fill="var(--primary)"
                                                     radius={[6, 6, 0, 0]}
                                                     barSize={40}
                                                 >
                                                     {filteredPriceHistory.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={index === 0 ? '#2563eb' : '#3b82f6'} fillOpacity={0.8} />
+                                                        <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--primary)' : 'var(--primary)'} fillOpacity={index === 0 ? 1 : 0.7} />
                                                     ))}
                                                 </Bar>
                                             </BarChart>

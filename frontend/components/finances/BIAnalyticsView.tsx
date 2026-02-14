@@ -22,7 +22,7 @@ import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } fr
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B9D'];
+const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
 
 interface BIAnalyticsViewProps {
     date?: DateRange;
@@ -185,7 +185,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                     labelLine={false}
                                     label={(entry: any) => `${entry.category}`}
                                     outerRadius={80}
-                                    fill="#8884d8"
+                                    fill="var(--primary)"
                                     dataKey="value"
                                 >
                                     {(inventory.stock_distribution || []).map((entry: any, index: number) => (

@@ -21,7 +21,7 @@ import api from '@/lib/api';
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B9D'];
+const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
 
 interface RatiosViewProps {
     date?: DateRange;
@@ -179,7 +179,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     labelLine={false}
                                     label={(props: any) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
                                     outerRadius={90}
-                                    fill="#8884d8"
+                                    fill="var(--primary)"
                                     dataKey="value"
                                 >
                                     {structureData.map((entry, index) => (
@@ -209,7 +209,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     label={(props: any) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
                                     innerRadius={60}
                                     outerRadius={90}
-                                    fill="#82ca9d"
+                                    fill="var(--accent)"
                                     dataKey="value"
                                 >
                                     {assetsDistribution.map((entry, index) => (

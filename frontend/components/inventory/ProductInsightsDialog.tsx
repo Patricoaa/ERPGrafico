@@ -271,12 +271,12 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                         <AreaChart data={[...data.price_history].reverse()}>
                                             <defs>
                                                 <linearGradient id="colorSale" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                                                 </linearGradient>
                                                 <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -292,8 +292,8 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                 formatter={(val: any) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
                                             />
                                             <Legend verticalAlign="top" height={36} />
-                                            <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="#3b82f6" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />
-                                            <Area type="monotone" name="Costo" dataKey="cost_price" stroke="#ef4444" fillOpacity={1} fill="url(#colorCost)" strokeWidth={2} />
+                                            <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />
+                                            <Area type="monotone" name="Costo" dataKey="cost_price" stroke="var(--destructive)" fillOpacity={1} fill="url(#colorCost)" strokeWidth={2} />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
