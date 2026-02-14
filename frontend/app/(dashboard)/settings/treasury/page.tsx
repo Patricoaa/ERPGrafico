@@ -1,0 +1,176 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { toast } from "sonner"
+import api from "@/lib/api"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+    Loader2,
+    CloudCheck,
+    CloudUpload,
+    Banknote
+} from "lucide-react"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { PageHeader } from "@/components/shared/PageHeader"
+
+const treasurySchema = z.object({
+    bank_commission_account: z.string().nullable(),
+    interest_income_account: z.string().nullable(),
+    exchange_difference_account: z.string().nullable(),
+    rounding_adjustment_account: z.string().nullable(),
+    error_adjustment_account: z.string().nullable(),
+    miscellaneous_adjustment_account: z.string().nullable(),
+})
+
+type TreasuryFormValues = z.infer<typeof treasurySchema>
+
+export default function TreasurySettingsPage() {
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+
+    const form = useForm<TreasuryFormValues>({
+        resolver: zodResolver(treasurySchema),
+        defaultValues: {
+            bank_commission_account: null,
+            interest_income_account: null,
+            exchange_difference_account: null,
+            rounding_adjustment_account: null,
+            error_adjustment_account: null,
+            miscellaneous_adjustment_account: null,
+        }
+    })
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await api.get('/accounting/settings/current/')
+                const settings = res.data
+                const formattedSettings: any = {}
+
+                const fields = Object.keys(form.getValues())
+                fields.forEach((key: any) => {
+                    const val = (settings as any)[key]
+                    formattedSettings[key] = val ? val.toString() : null
+                })
+
+                form.reset(formattedSettings)
+            } catch (error: any) {
+                if (error.response?.status !== 404) {
+                    toast.error("Error al cargar configuración")
+                }
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchSettings()
+    }, [form])
+
+    const watchedValues = form.watch()
+    const { isDirty } = form.formState
+
+    useEffect(() => {
+        if (!loading && isDirty) {
+            const timer = setTimeout(() => {
+                form.handleSubmit(onSubmit)()
+            }, 1000)
+            return () => clearTimeout(timer)
+        }
+    }, [watchedValues, loading, isDirty])
+
+    async function onSubmit(data: TreasuryFormValues) {
+        setSaving(true)
+        try {
+            await api.patch('/accounting/settings/current/', data)
+            toast.success("Configuración de tesorería aplicada")
+            form.reset(data)
+        } catch (error) {
+            toast.error("Error al guardar cambios")
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex h-[400px] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex-1 space-y-6 p-8 pt-6 max-w-4xl mx-auto">
+            <PageHeader
+                title="Configuración de Tesorería"
+                description="Gestione las cuentas de ajuste para conciliación bancaria."
+                icon={Banknote}
+            >
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
+                    {saving ? (
+                        <>
+                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
+                            <span className="text-blue-600">Guardando cambios...</span>
+                        </>
+                    ) : (
+                        <>
+                            <CloudCheck className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-600">Cambios guardados</span>
+                        </>
+                    )}
+                </div>
+            </PageHeader>
+
+            <Form {...form}>
+                <form className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Cuentas de Conciliación Bancaria</CardTitle>
+                            <CardDescription>Cuentas para justificar diferencias en conciliación</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias" accountType="EXPENSE" />
+                            <AccountField form={form} name="interest_income_account" label="Intereses Ganados" accountType="INCOME" />
+                            <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio" accountType="" />
+                            <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo" accountType="EXPENSE" />
+                            <AccountField form={form} name="error_adjustment_account" label="Ajuste por Error" accountType="EXPENSE" />
+                            <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
+                        </CardContent>
+                    </Card>
+                </form>
+            </Form>
+        </div>
+    )
+}
+
+interface AccountFieldProps {
+    form: any
+    name: string
+    label: string
+    accountType: string
+}
+
+function AccountField({ form, name, label, accountType }: AccountFieldProps) {
+    return (
+        <FormField
+            control={form.control}
+            name={name}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
+                    <FormControl>
+                        <AccountSelector
+                            value={field.value as string}
+                            onChange={(val) => field.onChange(val)}
+                            accountType={accountType}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    )
+}

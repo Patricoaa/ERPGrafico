@@ -950,8 +950,13 @@ class SalesService:
                             cogs_account = settings.manufactured_cogs_account
                         
                     if not cogs_account:
-                        cogs_account = Account.objects.filter(code='5.1.01').first() or \
-                                       settings.default_expense_account
+                        cogs_account = settings.default_expense_account
+                    
+                    if not cogs_account:
+                        raise ValidationError(
+                            f"No se pudo determinar la cuenta de COGS para {product.name}. "
+                            "Por favor configure las cuentas de costo en Configuración de Inventario."
+                        )
                     
                     if cogs_account and inventory_account:
                         # Reversal Entries:

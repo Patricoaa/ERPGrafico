@@ -21,20 +21,27 @@ import {
 const categoryItems: Record<string, any> = {
     "dashboard": [], // No sub-items for dashboard
     "accounting": [
+        { title: "Configuración Contable", url: "/settings/accounting" },
         { title: "Plan de Cuentas", url: "/accounting/accounts" },
         { title: "Asientos Contables", url: "/accounting/entries" },
         { title: "Periodos Contables", url: "/accounting/periods" },
+    ],
+    "billing": [
+        { title: "Configuración Facturación", url: "/settings/billing" },
         { title: "Documentos Emitidos", url: "/billing/sales" },
         { title: "Documentos Recibidos", url: "/billing/purchases" },
+        { title: "Declaraciones F29", url: "/tax/declarations" },
     ],
     "contacts": [], // Simple list
     "sales": [
+        { title: "Configuración Ventas", url: "/settings/sales" },
         { title: "Notas de Venta", url: "/sales/orders" },
         { title: "POS", url: "/sales/pos" },
         { title: "Terminales", url: "/sales/terminals" },
     ],
 
     "inventory": [
+        { title: "Configuración Inventario", url: "/settings/inventory" },
         { title: "Productos", url: "/inventory/products" },
         { title: "Stock", url: "/inventory/stock" },
         { title: "Suscripciones", url: "/subscriptions" },
@@ -42,18 +49,19 @@ const categoryItems: Record<string, any> = {
         { title: "Atributos", url: "/inventory/attributes" },
     ],
     "production": [
+        { title: "Configuración Producción", url: "/settings/production" },
         { title: "Ordenes de Trabajo", url: "/production/orders" },
         { title: "Materiales (BOM)", url: "/production/boms" },
     ],
     "treasury": [
+        { title: "Configuración Tesorería", url: "/settings/treasury" },
         { title: "Cuentas de Tesorería", url: "/treasury/accounts" },
-
         { title: "Movimientos de Tesorería", url: "/treasury/movements" },
         { title: "Diferencias POS", url: "/treasury/differences" },
         { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
-
     ],
     "purchasing": [
+        { title: "Configuración Compras", url: "/settings/purchasing" },
         { title: "Ordenes de Compra", url: "/purchasing/orders" },
     ],
     "finances": [
@@ -61,15 +69,12 @@ const categoryItems: Record<string, any> = {
         { title: "Análisis", url: "/finances/analysis" },
         { title: "Presupuestos", url: "/finances/budgets" },
     ],
-    "tax": [
-        { title: "Declaraciones F29", url: "/tax/declarations" },
-        { title: "Configuración Impuestos", url: "/settings/tax" },
-    ],
 }
 
 const titles: Record<string, string> = {
     "dashboard": "Inicio",
     "accounting": "Contabilidad",
+    "billing": "Facturación",
     "contacts": "Contactos",
     "sales": "Ventas",
 
@@ -78,7 +83,6 @@ const titles: Record<string, string> = {
     "treasury": "Tesorería",
     "purchasing": "Compras",
     "finances": "Finanzas",
-    "tax": "Impuestos",
 }
 
 interface AppSidebarProps {

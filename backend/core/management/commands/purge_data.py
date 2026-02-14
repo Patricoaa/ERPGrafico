@@ -7,8 +7,8 @@ from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
 from treasury.models import TreasuryAccount, Payment
 from billing.models import Invoice
-from services.models import ServiceCategory, ServiceContract, ServiceObligation
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
+from tax.models import AccountingPeriod
 
 class Command(BaseCommand):
     help = 'Completely purges all data from the database'
@@ -37,9 +37,7 @@ class Command(BaseCommand):
             (BillOfMaterials, "BillOfMaterials"),
             (BudgetItem, "BudgetItem"),
             (Budget, "Budget"),
-            (ServiceObligation, "ServiceObligation"),
-            (ServiceContract, "ServiceContract"),
-            (ServiceCategory, "ServiceCategory"),
+            (AccountingPeriod, "AccountingPeriod"),
             (Payment, "Payment"),
             (Invoice, "Invoice"),
             (PurchaseReceiptLine, "PurchaseReceiptLine"),

@@ -23,8 +23,7 @@ from treasury.models import (
     Bank, PaymentMethod, TerminalBatch
 )
 from billing.models import Invoice, NoteWorkflow
-from tax.models import TaxPeriod, F29Declaration, F29Payment
-# from services.models import ServiceCategory, ServiceContract, ServiceObligation (Removed)
+from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
 from core.models import User
 from workflow.models import Task, Notification, TaskAssignmentRule
@@ -87,241 +86,65 @@ class Command(BaseCommand):
         self.stdout.write('Creating Treasury Infrastructure...')
         self._create_treasury_infrastructure(accounts, partners)
 
+        self.stdout.write('Creating Accounting & Tax Periods...')
+        periods = self._create_periods()
+
+        self.stdout.write('Creating Sales & Purchasing Demo Flow...')
+        self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
+
+        self.stdout.write('Creating F29 Tax Declaration Demo...')
+        self._create_tax_demo(periods)
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
     def _configure_inventory_accounting(self):
-        # Ensure we have the necessary accounts for advanced inventory mapping
-        
-        # 4.2.02 - Ganancia por Ajuste de Inventario (Income)
-        parent_42 = Account.objects.filter(code='4.2').first()
-        if parent_42:
-            acc_gain, _ = Account.objects.get_or_create(
-                code='4.2.02',
-                defaults={
-                    'name': 'Ganancia por Ajuste de Inventario',
-                    'account_type': AccountType.INCOME,
-                    'parent': parent_42,
-                    'is_category': None,
-                    'cf_category': None,
-                    'is_reconcilable': True
-                }
-            )
-        else:
-            acc_gain = None
-
-        # 5.2.07 - Pérdida por Ajuste de Inventario (Expense)
-        parent_52 = Account.objects.filter(code='5.2').first()
-        if parent_52:
-            acc_loss, _ = Account.objects.get_or_create(
-                code='5.2.07',
-                defaults={
-                    'name': 'Pérdida por Ajuste de Inventario',
-                    'account_type': AccountType.EXPENSE,
-                    'parent': parent_52,
-                    'is_category': None,
-                    'cf_category': None,
-                    'is_reconcilable': True
-                }
-            )
-        else:
-            acc_loss = None
-
-        # 3.1.02 - Contrapartida Inicial de Inventario (Equity)
-        parent_31 = Account.objects.filter(code='3.1').first()
-        if parent_31:
-            acc_initial, _ = Account.objects.get_or_create(
-                code='3.1.02',
-                defaults={
-                    'name': 'Contrapartida Inicial de Inventario',
-                    'account_type': AccountType.EQUITY,
-                    'parent': parent_31,
-                    'is_category': None,
-                    'cf_category': None
-                }
-            )
-        else:
-            acc_initial = None
-        
-        # 5.1.03 - Costo por Revalorización (Expense - COGS related)
-        parent_51 = Account.objects.filter(code='5.1').first()
-        if parent_51:
-            acc_reval, _ = Account.objects.get_or_create(
-                code='5.1.03',
-                defaults={
-                    'name': 'Ajuste por Revalorización de Stock',
-                    'account_type': AccountType.EXPENSE,
-                    'parent': parent_51,
-                    'is_category': None, # Inherits COST_OF_SALES
-                    'cf_category': None
-                }
-            )
-        else:
-            acc_reval = None
-
-        # Update Settings
+        """
+        The populate_ifrs_coa() service already configures ALL accounts comprehensively.
+        This method just adds any additional demo-specific accounts or adjustments.
+        """
         settings = AccountingSettings.objects.first()
-        if settings:
-            # Cuentas de ajuste (ya existentes)
-            if acc_gain: settings.adjustment_income_account = acc_gain
-            if acc_loss: settings.adjustment_expense_account = acc_loss
-            if acc_initial: settings.initial_inventory_account = acc_initial
-            if acc_reval: settings.revaluation_account = acc_reval
-            
-            # NUEVO: Configurar cuentas por tipo de producto
-            inventory_account = Account.objects.filter(code='1.1.03.01').first()
-            consumable_account = Account.objects.filter(code='5.2.05').first()
-            
-            if inventory_account:
-                settings.storable_inventory_account = inventory_account
-                settings.manufacturable_inventory_account = inventory_account
-                self.stdout.write("  ✓ Cuentas de inventario por tipo configuradas")
-            
-            if consumable_account:
-                settings.default_consumable_account = consumable_account
-                self.stdout.write("  ✓ Cuenta de consumibles configurada")
-            
-            # Map COGS for distinct product types
-            settings.merchandise_cogs_account = Account.objects.filter(code='5.1.01').first()
-            if settings.merchandise_cogs_account:
-                self.stdout.write("  ✓ Cuenta de costo de mercaderías configurada (5.1.01)")
+        if not settings:
+            self.stdout.write(self.style.WARNING("  ⚠ No AccountingSettings found. Skipping additional configuration."))
+            return
+        
+        # The populate_ifrs_coa service already configured:
+        # - All 60+ default accounts (receivable, payable, revenue, expense, inventory, COGS, etc.)
+        # - All 11 POS control accounts (cash difference, theft, tips, errors, etc.)
+        # - All 2 terminal bridge accounts (commission, IVA)
+        # - All 6 treasury reconciliation accounts (bank commission, interest, exchange, rounding, error, misc)
+        # - All tax accounts (VAT, withholding, PPM, second category, correction)
+        
+        self.stdout.write("  ✓ All account mappings configured by populate_ifrs_coa service")
+        self.stdout.write(f"  ✓ Total configured accounts: {Account.objects.count()}")
+        
+        # Display key mappings for verification
+        key_mappings = {
+            'Receivable': settings.default_receivable_account,
+            'Payable': settings.default_payable_account,
+            'Revenue': settings.default_revenue_account,
+            'Expense': settings.default_expense_account,
+            'Inventory (Storable)': settings.storable_inventory_account,
+            'Inventory (Manufacturable)': settings.manufacturable_inventory_account,
+            'COGS (Merchandise)': settings.merchandise_cogs_account,
+            'COGS (Manufactured)': settings.manufactured_cogs_account,
+            'POS Cash Difference (Gain)': settings.pos_cash_difference_gain_account,
+            'POS Cash Difference (Loss)': settings.pos_cash_difference_loss_account,
+            'Terminal Commission Bridge': settings.terminal_commission_bridge_account,
+            'Bank Commission': settings.bank_commission_account,
+            'VAT Payable': settings.vat_payable_account,
+        }
+        
+        self.stdout.write("\n  📊 Key Account Mappings:")
+        for name, account in key_mappings.items():
+            if account:
+                self.stdout.write(f"     • {name}: {account.code} - {account.name}")
+            else:
+                self.stdout.write(self.style.WARNING(f"     ⚠ {name}: NOT CONFIGURED"))
 
-            settings.manufactured_cogs_account = Account.objects.filter(code='5.1.02').first()
-            if settings.manufactured_cogs_account:
-                self.stdout.write("  ✓ Cuenta de costo de productos fabricados configurada (5.1.02)")
-
-            # Map service expense account (5.1.03 - Costo de Servicios Prestados)
-            service_expense_acc = Account.objects.filter(code='5.1.03').first()
-            if service_expense_acc:
-                settings.default_service_expense_account = service_expense_acc
-                settings.default_subscription_expense_account = service_expense_acc
-                self.stdout.write("  ✓ Cuenta de gastos por servicios/suscripción configurada (5.1.03)")
-
-            # NUEVO: Mapeo de ingresos y suscripciones
-            service_revenue_acc = Account.objects.filter(code='4.1.02').first()
-            if service_revenue_acc:
-                settings.default_service_revenue_account = service_revenue_acc
-                settings.default_subscription_revenue_account = service_revenue_acc
-                self.stdout.write("  ✓ Cuenta de ingresos por servicios/suscripción configurada")
-            
-            # NUEVO: Cuentas por Cobrar/Pagar por defecto
-            ar_acc = Account.objects.filter(code='1.1.02.01').first()
-            if ar_acc:
-                settings.default_receivable_account = ar_acc
-                self.stdout.write("  ✓ Cuenta por cobrar por defecto configurada (1.1.02.01)")
-            
-            ap_acc = Account.objects.filter(code='2.1.01.01').first()
-            if ap_acc:
-                settings.default_payable_account = ap_acc
-                self.stdout.write("  ✓ Cuenta por pagar por defecto configurada (2.1.01.01)")
-            
-            # --- Reconciliation Accounts ---
-            # 5.2.10 - Comisiones Bancarias
-            acc_comm = None
-            if parent_52:
-                acc_comm, _ = Account.objects.get_or_create(code='5.2.10', defaults={
-                    'name': 'Comisiones Bancarias', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
-                })
-                settings.bank_commission_account = acc_comm
-
-            # 4.2.03 - Intereses Ganados
-            acc_int = None
-            if parent_42:
-                acc_int, _ = Account.objects.get_or_create(code='4.2.03', defaults={
-                    'name': 'Intereses Ganados', 'account_type': AccountType.INCOME, 'parent': parent_42, 'is_reconcilable': True
-                })
-                settings.interest_income_account = acc_int
-            
-            # 4.2.04 - Diferencia de Cambio
-            acc_exchange = None
-            if parent_42:
-                acc_exchange, _ = Account.objects.get_or_create(code='4.2.04', defaults={
-                    'name': 'Diferencia de Cambio', 'account_type': AccountType.INCOME, 'parent': parent_42, 'is_reconcilable': True
-                })
-                settings.exchange_difference_account = acc_exchange
-
-            # 5.2.11 - Redondeo
-            acc_rounding = None
-            if parent_52:
-                acc_rounding, _ = Account.objects.get_or_create(code='5.2.11', defaults={
-                    'name': 'Ajuste por Redondeo', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
-                })
-                settings.rounding_adjustment_account = acc_rounding
-
-            # 5.2.12 - Error
-            acc_error = None
-            if parent_52:
-                acc_error, _ = Account.objects.get_or_create(code='5.2.12', defaults={
-                    'name': 'Ajuste por Error', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
-                })
-                settings.error_adjustment_account = acc_error
-
-            # 5.2.13 - Comisión Tarjeta
-            acc_card_comm = None
-            if parent_52:
-                acc_card_comm, _ = Account.objects.get_or_create(code='5.2.13', defaults={
-                    'name': 'Comisión Tarjeta', 'account_type': AccountType.EXPENSE, 'parent': parent_52, 'is_reconcilable': True
-                })
-                settings.card_commission_account = acc_card_comm
-
-            # 5.2.99 - Otros
-            acc_misc = None
-            if parent_52:
-                acc_misc, _ = Account.objects.get_or_create(code='5.2.99', defaults={
-                    'name': 'Otros Gastos Varios', 'account_type': AccountType.EXPENSE, 'parent': parent_52
-                })
-                settings.miscellaneous_adjustment_account = acc_misc
-
-            self.stdout.write("  ✓ Cuentas de conciliación bancaria configuradas y mapeadas (incluye Comisión Tarjeta)")
-
-            settings.pos_cash_difference_approval_threshold = Decimal('5000') # $5.000 CLP
-            settings.default_vat_rate = Decimal('19.00')
-            self.stdout.write("  ✓ Configuración de IVA (19%) y umbral POS establecida")
-
-            # NUEVO: Mapeo de movimientos de caja POS hardcodeados y motivos especializados
-            settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.01.03').first() # Using specialized withdrawal if exists
-            if not settings.pos_partner_withdrawal_account:
-                settings.pos_partner_withdrawal_account = Account.objects.filter(code='3.1.03').first()
-                
-            settings.pos_theft_account = Account.objects.filter(code='5.2.14').first()
-            settings.pos_other_inflow_account = Account.objects.filter(code='4.2.05').first()
-            settings.pos_other_outflow_account = Account.objects.filter(code='5.2.15').first()
-            
-            # Specialized POS Accounts
-            settings.pos_tip_account = Account.objects.filter(code='4.2.06').first()
-            settings.pos_cashback_error_account = Account.objects.filter(code='5.2.16').first()
-            settings.pos_counting_error_account = Account.objects.filter(code='5.2.17').first()
-            settings.pos_system_error_account = Account.objects.filter(code='5.2.17').first()
-            settings.pos_rounding_adjustment_account = Account.objects.filter(code='5.2.16').first()
-            
-            self.stdout.write("  ✓ Mapeos de motivos y movimientos manuales de caja POS configurados")
-
-            settings.save()
-            self.stdout.write("  ✓ Inventory and specialized accounting settings updated.")
 
     def _purge_data(self):
         from django.db import connection
         
-        def _purge_legacy_tables():
-            self.stdout.write("  Checking for legacy tables...")
-            with connection.cursor() as cursor:
-                # Tables that might exist in DB but not in current apps
-                legacy_tables = [
-                    'services_serviceobligation',
-                    'services_servicecontract',
-                    'services_servicecategory'
-                ]
-                for table in legacy_tables:
-                    try:
-                        with transaction.atomic():
-                            cursor.execute(f"TRUNCATE TABLE {table} CASCADE;")
-                        self.stdout.write(f"    ✓ Legacy table {table} truncated.")
-                    except Exception:
-                        # Table might not exist, ignore
-                        pass
-
-        _purge_legacy_tables()
-
         def _safe_delete(model_class, name):
             self.stdout.write(f"  Deleting {name}...")
             try:
@@ -420,6 +243,7 @@ class Command(BaseCommand):
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
         _safe_delete(Account, "Account")
+        _safe_delete(AccountingPeriod, "AccountingPeriod")
         _safe_delete(TaxPeriod, "TaxPeriod")
 
     def _get_account_references(self):
@@ -1199,3 +1023,154 @@ class Command(BaseCommand):
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")
+
+    def _create_periods(self):
+        """Creates tax and accounting periods for the current year."""
+        current_year = timezone.now().year
+        periods = []
+        for month in range(1, 13):
+            status = TaxPeriod.Status.OPEN
+            if month < timezone.now().month:
+                status = TaxPeriod.Status.CLOSED
+            
+            tax_period, _ = TaxPeriod.objects.get_or_create(
+                year=current_year,
+                month=month,
+                defaults={'status': status}
+            )
+            
+            acc_period, _ = AccountingPeriod.objects.get_or_create(
+                year=current_year,
+                month=month,
+                defaults={'status': status, 'tax_period': tax_period}
+            )
+            
+            # Close them if they are in the past
+            if status == TaxPeriod.Status.CLOSED:
+                tax_period.closed_at = timezone.now()
+                tax_period.save()
+                acc_period.closed_at = timezone.now()
+                acc_period.save()
+            
+            periods.append({'tax': tax_period, 'acc': acc_period})
+            
+        self.stdout.write(f"    ✓ {len(periods)} periods created/verified for {current_year}.")
+        return periods
+
+    def _create_sales_purchasing_demo(self, accounts, partners, inventory, periods):
+        """Creates a sample document flow for sales and purchasing."""
+        from sales.services import SalesService
+        from purchasing.services import PurchasingService
+        from billing.models import Invoice
+        
+        # 1. SAMPLE SALE: NV -> GD -> FACT
+        customer = partners['customers'][0]
+        warehouse = inventory['warehouse']
+        # Use a standard product to avoid manufacturing validation during seeding
+        product = Product.objects.filter(product_type='STANDARD').first()
+        
+        if product:
+            order = SaleOrder.objects.create(
+                customer=customer,
+                date=timezone.now().date(),
+                payment_method=SaleOrder.PaymentMethod.CREDIT
+            )
+            SaleLine.objects.create(order=order, product=product, quantity=100, unit_price=150)
+            order.save() # Triggers totals calculation
+            
+            # Confirm and Delivery
+            SalesService.confirm_sale(order)
+            delivery = SalesService.dispatch_order(order, warehouse)
+            SalesService.confirm_delivery(delivery)
+            
+            # Bill
+            invoice = Invoice.objects.create(
+                dte_type=Invoice.DTEType.FACTURA,
+                number="1001",
+                sale_order=order,
+                contact=customer,
+                total_net=order.total_net,
+                total_tax=order.total_tax,
+                total=order.total,
+                status=Invoice.Status.POSTED,
+                date=timezone.now().date()
+            )
+            self.stdout.write(f"    ✓ Demo Sale Flow: FACT-{invoice.number} created.")
+
+        # 2. SAMPLE PURCHASE: OCS -> REC -> FCP
+        supplier = partners['suppliers'][0]
+        raw_mat = inventory['raw_materials'][0] # Resma de papel
+        
+        if raw_mat:
+            p_order = PurchaseOrder.objects.create(
+                supplier=supplier,
+                date=timezone.now().date(),
+                payment_method=PurchaseOrder.PaymentMethod.CREDIT
+            )
+            PurchaseLine.objects.create(order=p_order, product=raw_mat, quantity=50, unit_cost=3500)
+            p_order.save()
+            
+            # Receive
+            receipt = PurchasingService.receive_order(p_order, warehouse)
+            
+            # Bill
+            p_invoice = Invoice.objects.create(
+                dte_type=Invoice.DTEType.PURCHASE_INV,
+                number="P-5501",
+                purchase_order=p_order,
+                contact=supplier,
+                total_net=p_order.total_net,
+                total_tax=p_order.total_tax,
+                total=p_order.total,
+                status=Invoice.Status.POSTED,
+                date=timezone.now().date()
+            )
+            self.stdout.write(f"    ✓ Demo Purchase Flow: FCP-{p_invoice.number} created.")
+
+    def _create_tax_demo(self, periods):
+        """Creates an F29 declaration for the previous month."""
+        prev_month = timezone.now().month - 1
+        if prev_month == 0:
+            return # Skip if it's January and we don't have prev year periods in demo
+            
+        period_data = next((p for p in periods if p['tax'].month == prev_month), None)
+        if not period_data:
+            return
+            
+        tax_period = period_data['tax']
+        
+        # Determine aggregate data from journal entries for that period
+        from django.db.models import Sum
+        start_date = timezone.datetime(tax_period.year, tax_period.month, 1).date()
+        if tax_period.month == 12:
+            end_date = timezone.datetime(tax_period.year + 1, 1, 1).date() - timezone.timedelta(days=1)
+        else:
+            end_date = timezone.datetime(tax_period.year, tax_period.month + 1, 1).date() - timezone.timedelta(days=1)
+
+        # Sales
+        sales_data = Invoice.objects.filter(
+            date__range=[start_date, end_date],
+            dte_type__in=[Invoice.DTEType.FACTURA, Invoice.DTEType.BOLETA],
+            status=Invoice.Status.POSTED
+        ).aggregate(net=Sum('total_net'))
+        
+        # Purchases
+        purchases_data = Invoice.objects.filter(
+            date__range=[start_date, end_date],
+            dte_type=Invoice.DTEType.PURCHASE_INV,
+            status=Invoice.Status.POSTED
+        ).aggregate(net=Sum('total_net'))
+
+        F29Declaration.objects.get_or_create(
+            tax_period=tax_period,
+            defaults={
+                'declaration_date': timezone.now().date(),
+                'folio_number': "99887766",
+                'sales_taxed': sales_data['net'] or Decimal('2500000'), # Default if no data
+                'purchases_taxed': purchases_data['net'] or Decimal('1200000'),
+                'ppm_amount': Decimal('50000'),
+                'withholding_tax': Decimal('15000'),
+                'notes': "Declaración generada automáticamente por demo data."
+            }
+        )
+        self.stdout.write(f"    ✓ Demo F29 Declaration created for {tax_period}.")
