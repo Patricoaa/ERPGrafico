@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
@@ -22,7 +23,13 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                         <div className="relative group aspect-video rounded-2xl border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
                             {imagePreview ? (
                                 <>
-                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                    <Image
+                                        src={imagePreview}
+                                        alt="Preview"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                    />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                         <Button
                                             type="button"
