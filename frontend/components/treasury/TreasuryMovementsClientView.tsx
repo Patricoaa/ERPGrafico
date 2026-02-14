@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Plus, ArrowRight, Eye, RefreshCw } from "lucide-react"
+import { Plus, ArrowRight, Eye } from "lucide-react"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
-// import { CashMovementModal } from "@/components/treasury/CashMovementModal" // Pending Refactor
 import { CashMovementModal } from "@/components/treasury/CashMovementModal"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +13,6 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
-// Define the type for our data
 interface TreasuryMovement {
     id: number
     display_id: string
@@ -28,16 +26,12 @@ interface TreasuryMovement {
     created_by_name: string
     notes: string
     pos_session: number | null
-
-    // Account info
     from_account: number | null
     from_account_name: string | null
     to_account: number | null
     to_account_name: string | null
-
     justify_reason: string | null
     justify_reason_display: string | null
-
     partner_name: string | null
     reference: string | null
     involved_accounts?: string[]
@@ -49,7 +43,7 @@ interface TreasuryMovement {
     } | null
 }
 
-export default function TreasuryMovementsPage() {
+export function TreasuryMovementsClientView() {
     const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
     const [openModal, setOpenModal] = useState(false)
@@ -89,14 +83,13 @@ export default function TreasuryMovementsPage() {
             ),
         },
         {
-            accessorKey: "date", // Use logical date, or created_at
+            accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => {
+            cell: ({ row }) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-xs">{formatPlainDate(row.getValue("date"))}</span>
-                    {/* <span className="text-[10px] text-muted-foreground">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span> */}
                 </div>
-            },
+            ),
         },
         {
             accessorKey: "movement_type",
@@ -104,8 +97,6 @@ export default function TreasuryMovementsPage() {
             cell: ({ row }) => {
                 const type = row.getValue("movement_type") as string
                 let label = row.original.movement_type_display
-
-                // Modernized labels
                 if (type === 'INBOUND') label = "Depósito"
                 if (type === 'OUTBOUND') label = "Retiro"
                 if (type === 'TRANSFER') label = "Traspaso"
@@ -122,9 +113,6 @@ export default function TreasuryMovementsPage() {
                     </Badge>
                 )
             },
-            filterFn: (row, id, value) => {
-                return value.includes(row.getValue(id))
-            },
         },
         {
             id: "flow",
@@ -132,11 +120,9 @@ export default function TreasuryMovementsPage() {
             cell: ({ row }) => {
                 const m = row.original;
                 const type = m.movement_type;
-
                 let source = "Particular";
                 let destination = "Caja";
 
-                // Resolve Source / Destination
                 if (type === 'TRANSFER') {
                     source = m.from_account_name || 'Origen';
                     destination = m.to_account_name || 'Destino';
@@ -203,9 +189,7 @@ export default function TreasuryMovementsPage() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const isOut = type === 'OUTBOUND'
-                const colorClass = isOut ? 'text-red-600' : 'text-emerald-600'
-
+                const colorClass = type === 'OUTBOUND' ? 'text-red-600' : 'text-emerald-600'
                 return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
             },
         },
@@ -216,14 +200,11 @@ export default function TreasuryMovementsPage() {
                 const session = row.original.pos_session
                 if (session) {
                     return (
-                        <div className="flex flex-col gap-1">
-                            <Badge variant="outline" className="font-mono text-[10px] w-fit bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
-                                POS #{session}
-                            </Badge>
-                        </div>
+                        <Badge variant="outline" className="font-mono text-[10px] w-fit bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
+                            POS #{session}
+                        </Badge>
                     )
                 }
-
                 return (
                     <Badge variant="secondary" className="text-[10px] w-fit bg-slate-100 dark:bg-slate-800 text-slate-500">
                         SISTEMA
@@ -242,21 +223,19 @@ export default function TreasuryMovementsPage() {
         },
         {
             id: "actions",
-            cell: ({ row }) => {
-                return (
-                    <div className="flex justify-end">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                            onClick={() => handleViewDetails(row.original.id)}
-                            title="Ver Detalle"
-                        >
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            }
+            cell: ({ row }) => (
+                <div className="flex justify-end">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => handleViewDetails(row.original.id)}
+                        title="Ver Detalle"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </div>
+            )
         }
     ]
 
@@ -278,9 +257,7 @@ export default function TreasuryMovementsPage() {
             <CashMovementModal
                 open={openModal}
                 onOpenChange={setOpenModal}
-                onSuccess={() => {
-                    fetchMovements()
-                }}
+                onSuccess={fetchMovements}
             />
 
             {loading ? (
@@ -312,10 +289,10 @@ export default function TreasuryMovementsPage() {
             <TransactionViewModal
                 open={detailsOpen}
                 onOpenChange={setDetailsOpen}
-                type="payment" // Mapped to new Unified Payment View
+                type="payment"
                 id={selectedMovementId}
                 view="details"
             />
-        </div >
+        </div>
     )
 }

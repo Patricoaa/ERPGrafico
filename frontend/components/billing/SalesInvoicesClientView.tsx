@@ -1,16 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Banknote, History, X, FileBadge, Receipt, FileUp, MoreVertical } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -20,19 +16,13 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageHeader } from "@/components/shared/PageHeader"
 
-export default function SalesInvoicesPage() {
+export function SalesInvoicesClientView() {
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
     const [payingInv, setPayingInv] = useState<any | null>(null)
-
-    // Action Panel state
     const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
-
-    useEffect(() => {
-        fetchInvoices()
-    }, [])
 
     const fetchInvoices = async () => {
         try {
@@ -50,6 +40,10 @@ export default function SalesInvoicesPage() {
         }
     }
 
+    useEffect(() => {
+        fetchInvoices()
+    }, [])
+
     const handleAnnul = async (id: number, force: boolean = false) => {
         if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
         try {
@@ -59,14 +53,12 @@ export default function SalesInvoicesPage() {
         } catch (error: any) {
             console.error("Error annulling invoice:", error)
             const errorMessage = error.response?.data?.error || ""
-
             if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
                 if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
                     handleAnnul(id, true)
                     return
                 }
             }
-
             toast.error(errorMessage || "Error al anular el documento.")
         }
     }
@@ -76,18 +68,13 @@ export default function SalesInvoicesPage() {
         try {
             const formData = new FormData()
             formData.append('amount', data.amount.toString())
-
-            // Auto-detect direction based on document type
-            let paymentType = 'INBOUND' // Default for receiving payment from a sale
-            const isCreditNote = payingInv.dte_type === 'NOTA_CREDITO'
-            if (isCreditNote) paymentType = 'OUTBOUND' // Refunding money back (Devolución)
-
+            let paymentType = 'INBOUND'
+            if (payingInv.dte_type === 'NOTA_CREDITO') paymentType = 'OUTBOUND'
             formData.append('payment_type', paymentType)
             formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
             formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
             formData.append('invoice', payingInv.id.toString())
             formData.append('payment_method', data.paymentMethod)
-
             if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
             if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
             if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
@@ -109,31 +96,12 @@ export default function SalesInvoicesPage() {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
-            ),
-            cell: ({ row }) => (
-                <span className="font-mono font-medium">{row.getValue("number") || '---'}</span>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
+            cell: ({ row }) => <span className="font-mono font-medium">{row.getValue("number") || '---'}</span>,
         },
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
-        },
-        {
-            accessorKey: "dte_type_display",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" />
-            ),
-        },
-        {
-            accessorKey: "partner_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cliente" />
-            ),
-        },
+        { accessorKey: "date", header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" /> },
+        { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
+        { accessorKey: "partner_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" /> },
         {
             accessorKey: "origin",
             header: "Origen",
@@ -154,14 +122,8 @@ export default function SalesInvoicesPage() {
         },
         {
             accessorKey: "total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Total" />
-            ),
-            cell: ({ row }) => (
-                <div className="text-right font-medium">
-                    ${Number(row.getValue("total")).toLocaleString()}
-                </div>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            cell: ({ row }) => <div className="text-right font-medium">${Number(row.getValue("total")).toLocaleString()}</div>,
         },
         {
             accessorKey: "status",
@@ -181,7 +143,6 @@ export default function SalesInvoicesPage() {
                 const inv = row.original
                 return (
                     <div className="flex space-x-1">
-                        {/* Open Action Panel */}
                         {inv.sale_order ? (
                             <Button
                                 variant="default"
@@ -198,7 +159,6 @@ export default function SalesInvoicesPage() {
                             </Button>
                         ) : (
                             <>
-
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -207,8 +167,6 @@ export default function SalesInvoicesPage() {
                                 >
                                     <Eye className="h-4 w-4" />
                                 </Button>
-
-                                {/* Historial de Pagos */}
                                 {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
                                     <Button
                                         variant="ghost"
@@ -220,10 +178,8 @@ export default function SalesInvoicesPage() {
                                         <History className="h-4 w-4" />
                                     </Button>
                                 )}
-
                                 {inv.status !== 'CANCELLED' && (
                                     <>
-                                        {/* Registrar Pago / Reembolso */}
                                         {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
                                             <Button
                                                 variant="ghost"
@@ -235,25 +191,15 @@ export default function SalesInvoicesPage() {
                                                 <Banknote className="h-4 w-4" />
                                             </Button>
                                         )}
-
-                                        {/* Registrar Nota (Solo para Facturas/Boletas, no sobre Notas) */}
                                         {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (() => {
-                                            // Check Disable Conditions
                                             const isDraft = inv.status === 'DRAFT'
                                             const isPaid = inv.status === 'PAID'
-                                            // Fallback to true if unknown, but usually we want strict check. 
-                                            // If no order, then logistics might check stock moves, but for now assuming order context.
-                                            // If no order (standalone invoice), assume logistics is not applicable or "delivered".
                                             const isDelivered = inv.sale_order ? inv.order_delivery_status === 'DELIVERED' : true
-
-                                            // "Hasta que las facturas no esten en estado borrador, no se encuentren pagos pendientes, se encuentra completamente finalizao la logistica"
                                             const disabled = isDraft || !isPaid || !isDelivered
-
                                             let tooltipText = ""
                                             if (isDraft) tooltipText = "La factura debe estar publicada (no borrador)"
                                             else if (!isPaid) tooltipText = "La factura debe estar completamente pagada"
                                             else if (!isDelivered) tooltipText = "La logística debe estar completamente finalizada"
-
                                             const ButtonComponent = (
                                                 <Button
                                                     variant="ghost"
@@ -266,25 +212,18 @@ export default function SalesInvoicesPage() {
                                                     <FileBadge className="h-4 w-4" />
                                                 </Button>
                                             )
-
                                             if (disabled) {
                                                 return (
                                                     <TooltipProvider delayDuration={0}>
                                                         <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div>{ButtonComponent}</div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{tooltipText}</p>
-                                                            </TooltipContent>
+                                                            <TooltipTrigger asChild><div>{ButtonComponent}</div></TooltipTrigger>
+                                                            <TooltipContent><p>{tooltipText}</p></TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                 )
                                             }
-
                                             return ButtonComponent
                                         })()}
-
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -317,28 +256,26 @@ export default function SalesInvoicesPage() {
                     Cargando facturas...
                 </div>
             ) : (
-                <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={invoices}
-                        filterColumn="partner_name"
-                        searchPlaceholder="Buscar por cliente..."
-                        facetedFilters={[
-                            {
-                                column: "status",
-                                title: "Estado",
-                                options: [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
-                            },
-                        ]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={20}
-                    />
-                </div>
+                <DataTable
+                    columns={columns}
+                    data={invoices}
+                    filterColumn="partner_name"
+                    searchPlaceholder="Buscar por cliente..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                />
             )}
 
             {viewingTransaction && (
@@ -372,11 +309,7 @@ export default function SalesInvoicesPage() {
                     pendingAmount={payingInv.pending_amount ?? parseFloat(payingInv.total)}
                     hideDteFields={true}
                     isRefund={payingInv.dte_type === 'NOTA_CREDITO'}
-                    existingInvoice={{
-                        dte_type: payingInv.dte_type,
-                        number: payingInv.number,
-                        document_attachment: null
-                    }}
+                    existingInvoice={{ dte_type: payingInv.dte_type, number: payingInv.number, document_attachment: null }}
                 />
             )}
 

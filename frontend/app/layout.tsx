@@ -32,9 +32,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <GlobalModalProvider>
-            <AuthGuard>
-              {children}
-            </AuthGuard>
+            {children}
           </GlobalModalProvider>
         </AuthProvider>
       </body>

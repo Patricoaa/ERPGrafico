@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Plus, Building2, User as UserIcon, BarChart3 } from "lucide-react"
+import { Edit, Trash2, Plus, Building2, User as UserIcon } from "lucide-react"
 import api from "@/lib/api"
 import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
@@ -30,7 +29,7 @@ interface Contact {
     is_default_vendor: boolean
 }
 
-export default function ContactsPage() {
+export function ContactsClientView() {
     const [contacts, setContacts] = useState<Contact[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedContact, setSelectedContact] = useState<any>(null)
@@ -57,13 +56,11 @@ export default function ContactsPage() {
 
     const handleDelete = async (contact: any, isConfirmed = false) => {
         if (!contact) return
-
         if (!isConfirmed) {
             setContactToDelete(contact)
             setIsDeleteModalOpen(true)
             return
         }
-
         try {
             await api.delete(`/contacts/${contact.id}/`)
             toast.success("El contacto ha sido eliminado exitosamente")
@@ -76,33 +73,23 @@ export default function ContactsPage() {
 
     const getContactTypeBadge = (type: string) => {
         switch (type) {
-            case 'CUSTOMER':
-                return <DataCell.Badge variant="info">Cliente</DataCell.Badge>
-            case 'SUPPLIER':
-                return <DataCell.Badge variant="indigo">Proveedor</DataCell.Badge>
-            case 'BOTH':
-                return <DataCell.Badge variant="success">Ambos</DataCell.Badge>
-            case 'RELATED':
-                return <DataCell.Badge variant="warning">Relacionado</DataCell.Badge>
-            default:
-                return <DataCell.Badge variant="outline">Sin Clasificar</DataCell.Badge>
+            case 'CUSTOMER': return <DataCell.Badge variant="info">Cliente</DataCell.Badge>
+            case 'SUPPLIER': return <DataCell.Badge variant="indigo">Proveedor</DataCell.Badge>
+            case 'BOTH': return <DataCell.Badge variant="success">Ambos</DataCell.Badge>
+            case 'RELATED': return <DataCell.Badge variant="warning">Relacionado</DataCell.Badge>
+            default: return <DataCell.Badge variant="outline">Sin Clasificar</DataCell.Badge>
         }
     }
 
-    // Definición de columnas para DataTable
     const columns: ColumnDef<Contact>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Código" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
             cell: ({ row }) => <DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code>,
         },
         {
             accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
             cell: ({ row }) => {
                 const contact = row.original
                 return (
@@ -136,9 +123,7 @@ export default function ContactsPage() {
         },
         {
             accessorKey: "tax_id",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="RUT / Identificación" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" />,
             cell: ({ row }) => {
                 const taxId = row.getValue("tax_id") as string | null
                 return <DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code>
@@ -151,17 +136,13 @@ export default function ContactsPage() {
         },
         {
             accessorKey: "email",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Email" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary>,
         },
         {
             accessorKey: "phone",
             header: "Teléfono",
-            cell: ({ row }) => {
-                return <DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary>
-            },
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary>,
         },
         {
             id: "actions",
