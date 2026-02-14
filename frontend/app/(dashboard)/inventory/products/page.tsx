@@ -80,19 +80,16 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     <TabsContent value="products" className="mt-0 outline-none">
                         <ProductList
                             externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
-                            onExternalOpenChange={() => { }} // Ideally this should navigate back
                         />
                     </TabsContent>
                     <TabsContent value="categories" className="mt-0 outline-none">
                         <CategoryList
                             externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
-                            onExternalOpenChange={() => { }}
                         />
                     </TabsContent>
                     <TabsContent value="pricing-rules" className="mt-0 outline-none">
                         <PricingRuleList
                             externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
-                            onExternalOpenChange={() => { }}
                         />
                     </TabsContent>
                 </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -64,6 +65,16 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchProducts = async () => {
         setLoading(true)
@@ -379,6 +390,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     if (!open) {
                         setEditingProduct(null)
                         onExternalOpenChange?.(false)
+                        handleCloseModal() // Clean URL
                     }
                 }}
                 initialData={editingProduct}

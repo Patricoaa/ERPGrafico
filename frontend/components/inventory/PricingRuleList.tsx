@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -46,6 +47,16 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
     const [loading, setLoading] = useState(true)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchRules = async () => {
         setLoading(true)
@@ -220,6 +231,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                         if (!open) {
                             setEditingRule(null)
                             onExternalOpenChange?.(false)
+                            handleCloseModal()
                         }
                     }}
                     onSuccess={fetchRules}

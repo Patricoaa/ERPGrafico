@@ -3,6 +3,7 @@
 // Dashboard unificado para la gestión de reabastecimiento: reglas y propuestas.
 
 import { useState, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -121,6 +122,16 @@ export function ReplenishmentDashboard({
     const [isSaving, setIsSaving] = useState(false)
     const [activeTab, setActiveTab] = useState("rules")
 
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
     // Fetch Data
     const fetchData = async () => {
         setIsLoading(true)
@@ -233,6 +244,7 @@ export function ReplenishmentDashboard({
             toast.error("Error en planificación", { id: toastId })
         } finally {
             onExternalRunPlanifierChange?.(false)
+            handleCloseModal()
         }
     }
 
@@ -374,6 +386,7 @@ export function ReplenishmentDashboard({
                 if (!open) {
                     setEditingRule(null)
                     onExternalOpenRuleChange?.(false)
+                    handleCloseModal()
                 }
             }}>
                 <DialogContent className="sm:max-w-[500px]">

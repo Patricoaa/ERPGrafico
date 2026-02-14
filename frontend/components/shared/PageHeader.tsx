@@ -39,18 +39,18 @@ export function PageHeader({ title, description, icon: Icon, titleActions, child
                         <h1 className="text-2xl md:text-3xl font-black tracking-[-0.03em] leading-tight font-heading uppercase">
                             {title}
                         </h1>
-                    </motion.div>
 
-                    {titleActions && (
-                        <motion.div
-                            initial={{ x: -5, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex items-center"
-                        >
-                            {titleActions}
-                        </motion.div>
-                    )}
+                        {titleActions && (
+                            <motion.div
+                                initial={{ x: -5, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="flex items-center ml-2"
+                            >
+                                {titleActions}
+                            </motion.div>
+                        )}
+                    </motion.div>
                 </div>
 
                 {description && (

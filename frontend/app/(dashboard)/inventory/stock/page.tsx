@@ -108,21 +108,17 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList
                             externalOpen={activeTab === 'movements' && modal === 'adjustment'}
-                            onExternalOpenChange={() => { }}
                         />
                     </TabsContent>
                     <TabsContent value="replenishment" className="mt-0 outline-none">
                         <ReplenishmentDashboard
                             externalRunPlanifier={activeTab === 'replenishment' && modal === 'planifier'}
-                            onExternalRunPlanifierChange={() => { }}
                             externalOpenRule={activeTab === 'replenishment' && modal === 'rule'}
-                            onExternalOpenRuleChange={() => { }}
                         />
                     </TabsContent>
                     <TabsContent value="warehouses" className="mt-0 outline-none">
                         <WarehouseList
                             externalOpen={activeTab === 'warehouses' && modal === 'new'}
-                            onExternalOpenChange={() => { }}
                         />
                     </TabsContent>
                 </div>

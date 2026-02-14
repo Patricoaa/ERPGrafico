@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -36,6 +37,16 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchCategories = async () => {
         try {
@@ -142,6 +153,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                     if (!open) {
                         setEditingCategory(null)
                         onExternalOpenChange?.(false)
+                        handleCloseModal()
                     }
                 }}
                 initialData={editingCategory}

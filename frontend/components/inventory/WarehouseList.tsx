@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -31,6 +32,16 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchWarehouses = async () => {
         try {
@@ -126,6 +137,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                     if (!open) {
                         setEditingWarehouse(null)
                         onExternalOpenChange?.(false)
+                        handleCloseModal()
                     }
                 }}
                 initialData={editingWarehouse}

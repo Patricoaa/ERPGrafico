@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -41,6 +42,16 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchMoves = async () => {
         setLoading(true)
@@ -243,7 +254,10 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
 
             <Dialog open={showAdjustmentModal} onOpenChange={(open) => {
                 setShowAdjustmentModal(open)
-                if (!open) onExternalOpenChange?.(false)
+                if (!open) {
+                    onExternalOpenChange?.(false)
+                    handleCloseModal()
+                }
             }}>
                 <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -252,10 +266,12 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                     <AdjustmentForm onSuccess={() => {
                         setShowAdjustmentModal(false);
                         onExternalOpenChange?.(false);
+                        handleCloseModal();
                         fetchMoves();
                     }} onCancel={() => {
                         setShowAdjustmentModal(false);
                         onExternalOpenChange?.(false);
+                        handleCloseModal();
                     }} />
                 </DialogContent>
             </Dialog>
