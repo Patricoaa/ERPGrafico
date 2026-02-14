@@ -28,8 +28,9 @@ class SequenceService:
                     try:
                         next_val = int(nums[-1]) + 1
                         return str(next_val).zfill(padding)
-                    except (ValueError, IndexError):
-                        pass
+                    except (ValueError, IndexError) as e:
+                        import logging
+                        logging.getLogger(__name__).warning(f"Error extracting sequence number: {e}")
         
         return '1'.zfill(padding)
 

@@ -172,6 +172,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+    'EXCEPTION_HANDLER': 'core.api.exceptions.erpgrafico_exception_handler',
 }
 
 from datetime import timedelta
