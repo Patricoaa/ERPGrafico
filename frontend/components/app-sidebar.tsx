@@ -57,7 +57,6 @@ const categoryItems: Record<string, any> = {
         { title: "Configuración Tesorería", url: "/settings/treasury" },
         { title: "Cuentas de Tesorería", url: "/treasury/accounts" },
         { title: "Movimientos de Tesorería", url: "/treasury/movements" },
-        { title: "Diferencias POS", url: "/treasury/differences" },
         { title: "Conciliación Bancaria", url: "/treasury/reconciliation" },
     ],
     "purchasing": [

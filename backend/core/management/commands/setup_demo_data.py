@@ -132,6 +132,19 @@ class Command(BaseCommand):
             'Terminal Commission Bridge': settings.terminal_commission_bridge_account,
             'Bank Commission': settings.bank_commission_account,
             'VAT Payable': settings.vat_payable_account,
+            
+            # Inventory Adjustment Verification
+            'Inv. Gain': settings.adjustment_income_account,
+            'Inv. Loss': settings.adjustment_expense_account,
+            'Initial Inv.': settings.initial_inventory_account,
+            'Revaluation': settings.revaluation_account,
+            
+            # Treasury Reconciliation Verification
+            'Interest Income': settings.interest_income_account,
+            'Exchange Diff': settings.exchange_difference_account,
+            'Rounding Adj': settings.rounding_adjustment_account,
+            'Error Adj': settings.error_adjustment_account,
+            'Misc Adj': settings.miscellaneous_adjustment_account,
         }
         
         self.stdout.write("\n  📊 Key Account Mappings:")

@@ -202,6 +202,17 @@ class AccountingService:
             ('5.2.23', 'Seguridad y Vigilancia', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.24', 'Suscripciones y Membresías Software', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.25', 'Gastos de Correspondencia', AccountType.EXPENSE, '5.2', None, None, None),
+            
+            # Missing Inventory Adjustments
+            ('4.2.02', 'Ganancia por Ajuste de Inventario', AccountType.INCOME, '4.2', None, None, None),
+            ('5.2.07', 'Pérdida por Ajuste de Inventario', AccountType.EXPENSE, '5.2', None, None, None), # Note: 5.2.07 was Mantenimiento via overwrite check if needed, better use new code or check
+            ('3.1.02', 'Contrapartida Inicial de Inventario', AccountType.EQUITY, '3.1', None, None, None),
+            ('5.1.03', 'Ajuste por Revalorización de Stock', AccountType.EXPENSE, '5.1', None, None, None), 
+
+            # Missing Treasury Reconciliation
+            ('4.2.03', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.04', 'Diferencia de Cambio', AccountType.INCOME, '4.2', None, None, None),
+            ('5.2.99', 'Otros Gastos Varios', AccountType.EXPENSE, '5.2', None, None, None),
         ]
         
         created_count = 0
@@ -287,6 +298,20 @@ class AccountingService:
             'ppm_account': '1.1.04.04',
             'second_category_tax_account': '2.1.02.04',
             'correction_income_account': '4.2.07',
+
+            # Inventory Adjustments (Missing)
+            'adjustment_income_account': '4.2.02',  # Ganancia por Ajuste de Inventario (needs creation)
+            'adjustment_expense_account': '5.2.07', # Pérdida por Ajuste de Inventario (needs creation)
+            'initial_inventory_account': '3.1.02',  # Contrapartida Inicial (needs creation)
+            'revaluation_account': '5.1.03',        # Ajuste por Revalorización (needs creation)
+
+            # Treasury Reconciliation (Missing)
+            'bank_commission_account': '5.2.10',
+            'interest_income_account': '4.2.03',    # Intereses Ganados (needs creation)
+            'exchange_difference_account': '4.2.04',# Diferencia de Cambio (needs creation)
+            'rounding_adjustment_account': '5.2.11',
+            'error_adjustment_account': '5.2.12',
+            'miscellaneous_adjustment_account': '5.2.99', # Otros Gastos Varios (needs creation)
         }
 
         for field, code in mapping.items():
