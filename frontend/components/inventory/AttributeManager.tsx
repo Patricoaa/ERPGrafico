@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react"
 import api from "@/lib/api"
-import { Plus, Pencil, Trash2, Tag, ListFilter } from "lucide-react"
+import { Plus, Trash2, Tag, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -16,6 +15,10 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ColumnDef } from "@tanstack/react-table" // Ensure this is installed/available
+import { PageHeader } from "@/components/shared/PageHeader"
 
 interface ProductAttribute {
     id: number
@@ -30,11 +33,13 @@ interface ProductAttributeValue {
 }
 
 interface AttributeManagerProps {
-    externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
+    // Props are no longer needed for external control if PageHeader is inside, 
+    // but keeping them optional just in case or for future flexibility won't hurt, 
+    // although we are removing the externalOpen logic from page.tsx.
+    // For this refactor, we will remove them to clean up since the page no longer passes them.
 }
 
-export function AttributeManager({ externalOpen, onExternalOpenChange }: AttributeManagerProps) {
+export function AttributeManager() {
     const [attributes, setAttributes] = useState<ProductAttribute[]>([])
     const [loading, setLoading] = useState(true)
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
@@ -42,13 +47,6 @@ export function AttributeManager({ externalOpen, onExternalOpenChange }: Attribu
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newValueName, setNewValueName] = useState("")
-
-    useEffect(() => {
-        if (externalOpen) {
-            setIsAttrModalOpen(true)
-            onExternalOpenChange?.(false)
-        }
-    }, [externalOpen, onExternalOpenChange])
 
     useEffect(() => {
         fetchAttributes()
@@ -72,6 +70,7 @@ export function AttributeManager({ externalOpen, onExternalOpenChange }: Attribu
 
             setAttributes(enrichedAttrs)
         } catch (error) {
+            console.error(error)
             toast.error("Error al cargar atributos")
         } finally {
             setLoading(false)
@@ -119,6 +118,7 @@ export function AttributeManager({ externalOpen, onExternalOpenChange }: Attribu
     }
 
     const handleDeleteValue = async (id: number) => {
+        if (!confirm("¿Seguro que deseas eliminar este valor?")) return
         try {
             await api.delete(`/inventory/attribute-values/${id}/`)
             toast.success("Valor eliminado")
@@ -128,54 +128,107 @@ export function AttributeManager({ externalOpen, onExternalOpenChange }: Attribu
         }
     }
 
+    const columns: ColumnDef<ProductAttribute>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Atributo" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2 font-medium">
+                    <Tag className="h-4 w-4 text-primary" />
+                    {row.getValue("name")}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "values",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Valores" />
+            ),
+            cell: ({ row }) => {
+                const values = row.original.values || []
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {values.map((val) => (
+                            <Badge key={val.id} variant="secondary" className="flex items-center gap-1 group">
+                                {val.value}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteValue(val.id)
+                                    }}
+                                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                                    title="Eliminar valor"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {values.length === 0 && <span className="text-muted-foreground text-xs italic">Sin valores</span>}
+                    </div>
+                )
+            },
+        },
+        {
+            id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            setSelectedAttribute(row.original)
+                            setIsValueModalOpen(true)
+                        }}
+                        className="h-8"
+                    >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Valor
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAttribute(row.original.id)}
+                        className="h-8 w-8 text-destructive hover:text-destructive/90"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ]
+
     return (
         <div className="space-y-6">
+            <PageHeader
+                title="Atributos de Variantes"
+                description="Gestiona los atributos y valores para productos con variaciones."
+                titleActions={
+                    <Button
+                        size="icon"
+                        className="rounded-full h-8 w-8"
+                        onClick={() => setIsAttrModalOpen(true)}
+                        title="Nuevo Atributo"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                }
+            />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {attributes.map((attr) => (
-                    <Card key={attr.id} className="overflow-hidden border-2 border-primary/5 hover:border-primary/20 transition-all">
-                        <CardHeader className="bg-muted/30 pb-4">
-                            <div className="flex justify-between items-center text-primary-foreground">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Tag className="h-5 w-5 text-primary" />
-                                    {attr.name}
-                                </CardTitle>
-                                <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteAttribute(attr.id)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
-                                {attr.values?.map((val) => (
-                                    <Badge key={val.id} variant="secondary" className="flex items-center gap-1 py-1 px-3 group">
-                                        {val.value}
-                                        <button onClick={() => handleDeleteValue(val.id)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Trash2 className="h-3 w-3 text-destructive" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                                {(!attr.values || attr.values.length === 0) && (
-                                    <p className="text-xs text-muted-foreground italic">Sin valores definidos</p>
-                                )}
-                            </div>
-                            <Button
-                                variant="outline"
-                                className="w-full border-dashed"
-                                onClick={() => {
-                                    setSelectedAttribute(attr)
-                                    setIsValueModalOpen(true)
-                                }}
-                            >
-                                <Plus className="mr-2 h-3 w-3" />
-                                Añadir Valor
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-muted-foreground">Cargando atributos...</div>
+                </div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={attributes}
+                    filterColumn="name"
+                    searchPlaceholder="Buscar atributos..."
+                />
+            )}
 
             {/* Modal para Atributo */}
             <Dialog open={isAttrModalOpen} onOpenChange={setIsAttrModalOpen}>

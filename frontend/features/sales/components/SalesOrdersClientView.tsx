@@ -14,7 +14,11 @@ const DeliveryModal = lazy(() => import("./DeliveryModal"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
 const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
 
-export function SalesOrdersClientView() {
+interface SalesOrdersClientViewProps {
+    viewMode: 'orders' | 'notes'
+}
+
+export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) {
     const [editingOrder, setEditingOrder] = useState<any | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
@@ -44,7 +48,7 @@ export function SalesOrdersClientView() {
                 )}
             </PageHeader>
 
-            <SalesOrdersView />
+            <SalesOrdersView viewMode={viewMode} />
 
             {viewingTransaction && (
                 <Suspense fallback={null}>

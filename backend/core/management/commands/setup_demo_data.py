@@ -18,7 +18,6 @@ from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, Purc
 from treasury.models import (
     TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
     ReconciliationMatch, ReconciliationRule,
-    CashDifference,
     POSTerminal, POSSession, POSSessionAudit,
     Bank, PaymentMethod, TerminalBatch
 )
@@ -36,6 +35,21 @@ class Command(BaseCommand):
             '--purge',
             action='store_true',
             help='Delete all existing business data before seeding',
+        )
+        parser.add_argument(
+            '--no-demo-flows',
+            action='store_true',
+            help='Skip creation of demo Sale/Purchase orders and invoices',
+        )
+        parser.add_argument(
+            '--no-tax-demo',
+            action='store_true',
+            help='Skip creation of the F29 tax declaration demo',
+        )
+        parser.add_argument(
+            '--only-infra',
+            action='store_true',
+            help='Seeds ONLY infrastructure (Users, Accounts, Treasury accounts). Forces --no-demo-flows and --no-tax-demo.',
         )
 
     @transaction.atomic
@@ -89,11 +103,13 @@ class Command(BaseCommand):
         self.stdout.write('Creating Accounting & Tax Periods...')
         periods = self._create_periods()
 
-        self.stdout.write('Creating Sales & Purchasing Demo Flow...')
-        self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
+        if not options['no_demo_flows'] and not options['only_infra']:
+            self.stdout.write('Creating Sales & Purchasing Demo Flow...')
+            self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
-        self.stdout.write('Creating F29 Tax Declaration Demo...')
-        self._create_tax_demo(periods)
+        if not options['no_tax_demo'] and not options['only_infra']:
+            self.stdout.write('Creating F29 Tax Declaration Demo...')
+            self._create_tax_demo(periods)
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
@@ -216,7 +232,6 @@ class Command(BaseCommand):
 
         # 7. POS & Infrastructure
         _safe_delete(POSSessionAudit, "POSSessionAudit")
-        _safe_delete(CashDifference, "CashDifference")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
         _safe_delete(TerminalBatch, "TerminalBatch")
@@ -1040,10 +1055,13 @@ class Command(BaseCommand):
     def _create_periods(self):
         """Creates tax and accounting periods for the current year."""
         current_year = timezone.now().year
+        current_month = timezone.now().month
         periods = []
-        for month in range(1, 13):
+        # Create periods from January to current_month + 1 (to allow for immediate next month planning)
+        # Avoid creating all 12 months to prevent cluttering the UI with future empty periods.
+        for month in range(1, min(current_month + 2, 13)):
             status = TaxPeriod.Status.OPEN
-            if month < timezone.now().month:
+            if month < current_month:
                 status = TaxPeriod.Status.CLOSED
             
             tax_period, _ = TaxPeriod.objects.get_or_create(

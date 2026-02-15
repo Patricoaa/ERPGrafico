@@ -25,13 +25,13 @@ import { useSalesOrders, useSalesNotes, type SaleOrder } from "@/features/sales"
 
 
 interface SalesOrdersViewProps {
+    viewMode: 'orders' | 'notes'
     posSessionId?: number | null
     onActionSuccess?: () => void
     hideStatusInCards?: boolean
 }
 
-export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
+export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
@@ -163,7 +163,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                 </div>
             ) : (
                 <div className="flex-1 overflow-hidden">
-                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="w-full h-full flex flex-col">
+                    <Tabs value={viewMode} className="w-full h-full flex flex-col">
                         <DataTable
                             columns={viewMode === 'orders' ? columns : noteColumns}
                             data={viewMode === 'orders' ? filteredOrders : filteredNotes}
@@ -232,12 +232,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                                     <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
                                 </div>
                             }
-                            rightAction={
-                                <TabsList>
-                                    <TabsTrigger value="orders">Notas de Venta</TabsTrigger>
-                                    <TabsTrigger value="notes">Notas Crédito/Débito</TabsTrigger>
-                                </TabsList>
-                            }
+
                             defaultPageSize={20}
                             renderCustomView={(table) => {
                                 const rows = table.getRowModel().rows
