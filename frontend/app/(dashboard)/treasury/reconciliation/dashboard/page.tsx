@@ -4,8 +4,13 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import api from "@/lib/api"
 import { DashboardKPIs } from "./DashboardKPIs"
-import { DashboardTrendChart } from "./DashboardTrendChart"
+import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
+
+const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
+    ssr: false,
+    loading: () => <div className="col-span-4 h-[350px] animate-pulse bg-muted rounded-lg" />
+})
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"

@@ -1,17 +1,27 @@
 "use client"
 
 import React, { useState } from "react"
+import dynamic from "next/dynamic"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { RatiosView } from "@/components/finances/RatiosView"
-import { BIAnalyticsView } from "@/components/finances/BIAnalyticsView"
 import { DateRangeSelector } from "@/components/finances/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PieChart, Activity } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+
+const RatiosView = dynamic(() => import("@/components/finances/RatiosView").then(mod => mod.RatiosView), {
+    ssr: false,
+    loading: () => <LoadingFallback message="Cargando análisis..." />
+})
+
+const BIAnalyticsView = dynamic(() => import("@/components/finances/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
+    ssr: false,
+    loading: () => <LoadingFallback message="Cargando BI..." />
+})
 
 export default function AnalysisPage() {
     const [showComparison, setShowComparison] = useState(false);
