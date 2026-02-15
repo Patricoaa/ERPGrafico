@@ -24,6 +24,9 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     {open && (
                         <SalesOrdersView
                             posSessionId={posSessionId}
+                            viewMode="orders"
+                            onActionSuccess={() => onOpenChange(false)}
+                            hideStatusInCards
                         />
                     )}
                 </div>

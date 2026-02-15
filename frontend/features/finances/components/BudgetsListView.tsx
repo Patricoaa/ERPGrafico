@@ -13,7 +13,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { BudgetEditor } from "@/components/finances/BudgetEditor"
 
 interface Budget {
@@ -148,10 +148,12 @@ export function BudgetsListView() {
                 title="Presupuestos"
                 description="Gestiona y monitorea los presupuestos anuales y su ejecución."
                 titleActions={
-                    <Button onClick={() => setIsCreateOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nuevo Presupuesto
-                    </Button>
+                    <PageHeaderButton
+                        onClick={() => setIsCreateOpen(true)}
+                        icon={Plus}
+                        circular
+                        title="Nuevo Presupuesto"
+                    />
                 }
             />
 
@@ -165,6 +167,7 @@ export function BudgetsListView() {
                     data={budgets}
                     filterColumn="name"
                     searchPlaceholder="Buscar presupuestos..."
+                    useAdvancedFilter={true}
                 />
             )}
 

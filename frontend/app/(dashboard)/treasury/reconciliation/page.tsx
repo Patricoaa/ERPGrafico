@@ -14,7 +14,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Progress } from "@/components/ui/progress"
 
 interface BankStatement {
@@ -164,9 +164,12 @@ export default function ReconciliationPage() {
                 title="Conciliación Bancaria"
                 description="Gestión de cartolas y cuadratura de movimientos bancarios."
                 titleActions={
-                    <Button onClick={() => setImportDialogOpen(true)} size="icon" className="rounded-full h-8 w-8" title="Importar cartola">
-                        <Upload className="h-4 w-4" />
-                    </Button>
+                    <PageHeaderButton
+                        onClick={() => setImportDialogOpen(true)}
+                        icon={Upload}
+                        circular
+                        title="Importar cartola"
+                    />
                 }
             >
                 <div className="flex items-center gap-2">

@@ -14,7 +14,7 @@ import { UserForm } from "@/components/forms/UserForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/components/settings/GroupManagement"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -144,9 +144,11 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                         <UserForm
                             onSuccess={fetchUsers}
                             trigger={
-                                <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Usuario">
-                                    <Plus className="h-4 w-4" />
-                                </Button>
+                                <PageHeaderButton
+                                    icon={Plus}
+                                    circular
+                                    title="Nuevo Usuario"
+                                />
                             }
                         />
                     )
@@ -156,9 +158,12 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     title: "Grupos y Equipos",
                     description: "Organice a sus colaboradores por departamentos o funciones específicas.",
                     actions: (
-                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsGroupModalOpen(true)} title="Nuevo Grupo">
-                            <Plus className="h-4 w-4" />
-                        </Button>
+                        <PageHeaderButton
+                            onClick={() => setIsGroupModalOpen(true)}
+                            icon={Plus}
+                            circular
+                            title="Nuevo Grupo"
+                        />
                     )
                 }
             default:

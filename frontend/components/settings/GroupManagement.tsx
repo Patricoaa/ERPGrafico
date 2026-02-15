@@ -123,6 +123,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupMan
                     columns={columns}
                     data={groups}
                     searchPlaceholder="Buscar grupo..."
+                    useAdvancedFilter={true}
                 />
             )}
 

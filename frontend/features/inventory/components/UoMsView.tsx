@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { UoMList } from "@/components/inventory/UoMList"
 import { UoMCategoryList } from "@/components/inventory/UoMCategoryList"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 
@@ -23,14 +23,12 @@ export function UoMsView({ activeTab }: UoMsViewProps) {
                     title: "Unidades de Medida",
                     description: "Gestión de unidades (Kg, Mts, Un, etc.) y sus equivalencias.",
                     actions: (
-                        <Button
-                            size="icon"
-                            className="rounded-full h-8 w-8"
+                        <PageHeaderButton
                             onClick={() => setIsUoMModalOpen(true)}
+                            icon={Plus}
+                            circular
                             title="Nueva Unidad"
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
+                        />
                     )
                 }
             case "categories":
@@ -38,14 +36,12 @@ export function UoMsView({ activeTab }: UoMsViewProps) {
                     title: "Categorías de Unidades",
                     description: "Agrupe unidades relacionadas para facilitar conversiones.",
                     actions: (
-                        <Button
-                            size="icon"
-                            className="rounded-full h-8 w-8"
+                        <PageHeaderButton
                             onClick={() => setIsCategoryModalOpen(true)}
+                            icon={Plus}
+                            circular
                             title="Nueva Categoría"
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
+                        />
                     )
                 }
             default:

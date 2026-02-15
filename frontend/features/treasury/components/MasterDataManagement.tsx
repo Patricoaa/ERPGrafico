@@ -138,6 +138,7 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
                 data={banks}
                 searchPlaceholder="Buscar bancos..."
                 filterColumn="name"
+                useAdvancedFilter={true}
             />
 
             <BankDialog
@@ -407,6 +408,7 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
                 data={methods}
                 searchPlaceholder="Buscar por nombre o cuenta..."
                 filterColumn="name"
+                useAdvancedFilter={true}
             />
 
             <PaymentMethodDialog

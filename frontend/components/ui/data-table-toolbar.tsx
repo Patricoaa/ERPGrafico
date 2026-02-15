@@ -33,6 +33,7 @@ interface DataTableToolbarProps<TData> {
     useAdvancedFilter?: boolean
     onReset?: () => void
     rightAction?: React.ReactNode
+    showToolbarSort?: boolean
 }
 
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
@@ -46,6 +47,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         useAdvancedFilter = false,
         onReset,
         rightAction,
+        showToolbarSort = false,
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
@@ -78,15 +80,73 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     />
                 )}
                 {useAdvancedFilter ? (
-                    <DataTableFilters
-                        table={table}
-                        facetedFilters={facetedFilters}
-                        filterColumn={filterColumn}
-                        globalFilterFields={globalFilterFields}
-                        searchPlaceholder={searchPlaceholder}
-                        toolbarAction={toolbarAction}
-                        onReset={onReset}
-                    />
+                    <>
+                        <DataTableFilters
+                            table={table}
+                            facetedFilters={facetedFilters}
+                            filterColumn={filterColumn}
+                            globalFilterFields={globalFilterFields}
+                            searchPlaceholder={searchPlaceholder}
+                            toolbarAction={toolbarAction}
+                            onReset={onReset}
+                        />
+                        {showToolbarSort && sortableColumns.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-8 border-dashed">
+                                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                                        Ordenar
+                                        {currentSortColumn && (
+                                            <>
+                                                <DropdownMenuSeparator className="mx-2 h-4 w-px bg-border inline-block" />
+                                                <span className="text-primary font-medium">
+                                                    {(currentSortColumn.columnDef.meta as any)?.title ||
+                                                        (typeof currentSortColumn.columnDef.header === 'string'
+                                                            ? currentSortColumn.columnDef.header
+                                                            : currentSortColumn.id)}
+                                                </span>
+                                                {currentSort?.desc ? (
+                                                    <ArrowDown className="ml-2 h-3 w-3" />
+                                                ) : (
+                                                    <ArrowUp className="ml-2 h-3 w-3" />
+                                                )}
+                                            </>
+                                        )}
+                                        <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-[200px]">
+                                    {sortableColumns.map((column) => (
+                                        <DropdownMenuItem
+                                            key={column.id}
+                                            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                                            className="flex items-center justify-between"
+                                        >
+                                            <span>
+                                                {(column.columnDef.meta as any)?.title ||
+                                                    (typeof column.columnDef.header === 'string'
+                                                        ? column.columnDef.header
+                                                        : column.id)}
+                                            </span>
+                                            {column.getIsSorted() === "desc" ? (
+                                                <ArrowDown className="h-4 w-4 text-primary" />
+                                            ) : column.getIsSorted() === "asc" ? (
+                                                <ArrowUp className="h-4 w-4 text-primary" />
+                                            ) : null}
+                                        </DropdownMenuItem>
+                                    ))}
+                                    {currentSort && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => table.resetSorting()} className="text-destructive focus:text-destructive">
+                                                Limpiar orden
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </>
                 ) : (
                     <>
                         {facetedFilters.map((filter) => {

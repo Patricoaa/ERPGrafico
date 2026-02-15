@@ -226,6 +226,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                 ] : [])
                             ]}
                             useAdvancedFilter={true}
+                            showToolbarSort={true}
                             onReset={() => setDateRange(undefined)}
                             toolbarAction={
                                 <div className="flex items-center gap-2">

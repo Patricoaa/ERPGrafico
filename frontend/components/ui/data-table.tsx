@@ -53,6 +53,7 @@ interface DataTableProps<TData, TValue> {
     onReset?: () => void
     renderCustomView?: (table: any) => React.ReactNode
     rightAction?: React.ReactNode
+    showToolbarSort?: boolean
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -74,6 +75,7 @@ export function DataTable<TData, TValue>({
     onReset,
     renderCustomView,
     rightAction,
+    showToolbarSort,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -151,6 +153,7 @@ export function DataTable<TData, TValue>({
                     useAdvancedFilter={useAdvancedFilter}
                     onReset={onReset}
                     rightAction={rightAction}
+                    showToolbarSort={showToolbarSort}
                 />
             )}
             {renderCustomView ? (

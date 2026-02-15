@@ -6,7 +6,7 @@ import { StockReport } from "@/components/inventory/StockReport"
 import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
 import { Warehouse, History, FileBarChart, RefreshCw, PlayCircle, Plus } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -45,9 +45,11 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     description: "Registro cronológico de entradas, salidas y transferencias.",
                     actions: (
                         <Link href="/inventory/stock?tab=movements&modal=adjustment">
-                            <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Ajuste">
-                                <Plus className="h-4 w-4" />
-                            </Button>
+                            <PageHeaderButton
+                                icon={Plus}
+                                circular
+                                title="Nuevo Ajuste"
+                            />
                         </Link>
                     )
                 }
@@ -64,9 +66,11 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                                 </Button>
                             </Link>
                             <Link href="/inventory/stock?tab=replenishment&modal=rule">
-                                <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Regla">
-                                    <Plus className="h-4 w-4" />
-                                </Button>
+                                <PageHeaderButton
+                                    icon={Plus}
+                                    circular
+                                    title="Nueva Regla"
+                                />
                             </Link>
                         </div>
                     )
@@ -77,9 +81,11 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     description: "Configure y administre sus bodegas y puntos de almacenamiento.",
                     actions: (
                         <Link href="/inventory/stock?tab=warehouses&modal=new">
-                            <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Almacén">
-                                <Plus className="h-4 w-4" />
-                            </Button>
+                            <PageHeaderButton
+                                icon={Plus}
+                                circular
+                                title="Nuevo Almacén"
+                            />
                         </Link>
                     )
                 }

@@ -6,7 +6,7 @@ import { CategoryList } from "@/components/inventory/CategoryList"
 import { PricingRuleList } from "@/components/inventory/PricingRuleList"
 import { Package, Tags, DollarSign, Plus } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -69,9 +69,11 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     description={description}
                     titleActions={actionTitle ? (
                         <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
-                            <Button size="icon" className="rounded-full h-8 w-8" title={actionTitle}>
-                                <Plus className="h-4 w-4" />
-                            </Button>
+                            <PageHeaderButton
+                                icon={Plus}
+                                circular
+                                title={actionTitle}
+                            />
                         </Link>
                     ) : null}
                 />

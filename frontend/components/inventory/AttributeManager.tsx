@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table" // Ensure this is installed/available
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 interface ProductAttribute {
     id: number
@@ -206,14 +206,12 @@ export function AttributeManager() {
                 title="Atributos de Variantes"
                 description="Gestiona los atributos y valores para productos con variaciones."
                 titleActions={
-                    <Button
-                        size="icon"
-                        className="rounded-full h-8 w-8"
+                    <PageHeaderButton
                         onClick={() => setIsAttrModalOpen(true)}
+                        icon={Plus}
+                        circular
                         title="Nuevo Atributo"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    />
                 }
             />
 
@@ -227,6 +225,7 @@ export function AttributeManager() {
                     data={attributes}
                     filterColumn="name"
                     searchPlaceholder="Buscar atributos..."
+                    useAdvancedFilter={true}
                 />
             )}
 
