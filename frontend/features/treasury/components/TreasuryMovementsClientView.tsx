@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, ArrowRight, Eye } from "lucide-react"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
-import { CashMovementModal } from "@/components/treasury/CashMovementModal"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { Badge } from "@/components/ui/badge"
+
+// Lazy load heavy components
+const CashMovementModal = lazy(() => import("./CashMovementModal"))
+const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
 interface TreasuryMovement {
     id: number
@@ -254,11 +256,13 @@ export function TreasuryMovementsClientView() {
                 }
             />
 
-            <CashMovementModal
-                open={openModal}
-                onOpenChange={setOpenModal}
-                onSuccess={fetchMovements}
-            />
+            <Suspense fallback={null}>
+                <CashMovementModal
+                    open={openModal}
+                    onOpenChange={(open: boolean) => setOpenModal(open)}
+                    onSuccess={fetchMovements}
+                />
+            </Suspense>
 
             {loading ? (
                 <div className="flex items-center justify-center h-64">
@@ -286,13 +290,15 @@ export function TreasuryMovementsClientView() {
                 />
             )}
 
-            <TransactionViewModal
-                open={detailsOpen}
-                onOpenChange={setDetailsOpen}
-                type="payment"
-                id={selectedMovementId}
-                view="details"
-            />
+            <Suspense fallback={null}>
+                <TransactionViewModal
+                    open={detailsOpen}
+                    onOpenChange={setDetailsOpen}
+                    type="payment"
+                    id={selectedMovementId}
+                    view="details"
+                />
+            </Suspense>
         </div>
     )
 }

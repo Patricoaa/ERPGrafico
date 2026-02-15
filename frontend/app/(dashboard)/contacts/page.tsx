@@ -1,5 +1,10 @@
 import { Metadata } from "next"
-import { ContactsClientView } from "@/components/contacts/ContactsClientView"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+
+const ContactsClientView = lazy(() =>
+    import("@/features/contacts").then(m => ({ default: m.ContactsClientView }))
+)
 
 export const metadata: Metadata = {
     title: "Contactos | ERPGrafico",
@@ -7,5 +12,9 @@ export const metadata: Metadata = {
 }
 
 export default function ContactsPage() {
-    return <ContactsClientView />
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <ContactsClientView />
+        </Suspense>
+    )
 }

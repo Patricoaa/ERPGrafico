@@ -18,7 +18,7 @@ interface DocumentCompletionModalProps {
     onSuccess?: () => void
 }
 
-export function DocumentCompletionModal({
+export default function DocumentCompletionModal({
     open,
     onOpenChange,
     invoiceId,

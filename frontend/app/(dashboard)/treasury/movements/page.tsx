@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { TreasuryMovementsClientView } from "@/components/treasury/TreasuryMovementsClientView"
+import { TreasuryMovementsClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
     title: "Movimientos de Tesorería | ERPGrafico",

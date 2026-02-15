@@ -1,13 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Plus, Building2, User as UserIcon } from "lucide-react"
 import api from "@/lib/api"
-import { ContactModal } from "@/components/contacts/ContactModal"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -15,6 +13,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DataCell } from "@/components/ui/data-table-cells"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { useContacts, type Contact } from "@/features/contacts"
+
+// Lazy load heavy components
+const ContactModal = lazy(() => import("./ContactModal"))
+const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
 
 
@@ -179,31 +181,35 @@ export function ContactsClientView() {
                 defaultPageSize={20}
             />
 
-            <ContactModal
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                contact={selectedContact}
-                onSuccess={() => {
-                    setModalOpen(false)
-                    setSelectedContact(null)
-                    // Automatic invalidation handles refetch
-                }}
-            />
+            <Suspense fallback={null}>
+                <ContactModal
+                    open={modalOpen}
+                    onOpenChange={(open: boolean) => setModalOpen(open)}
+                    contact={selectedContact}
+                    onSuccess={() => {
+                        setModalOpen(false)
+                        setSelectedContact(null)
+                        // Automatic invalidation handles refetch
+                    }}
+                />
+            </Suspense>
 
-            <ActionConfirmModal
-                open={isDeleteModalOpen}
-                onOpenChange={setIsDeleteModalOpen}
-                title="Eliminar Contacto"
-                variant="destructive"
-                onConfirm={() => { if (contactToDelete) return handleDelete(contactToDelete, true) }}
-                confirmText="Eliminar"
-                description={
-                    <p>
-                        ¿Está seguro de que desea eliminar el contacto <strong>{contactToDelete?.name}</strong>?
-                        Esta acción no se puede deshacer y puede afectar documentos asociados.
-                    </p>
-                }
-            />
+            <Suspense fallback={null}>
+                <ActionConfirmModal
+                    open={isDeleteModalOpen}
+                    onOpenChange={(open: boolean) => setIsDeleteModalOpen(open)}
+                    title="Eliminar Contacto"
+                    variant="destructive"
+                    onConfirm={() => { if (contactToDelete) return handleDelete(contactToDelete, true) }}
+                    confirmText="Eliminar"
+                    description={
+                        <p>
+                            ¿Está seguro de que desea eliminar el contacto <strong>{contactToDelete?.name}</strong>?
+                            Esta acción no se puede deshacer y puede afectar documentos asociados.
+                        </p>
+                    }
+                />
+            </Suspense>
         </div>
     )
 }

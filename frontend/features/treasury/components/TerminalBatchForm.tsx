@@ -24,7 +24,7 @@ interface TerminalBatchFormProps {
     onCancel: () => void
 }
 
-export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
+export default function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
     const [loading, setLoading] = useState(false)
     const [terminals, setTerminals] = useState<any[]>([])
 

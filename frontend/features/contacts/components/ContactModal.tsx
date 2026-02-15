@@ -57,7 +57,7 @@ interface ContactModalProps {
     onSuccess: () => void
 }
 
-export function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
+export default function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
     const [defaultCustomer, setDefaultCustomer] = useState<any>(null)
     const [defaultVendor, setDefaultVendor] = useState<any>(null)
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })

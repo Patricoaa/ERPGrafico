@@ -1,5 +1,10 @@
 import { Metadata } from "next"
-import { SalesOrdersClientView } from "@/components/sales/SalesOrdersClientView"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+
+const SalesOrdersClientView = lazy(() =>
+    import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView }))
+)
 
 export const metadata: Metadata = {
     title: "Notas de Venta | ERPGrafico",
@@ -7,5 +12,9 @@ export const metadata: Metadata = {
 }
 
 export default function SalesOrdersPage() {
-    return <SalesOrdersClientView />
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <SalesOrdersClientView />
+        </Suspense>
+    )
 }

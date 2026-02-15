@@ -411,7 +411,7 @@ const PaymentHistorySection = ({ data, currentType, navigateTo, handleDeletePaym
     );
 }
 
-export function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
+export default function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
     const [history, setHistory] = useState<{ type: string, id: number | string }[]>([])
     const [currentType, setCurrentType] = useState<any>(initialType)
     const [currentId, setCurrentId] = useState<number | string>(initialId)

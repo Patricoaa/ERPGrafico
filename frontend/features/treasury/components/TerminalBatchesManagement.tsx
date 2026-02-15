@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
@@ -10,10 +10,12 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { TerminalBatchForm } from "@/components/treasury/TerminalBatchForm"
-import { MonthlyInvoiceDialog } from "@/components/treasury/MonthlyInvoiceDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useTerminalBatches } from "@/features/treasury"
+
+// Lazy load feature components
+const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
+const MonthlyInvoiceDialog = lazy(() => import("./MonthlyInvoiceDialog"))
 
 interface TerminalBatchesManagementProps {
     showTitle?: boolean
@@ -173,26 +175,30 @@ export function TerminalBatchesManagement({
                 />
             </div>
 
-            <TerminalBatchDialog
-                open={openCreate}
-                onOpenChange={(open) => {
-                    setOpenCreate(open)
-                    if (!open) onExternalOpenBatchChange?.(false)
-                }}
-                onSuccess={() => {
-                    setOpenCreate(false)
-                    onExternalOpenBatchChange?.(false)
-                    refetch()
-                }}
-            />
+            <Suspense fallback={null}>
+                <TerminalBatchDialog
+                    open={openCreate}
+                    onOpenChange={(open: boolean) => {
+                        setOpenCreate(open)
+                        if (!open) onExternalOpenBatchChange?.(false)
+                    }}
+                    onSuccess={() => {
+                        setOpenCreate(false)
+                        onExternalOpenBatchChange?.(false)
+                        refetch()
+                    }}
+                />
+            </Suspense>
 
-            <MonthlyInvoiceDialog
-                open={openInvoice}
-                onOpenChange={(open) => {
-                    setOpenInvoice(open)
-                    if (!open) onExternalOpenInvoiceChange?.(false)
-                }}
-            />
+            <Suspense fallback={null}>
+                <MonthlyInvoiceDialog
+                    open={openInvoice}
+                    onOpenChange={(open: boolean) => {
+                        setOpenInvoice(open)
+                        if (!open) onExternalOpenInvoiceChange?.(false)
+                    }}
+                />
+            </Suspense>
         </div>
     )
 }

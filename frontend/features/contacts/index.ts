@@ -1,3 +1,5 @@
 export * from './types'
 export * from './api/contactsApi'
 export * from './hooks/useContacts'
+export * from './components/ContactsClientView'
+export * from './components/ContactModal'

@@ -1,9 +1,8 @@
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
-// Lazy load the heavy TreasuryAccountsView component
 const TreasuryAccountsView = lazy(() =>
-    import("@/components/treasury/TreasuryAccountsView").then(module => ({
+    import("@/features/treasury").then(module => ({
         default: module.TreasuryAccountsView
     }))
 )
