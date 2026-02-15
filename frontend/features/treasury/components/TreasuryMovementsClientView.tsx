@@ -302,3 +302,5 @@ export function TreasuryMovementsClientView() {
         </div>
     )
 }
+
+export default TreasuryMovementsClientView

@@ -39,7 +39,7 @@ interface CashMovementModalProps {
 // Maps to UI tabs, but backend expects INBOUND/OUTBOUND/TRANSFER
 type TabType = 'TRANSFER' | 'DEPOSIT' | 'WITHDRAWAL'
 
-export default function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovementModalProps) {
+export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovementModalProps) {
     const [tab, setTab] = useState<TabType>('TRANSFER')
     const [amount, setAmount] = useState("")
     const [fromId, setFromId] = useState<string>("")
@@ -394,3 +394,5 @@ export default function CashMovementModal({ open, onOpenChange, onSuccess }: Cas
         </BaseModal>
     )
 }
+
+export default CashMovementModal

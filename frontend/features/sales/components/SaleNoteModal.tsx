@@ -37,7 +37,7 @@ interface SaleNoteModalProps {
     initialType?: "NOTA_CREDITO" | "NOTA_DEBITO"
 }
 
-export default function SaleNoteModal({
+export function SaleNoteModal({
     open,
     onOpenChange,
     orderId,
@@ -319,3 +319,5 @@ export default function SaleNoteModal({
         </Dialog>
     )
 }
+
+export default SaleNoteModal

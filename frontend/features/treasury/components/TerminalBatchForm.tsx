@@ -24,7 +24,7 @@ interface TerminalBatchFormProps {
     onCancel: () => void
 }
 
-export default function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
+export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
     const [loading, setLoading] = useState(false)
     const [terminals, setTerminals] = useState<any[]>([])
 
@@ -421,3 +421,5 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
         </Dialog>
     )
 }
+
+export default TerminalBatchForm

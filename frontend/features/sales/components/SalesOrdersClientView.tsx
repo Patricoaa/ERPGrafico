@@ -128,3 +128,5 @@ export function SalesOrdersClientView() {
         </div>
     )
 }
+
+export default SalesOrdersClientView

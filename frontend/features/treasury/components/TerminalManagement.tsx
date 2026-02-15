@@ -474,3 +474,5 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
         </Dialog>
     )
 }
+
+export default TerminalManagement

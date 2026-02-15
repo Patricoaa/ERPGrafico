@@ -16,7 +16,7 @@ interface MonthlyInvoiceDialogProps {
     onOpenChange: (open: boolean) => void
 }
 
-export default function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialogProps) {
+export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialogProps) {
     const { dateString, year: serverYear, month: serverMonth } = useServerDate()
 
     const [loading, setLoading] = useState(false)
@@ -187,3 +187,5 @@ export default function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvo
         </Dialog>
     )
 }
+
+export default MonthlyInvoiceDialog

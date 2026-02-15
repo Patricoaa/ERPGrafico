@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Loader2, CheckCircle2, Info, GraduationCap } from "lucide-react"
 import api from "@/lib/api"
-import ReconciliationPanel from "@/components/treasury/ReconciliationPanel"
+import { ReconciliationPanel } from "@/features/treasury"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 

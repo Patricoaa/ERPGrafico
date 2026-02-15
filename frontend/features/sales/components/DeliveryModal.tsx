@@ -70,7 +70,7 @@ interface DeliveryModalProps {
     onSuccess?: () => void
 }
 
-export default function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
+export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
     const { dateString } = useServerDate()
     const [order, setOrder] = useState<SaleOrder | null>(null)
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -523,3 +523,5 @@ export default function DeliveryModal({ open, onOpenChange, orderId, onSuccess }
         </BaseModal>
     )
 }
+
+export default DeliveryModal

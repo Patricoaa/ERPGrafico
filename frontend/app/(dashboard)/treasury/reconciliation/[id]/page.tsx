@@ -28,7 +28,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
-import ReconciliationPanel from "@/components/treasury/ReconciliationPanel"
+import { ReconciliationPanel } from "@/features/treasury"
 
 interface BankStatementLine {
     id: number

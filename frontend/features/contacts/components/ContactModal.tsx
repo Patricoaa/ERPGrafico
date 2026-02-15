@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"

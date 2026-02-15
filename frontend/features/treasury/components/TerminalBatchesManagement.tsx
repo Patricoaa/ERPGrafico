@@ -218,3 +218,5 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
         </Dialog>
     )
 }
+
+export default TerminalBatchesManagement

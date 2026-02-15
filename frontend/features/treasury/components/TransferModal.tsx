@@ -250,3 +250,5 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
         </Dialog>
     )
 }
+
+export default TransferModal

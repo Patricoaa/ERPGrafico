@@ -306,4 +306,4 @@ export function PaymentDialog({
             </DialogContent>
         </Dialog>
     )
-}
+} export default PaymentDialog

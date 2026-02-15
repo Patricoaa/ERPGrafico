@@ -9,7 +9,7 @@ import { Upload, FileText, CheckCircle2, Clock, AlertCircle, BarChart3, Wand2, E
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
-import StatementImportDialog from "@/components/treasury/StatementImportDialog"
+import { StatementImportDialog } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"

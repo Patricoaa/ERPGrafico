@@ -1,6 +1,6 @@
 "use client"
 
-import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatchesManagement"
+import { TerminalBatchesManagement } from "@/features/treasury"
 
 export default function TerminalBatchesPage() {
     return (

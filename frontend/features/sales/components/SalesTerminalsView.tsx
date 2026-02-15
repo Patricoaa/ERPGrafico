@@ -2,8 +2,7 @@
 
 import React, { useState } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { TerminalManagement } from "@/components/treasury/TerminalManagement"
-import { TerminalBatchesManagement } from "@/components/treasury/TerminalBatchesManagement"
+import { TerminalManagement, TerminalBatchesManagement } from "@/features/treasury"
 import { Banknote, List, Receipt, Plus, Store } from "lucide-react"
 import POSSessionsPage from "@/app/(dashboard)/sales/sessions/page"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"

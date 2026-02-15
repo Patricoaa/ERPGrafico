@@ -48,7 +48,7 @@ interface SalesCheckoutWizardProps {
     onStateChange?: (state: any) => void
 }
 
-export default function SalesCheckoutWizard({
+export function SalesCheckoutWizard({
     open,
     onOpenChange,
     order,
@@ -584,3 +584,5 @@ export default function SalesCheckoutWizard({
         </BaseModal>
     )
 }
+
+export default SalesCheckoutWizard

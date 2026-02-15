@@ -86,7 +86,7 @@ interface ReconciliationPanelProps {
     onComplete: () => void
 }
 
-export default function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
+export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
     const [unreconciledLines, setUnreconciledLines] = useState<BankStatementLine[]>([])
     // Multi-selection state
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
@@ -1023,4 +1023,6 @@ export default function ReconciliationPanel({ statementId, treasuryAccountId, on
         </div>
     )
 }
+
+export default ReconciliationPanel
 
