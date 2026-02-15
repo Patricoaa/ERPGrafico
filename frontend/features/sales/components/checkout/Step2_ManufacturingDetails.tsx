@@ -8,7 +8,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import { AlertCircle, Paintbrush, Edit, CheckCircle2 } from "lucide-react"
-import { AdvancedManufacturingDialog } from "../../forms/AdvancedManufacturingDialog"
+import { AdvancedManufacturingDialog } from "../forms/AdvancedManufacturingDialog"
 
 interface Step2_ManufacturingDetailsProps {
     orderLines: any[]

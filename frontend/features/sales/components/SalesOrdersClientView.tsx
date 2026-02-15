@@ -7,7 +7,7 @@ import { SalesOrdersView } from "./SalesOrdersView"
 import { ShoppingCart } from "lucide-react"
 
 // Lazy load heavy components
-const SaleOrderForm = lazy(() => import("@/components/forms/SaleOrderForm"))
+const SaleOrderForm = lazy(() => import("@/features/sales/components/forms/SaleOrderForm"))
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 const DeliveryModal = lazy(() => import("./DeliveryModal"))

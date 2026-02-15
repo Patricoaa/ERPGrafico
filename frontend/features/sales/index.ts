@@ -7,3 +7,5 @@ export { default as SalesCheckoutWizard } from './components/SalesCheckoutWizard
 export { default as DeliveryModal } from './components/DeliveryModal'
 export { default as SaleNoteModal } from './components/SaleNoteModal'
 export { default as SalesTerminalsView } from './components/SalesTerminalsView'
+export { default as SaleOrderForm } from './components/forms/SaleOrderForm'
+export { AdvancedManufacturingDialog } from './components/forms/AdvancedManufacturingDialog'
