@@ -50,7 +50,7 @@ import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
 
 // 🚀 Lazy-loaded heavy components (modals only used when triggered)
 const SalesCheckoutWizard = dynamic(
-    () => import('@/components/sales/SalesCheckoutWizard').then(mod => ({ default: mod.SalesCheckoutWizard })),
+    () => import('@/features/sales/components/SalesCheckoutWizard'),
     { ssr: false, loading: () => <div className="p-4">Cargando...</div> }
 )
 

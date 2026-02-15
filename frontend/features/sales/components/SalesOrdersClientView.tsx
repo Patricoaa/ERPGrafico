@@ -34,7 +34,7 @@ export function SalesOrdersClientView() {
                         <SaleOrderForm
                             initialData={editingOrder}
                             open={isFormOpen && !!editingOrder}
-                            onOpenChange={(open) => {
+                            onOpenChange={(open: boolean) => {
                                 setIsFormOpen(open)
                                 if (!open) setEditingOrder(null)
                             }}
@@ -50,7 +50,7 @@ export function SalesOrdersClientView() {
                 <Suspense fallback={null}>
                     <TransactionViewModal
                         open={!!viewingTransaction}
-                        onOpenChange={(open) => !open && setViewingTransaction(null)}
+                        onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
                         type={viewingTransaction.type}
                         id={viewingTransaction.id}
                         view={viewingTransaction.view}
@@ -62,7 +62,7 @@ export function SalesOrdersClientView() {
                 <Suspense fallback={null}>
                     <SalesCheckoutWizard
                         open={!!payingOrder || !!checkoutData}
-                        onOpenChange={(open) => {
+                        onOpenChange={(open: boolean) => {
                             if (!open) {
                                 setPayingOrder(null)
                                 setCheckoutData(null)
@@ -117,7 +117,7 @@ export function SalesOrdersClientView() {
                 <Suspense fallback={null}>
                     <SaleNoteModal
                         open={!!addingNote}
-                        onOpenChange={(open) => !open && setAddingNote(null)}
+                        onOpenChange={(open: boolean) => !open && setAddingNote(null)}
                         orderId={addingNote.id}
                         orderNumber={addingNote.number}
                         invoiceId={addingNote.related_documents?.invoices?.[0]?.id}

@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ShoppingCart } from "lucide-react"
-import { SalesOrdersView } from "@/components/sales/SalesOrdersView"
+import { SalesOrdersView } from "@/features/sales"
 
 interface SalesOrdersModalProps {
     open: boolean

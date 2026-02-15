@@ -21,7 +21,7 @@ import { Step1_Items } from "@/components/billing/checkout/Step1_Items"
 import { Step2_Logistics } from "@/components/billing/checkout/Step2_Logistics"
 import { Step3_Registration } from "@/components/billing/checkout/Step3_Registration"
 import { Step4_Payment } from "@/components/billing/checkout/Step4_Payment"
-import { Step2_ManufacturingDetails } from "@/components/sales/checkout/Step2_ManufacturingDetails"
+import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/components/billing/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/components/billing/checkout/NoteItemsSummary"
 
