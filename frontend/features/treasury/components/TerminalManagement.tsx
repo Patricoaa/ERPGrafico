@@ -141,7 +141,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                                 {terminal.code}
                             </Badge>
                             {terminal.is_active ? (
-                                <Badge variant="default" className="text-[10px] bg-emerald-500 hover:bg-emerald-600">
+                                <Badge variant="default" className="text-[10px] bg-success hover:bg-success/90">
                                     Activo
                                 </Badge>
                             ) : (
@@ -168,9 +168,9 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <div className="flex flex-wrap gap-1.5">
                         {Object.entries(methodsByType).map(([type, count]) => (
                             <Badge key={type} variant="secondary" className="text-[10px] px-1.5 font-normal">
-                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-emerald-600" />}
-                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-blue-600" />}
-                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-purple-600" />}
+                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-success" />}
+                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-info" />}
+                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-indigo-500" />}
                                 {type} <span className="ml-1 text-muted-foreground">({count})</span>
                             </Badge>
                         ))}
@@ -184,7 +184,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <Button
                         variant={terminal.is_active ? "ghost" : "outline"}
                         size="sm"
-                        className={`h-7 text-xs ${terminal.is_active ? "text-muted-foreground hover:text-red-500" : ""}`}
+                        className={`h-7 text-xs ${terminal.is_active ? "text-muted-foreground hover:text-destructive" : ""}`}
                         onClick={onToggleActive}
                     >
                         {terminal.is_active ? <PowerOff className="h-3 w-3 mr-1" /> : <Power className="h-3 w-3 mr-1" />}
@@ -193,7 +193,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="h-7 text-xs text-destructive hover:text-destructive/80 hover:bg-destructive/5"
                         onClick={onDelete}
                     >
                         <Trash2 className="h-3 w-3" />
@@ -355,7 +355,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1100px] h-[90vh] flex flex-col p-0 overflow-hidden">
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
                     <DialogDescription>
@@ -404,7 +404,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                                 <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
                                                     {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
                                                     {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5" />}
+                                                    {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-indigo-500" />}
                                                     {getTypeLabel(type)}
                                                 </h4>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

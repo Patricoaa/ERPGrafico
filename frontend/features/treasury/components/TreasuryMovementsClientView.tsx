@@ -156,7 +156,7 @@ export function TreasuryMovementsClientView() {
             accessorKey: "payment_method",
             header: "Método",
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] h-5 font-mono uppercase bg-slate-50 dark:bg-slate-900">
+                <Badge variant="outline" className="text-[10px] h-5 font-mono uppercase bg-muted/30">
                     {row.original.payment_method_display}
                 </Badge>
             )
@@ -191,7 +191,7 @@ export function TreasuryMovementsClientView() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const colorClass = type === 'OUTBOUND' ? 'text-red-600' : 'text-emerald-600'
+                const colorClass = type === 'OUTBOUND' ? 'text-destructive' : 'text-success'
                 return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
             },
         },
@@ -202,13 +202,13 @@ export function TreasuryMovementsClientView() {
                 const session = row.original.pos_session
                 if (session) {
                     return (
-                        <Badge variant="outline" className="font-mono text-[10px] w-fit bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-400">
+                        <Badge variant="outline" className="font-mono text-[10px] w-fit bg-info/5 border-info/20 text-info">
                             POS #{session}
                         </Badge>
                     )
                 }
                 return (
-                    <Badge variant="secondary" className="text-[10px] w-fit bg-slate-100 dark:bg-slate-800 text-slate-500">
+                    <Badge variant="secondary" className="text-[10px] w-fit bg-muted/50 text-muted-foreground">
                         SISTEMA
                     </Badge>
                 )

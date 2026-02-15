@@ -135,7 +135,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             cell: ({ row }) => {
                 const balance = parseFloat(row.getValue("current_balance") || "0")
                 return (
-                    <div className={`font-bold ${balance < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                    <div className={`font-bold ${balance < 0 ? "text-destructive" : "text-success"}`}>
                         {new Intl.NumberFormat("es-CL", {
                             style: "currency",
                             currency: row.original.currency
@@ -392,7 +392,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1100px] h-[85vh] flex flex-col p-0 overflow-hidden">
+            <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta"}</DialogTitle>
                     <DialogDescription>
@@ -441,11 +441,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
 
                                     {requiresBank(type) && (
                                         <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                            <Label className="text-info font-semibold flex items-center gap-1">
                                                 <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
                                             </Label>
                                             <Select value={bank || ""} onValueChange={setBank}>
-                                                <SelectTrigger className="border-blue-200 bg-blue-50/30">
+                                                <SelectTrigger className="border-info/20 bg-info/5">
                                                     <SelectValue placeholder="Seleccione banco..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -459,14 +459,14 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
 
                                     {requiresBank(type) && (
                                         <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className="text-blue-600 font-semibold flex items-center gap-1">
+                                            <Label className="text-info font-semibold flex items-center gap-1">
                                                 <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
                                             </Label>
                                             <Input
                                                 value={accountNumber}
                                                 onChange={e => setAccountNumber(e.target.value)}
                                                 placeholder="Ej: 0123456789"
-                                                className="border-blue-200 bg-blue-50/30"
+                                                className="border-info/20 bg-info/5"
                                             />
                                         </div>
                                     )}
@@ -487,19 +487,19 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 border rounded-xl bg-orange-50/30 space-y-3 border-orange-100">
+                                    <div className="p-4 border rounded-xl bg-warning/5 space-y-3 border-warning/10">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
                                             <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
                                         </div>
                                         {isPhysical && (
-                                            <div className="space-y-3 pt-2 border-t border-orange-100 animate-in fade-in duration-300">
+                                            <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
                                                 <div className="grid gap-1.5">
-                                                    <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Ubicación</Label>
+                                                    <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Ubicación</Label>
                                                     <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
                                                 </div>
                                                 <div className="grid gap-1.5">
-                                                    <Label className="text-[11px] uppercase tracking-wider text-orange-600 font-bold">Custodio</Label>
+                                                    <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Custodio</Label>
                                                     <UserSelector value={custodian} onChange={setCustodian} />
                                                 </div>
                                             </div>

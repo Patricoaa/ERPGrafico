@@ -54,7 +54,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     <FormItem>
                                         <div className="flex items-center gap-2 mb-2">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <FormLabel className="!mb-0">Días de Entrega Estándar</FormLabel>
+                                            <FormLabel className="mb-0">Días de Entrega Estándar</FormLabel>
                                         </div>
                                         <FormControl>
                                             <div className="relative">

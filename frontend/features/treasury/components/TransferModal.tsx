@@ -117,10 +117,10 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
         /* Using simplified Dialog-like structure with Card/Overlay if Radix Dialog is not directly available 
            but based on other files, Dialog should work. Assuming it works. */
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-                <DialogHeader className="p-6 bg-slate-900 text-white">
+            <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
+                <DialogHeader className="p-6 bg-primary text-primary-foreground">
                     <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-                        <ArrowLeftRight className="h-5 w-5 text-amber-400" />
+                        <ArrowLeftRight className="h-5 w-5 opacity-80" />
                         Traspaso entre Cuentas
                     </DialogTitle>
                 </DialogHeader>
@@ -213,9 +213,9 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                         </div>
                         <div className="flex items-end pb-1">
                             {sourceAccount && destAccount && amount && (
-                                <div className="p-2 rounded-lg bg-slate-50 border w-full text-center">
+                                <div className="p-2 rounded-lg bg-muted/30 border w-full text-center">
                                     <p className="text-[10px] text-muted-foreground uppercase leading-none">Nueva Estimación</p>
-                                    <p className="text-xs font-bold text-amber-600">
+                                    <p className="text-xs font-bold text-warning">
                                         {formatCurrency(sourceAccount.current_balance - parseFloat(amount))}
                                     </p>
                                 </div>
@@ -234,14 +234,14 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t">
+                <DialogFooter className="p-6 bg-muted/20 border-t">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={submitting || !amount || !fromAccount || !toAccount}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 shadow-lg shadow-amber-500/20"
+                        className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold px-8 shadow-lg shadow-warning/20"
                     >
                         {submitting ? "Registrando..." : "Confirmar Traspaso"}
                     </Button>
