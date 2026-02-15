@@ -20,8 +20,13 @@ export const treasuryApi = {
      * Fetch all POS terminals
      */
     getTerminals: async (): Promise<Terminal[]> => {
-        const { data } = await api.get<{ results: Terminal[] }>('/treasury/pos-terminals/')
-        return data.results || data
+        const response = await api.get('/treasury/pos-terminals/')
+        return response.data.results || response.data
+    },
+
+    getTerminalBatches: async (): Promise<any[]> => {
+        const response = await api.get('/treasury/terminal-batches/')
+        return response.data.results || response.data
     },
 
     /**
@@ -88,5 +93,27 @@ export const treasuryApi = {
     getPaymentMethods: async (): Promise<PaymentMethod[]> => {
         const { data } = await api.get<{ results: PaymentMethod[] }>('/treasury/payment-methods/')
         return data.results || data
+    },
+
+    // ========== Payments ==========
+
+    /**
+     * Create new payment (supports file upload)
+     */
+    createPayment: async (payload: FormData): Promise<any> => {
+        const { data } = await api.post('/treasury/payments/', payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+        return data
+    },
+
+    /**
+     * Fetch all banks
+     */
+    getBanks: async (): Promise<any[]> => {
+        const { data } = await api.get<any[]>('/treasury/banks/')
+        return data
     },
 }

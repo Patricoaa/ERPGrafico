@@ -85,6 +85,23 @@ export type PaymentMethodType =
     | 'OTHER'
     | 'CARD_TERMINAL'
 
+// Payment types
+export interface PaymentCreatePayload {
+    amount: number
+    payment_type: 'INBOUND' | 'OUTBOUND'
+    reference: string
+    sale_order?: string
+    invoice?: string
+    payment_method: number
+    transaction_number?: string
+    is_pending_registration?: boolean
+    treasury_account_id?: number
+    dte_type?: string
+    document_reference?: string
+    document_date?: string
+    document_attachment?: File | null
+}
+
 // API Error types
 export interface ApiErrorResponse {
     error?: string

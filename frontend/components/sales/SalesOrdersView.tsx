@@ -9,7 +9,6 @@ import {
     LayoutDashboard, Monitor, ArrowRight, Calendar,
     ShoppingCart, Package, FileBadge
 } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
@@ -21,30 +20,9 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { translateSalesChannel, formatPlainDate } from "@/lib/utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useSalesOrders, useSalesNotes, type SaleOrder } from "@/features/sales"
 
-interface SaleOrder {
-    id: number
-    number: string
-    customer_name: string
-    date: string
-    status: string
-    total: string
-    total_paid: number
-    pending_amount: number
-    customer: number
-    channel_display: string
-    delivery_status: 'PENDING' | 'PARTIAL' | 'DELIVERED'
-    has_pending_work_orders?: boolean
-    related_documents?: {
-        invoices: any[]
-        notes: any[]
-        payments: any[]
-        deliveries: any[]
-    }
-    lines?: any[]
-    pos_session_display?: string
-    pos_session?: number
-}
+
 
 interface SalesOrdersViewProps {
     posSessionId?: number | null
@@ -54,54 +32,16 @@ interface SalesOrdersViewProps {
 
 export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
-    const [orders, setOrders] = useState<SaleOrder[]>([])
-    const [notes, setNotes] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
-    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
-    const fetchOrders = async () => {
-        try {
-            const response = await api.get('/sales/orders/')
-            setOrders(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch sales orders", error)
-            toast.error("Error al cargar las notas de venta.")
-        } finally {
-            setLoading(false)
+    const { orders } = useSalesOrders({
+        filters: {
+            pos_session: posSessionId || undefined
         }
-    }
-
-    const fetchNotes = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/billing/invoices/', {
-                params: {
-                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                    sale_order__isnull: false
-                }
-            })
-            const results = response.data.results || response.data
-            const salesNotes = results.filter((inv: any) =>
-                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.sale_order
-            )
-            setNotes(salesNotes)
-        } catch (error) {
-            console.error("Failed to fetch notes", error)
-            toast.error("Error al cargar las notas de crédito/débito.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        if (viewMode === 'orders') {
-            fetchOrders()
-        } else {
-            fetchNotes()
-        }
-    }, [viewMode])
+    })
+    const { data: notes, isLoading: loadingNotes } = useSalesNotes()
 
     const filteredOrders = orders.filter(order => {
         if (!dateRange || !dateRange.from) return true
@@ -111,7 +51,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
         return isWithinInterval(orderDate, { start, end })
     })
 
-    const filteredNotes = notes.filter(note => {
+    const filteredNotes = (notes || []).filter(note => {
         if (!dateRange || !dateRange.from) return true
         const noteDate = parseISO(note.date)
         const start = startOfDay(dateRange.from)
@@ -217,7 +157,7 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
 
     return (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {loading ? (
+            {loadingNotes ? (
                 <div className="flex items-center justify-center flex-1 py-12">
                     <div className="text-muted-foreground">Cargando datos...</div>
                 </div>
@@ -451,11 +391,6 @@ export function SalesOrdersView({ posSessionId, onActionSuccess, hideStatusInCar
                     }
                 }}
                 onActionSuccess={() => {
-                    if (viewMode === 'orders') {
-                        fetchOrders()
-                    } else {
-                        fetchNotes()
-                    }
                     if (onActionSuccess) onActionSuccess()
                 }}
                 posSessionId={posSessionId}

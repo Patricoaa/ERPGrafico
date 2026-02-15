@@ -5,46 +5,21 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "@/components/forms/ProductForm"
-import { Pencil, Archive, ChevronRight, ChevronDown, Plus } from "lucide-react"
+import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
-// import { formatCurrency } from "@/lib/currency" // Removing custom formatter in favor of DataCell
 import { PricingUtils } from "@/lib/pricing"
-import { ArchivingRestrictionsDialog, type Restriction } from "./ArchivingRestrictionsDialog"
+import { ArchivingRestrictionsDialog } from "./ArchivingRestrictionsDialog"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { AlertTriangle } from "lucide-react"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { Product, Restriction } from "@/features/inventory/types"
 
-interface Product {
-    id: number
-    code: string
-    internal_code: string
-    name: string
-    product_type: string
-    category_id: number
-    category_name: string
-    sale_price: string
-    sale_price_gross: string
-    current_stock: number
-    qty_reserved?: number
-    qty_available?: number
-    total_stock: number
-    manufacturable_quantity?: number | null
-    uom_name: string
-    purchase_uom_name: string
-    track_inventory: boolean
-    can_be_sold: boolean
-    can_be_purchased: boolean
-    active: boolean
-    is_dynamic_pricing?: boolean
-    has_variants?: boolean
-    variants?: Product[]
-}
+
 
 interface ProductListProps {
     externalOpen?: boolean
@@ -52,8 +27,9 @@ interface ProductListProps {
 }
 
 export function ProductList({ externalOpen, onExternalOpenChange }: ProductListProps) {
-    const [products, setProducts] = useState<Product[]>([])
-    const [loading, setLoading] = useState(true)
+    const { products, refetch, updateProduct } = useProducts({
+        filters: { active: 'all', parent_template__isnull: true }
+    })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -76,23 +52,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         router.push(`${pathname}?${params.toString()}`)
     }
 
-    const fetchProducts = async () => {
-        setLoading(true)
-        try {
-            const params = {
-                active: 'all',
-                parent_template__isnull: true
-            }
-            const response = await api.get('/inventory/products/', { params })
-            const data = response.data.results || response.data
-            setProducts(data)
-        } catch (error) {
-            console.error("Failed to fetch products", error)
-            toast.error("Error al cargar los productos.")
-        } finally {
-            setLoading(false)
-        }
-    }
+
 
     const toggleExpand = (templateId: number) => {
         setExpandedTemplates(prev => {
@@ -135,7 +95,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         }
 
         try {
-            await api.patch(`/inventory/products/${targetProduct.id}/`, { active: !targetProduct.active })
+            await updateProduct({ id: targetProduct.id, payload: { active: !targetProduct.active } })
             toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurar'} correctamente.`, {
                 description: targetProduct.product_type === 'SUBSCRIPTION'
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
@@ -143,7 +103,6 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             })
             setIsRestrictionsDialogOpen(false)
             setIsConfirmModalOpen(false)
-            fetchProducts()
         } catch (error: any) {
             console.error(`Error ${action} product:`, error)
 
@@ -161,9 +120,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         }
     }
 
-    useEffect(() => {
-        fetchProducts()
-    }, [])
+    // Initial fetch handled by Suspense
 
     useEffect(() => {
         if (externalOpen) {
@@ -343,44 +300,39 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     return (
         <div className="space-y-4">
             <div className="">
-                {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Cargando productos...</div>
-                    </div>
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={displayProducts}
-                        globalFilterFields={["name", "code", "internal_code"]}
-                        searchPlaceholder="Buscar por nombre, SKU o código..."
-                        initialColumnVisibility={{ active: false }}
-                        facetedFilters={[
-                            {
-                                column: "category_name",
-                                title: "Categoría",
-                            },
-                            {
-                                column: "product_type",
-                                title: "Tipo",
-                                options: [
-                                    { label: "Almacenable", value: "STORABLE" },
-                                    { label: "Consumible", value: "CONSUMABLE" },
-                                    { label: "Servicio", value: "SERVICE" },
-                                    { label: "Fabricable", value: "MANUFACTURABLE" },
-                                    { label: "Suscripción", value: "SUBSCRIPTION" },
-                                ],
-                            },
-                            {
-                                column: "active",
-                                title: "Estado",
-                                options: [
-                                    { label: "Activos", value: "true" },
-                                    { label: "Archivados", value: "false" },
-                                ],
-                            }
-                        ]}
-                        useAdvancedFilter={true}
-                    />)}
+                <DataTable
+                    columns={columns}
+                    data={displayProducts}
+                    globalFilterFields={["name", "code", "internal_code"]}
+                    searchPlaceholder="Buscar por nombre, SKU o código..."
+                    initialColumnVisibility={{ active: false }}
+                    facetedFilters={[
+                        {
+                            column: "category_name",
+                            title: "Categoría",
+                        },
+                        {
+                            column: "product_type",
+                            title: "Tipo",
+                            options: [
+                                { label: "Almacenable", value: "STORABLE" },
+                                { label: "Consumible", value: "CONSUMABLE" },
+                                { label: "Servicio", value: "SERVICE" },
+                                { label: "Fabricable", value: "MANUFACTURABLE" },
+                                { label: "Suscripción", value: "SUBSCRIPTION" },
+                            ],
+                        },
+                        {
+                            column: "active",
+                            title: "Estado",
+                            options: [
+                                { label: "Activos", value: "true" },
+                                { label: "Archivados", value: "false" },
+                            ],
+                        }
+                    ]}
+                    useAdvancedFilter={true}
+                />
             </div>
 
             <ProductForm
@@ -394,7 +346,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     }
                 }}
                 initialData={editingProduct}
-                onSuccess={fetchProducts}
+                onSuccess={refetch}
             />
 
             <ArchivingRestrictionsDialog

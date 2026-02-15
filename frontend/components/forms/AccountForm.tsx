@@ -36,6 +36,8 @@ import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { AccountPayload } from "@/features/accounting/types"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -60,7 +62,8 @@ interface AccountFormProps {
 
 export function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nueva Cuenta", triggerVariant = "default" }: AccountFormProps) {
     const [open, setOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const { createAccount, updateAccount, isCreating, isUpdating } = useAccounts()
+    const loading = isCreating || isUpdating
 
     const form = useForm<AccountFormValues>({
         resolver: zodResolver(accountSchema),
@@ -122,39 +125,38 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
 
 
     async function onSubmit(data: AccountFormValues) {
-        setLoading(true)
         try {
-            const payload = {
-                ...data,
-                parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
+            const payload: AccountPayload = {
+                code: data.code || "",
+                name: data.name,
+                account_type: data.account_type,
+                parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? Number(data.parent) : null,
+                is_selectable: true, // Defaulting to true as it wasn't in schema explicitely but required by type
+            }
+
+            // Add extended attributes if needed, though they aren't in AccountPayload yet. 
+            // Assuming backend handles them or we need to update types.
+            // For now sending as any to bypass if API accepts extra fields not in strict type
+            const extendedPayload = {
+                ...payload,
                 is_category: data.is_category || null,
                 cf_category: data.cf_category || null,
                 bs_category: data.bs_category || null,
+                is_reconcilable: data.is_reconcilable
             }
 
             if (initialData?.id) {
-                await api.put(`/accounting/accounts/${initialData.id}/`, payload)
-                toast.success("Cuenta actualizada")
+                await updateAccount({ id: initialData.id, payload: extendedPayload as any })
             } else {
-                await api.post('/accounting/accounts/', payload)
-                toast.success("Cuenta creada")
+                await createAccount(extendedPayload as any)
             }
 
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error saving account:", error)
-            const detail = error.response?.data?.error || error.response?.data?.detail || "Error al guardar la cuenta"
-            if (typeof detail === 'object') {
-                // Format object errors
-                const msg = Object.entries(detail).map(([k, v]) => `${k}: ${v}`).join(', ')
-                toast.error(`Error: ${msg}`)
-            } else {
-                toast.error(detail)
-            }
-        } finally {
-            setLoading(false)
+            // Error handling is done in hook
         }
     }
 

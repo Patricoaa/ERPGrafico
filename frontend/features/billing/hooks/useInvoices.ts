@@ -1,0 +1,41 @@
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { billingApi } from '../api/billingApi'
+import { toast } from 'sonner'
+import type { InvoiceFilters } from '../types'
+
+export const INVOICES_QUERY_KEY = ['invoices']
+
+interface UseInvoicesProps {
+    filters?: InvoiceFilters
+    initialData?: any // For server-side prefetching if needed
+}
+
+export function useInvoices({ filters }: UseInvoicesProps = {}) {
+    const queryClient = useQueryClient()
+
+    const { data: invoices, refetch } = useSuspenseQuery({
+        queryKey: [...INVOICES_QUERY_KEY, filters],
+        queryFn: () => billingApi.getInvoices(filters),
+    })
+
+    const annulMutation = useMutation({
+        mutationFn: async ({ id, force }: { id: number, force: boolean }) => {
+            return billingApi.annulInvoice(id, { force })
+        },
+        onSuccess: () => {
+            toast.success('Documento anulado correctamente')
+            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
+        },
+        onError: (error: any) => {
+            // Let component handle specific errors
+            console.error("Error annulling invoice", error)
+        }
+    })
+
+    return {
+        invoices,
+        refetch,
+        annulInvoice: annulMutation.mutateAsync,
+        isAnnulling: annulMutation.isPending
+    }
+}

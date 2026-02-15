@@ -14,45 +14,16 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { useContacts, type Contact } from "@/features/contacts"
 
-interface Contact {
-    id: number
-    code: string | null
-    display_id: string
-    name: string
-    tax_id: string | null
-    contact_type: string
-    email: string | null
-    phone: string | null
-    address: string | null
-    is_default_customer: boolean
-    is_default_vendor: boolean
-}
+
 
 export function ContactsClientView() {
-    const [contacts, setContacts] = useState<Contact[]>([])
-    const [loading, setLoading] = useState(true)
+    const { contacts, deleteContact } = useContacts()
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [contactToDelete, setContactToDelete] = useState<any>(null)
-
-    const fetchContacts = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get("/contacts/")
-            setContacts(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching contacts", error)
-            toast.error("No se pudieron cargar los contactos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchContacts()
-    }, [])
 
     const handleDelete = async (contact: any, isConfirmed = false) => {
         if (!contact) return
@@ -62,12 +33,10 @@ export function ContactsClientView() {
             return
         }
         try {
-            await api.delete(`/contacts/${contact.id}/`)
-            toast.success("El contacto ha sido eliminado exitosamente")
+            await deleteContact(contact.id)
             setIsDeleteModalOpen(false)
-            fetchContacts()
         } catch (error) {
-            toast.error("No se pudo eliminar el contacto. Puede que tenga documentos asociados.")
+            // Error handling is done in the hook
         }
     }
 
@@ -190,31 +159,25 @@ export function ContactsClientView() {
                 }
             />
 
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando contactos...
-                </div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={contacts}
-                    globalFilterFields={["name", "tax_id", "code"]}
-                    searchPlaceholder="Buscar por nombre, RUT o código..."
-                    facetedFilters={[
-                        {
-                            column: "contact_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Cliente", value: "CUSTOMER" },
-                                { label: "Proveedor", value: "SUPPLIER" },
-                                { label: "Ambos", value: "BOTH" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={contacts}
+                globalFilterFields={["name", "tax_id", "code"]}
+                searchPlaceholder="Buscar por nombre, RUT o código..."
+                facetedFilters={[
+                    {
+                        column: "contact_type",
+                        title: "Tipo",
+                        options: [
+                            { label: "Cliente", value: "CUSTOMER" },
+                            { label: "Proveedor", value: "SUPPLIER" },
+                            { label: "Ambos", value: "BOTH" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+            />
 
             <ContactModal
                 open={modalOpen}
@@ -223,7 +186,7 @@ export function ContactsClientView() {
                 onSuccess={() => {
                     setModalOpen(false)
                     setSelectedContact(null)
-                    fetchContacts()
+                    // Automatic invalidation handles refetch
                 }}
             />
 

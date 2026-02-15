@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
+import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,7 +46,7 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
-    const { accounts, deleteAccount, refetch } = useTreasuryAccounts()
+    const { accounts, deleteAccount, refetch, createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
@@ -288,13 +288,25 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     refetch()
                     setDialogOpen(false)
                 }}
+                createAccount={createAccount}
+                updateAccount={updateAccount}
+                isSubmitting={isCreating || isUpdating}
             />
         </div>
     )
 }
 
-function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boolean, onOpenChange: (o: boolean) => void, account: TreasuryAccount | null, onSuccess: () => void }) {
-    const [loading, setLoading] = useState(false)
+interface AccountDialogProps {
+    open: boolean
+    onOpenChange: (o: boolean) => void
+    account: TreasuryAccount | null
+    onSuccess: () => void
+    createAccount: (payload: any) => Promise<TreasuryAccount>
+    updateAccount: (params: { id: number, payload: any }) => Promise<TreasuryAccount>
+    isSubmitting: boolean
+}
+
+function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, updateAccount, isSubmitting }: AccountDialogProps) {
     const [name, setName] = useState("")
     const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
     const [currency, setCurrency] = useState("CLP")
@@ -309,8 +321,8 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
     useEffect(() => {
         const fetchBanks = async () => {
             try {
-                const res = await api.get('/treasury/banks/')
-                setBanks(res.data)
+                const data = await treasuryApi.getBanks()
+                setBanks(data)
             } catch (err) { }
         }
         if (open) fetchBanks()
@@ -348,7 +360,6 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
         try {
             const allowsCash = type === 'CASH'
             const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(type)
@@ -369,17 +380,13 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
                 account_number: requiresBank(type) ? accountNumber : null
             }
             if (account) {
-                await api.patch(`/treasury/accounts/${account.id}/`, payload)
-                toast.success("Cuenta actualizada")
+                await updateAccount({ id: account.id, payload })
             } else {
-                await api.post('/treasury/accounts/', payload)
-                toast.success("Cuenta creada")
+                await createAccount(payload)
             }
             onSuccess()
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Error al guardar")
-        } finally {
-            setLoading(false)
+            // Error handled by hook
         }
     }
 
@@ -523,8 +530,8 @@ function AccountDialog({ open, onOpenChange, account, onSuccess }: { open: boole
 
                 <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="account-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" form="account-form" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {account ? "Guardar Cambios" : "Crear Cuenta"}
                     </Button>
                 </DialogFooter>

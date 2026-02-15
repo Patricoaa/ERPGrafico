@@ -7,7 +7,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical } from "lucide-react"
-import api from "@/lib/api"
+import { treasuryApi } from "@/features/treasury/api/treasuryApi"
+import { useInvoices } from "@/features/billing/hooks/useInvoices"
+import { Invoice } from "@/features/billing/types"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/components/sales/SaleNoteModal"
@@ -17,41 +19,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PageHeader } from "@/components/shared/PageHeader"
 
 export function SalesInvoicesClientView() {
-    const [invoices, setInvoices] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const { invoices, refetch, annulInvoice } = useInvoices()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
-    const [notingInvoice, setNotingInvoice] = useState<any | null>(null)
-    const [payingInv, setPayingInv] = useState<any | null>(null)
+    const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
+    const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
-
-    const fetchInvoices = async () => {
-        try {
-            const res = await api.get('/billing/invoices/')
-            // Filter only sales
-            const results = res.data.results || res.data
-            setInvoices(results.filter((i: any) =>
-                i.sale_order ||
-                ['FACTURA', 'BOLETA'].includes(i.dte_type)
-            ))
-        } catch (error) {
-            toast.error("Error al cargar facturas")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchInvoices()
-    }, [])
 
     const handleAnnul = async (id: number, force: boolean = false) => {
         if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force })
-            toast.success("Documento anulado correctamente.")
-            fetchInvoices()
+            await annulInvoice({ id, force })
         } catch (error: any) {
             console.error("Error annulling invoice:", error)
+            // Error handling for associated payments
             const errorMessage = error.response?.data?.error || ""
             if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
                 if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
@@ -83,17 +63,17 @@ export function SalesInvoicesClientView() {
             if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
 
-            await api.post('/treasury/payments/', formData)
+            await treasuryApi.createPayment(formData)
             toast.success("Operación registrada correctamente")
             setPayingInv(null)
-            fetchInvoices()
+            refetch()
         } catch (error: any) {
             console.error("Error registering payment:", error)
             toast.error(error.response?.data?.error || "Error al registrar la operación")
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Invoice>[] = [
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
@@ -103,14 +83,14 @@ export function SalesInvoicesClientView() {
         { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
         { accessorKey: "partner_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" /> },
         {
-            accessorKey: "origin",
+            id: "origin",
             header: "Origen",
             cell: ({ row }) => {
                 const inv = row.original
                 return (
                     <div className="flex flex-col gap-1">
                         <button
-                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order })}
+                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order ?? 0 })}
                             className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                         >
                             <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota de Venta</span>
@@ -251,32 +231,27 @@ export function SalesInvoicesClientView() {
                 icon={Receipt}
             />
 
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando facturas...
-                </div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={invoices}
-                    filterColumn="partner_name"
-                    searchPlaceholder="Buscar por cliente..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={invoices}
+                filterColumn="partner_name"
+                searchPlaceholder="Buscar por cliente..."
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Borrador", value: "DRAFT" },
+                            { label: "Publicado", value: "POSTED" },
+                            { label: "Pagado", value: "PAID" },
+                            { label: "Anulado", value: "CANCELLED" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+            />
+
 
             {viewingTransaction && (
                 <TransactionViewModal
@@ -295,7 +270,7 @@ export function SalesInvoicesClientView() {
                     orderId={notingInvoice.sale_order || undefined}
                     orderNumber={notingInvoice.sale_order_number || undefined}
                     invoiceId={notingInvoice.id}
-                    onSuccess={fetchInvoices}
+                    onSuccess={refetch}
                 />
             )}
 
@@ -309,7 +284,7 @@ export function SalesInvoicesClientView() {
                     pendingAmount={payingInv.pending_amount ?? parseFloat(payingInv.total)}
                     hideDteFields={true}
                     isRefund={payingInv.dte_type === 'NOTA_CREDITO'}
-                    existingInvoice={{ dte_type: payingInv.dte_type, number: payingInv.number, document_attachment: null }}
+                    existingInvoice={{ dte_type: payingInv.dte_type || '', number: payingInv.number || '', document_attachment: null }}
                 />
             )}
 
@@ -319,7 +294,7 @@ export function SalesInvoicesClientView() {
                 type="sale"
                 open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
                 onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
-                onActionSuccess={fetchInvoices}
+                onActionSuccess={refetch}
             />
         </div>
     )

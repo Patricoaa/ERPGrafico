@@ -20,10 +20,6 @@ export function SalesOrdersClientView() {
     const [completingFolio, setCompletingFolio] = useState<any | null>(null)
     const [addingNote, setAddingNote] = useState<any | null>(null)
     const [checkoutData, setCheckoutData] = useState<any | null>(null)
-    const [refreshKey, setRefreshKey] = useState(0)
-
-    const triggerRefresh = () => setRefreshKey(prev => prev + 1)
-
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <PageHeader
@@ -38,12 +34,12 @@ export function SalesOrdersClientView() {
                             setIsFormOpen(open)
                             if (!open) setEditingOrder(null)
                         }}
-                        onSuccess={triggerRefresh}
+                        onSuccess={() => setIsFormOpen(false)}
                     />
                 )}
             </PageHeader>
 
-            <SalesOrdersView key={refreshKey} onActionSuccess={triggerRefresh} />
+            <SalesOrdersView />
 
             {viewingTransaction && (
                 <TransactionViewModal
@@ -78,7 +74,10 @@ export function SalesOrdersClientView() {
                     initialCustomerId={payingOrder?.customer?.toString()}
                     initialCustomerName={payingOrder?.customer_name}
                     channel={checkoutData ? "SALE" : "POS"}
-                    onComplete={triggerRefresh}
+                    onComplete={() => {
+                        setPayingOrder(null)
+                        setCheckoutData(null)
+                    }}
                 />
             )}
 
@@ -87,7 +86,7 @@ export function SalesOrdersClientView() {
                     open={!!dispatchingOrder}
                     onOpenChange={(open) => !open && setDispatchingOrder(null)}
                     orderId={dispatchingOrder}
-                    onSuccess={triggerRefresh}
+                    onSuccess={() => setDispatchingOrder(null)}
                 />
             )}
 
@@ -97,7 +96,7 @@ export function SalesOrdersClientView() {
                     onOpenChange={(open) => !open && setCompletingFolio(null)}
                     invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
                     invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
-                    onSuccess={triggerRefresh}
+                    onSuccess={() => setCompletingFolio(null)}
                 />
             )}
 
@@ -108,7 +107,7 @@ export function SalesOrdersClientView() {
                     orderId={addingNote.id}
                     orderNumber={addingNote.number}
                     invoiceId={addingNote.related_documents?.invoices?.[0]?.id}
-                    onSuccess={triggerRefresh}
+                    onSuccess={() => setAddingNote(null)}
                 />
             )}
         </div>

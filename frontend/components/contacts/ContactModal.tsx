@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
+import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -62,9 +63,11 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
-    const [insightsData, setInsightsData] = useState<any>(null)
-    const [loadingInsights, setLoadingInsights] = useState(false)
+
     const [activeTab, setActiveTab] = useState("profile")
+
+    const { createContact, updateContact } = useContactMutations()
+    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
@@ -113,28 +116,18 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
         }
     }
 
-    const fetchInsights = async (id: number) => {
-        setLoadingInsights(true)
-        try {
-            const res = await api.get(`/contacts/${id}/insights/`)
-            setInsightsData(res.data)
-        } catch (error) {
-            console.error("Error fetching insights", error)
-        } finally {
-            setLoadingInsights(false)
-        }
-    }
+
 
     useEffect(() => {
         if (!open) {
             setActiveTab("profile")
-            setInsightsData(null)
+
             return
         }
         fetchDefaults()
 
         if (contact) {
-            fetchInsights(contact.id)
+            // Insights fetched via hook
             form.reset({
                 name: contact.name,
                 tax_id: contact.tax_id || "",
@@ -164,17 +157,14 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
             if (contact) {
-                await api.patch(`/contacts/${contact.id}/`, values)
-                toast.success("Contacto actualizado exitosamente")
+                await updateContact({ id: contact.id, payload: values })
             } else {
-                await api.post("/contacts/", values)
-                toast.success("Contacto creado exitosamente")
+                await createContact(values as any)
             }
             onSuccess()
             onOpenChange(false)
         } catch (error) {
-            console.error(error)
-            toast.error("No se pudo guardar el contacto")
+            // Error handled by hook
         }
     }
 
@@ -251,7 +241,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                 Perfil
                             </TabsTrigger>
 
-                            {insightsData?.sales?.count > 0 && (
+                            {insightsData?.sales?.count && insightsData.sales.count > 0 && (
                                 <TabsTrigger
                                     value="sales"
                                     className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
@@ -266,7 +256,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                 </TabsTrigger>
                             )}
 
-                            {insightsData?.purchases?.count > 0 && (
+                            {insightsData?.purchases?.count && insightsData.purchases.count > 0 && (
                                 <TabsTrigger
                                     value="purchases"
                                     className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
@@ -281,7 +271,7 @@ export function ContactModal({ open, onOpenChange, contact, onSuccess }: Contact
                                 </TabsTrigger>
                             )}
 
-                            {insightsData?.work_orders?.count > 0 && (
+                            {insightsData?.work_orders?.count && insightsData.work_orders.count > 0 && (
                                 <TabsTrigger
                                     value="work_orders"
                                     className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"

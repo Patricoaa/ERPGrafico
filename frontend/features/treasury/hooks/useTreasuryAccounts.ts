@@ -8,7 +8,11 @@ export const ACCOUNTS_QUERY_KEY = ['treasury-accounts']
 interface UseTreasuryAccountsReturn {
     accounts: TreasuryAccount[]
     refetch: () => Promise<any>
+    createAccount: (payload: any) => Promise<TreasuryAccount>
+    updateAccount: (params: { id: number, payload: any }) => Promise<TreasuryAccount>
     deleteAccount: (id: number) => Promise<void>
+    isCreating: boolean
+    isUpdating: boolean
 }
 
 /**
@@ -20,6 +24,32 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     const { data: accounts, refetch } = useSuspenseQuery({
         queryKey: ACCOUNTS_QUERY_KEY,
         queryFn: treasuryApi.getAccounts,
+    })
+
+    const createMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            return treasuryApi.createAccount(payload)
+        },
+        onSuccess: () => {
+            toast.success('Cuenta creada')
+            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Error al crear la cuenta')
+        }
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: number, payload: any }) => {
+            return treasuryApi.updateAccount(id, payload)
+        },
+        onSuccess: () => {
+            toast.success('Cuenta actualizada')
+            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Error al actualizar la cuenta')
+        }
     })
 
     const deleteMutation = useMutation({
@@ -45,6 +75,10 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     return {
         accounts,
         refetch,
+        createAccount: createMutation.mutateAsync,
+        updateAccount: updateMutation.mutateAsync,
         deleteAccount,
+        isCreating: createMutation.isPending,
+        isUpdating: updateMutation.isPending
     }
 }

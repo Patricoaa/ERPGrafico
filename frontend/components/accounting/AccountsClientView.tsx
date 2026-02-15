@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -8,60 +8,31 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Search, Plus, Book, Trash2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { AccountForm } from "@/components/forms/AccountForm"
 import { DataManagement } from "@/components/shared/DataManagement"
 import { LedgerModal } from "@/components/shared/LedgerModal"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { Account } from "@/features/accounting/types"
 
-interface Account {
-    id: number
-    code: string
-    name: string
-    account_type: string
-    account_type_display: string
-    parent: number | null
-    debit_total: string
-    credit_total: string
-    balance: string
-    is_selectable: boolean
-}
+
 
 const typeOrder = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']
 
 export function AccountsClientView() {
-    const [accounts, setAccounts] = useState<Account[]>([])
-    const [loading, setLoading] = useState(true)
-
-    const fetchAccounts = async () => {
-        try {
-            const response = await api.get('/accounting/accounts/')
-            const data = response.data.results || response.data
-            setAccounts(data)
-        } catch (error) {
-            console.error("Failed to fetch accounts", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { accounts, refetch, deleteAccount } = useAccounts()
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar esta cuenta?")) return
-
         try {
-            await api.delete(`/accounting/accounts/${id}/`)
-            toast.success("Cuenta eliminada correctamente")
-            fetchAccounts()
-        } catch (error: any) {
-            const errorMsg = error.response?.data?.error || "Error al eliminar la cuenta"
-            toast.error(errorMsg)
+            await deleteAccount(id)
+        } catch (error) {
+            console.error("Failed to delete account", error)
         }
     }
 
-    useEffect(() => {
-        fetchAccounts()
-    }, [])
+
 
     const columns: ColumnDef<Account>[] = [
         {
@@ -131,7 +102,7 @@ export function AccountsClientView() {
                         <AccountForm
                             accounts={accounts}
                             initialData={account as any}
-                            onSuccess={fetchAccounts}
+                            onSuccess={refetch}
                             triggerText={<Pencil className="h-4 w-4" />}
                         />
                         <Button
@@ -155,12 +126,12 @@ export function AccountsClientView() {
                 title="Plan de Cuentas"
                 description="Administra la estructura de cuentas contables y su jerarquía."
                 titleActions={
-                    <AccountForm accounts={accounts} onSuccess={fetchAccounts} triggerVariant="circular" />
+                    <AccountForm accounts={accounts} onSuccess={refetch} triggerVariant="circular" />
                 }
             >
                 <DataManagement
                     endpoint="/accounting/accounts/"
-                    onImportSuccess={fetchAccounts}
+                    onImportSuccess={refetch}
                     exportFilename="plan-de-cuentas.csv"
                     templateData={[
                         { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }

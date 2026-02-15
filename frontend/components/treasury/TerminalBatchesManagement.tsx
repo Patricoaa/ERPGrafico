@@ -13,6 +13,7 @@ import { es } from "date-fns/locale"
 import { TerminalBatchForm } from "@/components/treasury/TerminalBatchForm"
 import { MonthlyInvoiceDialog } from "@/components/treasury/MonthlyInvoiceDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { useTerminalBatches } from "@/features/treasury"
 
 interface TerminalBatchesManagementProps {
     showTitle?: boolean
@@ -29,26 +30,9 @@ export function TerminalBatchesManagement({
     externalOpenInvoice,
     onExternalOpenInvoiceChange
 }: TerminalBatchesManagementProps) {
-    const [batches, setBatches] = useState([])
-    const [loading, setLoading] = useState(true)
+    const { batches, refetch } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
-
-    const fetchBatches = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/treasury/terminal-batches/')
-            setBatches(res.data.results || res.data)
-        } catch (error) {
-            toast.error("Error al cargar lotes")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchBatches()
-    }, [])
 
     useEffect(() => {
         if (externalOpenBatch) {
@@ -198,7 +182,7 @@ export function TerminalBatchesManagement({
                 onSuccess={() => {
                     setOpenCreate(false)
                     onExternalOpenBatchChange?.(false)
-                    fetchBatches()
+                    refetch()
                 }}
             />
 
