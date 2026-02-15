@@ -21,7 +21,7 @@ export default function ProductionSettingsPage() {
             <PageHeader
                 title="Configuración de Producción"
                 description="Configuración del módulo de producción."
-                icon={Settings}
+
             />
 
             <Card>

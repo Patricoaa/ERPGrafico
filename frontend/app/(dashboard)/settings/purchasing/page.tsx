@@ -101,7 +101,7 @@ export default function PurchasingSettingsPage() {
             <PageHeader
                 title="Configuración de Compras"
                 description="Gestione las cuentas de gastos para diferentes tipos de compras."
-                icon={ShoppingCart}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

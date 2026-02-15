@@ -128,7 +128,7 @@ export default function TaxSettingsPage() {
             <PageHeader
                 title="Configuración de Impuestos"
                 description="Gestione las tasas impositivas y el mapeo de cuentas para el cumplimiento tributario (F29)."
-                icon={FileText}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

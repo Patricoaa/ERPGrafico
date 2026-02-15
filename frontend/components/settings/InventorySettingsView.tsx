@@ -121,7 +121,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             <PageHeader
                 title="Configuración de Inventario"
                 description="Gestione las cuentas de stock, ajustes y costo de ventas."
-                icon={Package}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

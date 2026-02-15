@@ -108,7 +108,7 @@ export default function TreasurySettingsPage() {
             <PageHeader
                 title="Configuración de Tesorería"
                 description="Gestione las cuentas de ajuste para conciliación bancaria."
-                icon={Banknote}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

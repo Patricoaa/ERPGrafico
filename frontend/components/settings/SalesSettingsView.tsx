@@ -132,7 +132,7 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
             <PageHeader
                 title="Configuración de Ventas"
                 description="Gestione las cuentas de ingresos, control de caja POS y terminales de pago."
-                icon={ShoppingBag}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

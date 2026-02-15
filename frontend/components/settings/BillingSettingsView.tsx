@@ -125,7 +125,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             <PageHeader
                 title="Configuración de Facturación"
                 description="Gestione las cuentas de clientes, proveedores y el cumplimiento tributario."
-                icon={FileText}
+
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (
