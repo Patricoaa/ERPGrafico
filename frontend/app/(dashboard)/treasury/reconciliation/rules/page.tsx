@@ -12,9 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import {
     Select,
@@ -58,6 +56,7 @@ export default function RulesPage() {
     const [accounts, setAccounts] = useState<Account[]>([])
     const [loading, setLoading] = useState(true)
     const [openDialog, setOpenDialog] = useState(false)
+    const [openSimulation, setOpenSimulation] = useState(false)
     const [editingRule, setEditingRule] = useState<Partial<ReconciliationRule>>({})
 
     useEffect(() => {
@@ -246,150 +245,142 @@ export default function RulesPage() {
                 </CardContent>
             </Card>
 
-            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>{editingRule.id ? 'Editar Regla' : 'Nueva Regla'}</DialogTitle>
-                        <DialogDescription>
-                            Define criterios de matching automático
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Nombre</Label>
-                                <Input
-                                    value={editingRule.name}
-                                    onChange={e => setEditingRule({ ...editingRule, name: e.target.value })}
-                                    className={FORM_STYLES.input}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Cuenta</Label>
-                                <Select
-                                    value={editingRule.treasury_account?.id?.toString() || "global"}
-                                    onValueChange={val => setEditingRule({
-                                        ...editingRule,
-                                        treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as any
-                                    })}
-                                >
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Global (Todas)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="global">Global (Todas)</SelectItem>
-                                        {accounts.map(acc => (
-                                            <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Descripción</Label>
-                            <Textarea
-                                value={editingRule.description}
-                                onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
-                                className={cn("min-h-[80px]", FORM_STYLES.input, "h-auto py-2")}
-                            />
-                        </div>
-
-                        <div className={cn("flex items-center justify-between", FORM_STYLES.card)}>
-                            <div className="space-y-0.5">
-                                <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
-                                <p className="text-xs text-muted-foreground">
-                                    Reconciliar automáticamente si el score es alto
-                                </p>
-                            </div>
-                            <Switch
-                                checked={editingRule.auto_confirm}
-                                onCheckedChange={checked => setEditingRule({ ...editingRule, auto_confirm: checked })}
-                            />
-                        </div>
-
-                        {/* Configuración de Criterios Simplificada */}
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
-                                    <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
-                                        <Switch
-                                            checked={editingRule.match_config?.criteria?.includes(criteria)}
-                                            onCheckedChange={checked => {
-                                                const current = editingRule.match_config?.criteria || []
-                                                const createNew = checked
-                                                    ? [...current, criteria]
-                                                    : current.filter((c: string) => c !== criteria)
-                                                setEditingRule({
-                                                    ...editingRule,
-                                                    match_config: { ...editingRule.match_config, criteria: createNew }
-                                                })
-                                            }}
-                                        />
-                                        <span className="text-sm font-medium">
-                                            {criteria === 'amount_exact' && 'Monto Exacto'}
-                                            {criteria === 'transaction_id' && 'ID Transacción'}
-                                            {criteria === 'date_range' && 'Rango Fecha'}
-                                            {criteria === 'reference' && 'Referencia'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
-                            <div className="flex items-center gap-4">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    step="5"
-                                    value={editingRule.match_config?.min_score || 50}
-                                    onChange={e => setEditingRule({
-                                        ...editingRule,
-                                        match_config: { ...editingRule.match_config, min_score: parseInt(e.target.value) }
-                                    })}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                                />
-                                <span className="font-medium text-sm w-12 text-right">
-                                    {editingRule.match_config?.min_score || 50}%
-                                </span>
-                            </div>
-                        </div>
-
-                    </div>
-
-
-
-                    <div className="flex justify-end pt-2 pb-4">
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="secondary" className="mr-2">
-                                    <Wand2 className="mr-2 h-4 w-4" />
-                                    Probar Regla
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                                <DialogHeader>
-                                    <DialogTitle>Simulación de Regla</DialogTitle>
-                                    <DialogDescription>
-                                        Probando regla contra las últimas 50 líneas no reconciliadas.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <SimulationResults rule={editingRule} />
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-
-                    <DialogFooter>
+            <BaseModal
+                open={openDialog}
+                onOpenChange={setOpenDialog}
+                size="lg"
+                title={editingRule.id ? 'Editar Regla' : 'Nueva Regla'}
+                description="Define criterios de matching automático"
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
                         <Button onClick={handleSaveRule}>Guardar Regla</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div >
+                    </div>
+                }
+            >
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Nombre</Label>
+                            <Input
+                                value={editingRule.name}
+                                onChange={e => setEditingRule({ ...editingRule, name: e.target.value })}
+                                className={FORM_STYLES.input}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Cuenta</Label>
+                            <Select
+                                value={editingRule.treasury_account?.id?.toString() || "global"}
+                                onValueChange={val => setEditingRule({
+                                    ...editingRule,
+                                    treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as any
+                                })}
+                            >
+                                <SelectTrigger className={FORM_STYLES.input}>
+                                    <SelectValue placeholder="Global (Todas)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="global">Global (Todas)</SelectItem>
+                                    {accounts.map(acc => (
+                                        <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Descripción</Label>
+                        <Textarea
+                            value={editingRule.description}
+                            onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
+                            className={cn("min-h-[80px]", FORM_STYLES.input, "h-auto py-2")}
+                        />
+                    </div>
+
+                    <div className={cn("flex items-center justify-between", FORM_STYLES.card)}>
+                        <div className="space-y-0.5">
+                            <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Reconciliar automáticamente si el score es alto
+                            </p>
+                        </div>
+                        <Switch
+                            checked={editingRule.auto_confirm}
+                            onCheckedChange={checked => setEditingRule({ ...editingRule, auto_confirm: checked })}
+                        />
+                    </div>
+
+                    {/* Configuración de Criterios Simplificada */}
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
+                                <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
+                                    <Switch
+                                        checked={editingRule.match_config?.criteria?.includes(criteria)}
+                                        onCheckedChange={checked => {
+                                            const current = editingRule.match_config?.criteria || []
+                                            const createNew = checked
+                                                ? [...current, criteria]
+                                                : current.filter((c: string) => c !== criteria)
+                                            setEditingRule({
+                                                ...editingRule,
+                                                match_config: { ...editingRule.match_config, criteria: createNew }
+                                            })
+                                        }}
+                                    />
+                                    <span className="text-sm font-medium">
+                                        {criteria === 'amount_exact' && 'Monto Exacto'}
+                                        {criteria === 'transaction_id' && 'ID Transacción'}
+                                        {criteria === 'date_range' && 'Rango Fecha'}
+                                        {criteria === 'reference' && 'Referencia'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                step="5"
+                                value={editingRule.match_config?.min_score || 50}
+                                onChange={e => setEditingRule({
+                                    ...editingRule,
+                                    match_config: { ...editingRule.match_config, min_score: parseInt(e.target.value) }
+                                })}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                            />
+                            <span className="font-medium text-sm w-12 text-right">
+                                {editingRule.match_config?.min_score || 50}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-start">
+                        <Button variant="secondary" onClick={() => setOpenSimulation(true)}>
+                            <Wand2 className="mr-2 h-4 w-4" />
+                            Probar Regla
+                        </Button>
+                    </div>
+                </div>
+            </BaseModal>
+
+            <BaseModal
+                open={openSimulation}
+                onOpenChange={setOpenSimulation}
+                size="lg"
+                title="Simulación de Regla"
+                description="Probando regla contra las últimas 50 líneas no reconciliadas."
+            >
+                <SimulationResults rule={editingRule} />
+            </BaseModal>
+        </div>
     )
 }

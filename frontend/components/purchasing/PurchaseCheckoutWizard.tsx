@@ -1,13 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
@@ -353,6 +346,7 @@ export function PurchaseCheckoutWizard({
             open={open}
             onOpenChange={onOpenChange}
             size="full"
+            variant="wizard"
             hideScrollArea
             className="h-[90vh]"
             contentClassName="p-0"

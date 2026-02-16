@@ -5,14 +5,9 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+
+// ... imports remain the same
 import {
     Form,
     FormControl,
@@ -154,9 +149,16 @@ interface CategoryFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    triggerText?: React.ReactNode
 }
 
-export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenChange }: CategoryFormProps) {
+export function CategoryForm({
+    onSuccess,
+    initialData,
+    open: openProp,
+    onOpenChange,
+    triggerText = "Nueva Categoría"
+}: CategoryFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -238,29 +240,48 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
             if (onSuccess) onSuccess(response.data)
         } catch (error: any) {
             console.error("Error saving category:", error)
-            alert(error.response?.data?.detail || "Error al guardar la categoría")
         } finally {
             setLoading(false)
         }
     }
 
+    const Trigger = () => {
+        if (openProp !== undefined) return null;
+        if (initialData) return null;
+
+        return (
+            <Button onClick={() => setOpen(true)}>
+                {triggerText}
+            </Button>
+        )
+    }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            {openProp === undefined && !initialData && (
-                <DialogTrigger asChild>
-                    <Button>Nueva Categoría</Button>
-                </DialogTrigger>
-            )}
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Categoría" : "Crear Categoría"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los datos de la categoría." : "Ingrese los datos de la nueva categoría y sus cuentas contables asociadas."}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Trigger />
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="sm"
+                title={initialData ? "Editar Categoría" : "Crear Categoría"}
+                description={initialData ? "Modifique los datos de la categoría." : "Ingrese los datos de la nueva categoría y sus cuentas contables asociadas."}
+                footer={
+                    <div className="flex justify-end space-x-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="category-form" disabled={loading}>
+                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -382,22 +403,10 @@ export function CategoryForm({ onSuccess, initialData, open: openProp, onOpenCha
                                 </FormItem>
                             )}
                         />
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }
 

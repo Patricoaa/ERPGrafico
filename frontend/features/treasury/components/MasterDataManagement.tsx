@@ -8,14 +8,7 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -193,70 +186,70 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] h-[80vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>{bank ? "Editar Banco" : "Nuevo Banco"}</DialogTitle>
-                    <DialogDescription>
-                        {bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Side: Form */}
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                        <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="bank-name">Nombre</Label>
-                                    <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" required />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="bank-code">Código (Alias)</Label>
-                                    <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="bank-swift">Código SWIFT/BIC</Label>
-                                    <Input
-                                        id="bank-swift"
-                                        value={swiftCode}
-                                        onChange={e => setSwiftCode(e.target.value)}
-                                        placeholder="Ej: BCHICLRM"
-                                        maxLength={11}
-                                    />
-                                    <p className="text-xs text-muted-foreground">Código internacional para transferencias</p>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* Right Side: Activity Sidebar */}
-                    <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                        {bank ? (
-                            <ActivitySidebar
-                                entityType="bank"
-                                entityId={bank.id}
-                                className="h-full border-none"
-                                title="Historial"
-                            />
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                                <History className="h-10 w-10 mb-3 opacity-20" />
-                                <p className="text-sm">El historial estará disponible una vez creado el banco.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={bank ? "Editar Banco" : "Nuevo Banco"}
+            description={bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
+            hideScrollArea={true}
+            className="h-[80vh]"
+            footer={
+                <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="bank-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {bank ? "Actualizar" : "Crear"}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="flex-1 flex overflow-hidden h-full">
+                {/* Left Side: Form */}
+                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
+                    <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="bank-name">Nombre</Label>
+                                <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="bank-code">Código (Alias)</Label>
+                                <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="bank-swift">Código SWIFT/BIC</Label>
+                                <Input
+                                    id="bank-swift"
+                                    value={swiftCode}
+                                    onChange={e => setSwiftCode(e.target.value)}
+                                    placeholder="Ej: BCHICLRM"
+                                    maxLength={11}
+                                />
+                                <p className="text-xs text-muted-foreground">Código internacional para transferencias</p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {/* Right Side: Activity Sidebar */}
+                <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                    {bank ? (
+                        <ActivitySidebar
+                            entityType="bank"
+                            entityId={bank.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <History className="h-10 w-10 mb-3 opacity-20" />
+                            <p className="text-sm">El historial estará disponible una vez creado el banco.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }
 
@@ -532,181 +525,181 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1000px] h-[85vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>{method ? "Editar Método de Pago" : "Nuevo Método de Pago"}</DialogTitle>
-                    <DialogDescription>
-                        {method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Side: Form */}
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                        <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid gap-4">
-                                <div className="grid gap-2">
-                                    <Label>Nombre</Label>
-                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Visa Santander Debito" required />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label>Tipo</Label>
-                                        <Select value={type} onValueChange={handleTypeChange}>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="CASH">Efectivo</SelectItem>
-                                                <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
-                                                <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                                <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                                <SelectItem value="TRANSFER">Transferencia</SelectItem>
-                                                <SelectItem value="CHECK">Cheque</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Cuenta</Label>
-                                        <Select value={accountId || ""} onValueChange={setAccountId}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {accounts.map(acc => (
-                                                    <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => {
-                                            if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-                                                toast.error("Tarjetas propias son solo para compras")
-                                                return
-                                            }
-                                            setAllowSales(!!v)
-                                        }} />
-                                        <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir para ventas</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => {
-                                            if (type === 'CARD_TERMINAL') {
-                                                toast.error("Terminales de cobro son solo para ventas")
-                                                return
-                                            }
-                                            setAllowPurchases(!!v)
-                                        }} />
-                                        <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir para compras</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1 hidden">
-                                        <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
-                                        <Label htmlFor="req-ref" className="text-sm cursor-pointer">¿Requiere N° Transacción?</Label>
-                                    </div>
-                                </div>
-                            </div>
-                            {type === 'CARD_TERMINAL' && (
-                                <div className="mt-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="flex items-center gap-2 text-primary font-bold">
-                                        <CreditCard className="h-4 w-4" /> Configuración de Recaudación
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label className="text-xs">Proveedor (Contacto)</Label>
-                                        <Select value={cardProviderId || ""} onValueChange={setCardProviderId}>
-                                            <SelectTrigger className="bg-white">
-                                                <SelectValue placeholder="Seleccionar contacto del proveedor..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {cardProviders.map(prov => (
-                                                    <SelectItem key={prov.id} value={prov.id.toString()}>{prov.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-[10px] text-muted-foreground text-center">
-                                            Entidad que procesa los pagos (ej: Transbank, Mercado Pago).
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label className="text-xs">Cuenta Por Cobrar Terminal</Label>
-                                        <AccountSelector
-                                            value={terminalReceivableAccount}
-                                            onChange={(val) => setTerminalReceivableAccount(val)}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
-                                            placeholder="Seleccione cuenta transitoria..."
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Cuenta transitoria donde se acumulan las ventas hasta que el proveedor liquida.
-                                            (Ej: 1-1-004 Por Cobrar Transbank)
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label className="text-xs">Cuenta Gasto Comisión</Label>
-                                        <AccountSelector
-                                            value={commissionExpenseAccount}
-                                            onChange={(val) => setCommissionExpenseAccount(val)}
-                                            accountType="EXPENSE"
-                                            placeholder="Seleccione cuenta de gasto..."
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Cuenta de gasto donde se registrarán las comisiones.
-                                            (Ej: 5-1-003 Comisiones Transbank)
-                                        </p>
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label className="text-xs">Producto de Servicio (Comisión)</Label>
-                                        <ProductSelector
-                                            value={commissionProductId}
-                                            onChange={(val) => setCommissionProductId(val)}
-                                            placeholder="Seleccione servicio de comisión..."
-                                            productType="SERVICE"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Servicio utilizado para facturar las comisiones en la factura mensual.
-                                        </p>
-                                    </div>
-
-                                    <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-primary/10 pt-2 mt-2">
-                                        * Al ser un terminal, los pagos no se reflejarán inmediatamente en el saldo bancario,
-                                        sino como cuentas por cobrar al proveedor hasta su liquidación.
-                                    </p>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-
-                    {/* Right Side: Activity Sidebar */}
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                        {method ? (
-                            <ActivitySidebar
-                                entityType="paymentmethod"
-                                entityId={method.id}
-                                className="h-full border-none"
-                                title="Historial"
-                            />
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                                <History className="h-10 w-10 mb-3 opacity-20" />
-                                <p className="text-sm">El historial estará disponible una vez creado el método.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={method ? "Editar Método de Pago" : "Nuevo Método de Pago"}
+            description={method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
+            hideScrollArea={true}
+            className="h-[85vh]"
+            footer={
+                <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="method-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {method ? "Actualizar" : "Crear"}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="flex-1 flex overflow-hidden h-full">
+                {/* Left Side: Form */}
+                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
+                    <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label>Nombre</Label>
+                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Visa Santander Debito" required />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label>Tipo</Label>
+                                    <Select value={type} onValueChange={handleTypeChange}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="CASH">Efectivo</SelectItem>
+                                            <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
+                                            <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                            <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                                            <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                                            <SelectItem value="CHECK">Cheque</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Cuenta</Label>
+                                    <Select value={accountId || ""} onValueChange={setAccountId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {accounts.map(acc => (
+                                                <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => {
+                                        if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
+                                            toast.error("Tarjetas propias son solo para compras")
+                                            return
+                                        }
+                                        setAllowSales(!!v)
+                                    }} />
+                                    <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir para ventas</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => {
+                                        if (type === 'CARD_TERMINAL') {
+                                            toast.error("Terminales de cobro son solo para ventas")
+                                            return
+                                        }
+                                        setAllowPurchases(!!v)
+                                    }} />
+                                    <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir para compras</Label>
+                                </div>
+                                <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1 hidden">
+                                    <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
+                                    <Label htmlFor="req-ref" className="text-sm cursor-pointer">¿Requiere N° Transacción?</Label>
+                                </div>
+                            </div>
+                        </div>
+                        {type === 'CARD_TERMINAL' && (
+                            <div className="mt-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex items-center gap-2 text-primary font-bold">
+                                    <CreditCard className="h-4 w-4" /> Configuración de Recaudación
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-xs">Proveedor (Contacto)</Label>
+                                    <Select value={cardProviderId || ""} onValueChange={setCardProviderId}>
+                                        <SelectTrigger className="bg-white">
+                                            <SelectValue placeholder="Seleccionar contacto del proveedor..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {cardProviders.map(prov => (
+                                                <SelectItem key={prov.id} value={prov.id.toString()}>{prov.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-[10px] text-muted-foreground text-center">
+                                        Entidad que procesa los pagos (ej: Transbank, Mercado Pago).
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label className="text-xs">Cuenta Por Cobrar Terminal</Label>
+                                    <AccountSelector
+                                        value={terminalReceivableAccount}
+                                        onChange={(val) => setTerminalReceivableAccount(val)}
+                                        accountType="ASSET"
+                                        isReconcilable={true}
+                                        placeholder="Seleccione cuenta transitoria..."
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Cuenta transitoria donde se acumulan las ventas hasta que el proveedor liquida.
+                                        (Ej: 1-1-004 Por Cobrar Transbank)
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label className="text-xs">Cuenta Gasto Comisión</Label>
+                                    <AccountSelector
+                                        value={commissionExpenseAccount}
+                                        onChange={(val) => setCommissionExpenseAccount(val)}
+                                        accountType="EXPENSE"
+                                        placeholder="Seleccione cuenta de gasto..."
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Cuenta de gasto donde se registrarán las comisiones.
+                                        (Ej: 5-1-003 Comisiones Transbank)
+                                    </p>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label className="text-xs">Producto de Servicio (Comisión)</Label>
+                                    <ProductSelector
+                                        value={commissionProductId}
+                                        onChange={(val) => setCommissionProductId(val)}
+                                        placeholder="Seleccione servicio de comisión..."
+                                        productType="SERVICE"
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Servicio utilizado para facturar las comisiones en la factura mensual.
+                                    </p>
+                                </div>
+
+                                <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-primary/10 pt-2 mt-2">
+                                    * Al ser un terminal, los pagos no se reflejarán inmediatamente en el saldo bancario,
+                                    sino como cuentas por cobrar al proveedor hasta su liquidación.
+                                </p>
+                            </div>
+                        )}
+                    </form>
+                </div>
+
+                {/* Right Side: Activity Sidebar */}
+                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                    {method ? (
+                        <ActivitySidebar
+                            entityType="paymentmethod"
+                            entityId={method.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <History className="h-10 w-10 mb-3 opacity-20" />
+                            <p className="text-sm">El historial estará disponible una vez creado el método.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }

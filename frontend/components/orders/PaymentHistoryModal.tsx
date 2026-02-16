@@ -1,11 +1,6 @@
 "use client"
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Table,
     TableBody,
@@ -44,15 +39,18 @@ export function PaymentHistoryModal({
     const payments = order.serialized_payments || order.related_documents?.payments || []
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl overflow-y-auto">
-                <DialogHeader className="border-b pb-4">
-                    <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                        <Landmark className="h-6 w-6 text-primary" />
-                        Historial de Pagos y Referencias - {order.number ? ((order.dte_type === 'NOTA_CREDITO' ? 'NC-' : order.dte_type === 'NOTA_DEBITO' ? 'ND-' : '') + order.number) : 'Borrador'}
-                    </DialogTitle>
-                </DialogHeader>
-
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={
+                <div className="flex items-center gap-2 text-xl font-bold">
+                    <Landmark className="h-6 w-6 text-primary" />
+                    Historial de Pagos y Referencias - {order.number ? ((order.dte_type === 'NOTA_CREDITO' ? 'NC-' : order.dte_type === 'NOTA_DEBITO' ? 'ND-' : '') + order.number) : 'Borrador'}
+                </div>
+            }
+        >
+            <div className="flex flex-col">
                 {payments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed mt-4">
                         <Landmark className="h-16 w-16 mb-4 opacity-10" />
@@ -120,7 +118,7 @@ export function PaymentHistoryModal({
                         {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(p.amount as any), 0))}
                     </span>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal>
     )
 }

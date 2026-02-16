@@ -6,14 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import { Plus } from "lucide-react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+
+// ... imports remain mostly the same, removing Dialog specific ones
 import {
     Form,
     FormControl,
@@ -58,10 +53,23 @@ interface AccountFormProps {
     initialData?: any // Use any for initialData to avoid strict prop widening issues
     triggerText?: React.ReactNode
     triggerVariant?: "default" | "circular"
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function AccountForm({ onSuccess, accounts = [], initialData, triggerText = "Nueva Cuenta", triggerVariant = "default" }: AccountFormProps) {
-    const [open, setOpen] = useState(false)
+export function AccountForm({
+    onSuccess,
+    accounts = [],
+    initialData,
+    triggerText = "Nueva Cuenta",
+    triggerVariant = "default",
+    open: openProp,
+    onOpenChange
+}: AccountFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false)
+    const open = openProp !== undefined ? openProp : internalOpen
+    const setOpen = onOpenChange || setInternalOpen
+
     const { createAccount, updateAccount, isCreating, isUpdating } = useAccounts()
     const loading = isCreating || isUpdating
 
@@ -134,9 +142,6 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                 is_selectable: true, // Defaulting to true as it wasn't in schema explicitely but required by type
             }
 
-            // Add extended attributes if needed, though they aren't in AccountPayload yet. 
-            // Assuming backend handles them or we need to update types.
-            // For now sending as any to bypass if API accepts extra fields not in strict type
             const extendedPayload = {
                 ...payload,
                 is_category: data.is_category || null,
@@ -156,32 +161,49 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
             if (onSuccess) onSuccess()
         } catch (error) {
             console.error("Error saving account:", error)
-            // Error handling is done in hook
         }
     }
 
+    const Trigger = () => {
+        if (openProp !== undefined) return null; // Controlled mode might not need internal trigger
+
+        return triggerVariant === "circular" ? (
+            <Button size="icon" className="rounded-full h-8 w-8" title="Crear Cuenta Contable" onClick={() => setOpen(true)}>
+                <Plus className="h-4 w-4" />
+            </Button>
+        ) : (
+            <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"} onClick={() => setOpen(true)}>
+                {triggerText}
+            </Button>
+        )
+    }
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {triggerVariant === "circular" ? (
-                    <Button size="icon" className="rounded-full h-8 w-8" title="Crear Cuenta Contable">
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button variant={initialData ? "ghost" : "default"} size={initialData ? "sm" : "default"}>
-                        {triggerText}
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Cuenta" : "Crear Cuenta Contable"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los detalles de la cuenta contable." : "Ingrese los datos de la nueva cuenta del plan de cuentas."}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Trigger />
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="sm"
+                title={initialData ? "Editar Cuenta" : "Crear Cuenta Contable"}
+                description={initialData ? "Modifique los detalles de la cuenta contable." : "Ingrese los datos de la nueva cuenta del plan de cuentas."}
+                footer={
+                    <div className="flex justify-end space-x-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="account-form" disabled={loading}>
+                            {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <FormField
                             control={form.control}
                             name="code"
@@ -219,7 +241,7 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Tipo</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger className={FORM_STYLES.input}>
                                                 <SelectValue placeholder="Seleccione tipo" />
@@ -371,22 +393,9 @@ export function AccountForm({ onSuccess, accounts = [], initialData, triggerText
                                 </FormItem>
                             )}
                         />
-
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }

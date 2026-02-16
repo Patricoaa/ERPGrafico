@@ -12,14 +12,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Select,
     SelectContent,
@@ -391,152 +384,152 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>{account ? "Editar Cuenta" : "Nueva Cuenta"}</DialogTitle>
-                    <DialogDescription>
-                        {account ? "Modifique los detalles de la cuenta y revise su historial." : "Complete la información para registrar una nueva cuenta."}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                        <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div className="grid gap-2">
-                                        <Label>Nombre de la Cuenta</Label>
-                                        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label>Tipo</Label>
-                                            <Select value={type} onValueChange={(v: any) => setType(v)}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
-                                                    <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                                    <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                                    <SelectItem value="CHECKBOOK">Chequera</SelectItem>
-                                                    <SelectItem value="CASH">Efectivo</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label>Moneda</Label>
-                                            <Select value={currency} onValueChange={setCurrency}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                                    <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className="text-info font-semibold flex items-center gap-1">
-                                                <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
-                                            </Label>
-                                            <Select value={bank || ""} onValueChange={setBank}>
-                                                <SelectTrigger className="border-info/20 bg-info/5">
-                                                    <SelectValue placeholder="Seleccione banco..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {banks.map((b: any) => (
-                                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-
-                                    {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className="text-info font-semibold flex items-center gap-1">
-                                                <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
-                                            </Label>
-                                            <Input
-                                                value={accountNumber}
-                                                onChange={e => setAccountNumber(e.target.value)}
-                                                placeholder="Ej: 0123456789"
-                                                className="border-info/20 bg-info/5"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className="grid gap-2">
-                                        <Label>Cuenta Contable</Label>
-                                        <AccountSelector
-                                            value={accountingAccount}
-                                            onChange={setAccountingAccount}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
-                                            placeholder="Seleccione cuenta..."
-                                        />
-                                        <p className="text-[10px] text-muted-foreground italic">
-                                            Vínculo con el plan de cuentas.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="p-4 border rounded-xl bg-warning/5 space-y-3 border-warning/10">
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
-                                            <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
-                                        </div>
-                                        {isPhysical && (
-                                            <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
-                                                <div className="grid gap-1.5">
-                                                    <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Ubicación</Label>
-                                                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
-                                                </div>
-                                                <div className="grid gap-1.5">
-                                                    <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Custodio</Label>
-                                                    <UserSelector value={custodian} onChange={setCustodian} />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                        {account ? (
-                            <ActivitySidebar
-                                entityType="treasuryaccount"
-                                entityId={account.id}
-                                className="h-full border-none"
-                                title="Historial de Cambios"
-                            />
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                                <History className="h-10 w-10 mb-3 opacity-20" />
-                                <p className="text-sm">El historial estará disponible una vez creada la cuenta.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={account ? "Editar Cuenta" : "Nueva Cuenta"}
+            description={account ? "Modifique los detalles de la cuenta y revise su historial." : "Complete la información para registrar una nueva cuenta."}
+            hideScrollArea={true}
+            className="h-[85vh]"
+            footer={
+                <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="account-form" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {account ? "Guardar Cambios" : "Crear Cuenta"}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="flex-1 flex overflow-hidden h-full">
+                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
+                    <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label>Nombre de la Cuenta</Label>
+                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label>Tipo</Label>
+                                        <Select value={type} onValueChange={(v: any) => setType(v)}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
+                                                <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
+                                                <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
+                                                <SelectItem value="CHECKBOOK">Chequera</SelectItem>
+                                                <SelectItem value="CASH">Efectivo</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Moneda</Label>
+                                        <Select value={currency} onValueChange={setCurrency}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="CLP">Pesos (CLP)</SelectItem>
+                                                <SelectItem value="USD">Dólar (USD)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                {requiresBank(type) && (
+                                    <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                        <Label className="text-info font-semibold flex items-center gap-1">
+                                            <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
+                                        </Label>
+                                        <Select value={bank || ""} onValueChange={setBank}>
+                                            <SelectTrigger className="border-info/20 bg-info/5">
+                                                <SelectValue placeholder="Seleccione banco..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {banks.map((b: any) => (
+                                                    <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                {requiresBank(type) && (
+                                    <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
+                                        <Label className="text-info font-semibold flex items-center gap-1">
+                                            <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
+                                        </Label>
+                                        <Input
+                                            value={accountNumber}
+                                            onChange={e => setAccountNumber(e.target.value)}
+                                            placeholder="Ej: 0123456789"
+                                            className="border-info/20 bg-info/5"
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="grid gap-2">
+                                    <Label>Cuenta Contable</Label>
+                                    <AccountSelector
+                                        value={accountingAccount}
+                                        onChange={setAccountingAccount}
+                                        accountType="ASSET"
+                                        isReconcilable={true}
+                                        placeholder="Seleccione cuenta..."
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                        Vínculo con el plan de cuentas.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="p-4 border rounded-xl bg-warning/5 space-y-3 border-warning/10">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
+                                        <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
+                                    </div>
+                                    {isPhysical && (
+                                        <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
+                                            <div className="grid gap-1.5">
+                                                <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Ubicación</Label>
+                                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
+                                            </div>
+                                            <div className="grid gap-1.5">
+                                                <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Custodio</Label>
+                                                <UserSelector value={custodian} onChange={setCustodian} />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                    {account ? (
+                        <ActivitySidebar
+                            entityType="treasuryaccount"
+                            entityId={account.id}
+                            className="h-full border-none"
+                            title="Historial de Cambios"
+                        />
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <History className="h-10 w-10 mb-3 opacity-20" />
+                            <p className="text-sm">El historial estará disponible una vez creada la cuenta.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }
 

@@ -4,14 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -109,103 +102,98 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            {!initialData && (
-                <DialogTrigger asChild>
-                    <Button>Nueva Caja/Banco</Button>
-                </DialogTrigger>
-            )}
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Caja o Banco" : "Crear Caja o Banco"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los datos de la cuenta de tesorería." : "Ingrese los datos de la nueva cuenta de tesorería (Caja, Banco, etc)."}
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
+        <BaseModal
+            open={open}
+            onOpenChange={setOpen}
+            size="sm"
+            title={initialData ? "Editar Caja o Banco" : "Crear Caja o Banco"}
+            description={initialData ? "Modifique los datos de la cuenta de tesorería." : "Ingrese los datos de la nueva cuenta de tesorería (Caja, Banco, etc)."}
+            footer={
+                <>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOpen(false)}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="bank-journal-form" disabled={loading}>
+                        {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
+                    </Button>
+                </>
+            }
+        >
+            <Form {...form}>
+                <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Banco Estado Cta Cte" className={FORM_STYLES.input} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="code"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <Input placeholder="Banco Estado Cta Cte" className={FORM_STYLES.input} {...field} />
+                                        <SelectTrigger className={FORM_STYLES.input}>
+                                            <SelectValue placeholder="Seleccione moneda" />
+                                        </SelectTrigger>
                                     </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="code"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="currency"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccione moneda" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="CLP">CLP (Peso Chileno)</SelectItem>
-                                            <SelectItem value="USD">USD (Dólar)</SelectItem>
-                                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta Contable</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
-                                            placeholder="Seleccionar cuenta de banco/caja"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                                    <SelectContent>
+                                        <SelectItem value="CLP">CLP (Peso Chileno)</SelectItem>
+                                        <SelectItem value="USD">USD (Dólar)</SelectItem>
+                                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="account"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Cuenta Contable</FormLabel>
+                                <FormControl>
+                                    <AccountSelector
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        accountType="ASSET"
+                                        isReconcilable={true}
+                                        placeholder="Seleccionar cuenta de banco/caja"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
+        </BaseModal>
     )
 }

@@ -6,14 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { CalendarIcon, Plus, Trash2, Pencil } from "lucide-react"
 import { format } from "date-fns"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+
+// ... other imports same
 import {
     Form,
     FormControl,
@@ -48,6 +43,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
 
+// JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
     id: z.number().optional(),
     account: z.string().min(1, "Cuenta requerida"),
@@ -79,6 +75,8 @@ interface JournalEntryFormProps {
     initialData?: any
     triggerText?: string
     triggerVariant?: "default" | "circular"
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> }) => {
@@ -103,8 +101,19 @@ const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> })
     )
 }
 
-export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialData, triggerText = "Nuevo Asiento", triggerVariant = "default" }: JournalEntryFormProps) {
-    const [open, setOpen] = useState(false)
+export function JournalEntryForm({
+    accounts: accountsProp,
+    onSuccess,
+    initialData,
+    triggerText = "Nuevo Asiento",
+    triggerVariant = "default",
+    open: openProp,
+    onOpenChange
+}: JournalEntryFormProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<any[]>(accountsProp || [])
 
@@ -217,9 +226,12 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
         }
     }
 
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
+    const Trigger = () => {
+        if (openProp !== undefined) return null;
+        if (initialData && triggerVariant !== "circular") return null;
+
+        return (
+            <div onClick={() => setOpen(true)}>
                 {triggerVariant === "circular" ? (
                     <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Asiento">
                         <Plus className="h-4 w-4" />
@@ -229,16 +241,36 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                         {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
                     </Button>
                 )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[1400px] w-[95vw] max-h-[90vh] overflow-y-auto"> {/* Increased width significantly and restored scroll */}
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</DialogTitle>
-                    <DialogDescription>
-                        Ingrese los detalles del movimiento contable.
-                    </DialogDescription>
-                </DialogHeader>
+            </div>
+        )
+    }
+
+    return (
+        <>
+            <Trigger />
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="xl"
+                title={initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}
+                description="Ingrese los detalles del movimiento contable."
+                footer={
+                    <div className="flex justify-end space-x-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="journal-entry-form" disabled={loading}>
+                            {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-3">
                                 <FormField
@@ -413,28 +445,15 @@ export function JournalEntryForm({ accounts: accountsProp, onSuccess, initialDat
                             </div>
                         </div>
 
-                        <FormMessage className="text-right" /> {/* Use for global form errors like balance */}
+                        <FormMessage className="text-right" />
                         {form.formState.errors.items?.root && (
                             <div className="text-red-500 text-sm text-right font-medium">
                                 {form.formState.errors.items.root.message}
                             </div>
                         )}
-
-                        <div className="flex justify-end space-x-2 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }

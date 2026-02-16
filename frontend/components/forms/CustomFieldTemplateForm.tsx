@@ -25,12 +25,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
@@ -100,143 +95,143 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle>Nueva Plantilla de Campo Personalizado</DialogTitle>
-                </DialogHeader>
-
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Nombre del Campo</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: Color de Tintas, Tamaño, etc." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="field_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tipo de Campo</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione tipo" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="TEXT">Texto (Línea simple)</SelectItem>
-                                            <SelectItem value="SELECT_SINGLE">Selección Única</SelectItem>
-                                            <SelectItem value="SELECT_MULTIPLE">Selección Múltiple</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Descripción / Ayuda</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Instrucciones para el usuario..."
-                                            className="resize-none"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="is_required"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                    <div className="space-y-0.5">
-                                        <FormLabel>¿Es obligatorio?</FormLabel>
-                                        <FormDescription>
-                                            El usuario deberá completar este campo al vender.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-
-                        {(fieldType === "SELECT_SINGLE" || fieldType === "SELECT_MULTIPLE") && (
-                            <div className="space-y-3 pt-2">
-                                <FormLabel>Opciones de Selección</FormLabel>
-                                <div className="flex gap-2">
-                                    <Input
-                                        value={newOption}
-                                        onChange={(e) => setNewOption(e.target.value)}
-                                        placeholder="Nueva opción"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                addOption()
-                                            }
-                                        }}
-                                    />
-                                    <Button type="button" variant="outline" size="icon" onClick={addOption}>
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div className="max-h-[150px] overflow-y-auto space-y-2">
-                                    {options.map((option, index) => (
-                                        <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                                            <span className="text-sm">{option}</span>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-destructive"
-                                                onClick={() => removeOption(index)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                    {options.length === 0 && (
-                                        <p className="text-sm text-center text-muted-foreground py-2">No hay opciones añadidas</p>
-                                    )}
-                                </div>
-                            </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title="Nueva Plantilla de Campo Personalizado"
+            footer={
+                <div className="flex justify-end gap-3 w-full">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="custom-field-template-form" disabled={loading}>
+                        {loading ? "Guardando..." : "Crear Plantilla"}
+                        {!loading && <Save className="ml-2 h-4 w-4" />}
+                    </Button>
+                </div>
+            }
+        >
+            <Form {...form}>
+                <form id="custom-field-template-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nombre del Campo</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: Color de Tintas, Tamaño, etc." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         )}
+                    />
 
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : "Crear Plantilla"}
-                                {!loading && <Save className="ml-2 h-4 w-4" />}
-                            </Button>
+                    <FormField
+                        control={form.control}
+                        name="field_type"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Tipo de Campo</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccione tipo" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="TEXT">Texto (Línea simple)</SelectItem>
+                                        <SelectItem value="SELECT_SINGLE">Selección Única</SelectItem>
+                                        <SelectItem value="SELECT_MULTIPLE">Selección Múltiple</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Descripción / Ayuda</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        placeholder="Instrucciones para el usuario..."
+                                        className="resize-none"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="is_required"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <FormLabel>¿Es obligatorio?</FormLabel>
+                                    <FormDescription>
+                                        El usuario deberá completar este campo al vender.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+
+                    {(fieldType === "SELECT_SINGLE" || fieldType === "SELECT_MULTIPLE") && (
+                        <div className="space-y-3 pt-2">
+                            <FormLabel>Opciones de Selección</FormLabel>
+                            <div className="flex gap-2">
+                                <Input
+                                    value={newOption}
+                                    onChange={(e) => setNewOption(e.target.value)}
+                                    placeholder="Nueva opción"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            addOption()
+                                        }
+                                    }}
+                                />
+                                <Button type="button" variant="outline" size="icon" onClick={addOption}>
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="max-h-[150px] overflow-y-auto space-y-2">
+                                {options.map((option, index) => (
+                                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                                        <span className="text-sm">{option}</span>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive"
+                                            onClick={() => removeOption(index)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {options.length === 0 && (
+                                    <p className="text-sm text-center text-muted-foreground py-2">No hay opciones añadidas</p>
+                                )}
+                            </div>
                         </div>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                    )}
+                </form>
+            </Form>
+        </BaseModal>
     )
 }

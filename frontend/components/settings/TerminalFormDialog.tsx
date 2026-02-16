@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -196,124 +196,122 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
         }, [] as string[])
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
-                    <DialogDescription>
-                        Configuración básica y cuentas asociadas.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="name" className="text-xs font-semibold">Nombre <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="name"
-                                placeholder="Ej: Caja Principal"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                className="h-8 text-sm"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="code" className="text-xs font-semibold">Código <span className="text-red-500">*</span></Label>
-                            <Input
-                                id="code"
-                                placeholder="TERM-01"
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                className="h-8 text-sm uppercase"
-                                required
-                            />
-                        </div>
-                    </div>
-
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="md"
+            title={terminal ? "Editar Terminal" : "Nuevo Terminal"}
+            description="Configuración básica y cuentas asociadas."
+            footer={
+                <div className="flex justify-end gap-2 w-full">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="terminal-form" size="sm" disabled={loading}>
+                        {loading && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+                        Guardar Cambios
+                    </Button>
+                </div>
+            }
+        >
+            <form id="terminal-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                        <Label htmlFor="location" className="text-xs font-semibold">Ubicación</Label>
+                        <Label htmlFor="name" className="text-xs font-semibold">Nombre <span className="text-red-500">*</span></Label>
                         <Input
-                            id="location"
-                            placeholder="Ej: Entrada Principal"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
+                            id="name"
+                            placeholder="Ej: Caja Principal"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             className="h-8 text-sm"
+                            required
                         />
                     </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="code" className="text-xs font-semibold">Código <span className="text-red-500">*</span></Label>
+                        <Input
+                            id="code"
+                            placeholder="TERM-01"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="h-8 text-sm uppercase"
+                            required
+                        />
+                    </div>
+                </div>
 
-                    <div className="space-y-2 border rounded-md p-3 bg-muted/10">
-                        <div className="flex justify-between items-center">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground">Cuentas Permitidas</Label>
-                            <span className="text-[10px] text-muted-foreground">{selectedAccountIds.length} seleccionadas</span>
-                        </div>
+                <div className="space-y-1.5">
+                    <Label htmlFor="location" className="text-xs font-semibold">Ubicación</Label>
+                    <Input
+                        id="location"
+                        placeholder="Ej: Entrada Principal"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="h-8 text-sm"
+                    />
+                </div>
 
-                        <div className="h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                            {treasuryAccounts.length === 0 ? (
-                                <p className="text-xs text-center text-muted-foreground py-4">No hay cuentas configuradas</p>
-                            ) : (
-                                treasuryAccounts.map((account) => {
-                                    const isSelected = selectedAccountIds.includes(account.id)
-                                    return (
-                                        <div
-                                            key={account.id}
-                                            className={`flex items-center space-x-2 p-1.5 rounded text-sm cursor-pointer border transition-colors ${isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-accent border-transparent'}`}
-                                            onClick={() => toggleAccountSelection(account.id)}
-                                        >
-                                            <Checkbox
-                                                id={`account-${account.id}`}
-                                                checked={isSelected}
-                                                onCheckedChange={() => toggleAccountSelection(account.id)}
-                                                className="h-4 w-4"
-                                            />
-                                            <div className="flex-1 flex items-center justify-between">
-                                                <span className="font-medium text-xs truncate ml-2 text-foreground/90">{account.name}</span>
-                                                <div className="flex gap-1 ml-2">
-                                                    {account.allows_cash && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-emerald-600 bg-emerald-50 border-emerald-100">Efectivo</Badge>}
-                                                    {account.allows_card && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-blue-600 bg-blue-50 border-blue-100">Tarjeta</Badge>}
-                                                    {account.allows_transfer && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-purple-600 bg-purple-50 border-purple-100">Transf</Badge>}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })
-                            )}
-                        </div>
+                <div className="space-y-2 border rounded-md p-3 bg-muted/10">
+                    <div className="flex justify-between items-center">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground">Cuentas Permitidas</Label>
+                        <span className="text-[10px] text-muted-foreground">{selectedAccountIds.length} seleccionadas</span>
                     </div>
 
-                    {selectedAccountIds.length > 0 && (
-                        <div className="space-y-1.5">
-                            <Label htmlFor="defaultAccount" className="text-xs font-semibold">Cuenta Predeterminada (Inicio de Sesión)</Label>
-                            <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
-                                <SelectTrigger className="h-8 text-sm">
-                                    <SelectValue placeholder="Seleccionar..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="__none__">-- Ninguna --</SelectItem>
-                                    {treasuryAccounts
-                                        .filter(acc => selectedAccountIds.includes(acc.id))
-                                        .map((account) => (
-                                            <SelectItem key={account.id} value={account.id.toString()}>
-                                                {account.name}
-                                            </SelectItem>
-                                        ))
-                                    }
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
+                    <div className="h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        {treasuryAccounts.length === 0 ? (
+                            <p className="text-xs text-center text-muted-foreground py-4">No hay cuentas configuradas</p>
+                        ) : (
+                            treasuryAccounts.map((account) => {
+                                const isSelected = selectedAccountIds.includes(account.id)
+                                return (
+                                    <div
+                                        key={account.id}
+                                        className={`flex items-center space-x-2 p-1.5 rounded text-sm cursor-pointer border transition-colors ${isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-accent border-transparent'}`}
+                                        onClick={() => toggleAccountSelection(account.id)}
+                                    >
+                                        <Checkbox
+                                            id={`account-${account.id}`}
+                                            checked={isSelected}
+                                            onCheckedChange={() => toggleAccountSelection(account.id)}
+                                            className="h-4 w-4"
+                                        />
+                                        <div className="flex-1 flex items-center justify-between">
+                                            <span className="font-medium text-xs truncate ml-2 text-foreground/90">{account.name}</span>
+                                            <div className="flex gap-1 ml-2">
+                                                {account.allows_cash && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-emerald-600 bg-emerald-50 border-emerald-100">Efectivo</Badge>}
+                                                {account.allows_card && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-blue-600 bg-blue-50 border-blue-100">Tarjeta</Badge>}
+                                                {account.allows_transfer && <Badge variant="secondary" className="text-[9px] px-1 h-4 font-normal text-purple-600 bg-purple-50 border-purple-100">Transf</Badge>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+                </div>
 
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-                            Cancelar
-                        </Button>
-                        <Button type="submit" size="sm" disabled={loading}>
-                            {loading && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
-                            Guardar Cambios
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                {selectedAccountIds.length > 0 && (
+                    <div className="space-y-1.5">
+                        <Label htmlFor="defaultAccount" className="text-xs font-semibold">Cuenta Predeterminada (Inicio de Sesión)</Label>
+                        <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
+                            <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="__none__">-- Ninguna --</SelectItem>
+                                {treasuryAccounts
+                                    .filter(acc => selectedAccountIds.includes(acc.id))
+                                    .map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name}
+                                        </SelectItem>
+                                    ))
+                                }
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </form>
+        </BaseModal>
     )
 }

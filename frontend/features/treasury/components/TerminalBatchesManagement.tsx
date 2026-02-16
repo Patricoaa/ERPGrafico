@@ -10,7 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
 
 // Lazy load feature components
@@ -205,17 +205,15 @@ export function TerminalBatchesManagement({
 
 function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px]">
-                <DialogHeader>
-                    <DialogTitle>Registrar Liquidación de Terminal</DialogTitle>
-                    <DialogDescription>
-                        Ingrese los datos de la liquidación diaria informada por el proveedor del terminal.
-                    </DialogDescription>
-                </DialogHeader>
-                <TerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
-            </DialogContent>
-        </Dialog>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title="Registrar Liquidación de Terminal"
+            description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal."
+        >
+            <TerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+        </BaseModal>
     )
 }
 

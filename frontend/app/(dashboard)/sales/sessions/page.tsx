@@ -14,14 +14,7 @@ import { FileText, Store, Lock, Calculator, Banknote, CreditCard, ArrowRightLeft
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { POSReport } from "@/components/pos/POSReport"
 import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
@@ -264,28 +257,24 @@ export default function POSSessionsPage({ hideHeader = false }: POSSessionsPageP
             )}
 
             {/* POS Report Dialog (X/Z) */}
-            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader className="sr-only">
-                        <DialogTitle>
-                            {reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Detalles del informe de sesión
-                        </DialogDescription>
-                    </DialogHeader>
-                    {reportData && (
-                        <POSReport
-                            data={reportData}
-                            type={reportType}
-                            title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                        />
-                    )}
-                    <DialogFooter className="print:hidden">
-                        <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <BaseModal
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
+                size="md"
+                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                description="Detalles del informe de sesión"
+                footer={
+                    <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
+                }
+            >
+                {reportData && (
+                    <POSReport
+                        data={reportData}
+                        type={reportType}
+                        title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                    />
+                )}
+            </BaseModal>
 
             {/* Session Close Modal - Using shared component */}
             {selectedSession && (

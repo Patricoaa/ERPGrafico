@@ -4,13 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -79,49 +73,49 @@ export function TransactionNumberForm({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="xs">
-                <DialogHeader>
-                    <DialogTitle>Registrar N° de Transacción</DialogTitle>
-                    <DialogDescription>
-                        Ingrese el número de comprobante o transacción bancaria.
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="transaction_number"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>N° de Transacción</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Ex: 543210"
-                                            className={FORM_STYLES.input}
-                                            {...field}
-                                            autoFocus
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : "Guardar"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xs"
+            title="Registrar N° de Transacción"
+            description="Ingrese el número de comprobante o transacción bancaria."
+            footer={
+                <>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="transaction-number-form" disabled={loading}>
+                        {loading ? "Guardando..." : "Guardar"}
+                    </Button>
+                </>
+            }
+        >
+            <Form {...form}>
+                <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="transaction_number"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>N° de Transacción</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Ex: 543210"
+                                        className={FORM_STYLES.input}
+                                        {...field}
+                                        autoFocus
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
+        </BaseModal>
     )
 }

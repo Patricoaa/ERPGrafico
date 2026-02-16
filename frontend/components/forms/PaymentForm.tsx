@@ -4,15 +4,9 @@ import { useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+
+// ... other imports same
 import {
     Form,
     FormControl,
@@ -38,6 +32,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Loader2, CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
 
+// schema and types remain the same
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
     payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "CARD_TERMINAL", "TRANSFER", "CHECK"]),
@@ -57,9 +52,16 @@ interface PaymentFormProps {
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    triggerText?: string
 }
 
-export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChange }: PaymentFormProps) {
+export function PaymentForm({
+    onSuccess,
+    initialData,
+    open: openProp,
+    onOpenChange,
+    triggerText = "Registrar Pago"
+}: PaymentFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -169,22 +171,38 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
         }
     }
 
+    const Trigger = () => {
+        if (openProp !== undefined) return null;
+        if (initialData) return null;
+
+        return (
+            <Button className="rounded-xl shadow-md" onClick={() => setOpen(true)}>
+                {triggerText}
+            </Button>
+        )
+    }
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            {!initialData && (
-                <DialogTrigger asChild>
-                    <Button className="rounded-xl shadow-md">Registrar Pago</Button>
-                </DialogTrigger>
-            )}
-            <DialogContent className="sm:max-w-[600px] rounded-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">{initialData ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Actualice la información del pago." : "Ingrese los datos para el flujo de tesorería."}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Trigger />
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="lg"
+                title={initialData ? "Editar Pago" : "Registrar Pago"}
+                description={initialData ? "Actualice la información del pago." : "Ingrese los datos para el flujo de tesorería."}
+                footer={
+                    <div className="flex justify-end space-x-2 w-full">
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+                        <Button type="submit" form="payment-form" disabled={loading} className="px-8 shadow-lg">
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {initialData ? "Actualizar" : "Registrar Pago"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2">
+                    <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
                             {!initialData && (
                                 <FormField
@@ -351,17 +369,9 @@ export function PaymentForm({ onSuccess, initialData, open: openProp, onOpenChan
                                 )}
                             />
                         </div>
-
-                        <DialogFooter className="gap-2 sm:gap-0 pt-4 border-t">
-                            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                            <Button type="submit" disabled={loading} className="px-8 shadow-lg">
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {initialData ? "Actualizar" : "Registrar Pago"}
-                            </Button>
-                        </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }

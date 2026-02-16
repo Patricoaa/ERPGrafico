@@ -1,14 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -180,259 +173,28 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const finalToPay = Math.max(0, totalDue - totalCredits)
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                            <Calculator className="h-5 w-5" />
-                        </div>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">Paso {step} de 4</Badge>
+        <BaseModal
+            open={isOpen}
+            onOpenChange={onOpenChange}
+            size="xl"
+            variant="wizard"
+            title={
+                <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Calculator className="h-5 w-5" />
                     </div>
-                    <DialogTitle className="text-2xl font-bold">Asistente de Declaración F29</DialogTitle>
-                    <div className="text-muted-foreground text-sm mt-1">
-                        {period.month && period.year && (
-                            <span>Período: {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
-                        )}
+                    <div>
+                        <div className="text-xl font-bold">Asistente de Declaración F29</div>
+                        <div className="text-muted-foreground text-xs font-normal">
+                            Paso {step} de 4 {period.month && period.year && (
+                                <span className="ml-2">• Período: {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                            )}
+                        </div>
                     </div>
-                </DialogHeader>
-
-                <div className="py-6">
-
-                    {step === 1 && (
-                        <div className="space-y-6 max-w-md mx-auto py-8">
-                            <div className="text-center space-y-2 mb-8">
-                                <h3 className="text-xl font-semibold">Selecciona el Período a Declarar</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Elige el mes y año para calcular el IVA y generar el formulario F29.
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Año Tributario</Label>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {(() => {
-                                            const baseYear = year || new Date().getFullYear();
-                                            return [baseYear - 2, baseYear - 1, baseYear, baseYear + 1].map(y => (
-                                                <div
-                                                    key={y}
-                                                    className={cn(
-                                                        "cursor-pointer rounded-xl border-2 px-2 py-3 text-center transition-all hover:border-primary/50",
-                                                        period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
-                                                    )}
-                                                    onClick={() => setPeriod(p => ({ ...p, year: y }))}
-                                                >
-                                                    {y}
-                                                </div>
-                                            ));
-                                        })()}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Mes</Label>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
-                                            const disabled = isPeriodDisabled(period.year, m)
-                                            return (
-                                                <div
-                                                    key={m}
-                                                    className={cn(
-                                                        "rounded-lg border px-2 py-2 text-center text-sm transition-all",
-                                                        disabled
-                                                            ? "opacity-30 cursor-not-allowed bg-muted border-transparent"
-                                                            : "cursor-pointer hover:border-primary/50",
-                                                        !disabled && period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : (!disabled ? "border-muted bg-background" : "")
-                                                    )}
-                                                    onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
-                                                >
-                                                    {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 flex justify-center">
-                                    <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs">
-                                        <Info className="h-4 w-4" />
-                                        Al continuar, se buscarán todos los documentos del período seleccionado.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-8">
-                                <section className="space-y-4">
-                                    <h3 className="font-bold text-lg flex items-center gap-2 text-primary">
-                                        <ArrowUpRight className="h-5 w-5" />
-                                        Débito Fiscal (Ventas)
-                                    </h3>
-                                    <div className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border/50">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Ventas Afectas</span>
-                                            <span className="font-medium">{formatCurrency(calcData?.sales_taxed)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Ventas Exentas</span>
-                                            <span className="font-medium">{formatCurrency(calcData?.sales_exempt)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm text-emerald-600">
-                                            <span>Notas de Crédito (-)</span>
-                                            <span>-{formatCurrency(calcData?.credit_notes_taxed)}</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between font-bold text-base pt-1">
-                                            <span>Total Neto Ventas</span>
-                                            <span>{formatCurrency(calcData?.net_taxed_sales)}</span>
-                                        </div>
-                                        <div className="flex justify-between font-bold text-primary text-lg">
-                                            <span>IVA Débito ({manualFields.tax_rate}%)</span>
-                                            <span>{formatCurrency(calcData?.vat_debit)}</span>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section className="space-y-4">
-                                    <h3 className="font-bold text-lg flex items-center gap-2 text-indigo-600">
-                                        <ArrowDownLeft className="h-5 w-5" />
-                                        Crédito Fiscal (Compras)
-                                    </h3>
-                                    <div className="space-y-3 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Compras Afectas</span>
-                                            <span className="font-medium">{formatCurrency(calcData?.purchases_taxed)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Compras Exentas</span>
-                                            <span className="font-medium">{formatCurrency(calcData?.purchases_exempt)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm text-amber-600">
-                                            <span>Notas de Crédito (-)</span>
-                                            <span>-{formatCurrency(calcData?.purchase_credit_notes)}</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between font-bold text-base pt-1">
-                                            <span>Total Neto Compras</span>
-                                            <span>{formatCurrency(calcData?.net_taxed_purchases)}</span>
-                                        </div>
-                                        <div className="flex justify-between font-bold text-indigo-600 text-lg">
-                                            <span>IVA Crédito ({manualFields.tax_rate}%)</span>
-                                            <span>{formatCurrency(calcData?.vat_credit)}</span>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 flex gap-4 items-start text-sm text-primary/80">
-                                <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                                <p>
-                                    Estos valores son calculados automáticamente de las facturas y boletas publicadas en el sistema. Asegúrese de haber conciliado todos los documentos antes de proceder. La tasa de impuestos se obtiene de la configuración contable.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 3 && (
-                        <div className="space-y-6">
-                            <h3 className="font-bold text-lg flex items-center gap-2">
-                                <HandCoins className="h-5 w-5 text-amber-500" />
-                                Otros Impuestos y Retenciones
-                            </h3>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="ppm">PPM (Pagos Provisionales Mensuales)</Label>
-                                    <Input
-                                        id="ppm"
-                                        type="number"
-                                        value={manualFields.ppm_amount}
-                                        onChange={(e) => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })}
-                                        className="rounded-xl"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="withholding">Retención Honorarios (2da Categoría)</Label>
-                                    <Input
-                                        id="withholding"
-                                        type="number"
-                                        value={manualFields.withholding_tax}
-                                        onChange={(e) => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })}
-                                        className="rounded-xl"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="remanente">Remanente de Mes Anterior</Label>
-                                    <Input
-                                        id="remanente"
-                                        type="number"
-                                        readOnly
-                                        value={manualFields.vat_credit_carryforward}
-                                        className="rounded-xl bg-muted/50 cursor-not-allowed"
-                                        title="Este valor se extrae automáticamente de la contabilidad"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="reajuste">Reajuste Remanente (Art. 31)</Label>
-                                    <Input
-                                        id="reajuste"
-                                        type="number"
-                                        value={manualFields.vat_correction_amount}
-                                        onChange={(e) => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })}
-                                        className="rounded-xl"
-                                        placeholder="Actualización monetaria"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="impuesto2da">Impuesto Único 2da Categoría</Label>
-                                    <Input
-                                        id="impuesto2da"
-                                        type="number"
-                                        value={manualFields.second_category_tax}
-                                        onChange={(e) => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
-                                        className="rounded-xl"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 4 && (
-                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-6">
-                            <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
-                                <CheckCircle2 className="h-10 w-10 animate-pulse" />
-                            </div>
-                            <div className="space-y-2">
-                                <h3 className="text-2xl font-bold">Resumen de Declaración</h3>
-                                <p className="text-muted-foreground">Período: {period.month}/{period.year}</p>
-                            </div>
-
-                            <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
-                                <div className="flex justify-between py-2">
-                                    <span className="text-muted-foreground">Total Impuestos Determinado</span>
-                                    <span className="font-bold text-indigo-600">{formatCurrency(totalDue)}</span>
-                                </div>
-                                <div className="flex justify-between py-2">
-                                    <span className="text-muted-foreground">Total Créditos/Pagos</span>
-                                    <span className="font-medium text-emerald-600">{formatCurrency(totalCredits)}</span>
-                                </div>
-                                <div className="flex justify-between py-4 text-xl font-black">
-                                    <span>TOTAL A PAGAR</span>
-                                    <span className="text-primary">{formatCurrency(finalToPay)}</span>
-                                </div>
-                            </div>
-
-                            <p className="text-xs text-muted-foreground max-w-sm">
-                                Al confirmar, se generará un asiento contable registrando la obligación tributaria y se habilitará el registro de pago.
-                            </p>
-                        </div>
-                    )}
                 </div>
-
-                <DialogFooter className="flex justify-between sm:justify-between items-center bg-muted/20 -mx-6 -mb-6 p-6 border-t rounded-b-lg">
+            }
+            footer={
+                <div className="flex justify-between items-center w-full">
                     <Button
                         variant="ghost"
                         onClick={prevStep}
@@ -471,8 +233,243 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </Button>
                         )}
                     </div>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            }
+        >
+            <div className="py-4">
+
+                {step === 1 && (
+                    <div className="space-y-6 max-w-md mx-auto py-8">
+                        <div className="text-center space-y-2 mb-8">
+                            <h3 className="text-xl font-semibold">Selecciona el Período a Declarar</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Elige el mes y año para calcular el IVA y generar el formulario F29.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Año Tributario</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {(() => {
+                                        const baseYear = year || new Date().getFullYear();
+                                        return [baseYear - 2, baseYear - 1, baseYear, baseYear + 1].map(y => (
+                                            <div
+                                                key={y}
+                                                className={cn(
+                                                    "cursor-pointer rounded-xl border-2 px-2 py-3 text-center transition-all hover:border-primary/50",
+                                                    period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
+                                                )}
+                                                onClick={() => setPeriod(p => ({ ...p, year: y }))}
+                                            >
+                                                {y}
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Mes</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                                        const disabled = isPeriodDisabled(period.year, m)
+                                        return (
+                                            <div
+                                                key={m}
+                                                className={cn(
+                                                    "rounded-lg border px-2 py-2 text-center text-sm transition-all",
+                                                    disabled
+                                                        ? "opacity-30 cursor-not-allowed bg-muted border-transparent"
+                                                        : "cursor-pointer hover:border-primary/50",
+                                                    !disabled && period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : (!disabled ? "border-muted bg-background" : "")
+                                                )}
+                                                onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
+                                            >
+                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex justify-center">
+                                <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                                    <Info className="h-4 w-4" />
+                                    Al continuar, se buscarán todos los documentos del período seleccionado.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {step === 2 && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-8">
+                            <section className="space-y-4">
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-primary">
+                                    <ArrowUpRight className="h-5 w-5" />
+                                    Débito Fiscal (Ventas)
+                                </h3>
+                                <div className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border/50">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Ventas Afectas</span>
+                                        <span className="font-medium">{formatCurrency(calcData?.sales_taxed)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Ventas Exentas</span>
+                                        <span className="font-medium">{formatCurrency(calcData?.sales_exempt)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-emerald-600">
+                                        <span>Notas de Crédito (-)</span>
+                                        <span>-{formatCurrency(calcData?.credit_notes_taxed)}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-base pt-1">
+                                        <span>Total Neto Ventas</span>
+                                        <span>{formatCurrency(calcData?.net_taxed_sales)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-primary text-lg">
+                                        <span>IVA Débito ({manualFields.tax_rate}%)</span>
+                                        <span>{formatCurrency(calcData?.vat_debit)}</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="space-y-4">
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-indigo-600">
+                                    <ArrowDownLeft className="h-5 w-5" />
+                                    Crédito Fiscal (Compras)
+                                </h3>
+                                <div className="space-y-3 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Compras Afectas</span>
+                                        <span className="font-medium">{formatCurrency(calcData?.purchases_taxed)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Compras Exentas</span>
+                                        <span className="font-medium">{formatCurrency(calcData?.purchases_exempt)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-amber-600">
+                                        <span>Notas de Crédito (-)</span>
+                                        <span>-{formatCurrency(calcData?.purchase_credit_notes)}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-base pt-1">
+                                        <span>Total Neto Compras</span>
+                                        <span>{formatCurrency(calcData?.net_taxed_purchases)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-indigo-600 text-lg">
+                                        <span>IVA Crédito ({manualFields.tax_rate}%)</span>
+                                        <span>{formatCurrency(calcData?.vat_credit)}</span>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 flex gap-4 items-start text-sm text-primary/80">
+                            <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                            <p>
+                                Estos valores son calculados automáticamente de las facturas y boletas publicadas en el sistema. Asegúrese de haber conciliado todos los documentos antes de proceder. La tasa de impuestos se obtiene de la configuración contable.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {step === 3 && (
+                    <div className="space-y-6">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                            <HandCoins className="h-5 w-5 text-amber-500" />
+                            Otros Impuestos y Retenciones
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="ppm">PPM (Pagos Provisionales Mensuales)</Label>
+                                <Input
+                                    id="ppm"
+                                    type="number"
+                                    value={manualFields.ppm_amount}
+                                    onChange={(e) => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="withholding">Retención Honorarios (2da Categoría)</Label>
+                                <Input
+                                    id="withholding"
+                                    type="number"
+                                    value={manualFields.withholding_tax}
+                                    onChange={(e) => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="remanente">Remanente de Mes Anterior</Label>
+                                <Input
+                                    id="remanente"
+                                    type="number"
+                                    readOnly
+                                    value={manualFields.vat_credit_carryforward}
+                                    className="rounded-xl bg-muted/50 cursor-not-allowed"
+                                    title="Este valor se extrae automáticamente de la contabilidad"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="reajuste">Reajuste Remanente (Art. 31)</Label>
+                                <Input
+                                    id="reajuste"
+                                    type="number"
+                                    value={manualFields.vat_correction_amount}
+                                    onChange={(e) => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                    placeholder="Actualización monetaria"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="impuesto2da">Impuesto Único 2da Categoría</Label>
+                                <Input
+                                    id="impuesto2da"
+                                    type="number"
+                                    value={manualFields.second_category_tax}
+                                    onChange={(e) => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {step === 4 && (
+                    <div className="flex flex-col items-center justify-center py-8 text-center space-y-6">
+                        <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
+                            <CheckCircle2 className="h-10 w-10 animate-pulse" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-bold">Resumen de Declaración</h3>
+                            <p className="text-muted-foreground">Período: {period.month}/{period.year}</p>
+                        </div>
+
+                        <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
+                            <div className="flex justify-between py-2">
+                                <span className="text-muted-foreground">Total Impuestos Determinado</span>
+                                <span className="font-bold text-indigo-600">{formatCurrency(totalDue)}</span>
+                            </div>
+                            <div className="flex justify-between py-2">
+                                <span className="text-muted-foreground">Total Créditos/Pagos</span>
+                                <span className="font-medium text-emerald-600">{formatCurrency(totalCredits)}</span>
+                            </div>
+                            <div className="flex justify-between py-4 text-xl font-black">
+                                <span>TOTAL A PAGAR</span>
+                                <span className="text-primary">{formatCurrency(finalToPay)}</span>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground max-w-sm">
+                            Al confirmar, se generará un asiento contable registrando la obligación tributaria y se habilitará el registro de pago.
+                        </p>
+                    </div>
+                )}
+            </div>
+        </BaseModal>
     )
 }

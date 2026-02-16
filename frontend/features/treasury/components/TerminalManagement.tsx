@@ -7,14 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
@@ -354,124 +347,124 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>{terminal ? "Editar Terminal" : "Nuevo Terminal"}</DialogTitle>
-                    <DialogDescription>
-                        {terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Side: Form */}
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                        <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Nombre <span className="text-red-500">*</span></Label>
-                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Código <span className="text-red-500">*</span></Label>
-                                    <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className="uppercase" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Ubicación</Label>
-                                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>IP (Opcional)</Label>
-                                    <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
-                                    <Badge variant="outline" className="text-[10px] bg-white">
-                                        {selectedMethodIds.length} seleccionados
-                                    </Badge>
-                                </div>
-
-                                <div className="space-y-5">
-                                    {typeOrder.map(type => {
-                                        const groupMethods = methodsGrouped[type] || []
-                                        if (groupMethods.length === 0) return null
-
-                                        return (
-                                            <div key={type} className="space-y-2">
-                                                <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
-                                                    {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
-                                                    {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-indigo-500" />}
-                                                    {getTypeLabel(type)}
-                                                </h4>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                    {groupMethods.map(method => {
-                                                        const isSelected = selectedMethodIds.includes(method.id)
-                                                        return (
-                                                            <div
-                                                                key={method.id}
-                                                                onClick={() => toggleMethod(method.id)}
-                                                                className={`
-                                                                    flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
-                                                                    ${isSelected
-                                                                        ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                                                        : 'bg-white border-transparent hover:border-gray-200'
-                                                                    }
-                                                                `}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={isSelected}
-                                                                    onCheckedChange={() => toggleMethod(method.id)}
-                                                                    className="mt-0.5"
-                                                                />
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-xs font-semibold">{method.name}</span>
-                                                                    <span className="text-[10px] text-muted-foreground">
-                                                                        Cuenta: {method.treasury_account_name}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* Right Side: Activity Sidebar */}
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                        {terminal ? (
-                            <ActivitySidebar
-                                entityType="terminal"
-                                entityId={terminal.id}
-                                className="h-full border-none"
-                                title="Historial"
-                            />
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                                <History className="h-10 w-10 mb-3 opacity-20" />
-                                <p className="text-sm">El historial estará disponible una vez creado el terminal.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <DialogFooter className="p-6 pt-4 border-t bg-white z-10">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={terminal ? "Editar Terminal" : "Nuevo Terminal"}
+            description={terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}
+            hideScrollArea={true}
+            className="h-[90vh]"
+            footer={
+                <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
                     <Button type="submit" form="terminal-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Guardar Terminal
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </>
+            }
+        >
+            <div className="flex-1 flex overflow-hidden h-full">
+                {/* Left Side: Form */}
+                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
+                    <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Nombre <span className="text-red-500">*</span></Label>
+                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Código <span className="text-red-500">*</span></Label>
+                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className="uppercase" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Ubicación</Label>
+                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>IP (Opcional)</Label>
+                                <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
+                                <Badge variant="outline" className="text-[10px] bg-white">
+                                    {selectedMethodIds.length} seleccionados
+                                </Badge>
+                            </div>
+
+                            <div className="space-y-5">
+                                {typeOrder.map(type => {
+                                    const groupMethods = methodsGrouped[type] || []
+                                    if (groupMethods.length === 0) return null
+
+                                    return (
+                                        <div key={type} className="space-y-2">
+                                            <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
+                                                {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
+                                                {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
+                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-indigo-500" />}
+                                                {getTypeLabel(type)}
+                                            </h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {groupMethods.map(method => {
+                                                    const isSelected = selectedMethodIds.includes(method.id)
+                                                    return (
+                                                        <div
+                                                            key={method.id}
+                                                            onClick={() => toggleMethod(method.id)}
+                                                            className={`
+                                                                flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
+                                                                ${isSelected
+                                                                    ? 'bg-primary/5 border-primary/30 shadow-sm'
+                                                                    : 'bg-white border-transparent hover:border-gray-200'
+                                                                }
+                                                            `}
+                                                        >
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                onCheckedChange={() => toggleMethod(method.id)}
+                                                                className="mt-0.5"
+                                                            />
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-semibold">{method.name}</span>
+                                                                <span className="text-[10px] text-muted-foreground">
+                                                                    Cuenta: {method.treasury_account_name}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {/* Right Side: Activity Sidebar */}
+                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
+                    {terminal ? (
+                        <ActivitySidebar
+                            entityType="terminal"
+                            entityId={terminal.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <History className="h-10 w-10 mb-3 opacity-20" />
+                            <p className="text-sm">El historial estará disponible una vez creado el terminal.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }
 

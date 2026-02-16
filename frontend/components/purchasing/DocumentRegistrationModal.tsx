@@ -1,14 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -98,90 +91,19 @@ export function DocumentRegistrationModal({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Registrar Factura/Boleta - OCS-{orderNumber}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Ingrese los datos del documento tributario recibido del proveedor.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label>Tipo de Documento</Label>
-                        <Select value={dteType} onValueChange={setDteType}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
-                                <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center space-x-2 py-2">
-                        <input
-                            type="checkbox"
-                            id="pending-check"
-                            checked={isPending}
-                            onChange={(e) => setIsPending(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                        />
-                        <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
-                            Aún no recibo el documento físico / digital
-                        </Label>
-                    </div>
-
-                    <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
-                        <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
-                        <Input
-                            id="issue-date"
-                            type="date"
-                            value={issueDate}
-                            onChange={(e) => setIssueDate(e.target.value)}
-                            disabled={isPending}
-                        />
-                    </div>
-
-                    <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <Label htmlFor="reference">
-                            N° de Folio / Referencia <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                            id="reference"
-                            placeholder="Ej: 12345"
-                            value={reference}
-                            onChange={(e) => setReference(e.target.value)}
-                            disabled={isPending}
-                        />
-                    </div>
-
-                    <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                        <Label>
-                            Adjuntar Documento {dteType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                type="file"
-                                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                className="cursor-pointer"
-                                disabled={isPending}
-                            />
-                        </div>
-                        {attachment && (
-                            <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
-                                <CheckCircle2 className="h-3 w-3" /> {attachment.name}
-                            </div>
-                        )}
-                    </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="md"
+            title={
+                <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Registrar Factura/Boleta - OCS-{orderNumber}
                 </div>
-
-                <DialogFooter>
+            }
+            description="Ingrese los datos del documento tributario recibido del proveedor."
+            footer={
+                <div className="flex justify-end gap-2 w-full">
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
@@ -189,10 +111,81 @@ export function DocumentRegistrationModal({
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Registrar Documento
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            }
+        >
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label>Tipo de Documento</Label>
+                    <Select value={dteType} onValueChange={setDteType}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
+                            <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex items-center space-x-2 py-2">
+                    <input
+                        type="checkbox"
+                        id="pending-check"
+                        checked={isPending}
+                        onChange={(e) => setIsPending(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                    />
+                    <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
+                        Aún no recibo el documento físico / digital
+                    </Label>
+                </div>
+
+                <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
+                    <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
+                    <Input
+                        id="issue-date"
+                        type="date"
+                        value={issueDate}
+                        onChange={(e) => setIssueDate(e.target.value)}
+                        disabled={isPending}
+                    />
+                </div>
+
+                <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <Label htmlFor="reference">
+                        N° de Folio / Referencia <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="reference"
+                        placeholder="Ej: 12345"
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        disabled={isPending}
+                    />
+                </div>
+
+                <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <Label>
+                        Adjuntar Documento {dteType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            type="file"
+                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                            disabled={isPending}
+                        />
+                    </div>
+                    {attachment && (
+                        <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="h-3 w-3" /> {attachment.name}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </BaseModal>
     )
 }
 
-import { CheckCircle2 } from "lucide-react" // Added missing import
+import { CheckCircle2 } from "lucide-react"

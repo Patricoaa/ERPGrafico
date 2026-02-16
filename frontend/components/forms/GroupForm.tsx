@@ -4,15 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+
+// ... other imports same
 import {
     Form,
     FormControl,
@@ -50,7 +44,13 @@ export function GroupForm({
 
     const isControlled = controlledOpen !== undefined
     const isOpen = isControlled ? controlledOpen : internalOpen
-    const setOpen = isControlled ? setControlledOpen : setInternalOpen
+    const setOpen = (val: boolean) => {
+        if (isControlled) {
+            setControlledOpen?.(val)
+        } else {
+            setInternalOpen(val)
+        }
+    }
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -87,20 +87,45 @@ export function GroupForm({
         }
     }
 
+    const Trigger = () => {
+        if (isControlled) return null;
+        if (!trigger) return null;
+        return (
+            <div onClick={() => setOpen?.(true)}>
+                {trigger}
+            </div>
+        )
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={setOpen}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Grupo" : "Nuevo Grupo"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData
-                            ? "Modifica el nombre del grupo o equipo."
-                            : "Crea un nuevo grupo funcional para asignar tareas."}
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Trigger />
+            <BaseModal
+                open={isOpen}
+                onOpenChange={setOpen}
+                size="sm"
+                title={initialData ? "Editar Grupo" : "Nuevo Grupo"}
+                description={initialData
+                    ? "Modifica el nombre del grupo o equipo."
+                    : "Crea un nuevo grupo funcional para asignar tareas."}
+                footer={
+                    <div className="flex justify-end space-x-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button type="submit" form="group-form" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Guardar
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -114,16 +139,10 @@ export function GroupForm({
                                 </FormItem>
                             )}
                         />
-                        <DialogFooter>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Guardar
-                            </Button>
-                        </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }
 

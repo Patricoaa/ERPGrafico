@@ -25,6 +25,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+import { BaseModal } from "@/components/shared/BaseModal"
 
 interface PeriodChecklistProps {
     isOpen: boolean
@@ -65,75 +66,25 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl">
-                <DialogHeader>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
-                            <ShieldCheck className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <DialogTitle className="text-xl font-bold">Cierre de Período Tributario</DialogTitle>
-                            <DialogDescription>
-                                {period?.month_display} {period?.year}
-                            </DialogDescription>
-                        </div>
+        <BaseModal
+            open={isOpen}
+            onOpenChange={onOpenChange}
+            size="md"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
+                        <ShieldCheck className="h-6 w-6" />
                     </div>
-                </DialogHeader>
-
-                <div className="py-4 space-y-6">
-                    <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 flex gap-4 items-start text-sm text-amber-800">
-                        <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-amber-500" />
-                        <p>
-                            <span className="font-bold">¡Atención!</span> Cerrar un período bloqueará la edición de todos los documentos asociados (Ventas/Compras) para garantizar la consistencia contable y tributaria.
-                        </p>
-                    </div>
-
-                    <div className="space-y-1">
-                        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Checklist de Verificación</h4>
-
-                        <div className="space-y-1">
-                            {[
-                                { id: 'invoices_reviewed', label: 'Revisión y validación de Facturas/Boletas emitidas' },
-                                { id: 'purchases_received', label: 'Aceptación de documentos de compra en RCV (SII)' },
-                                { id: 'credit_notes_applied', label: 'Verificación de Notas de Crédito y Débito' },
-                                { id: 'reconciliation_done', label: 'Conciliación bancaria de pagos tributarios' },
-                                { id: 'declaration_filed', label: 'Declaración F29 aceptada en el portal SII' },
-                            ].map((item) => (
-                                <div
-                                    key={item.id}
-                                    className={cn(
-                                        "flex items-center space-x-3 p-3 rounded-xl transition-all border border-transparent",
-                                        checklist[item.id as keyof typeof checklist] ? "bg-emerald-50/50 border-emerald-100" : "hover:bg-muted/50"
-                                    )}
-                                >
-                                    <Checkbox
-                                        id={item.id}
-                                        checked={checklist[item.id as keyof typeof checklist]}
-                                        onCheckedChange={(checked) =>
-                                            setChecklist({ ...checklist, [item.id]: !!checked })
-                                        }
-                                        className="h-5 w-5 rounded-md"
-                                    />
-                                    <label
-                                        htmlFor={item.id}
-                                        className={cn(
-                                            "flex-1 text-sm font-medium cursor-pointer transition-all",
-                                            checklist[item.id as keyof typeof checklist] ? "text-emerald-700" : "text-foreground"
-                                        )}
-                                    >
-                                        {item.label}
-                                    </label>
-                                    {checklist[item.id as keyof typeof checklist] && (
-                                        <FileCheck className="h-4 w-4 text-emerald-500" />
-                                    )}
-                                </div>
-                            ))}
+                    <div>
+                        <div className="text-xl font-bold">Cierre de Período Tributario</div>
+                        <div className="text-muted-foreground text-sm font-normal">
+                            {period?.month_display} {period?.year}
                         </div>
                     </div>
                 </div>
-
-                <DialogFooter className="mt-4 gap-2">
+            }
+            footer={
+                <div className="flex justify-end gap-2 w-full">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
                         Aún no, cancelar
                     </Button>
@@ -150,8 +101,60 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
                         <Lock className="h-4 w-4 mr-2" />
                         Cerrar Período Definitivamente
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            }
+        >
+            <div className="py-2 space-y-6">
+                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 flex gap-4 items-start text-sm text-amber-800">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-amber-500" />
+                    <p>
+                        <span className="font-bold">¡Atención!</span> Cerrar un período bloqueará la edición de todos los documentos asociados (Ventas/Compras) para garantizar la consistencia contable y tributaria.
+                    </p>
+                </div>
+
+                <div className="space-y-1">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Checklist de Verificación</h4>
+
+                    <div className="space-y-1">
+                        {[
+                            { id: 'invoices_reviewed', label: 'Revisión y validación de Facturas/Boletas emitidas' },
+                            { id: 'purchases_received', label: 'Aceptación de documentos de compra en RCV (SII)' },
+                            { id: 'credit_notes_applied', label: 'Verificación de Notas de Crédito y Débito' },
+                            { id: 'reconciliation_done', label: 'Conciliación bancaria de pagos tributarios' },
+                            { id: 'declaration_filed', label: 'Declaración F29 aceptada en el portal SII' },
+                        ].map((item) => (
+                            <div
+                                key={item.id}
+                                className={cn(
+                                    "flex items-center space-x-3 p-3 rounded-xl transition-all border border-transparent",
+                                    checklist[item.id as keyof typeof checklist] ? "bg-emerald-50/50 border-emerald-100" : "hover:bg-muted/50"
+                                )}
+                            >
+                                <Checkbox
+                                    id={item.id}
+                                    checked={checklist[item.id as keyof typeof checklist]}
+                                    onCheckedChange={(checked) =>
+                                        setChecklist({ ...checklist, [item.id]: !!checked })
+                                    }
+                                    className="h-5 w-5 rounded-md"
+                                />
+                                <label
+                                    htmlFor={item.id}
+                                    className={cn(
+                                        "flex-1 text-sm font-medium cursor-pointer transition-all",
+                                        checklist[item.id as keyof typeof checklist] ? "text-emerald-700" : "text-foreground"
+                                    )}
+                                >
+                                    {item.label}
+                                </label>
+                                {checklist[item.id as keyof typeof checklist] && (
+                                    <FileCheck className="h-4 w-4 text-emerald-500" />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </BaseModal>
     )
 }
