@@ -8,13 +8,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -184,85 +178,83 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 useAdvancedFilter={true}
             />
 
-            <Dialog
+            <BaseModal
                 open={isUoMModalOpen}
                 onOpenChange={(open) => {
                     setIsUoMModalOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{currentUoM.id ? 'Editar' : 'Crear'} Unidad de Medida</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Nombre</Label>
-                            <Input
-                                className="col-span-3"
-                                placeholder="Ej: Kilogramo, Metro, Litro"
-                                value={currentUoM.name || ''}
-                                onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Categoría</Label>
-                            <Select
-                                value={currentUoM.category?.toString()}
-                                onValueChange={(val) => setCurrentUoM({ ...currentUoM, category: parseInt(val) })}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue placeholder="Seleccionar categoría" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map(cat => (
-                                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Tipo</Label>
-                            <Select
-                                value={currentUoM.uom_type}
-                                onValueChange={(val: any) => setCurrentUoM({ ...currentUoM, uom_type: val })}
-                            >
-                                <SelectTrigger className="col-span-3">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="REFERENCE">Referencia (Base de la categoría)</SelectItem>
-                                    <SelectItem value="BIGGER">Más Grande que la base</SelectItem>
-                                    <SelectItem value="SMALLER">Más Pequeña que la base</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        {currentUoM.uom_type !== 'REFERENCE' && (
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Ratio</Label>
-                                <Input
-                                    className="col-span-3"
-                                    type="number"
-                                    step="0.00001"
-                                    value={currentUoM.ratio || ''}
-                                    onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
-                                />
-                                <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground italic">
-                                    {currentUoM.uom_type === 'BIGGER'
-                                        ? 'Cuántas unidades base equivalen a esta unidad'
-                                        : 'Cuántas unidades de estas equivalen a la unidad base'}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                    <DialogFooter>
+                title={`${currentUoM.id ? 'Editar' : 'Crear'} Unidad de Medida`}
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsUoMModalOpen(false)}>Cancelar</Button>
                         <Button onClick={handleSaveUoM} disabled={isSaving}>
                             {isSaving ? "Guardando..." : "Guardar Unidad"}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                }
+            >
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Nombre</Label>
+                        <Input
+                            className="col-span-3"
+                            placeholder="Ej: Kilogramo, Metro, Litro"
+                            value={currentUoM.name || ''}
+                            onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Categoría</Label>
+                        <Select
+                            value={currentUoM.category?.toString()}
+                            onValueChange={(val) => setCurrentUoM({ ...currentUoM, category: parseInt(val) })}
+                        >
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Seleccionar categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Tipo</Label>
+                        <Select
+                            value={currentUoM.uom_type}
+                            onValueChange={(val: any) => setCurrentUoM({ ...currentUoM, uom_type: val })}
+                        >
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="REFERENCE">Referencia (Base de la categoría)</SelectItem>
+                                <SelectItem value="BIGGER">Más Grande que la base</SelectItem>
+                                <SelectItem value="SMALLER">Más Pequeña que la base</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {currentUoM.uom_type !== 'REFERENCE' && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Ratio</Label>
+                            <Input
+                                className="col-span-3"
+                                type="number"
+                                step="0.00001"
+                                value={currentUoM.ratio || ''}
+                                onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
+                            />
+                            <p className="col-start-2 col-span-3 text-[10px] text-muted-foreground italic">
+                                {currentUoM.uom_type === 'BIGGER'
+                                    ? 'Cuántas unidades base equivalen a esta unidad'
+                                    : 'Cuántas unidades de estas equivalen a la unidad base'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </BaseModal>
         </div>
     )
 }

@@ -1,12 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Table,
     TableBody,
@@ -135,25 +130,30 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
     return (
         <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
-                    <DialogHeader className="p-6 pb-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg">
-                                    <History className="h-5 w-5 text-primary" />
-                                </div>
-                                <div>
-                                    <DialogTitle className="text-xl">Historial de Suscripción</DialogTitle>
-                                    {data && (
-                                        <p className="text-sm text-muted-foreground font-medium">
-                                            {data.product_name} | {data.supplier_name}
-                                        </p>
-                                    )}
-                                </div>
+            <BaseModal
+                open={open}
+                onOpenChange={onOpenChange}
+                size="full"
+                className="max-w-5xl"
+                headerClassName="sr-only"
+                title={`Historial de Suscripción: ${data?.product_name}`}
+            >
+                <div className="flex flex-col h-full overflow-hidden">
+                    <div className="p-6 pb-2 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <History className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold">Historial de Suscripción</h2>
+                                {data && (
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                        {data.product_name} | {data.supplier_name}
+                                    </p>
+                                )}
                             </div>
                         </div>
-                    </DialogHeader>
+                    </div>
 
                     {loading ? (
                         <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
@@ -375,8 +375,8 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                             </div>
                         </Tabs>
                     )}
-                </DialogContent>
-            </Dialog>
+                </div>
+            </BaseModal>
 
             <OrderCommandCenter
                 orderId={selectedOrderId}

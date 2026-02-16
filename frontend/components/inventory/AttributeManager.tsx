@@ -7,13 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -230,55 +224,57 @@ export function AttributeManager() {
             )}
 
             {/* Modal para Atributo */}
-            <Dialog open={isAttrModalOpen} onOpenChange={setIsAttrModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Crear Nuevo Atributo</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="attr-name">Nombre (ej: Color, Talla)</Label>
-                            <Input
-                                id="attr-name"
-                                value={newAttrName}
-                                onChange={(e) => setNewAttrName(e.target.value)}
-                                placeholder="Escribe el nombre..."
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
+            <BaseModal
+                open={isAttrModalOpen}
+                onOpenChange={setIsAttrModalOpen}
+                title="Crear Nuevo Atributo"
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsAttrModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleCreateAttribute}>Crear</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="attr-name">Nombre (ej: Color, Talla)</Label>
+                        <Input
+                            id="attr-name"
+                            value={newAttrName}
+                            onChange={(e) => setNewAttrName(e.target.value)}
+                            placeholder="Escribe el nombre..."
+                        />
+                    </div>
+                </div>
+            </BaseModal>
 
             {/* Modal para Valor */}
-            <Dialog open={isValueModalOpen} onOpenChange={setIsValueModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Añadir Valor a {selectedAttribute?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="val-name">Nombre del Valor (ej: Rojo, XL)</Label>
-                            <Input
-                                id="val-name"
-                                value={newValueName}
-                                onChange={(e) => setNewValueName(e.target.value)}
-                                placeholder="Escribe el valor..."
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleCreateValue()
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
+            <BaseModal
+                open={isValueModalOpen}
+                onOpenChange={setIsValueModalOpen}
+                title={`Añadir Valor a ${selectedAttribute?.name}`}
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsValueModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleCreateValue}>Añadir</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <Button onClick={handleCreateValue}>Añadir Valor</Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="val-name">Nombre del Valor (ej: Rojo, XL)</Label>
+                        <Input
+                            id="val-name"
+                            value={newValueName}
+                            onChange={(e) => setNewValueName(e.target.value)}
+                            placeholder="Escribe el valor..."
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") handleCreateValue()
+                            }}
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </div>
     )
 }

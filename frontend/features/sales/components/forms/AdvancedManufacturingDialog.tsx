@@ -1,9 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -168,23 +166,45 @@ export function AdvancedManufacturingDialog({
     const showProductDescription = product.product_type === 'MANUFACTURABLE' && !product.has_bom
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-y-auto max-h-[90vh] p-0 rounded-none border-t-4 border-t-primary">
-                <DialogHeader className="p-8 pb-4 bg-muted/30">
-                    <div className="flex items-center gap-6">
-                        <motion.div
-                            initial={{ rotate: -15, scale: 0.8 }}
-                            animate={{ rotate: 0, scale: 1 }}
-                            className="p-4 rounded-none bg-primary text-primary-foreground shadow-xl"
-                        >
-                            <Paintbrush className="h-8 w-8" />
-                        </motion.div>
-                        <div className="space-y-1">
-                            <DialogTitle className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</DialogTitle>
-                            <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} // REF: {product.code}</p>
-                        </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            className="max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] p-0 rounded-none border-t-4 border-t-primary"
+            hideScrollArea
+            title={
+                <div className="flex items-center gap-6 p-4">
+                    <motion.div
+                        initial={{ rotate: -15, scale: 0.8 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        className="p-4 rounded-none bg-primary text-primary-foreground shadow-xl"
+                    >
+                        <Paintbrush className="h-8 w-8" />
+                    </motion.div>
+                    <div className="space-y-1">
+                        <div className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</div>
+                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} // REF: {product.code}</p>
                     </div>
-                </DialogHeader>
+                </div>
+            }
+            footer={
+                <div className="bg-muted p-6 border-t border-border flex flex-row items-center justify-between gap-4 w-full">
+                    <div className="hidden md:block text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+                        ESTADO DE FICHA: {(enablePrepress || enablePress || enablePostpress) ? 'ACTIVA' : 'INCOMPLETA'}
+                    </div>
+                    <div className="flex items-center gap-4 ml-auto">
+                        <Button variant="ghost" className="font-bold text-xs uppercase tracking-widest hover:bg-background" onClick={() => onOpenChange(false)}>Anular</Button>
+                        <Button
+                            className="px-10 h-12 font-black text-xs uppercase tracking-[0.3em] rounded-none shadow-[8px_8px_0_rgba(var(--primary),0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0_rgba(var(--primary),0.3)] transition-all"
+                            onClick={handleConfirm}
+                        >
+                            Validar Producción
+                        </Button>
+                    </div>
+                </div>
+            }
+        >
+            <div className="flex-1 overflow-y-auto">
 
                 <div className="grid gap-8 p-8 py-6">
                     {/* Contact Row */}
@@ -387,22 +407,7 @@ export function AdvancedManufacturingDialog({
                         />
                     </div>
                 </div>
-
-                <DialogFooter className="bg-muted p-6 border-t border-border flex flex-row items-center justify-between gap-4">
-                    <div className="hidden md:block text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-                        ESTADO DE FICHA: {enablePrepress || enablePress || enablePostpress ? 'ACTIVA' : 'INCOMPLETA'}
-                    </div>
-                    <div className="flex items-center gap-4 ml-auto">
-                        <Button variant="ghost" className="font-bold text-xs uppercase tracking-widest hover:bg-background" onClick={() => onOpenChange(false)}>Anular</Button>
-                        <Button
-                            className="px-10 h-12 font-black text-xs uppercase tracking-[0.3em] rounded-none shadow-[8px_8px_0_rgba(var(--primary),0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0_rgba(var(--primary),0.3)] transition-all"
-                            onClick={handleConfirm}
-                        >
-                            Validar Producción
-                        </Button>
-                    </div>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal >
     )
 }

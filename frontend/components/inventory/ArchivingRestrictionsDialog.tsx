@@ -1,14 +1,7 @@
 "use client"
 
 import React from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
@@ -42,17 +35,42 @@ export function ArchivingRestrictionsDialog({
     isRetrying = false
 }: ArchivingRestrictionsDialogProps) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-destructive">
-                        <AlertCircle className="h-5 w-5" />
-                        No se puede archivar el producto
-                    </DialogTitle>
-                    <DialogDescription>
-                        El producto <strong>{productName}</strong> tiene dependencias activas que deben resolverse antes de poder archivarlo.
-                    </DialogDescription>
-                </DialogHeader>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title={
+                <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    No se puede archivar el producto
+                </div>
+            }
+            footer={
+                <div className="flex gap-2 w-full justify-end">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                        Cerrar
+                    </Button>
+                    {onRetry && (
+                        <Button
+                            onClick={onRetry}
+                            disabled={isRetrying}
+                            className="flex-1 sm:flex-none"
+                        >
+                            {isRetrying ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                                <RefreshCcw className="h-4 w-4 mr-2" />
+                            )}
+                            Reintentar Archivado
+                        </Button>
+                    )}
+                </div>
+            }
+        >
+            <div className="space-y-4 py-2">
+                <p className="text-sm text-muted-foreground">
+                    El producto <strong>{productName}</strong> tiene dependencias activas que deben resolverse antes de poder archivarlo.
+                </p>
 
                 <div className="space-y-4 py-4">
                     {restrictions.map((restriction, index) => (
@@ -84,27 +102,7 @@ export function ArchivingRestrictionsDialog({
                         </div>
                     ))}
                 </div>
-
-                <DialogFooter className="gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
-                        Cerrar
-                    </Button>
-                    {onRetry && (
-                        <Button
-                            onClick={onRetry}
-                            disabled={isRetrying}
-                            className="flex-1 sm:flex-none"
-                        >
-                            {isRetrying ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                                <RefreshCcw className="h-4 w-4 mr-2" />
-                            )}
-                            Reintentar Archivado
-                        </Button>
-                    )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal>
     )
 }

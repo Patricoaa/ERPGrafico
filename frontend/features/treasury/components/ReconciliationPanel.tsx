@@ -12,19 +12,11 @@ import { Textarea } from "@/components/ui/textarea"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import {
     AlertCircle, AlertTriangle, ArrowRight, Ban, Check, CheckCircle2, ChevronRight, Filter,
     Loader2, MoreVertical, MousePointer2, Search, Settings2, Sparkles, Trash2,
@@ -924,102 +916,77 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             </div>
 
             {/* Difference Adjustment Dialog */}
-            <Dialog open={diffDialog.open} onOpenChange={open => setDiffDialog(prev => ({ ...prev, open }))}>
-                <DialogContent className="max-w-md bg-white p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-                    <div className="bg-amber-500 p-6 text-white">
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <AlertTriangle className="h-6 w-6" />
-                            Ajuste de Diferencia
-                        </DialogTitle>
-                        <p className="text-amber-100 text-sm mt-1">Existe un saldo pendiente por justificar en esta operación.</p>
-                    </div>
-
-                    <div className="p-6 space-y-6">
-                        <div className="bg-muted/50 rounded-xl p-4 flex justify-between items-center border">
-                            <span className="text-xs font-bold uppercase text-muted-foreground opacity-60">Diferencia Neta</span>
-                            <span className="text-xl font-black font-mono text-amber-600">{formatCurrency(diffDialog.amount)}</span>
-                        </div>
-
-                        <div className="grid gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tipo de Ajuste Contable</Label>
-                                <Select value={diffType} onValueChange={setDiffType}>
-                                    <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-amber-500">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="COMMISSION">🏦 Comisión Bancaria</SelectItem>
-                                        <SelectItem value="INTEREST">📈 Intereses Percibidos/Pagados</SelectItem>
-                                        <SelectItem value="EXCHANGE_DIFF">💱 Diferencia de Cambio</SelectItem>
-                                        <SelectItem value="ROUNDING">🔢 Ajuste por Redondeo</SelectItem>
-                                        <SelectItem value="ERROR">❌ Error Operativo / Diferencia</SelectItem>
-                                        <SelectItem value="OTHER">📁 Otro Concepto Contable</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observaciones</Label>
-                                <Textarea
-                                    placeholder="Explica brevemente el motivo de este ajuste..."
-                                    value={diffNotes}
-                                    onChange={e => setDiffNotes(e.target.value)}
-                                    className="resize-none h-24 bg-muted/20 border-border/50 focus:ring-amber-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <DialogFooter className="bg-muted/30 p-4 border-t gap-2 sm:gap-0">
+            {/* Difference Adjustment Dialog */}
+            <BaseModal
+                open={diffDialog.open}
+                onOpenChange={open => setDiffDialog(prev => ({ ...prev, open }))}
+                title="Ajuste de Diferencia"
+                description="Existe un saldo pendiente por justificar en esta operación."
+                variant="transaction"
+                headerClassName="bg-amber-500 text-white border-none"
+                footer={(
+                    <div className="flex w-full gap-2 sm:gap-0">
                         <Button variant="ghost" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} className="font-bold text-muted-foreground flex-1">Cancelar</Button>
                         <Button onClick={confirmDifferenceMatch} disabled={matching} className="bg-amber-600 hover:bg-amber-700 font-bold flex-[2]">
                             {matching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Confirmar y Justificar
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                )}
+            >
+                <div className="p-6 space-y-6">
+                    <div className="bg-muted/50 rounded-xl p-4 flex justify-between items-center border">
+                        <span className="text-xs font-bold uppercase text-muted-foreground opacity-60">Diferencia Neta</span>
+                        <span className="text-xl font-black font-mono text-amber-600">{formatCurrency(diffDialog.amount)}</span>
+                    </div>
 
-            <AlertDialog open={actionDialog.open} onOpenChange={(open) => !open && setActionDialog(prev => ({ ...prev, open: false }))}>
-                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
-                            {actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude' ? (
-                                <>
-                                    <Ban className="h-5 w-5 text-red-500" />
-                                    ¿Excluir transacciones?
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="h-5 w-5 text-amber-500" />
-                                    ¿Iniciar Auto-Match?
-                                </>
-                            )}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-foreground/60">
-                            {actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude'
-                                ? 'Estas transacciones se moverán al archivo de excluidos y dejarán de aparecer en este panel. Podrás re-incorporarlas desde el detalle de la cartola si fuera necesario.'
-                                : 'Nuestro algoritmo analizará todas las líneas pendientes buscando coincidencias exactas y de alta confianza (90%+). Las transacciones seleccionadas se reconciliarán automáticamente.'
-                            }
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-4">
-                        <AlertDialogCancel className="font-bold border-none bg-muted/50 hover:bg-muted">Retroceder</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => {
-                                if (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') confirmExclude()
-                                if (actionDialog.type === 'automatch') confirmAutoMatch()
-                            }}
-                            className={cn(
-                                "font-bold shadow-lg",
-                                (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary"
-                            )}
-                        >
-                            Comprendido, procesar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tipo de Ajuste Contable</Label>
+                            <Select value={diffType} onValueChange={setDiffType}>
+                                <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-amber-500">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="COMMISSION">🏦 Comisión Bancaria</SelectItem>
+                                    <SelectItem value="INTEREST">📈 Intereses Percibidos/Pagados</SelectItem>
+                                    <SelectItem value="EXCHANGE_DIFF">💱 Diferencia de Cambio</SelectItem>
+                                    <SelectItem value="ROUNDING">🔢 Ajuste por Redondeo</SelectItem>
+                                    <SelectItem value="ERROR">❌ Error Operativo / Diferencia</SelectItem>
+                                    <SelectItem value="OTHER">📁 Otro Concepto Contable</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observaciones</Label>
+                            <Textarea
+                                placeholder="Explica brevemente el motivo de este ajuste..."
+                                value={diffNotes}
+                                onChange={e => setDiffNotes(e.target.value)}
+                                className="resize-none h-24 bg-muted/20 border-border/50 focus:ring-amber-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </BaseModal>
+
+            <ActionConfirmModal
+                open={actionDialog.open}
+                onOpenChange={(open) => !open && setActionDialog(prev => ({ ...prev, open: false }))}
+                onConfirm={async () => {
+                    if (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') await confirmExclude()
+                    if (actionDialog.type === 'automatch') await confirmAutoMatch()
+                }}
+                title={actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude' ? "¿Excluir transacciones?" : "¿Iniciar Auto-Match?"}
+                description={actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude'
+                    ? 'Estas transacciones se moverán al archivo de excluidos y dejarán de aparecer en este panel. Podrás re-incorporarlas desde el detalle de la cartola si fuera necesario.'
+                    : 'Nuestro algoritmo analizará todas las líneas pendientes buscando coincidencias exactas y de alta confianza (90%+). Las transacciones seleccionadas se reconciliarán automáticamente.'
+                }
+                variant={(actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') ? "destructive" : "default"}
+                confirmText="Comprendido, procesar"
+                icon={(actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude') ? Ban : Sparkles}
+            />
         </div>
     )
 }

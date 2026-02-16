@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -250,160 +250,16 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
     }
 
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-7xl max-w-[95vw] w-full" : "sm:max-w-[500px]")}>
-                <DialogHeader>
-                    <DialogTitle>
-                        {step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {step === 'MAPPING'
-                            ? 'Asigna cada columna de tu archivo a los campos del sistema'
-                            : 'Sube tu cartola bancaria para conciliar movimientos'}
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                    {step === 'UPLOAD' && (
-                        <>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Cuenta de Tesorería *</Label>
-                                <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Selecciona cuenta..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {treasuryAccounts.map((account) => (
-                                            <SelectItem key={account.id} value={account.id.toString()}>
-                                                {account.name} ({account.code})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Formato *</Label>
-                                <Select value={bankFormat} onValueChange={setBankFormat}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(bankFormats).map(([key, label]) => (
-                                            <SelectItem key={key} value={key}>
-                                                {label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {isGenericFormat() && (
-                                    <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                                        <RefreshCw className="w-3 h-3" />
-                                        Modo flexible: podrás configurar las columnas manualmente.
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Archivo *</Label>
-                                <Input type="file" onChange={handleFileChange} accept=".csv,.xls,.xlsx" className={cn(FORM_STYLES.input, "cursor-pointer pt-1.5")} />
-                            </div>
-                        </>
-                    )}
-
-                    {step === 'MAPPING' && previewData && (
-                        <div className="space-y-4">
-                            <div className="rounded-md border max-h-[500px] overflow-auto w-full relative">
-                                <Table className="table-fixed w-max min-w-full border-separate border-spacing-0">
-                                    <TableHeader className="sticky top-0 z-10 bg-background">
-                                        <TableRow>
-                                            {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="w-[250px] bg-muted/50 border-x p-0">
-                                                    <div className="flex flex-col gap-2 p-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                                {idx}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs font-mono text-muted-foreground break-all line-clamp-1 h-4" title={String(col)}>
-                                                            {String(col)}
-                                                        </span>
-                                                        <Select
-                                                            value={Object.entries(mapping).find(([_, v]) => v === col)?.[0] || "ignore"}
-                                                            onValueChange={(val) => {
-                                                                const newMapping = { ...mapping }
-                                                                // Clear previous assignment of this field
-                                                                if (val !== 'ignore') {
-                                                                    // Remove if assigned elsewhere? Allow duplicates? Usually 1-to-1.
-                                                                    // Let's just set it.
-                                                                    newMapping[val] = col
-                                                                } else {
-                                                                    // Find key that has this col and remove it
-                                                                    const key = Object.entries(mapping).find(([_, v]) => v === col)?.[0]
-                                                                    if (key) newMapping[key] = null
-                                                                }
-                                                                setMapping(newMapping)
-                                                            }}
-                                                        >
-                                                            <SelectTrigger className={cn(FORM_STYLES.input, "h-7 text-xs")}>
-                                                                <SelectValue placeholder="Ignorar" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="ignore">Ignorar</SelectItem>
-                                                                <SelectItem value="date">Fecha</SelectItem>
-                                                                <SelectItem value="description">Descripción</SelectItem>
-                                                                <SelectItem value="debit">Cargos</SelectItem>
-                                                                <SelectItem value="credit">Abonos</SelectItem>
-                                                                <SelectItem value="balance">Saldo</SelectItem>
-                                                                <SelectItem value="reference">Referencia</SelectItem>
-                                                                <SelectItem value="transaction_id">ID Transacción</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {previewData.rows.slice(0, 5).map((row, rIdx) => (
-                                            <TableRow key={rIdx}>
-                                                {row.map((cell, cIdx) => (
-                                                    <TableCell key={cIdx} className="text-xs whitespace-nowrap">
-                                                        {String(cell)}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                            <div className="flex gap-2 text-xs text-muted-foreground">
-                                <span>Campos:</span>
-                                {REQUIRED_FIELDS.map(f => (
-                                    <span key={f} className={cn(mapping[f] !== null ? "text-green-600 font-medium" : "text-red-500")}>
-                                        {f} {mapping[f] !== null ? '✓' : '✗'}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {success && (
-                        <Alert className="bg-green-50 text-green-900 border-green-200">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <AlertDescription>Importación exitosa</AlertDescription>
-                        </Alert>
-                    )}
-                </div>
-
-                <DialogFooter>
+        <BaseModal
+            open={open}
+            onOpenChange={handleClose}
+            title={step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}
+            description={step === 'MAPPING'
+                ? 'Asigna cada columna de tu archivo a los campos del sistema'
+                : 'Sube tu cartola bancaria para conciliar movimientos'}
+            className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-7xl max-w-[95vw] w-full" : "sm:max-w-[500px]")}
+            footer={(
+                <div className="flex justify-end gap-2 w-full">
                     {step === 'MAPPING' && (
                         <Button variant="outline" onClick={() => setStep('UPLOAD')} disabled={loading}>
                             Atrás
@@ -414,8 +270,148 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         {step === 'UPLOAD' && isGenericFormat() ? 'Siguiente' : 'Importar'}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            )}
+        >
+            <div className="space-y-4 py-2 px-1">
+                {step === 'UPLOAD' && (
+                    <>
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Cuenta de Tesorería *</Label>
+                            <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
+                                <SelectTrigger className={FORM_STYLES.input}>
+                                    <SelectValue placeholder="Selecciona cuenta..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {treasuryAccounts.map((account) => (
+                                        <SelectItem key={account.id} value={account.id.toString()}>
+                                            {account.name} ({account.code})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Formato *</Label>
+                            <Select value={bankFormat} onValueChange={setBankFormat}>
+                                <SelectTrigger className={FORM_STYLES.input}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(bankFormats).map(([key, label]) => (
+                                        <SelectItem key={key} value={key}>
+                                            {label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {isGenericFormat() && (
+                                <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                                    <RefreshCw className="w-3 h-3" />
+                                    Modo flexible: podrás configurar las columnas manualmente.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Archivo *</Label>
+                            <Input type="file" onChange={handleFileChange} accept=".csv,.xls,.xlsx" className={cn(FORM_STYLES.input, "cursor-pointer pt-1.5")} />
+                        </div>
+                    </>
+                )}
+
+                {step === 'MAPPING' && previewData && (
+                    <div className="space-y-4">
+                        <div className="rounded-md border max-h-[500px] overflow-x-auto overflow-y-auto w-full relative">
+                            <Table className="w-max min-w-full border-separate border-spacing-0">
+                                <TableHeader className="sticky top-0 z-10 bg-background">
+                                    <TableRow>
+                                        {previewData.columns.map((col, idx) => (
+                                            <TableHead key={idx} className="w-[250px] bg-muted/50 border-x p-0">
+                                                <div className="flex flex-col gap-2 p-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                            {idx}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-xs font-mono text-muted-foreground break-all line-clamp-1 h-4" title={String(col)}>
+                                                        {String(col)}
+                                                    </span>
+                                                    <Select
+                                                        value={Object.entries(mapping).find(([_, v]) => v === col)?.[0] || "ignore"}
+                                                        onValueChange={(val) => {
+                                                            const newMapping = { ...mapping }
+                                                            // Clear previous assignment of this field
+                                                            if (val !== 'ignore') {
+                                                                // Remove if assigned elsewhere? Allow duplicates? Usually 1-to-1.
+                                                                // Let's just set it.
+                                                                newMapping[val] = col
+                                                            } else {
+                                                                // Find key that has this col and remove it
+                                                                const key = Object.entries(mapping).find(([_, v]) => v === col)?.[0]
+                                                                if (key) newMapping[key] = null
+                                                            }
+                                                            setMapping(newMapping)
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className={cn(FORM_STYLES.input, "h-7 text-xs")}>
+                                                            <SelectValue placeholder="Ignorar" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="ignore">Ignorar</SelectItem>
+                                                            <SelectItem value="date">Fecha</SelectItem>
+                                                            <SelectItem value="description">Descripción</SelectItem>
+                                                            <SelectItem value="debit">Cargos</SelectItem>
+                                                            <SelectItem value="credit">Abonos</SelectItem>
+                                                            <SelectItem value="balance">Saldo</SelectItem>
+                                                            <SelectItem value="reference">Referencia</SelectItem>
+                                                            <SelectItem value="transaction_id">ID Transacción</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {previewData.rows.slice(0, 5).map((row, rIdx) => (
+                                        <TableRow key={rIdx}>
+                                            {row.map((cell, cIdx) => (
+                                                <TableCell key={cIdx} className="text-xs whitespace-nowrap">
+                                                    {String(cell)}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <div className="flex gap-2 text-xs text-muted-foreground">
+                            <span>Campos:</span>
+                            {REQUIRED_FIELDS.map(f => (
+                                <span key={f} className={cn(mapping[f] !== null ? "text-green-600 font-medium" : "text-red-500")}>
+                                    {f} {mapping[f] !== null ? '✓' : '✗'}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {error && (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert className="bg-green-50 text-green-900 border-green-200">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <AlertDescription>Importación exitosa</AlertDescription>
+                    </Alert>
+                )}
+            </div>
+        </BaseModal>
     )
 }

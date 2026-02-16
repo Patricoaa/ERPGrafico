@@ -5,13 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -102,76 +96,78 @@ export function EditProposalDialog({ proposal, open, onOpenChange, onSuccess }: 
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="xs">
-                <DialogHeader>
-                    <DialogTitle>Editar Propuesta de Reabastecimiento</DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="qty_to_order"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cantidad a Pedir ({proposal?.uom_name || 'Unidades'})</FormLabel>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title="Editar Propuesta de Reabastecimiento"
+            footer={
+                <div className="flex justify-end gap-2 w-full">
+                    <Button type="submit" form="edit-proposal-form" disabled={isSaving}>
+                        {isSaving ? "Guardando..." : "Guardar Cambios"}
+                    </Button>
+                </div>
+            }
+        >
+            <Form {...form}>
+                <form id="edit-proposal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <FormField
+                        control={form.control}
+                        name="qty_to_order"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Cantidad a Pedir ({proposal?.uom_name || 'Unidades'})</FormLabel>
+                                <FormControl>
+                                    <Input {...field} type="number" step="0.01" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="supplier"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Proveedor</FormLabel>
+                                <FormControl>
+                                    <AdvancedContactSelector
+                                        contactType="SUPPLIER"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Seleccionar proveedor..."
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="warehouse"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Almacén de Recepción</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
-                                        <Input {...field} type="number" step="0.01" />
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar almacén" />
+                                        </SelectTrigger>
                                     </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="supplier"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Proveedor</FormLabel>
-                                    <FormControl>
-                                        <AdvancedContactSelector
-                                            contactType="SUPPLIER"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="Seleccionar proveedor..."
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="warehouse"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Almacén de Recepción</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccionar almacén" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {warehouses.map((w) => (
-                                                <SelectItem key={w.id} value={w.id.toString()}>
-                                                    {w.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <DialogFooter>
-                            <Button type="submit" disabled={isSaving}>
-                                {isSaving ? "Guardando..." : "Guardar Cambios"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                                    <SelectContent>
+                                        {warehouses.map((w) => (
+                                            <SelectItem key={w.id} value={w.id.toString()}>
+                                                {w.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
+        </BaseModal>
     )
 }

@@ -16,7 +16,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface TerminalBatchFormProps {
@@ -335,42 +335,52 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
         .reduce((sum, m) => sum + parseFloat(m.amount), 0)
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle>Seleccionar Ventas a Liquidar</DialogTitle>
-                    <DialogDescription>
-                        Seleccione las transacciones que el proveedor incluyó en esta liquidación.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="py-4">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="select-all"
-                                checked={selectedIds.size === movements.length && movements.length > 0}
-                                onCheckedChange={toggleAll}
-                            />
-                            <Label htmlFor="select-all" className="text-sm font-bold cursor-pointer">
-                                Seleccionar Todas ({movements.length})
-                            </Label>
-                        </div>
-                        <div className="text-sm font-black text-emerald-600">
-                            Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
-                        </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Seleccionar Ventas a Liquidar"
+            description="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
+            className="sm:max-w-[600px]"
+            footer={(
+                <div className="flex justify-end gap-2 w-full">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button
+                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
+                        disabled={selectedIds.size === 0}
+                    >
+                        Confirmar Selección
+                    </Button>
+                </div>
+            )}
+        >
+            <div className="py-2">
+                <div className="flex items-center justify-between mb-4 px-2">
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="select-all"
+                            checked={selectedIds.size === movements.length && movements.length > 0}
+                            onCheckedChange={toggleAll}
+                        />
+                        <Label htmlFor="select-all" className="text-sm font-bold cursor-pointer">
+                            Seleccionar Todas ({movements.length})
+                        </Label>
                     </div>
+                    <div className="text-sm font-black text-emerald-600">
+                        Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
+                    </div>
+                </div>
 
-                    <ScrollArea className="h-[300px] border rounded-md">
-                        {loading ? (
-                            <div className="flex items-center justify-center h-full">
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                            </div>
-                        ) : movements.length === 0 ? (
-                            <div className="p-8 text-center text-muted-foreground italic">
-                                No se encontraron ventas pendientes para esta fecha.
-                            </div>
-                        ) : (
+                <div className="h-[300px] border rounded-md relative overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-full">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : movements.length === 0 ? (
+                        <div className="p-8 text-center text-muted-foreground italic">
+                            No se encontraron ventas pendientes para esta fecha.
+                        </div>
+                    ) : (
+                        <ScrollArea className="h-full">
                             <div className="divide-y">
                                 {movements.map((m) => (
                                     <div
@@ -404,21 +414,11 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                                     </div>
                                 ))}
                             </div>
-                        )}
-                    </ScrollArea>
+                        </ScrollArea>
+                    )}
                 </div>
-
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button
-                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
-                        disabled={selectedIds.size === 0}
-                    >
-                        Confirmar Selección
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal>
     )
 }
 

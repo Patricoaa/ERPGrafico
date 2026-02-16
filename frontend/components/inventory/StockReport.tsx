@@ -10,7 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { ProductInsightsDialog } from "@/components/inventory/ProductInsightsDialog"
 import { Badge } from "@/components/ui/badge"
 
@@ -172,29 +172,31 @@ export function StockReport() {
                 defaultPageSize={50}
             />
 
-            <Dialog open={!!adjustingProduct} onOpenChange={(open) => !open && setAdjustingProduct(null)}>
-                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>
-                            Ajustar Stock: {adjustingProduct?.name}
-                        </DialogTitle>
-                        <p className="text-sm text-muted-foreground">
+            <BaseModal
+                open={!!adjustingProduct}
+                onOpenChange={(open) => !open && setAdjustingProduct(null)}
+                size="lg"
+                title={
+                    <div>
+                        <div className="text-xl font-bold">Ajustar Stock: {adjustingProduct?.name}</div>
+                        <p className="text-sm text-muted-foreground font-normal mt-1">
                             Stock actual: <span className="font-bold">{adjustingProduct?.stock_qty} {adjustingProduct?.uom_name}</span> •
                             Costo unitario: <span className="font-bold">${adjustingProduct?.unit_cost}</span>
                         </p>
-                    </DialogHeader>
-                    {adjustingProduct && (
-                        <AdjustmentForm
-                            preSelectedProduct={adjustingProduct.id.toString()}
-                            onSuccess={() => {
-                                setAdjustingProduct(null);
-                                fetchReport();
-                            }}
-                            onCancel={() => setAdjustingProduct(null)}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
+                    </div>
+                }
+            >
+                {adjustingProduct && (
+                    <AdjustmentForm
+                        preSelectedProduct={adjustingProduct.id.toString()}
+                        onSuccess={() => {
+                            setAdjustingProduct(null);
+                            fetchReport();
+                        }}
+                        onCancel={() => setAdjustingProduct(null)}
+                    />
+                )}
+            </BaseModal>
             <ProductInsightsDialog
                 open={!!insightsProduct}
                 onOpenChange={(open) => !open && setInsightsProduct(null)}

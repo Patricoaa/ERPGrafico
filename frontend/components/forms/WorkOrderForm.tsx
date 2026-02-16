@@ -11,14 +11,7 @@ import Link from "next/link"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -396,37 +389,59 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <>
             {!initialData && (
-                <DialogTrigger asChild>
-                    {triggerVariant === "circular" ? (
-                        <Button size="icon" className="rounded-full h-8 w-8" title="Nueva OT">
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    ) : (
-                        <Button>Nueva Orden de Trabajo</Button>
-                    )}
-                </DialogTrigger>
+                triggerVariant === "circular" ? (
+                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setOpen(true)} title="Nueva OT">
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button onClick={() => setOpen(true)}>Nueva Orden de Trabajo</Button>
+                )
             )}
-            <DialogContent className="sm:max-w-[1000px] w-[95vw] max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="border-b pb-4 mb-4">
-                    <div className="flex items-center justify-between">
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="full"
+                className="max-w-[1000px]"
+                title={
+                    <div className="flex items-center justify-between w-full pr-8">
                         <div className="space-y-1">
-                            <DialogTitle>
+                            <div className="text-xl font-bold">
                                 {initialData ? `Orden de Trabajo #${initialData?.number}` : "Crear Orden de Trabajo"}
-                            </DialogTitle>
-                            <DialogDescription className="text-primary font-medium flex items-center gap-2">
+                            </div>
+                            <div className="text-xs text-primary font-medium flex items-center gap-2">
                                 <CalendarIcon className="h-3.5 w-3.5" />
                                 {form.getValues("start_date") ?
                                     `Inicio: ${format(form.getValues("start_date")!, "PPP", { locale: es })}` :
                                     "Fecha de inicio automática"}
-                            </DialogDescription>
+                            </div>
                         </div>
                         {renderStatusBadge()}
                     </div>
-                </DialogHeader>
+                }
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            form="work-order-form"
+                            type="submit"
+                            disabled={loading}
+                        >
+                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form id="work-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
 
                         {/* 1. General Info & Link */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1030,22 +1045,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                             )}
                         />
 
-                        <div className="flex justify-end space-x-2 pt-4 border-t">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear OT"}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog >
+            </BaseModal >
+        </>
     )
 }
-

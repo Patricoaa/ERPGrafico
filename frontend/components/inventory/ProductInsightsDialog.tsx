@@ -1,12 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Table,
     TableBody,
@@ -126,25 +121,30 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
         : 0
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <BarChart3 className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-xl">Insights del Producto</DialogTitle>
-                                {productName && (
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                        {productName}
-                                    </p>
-                                )}
-                            </div>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            className="max-w-5xl"
+            headerClassName="sr-only" // We are using a custom header inside for complex layout
+            title={`Insights del Producto: ${productName}`}
+        >
+            <div className="flex flex-col h-full overflow-hidden">
+                <div className="p-6 pb-2 flex items-center justify-between border-b">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <BarChart3 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold">Insights del Producto</h2>
+                            {productName && (
+                                <p className="text-sm text-muted-foreground font-medium">
+                                    {productName}
+                                </p>
+                            )}
                         </div>
                     </div>
-                </DialogHeader>
+                </div>
 
                 {loading ? (
                     <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
@@ -433,7 +433,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                         </div>
                     </Tabs>
                 )}
-            </DialogContent>
-        </Dialog>
+            </div>
+        </BaseModal>
     )
 }

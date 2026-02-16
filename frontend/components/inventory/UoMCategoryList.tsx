@@ -7,13 +7,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2 } from "lucide-react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -128,35 +122,33 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                 useAdvancedFilter={true}
             />
 
-            <Dialog
+            <BaseModal
                 open={isModalOpen}
                 onOpenChange={(open) => {
                     setIsModalOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{currentCategory.id ? 'Editar' : 'Crear'} Categoría de Medida</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="cat-name" className="text-right">Nombre</Label>
-                            <Input
-                                id="cat-name"
-                                className="col-span-3"
-                                placeholder="Ej: Peso, Volumen, Unidades"
-                                value={currentCategory.name || ''}
-                                onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
+                title={`${currentCategory.id ? 'Editar' : 'Crear'} Categoría de Medida`}
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
                         <Button onClick={handleSave} disabled={isSaving}>Guardar</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                }
+            >
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="cat-name" className="text-right">Nombre</Label>
+                        <Input
+                            id="cat-name"
+                            className="col-span-3"
+                            placeholder="Ej: Peso, Volumen, Unidades"
+                            value={currentCategory.name || ''}
+                            onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </div>
     )
 }

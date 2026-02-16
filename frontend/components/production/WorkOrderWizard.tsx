@@ -2,13 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -1397,61 +1390,24 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             }
 
             {/* PO Preview Modal */}
-            <Dialog open={showPOPreview} onOpenChange={setShowPOPreview}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-primary" />
-                            Vista Previa de Órdenes de Compra
-                        </DialogTitle>
-                        <DialogDescription>
-                            Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                        <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="p-2 text-left">Proveedor</th>
-                                        <th className="p-2 text-left">Servicio</th>
-                                        <th className="p-2 text-right">Cant.</th>
-                                        <th className="p-2 text-right">P. Bruto</th>
-                                        <th className="p-2 text-right">Total Bruto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {outsourcedPending.map((m, i) => (
-                                        <tr key={i} className="border-t">
-                                            <td className="p-2 font-medium">{m.supplier_name}</td>
-                                            <td className="p-2">{m.component_name}</td>
-                                            <td className="p-2 text-right">{m.quantity_planned}</td>
-                                            <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price) * 1.19)}</td>
-                                            <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
-                            <div className="bg-blue-100 p-2 rounded-full h-fit">
-                                <FileText className="h-4 w-4 text-blue-600" />
-                            </div>
-                            <div className="text-xs text-blue-700 leading-relaxed">
-                                <p className="font-bold mb-1">Nota importante:</p>
-                                <p>Las órdenes de compra se crearán en estado <span className="font-bold">Confirmado</span>. Deberá procesar la recepción desde el Hub de la OC para poder finalizar la OT posteriormente.</p>
-                            </div>
-                        </div>
+            <BaseModal
+                open={showPOPreview}
+                onOpenChange={setShowPOPreview}
+                size="md"
+                title={
+                    <div className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-primary" />
+                        Vista Previa de Órdenes de Compra
                     </div>
-
-                    <div className="flex justify-end gap-3">
+                }
+                description="Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados."
+                footer={
+                    <div className="flex justify-end gap-3 w-full">
                         <Button variant="outline" onClick={() => setShowPOPreview(false)}>
                             Cancelar y Revisar
                         </Button>
                         <Button onClick={() => {
                             setShowPOPreview(false)
-                            // Call handleTransition again but skip preview
                             const nextStage = STAGES[actualStepIndex + 1]?.id
                             if (nextStage) {
                                 handleTransition(nextStage)
@@ -1460,8 +1416,44 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             Confirmar y Generar OC
                         </Button>
                     </div>
-                </DialogContent>
-            </Dialog>
+                }
+            >
+                <div className="space-y-4 py-4">
+                    <div className="border rounded-lg overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted">
+                                <tr>
+                                    <th className="p-2 text-left">Proveedor</th>
+                                    <th className="p-2 text-left">Servicio</th>
+                                    <th className="p-2 text-right">Cant.</th>
+                                    <th className="p-2 text-right">P. Bruto</th>
+                                    <th className="p-2 text-right">Total Bruto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {outsourcedPending.map((m, i) => (
+                                    <tr key={i} className="border-t">
+                                        <td className="p-2 font-medium">{m.supplier_name}</td>
+                                        <td className="p-2">{m.component_name}</td>
+                                        <td className="p-2 text-right">{m.quantity_planned}</td>
+                                        <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price) * 1.19)}</td>
+                                        <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
+                        <div className="bg-blue-100 p-2 rounded-full h-fit">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="text-xs text-blue-700 leading-relaxed">
+                            <p className="font-bold mb-1">Nota importante:</p>
+                            <p>Las órdenes de compra se crearán en estado <span className="font-bold">Confirmado</span>. Deberá procesar la recepción desde el Hub de la OC para poder finalizar la OT posteriormente.</p>
+                        </div>
+                    </div>
+                </div>
+            </BaseModal>
 
             <ActionConfirmModal
                 open={isAnnulModalOpen}

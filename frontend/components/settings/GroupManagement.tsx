@@ -9,16 +9,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
 import { GroupForm } from "@/components/forms/GroupForm"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface GroupManagementProps {
     externalOpen?: boolean
@@ -140,22 +131,15 @@ export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupMan
                 }}
             />
 
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción eliminará el grupo permanentemente. Los usuarios asignados a este grupo dejarán de pertenecer a él, pero no serán eliminados.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Eliminar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={!!deleteId}
+                onOpenChange={(open) => !open && setDeleteId(null)}
+                onConfirm={handleDelete}
+                title="¿Está seguro?"
+                description="Esta acción eliminará el grupo permanentemente. Los usuarios asignados a este grupo dejarán de pertenecer a él, pero no serán eliminados."
+                variant="destructive"
+                confirmText="Eliminar"
+            />
         </div>
     )
 }

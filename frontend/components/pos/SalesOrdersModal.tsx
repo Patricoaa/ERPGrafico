@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { ShoppingCart } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
 
@@ -12,25 +12,28 @@ interface SalesOrdersModalProps {
 
 export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrdersModalProps) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="full" className="max-w-[95vw] h-[90vh] flex flex-col">
-                <DialogHeader className="pb-2">
-                    <DialogTitle className="flex items-center gap-2">
-                        <ShoppingCart className="h-5 w-5" />
-                        Notas de Ventas
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                    {open && (
-                        <SalesOrdersView
-                            posSessionId={posSessionId}
-                            viewMode="orders"
-                            onActionSuccess={() => onOpenChange(false)}
-                            hideStatusInCards
-                        />
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="full"
+            title={
+                <span className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Notas de Ventas
+                </span>
+            }
+            contentClassName="max-w-[95vw] h-[90vh] flex flex-col p-0"
+        >
+            <div className="flex-1 overflow-hidden p-6">
+                {open && (
+                    <SalesOrdersView
+                        posSessionId={posSessionId}
+                        viewMode="orders"
+                        onActionSuccess={() => onOpenChange(false)}
+                        hideStatusInCards
+                    />
+                )}
+            </div>
+        </BaseModal>
     )
 }

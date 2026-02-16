@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { formatPlainDate } from "@/lib/utils"
 
 interface StockMove {
@@ -252,29 +252,32 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 )
             }
 
-            <Dialog open={showAdjustmentModal} onOpenChange={(open) => {
-                setShowAdjustmentModal(open)
-                if (!open) {
-                    onExternalOpenChange?.(false)
-                    handleCloseModal()
-                }
-            }}>
-                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Nuevo Ajuste de Stock</DialogTitle>
-                    </DialogHeader>
-                    <AdjustmentForm onSuccess={() => {
+            <BaseModal
+                open={showAdjustmentModal}
+                onOpenChange={(open) => {
+                    setShowAdjustmentModal(open)
+                    if (!open) {
+                        onExternalOpenChange?.(false)
+                        handleCloseModal()
+                    }
+                }}
+                size="lg"
+                title="Nuevo Ajuste de Stock"
+            >
+                <AdjustmentForm
+                    onSuccess={() => {
                         setShowAdjustmentModal(false);
                         onExternalOpenChange?.(false);
                         handleCloseModal();
                         fetchMoves();
-                    }} onCancel={() => {
+                    }}
+                    onCancel={() => {
                         setShowAdjustmentModal(false);
                         onExternalOpenChange?.(false);
                         handleCloseModal();
-                    }} />
-                </DialogContent>
-            </Dialog>
+                    }}
+                />
+            </BaseModal>
         </div >
     )
 }

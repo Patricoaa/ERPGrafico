@@ -1,13 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -120,93 +114,96 @@ export function POSVariantSelectorModal({
     if (!product) return null
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-                <DialogHeader className="p-6 bg-primary text-primary-foreground">
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                        <Package className="h-6 w-6" />
-                        Seleccionar {product.name}
-                    </DialogTitle>
-                </DialogHeader>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={
+                <span className="flex items-center gap-3">
+                    <Package className="h-6 w-6" />
+                    Seleccionar {product.name}
+                </span>
+            }
+            size="xl"
+            contentClassName="max-w-3xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl"
+            headerClassName="p-6 bg-primary text-primary-foreground"
+        >
+            <div className="p-6">
+                {loading ? (
+                    <div className="h-64 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    </div>
+                ) : (
+                    <ScrollArea className="h-[50vh] pr-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                            {variants.map((v) => {
+                                const limit = variantLimits[v.id]
+                                const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.current_stock ?? Infinity)
 
-                <div className="p-6">
-                    {loading ? (
-                        <div className="h-64 flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                        </div>
-                    ) : (
-                        <ScrollArea className="h-[50vh] pr-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
-                                {variants.map((v) => {
-                                    const limit = variantLimits[v.id]
-                                    const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.current_stock ?? Infinity)
+                                const isAvailable = max > 0 || v.product_type === 'SERVICE' || v.product_type === 'CONSUMABLE'
 
-                                    const isAvailable = max > 0 || v.product_type === 'SERVICE' || v.product_type === 'CONSUMABLE'
-
-                                    return (
-                                        <div
-                                            key={v.id}
-                                            onClick={() => isAvailable && handleSelect(v)}
-                                            className={cn(
-                                                "relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer",
-                                                !isAvailable ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
+                                return (
+                                    <div
+                                        key={v.id}
+                                        onClick={() => isAvailable && handleSelect(v)}
+                                        className={cn(
+                                            "relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer",
+                                            !isAvailable ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
+                                        )}
+                                    >
+                                        {/* Variant Image or Placeholder */}
+                                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            {v.image || product.image ? (
+                                                <img
+                                                    src={v.image || product.image || ""}
+                                                    alt={v.variant_display_name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
                                             )}
-                                        >
-                                            {/* Variant Image or Placeholder */}
-                                            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                {v.image || product.image ? (
-                                                    <img
-                                                        src={v.image || product.image || ""}
-                                                        alt={v.variant_display_name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
-                                                )}
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-sm truncate">
+                                                {v.variant_display_name || v.name}
+                                            </h4>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {v.attribute_values_data?.map((av) => (
+                                                    <Badge key={av.id} variant="outline" className="text-[9px] py-0 h-4 bg-background">
+                                                        {av.value}
+                                                    </Badge>
+                                                ))}
                                             </div>
+                                            <div className="mt-2 flex items-center justify-between">
+                                                <span className="text-primary font-bold">
+                                                    {formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
+                                                </span>
 
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-sm truncate">
-                                                    {v.variant_display_name || v.name}
-                                                </h4>
-                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                    {v.attribute_values_data?.map((av) => (
-                                                        <Badge key={av.id} variant="outline" className="text-[9px] py-0 h-4 bg-background">
-                                                            {av.value}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                                <div className="mt-2 flex items-center justify-between">
-                                                    <span className="text-primary font-bold">
-                                                        {formatCurrency(Number(v.sale_price_gross) || PricingUtils.netToGross(Number(v.sale_price)))}
-                                                    </span>
-
-                                                    {v.has_active_bom ? (
-                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                            {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
+                                                {v.has_active_bom ? (
+                                                    <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                        {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
+                                                    </Badge>
+                                                ) : (
+                                                    (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
+                                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
+                                                            Disponible
                                                         </Badge>
                                                     ) : (
-                                                        (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]">
-                                                                Disponible
-                                                            </Badge>
-                                                        ) : (
-                                                            <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                                {limit !== undefined ? limit : v.current_stock} stock
-                                                            </Badge>
-                                                        )
-                                                    )}
-                                                </div>
+                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                            {limit !== undefined ? limit : v.current_stock} stock
+                                                        </Badge>
+                                                    )
+                                                )}
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </ScrollArea>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </ScrollArea>
+                )}
+            </div>
+        </BaseModal>
     )
 }

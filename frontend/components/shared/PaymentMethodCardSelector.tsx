@@ -10,13 +10,7 @@ import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPayme
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Numpad } from "@/components/ui/numpad"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 
 export interface PaymentData {
     method: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
@@ -361,69 +355,68 @@ export function PaymentMethodCardSelector({
             </div>
 
             {/* Numpad Modal */}
-            <Dialog open={isAmountModalOpen} onOpenChange={setIsAmountModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{amountModalTitle}</DialogTitle>
-                        <DialogDescription>
-                            {amountModalDescription}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-4">
-                            <Label htmlFor="modal-amount">Monto</Label>
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="text-4xl font-black tracking-tight text-blue-600 bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm w-full text-center">
-                                    ${Number(tempAmount || 0).toLocaleString('es-CL')}
-                                </div>
+            <BaseModal
+                open={isAmountModalOpen}
+                onOpenChange={setIsAmountModalOpen}
+                title={amountModalTitle || "Monto"}
+                description={amountModalDescription}
+                className="sm:max-w-md"
+                hideScrollArea
+            >
+                <div className="space-y-4 py-4 px-4">
+                    <div className="space-y-4">
+                        <Label htmlFor="modal-amount">Monto</Label>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="text-4xl font-black tracking-tight text-blue-600 bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm w-full text-center">
+                                ${Number(tempAmount || 0).toLocaleString('es-CL')}
+                            </div>
 
-                                <div className="grid grid-cols-3 gap-2 w-full">
-                                    {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
-                                        <Button
-                                            key={val}
-                                            variant="outline"
-                                            size="sm"
-                                            className="text-xs h-10 font-bold"
-                                            onClick={() => {
-                                                const current = parseFloat(tempAmount) || 0;
-                                                let newAmount = current + val;
-
-                                                // For purchases, limit to total
-                                                if (operation === 'purchases' && newAmount > total) {
-                                                    newAmount = total;
-                                                }
-
-                                                setTempAmount(newAmount.toString());
-                                            }}
-                                        >
-                                            +${val.toLocaleString('es-CL')}
-                                        </Button>
-                                    ))}
+                            <div className="grid grid-cols-3 gap-2 w-full">
+                                {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
                                     <Button
+                                        key={val}
                                         variant="outline"
                                         size="sm"
-                                        className="text-xs h-10 font-bold border-primary text-primary col-span-1"
-                                        onClick={() => setTempAmount(total.toString())}
-                                    >
-                                        Exacto
-                                    </Button>
-                                </div>
+                                        className="text-xs h-10 font-bold"
+                                        onClick={() => {
+                                            const current = parseFloat(tempAmount) || 0;
+                                            let newAmount = current + val;
 
-                                <Numpad
-                                    value={tempAmount}
-                                    onChange={setTempAmount}
-                                    onConfirm={handleAmountConfirm}
-                                    onClose={() => setIsAmountModalOpen(false)}
-                                    allowDecimal={false}
-                                    hideDisplay={true}
-                                    className="border-none shadow-none p-0 w-full max-w-none"
-                                    confirmLabel="CONFIRMAR"
-                                />
+                                            // For purchases, limit to total
+                                            if (operation === 'purchases' && newAmount > total) {
+                                                newAmount = total;
+                                            }
+
+                                            setTempAmount(newAmount.toString());
+                                        }}
+                                    >
+                                        +${val.toLocaleString('es-CL')}
+                                    </Button>
+                                ))}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs h-10 font-bold border-primary text-primary col-span-1"
+                                    onClick={() => setTempAmount(total.toString())}
+                                >
+                                    Exacto
+                                </Button>
                             </div>
+
+                            <Numpad
+                                value={tempAmount}
+                                onChange={setTempAmount}
+                                onConfirm={handleAmountConfirm}
+                                onClose={() => setIsAmountModalOpen(false)}
+                                allowDecimal={false}
+                                hideDisplay={true}
+                                className="border-none shadow-none p-0 w-full max-w-none"
+                                confirmLabel="CONFIRMAR"
+                            />
                         </div>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </div>
+            </BaseModal>
         </div>
     )
 }

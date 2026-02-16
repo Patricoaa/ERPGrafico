@@ -15,15 +15,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -381,132 +373,131 @@ export function ReplenishmentDashboard({
 
     return (
         <div className="space-y-6">
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-                setIsDialogOpen(open)
-                if (!open) {
-                    setEditingRule(null)
-                    onExternalOpenRuleChange?.(false)
-                    handleCloseModal()
+            <BaseModal
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                    setIsDialogOpen(open)
+                    if (!open) {
+                        setEditingRule(null)
+                        onExternalOpenRuleChange?.(false)
+                        handleCloseModal()
+                    }
+                }}
+                title={editingRule ? 'Editar Regla' : 'Nueva Regla de Reabastecimiento'}
+                description="Configura los niveles de stock para activar alertas de compra."
+                size="md"
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button type="submit" form="replenishment-rule-form" disabled={isSaving}>
+                            {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                            Guardar Regla
+                        </Button>
+                    </div>
                 }
-            }}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>{editingRule ? 'Editar Regla' : 'Nueva Regla de Reabastecimiento'}</DialogTitle>
-                        <DialogDescription>
-                            Configura los niveles de stock para activar alertas de compra.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="product"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Producto</FormLabel>
-                                            <FormControl>
-                                                <ProductSelector
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    disabled={!!editingRule}
-                                                    placeholder="Seleccionar producto..."
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="warehouse"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Almacén</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className={FORM_STYLES.input}>
-                                                        <SelectValue placeholder="Seleccionar almacén..." />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {warehouses.map((w) => (
-                                                        <SelectItem key={w.id} value={w.id.toString()}>
-                                                            {w.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="min_quantity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Stock Mínimo</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormDescription className="text-[10px]">
-                                                Punto de reorden.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="max_quantity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Stock Máximo</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormDescription className="text-[10px]">
-                                                Objetivo de stock.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
+            >
+                <Form {...form}>
+                    <form id="replenishment-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
-                                name="active"
+                                name="product"
                                 render={({ field }) => (
-                                    <FormItem className={cn("flex items-center justify-between", FORM_STYLES.card)}>
-                                        <div className="space-y-0.5">
-                                            <FormLabel className={FORM_STYLES.label}>Regla Activa</FormLabel>
-                                        </div>
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Producto</FormLabel>
                                         <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
+                                            <ProductSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                disabled={!!editingRule}
+                                                placeholder="Seleccionar producto..."
                                             />
                                         </FormControl>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            <DialogFooter>
-                                <Button type="submit" disabled={isSaving}>
-                                    {isSaving && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                                    Guardar
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+                            <FormField
+                                control={form.control}
+                                name="warehouse"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Almacén</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className={FORM_STYLES.input}>
+                                                    <SelectValue placeholder="Seleccionar almacén..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {warehouses.map((w) => (
+                                                    <SelectItem key={w.id} value={w.id.toString()}>
+                                                        {w.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="min_quantity"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Stock Mínimo</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
+                                        </FormControl>
+                                        <FormDescription className="text-[10px]">
+                                            Punto de reorden.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="max_quantity"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Stock Máximo</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" step="0.01" {...field} className={FORM_STYLES.input} />
+                                        </FormControl>
+                                        <FormDescription className="text-[10px]">
+                                            Objetivo de stock.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <FormField
+                            control={form.control}
+                            name="active"
+                            render={({ field }) => (
+                                <FormItem className={cn("flex items-center justify-between", FORM_STYLES.card)}>
+                                    <div className="space-y-0.5">
+                                        <FormLabel className={FORM_STYLES.label}>Regla Activa</FormLabel>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </form>
+                </Form>
+            </BaseModal>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsContent value="rules" className="m-0 border-none outline-none">

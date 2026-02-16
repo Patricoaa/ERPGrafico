@@ -12,14 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +29,6 @@ import { Numpad } from "@/components/ui/numpad"
 import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import type { POSSession } from "@/types/pos"
@@ -1014,11 +1006,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     Abrir Caja
                 </Button>
 
-                <Dialog open={openDialogOpen} onOpenChange={setOpenDialogOpen}>
-                    <DialogContent className="sm:max-w-md">
+                <BaseModal
+                    open={openDialogOpen}
+                    onOpenChange={setOpenDialogOpen}
+                    size="lg"
+                    title="Control de Sesión de Caja"
+                >
+                    <div className="py-2">
                         {renderWizardStep()}
-                    </DialogContent>
-                </Dialog>
+                    </div>
+                </BaseModal>
             </>
         )
     }
@@ -1095,16 +1092,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )}
             </div>
 
-            <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader className="sr-only">
-                        <DialogTitle>
-                            {reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Detalles del informe de sesión
-                        </DialogDescription>
-                    </DialogHeader>
+            <BaseModal
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
+                size="full"
+                className="max-w-4xl"
+                headerClassName="sr-only"
+                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                footer={
+                    <div className="flex justify-end w-full">
+                        <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
+                    </div>
+                }
+            >
+                <div>
                     {reportData && (
                         <POSReport
                             data={reportData}
@@ -1112,11 +1113,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                         />
                     )}
-                    <DialogFooter>
-                        <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                </div>
+            </BaseModal>
 
 
             {/* Session Close Modal - Using shared component */}
@@ -1129,11 +1127,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 />
             )}
 
-            <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+            <BaseModal
+                open={moveDialogOpen}
+                onOpenChange={setMoveDialogOpen}
+                size="md"
+                title="Movimiento de Caja Manual"
+            >
+                <div className="py-2">
                     {renderMoveWizardStep()}
-                </DialogContent>
-            </Dialog>
+                </div>
+            </BaseModal>
         </>
     )
 })

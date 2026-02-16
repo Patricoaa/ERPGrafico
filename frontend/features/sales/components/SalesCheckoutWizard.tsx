@@ -1,13 +1,6 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"

@@ -4,14 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormControl,
@@ -92,21 +85,33 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <>
             {openProp === undefined && !initialData && (
-                <DialogTrigger asChild>
-                    <Button>Nuevo Almacén</Button>
-                </DialogTrigger>
+                <Button onClick={() => setOpen(true)}>Nuevo Almacén</Button>
             )}
-            <DialogContent size="sm">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Editar Almacén" : "Crear Almacén"}</DialogTitle>
-                    <DialogDescription>
-                        {initialData ? "Modifique los datos del almacén." : "Ingrese los datos del nuevo almacén."}
-                    </DialogDescription>
-                </DialogHeader>
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="sm"
+                title={initialData ? "Editar Almacén" : "Crear Almacén"}
+                description={initialData ? "Modifique los datos del almacén." : "Ingrese los datos del nuevo almacén."}
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button form="warehouse-form" type="submit" disabled={loading}>
+                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -146,21 +151,9 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 </FormItem>
                             )}
                         />
-                        <div className="flex justify-end space-x-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setOpen(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={loading}>
-                                {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }

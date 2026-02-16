@@ -1,19 +1,12 @@
 "use client"
 
 import React, { useState } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from "@/components/ui/dialog"
+import { BaseModal } from "./BaseModal"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, AlertCircle, Info, Loader2, LucideIcon } from "lucide-react"
+import { AlertTriangle, AlertCircle, Info, Loader2, LucideIcon, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export type ActionVariant = "default" | "destructive" | "warning" | "info"
+export type ActionVariant = "default" | "destructive" | "warning" | "info" | "success"
 
 interface ActionConfirmModalProps {
     open: boolean
@@ -76,6 +69,13 @@ export function ActionConfirmModal({
                     buttonVariant: "default" as const,
                     titleClassName: "text-blue-700"
                 }
+            case "success":
+                return {
+                    icon: CustomIcon || CheckCircle2,
+                    iconClassName: "text-emerald-600 bg-emerald-50",
+                    buttonVariant: "default" as const,
+                    titleClassName: "text-emerald-700"
+                }
             default:
                 return {
                     icon: CustomIcon || AlertCircle,
@@ -90,58 +90,59 @@ export function ActionConfirmModal({
     const Icon = config.icon
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size="xs">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className={cn("p-2 rounded-full", config.iconClassName)}>
-                            <Icon className="h-6 w-6" />
-                        </div>
-                        <DialogHeader className="text-left">
-                            <DialogTitle className={cn("text-xl", config.titleClassName)}>
-                                {title}
-                            </DialogTitle>
-                        </DialogHeader>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xs"
+            title={
+                <div className="flex items-center gap-4 py-1">
+                    <div className={cn("p-2 rounded-full", config.iconClassName)}>
+                        <Icon className="h-5 w-5" />
                     </div>
-
-                    <div className="px-1 text-muted-foreground text-sm leading-relaxed">
-                        {typeof description === "string" ? (
-                            <p>{description}</p>
-                        ) : (
-                            description
-                        )}
-                    </div>
-
-                    <DialogFooter className="mt-4 gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                            disabled={isLoading}
-                            className="flex-1 sm:flex-none"
-                        >
-                            {cancelText}
-                        </Button>
-                        <Button
-                            variant={config.buttonVariant}
-                            onClick={handleConfirm}
-                            disabled={isLoading}
-                            className={cn(
-                                "flex-1 sm:flex-none min-w-[100px]",
-                                variant === "warning" && "bg-amber-600 hover:bg-amber-700 text-white border-none"
-                            )}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Procesando...
-                                </>
-                            ) : (
-                                confirmText
-                            )}
-                        </Button>
-                    </DialogFooter>
+                    <span className={cn("text-lg font-bold", config.titleClassName)}>
+                        {title}
+                    </span>
                 </div>
-            </DialogContent>
-        </Dialog>
+            }
+            footer={
+                <div className="flex gap-2 w-full justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        disabled={isLoading}
+                        className="flex-1 sm:flex-none"
+                    >
+                        {cancelText}
+                    </Button>
+                    <Button
+                        variant={config.buttonVariant}
+                        onClick={handleConfirm}
+                        disabled={isLoading}
+                        className={cn(
+                            "flex-1 sm:flex-none min-w-[100px]",
+                            variant === "warning" && "bg-amber-600 hover:bg-amber-700 text-white border-none",
+                            variant === "success" && "bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                        )}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Procesando...
+                            </>
+                        ) : (
+                            confirmText
+                        )}
+                    </Button>
+                </div>
+            }
+        >
+            <div className="px-1 py-4 text-muted-foreground text-sm leading-relaxed">
+                {typeof description === "string" ? (
+                    <p>{description}</p>
+                ) : (
+                    description
+                )}
+            </div>
+        </BaseModal>
     )
 }
