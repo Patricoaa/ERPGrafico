@@ -116,8 +116,8 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
 
 
     const tabs = [
-        { value: "accounts", label: "Cuentas por Cobrar/Pagar", icon: Users, href: "/settings/billing?tab=accounts" },
-        { value: "tax", label: "Impuestos", icon: Receipt, href: "/settings/billing?tab=tax" },
+        { value: "accounts", label: "Cuentas por Cobrar/Pagar", iconName: "users", href: "/settings/billing?tab=accounts" },
+        { value: "tax", label: "Impuestos", iconName: "receipt", href: "/settings/billing?tab=tax" },
     ]
 
     return (

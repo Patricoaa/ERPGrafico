@@ -3,7 +3,6 @@ import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Tabs } from "@/components/ui/tabs"
-import { ShoppingCart, FileText } from "lucide-react"
 
 const PurchasingOrdersClientView = lazy(() =>
     import("./components/PurchasingOrdersClientView").then(m => ({ default: m.PurchasingOrdersClientView }))
@@ -23,8 +22,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
     const viewMode = (view as 'orders' | 'notes') || 'orders'
 
     const tabs = [
-        { value: "orders", label: "Ordenes", icon: ShoppingCart, href: "/purchasing/orders?view=orders" },
-        { value: "notes", label: "Notas Crédito/Débito", icon: FileText, href: "/purchasing/orders?view=notes" },
+        { value: "orders", label: "Ordenes", iconName: "shopping-cart", href: "/purchasing/orders?view=orders" },
+        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/orders?view=notes" },
     ]
 
     return (

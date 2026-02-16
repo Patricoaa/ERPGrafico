@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
-import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
@@ -57,9 +55,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const openCreate = () => {
         setCurrentAccount(null)
         setDialogOpen(true)
+        setIsAccountModalOpen(false) // Reset external trigger
     }
 
-    // Effect for external creation trigger
+    // Reset external creation trigger state when modal opens
     useEffect(() => {
         if (isAccountModalOpen) {
             openCreate()
@@ -74,10 +73,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const columns: ColumnDef<TreasuryAccount>[] = [
         {
             accessorKey: "name",
-            header: ({ column }) => (
+            header: ({ column }: { column: any }) => (
                 <DataTableColumnHeader column={column} title="Nombre | Tipo" />
             ),
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const acc = row.original
                 const labels: Record<string, string> = {
                     'CHECKING': 'Cta. Corriente',
@@ -106,10 +105,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "account_name",
-            header: ({ column }) => (
+            header: ({ column }: { column: any }) => (
                 <DataTableColumnHeader column={column} title="Cuenta Contable" />
             ),
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const name = row.original.account_name
                 if (!name) return <span className="text-muted-foreground italic text-xs">No vinculada</span>
                 return (
@@ -122,10 +121,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "current_balance",
-            header: ({ column }) => (
+            header: ({ column }: { column: any }) => (
                 <DataTableColumnHeader column={column} title="Saldo" />
             ),
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const balance = parseFloat(row.getValue("current_balance") || "0")
                 return (
                     <div className={`font-bold ${balance < 0 ? "text-destructive" : "text-success"}`}>
@@ -139,10 +138,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "location",
-            header: ({ column }) => (
+            header: ({ column }: { column: any }) => (
                 <DataTableColumnHeader column={column} title="Ubicación" />
             ),
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const val = row.original.location
                 if (!val) return <span className="text-muted-foreground">-</span>
                 return (
@@ -156,7 +155,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         {
             id: "custodian",
             header: "Responsable",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const acc = row.original
                 if (!acc.custodian_name) return <span className="text-muted-foreground">-</span>
                 return (
@@ -169,7 +168,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             id: "actions",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: any }) => {
                 const acc = row.original
                 return (
                     <div className="flex items-center gap-2 justify-end">
@@ -186,9 +185,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     ]
 
     const tabs = [
-        { value: "accounts", label: "Cuentas de tesorería", icon: List, href: "/treasury/accounts?tab=accounts" },
-        { value: "banks", label: "Bancos", icon: Landmark, href: "/treasury/accounts?tab=banks" },
-        { value: "methods", label: "Métodos", icon: CreditCard, href: "/treasury/accounts?tab=methods" },
+        { value: "accounts", label: "Cuentas de tesorería", iconName: "list", href: "/treasury/accounts?tab=accounts" },
+        { value: "banks", label: "Bancos", iconName: "landmark", href: "/treasury/accounts?tab=banks" },
+        { value: "methods", label: "Métodos", iconName: "credit-card", href: "/treasury/accounts?tab=methods" },
     ]
 
     const getHeaderConfig = () => {
@@ -294,8 +293,8 @@ interface AccountDialogProps {
     onOpenChange: (o: boolean) => void
     account: TreasuryAccount | null
     onSuccess: () => void
-    createAccount: (payload: any) => Promise<TreasuryAccount>
-    updateAccount: (params: { id: number, payload: any }) => Promise<TreasuryAccount>
+    createAccount: (payload: Partial<TreasuryAccount>) => Promise<TreasuryAccount>
+    updateAccount: (params: { id: number, payload: Partial<TreasuryAccount> }) => Promise<TreasuryAccount>
     isSubmitting: boolean
 }
 
@@ -303,11 +302,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
     const [name, setName] = useState("")
     const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
     const [currency, setCurrency] = useState("CLP")
-    const [accountingAccount, setAccountingAccount] = useState<string | null>(null)
+    const [accountingAccount, setAccountingAccount] = useState<number | null>(null)
     const [location, setLocation] = useState("")
     const [custodian, setCustodian] = useState<number | null>(null)
     const [isPhysical, setIsPhysical] = useState(false)
-    const [bank, setBank] = useState<string | null>(null)
+    const [bank, setBank] = useState<number | null>(null)
     const [accountNumber, setAccountNumber] = useState("")
     const [banks, setBanks] = useState<any[]>([])
 
@@ -322,28 +321,28 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
     }, [open])
 
     useEffect(() => {
-        if (open) {
-            if (account) {
-                setName(account.name)
-                setType(account.account_type)
-                setCurrency(account.currency)
-                setAccountingAccount(account.account ? account.account.toString() : null)
-                setLocation(account.location || "")
-                setCustodian(account.custodian || null)
-                setIsPhysical(account.is_physical || false)
-                setBank(account.bank ? account.bank.toString() : null)
-                setAccountNumber(account.account_number || "")
-            } else {
-                setName("")
-                setType("CASH")
-                setCurrency("CLP")
-                setAccountingAccount(null)
-                setLocation("")
-                setCustodian(null)
-                setIsPhysical(false)
-                setBank(null)
-                setAccountNumber("")
-            }
+        if (!open) return
+
+        if (account) {
+            setName(account.name)
+            setType(account.account_type)
+            setCurrency(account.currency)
+            setAccountingAccount(account.account ? Number(account.account) : null)
+            setLocation(account.location || "")
+            setCustodian(account.custodian || null)
+            setIsPhysical(account.is_physical || false)
+            setBank(account.bank ? Number(account.bank) : null)
+            setAccountNumber(account.account_number || "")
+        } else {
+            setName("")
+            setType("CASH")
+            setCurrency("CLP")
+            setAccountingAccount(null)
+            setLocation("")
+            setCustodian(null)
+            setIsPhysical(false)
+            setBank(null)
+            setAccountNumber("")
         }
     }, [open, account])
 
@@ -446,7 +445,7 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                                         <Label className="text-info font-semibold flex items-center gap-1">
                                             <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
                                         </Label>
-                                        <Select value={bank || ""} onValueChange={setBank}>
+                                        <Select value={bank?.toString() || ""} onValueChange={(v) => setBank(v ? Number(v) : null)}>
                                             <SelectTrigger className="border-info/20 bg-info/5">
                                                 <SelectValue placeholder="Seleccione banco..." />
                                             </SelectTrigger>
@@ -476,8 +475,8 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                                 <div className="grid gap-2">
                                     <Label>Cuenta Contable</Label>
                                     <AccountSelector
-                                        value={accountingAccount}
-                                        onChange={setAccountingAccount}
+                                        value={accountingAccount?.toString() || null}
+                                        onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
                                         accountType="ASSET"
                                         isReconcilable={true}
                                         placeholder="Seleccione cuenta..."

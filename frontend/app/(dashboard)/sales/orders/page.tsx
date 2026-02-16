@@ -3,7 +3,6 @@ import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Tabs } from "@/components/ui/tabs"
-import { ShoppingCart, FileText } from "lucide-react"
 
 const SalesOrdersClientView = lazy(() =>
     import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView }))
@@ -23,8 +22,8 @@ export default async function SalesOrdersPage({ searchParams }: PageProps) {
     const viewMode = (view as 'orders' | 'notes') || 'orders'
 
     const tabs = [
-        { value: "orders", label: "Notas de Venta", icon: ShoppingCart, href: "/sales/orders?view=orders" },
-        { value: "notes", label: "Notas Crédito/Débito", icon: FileText, href: "/sales/orders?view=notes" },
+        { value: "orders", label: "Notas de Venta", iconName: "shopping-cart", href: "/sales/orders?view=orders" },
+        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/sales/orders?view=notes" },
     ]
 
     return (

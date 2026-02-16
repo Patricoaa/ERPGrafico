@@ -23,9 +23,9 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
 
     const tabs = [
-        { value: "terminals", label: "Terminales POS", icon: Banknote, href: "/sales/terminals?tab=terminals" },
-        { value: "batches", label: "Lotes de Liquidación", icon: Receipt, href: "/sales/terminals?tab=batches" },
-        { value: "sessions", label: "Historial de Sesiones", icon: List, href: "/sales/terminals?tab=sessions" },
+        { value: "terminals", label: "Terminales POS", iconName: "banknote", href: "/sales/terminals?tab=terminals" },
+        { value: "batches", label: "Lotes de Liquidación", iconName: "receipt", href: "/sales/terminals?tab=batches" },
+        { value: "sessions", label: "Historial de Sesiones", iconName: "list", href: "/sales/terminals?tab=sessions" },
     ]
 
     const getHeaderConfig = () => {

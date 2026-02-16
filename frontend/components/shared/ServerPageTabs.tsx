@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 interface TabConfig {
     value: string
     label: string
-    icon: LucideIcon
+    iconName: string
     href: string
 }
 
@@ -16,6 +16,8 @@ interface ServerPageTabsProps {
     maxWidth?: string
     className?: string
 }
+
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
 export function ServerPageTabs({ tabs, activeValue, maxWidth = "max-w-xl", className }: ServerPageTabsProps) {
     const gridCols = {
@@ -33,7 +35,6 @@ export function ServerPageTabs({ tabs, activeValue, maxWidth = "max-w-xl", class
                 gridCols
             )}>
                 {tabs.map((tab) => {
-                    const Icon = tab.icon
                     const isActive = tab.value === activeValue
                     return (
                         <Link
@@ -46,7 +47,7 @@ export function ServerPageTabs({ tabs, activeValue, maxWidth = "max-w-xl", class
                                     : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <Icon className="h-4 w-4" />
+                            <DynamicIcon name={tab.iconName} className="h-4 w-4" />
                             <span className="max-sm:hidden">{tab.label}</span>
                         </Link>
                     )

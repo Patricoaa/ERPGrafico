@@ -1,5 +1,4 @@
 import { Tabs } from "@/components/ui/tabs"
-import { PieChart, Activity } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { AnalysisView } from "@/components/finances/AnalysisView"
 
@@ -12,8 +11,8 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
     const activeTab = tab || "ratios"
 
     const tabs = [
-        { value: "ratios", label: "Ratios Financieros", icon: PieChart, href: "/finances/analysis?tab=ratios" },
-        { value: "bi", label: "Business Intelligence", icon: Activity, href: "/finances/analysis?tab=bi" },
+        { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
+        { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
     ]
 
     return (

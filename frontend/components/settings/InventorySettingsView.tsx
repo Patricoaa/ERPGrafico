@@ -13,9 +13,6 @@ import {
     Loader2,
     CloudCheck,
     CloudUpload,
-    Package,
-    TrendingUp,
-    DollarSign
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -111,9 +108,9 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
 
     const tabs = [
-        { value: "accounts", label: "Cuentas de Inventario", icon: Package, href: "/settings/inventory?tab=accounts" },
-        { value: "adjustments", label: "Ajustes y Valoración", icon: TrendingUp, href: "/settings/inventory?tab=adjustments" },
-        { value: "cogs", label: "Costo de Ventas", icon: DollarSign, href: "/settings/inventory?tab=cogs" },
+        { value: "accounts", label: "Cuentas de Inventario", iconName: "package", href: "/settings/inventory?tab=accounts" },
+        { value: "adjustments", label: "Ajustes y Valoración", iconName: "trending-up", href: "/settings/inventory?tab=adjustments" },
+        { value: "cogs", label: "Costo de Ventas", iconName: "dollar-sign", href: "/settings/inventory?tab=cogs" },
     ]
 
     return (

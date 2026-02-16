@@ -41,6 +41,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
     const handleCreate = () => {
         setEditingTerminal(null)
         setDialogOpen(true)
+        onExternalOpenChange?.(false)
     }
 
     const handleToggleActive = async (terminal: Terminal) => {
@@ -134,7 +135,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                                 {terminal.code}
                             </Badge>
                             {terminal.is_active ? (
-                                <Badge variant="default" className="text-[10px] bg-success hover:bg-success/90">
+                                <Badge variant="default" className="text-[10px] bg-emerald-500 hover:bg-emerald-600">
                                     Activo
                                 </Badge>
                             ) : (
@@ -316,7 +317,8 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             onSuccess()
             onOpenChange(false)
         } catch (error: any) {
-            console.error("Error saving terminal:", error.response?.data || error)
+            const err = error as any
+            console.error("Error saving terminal:", err.response?.data || err)
             toast.error("Error al guardar terminal")
         } finally {
             setLoading(false)

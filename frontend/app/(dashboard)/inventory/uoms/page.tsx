@@ -1,5 +1,4 @@
 import { Tabs } from "@/components/ui/tabs"
-import { Scale, Layers } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { UoMsView } from "@/features/inventory/components/UoMsView"
 
@@ -12,8 +11,8 @@ export default async function UnifiedUoMPage({ searchParams }: PageProps) {
     const activeTab = tab || "units"
 
     const tabs = [
-        { value: "units", label: "Unidades", icon: Scale, href: "/inventory/uoms?tab=units" },
-        { value: "categories", label: "Categorías", icon: Layers, href: "/inventory/uoms?tab=categories" },
+        { value: "units", label: "Unidades", iconName: "scale", href: "/inventory/uoms?tab=units" },
+        { value: "categories", label: "Categorías", iconName: "layers", href: "/inventory/uoms?tab=categories" },
     ]
 
     return (

@@ -25,10 +25,10 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     const modal = resolvedParams.modal
 
     const tabs = [
-        { value: "report", label: "Stock", icon: FileBarChart, href: "/inventory/stock?tab=report" },
-        { value: "movements", label: "Movimientos", icon: History, href: "/inventory/stock?tab=movements" },
-        { value: "replenishment", label: "Reabastecimiento", icon: RefreshCw, href: "/inventory/stock?tab=replenishment" },
-        { value: "warehouses", label: "Almacenes", icon: Warehouse, href: "/inventory/stock?tab=warehouses" },
+        { value: "report", label: "Stock", iconName: "file-bar-chart", href: "/inventory/stock?tab=report" },
+        { value: "movements", label: "Movimientos", iconName: "history", href: "/inventory/stock?tab=movements" },
+        { value: "replenishment", label: "Reabastecimiento", iconName: "refresh-cw", href: "/inventory/stock?tab=replenishment" },
+        { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory/stock?tab=warehouses" },
     ]
 
     const getHeaderConfig = () => {

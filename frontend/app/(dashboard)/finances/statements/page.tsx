@@ -1,5 +1,4 @@
 import { Tabs } from "@/components/ui/tabs"
-import { FileText, BarChart2, TrendingUp } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { StatementsView } from "@/components/finances/StatementsView"
 
@@ -12,9 +11,9 @@ export default async function StatementsPage({ searchParams }: PageProps) {
     const activeTab = tab || "bs"
 
     const tabs = [
-        { value: "bs", label: "Balance", icon: FileText, href: "/finances/statements?tab=bs" },
-        { value: "pl", label: "Resultados", icon: BarChart2, href: "/finances/statements?tab=pl" },
-        { value: "cf", label: "Flujos", icon: TrendingUp, href: "/finances/statements?tab=cf" },
+        { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
+        { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
+        { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
     ]
 
     return (

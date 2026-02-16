@@ -13,10 +13,6 @@ import {
     Loader2,
     CloudCheck,
     CloudUpload,
-    ShoppingBag,
-    DollarSign,
-    Store,
-    CreditCard
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -122,9 +118,9 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
 
 
     const tabs = [
-        { value: "revenue", label: "Ingresos", icon: DollarSign, href: "/settings/sales?tab=revenue" },
-        { value: "pos", label: "Control POS", icon: Store, href: "/settings/sales?tab=pos" },
-        { value: "terminals", label: "Terminales", icon: CreditCard, href: "/settings/sales?tab=terminals" },
+        { value: "revenue", label: "Ingresos", iconName: "dollar-sign", href: "/settings/sales?tab=revenue" },
+        { value: "pos", label: "Control POS", iconName: "store", href: "/settings/sales?tab=pos" },
+        { value: "terminals", label: "Terminales", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
     ]
 
     return (

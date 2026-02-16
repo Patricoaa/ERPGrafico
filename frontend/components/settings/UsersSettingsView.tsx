@@ -130,8 +130,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ]
 
     const tabs = [
-        { value: "users", label: "Usuarios", icon: Users, href: "/settings/users?tab=users" },
-        { value: "groups", label: "Grupos y Equipos", icon: UserPlus, href: "/settings/users?tab=groups" },
+        { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
+        { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users?tab=groups" },
     ]
 
     const getHeaderConfig = () => {

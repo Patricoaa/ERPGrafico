@@ -9,6 +9,7 @@ interface PageHeaderProps {
     title: string
     description?: string
     icon?: LucideIcon
+    iconName?: string
     titleActions?: React.ReactNode // For buttons next to the title
     children?: React.ReactNode // For actions/buttons on the right
     className?: string
@@ -19,8 +20,9 @@ interface PageHeaderProps {
  * Supports an optional action area on the right and actions next to the title.
  */
 import { motion } from "framer-motion"
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
-export function PageHeader({ title, description, icon: Icon, titleActions, children, className }: PageHeaderProps) {
+export function PageHeader({ title, description, icon: Icon, iconName, titleActions, children, className }: PageHeaderProps) {
     return (
         <div className={cn("flex flex-col md:flex-row md:items-end justify-between gap-4 py-4 border-b border-border/40 mb-6 relative overflow-hidden", className)}>
             <div className="space-y-2 relative z-10">
@@ -31,7 +33,11 @@ export function PageHeader({ title, description, icon: Icon, titleActions, child
                         transition={{ duration: 0.4, ease: "easeOut" }}
                         className="flex items-center gap-3"
                     >
-                        {Icon && (
+                        {iconName ? (
+                            <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
+                                <DynamicIcon name={iconName} className="h-5 w-5" />
+                            </div>
+                        ) : Icon && (
                             <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
                                 <Icon className="h-5 w-5" />
                             </div>
@@ -81,6 +87,7 @@ export function PageHeader({ title, description, icon: Icon, titleActions, child
 
 interface PageHeaderButtonProps extends React.ComponentProps<typeof Button> {
     icon?: LucideIcon
+    iconName?: string
     label?: string
     circular?: boolean
 }
@@ -89,7 +96,7 @@ interface PageHeaderButtonProps extends React.ComponentProps<typeof Button> {
  * A consistent button for the PageHeader.
  * Supports a "circular" variant for icon-only buttons.
  */
-export function PageHeaderButton({ icon: Icon, label, circular, className, ...props }: PageHeaderButtonProps) {
+export function PageHeaderButton({ icon: Icon, iconName, label, circular, className, ...props }: PageHeaderButtonProps) {
     return (
         <Button
             className={cn(
@@ -98,7 +105,11 @@ export function PageHeaderButton({ icon: Icon, label, circular, className, ...pr
             )}
             {...props}
         >
-            {Icon && <Icon className={cn("h-4 w-4", label ? "mr-2" : "")} />}
+            {iconName ? (
+                <DynamicIcon name={iconName} className={cn("h-4 w-4", label ? "mr-2" : "")} />
+            ) : Icon && (
+                <Icon className={cn("h-4 w-4", label ? "mr-2" : "")} />
+            )}
             {label && <span>{label}</span>}
         </Button>
     )

@@ -4,11 +4,11 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList } from "@/components/inventory/ProductList"
 import { CategoryList } from "@/components/inventory/CategoryList"
 import { PricingRuleList } from "@/components/inventory/PricingRuleList"
-import { Package, Tags, DollarSign, Plus } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Plus } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
@@ -24,9 +24,9 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const activeTab = resolvedParams.tab || "products"
 
     const tabs = [
-        { value: "products", label: "Productos", icon: Package, href: "/inventory/products?tab=products" },
-        { value: "categories", label: "Categorías", icon: Tags, href: "/inventory/products?tab=categories" },
-        { value: "pricing-rules", label: "Reglas de Precio", icon: DollarSign, href: "/inventory/products?tab=pricing-rules" },
+        { value: "products", label: "Productos", iconName: "package", href: "/inventory/products?tab=products" },
+        { value: "categories", label: "Categorías", iconName: "tags", href: "/inventory/products?tab=categories" },
+        { value: "pricing-rules", label: "Reglas de Precio", iconName: "dollar-sign", href: "/inventory/products?tab=pricing-rules" },
     ]
 
     const getHeaderConfig = () => {
@@ -70,7 +70,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     titleActions={actionTitle ? (
                         <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
                             <PageHeaderButton
-                                icon={Plus}
+                                iconName="plus"
                                 circular
                                 title={actionTitle}
                             />
