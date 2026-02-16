@@ -53,7 +53,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
 
     return (
         <aside
-            className="w-[75px] flex flex-col items-center py-8 gap-4 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
+            className="w-[65px] flex flex-col items-center py-4 gap-2 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
             onMouseLeave={() => onHoverCategory?.(null)}
         >
             {/* Logo */}

@@ -12,11 +12,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Dialog,
-    DialogContent,
-} from "@/components/ui/dialog"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } from "lucide-react"
 import { toast } from "sonner"
@@ -192,7 +187,7 @@ export function SessionCloseModal({
         }
     }
 
-    const renderStep = () => {
+    const renderStepContent = () => {
         switch (step) {
             case 1: // Count
                 const reportData = {
@@ -211,68 +206,51 @@ export function SessionCloseModal({
                 }
 
                 return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center mb-4">
-                            <h3 className="font-bold text-lg">Cierre de Caja y Conteo</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Revise los totales del sistema y realice el conteo físico
-                            </p>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                        {/* Left Column: Report context */}
+                        <POSReport
+                            data={reportData}
+                            type="Z"
+                            title="Resumen del Sistema"
+                        />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Left Column: Report context */}
-
-                            <POSReport
-                                data={reportData}
-                                type="Z"
-                                title="Resumen del Sistema"
-                            />
-
-
-                            {/* Right Column: Counter */}
-                            <div className="space-y-4">
-                                <div className="md:hidden mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900">
-                                    <div className="flex justify-between text-sm font-bold">
-                                        <span>Efectivo Esperado:</span>
-                                        <span className="text-blue-600 dark:text-blue-400">{formatCurrency(session.expected_cash)}</span>
-                                    </div>
+                        {/* Right Column: Counter */}
+                        <div className="space-y-4">
+                            <div className="md:hidden mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900">
+                                <div className="flex justify-between text-sm font-bold">
+                                    <span>Efectivo Esperado:</span>
+                                    <span className="text-blue-600 dark:text-blue-400">{formatCurrency(session.expected_cash)}</span>
                                 </div>
+                            </div>
 
-                                <div className="flex justify-center">
-                                    <div className="w-full bg-muted/30 p-4 rounded-xl">
-                                        <div className="text-right mb-4">
-                                            <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
-                                            <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                                {formatCurrency(parseFloat(actualCash) || 0)}
-                                            </div>
+                            <div className="flex justify-center">
+                                <div className="w-full bg-muted/30 p-4 rounded-xl">
+                                    <div className="text-right mb-4">
+                                        <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
+                                        <div className="text-3xl font-black font-mono tracking-tight text-primary">
+                                            {formatCurrency(parseFloat(actualCash) || 0)}
                                         </div>
-                                        <Numpad
-                                            value={actualCash}
-                                            onChange={setActualCash}
-                                            hideDisplay={true}
-                                            allowDecimal={true}
-                                            className="w-full max-w-full shadow-none border-0 p-0"
-                                            onConfirm={handleNext}
-                                            confirmLabel="Confirmar Conteo"
-                                            onExactAmount={() => setActualCash(session.expected_cash.toString())}
-                                            exactAmountLabel={`Monto Exacto (${formatCurrency(session.expected_cash)})`}
-                                        />
                                     </div>
+                                    <Numpad
+                                        value={actualCash}
+                                        onChange={setActualCash}
+                                        hideDisplay={true}
+                                        allowDecimal={true}
+                                        className="w-full max-w-full shadow-none border-0 p-0"
+                                        onConfirm={handleNext}
+                                        confirmLabel="Confirmar Conteo"
+                                        onExactAmount={() => setActualCash(session.expected_cash.toString())}
+                                        exactAmountLabel={`Monto Exacto (${formatCurrency(session.expected_cash)})`}
+                                    />
                                 </div>
                             </div>
                         </div>
-
-                        <div className="h-2" />
                     </div>
                 )
 
             case 2: // Review & Difference
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center">
-                            <h3 className="font-bold text-lg">Resumen de Cierre</h3>
-                        </div>
-
                         <div className="bg-card border rounded-xl p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
@@ -395,16 +373,6 @@ export function SessionCloseModal({
             case 3: // Decision Step
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center">
-                            <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                                <ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <h3 className="font-bold text-lg">Retiro o Traspaso</h3>
-                            <p className="text-sm text-muted-foreground">
-                                ¿Desea realizar un retiro de efectivo o traspaso de dinero a otra caja antes de cerrar?
-                            </p>
-                        </div>
-
                         <div className="grid grid-cols-1 gap-3">
                             <Button
                                 variant="outline"
@@ -444,11 +412,6 @@ export function SessionCloseModal({
             case 4: // Withdrawal (Optional Step)
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center">
-                            <h3 className="font-bold text-lg">Configurar Retiro</h3>
-                            <p className="text-sm text-muted-foreground">Ingrese el monto y el destino para el retiro</p>
-                        </div>
-
                         <div className="p-4 bg-muted/20 rounded-xl space-y-4">
                             <div className="space-y-4">
                                 <div className="text-right">
@@ -490,14 +453,34 @@ export function SessionCloseModal({
         }
     }
 
+    // Step configuration for Header
+    const getStepInfo = () => {
+        switch (step) {
+            case 1: return { title: "Cierre de Caja y Conteo", description: "Revise los totales del sistema y realice el conteo físico" }
+            case 2: return { title: "Resumen de Cierre", description: "Verifique las diferencias y justifique si es necesario" }
+            case 3: return { title: "Retiro o Traspaso", description: "¿Desea realizar un retiro de efectivo antes de cerrar?" }
+            case 4: return { title: "Configurar Retiro", description: "Ingrese el monto y el destino para el retiro" }
+            default: return { title: "Cierre de Caja", description: "" }
+        }
+    }
+
+    const { title, description } = getStepInfo()
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={cn(
-                "sm:max-w-md transition-all duration-300",
-                step === 1 && "sm:max-w-4xl"
-            )}>
-                {renderStep()}
-            </DialogContent>
-        </Dialog>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            variant="wizard"
+            title={title}
+            description={description}
+            className={cn(
+                "transition-all duration-300",
+                step === 1 ? "sm:max-w-4xl" : "sm:max-w-md"
+            )}
+            hideScrollArea={true}
+            contentClassName="p-4 sm:p-6"
+        >
+            {renderStepContent()}
+        </BaseModal>
     )
 }

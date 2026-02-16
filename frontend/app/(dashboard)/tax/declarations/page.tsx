@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -249,19 +249,19 @@ export default function TaxDeclarationsPage() {
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="flex-1 space-y-4 p-8 pt-6">
             <PageHeader
                 title="Declaraciones F29"
-                description="Gestión mensual de IVA, PPM y retenciones"
+                titleActions={
+                    <PageHeaderButton
+                        onClick={handleOpenWizard}
+                        icon={Plus}
+                        circular
+                        title="Nueva Declaración"
+                    />
+                }
                 icon={FileText}
-            >
-                <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={handleOpenWizard}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nueva Declaración
-                    </Button>
-                </div>
-            </PageHeader>
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
@@ -321,6 +321,7 @@ export default function TaxDeclarationsPage() {
                 filterColumn="period_display"
                 searchPlaceholder="Buscar período..."
                 useAdvancedFilter={true}
+                showToolbarSort={true}
                 facetedFilters={[
                     {
                         column: "status",
@@ -348,6 +349,9 @@ export default function TaxDeclarationsPage() {
                                 const period = row.original
                                 const summary = period.declaration_summary
                                 const canOpenChecklist = period.status === 'OPEN'
+
+                                // Logic: Period must be OPEN (or at least not CLOSED) AND have a declaration summary
+                                const showPayButton = period.status !== 'CLOSED' && summary && !summary.is_fully_paid && summary.vat_to_pay > 0
 
                                 return (
                                     <div
@@ -404,7 +408,7 @@ export default function TaxDeclarationsPage() {
                                             )}
 
                                             <div className="flex items-center gap-2">
-                                                {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0 || !summary)) && (
+                                                {showPayButton && (
                                                     <Button
                                                         variant="outline"
                                                         size="sm"

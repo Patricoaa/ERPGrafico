@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils"
 import { VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
 
+export type BaseModalVariant = "default" | "transaction" | "wizard" | "raw"
+
 interface BaseModalProps extends VariantProps<typeof dialogContentVariants> {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -24,7 +26,10 @@ interface BaseModalProps extends VariantProps<typeof dialogContentVariants> {
     headerActions?: React.ReactNode
     className?: string
     contentClassName?: string
+    headerClassName?: string
+    footerClassName?: string
     hideScrollArea?: boolean
+    variant?: BaseModalVariant
 }
 
 export function BaseModal({
@@ -38,32 +43,71 @@ export function BaseModal({
     size = "md",
     className,
     contentClassName,
+    headerClassName,
+    footerClassName,
     hideScrollArea = false,
+    variant = "default",
 }: BaseModalProps) {
+    const isTransaction = variant === "transaction"
+    const isWizard = variant === "wizard"
+    const isRaw = variant === "raw"
+
+    // Dynamic styles based on variant
+    const headerStyles = cn(
+        "px-6 py-4 flex-shrink-0",
+        isTransaction && "bg-primary text-primary-foreground border-b-0",
+        isWizard && "border-b pb-2",
+        !isRaw && "border-b",
+        headerClassName
+    )
+
+    const titleStyles = cn(
+        "text-xl font-bold flex items-center gap-2",
+        isTransaction && "tracking-tight text-white",
+        isWizard && "text-center w-full justify-center"
+    )
+
+    const footerStyles = cn(
+        "px-6 py-4 flex-shrink-0",
+        !isRaw && "border-t bg-muted/20",
+        footerClassName
+    )
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent size={size} className={cn("p-0 overflow-hidden flex flex-col max-h-[95vh]", className)}>
-                <DialogHeader className="px-6 py-4 border-b">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex flex-col gap-1">
-                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <DialogContent
+                size={size}
+                className={cn(
+                    "p-0 overflow-hidden flex flex-col max-h-[95vh]",
+                    isTransaction && "border-none shadow-2xl",
+                    className
+                )}
+            >
+                <DialogHeader className={headerStyles}>
+                    <div className="flex items-center justify-between gap-4 w-full">
+                        <div className={cn("flex flex-col gap-1 w-full", isWizard && "items-center")}>
+                            <DialogTitle className={titleStyles}>
                                 {title}
                             </DialogTitle>
                             {description && (
-                                <DialogDescription asChild={typeof description !== "string"}>
+                                <DialogDescription
+                                    asChild={typeof description !== "string"}
+                                    className={cn(isTransaction && "text-primary-foreground/80")}
+                                >
                                     {description}
                                 </DialogDescription>
                             )}
                         </div>
                         {headerActions && (
-                            <div className="flex items-center gap-2 pr-6">
+                            <div className="flex items-center gap-2 flex-shrink-0">
                                 {headerActions}
                             </div>
                         )}
                     </div>
                 </DialogHeader>
 
-                {hideScrollArea ? (
+                {/* Content Area */}
+                {hideScrollArea || isRaw ? (
                     <div className={cn("flex-1 overflow-hidden", contentClassName)}>
                         {children}
                     </div>
@@ -73,8 +117,9 @@ export function BaseModal({
                     </ScrollArea>
                 )}
 
+                {/* Footer Area */}
                 {footer && (
-                    <DialogFooter className="px-6 py-4 border-t bg-muted/20">
+                    <DialogFooter className={footerStyles}>
                         {footer}
                     </DialogFooter>
                 )}

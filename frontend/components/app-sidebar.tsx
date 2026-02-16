@@ -110,7 +110,7 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
                     onMouseEnter={onMouseEnter}
                     onMouseLeave={onMouseLeave}
                     className={cn(
-                        "w-72 bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border h-screen absolute top-0 left-[75px] flex flex-col pt-12 z-40 shadow-[10px_0_50px_rgba(0,0,0,0.4)] overflow-hidden"
+                        "w-72 bg-sidebar backdrop-blur-xl border-r border-sidebar-border h-screen absolute top-0 left-[65px] flex flex-col pt-12 z-40 shadow-[10px_0_50px_rgba(0,0,0,0.4)] overflow-hidden"
                     )}
                 >
                     <div className="px-8 mb-10">
