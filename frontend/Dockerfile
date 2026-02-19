@@ -1,16 +1,19 @@
-FROM node:20
+# Desarrollo local — imagen ligera solo para instalar dependencias
+# El código fuente se monta como volumen (bind mount)
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+# Instalar dependencias nativas si son necesarias
+RUN apk add --no-cache libc6-compat
 
-# Install dependencies if package.json exists, otherwise we'll mount them or install later
-RUN if [ -f package.json ]; then npm install; fi
+# Copiar solo los manifiestos para cachear la capa de dependencias
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-# Copy the rest of the code
-COPY . .
+# El resto del código se monta como volumen en docker-compose.yml
+# No se hace COPY . . ni npm run build aquí
 
-# Expose port
 EXPOSE 3000
 
 CMD ["npm", "run", "dev"]

@@ -1,0 +1,12 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8100/api
+    # We use node server.js for standalone mode
+    command: [ "node", "server.js" ]
+    # We clear volumes to avoid masking the production build in /app-deploy
+    volumes: []

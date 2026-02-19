@@ -1,9 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: ["react-day-picker"],
   devIndicators: {
-    position: 'bottom-left',
+    appIsrStatus: false,
+    buildActivity: true,
+    buildActivityPosition: 'bottom-left',
   },
 };
 

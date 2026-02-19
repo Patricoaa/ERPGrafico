@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
-    restart: always
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -9,43 +9,63 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
-    restart: always
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: erpgrafico-backend:dev
     command: python manage.py runserver 0.0.0.0:8100
     volumes:
       - ./backend:/app
     ports:
       - "8100:8100"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DEBUG=1
       - SECRET_KEY=dev_secret_key
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
       - DATABASE_URL=postgres://postgres:postgres@db:5432/erpgrafico
       - REDIS_URL=redis://redis:6379/1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: erpgrafico-backend:dev
     command: celery -A config worker -l info
     volumes:
       - ./backend:/app
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DEBUG=1
       - SECRET_KEY=dev_secret_key
@@ -53,17 +73,21 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - SKIP_MIGRATIONS=true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: erpgrafico-backend:dev
     command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ./backend:/app
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DEBUG=1
       - SECRET_KEY=dev_secret_key
@@ -71,18 +95,21 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - SKIP_MIGRATIONS=true
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    user: "root"
     command: npm run dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - /app/.next
-      - /app/.turbo
+      - next_cache:/app/.next
+      - turbo_cache:/app/.turbo
     ports:
       - "4000:3000"
     depends_on:
@@ -90,14 +117,16 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8100/api
       - NEXT_TELEMETRY_DISABLED=1
-      - NEXT_OTEL_FETCH_DISABLED=1
-      - TURBO_CACHE_DIR=/tmp/.turbo
-      - TURBO_DATABASE_DIR=/tmp/turbo-db
       - NODE_OPTIONS=--max-old-space-size=3072
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - FAST_REFRESH=true
     deploy:
       resources:
         limits:
-          memory: 4096M
+          memory: 3072M
 
 volumes:
   postgres_data:
+  next_cache:
+  turbo_cache:
