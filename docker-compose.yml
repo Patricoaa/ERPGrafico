@@ -104,6 +104,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     command: npm run dev
     volumes:
       - ./frontend:/app
@@ -117,14 +118,14 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8100/api
       - NEXT_TELEMETRY_DISABLED=1
-      - NODE_OPTIONS=--max-old-space-size=3072
+      - NODE_OPTIONS=--max-old-space-size=3584
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
       - FAST_REFRESH=true
     deploy:
       resources:
         limits:
-          memory: 3072M
+          memory: 4096M
 
 volumes:
   postgres_data:

@@ -627,7 +627,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[10px] text-muted-foreground text-center">
+                                    <p className="text-[10px] text-muted-foreground">
                                         Entidad que procesa los pagos (ej: Transbank, Mercado Pago).
                                     </p>
                                 </div>

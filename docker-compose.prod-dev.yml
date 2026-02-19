@@ -6,7 +6,12 @@ services:
       target: runner
       args:
         - NEXT_PUBLIC_API_URL=http://localhost:8100/api
-    # We use node server.js for standalone mode
+    working_dir: /app-standalone
     command: [ "node", "server.js" ]
-    # We clear volumes to avoid masking the production build in /app-deploy
+    # The volumes from the base file are merged by Compose, but by using 
+    # /app-standalone as WORKDIR, we avoid the masking effect of the /app volume.
     volumes: []
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
