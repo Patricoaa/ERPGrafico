@@ -34,7 +34,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
       <h1 className="text-4xl font-bold tracking-tight text-primary animate-in fade-in slide-in-from-bottom-4 duration-1000">
-        Bienvenido, {displayName}
+        Bienvenid, {displayName}
       </h1>
       <p className="text-muted-foreground text-lg animate-in fade-in duration-1000 delay-300">
         Sistema de Gestión ERP Grafico
