@@ -52,8 +52,12 @@ class Command(BaseCommand):
             help='Seeds ONLY infrastructure (Users, Accounts, Treasury accounts). Forces --no-demo-flows and --no-tax-demo.',
         )
 
-    @transaction.atomic
     def handle(self, *args, **options):
+        # NOTE: No @transaction.atomic on the outer handle().
+        # The purge phase runs each model deletion in its own savepoint via _safe_delete().
+        # Wrapping the whole handle in one transaction would cause PostgreSQL to mark the
+        # entire connection as aborted if any single savepoint fails, breaking all subsequent
+        # deletions with "current transaction is aborted".
         if options['purge']:
             self.stdout.write(self.style.WARNING('Purging existing data...'))
             try:
@@ -65,51 +69,54 @@ class Command(BaseCommand):
                 self.stdout.write(traceback.format_exc())
                 return
 
-        self.stdout.write('Populating IFRS Chart of Accounts...')
-        result_msg = AccountingService.populate_ifrs_coa()
-        self.stdout.write(f"  {result_msg}")
+        # Wrap the seeding phase in its own atomic block so we get full rollback
+        # if anything fails during data creation (separate from the purge phase above).
+        with transaction.atomic():
+            self.stdout.write('Populating IFRS Chart of Accounts...')
+            result_msg = AccountingService.populate_ifrs_coa()
+            self.stdout.write(f"  {result_msg}")
 
-        self.stdout.write('Configuring Inventory Accounting Mappings...')
-        self._configure_inventory_accounting()
+            self.stdout.write('Configuring Inventory Accounting Mappings...')
+            self._configure_inventory_accounting()
 
-        self.stdout.write('Creating Demo Users...')
-        self._create_all_users()
-        
-        # Get references to key accounts for further seeding
-        accounts = self._get_account_references()
-        
-        self.stdout.write('Creating Partners...')
-        partners = self._create_partners(accounts)
+            self.stdout.write('Creating Demo Users...')
+            self._create_all_users()
+            
+            # Get references to key accounts for further seeding
+            accounts = self._get_account_references()
+            
+            self.stdout.write('Creating Partners...')
+            partners = self._create_partners(accounts)
 
-        self.stdout.write('Creating Units of Measure...')
-        uoms = self._create_uoms()
+            self.stdout.write('Creating Units of Measure...')
+            uoms = self._create_uoms()
 
-        self.stdout.write('Creating Inventory & Manufacturing Data...')
-        inventory = self._create_inventory(accounts, uoms)
+            self.stdout.write('Creating Inventory & Manufacturing Data...')
+            inventory = self._create_inventory(accounts, uoms)
 
-        self.stdout.write('Creating Subscriptions...')
-        self._create_subscriptions(accounts, partners['suppliers'])
+            self.stdout.write('Creating Subscriptions...')
+            self._create_subscriptions(accounts, partners['suppliers'])
 
-        self.stdout.write('Creating Opening Balance...')
-        self._create_opening_balance(accounts)
-        
-        # Add initial stock for all storable products
-        self.stdout.write('Adding Initial Stock...')
-        self._add_initial_stock(accounts)
+            self.stdout.write('Creating Opening Balance...')
+            self._create_opening_balance(accounts)
+            
+            # Add initial stock for all storable products
+            self.stdout.write('Adding Initial Stock...')
+            self._add_initial_stock(accounts)
 
-        self.stdout.write('Creating Treasury Infrastructure...')
-        self._create_treasury_infrastructure(accounts, partners)
+            self.stdout.write('Creating Treasury Infrastructure...')
+            self._create_treasury_infrastructure(accounts, partners)
 
-        self.stdout.write('Creating Accounting & Tax Periods...')
-        periods = self._create_periods()
+            self.stdout.write('Creating Accounting & Tax Periods...')
+            periods = self._create_periods()
 
-        if not options['no_demo_flows'] and not options['only_infra']:
-            self.stdout.write('Creating Sales & Purchasing Demo Flow...')
-            self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
+            if not options['no_demo_flows'] and not options['only_infra']:
+                self.stdout.write('Creating Sales & Purchasing Demo Flow...')
+                self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
-        if not options['no_tax_demo'] and not options['only_infra']:
-            self.stdout.write('Creating F29 Tax Declaration Demo...')
-            self._create_tax_demo(periods)
+            if not options['no_tax_demo'] and not options['only_infra']:
+                self.stdout.write('Creating F29 Tax Declaration Demo...')
+                self._create_tax_demo(periods)
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
