@@ -109,9 +109,6 @@ class Command(BaseCommand):
                 self.stdout.write('Creating Sales & Purchasing Demo Flow...')
                 self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
-            if not options['no_demo_flows'] and not options['only_infra']:
-                self.stdout.write('Creating Sales & Purchasing Demo Flow...')
-                self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
@@ -1129,33 +1126,4 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"    ✓ Demo Sale Flow: FACT-{invoice.number} created.")
 
-        # 2. SAMPLE PURCHASE: OCS -> REC -> FCP
-        supplier = partners['suppliers'][0]
-        raw_mat = inventory['raw_materials'][0] # Resma de papel
-        
-        if raw_mat:
-            p_order = PurchaseOrder.objects.create(
-                supplier=supplier,
-                date=timezone.now().date(),
-                payment_method=PurchaseOrder.PaymentMethod.CREDIT
-            )
-            PurchaseLine.objects.create(order=p_order, product=raw_mat, quantity=50, unit_cost=3500)
-            p_order.save()
-            
-            # Receive
-            receipt = PurchasingService.receive_order(p_order, warehouse)
-            
-            # Bill
-            p_invoice = Invoice.objects.create(
-                dte_type=Invoice.DTEType.PURCHASE_INV,
-                number="P-5501",
-                purchase_order=p_order,
-                contact=supplier,
-                total_net=p_order.total_net,
-                total_tax=p_order.total_tax,
-                total=p_order.total,
-                status=Invoice.Status.POSTED,
-                date=timezone.now().date()
-            )
-            self.stdout.write(f"    ✓ Demo Purchase Flow: FCP-{p_invoice.number} created.")
 
