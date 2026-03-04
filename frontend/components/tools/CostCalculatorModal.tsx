@@ -176,79 +176,81 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
         >
             <div className="flex-1 overflow-hidden flex divide-x">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[45%] flex flex-col p-6 gap-4 bg-background">
+                <div className="w-[45%] flex flex-col p-6 gap-4 bg-muted/10 min-h-0">
                     <div className="flex items-center gap-2">
                         <Input
                             placeholder="Buscar por nombre, código o código de barras..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="flex-1 h-12 text-lg shadow-sm"
+                            className="flex-1 h-12 text-lg shadow-sm bg-background border-muted/50"
                         />
                     </div>
 
-                    <ScrollArea className="flex-1 -mx-2 px-2">
-                        {loading && products.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-[40vh] gap-3 text-muted-foreground">
-                                <Loader2 className="h-10 w-10 animate-spin" />
-                                <p>Cargando productos...</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
-                                {filteredProducts.map(product => (
-                                    <Card
-                                        key={product.id}
-                                        className="group cursor-pointer hover:border-primary/50 transition-all shadow-sm hover:shadow-md border-muted-foreground/10 overflow-hidden flex flex-col"
-                                        onClick={() => addItem(product)}
-                                    >
-                                        <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
-                                            {product.image ? (
-                                                <img
-                                                    src={product.image}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                                />
-                                            ) : (
-                                                <Plus className="h-12 w-12 text-muted-foreground/30" />
-                                            )}
-                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Badge className="bg-primary text-primary-foreground shadow-lg">
-                                                    <Plus className="h-3 w-3 mr-1" /> Agregar
-                                                </Badge>
+                    <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-muted/50 bg-background">
+                        <CardContent className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {loading && products.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                                    <Loader2 className="h-10 w-10 animate-spin" />
+                                    <p>Cargando productos...</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {filteredProducts.map(product => (
+                                        <Card
+                                            key={product.id}
+                                            className="group cursor-pointer hover:border-primary/50 transition-all shadow-sm hover:shadow-md border-muted-foreground/10 overflow-hidden flex flex-col"
+                                            onClick={() => addItem(product)}
+                                        >
+                                            <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
+                                                {product.image ? (
+                                                    <img
+                                                        src={product.image}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                    />
+                                                ) : (
+                                                    <Plus className="h-12 w-12 text-muted-foreground/30" />
+                                                )}
+                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                    <Badge className="bg-primary text-primary-foreground shadow-lg">
+                                                        <Plus className="h-3 w-3 mr-1" /> Agregar
+                                                    </Badge>
+                                                </div>
                                             </div>
+                                            <CardContent className="p-3 flex-1 flex flex-col justify-between gap-2">
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground font-mono uppercase tracking-tighter mb-1">
+                                                        {product.internal_code}
+                                                    </p>
+                                                    <p className="text-sm font-bold leading-tight line-clamp-2">
+                                                        {product.name}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1">
+                                                    <span className="text-xs text-muted-foreground uppercase">
+                                                        {product.uom_name}
+                                                    </span>
+                                                    <span className="text-base font-black text-primary">
+                                                        ${new Intl.NumberFormat("es-CL").format(product.cost_price || 0)}
+                                                    </span>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {filteredProducts.length === 0 && (
+                                        <div className="col-span-full py-12 text-center text-muted-foreground">
+                                            No se encontraron productos.
                                         </div>
-                                        <CardContent className="p-3 flex-1 flex flex-col justify-between gap-2">
-                                            <div>
-                                                <p className="text-xs text-muted-foreground font-mono uppercase tracking-tighter mb-1">
-                                                    {product.internal_code}
-                                                </p>
-                                                <p className="text-sm font-bold leading-tight line-clamp-2">
-                                                    {product.name}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center justify-between mt-1">
-                                                <span className="text-xs text-muted-foreground uppercase">
-                                                    {product.uom_name}
-                                                </span>
-                                                <span className="text-base font-black text-primary">
-                                                    ${new Intl.NumberFormat("es-CL").format(product.cost_price || 0)}
-                                                </span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                                {filteredProducts.length === 0 && (
-                                    <div className="col-span-full py-12 text-center text-muted-foreground">
-                                        No se encontraron productos.
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </ScrollArea>
+                                    )}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[55%] flex flex-col p-6 bg-muted/5 gap-4">
-                    <div className="flex items-center justify-between">
+                <div className="w-[55%] flex flex-col p-6 bg-muted/10 gap-4 min-h-0">
+                    <div className="flex items-center justify-between h-12">
                         <h3 className="text-xl font-black uppercase tracking-tight">
                             Materiales Seleccionados
                             <Badge variant="secondary" className="ml-2 bg-muted-foreground/10 text-muted-foreground">
@@ -262,15 +264,15 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                         )}
                     </div>
 
-                    <div className="flex-1 flex flex-col overflow-hidden bg-background rounded-xl border shadow-sm">
-                        <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-muted/50 border-b text-xs font-bold uppercase text-muted-foreground tracking-widest">
+                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-sm border-muted/50 bg-background">
+                        <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-muted/50 border-b text-xs font-bold uppercase text-muted-foreground tracking-widest shrink-0">
                             <div className="col-span-5">Descripción</div>
                             <div className="col-span-2 text-center px-1">Cantidad</div>
                             <div className="col-span-3">UoM</div>
                             <div className="col-span-2 text-right">Subtotal</div>
                         </div>
 
-                        <ScrollArea className="flex-1">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {selectedItems.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
                                     <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
@@ -343,10 +345,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     ))}
                                 </div>
                             )}
-                        </ScrollArea>
+                        </div>
 
                         {/* Sumatoria Total */}
-                        <div className="p-4 bg-blue-50/50 border-t mt-auto">
+                        <div className="p-4 bg-blue-50/50 border-t mt-auto shrink-0">
                             <div className="space-y-2">
                                 {/* Primary Focus: Total Neto (Blue) */}
                                 <div className="flex justify-between items-end">
@@ -375,7 +377,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
 
                             </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </BaseModal>

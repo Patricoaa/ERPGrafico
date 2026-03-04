@@ -88,9 +88,9 @@ function ProductGridComponent({
                             )}
 
                             {/* Hover Badge */}
-                            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Badge className="bg-primary text-primary-foreground shadow-lg scale-90 group-hover:scale-100 transition-transform">
-                                    <Plus className="h-4 w-4 mr-1" /> Agregar
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <Badge className="bg-primary text-primary-foreground shadow-lg">
+                                    <Plus className="h-3 w-3 mr-1" /> Agregar
                                 </Badge>
                             </div>
 

@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+  },
   transpilePackages: ["react-day-picker"],
   devIndicators: {
-    appIsrStatus: false,
-    buildActivity: true,
-    buildActivityPosition: 'bottom-left',
   },
 };
 

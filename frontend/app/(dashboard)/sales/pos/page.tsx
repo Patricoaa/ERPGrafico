@@ -16,8 +16,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { LayoutGrid, FileText, ChevronDown, BarChart3, Save } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
+import { LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -355,7 +354,7 @@ function POSPageContent() {
                         <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
                             <CardHeader className="text-center pb-2">
                                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
-                                    <LucideIcons.Lock className="h-8 w-8 text-primary" />
+                                    <Lock className="h-8 w-8 text-primary" />
                                 </div>
                                 <CardTitle className="text-2xl">Caja Cerrada</CardTitle>
                                 <div className="space-y-1">
