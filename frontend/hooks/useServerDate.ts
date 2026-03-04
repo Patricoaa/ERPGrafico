@@ -20,7 +20,8 @@ export function useServerDate() {
         const fetchServerDate = async () => {
             try {
                 const response = await api.get<ServerDateResponse>('/core/server-time/')
-                setServerDate(new Date(response.data.datetime))
+                const { year, month, day } = response.data
+                setServerDate(new Date(year, month - 1, day))
                 setRawDate(response.data.date)
                 setError(null)
             } catch (err) {

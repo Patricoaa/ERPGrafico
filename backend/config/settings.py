@@ -210,7 +210,7 @@ from django.utils import timezone
 
 # FECHA DE PRUEBA: Cambia esto a la fecha que quieras simular
 # Ejemplo: 15 de Abril de 2026
-MOCK_DATE = datetime.datetime(2026, 7, 15, tzinfo=datetime.timezone.utc)
+MOCK_DATE = datetime.datetime(2026, 9, 15, tzinfo=datetime.timezone.utc)
 
 # Activa el "Viaje en el tiempo" de forma segura para migraciones
 # Usamos una función con nombre en lugar de lambda para que sea serializable
