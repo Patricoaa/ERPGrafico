@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "date-fns", "recharts"],
+    // Importa solo los módulos utilizados de estas librerías pesadas
+    // → evita que el compilador procese toda la librería en cada build
+    optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
   },
   transpilePackages: ["react-day-picker"],
   devIndicators: {

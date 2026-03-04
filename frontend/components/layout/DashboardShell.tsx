@@ -1,13 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { TaskInboxSidebar } from "@/components/layout/TaskInboxSidebar"
 import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
+
+// Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
+const TaskInboxSidebar = dynamic(
+    () => import("@/components/layout/TaskInboxSidebar").then(m => ({ default: m.TaskInboxSidebar })),
+    { ssr: false }
+)
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
     const router = useRouter()

@@ -1,10 +1,16 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator } from "lucide-react"
-import { CostCalculatorModal } from "@/components/tools/CostCalculatorModal"
+
+// Lazy load: solo se descarga y compila cuando el usuario abre la calculadora
+const CostCalculatorModal = dynamic(
+    () => import("@/components/tools/CostCalculatorModal").then(m => ({ default: m.CostCalculatorModal })),
+    { ssr: false }
+)
 import { cn } from "@/lib/utils"
 import {
     Tooltip,
