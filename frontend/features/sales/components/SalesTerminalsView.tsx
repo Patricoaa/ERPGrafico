@@ -2,9 +2,10 @@
 
 import React, { useState } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { TerminalManagement, TerminalBatchesManagement } from "@/features/treasury"
+import { TerminalManagement } from "@/features/treasury/components/TerminalManagement"
+import { TerminalBatchesManagement } from "@/features/treasury/components/TerminalBatchesManagement"
 import { Banknote, List, Receipt, Plus, Store } from "lucide-react"
-import POSSessionsPage from "@/app/(dashboard)/sales/sessions/page"
+import { POSSessionsView } from "@/features/sales/components/POSSessionsView"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
@@ -106,7 +107,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </TabsContent>
 
                 <TabsContent value="sessions" className="mt-0 outline-none">
-                    <POSSessionsPage hideHeader />
+                    <POSSessionsView hideHeader />
                 </TabsContent>
             </Tabs>
         </div>
