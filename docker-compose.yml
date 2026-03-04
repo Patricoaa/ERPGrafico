@@ -8,6 +8,13 @@
 #
 # Para limpiar TODO (caché incluido):
 #   docker compose down -v
+#
+# MODO ESTABLE (Sin Hot Reload / Más estable en Windows):
+#   docker compose -f docker-compose.yml -f docker-compose.stable.yml up frontend -d
+#
+# MODO HÍBRIDO (Máximo Rendimiento Front nativo + Back Docker - RECOMENDADO):
+#   docker compose -f docker-compose.yml -f docker-compose.hybrid.yml up -d
+#   cd frontend && npm run dev
 # -------------------------------------------------------
 
 services:

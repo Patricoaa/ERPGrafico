@@ -255,12 +255,12 @@ export default function TaxDeclarationsPage() {
                 titleActions={
                     <PageHeaderButton
                         onClick={handleOpenWizard}
-                        icon={Plus}
+                        iconName="plus"
                         circular
                         title="Nueva Declaración"
                     />
                 }
-                icon={FileText}
+                iconName="file-text"
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

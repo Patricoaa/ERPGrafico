@@ -1,0 +1,29 @@
+# Docker Compose — Hybrid Dev Setup
+# -------------------------------------------------------
+# Uso: docker compose -f docker-compose.yml -f docker-compose.hybrid.yml up -d
+#
+# Este archivo DESACTIVA el frontend y el nginx de Docker para que corras el
+# frontend de manera nativa en Windows con `npm run dev`.
+#
+# Pasos:
+# 1. Ejecutar el comando de arriba
+# 2. Abrir terminal en ./frontend
+# 3. Ejecutar: npm run dev
+# 4. Ir a http://localhost:3000
+# -------------------------------------------------------
+
+services:
+  # Desactivamos los servicios que vas a correr en Windows
+  frontend:
+    profiles:
+      - donotstart
+
+  nginx:
+    profiles:
+      - donotstart
+
+  # Aseguramos que el backend exponga su puerto directo a localhost
+  # (ya lo hace en el docker-compose.yml original en 8100:8100)
+  backend:
+    ports:
+      - "8100:8100"

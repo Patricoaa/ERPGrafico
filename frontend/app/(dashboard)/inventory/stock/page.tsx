@@ -4,7 +4,7 @@ import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
 import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
-import { Warehouse, History, FileBarChart, RefreshCw, PlayCircle, Plus } from "lucide-react"
+import { Warehouse, History, FileBarChart, RefreshCw, PlayCircle } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -46,7 +46,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     actions: (
                         <Link href="/inventory/stock?tab=movements&modal=adjustment">
                             <PageHeaderButton
-                                icon={Plus}
+                                iconName="plus"
                                 circular
                                 title="Nuevo Ajuste"
                             />
@@ -67,7 +67,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                             </Link>
                             <Link href="/inventory/stock?tab=replenishment&modal=rule">
                                 <PageHeaderButton
-                                    icon={Plus}
+                                    iconName="plus"
                                     circular
                                     title="Nueva Regla"
                                 />
@@ -82,7 +82,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     actions: (
                         <Link href="/inventory/stock?tab=warehouses&modal=new">
                             <PageHeaderButton
-                                icon={Plus}
+                                iconName="plus"
                                 circular
                                 title="Nuevo Almacén"
                             />
