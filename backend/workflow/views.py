@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Task, Notification, TaskAssignmentRule
 from .serializers import TaskSerializer, NotificationSerializer, TaskAssignmentRuleSerializer
@@ -47,6 +48,15 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         task = self.get_object()
+        
+        # Security Check: Can this user complete this task?
+        if not request.user.is_superuser:
+            if task.assigned_to and task.assigned_to != request.user:
+                raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
+            
+            if task.assigned_group and not request.user.groups.filter(id=task.assigned_group.id).exists():
+                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
+
         task.status = Task.Status.COMPLETED
         task.completed_at = timezone.now()
         task.completed_by = request.user

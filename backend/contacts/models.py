@@ -125,20 +125,27 @@ class Contact(models.Model):
     def credit_balance_used(self) -> Decimal:
         """
         Calculates the amount of credit currently used by the contact.
-        This includes all unpaid sale orders where the payment method is 'CREDIT'.
-        Based on effective_total which handles invoices/credit notes.
+        This includes all sale orders where the payment method is 'CREDIT', 
+        excluding DRAFT and CANCELLED orders.
+        The calculation is: sum of (order.effective_total - order.payments_net)
         """
-        # For a simplified Phase 1, we find SaleOrders that are CONFIRMED/INVOICED
-        # and not PAID, with payment_method CREDIT.
-        # Alternatively, since partial payments aren't easily tracked solely in SaleOrder status,
-        # we sum the 'effective_total' of all non-cancelled, non-draft orders that are CREDIT,
-        # minus whatever actual payments were registered against their invoices.
-        # However, POS currently sets 'status' = PAID when fully paid.
         orders = self.sale_orders.filter(
-            payment_method='CREDIT',
-            status__in=['CONFIRMED', 'INVOICED']
-        )
-        return sum(order.effective_total for order in orders)
+            payment_method='CREDIT'
+        ).exclude(status__in=['DRAFT', 'CANCELLED'])
+        
+        balance = Decimal('0')
+        for order in orders:
+            # Calculate net payments manually to avoid complex annotations here
+            payments = order.payments.filter(is_pending_registration=False)
+            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
+            payments_net = paid_in - paid_out
+            
+            order_balance = order.effective_total - payments_net
+            if order_balance > Decimal('0'):
+                balance += order_balance
+                
+        return balance
 
     @property
     def credit_available(self) -> Decimal:

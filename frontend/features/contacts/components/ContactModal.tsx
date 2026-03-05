@@ -22,7 +22,7 @@ import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShoppingCart, Package, Factory, User, BarChart3, Clock, Scale, Banknote, Truck, Receipt, ClipboardList } from "lucide-react"
+import { ShoppingCart, Package, Factory, User, BarChart3, Clock, Scale, Banknote, Truck, Receipt, ClipboardList, CreditCard } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
@@ -50,6 +50,10 @@ const contactSchema = z.object({
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
     payment_terms: z.string().optional(),
+
+    credit_enabled: z.boolean().optional(),
+    credit_limit: z.coerce.number().nullable().optional(),
+    credit_days: z.coerce.number().nullable().optional(),
 })
 
 interface ContactModalProps {
@@ -67,6 +71,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
     const [activeTab, setActiveTab] = useState("profile")
+    const [ledgerData, setLedgerData] = useState<any[]>([])
+    const [loadingLedger, setLoadingLedger] = useState(false)
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
@@ -83,6 +89,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             payment_terms: contact.payment_terms || "CONTADO",
             is_default_customer: !!contact.is_default_customer,
             is_default_vendor: !!contact.is_default_vendor,
+            credit_enabled: !!contact.credit_enabled,
+            credit_limit: contact.credit_limit || null,
+            credit_days: contact.credit_days || 30,
         } : {
             name: "",
             tax_id: "",
@@ -93,6 +102,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
             is_default_customer: false,
             is_default_vendor: false,
+            credit_enabled: false,
+            credit_limit: null,
+            credit_days: 30,
         },
     })
 
@@ -135,6 +147,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         payment_terms: res.data.payment_terms || "CONTADO",
                         is_default_customer: !!res.data.is_default_customer,
                         is_default_vendor: !!res.data.is_default_vendor,
+                        credit_enabled: !!res.data.credit_enabled,
+                        credit_limit: res.data.credit_limit || null,
+                        credit_days: res.data.credit_days || 30,
                     })
                 })
                 .catch(err => {
@@ -145,8 +160,22 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }, [open, contact?.id, contact?.name])
 
     useEffect(() => {
+        if (open && contact?.id && activeTab === "credit") {
+            setLoadingLedger(true)
+            api.get(`/contacts/${contact.id}/credit_ledger/`)
+                .then(res => setLedgerData(res.data))
+                .catch(err => {
+                    console.error("Error fetching credit ledger:", err)
+                    toast.error("Error al cargar el historial crediticio")
+                })
+                .finally(() => setLoadingLedger(false))
+        }
+    }, [open, contact?.id, activeTab])
+
+    useEffect(() => {
         if (!open) {
             setActiveTab("profile")
+            setLedgerData([])
             return
         }
         fetchDefaults()
@@ -162,7 +191,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 city: contact.city || "",
                 payment_terms: contact.payment_terms || "CONTADO",
                 is_default_customer: !!contact.is_default_customer,
-                is_default_vendor: !!contact.is_default_vendor
+                is_default_vendor: !!contact.is_default_vendor,
+                credit_enabled: !!contact.credit_enabled,
+                credit_limit: contact.credit_limit || null,
+                credit_days: contact.credit_days || 30,
             })
         } else if (!contact?.id) {
             // New contact
@@ -175,7 +207,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 city: "",
                 payment_terms: "CONTADO",
                 is_default_customer: false,
-                is_default_vendor: false
+                is_default_vendor: false,
+                credit_enabled: false,
+                credit_limit: null,
+                credit_days: 30,
             })
         }
     }, [contact, open, form.reset])
@@ -311,6 +346,14 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     </div>
                                 </TabsTrigger>
                             )}
+
+                            <TabsTrigger
+                                value="credit"
+                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                Línea de Crédito
+                            </TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -458,6 +501,125 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
 
                                                 </div>
+                                            </form>
+                                        </Form>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="credit" className="h-full m-0 p-0 border-0 outline-none">
+                                    <div className="p-8 pb-32">
+
+
+                                        <Form {...form}>
+                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                                {/* Enabler Switch */}
+                                                <div className="p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/10 flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="font-semibold text-primary/80">Habilitar Pago a Crédito</h4>
+                                                        <p className="text-xs font-medium text-muted-foreground">Permite al cliente pagar sus compras con cargo a una línea de crédito.</p>
+                                                    </div>
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="credit_enabled"
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                                <FormControl>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <Checkbox
+                                                                            id="credit_enabled"
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                            className="h-5 w-5"
+                                                                        />
+                                                                        <label htmlFor="credit_enabled" className="text-sm font-medium leading-none cursor-pointer">
+                                                                            {field.value ? "Activado" : "Desactivado"}
+                                                                        </label>
+                                                                    </div>
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                {/* Conditional Fields */}
+                                                {form.watch("credit_enabled") && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-1">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="credit_limit"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className={FORM_STYLES.label}>Límite de Crédito ($)</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
+                                                                            <Input
+                                                                                type="number"
+                                                                                placeholder="Ej: 500000"
+                                                                                className={`pl-8 ${FORM_STYLES.input}`}
+                                                                                {...field}
+                                                                                value={field.value || ""}
+                                                                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                                                            />
+                                                                        </div>
+                                                                    </FormControl>
+                                                                    <p className="text-[11px] text-muted-foreground mt-1">Monto máximo que el cliente puede adeudar.</p>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="credit_days"
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel className={FORM_STYLES.label}>Días de Plazo</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            type="number"
+                                                                            placeholder="Ej: 30"
+                                                                            className={FORM_STYLES.input}
+                                                                            {...field}
+                                                                            value={field.value || ""}
+                                                                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <p className="text-[11px] text-muted-foreground mt-1">Plazo estándar de pago (Ej: 30 días, 45 días).</p>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+
+                                                        {contact && (
+                                                            <div className="md:col-span-2 mt-4">
+                                                                <h4 className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wider">Estado Actual</h4>
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl flex flex-col items-center justify-center">
+                                                                        <span className="text-xs font-semibold text-emerald-600/70 uppercase mb-1">Disponible</span>
+                                                                        <span className="text-xl font-bold text-emerald-700">
+                                                                            ${Number(contact.credit_available || 0).toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="bg-red-50/50 border border-red-100 p-4 rounded-xl flex flex-col items-center justify-center">
+                                                                        <span className="text-xs font-semibold text-red-600/70 uppercase mb-1">Deuda Pendiente (Usado)</span>
+                                                                        <span className="text-xl font-bold text-red-700">
+                                                                            ${Number(contact.credit_balance_used || 0).toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Credit Ledger Table */}
+                                                                <div className="mt-8">
+                                                                    <CreditLedgerTable
+                                                                        data={ledgerData}
+                                                                        loading={loadingLedger}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </form>
                                         </Form>
                                     </div>
@@ -797,6 +959,83 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                     data={filteredData}
                     defaultPageSize={10}
                 />
+            </div>
+        </div>
+    )
+}
+
+function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean }) {
+    const { openCommandCenter } = useGlobalModals()
+
+    if (loading) {
+        return (
+            <div className="space-y-3">
+                <div className="h-8 bg-muted/50 animate-pulse rounded" />
+                <div className="h-20 bg-muted/20 animate-pulse rounded" />
+                <div className="h-20 bg-muted/20 animate-pulse rounded" />
+            </div>
+        )
+    }
+
+    if (data.length === 0) {
+        return (
+            <div className="text-center py-12 bg-muted/5 rounded-2xl border border-dashed">
+                <p className="text-sm text-muted-foreground">No hay documentos con deuda pendiente.</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Scale className="h-4 w-4" />
+                Detalle de Deuda (Facturas/Ventas a Crédito)
+            </h4>
+
+            <div className="rounded-xl border overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow>
+                            <TableHead className="text-xs font-bold uppercase">Documento</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-right">Monto Total</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-right">Pagado</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-right">Saldo Pendiente</TableHead>
+                            <TableHead className="text-xs font-bold uppercase text-center">Acción</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.map((order) => (
+                            <TableRow key={order.id} className="hover:bg-muted/5">
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-sm">NV-{order.number.toString().padStart(6, '0')}</span>
+                                        <span className="text-[10px] text-muted-foreground">{format(new Date(order.date), "dd MMM yyyy", { locale: es })}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DataCell.Currency value={order.effective_total} className="text-xs font-medium" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DataCell.Currency value={order.paid_amount} className="text-xs text-emerald-600 font-medium" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DataCell.Currency value={order.balance} className="text-sm font-bold text-red-600" />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 px-2"
+                                        onClick={() => openCommandCenter(order.id, 'sale')}
+                                    >
+                                        <LayoutDashboard className="h-4 w-4 mr-1" />
+                                        Ver
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
         </div>
     )

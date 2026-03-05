@@ -15,7 +15,8 @@ import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart, AlertCircle, Clock } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart, AlertCircle, Clock, Banknote, AlertTriangle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
 // ... other imports
@@ -693,6 +694,16 @@ export function SalesCheckoutWizard({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
+                        {selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0 && (
+                            <Alert variant="destructive" className="mb-4 bg-amber-50 border-amber-200 text-amber-900">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                <AlertTitle className="text-amber-800 font-bold">Deuda Activa Detectada</AlertTitle>
+                                <AlertDescription className="text-amber-700">
+                                    El cliente <strong>{selectedCustomer.name}</strong> tiene un saldo pendiente de <strong>${Number(selectedCustomer.credit_balance_used).toLocaleString()}</strong>.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
                         {creditApprovalRequired && !isWaitingApproval && (
                             <div className="mb-4 p-3 border border-warning/50 bg-warning/5 rounded-xl flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">

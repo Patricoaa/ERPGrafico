@@ -3,7 +3,7 @@
 import { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Plus, Building2, User as UserIcon } from "lucide-react"
+import { Edit, Trash2, Plus, Building2, User as UserIcon, Banknote } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatRUT } from "@/lib/utils/format"
@@ -84,6 +84,34 @@ export function ContactsClientView() {
                                             <DataCell.Icon icon={Building2} className="bg-purple-100 text-purple-600 h-6 w-6" />
                                         </TooltipTrigger>
                                         <TooltipContent>Proveedor por defecto</TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                            {(contact.credit_enabled || Number(contact.credit_balance_used || 0) > 0) && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <DataCell.Icon
+                                                icon={Banknote}
+                                                className={
+                                                    Number(contact.credit_balance_used || 0) > 0
+                                                        ? "bg-amber-100 text-amber-600 h-6 w-6"
+                                                        : "bg-emerald-100 text-emerald-600 h-6 w-6"
+                                                }
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <div className="flex flex-col gap-1">
+                                                {contact.credit_enabled && (
+                                                    <span>Límite Habilitado: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
+                                                )}
+                                                {Number(contact.credit_balance_used || 0) > 0 && (
+                                                    <span className="font-bold text-amber-600">
+                                                        Deuda Activa: ${Number(contact.credit_balance_used || 0).toLocaleString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}

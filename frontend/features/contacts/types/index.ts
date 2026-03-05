@@ -12,6 +12,12 @@ export interface Contact {
     payment_terms: string | null
     is_default_customer: boolean
     is_default_vendor: boolean
+
+    credit_enabled?: boolean
+    credit_limit?: number | null
+    credit_days?: number | null
+    credit_balance_used?: number | null
+    credit_available?: number | null
 }
 
 export interface ContactFilters {
@@ -33,6 +39,10 @@ export interface ContactPayload {
     payment_terms?: string
     is_default_customer: boolean
     is_default_vendor: boolean
+
+    credit_enabled?: boolean
+    credit_limit?: number | null
+    credit_days?: number | null
 }
 
 export interface InsightsData {

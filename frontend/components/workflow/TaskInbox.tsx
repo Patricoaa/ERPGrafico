@@ -11,6 +11,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function TaskInbox() {
     const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
@@ -21,6 +22,7 @@ export function TaskInbox() {
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const { openWorkOrder, openCommandCenter, openContact } = useGlobalModals()
+    const { user } = useAuth()
 
     const fetchTasks = async () => {
         setLoading(true)
@@ -216,25 +218,29 @@ export function TaskInbox() {
                                 <span className="font-mono font-bold">${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}</span>
                             </div>
                         </div>
-                        <div className="flex justify-between gap-2">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 text-xs h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
-                                onClick={(e) => handleCreditAction(e, task, 'REJECT')}
-                                disabled={actioningTask === task.id}
-                            >
-                                Rechazar
-                            </Button>
-                            <Button
-                                size="sm"
-                                className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-bold"
-                                onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
-                                disabled={actioningTask === task.id}
-                            >
-                                Aprobar
-                            </Button>
-                        </div>
+
+                        {/* Only show buttons if user is superuser, or specifically assigned (or if it's open to any) */}
+                        {(user?.is_superuser || task.assigned_to === user?.id || !task.assigned_to) && (
+                            <div className="flex justify-between gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 text-xs h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => handleCreditAction(e, task, 'REJECT')}
+                                    disabled={actioningTask === task.id}
+                                >
+                                    Rechazar
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-bold"
+                                    onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
+                                    disabled={actioningTask === task.id}
+                                >
+                                    Aprobar
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Card>

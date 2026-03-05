@@ -19,6 +19,7 @@ const TASK_TYPES = [
     { id: 'OT_PRESS_APPROVAL', name: 'Prensa (Impresión)', description: 'Validación de salida de prensa.' },
     { id: 'OT_POSTPRESS_APPROVAL', name: 'Post-Prensa (Terminado)', description: 'Validación de acabados finales.' },
     { id: 'OT_OUTSOURCING_VERIFICATION_APPROVAL', name: 'Verificación Tercerizados', description: 'Recepción de trabajos externos.' },
+    { id: 'CREDIT_POS_REQUEST', name: 'Aprobación de Crédito (POS)', description: 'Autorización para sobregiros y ventas a crédito no habilitadas.' },
 ]
 
 export function WorkflowSettings() {

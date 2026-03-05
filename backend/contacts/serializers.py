@@ -26,7 +26,8 @@ class ContactSerializer(serializers.ModelSerializer):
 class ContactListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
     contact_type = serializers.CharField(read_only=True)
+    credit_balance_used = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
-        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_limit', 'credit_available']
+        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_limit', 'credit_available', 'credit_balance_used']

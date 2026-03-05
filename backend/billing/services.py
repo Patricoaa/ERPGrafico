@@ -68,6 +68,26 @@ class BillingService:
             data={'request_data': clean_request_data, 'customer_id': customer.id, 'required_credit': str(required_credit)},
             category=Task.Category.APPROVAL
         )
+
+        # Apply assignment rule if configured
+        try:
+            from workflow.models import TaskAssignmentRule
+            rule = TaskAssignmentRule.objects.filter(task_type='CREDIT_POS_REQUEST').first()
+            if rule:
+                task.assigned_to = rule.assigned_user
+                
+                # Assign to group. task.assigned_group is a FK to Group, but rule.assigned_group is a CharField string in TaskAssignmentRule.
+                if rule.assigned_group:
+                    from django.contrib.auth.models import Group
+                    group = Group.objects.filter(name=rule.assigned_group).first()
+                    if group:
+                        task.assigned_group = group
+                
+                task.save(update_fields=['assigned_to', 'assigned_group'])
+        except Exception as e:
+            # Silently fail assignment and leave it unassigned if rule processing errors
+            pass
+
         return task
 
     @staticmethod

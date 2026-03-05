@@ -155,3 +155,40 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'orders': WorkOrderSerializer(work_orders_as_related[:50], many=True).data
             }
         })
+
+    @action(detail=True, methods=['get'])
+    def credit_ledger(self, request, pk=None):
+        """
+        Returns a list of unpaid credit orders for the contact.
+        """
+        from decimal import Decimal
+        contact = self.get_object()
+        
+        # Get all non-draft, non-cancelled CREDIT orders
+        orders = contact.sale_orders.filter(
+            payment_method='CREDIT'
+        ).exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
+        
+        ledger_data = []
+        for order in orders:
+            # Calculate payments
+            payments = order.payments.filter(is_pending_registration=False)
+            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
+            payments_net = paid_in - paid_out
+            
+            balance = order.effective_total - payments_net
+            
+            if balance > 0:
+                ledger_data.append({
+                    'id': order.id,
+                    'date': order.date,
+                    'number': order.display_id,
+                    'total': order.total,
+                    'effective_total': order.effective_total,
+                    'paid_amount': payments_net,
+                    'balance': balance,
+                    'status': order.status
+                })
+                
+        return Response(ledger_data)
