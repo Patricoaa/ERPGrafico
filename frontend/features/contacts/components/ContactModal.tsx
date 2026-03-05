@@ -302,50 +302,44 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                 Perfil
                             </TabsTrigger>
 
-                            {insightsData?.sales?.count && insightsData.sales.count > 0 && (
-                                <TabsTrigger
-                                    value="sales"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <ShoppingCart className="h-4 w-4" />
-                                        Cliente
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                            {insightsData.sales.count}
-                                        </Badge>
-                                    </div>
-                                </TabsTrigger>
-                            )}
+                            <TabsTrigger
+                                value="sales"
+                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <ShoppingCart className="h-4 w-4" />
+                                    Cliente
+                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        {insightsData?.sales?.count || 0}
+                                    </Badge>
+                                </div>
+                            </TabsTrigger>
 
-                            {insightsData?.purchases?.count && insightsData.purchases.count > 0 && (
-                                <TabsTrigger
-                                    value="purchases"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Package className="h-4 w-4" />
-                                        Proveedor
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                            {insightsData.purchases.count}
-                                        </Badge>
-                                    </div>
-                                </TabsTrigger>
-                            )}
+                            <TabsTrigger
+                                value="purchases"
+                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4" />
+                                    Proveedor
+                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        {insightsData?.purchases?.count || 0}
+                                    </Badge>
+                                </div>
+                            </TabsTrigger>
 
-                            {insightsData?.work_orders?.count && insightsData.work_orders.count > 0 && (
-                                <TabsTrigger
-                                    value="work_orders"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Wand2 className="h-4 w-4" />
-                                        Relacionado
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                            {insightsData.work_orders.count}
-                                        </Badge>
-                                    </div>
-                                </TabsTrigger>
-                            )}
+                            <TabsTrigger
+                                value="work_orders"
+                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Wand2 className="h-4 w-4" />
+                                    Relacionado
+                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        {insightsData?.work_orders?.count || 0}
+                                    </Badge>
+                                </div>
+                            </TabsTrigger>
 
                             <TabsTrigger
                                 value="credit"

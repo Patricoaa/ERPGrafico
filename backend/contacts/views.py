@@ -165,9 +165,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         contact = self.get_object()
         
         # Get all non-draft, non-cancelled CREDIT orders
-        orders = contact.sale_orders.filter(
-            payment_method='CREDIT'
-        ).exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
+        orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
         
         ledger_data = []
         for order in orders:

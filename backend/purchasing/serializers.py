@@ -70,7 +70,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PurchaseOrder
-        fields = '__all__'
+        fields = [
+            'id', 'number', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
+            'date', 'status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
+            'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments',
+            'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at'
+        ]
 
     def get_total_paid(self, obj):
         # Exclude payments specific to Notes (NC/ND)

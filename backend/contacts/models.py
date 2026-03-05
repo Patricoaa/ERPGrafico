@@ -129,9 +129,7 @@ class Contact(models.Model):
         excluding DRAFT and CANCELLED orders.
         The calculation is: sum of (order.effective_total - order.payments_net)
         """
-        orders = self.sale_orders.filter(
-            payment_method='CREDIT'
-        ).exclude(status__in=['DRAFT', 'CANCELLED'])
+        orders = self.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED'])
         
         balance = Decimal('0')
         for order in orders:

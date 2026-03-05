@@ -141,7 +141,14 @@ class SaleOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SaleOrder
-        fields = '__all__'
+        fields = [
+            'id', 'number', 'customer', 'customer_name', 'date', 'status', 'channel', 'channel_display',
+            'notes', 'payment_method', 'delivery_status', 'delivery_date', 'salesperson',
+            'total_net', 'total_tax', 'total', 'effective_total', 'total_paid', 'pending_amount',
+            'lines', 'serialized_payments', 'related_documents', 'work_orders', 
+            'production_progress', 'has_pending_work_orders', 'pos_session', 'pos_session_display',
+            'created_at', 'updated_at'
+        ]
 
     def get_related_documents(self, obj):
         from billing.models import Invoice

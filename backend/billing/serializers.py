@@ -30,7 +30,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = '__all__'
+        fields = [
+            'id', 'dte_type', 'dte_type_display', 'sii_document_code', 'number',
+            'document_attachment', 'date', 'sale_order', 'purchase_order',
+            'corrected_invoice', 'contact', 'status', 'status_display',
+            'payment_method', 'payment_method_display', 'total_net', 'total_tax',
+            'total', 'journal_entry', 'tax_period_closed', 'created_at',
+            'updated_at', 'attachments', 'sale_order_number',
+            'purchase_order_number', 'po_receiving_status', 'partner_name',
+            'related_documents', 'related_stock_moves', 'related_returns',
+            'lines', 'pending_amount', 'serialized_payments', 'adjustments',
+            'order_delivery_status', 'work_orders', 'is_tax_exempt', 'pos_session'
+        ]
 
     def get_serialized_payments(self, obj):
         return TreasuryMovementSerializer(obj.payments.all(), many=True).data

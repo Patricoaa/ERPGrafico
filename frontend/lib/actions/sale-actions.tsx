@@ -78,7 +78,7 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'create-work-order',
                 label: 'Crear OT Manual',
                 icon: FileEdit,
-                requiredPermissions: ['manufacturing.add_workorder'],
+                requiredPermissions: ['production.add_workorder'],
                 checkAvailability: (order) => {
                     const lines = order.lines || order.items || []
                     const hasManufacturable = lines.some((l: any) => l.is_manufacturable)
@@ -179,20 +179,20 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'register-payment',
                 label: 'Registrar Pago',
                 icon: Banknote,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
                         // Allow registration for any posted document with pending balance
-                        const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
+                        const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") ?? 0) > 0
                         // For ND, also allow in DRAFT if it corrections/additions are being paid early
                         return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.dte_type !== 'NOTA_CREDITO'
                     }
 
                     // Show if there's a pending amount
-                    const hasPendingAmount = (parseFloat(activeDoc.pending_amount) || 0) > 0
+                    const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") || 0) > 0
                     return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                 },
                 badge: { type: 'pending' },
@@ -202,7 +202,7 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'register-payment-return',
                 label: 'Devolver Pago',
                 icon: DollarSign,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const isInvoiced = !!activeDoc.dte_type
@@ -210,7 +210,7 @@ export const saleOrderActions: ActionRegistry = {
                     if (isInvoiced) {
                         // For Credit Note, this IS the primary treasury action
                         if (activeDoc.dte_type === 'NOTA_CREDITO') {
-                            const hasPendingAmount = (parseFloat(activeDoc.pending_amount) ?? 0) > 0
+                            const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") ?? 0) > 0
                             return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                         }
                         return false
@@ -235,7 +235,7 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'payment-history',
                 label: 'Historial de Pagos',
                 icon: History,
-                requiredPermissions: ['treasury.view_payment'],
+                requiredPermissions: ['treasury.view_treasurymovement'],
                 checkAvailability: (order) => {
                     const paymentsCount = order.related_documents?.payments?.length ||
                         order.serialized_payments?.length || 0
@@ -355,7 +355,7 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'register-payment-return',
                 label: 'Devolver Pago',
                 icon: DollarSign,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 checkAvailability: (order) => {
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = order.related_documents?.invoices?.some(
@@ -383,7 +383,7 @@ export const saleOrderActions: ActionRegistry = {
                 id: 'view-work-orders',
                 label: 'Ver Órdenes de Trabajo',
                 icon: Eye,
-                requiredPermissions: ['manufacturing.view_workorder'],
+                requiredPermissions: ['production.view_workorder'],
                 checkAvailability: (order) => (order.work_orders?.length || 0) > 0
             },
             {

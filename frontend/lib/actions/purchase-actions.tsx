@@ -169,7 +169,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 id: 'register-payment',
                 label: 'Registrar Pago',
                 icon: Banknote,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 // Removed specific requiredStatus to rely on financial state
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
@@ -192,7 +192,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 id: 'register-payment-return',
                 label: 'Devolver Pago',
                 icon: DollarSign,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const isInvoiced = !!activeDoc.dte_type
@@ -225,7 +225,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 id: 'payment-history',
                 label: 'Historial de Pagos',
                 icon: History,
-                requiredPermissions: ['treasury.view_payment'],
+                requiredPermissions: ['treasury.view_treasurymovement'],
                 checkAvailability: (order) => {
                     const paymentsCount = order.related_documents?.payments?.length ||
                         order.serialized_payments?.length || 0
@@ -330,7 +330,7 @@ export const purchaseOrderActions: ActionRegistry = {
                 id: 'register-payment-return',
                 label: 'Devolver Pago',
                 icon: DollarSign,
-                requiredPermissions: ['treasury.add_payment'],
+                requiredPermissions: ['treasury.add_treasurymovement'],
                 checkAvailability: (order) => {
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = order.related_documents?.invoices?.some(
