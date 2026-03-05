@@ -55,7 +55,6 @@ export const settingsApi = {
             'pos_theft_account',
             'pos_other_inflow_account',
             'pos_other_outflow_account',
-            'pos_cash_difference_approval_threshold',
             'terminal_commission_bridge_account',
             'terminal_iva_bridge_account',
         ]

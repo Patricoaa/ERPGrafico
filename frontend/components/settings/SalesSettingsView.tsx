@@ -7,7 +7,6 @@ import * as z from "zod"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {
     Loader2,
@@ -35,7 +34,6 @@ const salesSchema = z.object({
     pos_theft_account: z.string().nullable(),
     pos_other_inflow_account: z.string().nullable(),
     pos_other_outflow_account: z.string().nullable(),
-    pos_cash_difference_approval_threshold: z.number(),
     // Terminal accounts
     terminal_commission_bridge_account: z.string().nullable(),
     terminal_iva_bridge_account: z.string().nullable(),
@@ -67,7 +65,6 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
             pos_theft_account: null,
             pos_other_inflow_account: null,
             pos_other_outflow_account: null,
-            pos_cash_difference_approval_threshold: 5000,
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
         }
@@ -82,9 +79,7 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
             keys.forEach((key) => {
                 const val = settings[key as keyof typeof settings]
                 if (val === null || val === undefined) {
-                    formattedSettings[key] = (key === 'pos_cash_difference_approval_threshold' ? 5000 : null) as never
-                } else if (key === 'pos_cash_difference_approval_threshold') {
-                    formattedSettings[key] = (parseInt(val.toString()) || 0) as never
+                    formattedSettings[key] = null as never
                 } else {
                     formattedSettings[key] = val.toString() as never
                 }
@@ -185,33 +180,6 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
                                         <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio" accountType="ASSET" />
                                         <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos" accountType="INCOME" />
                                         <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
-                                    </div>
-
-                                    <div className="pt-4 border-t">
-                                        <FormField
-                                            control={form.control}
-                                            name="pos_cash_difference_approval_threshold"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <FormLabel className="text-xs font-semibold uppercase">Umbral de Aprobación Automática</FormLabel>
-                                                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">Valor en CLP</span>
-                                                    </div>
-                                                    <FormControl>
-                                                        <Input
-                                                            {...field}
-                                                            type="number"
-                                                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                            className="font-mono"
-                                                        />
-                                                    </FormControl>
-                                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                                        Las diferencias de caja menores a este monto se aprobarán automáticamente al cerrar el terminal.
-                                                    </p>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
                                     </div>
                                 </CardContent>
                             </Card>

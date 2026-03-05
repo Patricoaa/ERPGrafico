@@ -263,7 +263,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                         <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
                             <div className="col-span-6">Descripción</div>
                             <div className="col-span-2 text-center">Cant.</div>
-                            <div className="col-span-2">UoM</div>
+                            <div className="col-span-2">Unidad</div>
                             <div className="col-span-2 text-right">Subtotal</div>
                         </div>
 

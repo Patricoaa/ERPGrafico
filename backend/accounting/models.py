@@ -645,14 +645,6 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta para registrar diferencias por redondeo en el POS.")
     )
     
-    pos_cash_difference_approval_threshold = models.DecimalField(
-        _("Umbral de Aprobación de Diferencias POS"),
-        max_digits=12,
-        decimal_places=2,
-        default=5000,
-        help_text=_("Montos mayores a este valor requieren aprobación manual.")
-    )
-
 
 
     # Advanced Accounting

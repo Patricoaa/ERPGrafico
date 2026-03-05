@@ -18,7 +18,6 @@ export interface SalesSettings {
     pos_theft_account: string | null
     pos_other_inflow_account: string | null
     pos_other_outflow_account: string | null
-    pos_cash_difference_approval_threshold: number
     // Terminal accounts
     terminal_commission_bridge_account: string | null
     terminal_iva_bridge_account: string | null
