@@ -232,7 +232,7 @@ const RelatedDocumentsSection = ({ data, currentType, navigateTo }: { data: any,
     if (!data) return null;
 
     const renderCard = (type: string, id: any, title: string, subtitle: string, icon: any, color: string, colorBg: string, colorBorder: string) => (
-        <Card className={`border-${colorBorder} bg-${colorBg}/30 hover:opacity-80 transition-all cursor-pointer shadow-sm`} onClick={() => navigateTo(type, id)}>
+        <Card key={`${type}-${id}-${title.replace(/\s+/g, '-')}`} className={`border-${colorBorder} bg-${colorBg}/30 hover:opacity-80 transition-all cursor-pointer shadow-sm`} onClick={() => navigateTo(type, id)}>
             <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                     <div className={`p-2 bg-${colorBorder}/20 rounded-lg`}>

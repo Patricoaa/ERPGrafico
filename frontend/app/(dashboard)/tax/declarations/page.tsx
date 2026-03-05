@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -13,7 +13,8 @@ import {
     AlertCircle,
     ArrowRight,
     DollarSign,
-    Package
+    Package,
+    History as HistoryIcon
 } from "lucide-react"
 import api from "@/lib/api"
 import { format } from "date-fns"
@@ -21,11 +22,12 @@ import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import { DeclarationWizard } from "@/components/tax/DeclarationWizard"
 import { PeriodChecklist } from "@/components/tax/PeriodChecklist"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { F29PaymentModal } from "@/components/tax/F29PaymentModal"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, Row } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { cn, formatCurrency } from "@/lib/utils"
 
 export default function TaxDeclarationsPage() {
     const [periods, setPeriods] = useState<any[]>([])
@@ -70,6 +72,9 @@ export default function TaxDeclarationsPage() {
             setSelectedDeclaration({
                 id: period.declaration_summary.id,
                 vat_to_pay: period.declaration_summary.vat_to_pay,
+                total_paid: period.declaration_summary.total_paid,
+                is_fully_paid: period.declaration_summary.is_fully_paid,
+                payments: period.declaration_summary.payments || [],
                 folio_number: period.declaration_summary.folio_number,
                 tax_period_display: `${period.month_display} ${period.year}`
             })
@@ -143,9 +148,6 @@ export default function TaxDeclarationsPage() {
     // We don't have credit balance in summary yet, would need to add it to serializer or keep it simple
     // For now assuming 0 or fetching separate if critical. User asked to sync "Impuesto Determinado".
 
-
-    // ... (previous code)
-
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "period_display",
@@ -207,25 +209,43 @@ export default function TaxDeclarationsPage() {
             cell: ({ row }) => {
                 const period = row.original
                 const summary = period.declaration_summary
-                const showPayButton = period.status !== 'CLOSED' && summary && !summary.is_fully_paid && summary.vat_to_pay > 0
+
+                // Show button if a summary exists (to pay or view) OR if it's closed and needs a summary
+                const hasSummary = !!summary
+                const isFullyPaid = summary?.is_fully_paid
+                const showPaymentButton = hasSummary || (!summary && period.status === 'CLOSED')
 
                 // Checklist only available if OPEN
                 const canOpenChecklist = period.status === 'OPEN'
 
                 return (
                     <div className="flex justify-end gap-2">
-                        {(!summary?.is_fully_paid && (summary?.vat_to_pay > 0 || !summary)) && (
+                        {showPaymentButton && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 rounded-lg border-emerald-500/50 text-emerald-600 hover:bg-emerald-50"
+                                className={cn(
+                                    "h-8 rounded-lg",
+                                    isFullyPaid
+                                        ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                        : "border-emerald-500/50 text-emerald-600 hover:bg-emerald-50"
+                                )}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenPayment(period);
                                 }}
                             >
-                                <DollarSign className="h-3.5 w-3.5 mr-1" />
-                                Pagar
+                                {isFullyPaid ? (
+                                    <>
+                                        <History className="h-4 w-4 mr-2" />
+                                        Ver Pagos
+                                    </>
+                                ) : (
+                                    <>
+                                        <DollarSign className="h-4 w-4 mr-2" />
+                                        Pagar
+                                    </>
+                                )}
                             </Button>
                         )}
                         {canOpenChecklist && (
@@ -348,10 +368,14 @@ export default function TaxDeclarationsPage() {
                             {rows.map((row: any) => {
                                 const period = row.original
                                 const summary = period.declaration_summary
-                                const canOpenChecklist = period.status === 'OPEN'
 
-                                // Logic: Period must be OPEN (or at least not CLOSED) AND have a declaration summary
-                                const showPayButton = period.status !== 'CLOSED' && summary && !summary.is_fully_paid && summary.vat_to_pay > 0
+                                // Logic: Show button if declaration exists OR if closed and needs one
+                                const hasSummary = !!summary
+                                const isFullyPaid = summary?.is_fully_paid
+                                const showPaymentButton = hasSummary || (!summary && period.status === 'CLOSED')
+
+                                // Checklist only available if OPEN
+                                const canOpenChecklist = period.status === 'OPEN'
 
                                 return (
                                     <div
@@ -408,18 +432,32 @@ export default function TaxDeclarationsPage() {
                                             )}
 
                                             <div className="flex items-center gap-2">
-                                                {showPayButton && (
+                                                {showPaymentButton && (
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        className="h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-50"
+                                                        className={cn(
+                                                            "h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-50",
+                                                            isFullyPaid
+                                                                ? "border-emerald-200 text-emerald-600"
+                                                                : "border-emerald-500/50 text-emerald-600"
+                                                        )}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleOpenPayment(period);
                                                         }}
                                                     >
-                                                        <DollarSign className="h-4 w-4 mr-2" />
-                                                        Pagar
+                                                        {isFullyPaid ? (
+                                                            <>
+                                                                <HistoryIcon className="h-4 w-4 mr-2" />
+                                                                Ver Pagos
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <DollarSign className="h-4 w-4 mr-2" />
+                                                                Pagar
+                                                            </>
+                                                        )}
                                                     </Button>
                                                 )}
                                                 {canOpenChecklist && (
@@ -469,15 +507,11 @@ export default function TaxDeclarationsPage() {
             />
 
             {selectedDeclaration && (
-                <PaymentDialog
-                    open={isPaymentOpen}
+                <F29PaymentModal
+                    isOpen={isPaymentOpen}
                     onOpenChange={setIsPaymentOpen}
-                    total={Number(selectedDeclaration.vat_to_pay || 0)}
-                    pendingAmount={Number(selectedDeclaration.vat_to_pay || 0)}
-                    onConfirm={handlePaymentConfirm}
-                    title="Pagar Impuestos F29"
-                    isPurchase={true}
-                    hideDteFields={true}
+                    declaration={selectedDeclaration}
+                    onConfirmPayment={handlePaymentConfirm}
                 />
             )}
         </div>

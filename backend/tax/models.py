@@ -338,29 +338,28 @@ class F29Declaration(models.Model):
 
     @property
     def total_amount_due(self):
-        """Total de impuestos determinados (IVA Débito + Retenciones + Impuesto Único)"""
-        return self.vat_debit + self.withholding_tax + self.second_category_tax
+        """Total de impuestos determinados a pagar (Neto VAT a pagar + Retenciones + Impuesto Único + PPM a pagar)"""
+        return self.vat_to_pay + self.withholding_tax + self.second_category_tax + self.ppm_amount
 
     @property
     def total_credits_available(self):
-        """Total de créditos/pagos (IVA Crédito + Remanente Anterior + Reajuste + PPM)"""
+        """Total de créditos pro-IVA (IVA Crédito + Remanente Anterior + Reajuste)"""
         return (
             self.vat_credit + 
             self.vat_credit_carryforward + 
-            self.vat_correction_amount + 
-            self.ppm_amount
+            self.vat_correction_amount
         )
 
     @property
     def vat_to_pay(self):
-        """Monto neto a pagar al SII si los impuestos superan los créditos"""
-        result = self.total_amount_due - self.total_credits_available
+        """Monto neto a pagar al SII SÓLO POR CONCEPTO DE IVA si los débitos superan los créditos"""
+        result = self.vat_debit - self.total_credits_available
         return result if result > 0 else Decimal('0')
 
     @property
     def vat_credit_balance(self):
-        """Remanente a favor si los créditos superen a los impuestos del período"""
-        result = self.total_amount_due - self.total_credits_available
+        """Remanente de IVA a favor si los créditos superan a los débitos del período"""
+        result = self.vat_debit - self.total_credits_available
         return abs(result) if result < 0 else Decimal('0')
 
     @property

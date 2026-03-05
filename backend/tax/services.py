@@ -32,11 +32,11 @@ class F29CalculationService:
         else:
             end_date = date(year, month + 1, 1)
         
-        # Query all posted invoices in the period
+        # Query all posted and paid invoices in the period
         invoices = Invoice.objects.filter(
             date__gte=start_date,
             date__lt=end_date,
-            status=Invoice.Status.POSTED
+            status__in=[Invoice.Status.POSTED, Invoice.Status.PAID]
         )
         
         # Initialize accumulators
@@ -83,7 +83,10 @@ class F29CalculationService:
                         purchase_debit_notes += invoice.total_net
                 else:
                     # Regular purchase invoices
-                    if is_exempt:
+                    if invoice.dte_type in [Invoice.DTEType.BOLETA, Invoice.DTEType.BOLETA_EXENTA]:
+                        # Boletas do not generate VAT credit for purchases
+                        pass
+                    elif is_exempt:
                         purchases_exempt += invoice.total_net
                     else:
                         purchases_taxed += invoice.total_net
@@ -216,7 +219,10 @@ class F29CalculationService:
             raise ValidationError("Esta declaración ya fue registrada.")
         
         if not declaration_date:
-            declaration_date = timezone.now().date()
+            import calendar
+            # Usa el último día del mes del periodo tributario para el cierre
+            last_day = calendar.monthrange(declaration.tax_period.year, declaration.tax_period.month)[1]
+            declaration_date = date(declaration.tax_period.year, declaration.tax_period.month, last_day)
         
         # Get accounting settings
         settings = AccountingSettings.objects.first()
@@ -258,14 +264,14 @@ class F29CalculationService:
                 'label': 'Cierre IVA Crédito Fiscal'
             })
         
-        # Register result
+        # Register result FOR VAT ONLY
         if declaration.vat_to_pay > 0:
-            # We owe taxes (net)
+            # We owe taxes (net) for VAT
             items.append({
                 'account': settings.vat_payable_account,
                 'debit': Decimal('0'),
                 'credit': declaration.vat_to_pay,
-                'label': 'Impuestos por Pagar al SII (F29)'
+                'label': 'IVA por Pagar al SII (F29)'
             })
         elif declaration.vat_credit_balance > 0:
             # We have credit balance (remanente)
@@ -339,15 +345,29 @@ class F29CalculationService:
 
         # 4. Clear Other Credits
         
-        # Credit: Clear PPM Asset
+        # Debit: Increase PPM Asset (we are paying this month)
         if declaration.ppm_amount > 0:
             if not settings.ppm_account:
                 raise ValidationError("Falta configurar cuenta de PPM por Recuperar.")
             items.append({
                 'account': settings.ppm_account,
+                'debit': declaration.ppm_amount,
+                'credit': Decimal('0'),
+                'label': 'Provisión PPM Mensual'
+            })
+            
+        # 4. Total Amount Due to SII (Rent Taxes + VAT to pay + PPM)
+        total_due = declaration.total_amount_due
+        if total_due > 0 and not (declaration.vat_to_pay > 0 and total_due == declaration.vat_to_pay):
+            # If there's more than just VAT to pay, we should record the non-VAT liabilities 
+            # as payable to SII. Because F29 payment usually pays everything from a single liability account.
+            # To keep it simple, we use vat_payable_account as the generic SII payable account for F29.
+            non_vat_due = declaration.withholding_tax + declaration.second_category_tax + declaration.ppm_amount
+            items.append({
+                'account': settings.vat_payable_account,
                 'debit': Decimal('0'),
-                'credit': declaration.ppm_amount,
-                'label': 'Uso de PPM Acumulado'
+                'credit': non_vat_due,
+                'label': 'Otras Obligaciones F29 (Retenciones, Renta, PPM)'
             })
         
         # Add journal items
@@ -507,7 +527,7 @@ class F29PaymentService:
         if not declaration.is_registered:
             raise ValidationError("La declaración debe estar registrada antes de registrar pagos.")
         
-        if declaration.vat_to_pay <= 0:
+        if declaration.total_amount_due <= 0:
             raise ValidationError("Esta declaración no tiene monto a pagar.")
         
         # Get accounting settings
@@ -515,15 +535,19 @@ class F29PaymentService:
         if not settings or not settings.vat_payable_account:
             raise ValidationError("Falta configurar cuenta IVA por Pagar.")
         
-        # Handle treasury_account - can be object (from serializer) or ID
-        if 'treasury_account' in payment_data and isinstance(payment_data['treasury_account'], TreasuryAccount):
-            treasury_account = payment_data['treasury_account']
-            treasury_account_id = treasury_account.id
-        elif 'treasury_account_id' in payment_data:
-            treasury_account_id = payment_data['treasury_account_id']
-            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+        # Handle treasury_account - prioritize treasury_account_id from payload, then use treasury_account object
+        # This handles cases where serializer passes the ID instead of the full instance
+        treasury_account_id = payment_data.get('treasury_account_id') or payment_data.get('treasury_account')
+        
+        if isinstance(treasury_account_id, TreasuryAccount):
+            treasury_account = treasury_account_id
+        elif treasury_account_id:
+            try:
+                treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+            except (ValueError, TypeError, TreasuryAccount.DoesNotExist):
+                raise ValidationError(f"Cuenta de tesorería inválida: {treasury_account_id}")
         else:
-            raise ValidationError("Se requiere treasury_account o treasury_account_id")
+            raise ValidationError("Se requiere una cuenta de tesorería (treasury_account o treasury_account_id)")
         
         # Create payment record
         payment = F29Payment.objects.create(

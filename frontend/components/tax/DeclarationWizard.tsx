@@ -167,10 +167,24 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val || 0)
 
-    // Calculate dynamic totals for step 3
-    const totalDue = (calcData?.vat_debit || 0) + manualFields.withholding_tax + manualFields.second_category_tax
-    const totalCredits = (calcData?.vat_credit || 0) + manualFields.vat_credit_carryforward + manualFields.vat_correction_amount + manualFields.ppm_amount
-    const finalToPay = Math.max(0, totalDue - totalCredits)
+    // Calculate dynamic totals for step 4
+    const vatDebit = calcData?.vat_debit || 0;
+    const vatCredit = calcData?.vat_credit || 0;
+
+    // Total Credits for VAT Use ONLY
+    const totalVATCredits = vatCredit + manualFields.vat_credit_carryforward + manualFields.vat_correction_amount;
+
+    // Total VAT strictly to Pay 
+    const vatToPay = Math.max(0, vatDebit - totalVATCredits);
+
+    // Total Remanent left over
+    const vatRemanent = Math.max(0, totalVATCredits - vatDebit);
+
+    // Other non-VAT tax obligations
+    const otherTaxes = manualFields.withholding_tax + manualFields.second_category_tax + manualFields.ppm_amount;
+
+    // The grand total 
+    const finalToPay = vatToPay + otherTaxes;
 
     return (
         <BaseModal
@@ -370,7 +384,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 flex gap-4 items-start text-sm text-primary/80">
                             <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
                             <p>
-                                Estos valores son calculados automáticamente de las facturas y boletas publicadas en el sistema. Asegúrese de haber conciliado todos los documentos antes de proceder. La tasa de impuestos se obtiene de la configuración contable.
+                                Estos valores son calculados automáticamente de las facturas y boletas publicadas en el sistema. Asegúrese de haber conciliado todos los documentos antes de proceder.
                             </p>
                         </div>
                     </div>
@@ -451,15 +465,33 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
                         <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
                             <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Total Impuestos Determinado</span>
-                                <span className="font-bold text-indigo-600">{formatCurrency(totalDue)}</span>
+                                <span className="text-muted-foreground">Débitos F. (Ventas)</span>
+                                <span className="font-medium text-indigo-600">{formatCurrency(vatDebit)}</span>
                             </div>
                             <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Total Créditos/Pagos</span>
-                                <span className="font-medium text-emerald-600">{formatCurrency(totalCredits)}</span>
+                                <span className="text-muted-foreground">Créditos F. y Reajuste</span>
+                                <span className="font-medium text-emerald-600">-{formatCurrency(totalVATCredits)}</span>
                             </div>
-                            <div className="flex justify-between py-4 text-xl font-black">
-                                <span>TOTAL A PAGAR</span>
+                            <div className="flex justify-between py-2 border-dashed">
+                                <span className="font-medium">Total IVA a Pagar</span>
+                                <span className={cn("font-bold", vatToPay > 0 ? "text-red-500" : "text-emerald-500")}>{formatCurrency(vatToPay)}</span>
+                            </div>
+                            {vatRemanent > 0 && (
+                                <div className="flex justify-between py-2 bg-emerald-500/5 px-2 -mx-2 rounded-lg">
+                                    <span className="text-emerald-700 font-medium">Nuevo Remanente a Favor</span>
+                                    <span className="font-bold text-emerald-600">{formatCurrency(vatRemanent)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between py-2">
+                                <span className="text-muted-foreground">Retenciones e Impuesto</span>
+                                <span className="font-medium text-amber-600">{formatCurrency(manualFields.withholding_tax + manualFields.second_category_tax)}</span>
+                            </div>
+                            <div className="flex justify-between py-2">
+                                <span className="text-muted-foreground">Pago Provisional PPM</span>
+                                <span className="font-medium text-amber-600">{formatCurrency(manualFields.ppm_amount)}</span>
+                            </div>
+                            <div className="flex justify-between py-4 text-xl font-black border-t-2 border-border mt-2">
+                                <span>TOTAL A PAGAR AL SII</span>
                                 <span className="text-primary">{formatCurrency(finalToPay)}</span>
                             </div>
                         </div>
