@@ -272,6 +272,27 @@ class F29Declaration(models.Model):
         decimal_places=0,
         default=Decimal('0')
     )
+    loan_retention = models.DecimalField(
+        _("Retención Préstamo Solidario"),
+        max_digits=15,
+        decimal_places=0,
+        default=Decimal('0'),
+        help_text=_("Retención adicional 3% Préstamo Solidario (Código 177)")
+    )
+    ila_tax = models.DecimalField(
+        _("Impuesto ILA"),
+        max_digits=15,
+        decimal_places=0,
+        default=Decimal('0'),
+        help_text=_("Impuesto Adicional (Licores, Bebidas analcohólicas, etc.)")
+    )
+    vat_withholding = models.DecimalField(
+        _("Retención IVA"),
+        max_digits=15,
+        decimal_places=0,
+        default=Decimal('0'),
+        help_text=_("IVA retenido por compras o cambio de sujeto")
+    )
 
     # --- CONFIGURATION ---
     tax_rate = models.DecimalField(
@@ -338,8 +359,16 @@ class F29Declaration(models.Model):
 
     @property
     def total_amount_due(self):
-        """Total de impuestos determinados a pagar (Neto VAT a pagar + Retenciones + Impuesto Único + PPM a pagar)"""
-        return self.vat_to_pay + self.withholding_tax + self.second_category_tax + self.ppm_amount
+        """Total de impuestos determinados a pagar (Neto VAT a pagar + Retenciones + Impuesto Único + PPM a pagar + Nuevas Retenciones)"""
+        return (
+            self.vat_to_pay + 
+            self.withholding_tax + 
+            self.second_category_tax + 
+            self.loan_retention + 
+            self.ila_tax + 
+            self.vat_withholding + 
+            self.ppm_amount
+        )
 
     @property
     def total_credits_available(self):

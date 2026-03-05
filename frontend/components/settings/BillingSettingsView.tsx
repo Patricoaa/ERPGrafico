@@ -36,6 +36,9 @@ const billingSchema = z.object({
     correction_income_account: z.string().nullable(),
     default_tax_receivable_account: z.string().nullable(),
     default_tax_payable_account: z.string().nullable(),
+    loan_retention_account: z.string().nullable(),
+    ila_tax_account: z.string().nullable(),
+    vat_withholding_account: z.string().nullable(),
     // Billing fields
     default_receivable_account: z.string().nullable(),
     default_payable_account: z.string().nullable(),
@@ -64,6 +67,9 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             correction_income_account: null,
             default_tax_receivable_account: null,
             default_tax_payable_account: null,
+            loan_retention_account: null,
+            ila_tax_account: null,
+            vat_withholding_account: null,
             default_receivable_account: null,
             default_payable_account: null,
             default_advance_payment_account: null,
@@ -263,6 +269,15 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <AccountField form={form} name="second_category_tax_account" label="Impuesto Único trabajadores" accountType="LIABILITY" />
                                                 <AccountField form={form} name="correction_income_account" label="IPCU / Corrección Monetaria" accountType="INCOME" />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <AccountField form={form} name="loan_retention_account" label="Retención Préstamo Solidario" accountType="LIABILITY" />
+                                                <AccountField form={form} name="ila_tax_account" label="Impuesto ILA (Alcoholes/Bebidas)" accountType="LIABILITY" />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <AccountField form={form} name="vat_withholding_account" label="Retención IVA (Cambio Sujeto)" accountType="LIABILITY" />
                                             </div>
                                         </CardContent>
                                     </Card>

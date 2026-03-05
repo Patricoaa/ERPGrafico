@@ -144,6 +144,9 @@ class AccountingService:
             ('2.1.02.02', 'IVA por Pagar (Neto)', AccountType.LIABILITY, '2.1.02', None, None, None),
             ('2.1.02.03', 'Retenciones Honorarios por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
             ('2.1.02.04', 'Impuesto Único 2da Categoría', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.05', 'Retención Préstamo Solidario', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.06', 'Impuesto Adicional (ILA) por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.07', 'Retención IVA por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
             
             ('2.1.03', 'Obligaciones Laborales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.03.01', 'Remuneraciones por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
@@ -297,6 +300,9 @@ class AccountingService:
             'withholding_tax_account': '2.1.02.03',
             'ppm_account': '1.1.04.04',
             'second_category_tax_account': '2.1.02.04',
+            'loan_retention_account': '2.1.02.05',
+            'ila_tax_account': '2.1.02.06',
+            'vat_withholding_account': '2.1.02.07',
             'correction_income_account': '4.2.07',
 
             # Inventory Adjustments (Missing)

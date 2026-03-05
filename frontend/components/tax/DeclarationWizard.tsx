@@ -47,6 +47,9 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         vat_credit_carryforward: 0,
         vat_correction_amount: 0,
         second_category_tax: 0,
+        loan_retention: 0,
+        ila_tax: 0,
+        vat_withholding: 0,
         tax_rate: 19,
         notes: ""
     })
@@ -446,6 +449,36 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     type="number"
                                     value={manualFields.second_category_tax}
                                     onChange={(e) => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="loan">Retención Préstamo Solidario (3%)</Label>
+                                <Input
+                                    id="loan"
+                                    type="number"
+                                    value={manualFields.loan_retention}
+                                    onChange={(e) => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="ila">Impuesto Adicional (ILA)</Label>
+                                <Input
+                                    id="ila"
+                                    type="number"
+                                    value={manualFields.ila_tax}
+                                    onChange={(e) => setManualFields({ ...manualFields, ila_tax: Number(e.target.value) })}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="iva_ret">Retención IVA (Cambio Sujeto)</Label>
+                                <Input
+                                    id="iva_ret"
+                                    type="number"
+                                    value={manualFields.vat_withholding}
+                                    onChange={(e) => setManualFields({ ...manualFields, vat_withholding: Number(e.target.value) })}
                                     className="rounded-xl"
                                 />
                             </div>

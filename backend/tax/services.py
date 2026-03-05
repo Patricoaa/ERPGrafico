@@ -175,7 +175,8 @@ class F29CalculationService:
         # Apply manual fields if provided
         if manual_fields:
             for field in ['ppm_amount', 'withholding_tax', 'vat_credit_carryforward', 
-                          'vat_correction_amount', 'second_category_tax', 'tax_rate', 'notes']:
+                          'vat_correction_amount', 'second_category_tax', 'tax_rate', 'notes',
+                          'loan_retention', 'ila_tax', 'vat_withholding']:
                 if field in manual_fields:
                     declaration_data[field] = manual_fields[field]
         
@@ -343,6 +344,39 @@ class F29CalculationService:
                 'label': 'Cierre Impuesto Único 2da Cat.'
             })
 
+        # Debit: Close Loan Retention Liability
+        if declaration.loan_retention > 0:
+            if not settings.loan_retention_account:
+                raise ValidationError("Falta configurar cuenta de Retención Préstamo Solidario.")
+            items.append({
+                'account': settings.loan_retention_account,
+                'debit': declaration.loan_retention,
+                'credit': Decimal('0'),
+                'label': 'Cierre Retención Préstamo Solidario'
+            })
+
+        # Debit: Close ILA Tax Liability
+        if declaration.ila_tax > 0:
+            if not settings.ila_tax_account:
+                raise ValidationError("Falta configurar cuenta de Impuesto ILA por Pagar.")
+            items.append({
+                'account': settings.ila_tax_account,
+                'debit': declaration.ila_tax,
+                'credit': Decimal('0'),
+                'label': 'Cierre Impuesto ILA'
+            })
+
+        # Debit: Close VAT Withholding Liability
+        if declaration.vat_withholding > 0:
+            if not settings.vat_withholding_account:
+                raise ValidationError("Falta configurar cuenta de Retención IVA por Pagar.")
+            items.append({
+                'account': settings.vat_withholding_account,
+                'debit': declaration.vat_withholding,
+                'credit': Decimal('0'),
+                'label': 'Cierre Retención IVA (Cambio Sujeto)'
+            })
+
         # 4. Clear Other Credits
         
         # Debit: Increase PPM Asset (we are paying this month)
@@ -362,12 +396,19 @@ class F29CalculationService:
             # If there's more than just VAT to pay, we should record the non-VAT liabilities 
             # as payable to SII. Because F29 payment usually pays everything from a single liability account.
             # To keep it simple, we use vat_payable_account as the generic SII payable account for F29.
-            non_vat_due = declaration.withholding_tax + declaration.second_category_tax + declaration.ppm_amount
+            non_vat_due = (
+                declaration.withholding_tax + 
+                declaration.second_category_tax + 
+                declaration.loan_retention + 
+                declaration.ila_tax + 
+                declaration.vat_withholding + 
+                declaration.ppm_amount
+            )
             items.append({
                 'account': settings.vat_payable_account,
                 'debit': Decimal('0'),
                 'credit': non_vat_due,
-                'label': 'Otras Obligaciones F29 (Retenciones, Renta, PPM)'
+                'label': 'Otras Obligaciones F29 (Retenciones, ILA, Renta, PPM)'
             })
         
         # Add journal items

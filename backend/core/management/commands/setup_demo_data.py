@@ -147,6 +147,9 @@ class Command(BaseCommand):
             'Terminal Commission Bridge': settings.terminal_commission_bridge_account,
             'Bank Commission': settings.bank_commission_account,
             'VAT Payable': settings.vat_payable_account,
+            'Loan Retention': settings.loan_retention_account,
+            'ILA Tax': settings.ila_tax_account,
+            'VAT Withholding (CS)': settings.vat_withholding_account,
             
             # Inventory Adjustment Verification
             'Inv. Gain': settings.adjustment_income_account,
@@ -295,6 +298,9 @@ class Command(BaseCommand):
             'expense_rent': Account.objects.get(code='5.2.02'),
             'vat_carryforward': Account.objects.get(code='1.1.04.02'),
             'vat_payable': Account.objects.get(code='2.1.02.02'),
+            'loan_retention': Account.objects.get(code='2.1.02.05'),
+            'ila_tax': Account.objects.get(code='2.1.02.06'),
+            'vat_withholding': Account.objects.get(code='2.1.02.07'),
             'correction_income': Account.objects.get(code='4.2.07'),
         }
 

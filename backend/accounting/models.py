@@ -717,6 +717,24 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta Impuesto Único 2da Categoría"),
         help_text=_("Cuenta 2.1.02.04 - Impuesto único a los trabajadores por pagar")
     )
+    loan_retention_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_retention',
+        verbose_name=_("Cuenta Retención Préstamo Solidario"),
+        help_text=_("Cuenta 2.1.02.05 - Retención adicional 3% Préstamo Solidario")
+    )
+    ila_tax_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_ila_tax',
+        verbose_name=_("Cuenta ILA por Pagar"),
+        help_text=_("Cuenta 2.1.02.06 - Impuesto Adicional (Licores, Bebidas, etc.)")
+    )
+    vat_withholding_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_vat_withholding',
+        verbose_name=_("Cuenta Retención IVA por Pagar"),
+        help_text=_("Cuenta 2.1.02.07 - IVA retenido a terceros (Factura de Compra)")
+    )
     default_vat_rate = models.DecimalField(
         _("Tasa de IVA por Defecto"),
         max_digits=5,

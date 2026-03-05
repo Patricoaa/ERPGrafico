@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, Loader2, Calculator } from "lucide-react"
+import { Trash2, Plus, Loader2, Calculator, Info } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { formatCurrency } from "@/lib/currency"
+import { cn } from "@/lib/utils"
 
 interface Product {
     id: number
@@ -167,214 +169,210 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             size="full"
             hideScrollArea
             title={
-                <div className="flex items-center gap-2">
-                    <Calculator className="h-6 w-6 text-primary" />
-                    Calculadora de Costos
+                <div className="flex items-center justify-between w-full pr-12">
+                    <div className="flex items-center gap-2">
+                        <Calculator className="h-6 w-6 text-blue-600" />
+                        <span>Calculadora de Costos</span>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 px-3 py-1 animate-pulse">
+                        <Info className="h-3 w-3" />
+                        Modo Simulación
+                    </Badge>
                 </div>
             }
-            description="Simulación rápida de materiales para determinar costos de producción"
+            description="Simulación rápida de materiales para determinar costos de producción (No afecta stock)"
         >
-            <div className="flex-1 overflow-hidden flex divide-x">
+            <div className="flex-1 overflow-hidden flex divide-x h-[calc(100vh-220px)] max-h-[750px]">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[45%] flex flex-col p-6 gap-4 bg-muted/10 min-h-0">
-                    <div className="flex items-center gap-2">
-                        <Input
-                            placeholder="Buscar por nombre, código o código de barras..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="flex-1 h-12 text-lg shadow-sm bg-background border-muted/50"
-                        />
-                    </div>
+                <div className="w-[45%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
+                    <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
+                        <div className="p-4 border-b bg-background/50">
+                            <Input
+                                placeholder="Buscar por nombre, código o código de barras..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="h-11 shadow-sm bg-background border-muted-foreground/20 focus-visible:ring-blue-500"
+                            />
+                        </div>
 
-                    <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-muted/50 bg-background">
-                        <CardContent className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                            {loading && products.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-                                    <Loader2 className="h-10 w-10 animate-spin" />
-                                    <p>Cargando productos...</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {filteredProducts.map(product => (
-                                        <Card
-                                            key={product.id}
-                                            className="group cursor-pointer hover:border-primary/50 transition-all shadow-sm hover:shadow-md border-muted-foreground/10 overflow-hidden flex flex-col"
-                                            onClick={() => addItem(product)}
-                                        >
-                                            <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
-                                                {product.image ? (
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                                    />
-                                                ) : (
-                                                    <Plus className="h-12 w-12 text-muted-foreground/30" />
-                                                )}
-                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                    <Badge className="bg-primary text-primary-foreground shadow-lg">
-                                                        <Plus className="h-3 w-3 mr-1" /> Agregar
-                                                    </Badge>
+                        <ScrollArea className="flex-1">
+                            <CardContent className="p-6">
+                                {loading && products.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-[200px] gap-3 text-muted-foreground">
+                                        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                                        <p>Cargando productos...</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {filteredProducts.map(product => (
+                                            <Card
+                                                key={product.id}
+                                                className="group cursor-pointer hover:border-blue-500/50 transition-all active:scale-95 relative flex flex-col overflow-hidden shadow-sm"
+                                                onClick={() => addItem(product)}
+                                            >
+                                                <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
+                                                    {product.image ? (
+                                                        <img
+                                                            src={product.image}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                        />
+                                                    ) : (
+                                                        <Plus className="h-12 w-12 text-muted-foreground/20" />
+                                                    )}
+                                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                        <Badge className="bg-blue-600 text-white shadow-lg border-none">
+                                                            <Plus className="h-3 w-3 mr-1" /> Agregar
+                                                        </Badge>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <CardContent className="p-3 flex-1 flex flex-col justify-between gap-2">
-                                                <div>
-                                                    <p className="text-xs text-muted-foreground font-mono uppercase tracking-tighter mb-1">
+                                                <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1">
+                                                    <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-tighter opacity-70">
                                                         {product.internal_code}
                                                     </p>
                                                     <p className="text-sm font-bold leading-tight line-clamp-2">
                                                         {product.name}
                                                     </p>
-                                                </div>
-                                                <div className="flex items-center justify-between mt-1">
-                                                    <span className="text-xs text-muted-foreground uppercase">
-                                                        {product.uom_name}
-                                                    </span>
-                                                    <span className="text-base font-black text-primary">
-                                                        ${new Intl.NumberFormat("es-CL").format(product.cost_price || 0)}
-                                                    </span>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                    {filteredProducts.length === 0 && (
-                                        <div className="col-span-full py-12 text-center text-muted-foreground">
-                                            No se encontraron productos.
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
+                                                    <div className="mt-1">
+                                                        <span className="text-base font-black text-blue-600">
+                                                            {formatCurrency(product.cost_price || 0)}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground ml-1 uppercase">
+                                                            /{product.uom_name}
+                                                        </span>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                        {filteredProducts.length === 0 && (
+                                            <div className="col-span-full py-12 text-center text-muted-foreground italic">
+                                                No se encontraron productos.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </ScrollArea>
                     </Card>
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[55%] flex flex-col p-6 bg-muted/10 gap-4 min-h-0">
-                    <div className="flex items-center justify-between h-12">
-                        <h3 className="text-xl font-black uppercase tracking-tight">
-                            Materiales Seleccionados
-                            <Badge variant="secondary" className="ml-2 bg-muted-foreground/10 text-muted-foreground">
-                                {selectedItems.length}
-                            </Badge>
-                        </h3>
-                        {selectedItems.length > 0 && (
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedItems([])} className="text-muted-foreground hover:text-destructive">
-                                Limpiar Todo
-                            </Button>
-                        )}
-                    </div>
-
-                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-sm border-muted/50 bg-background">
-                        <div className="grid grid-cols-12 gap-2 px-6 py-3 bg-muted/50 border-b text-xs font-bold uppercase text-muted-foreground tracking-widest shrink-0">
-                            <div className="col-span-5">Descripción</div>
-                            <div className="col-span-2 text-center px-1">Cantidad</div>
-                            <div className="col-span-3">UoM</div>
+                <div className="w-[55%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
+                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
+                        {/* List Header */}
+                        <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
+                            <div className="col-span-6">Descripción</div>
+                            <div className="col-span-2 text-center">Cant.</div>
+                            <div className="col-span-2">UoM</div>
                             <div className="col-span-2 text-right">Subtotal</div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <ScrollArea className="flex-1">
                             {selectedItems.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
-                                        <Calculator className="h-10 w-10 text-muted-foreground/30" />
+                                <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
+                                    <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                                        <Calculator className="h-8 w-8 text-muted-foreground/20" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="font-bold text-lg">Tu lista está vacía</p>
-                                        <p className="max-w-[240px] text-sm italic">
-                                            Haz click en los productos de la izquierda para agregarlos al cálculo de costos.
+                                        <p className="font-bold text-sm">Tu lista está vacía</p>
+                                        <p className="max-w-[200px] text-[11px] italic opacity-70">
+                                            Agrega productos del catálogo para calcular costos.
                                         </p>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="divide-y">
-                                    {selectedItems.map(item => (
-                                        <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-4 items-center group hover:bg-muted/30 transition-colors">
-                                            <div className="col-span-5 flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
+                                <div className="divide-y pb-2">
+                                    {selectedItems.map((item, index) => (
+                                        <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-blue-50/30 transition-colors">
+                                            <div className="col-span-6 flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
                                                     {item.product.image ? (
                                                         <img src={item.product.image} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <Plus className="h-5 w-5 text-muted-foreground/30" />
+                                                        <Plus className="h-4 w-4 text-muted-foreground/20" />
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-bold truncate">{item.product.name}</p>
-                                                    <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                                                        {item.product.internal_code} • ${new Intl.NumberFormat("es-CL").format(item.unit_cost)}
+                                                    <p className="text-xs font-bold truncate leading-none mb-1">{item.product.name}</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase font-medium">
+                                                        {item.product.internal_code} • {formatCurrency(item.unit_cost)}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="col-span-2 px-1">
+                                            <div className="col-span-2">
                                                 <Input
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
                                                     value={item.quantity}
                                                     onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                    className="h-8 px-1 text-center font-bold focus:ring-primary border-muted-foreground/20"
+                                                    className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-blue-500"
                                                 />
                                             </div>
-                                            <div className="col-span-3">
+                                            <div className="col-span-2">
                                                 <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                    <SelectTrigger className="h-8 text-[11px] border-muted-foreground/20 px-2">
+                                                    <SelectTrigger className="h-7 text-[10px] border-muted-foreground/20 px-2 bg-background">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {(item.product.available_uoms || []).map(uom => (
-                                                            <SelectItem key={uom.id} value={String(uom.id)} className="text-[11px]">
+                                                            <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
                                                                 {uom.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="col-span-2 flex items-center justify-end gap-2 pl-1">
-                                                <p className="text-xs font-black text-right min-w-[60px]">
-                                                    ${new Intl.NumberFormat("es-CL").format(item.subtotal)}
-                                                </p>
+                                            <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
+                                                <div className="text-right">
+                                                    <p className="text-xs font-black text-blue-700">
+                                                        {formatCurrency(item.subtotal)}
+                                                    </p>
+                                                </div>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => removeItem(item.id)}
-                                                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                    className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    <Trash2 className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </ScrollArea>
 
-                        {/* Sumatoria Total */}
-                        <div className="p-4 bg-blue-50/50 border-t mt-auto shrink-0">
-                            <div className="space-y-2">
-                                {/* Primary Focus: Total Neto (Blue) */}
-                                <div className="flex justify-between items-end">
+                        {/* Totals Section Align with POS */}
+                        <div className="p-6 bg-muted/20 border-t space-y-4 shrink-0">
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                                    <span>Costo Neto</span>
+                                    <span>{formatCurrency(totalCost)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                                    <span>IVA Estimado (19%)</span>
+                                    <span>{formatCurrency(Math.round(totalCost * 0.19))}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t">
                                     <div className="flex flex-col">
-                                        <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Costo de Producción</span>
-                                        <span className="text-sm font-black text-blue-600 tracking-widest uppercase">Total Neto</span>
+
+                                        <span className="text-lg font-black text-blue-700 uppercase tracking-tighter">
+                                            Total
+                                        </span>
                                     </div>
-                                    <span className="text-sm font-black text-blue-600 tracking-widest leading-none">
-                                        ${new Intl.NumberFormat("es-CL").format(Math.round(totalCost))}
+                                    <span className="text-3xl font-black text-blue-700 tracking-tighter">
+                                        {formatCurrency(Math.round(totalCost * 1.19))}
                                     </span>
                                 </div>
+                            </div>
 
-                                <div className="flex justify-between items-center text-muted-foreground/80">
-                                    <span className="text-sm font-bold uppercase tracking-widest">IVA (19%)</span>
-                                    <span className="text-base font-bold">
-                                        + ${new Intl.NumberFormat("es-CL").format(Math.round(totalCost * 0.19))}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between items-center text-muted-foreground/80">
-                                    <span className="text-sm font-bold uppercase tracking-widest">Total Bruto (Con IVA)</span>
-                                    <span className="text-sm font-bold">
-                                        ${new Intl.NumberFormat("es-CL").format(Math.round(totalCost * 1.19))}
-                                    </span>
-                                </div>
-
+                            <div className="bg-blue-600/5 border border-blue-600/10 rounded-lg p-3 flex items-start gap-3">
+                                <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                                <p className="text-[10px] text-blue-700/80 leading-relaxed font-medium uppercase tracking-tight">
+                                    Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
+                                </p>
                             </div>
                         </div>
                     </Card>
