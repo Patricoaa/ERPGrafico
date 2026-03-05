@@ -3,21 +3,24 @@
 import { useState, useEffect } from "react"
 import { getTasks, Task } from "@/lib/workflow/api"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight } from "lucide-react"
+import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import api from "@/lib/api"
 
 export function TaskInbox() {
     const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
     const [operationalTasks, setOperationalTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
+    const [actioningTask, setActioningTask] = useState<number | null>(null)
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
-    const { openWorkOrder, openCommandCenter } = useGlobalModals()
+    const { openWorkOrder, openCommandCenter, openContact } = useGlobalModals()
 
     const fetchTasks = async () => {
         setLoading(true)
@@ -65,6 +68,10 @@ export function TaskInbox() {
             // Credit/Debit notes - determine type from context
             // For now, default to 'sale' - could be enhanced based on task metadata
             openCommandCenter(task.object_id, 'sale')
+        } else if (task.task_type === 'CREDIT_POS_REQUEST') {
+            // No full document, just a quick approval
+            toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
+            return
         } else {
             // Generic fallback
             toast.info("Navegación específica no configurada para este tipo de tarea")
@@ -86,6 +93,29 @@ export function TaskInbox() {
         return "??"
     }
 
+    const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
+        e.stopPropagation() // Prevent card click
+        try {
+            setActioningTask(task.id)
+            const status = action === 'APPROVE' ? 'COMPLETED' : 'REJECTED'
+            // Add a small note if approved/rejected
+            const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
+
+            await api.patch(`/workflow/tasks/${task.id}/`, {
+                status,
+                notes: task.notes ? `${task.notes}\n${notes}` : notes
+            })
+
+            toast.success(`Crédito ${action === 'APPROVE' ? 'Aprobado' : 'Rechazado'}`)
+            fetchTasks()
+        } catch (error) {
+            console.error("Error setting credit action:", error)
+            toast.error("Error al procesar la solicitud")
+        } finally {
+            setActioningTask(null)
+        }
+    }
+
     const getDocumentId = (task: Task): string => {
         // Extract document ID from task metadata
         if (task.object_id) {
@@ -96,8 +126,12 @@ export function TaskInbox() {
             if (task.task_type?.includes('NC_')) return `NC-${task.object_id}`
             if (task.task_type?.includes('ND_')) return `ND-${task.object_id}`
 
+            if (task.task_type === 'CREDIT_POS_REQUEST') return `CREDITO`
+
             return `#${task.object_id}`
         }
+        if (task.task_type === 'CREDIT_POS_REQUEST') return `CREDITO`
+
         return "Sin documento"
     }
 
@@ -118,7 +152,7 @@ export function TaskInbox() {
                 {/* Row 1: Task Name | Avatar */}
                 <div className="flex items-center justify-between gap-3 mb-3">
                     <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1 group-hover:text-primary transition-colors">
-                        {task.title}
+                        {task.task_type === 'CREDIT_POS_REQUEST' ? `Aprobación Crédito: ${task.data?.customer_name || 'Cliente'}` : task.title}
                     </h3>
                     <Avatar className="h-8 w-8 shrink-0 border border-primary/20">
                         <AvatarFallback className="text-xs bg-primary/20 text-primary font-bold">
@@ -136,7 +170,12 @@ export function TaskInbox() {
                         {isCompleted ? (
                             <span className="flex items-center gap-1 text-green-400">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
-                                <span>Completada</span>
+                                <span>{task.status === 'REJECTED' ? 'Rechazada' : 'Completada'}</span>
+                            </span>
+                        ) : task.status === 'REJECTED' ? (
+                            <span className="flex items-center gap-1 text-red-400">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>Rechazada</span>
                             </span>
                         ) : (
                             <span className="flex items-center gap-1">
@@ -146,6 +185,58 @@ export function TaskInbox() {
                         )}
                     </div>
                 </div>
+
+                {/* Row 3: Inline Actions for Credit Requests */}
+                {task.task_type === 'CREDIT_POS_REQUEST' && !isCompleted && task.status !== 'REJECTED' && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {task.data?.customer_name || 'Cliente'}
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[10px] text-primary hover:bg-primary/10"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (task.data?.customer_id) openContact(task.data.customer_id);
+                                }}
+                            >
+                                Ver Ficha
+                            </Button>
+                        </div>
+                        <div className="text-xs text-muted-foreground mb-3 space-y-1 bg-black/10 p-2 rounded-md">
+                            <div className="flex justify-between">
+                                <span>Disponible:</span>
+                                <span className="font-mono font-bold">${Number(task.data?.credit_available || 0).toLocaleString('es-CL')}</span>
+                            </div>
+                            <div className="flex justify-between text-warning">
+                                <span>Requerido:</span>
+                                <span className="font-mono font-bold">${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 text-xs h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+                                onClick={(e) => handleCreditAction(e, task, 'REJECT')}
+                                disabled={actioningTask === task.id}
+                            >
+                                Rechazar
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-bold"
+                                onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
+                                disabled={actioningTask === task.id}
+                            >
+                                Aprobar
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Card>
         )
     }

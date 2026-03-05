@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from accounting.models import Account, AccountType
 from simple_history.models import HistoricalRecords
+from decimal import Decimal
+from django.db.models import Sum
 
 
 class Contact(models.Model):
@@ -42,6 +44,11 @@ class Contact(models.Model):
 
     is_default_customer = models.BooleanField(_("Cliente por Defecto"), default=False)
     is_default_vendor = models.BooleanField(_("Proveedor por Defecto"), default=False)
+
+    # Credit Rules
+    credit_enabled = models.BooleanField(_("Crédito Habilitado"), default=False)
+    credit_limit = models.DecimalField(_("Límite de Crédito"), max_digits=14, decimal_places=0, null=True, blank=True)
+    credit_days = models.IntegerField(_("Días Plazo"), default=30, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -113,3 +120,31 @@ class Contact(models.Model):
             return 'RELATED'
         else:
             return 'NONE'
+
+    @property
+    def credit_balance_used(self) -> Decimal:
+        """
+        Calculates the amount of credit currently used by the contact.
+        This includes all unpaid sale orders where the payment method is 'CREDIT'.
+        Based on effective_total which handles invoices/credit notes.
+        """
+        # For a simplified Phase 1, we find SaleOrders that are CONFIRMED/INVOICED
+        # and not PAID, with payment_method CREDIT.
+        # Alternatively, since partial payments aren't easily tracked solely in SaleOrder status,
+        # we sum the 'effective_total' of all non-cancelled, non-draft orders that are CREDIT,
+        # minus whatever actual payments were registered against their invoices.
+        # However, POS currently sets 'status' = PAID when fully paid.
+        orders = self.sale_orders.filter(
+            payment_method='CREDIT',
+            status__in=['CONFIRMED', 'INVOICED']
+        )
+        return sum(order.effective_total for order in orders)
+
+    @property
+    def credit_available(self) -> Decimal:
+        if not self.credit_limit:
+            return Decimal('0')
+        balance = self.credit_balance_used
+        available = self.credit_limit - balance
+        return available if available > 0 else Decimal('0')
+

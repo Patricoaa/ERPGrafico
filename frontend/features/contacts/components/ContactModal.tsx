@@ -121,15 +121,38 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
 
     useEffect(() => {
+        if (open && contact?.id && !contact.name) {
+            // Fetch full contact details if only ID is provided
+            api.get(`/contacts/${contact.id}/`)
+                .then(res => {
+                    form.reset({
+                        name: res.data.name || "",
+                        tax_id: res.data.tax_id || "",
+                        email: res.data.email || "",
+                        phone: res.data.phone || "",
+                        address: res.data.address || "",
+                        city: res.data.city || "",
+                        payment_terms: res.data.payment_terms || "CONTADO",
+                        is_default_customer: !!res.data.is_default_customer,
+                        is_default_vendor: !!res.data.is_default_vendor,
+                    })
+                })
+                .catch(err => {
+                    console.error("Error fetching contact details:", err)
+                    toast.error("Error al cargar detalles del contacto")
+                })
+        }
+    }, [open, contact?.id, contact?.name])
+
+    useEffect(() => {
         if (!open) {
             setActiveTab("profile")
-
             return
         }
         fetchDefaults()
 
-        if (contact) {
-            // Insights fetched via hook
+        if (contact && contact.name) {
+            // Full contact provided
             form.reset({
                 name: contact.name,
                 tax_id: contact.tax_id || "",
@@ -141,7 +164,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 is_default_customer: !!contact.is_default_customer,
                 is_default_vendor: !!contact.is_default_vendor
             })
-        } else {
+        } else if (!contact?.id) {
+            // New contact
             form.reset({
                 name: "",
                 tax_id: "",

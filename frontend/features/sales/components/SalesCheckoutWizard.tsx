@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart, AlertCircle, Clock } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
 // ... other imports
@@ -102,6 +102,7 @@ export function SalesCheckoutWizard({
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
+    const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
 
     const [paymentData, setPaymentData] = useState(initialPaymentData || {
         method: '',
@@ -110,6 +111,12 @@ export function SalesCheckoutWizard({
         treasuryAccountId: null,
         isPending: false
     })
+
+    // Approval Workflow State
+    const [isWaitingApproval, setIsWaitingApproval] = useState(false)
+    const [approvalTaskId, setApprovalTaskId] = useState<number | null>(null)
+    const [creditApprovalRequired, setCreditApprovalRequired] = useState(false)
+    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     // Sync payment amount when total changes
     // Sync payment amount when total changes - REMOVED to defaulting to 0
@@ -163,6 +170,7 @@ export function SalesCheckoutWizard({
                     if (defaultCustomer) {
                         setSelectedCustomerId(defaultCustomer.id.toString());
                         setSelectedCustomerName(defaultCustomer.name);
+                        // The next useEffect will fetch the full details by ID
                     }
                 } catch (error) {
                     console.error("Error fetching default customer:", error);
@@ -171,6 +179,20 @@ export function SalesCheckoutWizard({
             fetchDefaultCustomer();
         }
     }, [initialCustomerId, open]);
+
+    // Fetch full customer details when ID changes
+    useEffect(() => {
+        if (selectedCustomerId && open) {
+            api.get(`/contacts/${selectedCustomerId}/`)
+                .then(res => {
+                    setSelectedCustomer(res.data)
+                    setSelectedCustomerName(res.data.name)
+                })
+                .catch(err => console.error("Error fetching full customer details:", err))
+        } else {
+            setSelectedCustomer(null)
+        }
+    }, [selectedCustomerId, open])
 
     // Notify parent of state changes
     useEffect(() => {
@@ -264,7 +286,10 @@ export function SalesCheckoutWizard({
         return null;
     }
 
-    const validateCurrentStep = async () => {
+    const validateCurrentStep = async (): Promise<{ isValid: boolean, requireApproval?: boolean }> => {
+        // Reset approval state
+        setCreditApprovalRequired(false)
+
         // Find which logical step we are in
         let currentStepNum = 1;
 
@@ -272,9 +297,9 @@ export function SalesCheckoutWizard({
         if (step === currentStepNum) {
             if (!selectedCustomerId) {
                 toast.error("Debe seleccionar un cliente para continuar.")
-                return false
+                return { isValid: false }
             }
-            return true
+            return { isValid: true }
         }
         currentStepNum++;
 
@@ -288,9 +313,9 @@ export function SalesCheckoutWizard({
                 )
                 if (pendingItems.length > 0) {
                     toast.error(`Tiene ${pendingItems.length} productos sin configurar detalles de fabricación.`)
-                    return false
+                    return { isValid: false }
                 }
-                return true
+                return { isValid: true }
             }
             currentStepNum++;
         }
@@ -300,7 +325,7 @@ export function SalesCheckoutWizard({
         if (step === currentStepNum) {
             if (dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
                 toast.error("Debe ingresar el número de folio para la factura.")
-                return false
+                return { isValid: false }
             }
 
             // Validate folio uniqueness
@@ -314,23 +339,23 @@ export function SalesCheckoutWizard({
                         toast.error("Folio duplicado", {
                             description: response.data.message
                         })
-                        return false
+                        return { isValid: false }
                     }
                 } catch (error) {
                     console.error('Error validating folio:', error)
                     toast.error("Error al validar el folio. Por favor, intente nuevamente.")
-                    return false
+                    return { isValid: false }
                 }
             }
 
-            return true
+            return { isValid: true }
         }
         currentStepNum++;
 
         // Delivery validation (now before payment)
         if (!isOnlyService && step === currentStepNum) {
             // Delivery step has no specific validation currently
-            return true
+            return { isValid: true }
         }
         if (!isOnlyService) currentStepNum++;
 
@@ -339,7 +364,7 @@ export function SalesCheckoutWizard({
             // Check if payment method is selected
             if (!paymentData.method) {
                 toast.error("Debe seleccionar un método de pago para continuar.")
-                return false
+                return { isValid: false }
             }
 
             const isMethodAllowed = (methodId: string) => {
@@ -356,138 +381,245 @@ export function SalesCheckoutWizard({
             if (paymentData.method !== 'CREDIT' && paymentData.amount > 0) {
                 if (!isMethodAllowed(paymentData.method)) {
                     toast.error(`El método ${paymentData.method} no está permitido o no tiene configuración válida.`)
-                    return false
+                    return { isValid: false }
                 }
 
                 // Requirement: Always need a treasury account if amount > 0 and method is not CREDIT
                 if (!paymentData.treasuryAccountId) {
                     toast.error("Debe seleccionar una cuenta de destino.")
-                    return false
+                    return { isValid: false }
                 }
 
                 if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
                     toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
-                    return false
+                    return { isValid: false }
                 }
             }
-            return true
+
+            // Credit Validation - check if bypass is active
+            if (!approvalTaskId) {
+                const amountPaid = paymentData.amount || 0;
+                if (amountPaid < currentTotal) {
+                    const requiredCredit = currentTotal - amountPaid;
+
+                    if (!selectedCustomer) {
+                        toast.error("Debe seleccionar un cliente para asignar crédito.");
+                        return { isValid: false };
+                    }
+
+                    // Treat credit as 0 if not enabled, which will trigger the approval flow
+                    const creditAvailable = selectedCustomer.credit_enabled ? Number(selectedCustomer.credit_available || 0) : 0;
+                    if (requiredCredit > creditAvailable) {
+                        // Instead of a hard error, we allow an approval flow
+                        setCreditApprovalRequired(true)
+                        return { isValid: false, requireApproval: true };
+                    }
+                }
+            }
+
+            return { isValid: true }
         }
 
 
-        return true
+        return { isValid: true }
     }
 
     const handleNext = async () => {
-        if (!(await validateCurrentStep())) return
+        const validation = await validateCurrentStep()
+        if (!validation.isValid) return
         setStep(prev => prev + 1)
     }
 
     const handleBack = () => setStep(prev => prev - 1)
 
-    const handleFinish = async () => {
-        // Final validation
-        if (!(await validateCurrentStep())) return
+    // Helper to generate the API formData payload
+    const buildCheckoutFormData = () => {
+        const formData = new FormData()
 
-        setLoading(true)
-        try {
-            const formData = new FormData()
-
-            const payloadOrder = order ? { id: order.id } : {
-                customer: parseInt(selectedCustomerId),
-                payment_method: paymentData.method,
-                channel: channel,
-                lines: currentOrderLines.map((l: any) => {
-                    // Clean up manufacturing_data for JSON (File objects can't be stringified)
-                    let cleanMfgData = null
-                    if (l.manufacturing_data) {
-                        const { design_files, approval_file, ...rest } = l.manufacturing_data
-                        cleanMfgData = {
-                            ...rest,
-                            design_filenames: (design_files || []).map((f: any) => f.name),
-                            approval_filename: approval_file ? approval_file.name : null
-                        }
-                    }
-                    return {
-                        product: l.product || l.id || null,
-                        description: l.name || l.product_name || l.description,
-                        quantity: l.qty || l.quantity,
-                        unit_price: l.unit_price_net || l.unit_price,
-                        unit_price_gross: l.unit_price_gross,
-                        uom: l.uom || null,
-                        tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
-                        manufacturing_data: cleanMfgData
-                    }
-                })
-            }
-            formData.append('order_data', JSON.stringify(payloadOrder))
-
-            // Append manufacturing files per line
-            currentOrderLines.forEach((l: any, lineIdx: number) => {
+        const payloadOrder = order ? { id: order.id } : {
+            customer: parseInt(selectedCustomerId),
+            payment_method: paymentData.method,
+            channel: channel,
+            lines: currentOrderLines.map((l: any) => {
+                let cleanMfgData = null
                 if (l.manufacturing_data) {
-                    if (l.manufacturing_data.design_files) {
-                        l.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
-                            formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
-                        })
-                    }
-                    if (l.manufacturing_data.approval_file) {
-                        formData.append(`line_${lineIdx}_approval`, l.manufacturing_data.approval_file)
+                    const { design_files, approval_file, ...rest } = l.manufacturing_data
+                    cleanMfgData = {
+                        ...rest,
+                        design_filenames: (design_files || []).map((f: any) => f.name),
+                        approval_filename: approval_file ? approval_file.name : null
                     }
                 }
+                return {
+                    product: l.product || l.id || null,
+                    description: l.name || l.product_name || l.description,
+                    quantity: l.qty || l.quantity,
+                    unit_price: l.unit_price_net || l.unit_price,
+                    unit_price_gross: l.unit_price_gross,
+                    uom: l.uom || null,
+                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
+                    manufacturing_data: cleanMfgData
+                }
             })
+        }
+        formData.append('order_data', JSON.stringify(payloadOrder))
 
-            // DTE data
-            formData.append('dte_type', dteData.type)
-            formData.append('is_pending_registration', dteData.isPending.toString())
-            if (dteData.number) formData.append('document_number', dteData.number)
-            if (dteData.date) formData.append('document_date', dteData.date)
-            if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
-
-            // Payment data
-            const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : paymentData.method
-            formData.append('payment_method', finalPaymentMethod)
-            if (paymentData.paymentMethodId && paymentData.amount > 0) {
-                formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+        currentOrderLines.forEach((l: any, lineIdx: number) => {
+            if (l.manufacturing_data) {
+                if (l.manufacturing_data.design_files) {
+                    l.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                        formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
+                    })
+                }
+                if (l.manufacturing_data.approval_file) {
+                    formData.append(`line_${lineIdx}_approval`, l.manufacturing_data.approval_file)
+                }
             }
-            formData.append('amount', paymentData.amount.toString())
-            formData.append('payment_is_pending', paymentData.isPending.toString())
-            if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
-            if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId)
-            formData.append('payment_type', 'INBOUND')
+        })
 
-            // Delivery data
-            formData.append('delivery_type', deliveryData.type)
-            if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
-            if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
+        formData.append('dte_type', dteData.type)
+        formData.append('is_pending_registration', dteData.isPending.toString())
+        if (dteData.number) formData.append('document_number', dteData.number)
+        if (dteData.date) formData.append('document_date', dteData.date)
+        if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
 
-            if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
-                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
-                    line_id: pq.lineId,
-                    product_id: pq.productId,
-                    quantity: pq.dispatchedQty,
-                    uom: pq.uom
-                }))))
-            }
+        const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : paymentData.method
+        formData.append('payment_method', finalPaymentMethod)
+        if (paymentData.paymentMethodId && paymentData.amount > 0) {
+            formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+        }
+        formData.append('amount', paymentData.amount.toString())
+        formData.append('payment_is_pending', paymentData.isPending.toString())
+        if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
+        if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+        formData.append('payment_type', 'INBOUND')
 
-            // POS Session ID for cash control
-            if (posSessionId) {
-                formData.append('pos_session_id', posSessionId.toString())
-            }
+        formData.append('delivery_type', deliveryData.type)
+        if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
+        if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
 
-            if (process.env.NODE_ENV === 'development') {
-                console.log('POS Checkout Payload:', Object.fromEntries(formData.entries()))
-            }
+        if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
+            formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
+                line_id: pq.lineId,
+                product_id: pq.productId,
+                quantity: pq.dispatchedQty,
+                uom: pq.uom
+            }))))
+        }
+
+        if (posSessionId) {
+            formData.append('pos_session_id', posSessionId.toString())
+        }
+
+        if (approvalTaskId) {
+            formData.append('credit_approval_task_id', approvalTaskId.toString())
+        }
+
+        return formData
+    }
+
+    const executeCheckout = async () => {
+        setLoading(true)
+        try {
+            const formData = buildCheckoutFormData()
             await api.post('/billing/invoices/pos_checkout/', formData)
-
             toast.success("Venta procesada correctamente")
             onComplete()
             onOpenChange(false)
         } catch (error: any) {
             console.error("Checkout error:", error)
             toast.error(error.response?.data?.error || "Error al procesar la venta")
+            // If the bypass failed (e.g. task rejected), reset it
+            if (approvalTaskId) {
+                setApprovalTaskId(null)
+                setIsWaitingApproval(false)
+            }
         } finally {
             setLoading(false)
         }
     }
+
+    const handleFinish = async () => {
+        // Final validation
+        const validation = await validateCurrentStep()
+        if (validation.requireApproval) {
+            // Keep the UI exactly where it is, but show the approval banner
+            return
+        }
+        if (!validation.isValid) return
+
+        executeCheckout()
+    }
+
+    // Approval Workflow Handlers
+    const handleRequestApproval = async () => {
+        setIsWaitingApproval(true)
+        try {
+            const formData = buildCheckoutFormData()
+            const response = await api.post('/billing/invoices/request_credit/', formData)
+            const taskId = response.data.task_id
+            setApprovalTaskId(taskId)
+
+            // Start polling
+            pollApprovalStatus(taskId)
+        } catch (error: any) {
+            console.error("Error requesting approval:", error)
+            toast.error(error.response?.data?.error || "Error al solicitar aprobación")
+            setIsWaitingApproval(false)
+        }
+    }
+
+    const cancelApprovalRequest = () => {
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+        setIsWaitingApproval(false)
+        setApprovalTaskId(null)
+        setCreditApprovalRequired(false)
+        toast.info("Solicitud de aprobación cancelada.")
+        // Optionally notify backend to cancel task
+    }
+
+    const pollApprovalStatus = (taskId: number) => {
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+
+        pollingIntervalRef.current = setInterval(async () => {
+            try {
+                const response = await api.get(`/workflow/tasks/${taskId}/`)
+                const task = response.data
+
+                if (task.status === 'COMPLETED') {
+                    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+                    toast.success("¡Crédito aprobado!")
+                    // The task state closure issue: we need to trigger executeCheckout but within the correct closure.
+                    // The easiest is to just set approvalTaskId then call it, but React state updates batch.
+                    // Instead, we can just call the API directly here to ensure it uses the approved task.
+                    setLoading(true)
+                    const formData = buildCheckoutFormData()
+                    formData.append('credit_approval_task_id', taskId.toString())
+                    await api.post('/billing/invoices/pos_checkout/', formData)
+
+                    toast.success("Venta procesada correctamente")
+                    onComplete()
+                    onOpenChange(false)
+                } else if (task.status === 'REJECTED' || task.status === 'CANCELLED') {
+                    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+                    toast.error("La solicitud de crédito fue rechazada.")
+                    setIsWaitingApproval(false)
+                    setApprovalTaskId(null)
+                }
+                // If PENDING or IN_PROGRESS, continue polling
+            } catch (error) {
+                console.error("Error polling task:", error)
+                // don't stop polling on intermittent network error, but maybe add retry limit
+            }
+        }, 3000)
+    }
+
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+        }
+    }, [])
 
     return (
         <BaseModal
@@ -561,7 +693,52 @@ export function SalesCheckoutWizard({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
-                        {renderStep()}
+                        {creditApprovalRequired && !isWaitingApproval && (
+                            <div className="mb-4 p-3 border border-warning/50 bg-warning/5 rounded-xl flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-warning/20 rounded-full text-warning shrink-0">
+                                        <AlertCircle className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-sm font-bold text-warning-foreground">Crédito insuficiente</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            Requiere autorización de un supervisor para continuar.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setCreditApprovalRequired(false)} className="h-8 text-xs">
+                                        Ajustar
+                                    </Button>
+                                    <Button size="sm" onClick={handleRequestApproval} className="h-8 text-xs bg-warning hover:bg-warning/90 text-warning-foreground font-bold px-4">
+                                        Solicitar Autorización
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {isWaitingApproval && (
+                            <div className="mb-4 p-3 border rounded-xl flex items-center justify-between gap-4 bg-primary/5 animate-pulse border-primary/20">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative shrink-0">
+                                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-sm font-bold">Esperando Autorización...</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            Solicitud enviada. Pendiente de aprobación en bandeja de entrada.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button size="sm" variant="ghost" onClick={cancelApprovalRequest} className="h-8 text-xs text-destructive hover:bg-destructive/10">
+                                    Cancelar
+                                </Button>
+                            </div>
+                        )}
+
+                        <div className={(creditApprovalRequired || isWaitingApproval) ? "opacity-30 pointer-events-none transition-opacity" : ""}>
+                            {renderStep()}
+                        </div>
                     </div>
                 </div>
 
@@ -571,6 +748,7 @@ export function SalesCheckoutWizard({
                         orderLines={currentOrderLines}
                         total={currentTotal}
                         dteType={dteData.type}
+                        customer={selectedCustomer}
                     />
                 </div>
             </div>

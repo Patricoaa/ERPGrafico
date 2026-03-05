@@ -210,7 +210,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 line_files=line_files,
                 pos_session_id=pos_session_id,
                 payment_method_id=payment_method_id,
-                user=request.user
+                user=request.user,
+                credit_approval_task_id=request.data.get('credit_approval_task_id')
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
@@ -221,6 +222,29 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+    @action(detail=False, methods=['post'])
+    def request_credit(self, request):
+        """
+        Creates an approval request task for a POS sale that exceeds the customer's credit limit.
+        """
+        try:
+            order_data = request.data.get('order_data')
+            amount = request.data.get('amount')
+            payment_method = request.data.get('payment_method')
+            
+            task = BillingService.request_credit_approval(
+                order_data=order_data,
+                amount=amount,
+                payment_method=payment_method,
+                full_request_data=request.data,
+                requesting_user=request.user
+            )
+            return Response({'task_id': task.id}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):

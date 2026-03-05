@@ -13,9 +13,15 @@ const WorkOrderWizard = dynamic(() => import("@/components/production/WorkOrderW
     loading: () => <div className="p-4 text-center">Cargando Gestor de OT...</div>
 })
 
+const ContactModal = dynamic(() => import("@/features/contacts/components/ContactModal"), {
+    ssr: false,
+    loading: () => <div className="p-4 text-center">Cargando Ficha...</div>
+})
+
 interface GlobalModalContextType {
     openWorkOrder: (id: number) => void
     openCommandCenter: (id: number, type: 'purchase' | 'sale' | 'obligation') => void
+    openContact: (id: number, contact?: any) => void
 }
 
 const GlobalModalContext = createContext<GlobalModalContextType | undefined>(undefined)
@@ -24,19 +30,36 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [woId, setWoId] = useState<number | null>(null)
     const [occId, setOccId] = useState<number | null>(null)
     const [occType, setOccType] = useState<'purchase' | 'sale' | 'obligation'>('sale')
+    const [contactId, setContactId] = useState<number | null>(null)
+    const [tempContact, setTempContact] = useState<any>(null)
 
     const openWorkOrder = (id: number) => {
         setOccId(null)
+        setContactId(null)
         setWoId(id)
     }
 
     const openCommandCenter = (id: number, type: 'purchase' | 'sale' | 'obligation') => {
+        setWoId(null)
+        setContactId(null)
         setOccId(id)
         setOccType(type)
     }
 
+    const openContact = (id: number, contact?: any) => {
+        setWoId(null)
+        setOccId(null)
+        setContactId(id)
+        setTempContact(contact || null)
+    }
+
+    const handleContactSuccess = () => {
+        setContactId(null)
+        setTempContact(null)
+    }
+
     return (
-        <GlobalModalContext.Provider value={{ openWorkOrder, openCommandCenter }}>
+        <GlobalModalContext.Provider value={{ openWorkOrder, openCommandCenter, openContact }}>
             {children}
             {woId !== null && (
                 <WorkOrderWizard
@@ -51,6 +74,14 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     type={occType}
                     open={occId !== null}
                     onOpenChange={(open) => !open && setOccId(null)}
+                />
+            )}
+            {contactId !== null && (
+                <ContactModal
+                    open={contactId !== null}
+                    onOpenChange={(open) => !open && setContactId(null)}
+                    contact={tempContact || { id: contactId }} // Pass ID if full contact not available
+                    onSuccess={handleContactSuccess}
                 />
             )}
         </GlobalModalContext.Provider>

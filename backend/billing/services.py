@@ -12,6 +12,65 @@ from decimal import Decimal
 
 class BillingService:
     @staticmethod
+    def request_credit_approval(order_data, amount, payment_method, full_request_data, requesting_user):
+        """
+        Creates a CREDIT_POS_REQUEST task when a sale exceeds available credit.
+        """
+        if isinstance(order_data, list):
+            order_data = order_data[0]
+            
+        if isinstance(order_data, str):
+            import json
+            order_data = json.loads(order_data)
+
+        # Basic parsing to find the customer
+        from sales.models import SaleOrder
+        from contacts.models import Contact
+        from decimal import Decimal
+        
+        customer_id = None
+        if 'id' in order_data:
+            order = SaleOrder.objects.get(id=order_data['id'])
+            customer = order.customer
+            total = order.total
+        else:
+            customer_id = order_data.get('customer')
+            if not customer_id:
+                raise ValidationError("Se requiere un cliente asociado para solicitar crédito.")
+            customer = Contact.objects.get(id=customer_id)
+            total = sum(Decimal(str(item.get('unit_price_gross', 0))) * Decimal(str(item.get('quantity', 0))) for item in order_data.get('lines', []))
+
+        paid_amount = Decimal(str(amount)) if amount is not None else (Decimal('0') if payment_method == 'CREDIT' else total)
+        required_credit = total - paid_amount
+
+        from workflow.services import WorkflowService
+        from workflow.models import Task
+        
+        description = (
+            f"Venta POS requiere aprobación de crédito.\n"
+            f"Cliente: {customer.name}\n"
+            f"Crédito Disponible: ${customer.credit_available:,.0f}\n"
+            f"Crédito Requerido para la venta: ${required_credit:,.0f}\n"
+            f"Monto Total Venta: ${total:,.0f}"
+        )
+        
+        # Save the full request data in the task payload so the frontend can retrieve it or the backend can process it.
+        # Ensure we remove files from full_request_data if they exist, as they can't be JSON serialized.
+        # The frontend handles file uploads separately or we assume POS credit requests don't have manufacturing files uploaded AT THIS POLLING STAGE.
+        clean_request_data = {k: v for k, v in full_request_data.items() if not k.startswith('line_')}
+
+        task = WorkflowService.create_task(
+            task_type='CREDIT_POS_REQUEST',
+            title=f"Aprobación Crédito: {customer.name}",
+            description=description,
+            priority=Task.Priority.HIGH,
+            created_by=requesting_user,
+            data={'request_data': clean_request_data, 'customer_id': customer.id, 'required_credit': str(required_credit)},
+            category=Task.Category.APPROVAL
+        )
+        return task
+
+    @staticmethod
     def _validate_document_uniqueness(number, dte_type, supplier_id=None, exclude_id=None):
         """
         Validates that the document number is unique.
@@ -296,7 +355,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -356,6 +415,43 @@ class BillingService:
             
             order.recalculate_totals()
             order.save()
+        
+        # --- CREDIT VALIDATION ---
+        # Determine the amount paid versus the order total
+        # If no amount is explicitly provided, we assume the full total is being paid UNLESS payment_method is CREDIT
+        paid_amount = Decimal(str(amount)) if amount is not None else (Decimal('0') if payment_method == 'CREDIT' else order.total)
+        
+        # Credit bypass by approved task
+        bypass_credit_validation = False
+        if credit_approval_task_id:
+            from workflow.models import Task
+            try:
+                task = Task.objects.get(id=credit_approval_task_id, task_type='CREDIT_POS_REQUEST')
+                if task.status == Task.Status.COMPLETED:
+                    bypass_credit_validation = True
+                else:
+                    raise ValidationError(f"La tarea de aprobación de crédito {task.id} aún no está completada.")
+            except Task.DoesNotExist:
+                raise ValidationError("Tarea de aprobación de crédito no encontrada.")
+
+        if not bypass_credit_validation:
+            if paid_amount < order.total:
+                required_credit = order.total - paid_amount
+                contact = order.customer
+                
+                if not contact:
+                    raise ValidationError("Se requiere un cliente asociado para asignar crédito.")
+                    
+                if not contact.credit_enabled:
+                    raise ValidationError(f"El cliente {contact.name} no tiene crédito habilitado.")
+                    
+                if required_credit > contact.credit_available:
+                    raise ValidationError(
+                        f"Límite de crédito excedido. "
+                        f"Crédito requerido: ${required_credit:,.0f}, "
+                        f"Crédito disponible: ${contact.credit_available:,.0f}."
+                    )
+        # -------------------------
         
         # 2. Confirm Order
         from sales.services import SalesService
