@@ -1,4 +1,4 @@
-from django.utils import timezone
+﻿from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
@@ -471,7 +471,7 @@ class Product(models.Model):
                 self.uom = self.sale_uom
             elif self.purchase_uom:
                 self.uom = self.purchase_uom
-
+ 
         if not self.internal_code:
             prefix = self.category.prefix or "PROD"
             # More robust sequence generation: 
@@ -884,7 +884,7 @@ class StockMove(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='warehouse_moves')
     uom = models.ForeignKey(UoM, on_delete=models.PROTECT, related_name='stock_moves_uom', null=True, blank=True)
-    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4) # Pos for Add, Neg for Remove
+    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
     move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
     adjustment_reason = models.CharField(
         _("Motivo de Ajuste"), 
@@ -903,11 +903,9 @@ class StockMove(models.Model):
         verbose_name=_("Asiento Contable")
     )
     
-    # Traceability for original transaction units
     source_uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_moves_source', help_text=_("Unidad original de la transacción"))
     source_quantity = models.DecimalField(_("Cantidad Original"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Cantidad original en la unidad de la transacción"))
     
-    # Unit cost at the time of this move (frozen at creation - never changes)
     unit_cost = models.DecimalField(
         _("Costo Unitario"),
         max_digits=12,
@@ -1139,5 +1137,3 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.supplier.name}"
-
-

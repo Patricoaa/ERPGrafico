@@ -393,7 +393,11 @@ class PurchasingService:
             raise ValidationError("No se encontró configuración contable.")
 
         # 1 & 2 & 4. Business Logic: Stock, Costs, and PO status
-        has_boleta = receipt.purchase_order.invoices.filter(dte_type='BOLETA').exists()
+        # Use .all() to avoid caching issues with filters if the invoice was just created
+        has_boleta = any(inv.dte_type == 'BOLETA' for inv in receipt.purchase_order.invoices.all())
+        
+        from inventory.models import StockMove
+        print(f"DEBUG: has_boleta={has_boleta}, StockMove fields={[f.name for f in StockMove._meta.get_fields()]}")
         
         for line in receipt.lines.all():
             # Skip stock moves for SERVICE and SUBSCRIPTION type products
@@ -468,6 +472,7 @@ class PurchasingService:
             PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
             
             # Create Stock Move (IN) with unit_cost frozen at time of move
+            print(f"DEBUG: Creating StockMove for {line.product.code} at unit_cost={cost_per_base_unit}")
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,

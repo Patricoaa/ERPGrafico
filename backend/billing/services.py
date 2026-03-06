@@ -122,7 +122,7 @@ class BillingService:
                 raise ValidationError(f"El folio {number} ya ha sido utilizado en otro documento de venta.")
 
     @staticmethod
-    def _capitalize_tax_to_product_cost(product, tax_amount, unit_cost, quantity):
+    def _capitalize_tax_to_product_cost(product, tax_amount, unit_cost, quantity, order=None):
         """
         Capitalizes tax amount into product cost using weighted average.
         This is used for Boletas and Draft Facturas.
@@ -137,6 +137,21 @@ class BillingService:
             # No stock yet, set cost to unit cost + tax per unit
             product.cost_price = unit_cost + (tax_amount / quantity)
         product.save()
+
+        # Retroactive Kardex Update: If an order is provided, update the moves that were recorded at Net
+        if order:
+            moves = StockMove.objects.filter(
+                product=product,
+                description__contains=f"OCS-{order.number}",
+                move_type='IN'
+            )
+            for move in moves:
+                # If the move was recorded at exactly unit_cost (Net), update it to Net + Tax_per_unit
+                # We assume capitalization happens for the full tax of the received qty
+                tax_per_unit = tax_amount / quantity
+                if move.unit_cost == unit_cost:
+                    move.unit_cost = (unit_cost + tax_per_unit).quantize(Decimal('1'))
+                    move.save()
     
     @staticmethod
     def _revert_tax_from_product_cost(product, tax_amount):
@@ -310,7 +325,7 @@ class BillingService:
                 # Because future receipts will check has_boleta=True and include it themselves in StockMove
                 if line_tax > 0 and getattr(line, 'quantity_received', 0) > 0:
                     received_tax = line_tax * (line.quantity_received / line.quantity)
-                    BillingService._capitalize_tax_to_product_cost(line.product, received_tax, line.unit_cost, line.quantity_received)
+                    BillingService._capitalize_tax_to_product_cost(line.product, received_tax, line.unit_cost, line.quantity_received, order=order)
         elif dte_type == Invoice.DTEType.BOLETA_EXENTA:
             # No IVA capitalization for tax-exempt boletas
             pass
