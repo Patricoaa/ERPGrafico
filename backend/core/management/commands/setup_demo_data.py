@@ -770,11 +770,12 @@ class Command(BaseCommand):
             )
 
             # Update product cost PMP
-            # We set the cost_price DIRECTLY. Since the StockMove also exists, 
-            # this represents the cost of that move.
+            # We set the cost_price DIRECTLY before any transaction that might trigger a save.
+            # In this demo setup, we want this to be the initial cost without cluttering history.
             product.cost_price = cost
-            product.save()
-
+            # DO NOT call product.save() here. It creates a secondary history entry 
+            # after the StockMove creation.
+            
             # 2. Create Journal Item (Debit Inventory)
             inv_account = product.get_asset_account or accounts['inventory_raw']
             line_val = qty * cost

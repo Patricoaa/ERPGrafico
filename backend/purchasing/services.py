@@ -533,7 +533,10 @@ class PurchasingService:
             if total_qty > 0:
                 product.cost_price = (current_value + new_value) / total_qty
         
-        product.save()
+        # Use update_fields to minimize history/signal impact if nothing else changed, 
+        # but since simple_history tracks all saves, it will still create an entry.
+        # The key is to ensure we don't save AGAIN in the caller.
+        product.save(update_fields=['cost_price'])
 
     @staticmethod
     def _update_order_receiving_status(order):

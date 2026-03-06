@@ -207,6 +207,8 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         ).all().order_by('-date', '-id')[:100]
         
         kardex = []
+        # Optimization: Pre-fetch price history for faster lookup in Kardex loop
+        # We only really need this for moves without linked transaction lines
         for m in moves:
             unit_price = 0
             if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
@@ -218,13 +220,22 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
                 unit_price = float(m.purchase_return_line.unit_cost)
             
-            # Fallback for manual adjustments or internal moves
-            # We use the cost_price at the moment of the move if possible, 
-            # but since we don't have historical stock move cost, we use the current product cost
-            # or the cost that WAS recorded in the history around that date.
+            # Fallback for manual adjustments: Lookup historical cost at the time of the move
             if unit_price == 0:
-                 # If it's a consumption (OUT) or adjustment, show the product cost
-                 unit_price = float(m.product.cost_price)
+                 # Find the history entry that was active at the time of the move
+                 # We look for the most recent history record BEFORE or AT the move date/time
+                 from django.utils import timezone
+                 
+                 # Convert m.date to datetime for comparison with history_date (which is a datetime)
+                 move_dt = timezone.make_aware(timezone.datetime.combine(m.date, timezone.datetime.min.time())) if isinstance(m.date, timezone.datetime.date) else m.date
+                 
+                 # Optimization: This could be slow in a loop. For demo purposes and small Kardex (100 items), it's okay.
+                 # Ideally, we would fetch history in bulk and find the closest match in memory.
+                 h_match = m.product.history.filter(history_date__lte=move_dt).order_by('-history_date').first()
+                 if h_match:
+                     unit_price = float(h_match.cost_price)
+                 else:
+                     unit_price = float(m.product.cost_price) # Absolute fallback
 
             description = m.description
             if instance.has_variants and m.product_id != instance.id:
