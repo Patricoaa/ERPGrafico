@@ -22,9 +22,9 @@ import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ShoppingCart, Package, Factory, User, BarChart3, Clock, Scale, Banknote, Truck, Receipt, ClipboardList, CreditCard } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { ShoppingCart, Package, Wand2, User, CreditCard, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
+import { OrderCard } from "@/components/orders/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -33,7 +33,6 @@ import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ColumnDef } from "@tanstack/react-table"
-import { LayoutDashboard, Wand2 } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from "@/lib/order-status-utils"
@@ -960,6 +959,26 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                     columns={columns}
                     data={filteredData}
                     defaultPageSize={10}
+                    globalFilterFields={["display_id", "number"]}
+                    showToolbarSort={true}
+                    renderCustomView={(table) => (
+                        <div className="grid gap-3 pt-2">
+                            {table.getRowModel().rows.map((row) => (
+                                <OrderCard
+                                    key={row.original.id}
+                                    item={row.original}
+                                    type={type}
+                                    onActionClick={() => {
+                                        if (type === 'work_order') {
+                                            openWorkOrder(row.original.id)
+                                        } else {
+                                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
                 />
             </div>
         </div>
@@ -987,6 +1006,33 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
         )
     }
 
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "date",
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
+        },
+        {
+            accessorKey: "number",
+            header: "Número",
+            cell: ({ row }) => (
+                <Badge variant="indigo" className="font-bold">
+                    NV-{row.original.number?.toString().padStart(6, '0')}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: "balance",
+            header: "Saldo",
+            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="text-left font-bold text-red-600" />,
+        },
+        {
+            id: "status",
+            header: "Estado Hub",
+            cell: ({ row }) => <OrderHubStatus order={row.original} />
+        }
+    ]
+
     return (
         <div className="space-y-4">
             <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
@@ -994,50 +1040,26 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
                 Detalle de Deuda (Facturas/Ventas a Crédito)
             </h4>
 
-            <div className="rounded-xl border overflow-hidden">
-                <Table>
-                    <TableHeader className="bg-muted/30">
-                        <TableRow>
-                            <TableHead className="text-xs font-bold uppercase">Documento</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-right">Monto Total</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-right">Pagado</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-right">Saldo Pendiente</TableHead>
-                            <TableHead className="text-xs font-bold uppercase text-center">Acción</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {data.map((order) => (
-                            <TableRow key={order.id} className="hover:bg-muted/5">
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-sm">NV-{order.number.toString().padStart(6, '0')}</span>
-                                        <span className="text-[10px] text-muted-foreground">{format(new Date(order.date), "dd MMM yyyy", { locale: es })}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DataCell.Currency value={order.effective_total} className="text-xs font-medium" />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DataCell.Currency value={order.paid_amount} className="text-xs text-emerald-600 font-medium" />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DataCell.Currency value={order.balance} className="text-sm font-bold text-red-600" />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 px-2"
-                                        onClick={() => openCommandCenter(order.id, 'sale')}
-                                    >
-                                        <LayoutDashboard className="h-4 w-4 mr-1" />
-                                        Ver
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+            <div className="flex-1 overflow-hidden p-0">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    defaultPageSize={10}
+                    globalFilterFields={["display_id", "number"]}
+                    showToolbarSort={true}
+                    renderCustomView={(table) => (
+                        <div className="grid gap-3 pt-2">
+                            {table.getRowModel().rows.map((row) => (
+                                <OrderCard
+                                    key={row.original.id}
+                                    item={row.original}
+                                    type="ledger"
+                                    onActionClick={() => openCommandCenter(row.original.id, 'sale')}
+                                />
+                            ))}
+                        </div>
+                    )}
+                />
             </div>
         </div>
     )

@@ -20,9 +20,10 @@ import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { PurchaseOrderHubStatus } from "../components/PurchaseOrderHubStatus"
+import { PurchaseOrderHubStatus } from "@/components/orders/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
+import { OrderCard } from "@/components/orders/OrderCard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { formatPlainDate } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -490,7 +491,8 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                                 <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"} />
                             </div>
                         }
-
+                        globalFilterFields={["number"]}
+                        showToolbarSort={true}
                         renderCustomView={(table) => {
                             const rows = table.getRowModel().rows
                             if (rows.length === 0) {
@@ -505,103 +507,19 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                                 <div className="grid gap-3 pt-2">
                                     {rows.map((row: any) => {
                                         const item = row.original
-                                        return viewMode === 'orders' ? (
-                                            <div
+                                        return (
+                                            <OrderCard
                                                 key={item.id}
-                                                className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
-                                                onClick={() => setSelectedOrderId(item.id)}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
-                                                        <ShoppingCart className="h-6 w-6 text-primary/60" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                                OCS-{item.number}
-                                                            </span>
-                                                            <h4 className="font-bold text-foreground">
-                                                                {item.supplier_name}
-                                                            </h4>
-                                                        </div>
-                                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                                            <span className="flex items-center gap-1">
-                                                                <Calendar className="h-3 w-3" />
-                                                                {formatPlainDate(item.date)}
-                                                            </span>
-                                                            <span className="flex items-center gap-1">
-                                                                <Package className="h-3 w-3" />
-                                                                {item.warehouse_name}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-6">
-                                                    <div className="hidden sm:flex flex-col items-end">
-                                                        <PurchaseOrderHubStatus order={item} />
-                                                    </div>
-
-                                                    <div className="text-right min-w-[100px]">
-                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total</div>
-                                                        <div className="text-sm font-bold text-primary">
-                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(item.total))}
-                                                        </div>
-                                                    </div>
-
-                                                    <Button variant="ghost" size="icon" className="group-hover:translate-x-1 transition-transform">
-                                                        <ArrowRight className="h-5 w-5 text-primary" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                key={item.id}
-                                                className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
-                                                onClick={() => setSelectedInvoiceId(item.id)}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-amber-500/5 flex flex-col items-center justify-center border border-amber-500/10">
-                                                        <FileBadge className="h-6 w-6 text-amber-500/60" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                                {item.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-'}{item.number || '---'}
-                                                            </span>
-                                                            <h4 className="font-bold text-foreground">
-                                                                {item.supplier_name || item.partner_name}
-                                                            </h4>
-                                                            <Badge variant="outline" className="text-[10px] uppercase">
-                                                                {item.dte_type_display}
-                                                            </Badge>
-                                                        </div>
-                                                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                                                            <span className="flex items-center gap-1">
-                                                                <Calendar className="h-3 w-3" />
-                                                                {formatPlainDate(item.date)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-6">
-                                                    <div className="hidden sm:flex flex-col items-end">
-                                                        <NoteHubStatus note={item} />
-                                                    </div>
-
-                                                    <div className="text-right min-w-[100px]">
-                                                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total</div>
-                                                        <div className="text-sm font-bold text-primary">
-                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(item.total))}
-                                                        </div>
-                                                    </div>
-
-                                                    <Button variant="ghost" size="icon" className="group-hover:translate-x-1 transition-transform">
-                                                        <ArrowRight className="h-5 w-5 text-primary" />
-                                                    </Button>
-                                                </div>
-                                            </div>
+                                                item={item}
+                                                type={viewMode === 'orders' ? 'purchase' : 'note'}
+                                                onClick={() => {
+                                                    if (viewMode === 'orders') {
+                                                        setSelectedOrderId(item.id)
+                                                    } else {
+                                                        setSelectedInvoiceId(item.id)
+                                                    }
+                                                }}
+                                            />
                                         )
                                     })}
                                 </div>

@@ -167,6 +167,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # Get all non-draft, non-cancelled CREDIT orders
         orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
         
+        from sales.serializers import SaleOrderSerializer
         ledger_data = []
         for order in orders:
             # Calculate payments
@@ -178,15 +179,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             balance = order.effective_total - payments_net
             
             if balance > 0:
-                ledger_data.append({
-                    'id': order.id,
-                    'date': order.date,
-                    'number': order.display_id,
-                    'total': order.total,
-                    'effective_total': order.effective_total,
-                    'paid_amount': payments_net,
-                    'balance': balance,
-                    'status': order.status
-                })
+                order_data = SaleOrderSerializer(order).data
+                order_data['paid_amount'] = str(payments_net)
+                order_data['balance'] = str(balance)
+                ledger_data.append(order_data)
                 
         return Response(ledger_data)
