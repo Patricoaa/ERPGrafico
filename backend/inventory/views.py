@@ -207,35 +207,25 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         ).all().order_by('-date', '-id')[:100]
         
         kardex = []
-        # Optimization: Pre-fetch price history for faster lookup in Kardex loop
-        # We only really need this for moves without linked transaction lines
         for m in moves:
+            # Priority 1: Transaction-linked price (most accurate, from actual invoice/delivery line)
             unit_price = 0
-            if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
-                unit_price = float(m.sale_delivery_line.unit_price)
-            elif hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
+            if hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
                 unit_price = float(m.purchase_receipt_line.unit_cost)
+            elif hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
+                unit_price = float(m.sale_delivery_line.unit_price)
             elif hasattr(m, 'sale_return_line') and m.sale_return_line:
                 unit_price = float(m.sale_return_line.unit_price)
             elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
                 unit_price = float(m.purchase_return_line.unit_cost)
             
-            # Fallback for manual adjustments: Lookup historical cost at the time of the move
+            # Priority 2: Frozen unit_cost stored directly on the StockMove at creation time
+            if unit_price == 0 and m.unit_cost:
+                unit_price = float(m.unit_cost)
+            
+            # Priority 3: Current product cost as last resort
             if unit_price == 0:
-                 # Find the history entry that was active at the time of the move
-                 # We look for the most recent history record BEFORE or AT the move date/time
-                 from django.utils import timezone
-                 
-                 # Convert m.date to datetime for comparison with history_date (which is a datetime)
-                 move_dt = timezone.make_aware(timezone.datetime.combine(m.date, timezone.datetime.min.time())) if isinstance(m.date, timezone.datetime.date) else m.date
-                 
-                 # Optimization: This could be slow in a loop. For demo purposes and small Kardex (100 items), it's okay.
-                 # Ideally, we would fetch history in bulk and find the closest match in memory.
-                 h_match = m.product.history.filter(history_date__lte=move_dt).order_by('-history_date').first()
-                 if h_match:
-                     unit_price = float(h_match.cost_price)
-                 else:
-                     unit_price = float(m.product.cost_price) # Absolute fallback
+                unit_price = float(m.product.cost_price)
 
             description = m.description
             if instance.has_variants and m.product_id != instance.id:

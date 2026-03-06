@@ -401,8 +401,10 @@ class Command(BaseCommand):
         cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
         if cat_services.asset_account: cat_services.asset_account = None; cat_services.save()
 
-        # RAW MATERIALS
+        # RAW MATERIALS - use skip_history=True during creation to avoid $0 history entry
+        # The first meaningful history entry will come from _add_initial_stock when cost_price is set
         p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['resma'], 'sale_price': 5000, 'receiving_warehouse': wh})
+        if _: p_papel.skip_history_when_saving = True; p_papel.save(); del p_papel.skip_history_when_saving
         p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
         p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
         p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
@@ -759,22 +761,22 @@ class Command(BaseCommand):
                 # Default material costs
                 cost = Decimal(str(random.randint(500, 5000)))
 
-            # 1. Create Stock Move
+            # 1. Create Stock Move with unit_cost frozen at time of seeding
             StockMove.objects.create(
                 date=timezone.now().date(),
                 product=product,
                 warehouse=warehouse,
                 quantity=qty,
                 move_type=StockMove.Type.IN,
-                description="Carga Inicial Demo Data"
+                description="Carga Inicial Demo Data",
+                unit_cost=cost  # Frozen at creation - will not change
             )
 
-            # Update product cost PMP
-            # We set the cost_price DIRECTLY before any transaction that might trigger a save.
-            # In this demo setup, we want this to be the initial cost without cluttering history.
+            # Update product cost PMP - single save with update_fields to track only cost change
+            # First, remove the $0 history entry created on product creation (before cost was set)
+            product.history.filter(cost_price=0).delete()
             product.cost_price = cost
-            # DO NOT call product.save() here. It creates a secondary history entry 
-            # after the StockMove creation.
+            product.save(update_fields=['cost_price'])
             
             # 2. Create Journal Item (Debit Inventory)
             inv_account = product.get_asset_account or accounts['inventory_raw']

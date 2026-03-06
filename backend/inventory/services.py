@@ -106,7 +106,8 @@ class StockService:
             adjustment_reason=adjustment_reason,
             description=description,
             source_uom=uom or product.uom,
-            source_quantity=quantity_orig
+            source_quantity=quantity_orig,
+            unit_cost=unit_cost  # Frozen at creation time
         )
 
         # 3. Accounting Logic

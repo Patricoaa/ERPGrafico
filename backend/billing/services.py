@@ -306,8 +306,11 @@ class BillingService:
         if dte_type == Invoice.DTEType.BOLETA:
             for line in order.lines.all():
                 line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-                if line_tax > 0 and line.quantity > 0:
-                    BillingService._capitalize_tax_to_product_cost(line.product, line_tax, line.unit_cost, line.quantity)
+                # Only capitalize tax for quantities that were ALREADY RECEIVED!
+                # Because future receipts will check has_boleta=True and include it themselves in StockMove
+                if line_tax > 0 and getattr(line, 'quantity_received', 0) > 0:
+                    received_tax = line_tax * (line.quantity_received / line.quantity)
+                    BillingService._capitalize_tax_to_product_cost(line.product, received_tax, line.unit_cost, line.quantity_received)
         elif dte_type == Invoice.DTEType.BOLETA_EXENTA:
             # No IVA capitalization for tax-exempt boletas
             pass

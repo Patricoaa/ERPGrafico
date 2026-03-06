@@ -467,7 +467,7 @@ class PurchasingService:
             # Update Product Cost (Weighted Average)
             PurchasingService._update_product_cost(line.product, base_qty, cost_per_base_unit)
             
-            # Create Stock Move (IN) - Placeholder for journal_entry
+            # Create Stock Move (IN) with unit_cost frozen at time of move
             stock_move = StockMove.objects.create(
                 date=receipt.receipt_date,
                 product=line.product,
@@ -476,7 +476,8 @@ class PurchasingService:
                 move_type=StockMove.Type.IN,
                 description=f"Recepción OCS-{receipt.purchase_order.number}",
                 source_uom=line.uom or line.purchase_line.uom,
-                source_quantity=line.quantity_received
+                source_quantity=line.quantity_received,
+                unit_cost=cost_per_base_unit
             )
             line.stock_move = stock_move
             line.save()
@@ -512,30 +513,32 @@ class PurchasingService:
     @staticmethod
     def _update_product_cost(product, quantity, unit_cost):
         """
-        Updates product cost price using Weighted Average Cost.
+        Updates product cost price using Weighted Average Cost (PMP).
         Quantity and unit_cost MUST be in base units.
+        
+        Formula: PMP = (qty_on_hand * old_cost + new_qty * new_cost) / (qty_on_hand + new_qty)
+        
+        IMPORTANT: This must be called BEFORE creating the new StockMove, so that
+        qty_on_hand reflects only existing stock.
         """
-        # Get current total stock across all warehouses (simplified)
-        # Ideally we should use accurate stock at that moment.
-        # Check if StockService has get_total_stock
-        current_stock = Decimal('0')
-        moves = StockMove.objects.filter(product=product)
-        current_stock = moves.aggregate(total=models.Sum('quantity'))['total'] or Decimal('0')
+        from inventory.models import StockMove as SM
+        # Use net stock from moves (positive = in stock, negative = consumed)
+        result = SM.objects.filter(product=product).aggregate(total=models.Sum('quantity'))
+        current_stock = result['total'] or Decimal('0')
         
-        # If stock is negative (bad data) or zero, new cost = unit_cost
         if current_stock <= 0:
-            product.cost_price = unit_cost
+            # No existing stock: new cost becomes the reference
+            product.cost_price = unit_cost.quantize(Decimal('1'))
         else:
+            # Weighted average: (existing value + new value) / total qty
             current_value = current_stock * product.cost_price
-            new_value = (quantity * unit_cost)
+            new_value = quantity * unit_cost
             total_qty = current_stock + quantity
-            
+
             if total_qty > 0:
-                product.cost_price = (current_value + new_value) / total_qty
+                product.cost_price = ((current_value + new_value) / total_qty).quantize(Decimal('1'))
         
-        # Use update_fields to minimize history/signal impact if nothing else changed, 
-        # but since simple_history tracks all saves, it will still create an entry.
-        # The key is to ensure we don't save AGAIN in the caller.
+        # Save only cost_price to minimize history entries 
         product.save(update_fields=['cost_price'])
 
     @staticmethod

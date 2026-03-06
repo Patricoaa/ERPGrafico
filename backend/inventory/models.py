@@ -907,6 +907,15 @@ class StockMove(models.Model):
     source_uom = models.ForeignKey(UoM, on_delete=models.SET_NULL, null=True, blank=True, related_name='stock_moves_source', help_text=_("Unidad original de la transacción"))
     source_quantity = models.DecimalField(_("Cantidad Original"), max_digits=12, decimal_places=4, null=True, blank=True, help_text=_("Cantidad original en la unidad de la transacción"))
     
+    # Unit cost at the time of this move (frozen at creation - never changes)
+    unit_cost = models.DecimalField(
+        _("Costo Unitario"),
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text=_("Costo unitario del producto en el momento de este movimiento")
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
 
