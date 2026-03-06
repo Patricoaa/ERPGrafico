@@ -9,6 +9,7 @@ import { PricingUtils } from "@/lib/pricing"
 interface OrderSummaryCardProps {
     orderLines: any[]
     total: number
+    totalDiscountAmount?: number
     dteType?: string
     customer?: any
 }
@@ -16,10 +17,15 @@ interface OrderSummaryCardProps {
 export function OrderSummaryCard({
     orderLines,
     total,
+    totalDiscountAmount = 0,
     dteType,
     customer
 }: OrderSummaryCardProps) {
     const isExempt = dteType === 'FACTURA_EXENTA' || dteType === 'BOLETA_EXENTA';
+
+    // Calculate totals
+    const lineDiscounts = orderLines.reduce((acc, line) => acc + (line.discount_amount || 0), 0);
+    const totalDiscount = lineDiscounts + totalDiscountAmount;
     const net = isExempt ? total : PricingUtils.grossToNet(total);
     const tax = isExempt ? 0 : PricingUtils.extractTax(total);
 
@@ -82,6 +88,12 @@ export function OrderSummaryCard({
                     <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                         <span>IVA (19%)</span>
                         <span className="whitespace-nowrap font-mono">{formatCurrency(tax)}</span>
+                    </div>
+                )}
+                {totalDiscount > 0 && (
+                    <div className="flex justify-between text-xs font-bold text-blue-600">
+                        <span>Descuento</span>
+                        <span className="whitespace-nowrap font-mono">-{formatCurrency(totalDiscount)}</span>
                     </div>
                 )}
                 <Separator className="my-2 opacity-50" />

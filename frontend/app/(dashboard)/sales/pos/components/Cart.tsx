@@ -13,6 +13,7 @@ import { CartItem } from './CartItem'
 import { formatCurrency } from '@/lib/currency'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+import { useSalesSettings } from '@/features/settings'
 
 interface CartProps {
     items: CartItemType[]
@@ -23,7 +24,11 @@ interface CartProps {
         total_gross: number
         total_net: number
         total_tax: number
+        total_discount?: number
+        total_gross_before_discount?: number
     }
+    totalDiscountAmount?: number
+    onTotalDiscountChange?: (amount: number) => void
     loading: boolean
     currentDraftId?: number | null
     lastSaved?: Date | null
@@ -32,8 +37,9 @@ interface CartProps {
     onItemQuantityChange: (cartItemId: string, qty: number | string) => void
     onItemUomChange: (cartItemId: string, uomId: number, uomName: string) => void
     onItemPriceChange: (cartItemId: string, priceGross: number) => void
+    onItemDiscountChange: (cartItemId: string, amount: number, percent: number) => void
     onItemRemove: (cartItemId: string) => void
-    onOpenNumpad: (cartItemId: string, field: 'qty' | 'price', currentValue: number) => void
+    onOpenNumpad: (cartItemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => void
     onQuickSale: () => void
     onConfirmSale: () => void
 }
@@ -52,12 +58,20 @@ export function Cart({
     onItemQuantityChange,
     onItemUomChange,
     onItemPriceChange,
+    onItemDiscountChange,
     onItemRemove,
     onOpenNumpad,
     onQuickSale,
-    onConfirmSale
+    onConfirmSale,
+    totalDiscountAmount = 0,
+    onTotalDiscountChange
 }: CartProps) {
     const { isTouchPOS } = useDeviceContext()
+    const { settings } = useSalesSettings()
+
+    const showLineDiscounts = settings?.pos_enable_line_discounts || false
+    const showTotalDiscounts = settings?.pos_enable_total_discounts || false
+
     return (
         <Card className="flex-1 flex flex-col overflow-hidden border">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
@@ -74,12 +88,15 @@ export function Cart({
                     <Table>
                         <TableHeader className="bg-muted/30 sticky top-0 z-10">
                             <TableRow className="hover:bg-transparent border-b">
-                                <TableHead className="w-[25%] text-xs py-2">Producto</TableHead>
-                                <TableHead className="w-[15%] text-xs py-2 text-center">Cant.</TableHead>
-                                <TableHead className="w-[15%] text-xs py-2 text-center">Unidad</TableHead>
+                                <TableHead className={cn("text-xs py-2", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
+                                <TableHead className="w-[12%] text-xs py-2 text-center">Cant.</TableHead>
+                                <TableHead className="w-[13%] text-xs py-2 text-center">Unidad</TableHead>
                                 <TableHead className="w-[15%] text-xs py-2 text-right">Precio Unit.</TableHead>
-                                <TableHead className="w-[20%] text-xs py-2 text-right">Total</TableHead>
-                                <TableHead className="w-[10%] py-2"></TableHead>
+                                {showLineDiscounts && (
+                                    <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80">Dscto.</TableHead>
+                                )}
+                                <TableHead className="w-[15%] text-xs py-2 text-right">Total</TableHead>
+                                <TableHead className="w-[5%] py-2"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -97,8 +114,10 @@ export function Cart({
                                         onQuantityChange={onItemQuantityChange}
                                         onUomChange={onItemUomChange}
                                         onPriceChange={onItemPriceChange}
+                                        onDiscountChange={onItemDiscountChange}
                                         onRemove={onItemRemove}
                                         onOpenNumpad={onOpenNumpad}
+                                        showLineDiscount={showLineDiscounts}
                                     />
                                 )
                             })}
@@ -155,13 +174,25 @@ export function Cart({
                     {/* Totals */}
                     <div className="space-y-1">
                         <div className="flex justify-between text-sm text-muted-foreground">
-                            <span>Neto</span>
+                            <span>Subtotal Neto</span>
                             <span>{formatCurrency(totals.total_net)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground">
                             <span>IVA (19%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
+                        {(showTotalDiscounts || (totals.total_discount || 0) > 0) && (
+                            <div
+                                className={cn(
+                                    "flex justify-between text-sm",
+                                    showTotalDiscounts ? "text-blue-600 font-medium cursor-pointer hover:underline" : "text-muted-foreground"
+                                )}
+                                onClick={() => showTotalDiscounts && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
+                            >
+                                <span>{showTotalDiscounts ? 'Añadir Dscto. Global' : 'Descuento'}</span>
+                                <span>{(totals.total_discount || 0) > 0 ? `-${formatCurrency(totals.total_discount || 0)}` : '$0'}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between text-xl font-bold pt-2 border-t">
                             <span>Total</span>
                             <span>{formatCurrency(totals.total_gross)}</span>

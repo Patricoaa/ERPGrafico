@@ -1,5 +1,6 @@
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 from typing import List, Optional, Dict, Any
 from .models import DraftCart
 from treasury.models import POSSession
@@ -20,6 +21,7 @@ class DraftCartService:
         name: str = "",
         notes: str = "",
         wizard_state: Optional[Dict[str, Any]] = None,
+        total_discount_amount: Decimal = Decimal('0.00'),
         draft_id: Optional[int] = None
     ) -> DraftCart:
         """
@@ -67,6 +69,7 @@ class DraftCartService:
             draft.name = name or draft.name
             draft.notes = notes
             draft.wizard_state = wizard_state
+            draft.total_discount_amount = total_discount_amount
             draft.last_modified_by = user
         else:
             # Crear nuevo borrador
@@ -83,6 +86,7 @@ class DraftCartService:
                 items=items,
                 wizard_state=wizard_state,
                 total_net=total_net,
+                total_discount_amount=total_discount_amount,
                 total_gross=total_gross
             )
         

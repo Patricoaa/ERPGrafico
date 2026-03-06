@@ -76,6 +76,7 @@ class Invoice(models.Model):
     # Totals
     total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
     total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
+    total_discount_amount = models.DecimalField(_("Monto Descuento Total"), max_digits=12, decimal_places=0, default=0)
     total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
 
     # Accounting

@@ -64,6 +64,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     
     total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
     total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
+    total_discount_amount = models.DecimalField(_("Descuento Total"), max_digits=12, decimal_places=2, default=0)
     total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
 
     # Link to Accounting
@@ -147,6 +148,9 @@ class SaleLine(models.Model):
     unit_price_gross = models.DecimalField(_("Precio Unitario Bruto"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
     tax_rate = models.DecimalField(_("Tasa Impuesto %"), max_digits=5, decimal_places=2, default=19.00, validators=[MinValueValidator(0)]) # Chile default
     
+    discount_percentage = models.DecimalField(_("Descuento %"), max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    discount_amount = models.DecimalField(_("Monto Descuento"), max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False)
     
     # Track delivered quantity
@@ -176,7 +180,8 @@ class SaleLine(models.Model):
 
     def calculate_subtotal(self):
         if self.unit_price_gross:
-            self.subtotal = self.quantity * self.unit_price_gross
+            base_gross = self.quantity * self.unit_price_gross
+            self.subtotal = max(Decimal('0'), base_gross - self.discount_amount)
         else:
             self.subtotal = self.quantity * self.unit_price
 
@@ -205,6 +210,14 @@ class SalesSettings(models.Model):
         _("Restringir Ventas Sin Stock"), 
         default=False,
         help_text=_("Si está activo, impide vender productos almacenables si no hay stock suficiente.")
+    )
+    pos_enable_line_discounts = models.BooleanField(
+        _("POS: Habilitar Descuentos por Línea"),
+        default=True
+    )
+    pos_enable_total_discounts = models.BooleanField(
+        _("POS: Habilitar Descuento Total"),
+        default=True
     )
 
     class Meta:
@@ -524,6 +537,13 @@ class DraftCart(models.Model):
     
     total_gross = models.DecimalField(
         _("Total Bruto"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    
+    total_discount_amount = models.DecimalField(
+        _("Descuento Total"),
         max_digits=12,
         decimal_places=2,
         default=0

@@ -27,6 +27,7 @@ interface SalesCheckoutWizardProps {
     order: any | null
     orderLines: any[]
     total: number
+    totalDiscountAmount?: number
     onComplete: () => void
     customerName?: string  // Optional for backward compatibility
     initialCustomerName?: string
@@ -48,6 +49,7 @@ export function SalesCheckoutWizard({
     order,
     orderLines: initialOrderLines,
     total: initialTotal,
+    totalDiscountAmount = 0,
     onComplete,
     initialCustomerName = "",
     initialCustomerId = "",
@@ -91,7 +93,7 @@ export function SalesCheckoutWizard({
     // Recalculate total if currentOrderLines changes (Gross total including 19% tax)
     const currentTotal = useMemo(() => {
         const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
-        return currentOrderLines.reduce((acc: number, line: any) => {
+        const linesTotal = currentOrderLines.reduce((acc: number, line: any) => {
             const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
 
             if (isExempt) return acc + net;
@@ -99,7 +101,8 @@ export function SalesCheckoutWizard({
             if (line.total_gross !== undefined) return acc + line.total_gross;
             return acc + PricingUtils.netToGross(net);
         }, 0);
-    }, [currentOrderLines, dteData.type]);
+        return Math.max(0, linesTotal - totalDiscountAmount);
+    }, [currentOrderLines, dteData.type, totalDiscountAmount]);
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
@@ -469,9 +472,9 @@ export function SalesCheckoutWizard({
         const formData = new FormData()
 
         const payloadOrder = order ? { id: order.id } : {
-            customer: parseInt(selectedCustomerId),
             payment_method: paymentData.method,
             channel: channel,
+            total_discount_amount: totalDiscountAmount,
             lines: currentOrderLines.map((l: any) => {
                 let cleanMfgData = null
                 if (l.manufacturing_data) {
@@ -789,6 +792,7 @@ export function SalesCheckoutWizard({
                     <OrderSummaryCard
                         orderLines={currentOrderLines}
                         total={currentTotal}
+                        totalDiscountAmount={totalDiscountAmount}
                         dteType={dteData.type}
                         customer={selectedCustomer}
                     />

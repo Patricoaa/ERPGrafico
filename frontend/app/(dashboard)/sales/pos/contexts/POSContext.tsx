@@ -32,6 +32,8 @@ interface POSContextValue {
     items: CartItem[]
     selectedCustomerId: number | null
     setSelectedCustomerId: (id: number | null) => void
+    totalDiscountAmount: number
+    setTotalDiscountAmount: (amount: number) => void
 
     // Draft & Wizard State
     currentDraftId: number | null
@@ -78,6 +80,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+    const [totalDiscountAmount, setTotalDiscountAmount] = useState<number>(0)
 
     // Draft & Wizard State
     const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
@@ -144,7 +147,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     }, [])
 
     // Computed values
-    const totals = CartUtils.calculateCartTotals(items)
+    const totals = CartUtils.calculateCartTotals(items, totalDiscountAmount)
 
     const value: POSContextValue = {
         // Session
@@ -163,6 +166,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
         items,
         selectedCustomerId,
         setSelectedCustomerId,
+        totalDiscountAmount,
+        setTotalDiscountAmount,
 
         // Draft & Wizard State
         currentDraftId,

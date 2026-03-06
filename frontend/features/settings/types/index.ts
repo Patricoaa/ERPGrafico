@@ -35,6 +35,8 @@ export interface SalesSettings {
     terminal_iva_bridge_account: string | null
     // POS Configurations
     pos_default_credit_percentage: number
+    pos_enable_line_discounts: boolean
+    pos_enable_total_discounts: boolean
 }
 
 export type SalesSettingsUpdatePayload = Partial<SalesSettings>

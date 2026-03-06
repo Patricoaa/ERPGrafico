@@ -91,7 +91,9 @@ function POSPageContent() {
         setCurrentDraftId,
         wizardState,
         setWizardState,
-        updateItem
+        updateItem,
+        totalDiscountAmount,
+        setTotalDiscountAmount,
     } = usePOS()
 
     // Products management
@@ -143,8 +145,8 @@ function POSPageContent() {
     const [selectedProductForVariant, setSelectedProductForVariant] = useState<any>(null)
     const [numpadOpen, setNumpadOpen] = useState(false)
     const [numpadConfig, setNumpadConfig] = useState<{
-        itemId: string
-        field: 'qty' | 'price'
+        itemId: string | 'cart'
+        field: 'qty' | 'price' | 'discount'
         initialValue: number
     } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
@@ -199,7 +201,7 @@ function POSPageContent() {
     }
 
     // Numpad handlers
-    const handleOpenNumpad = (itemId: string, field: 'qty' | 'price', currentValue: number) => {
+    const handleOpenNumpad = (itemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => {
         setNumpadConfig({ itemId, field, initialValue: currentValue })
         setNumpadValue(currentValue.toString())
         setNumpadOpen(true)
@@ -208,14 +210,22 @@ function POSPageContent() {
     const handleNumpadConfirm = (value: number) => {
         if (!numpadConfig) return
 
-        if (numpadConfig.field === 'qty') {
-            updateQuantity(numpadConfig.itemId, value)
-        } else if (numpadConfig.field === 'price') {
-            const item = items.find(i => i.cartItemId === numpadConfig.itemId)
-            if (item) {
-                const newNet = PricingUtils.grossToNet(value)
-                // Trigger price update via callback
+        if (numpadConfig.itemId === 'cart') {
+            if (numpadConfig.field === 'discount') {
+                handleTotalDiscountChange(value)
+            }
+        } else {
+            if (numpadConfig.field === 'qty') {
+                updateQuantity(numpadConfig.itemId, value)
+            } else if (numpadConfig.field === 'price') {
                 handleItemPriceChange(numpadConfig.itemId, value)
+            } else if (numpadConfig.field === 'discount') {
+                const item = items.find(i => i.cartItemId === numpadConfig.itemId)
+                if (item) {
+                    const totalBeforeDiscount = item.qty * item.unit_price_gross
+                    const percent = totalBeforeDiscount > 0 ? (value / totalBeforeDiscount) * 100 : 0
+                    handleItemDiscountChange(numpadConfig.itemId, value, percent)
+                }
             }
         }
 
@@ -246,12 +256,32 @@ function POSPageContent() {
         if (!item) return
 
         const newNet = PricingUtils.grossToNet(priceGross)
+        const linePricing = PricingUtils.calculateLineFromGross(item.qty, priceGross, item.discount_amount || 0)
+
         updateItem(cartItemId, {
             unit_price_net: newNet,
             unit_price_gross: priceGross,
-            total_net: PricingUtils.calculateLineNet(item.qty, newNet),
-            total_gross: Math.round(item.qty * priceGross)
+            total_net: linePricing.net,
+            total_gross: linePricing.gross
         })
+    }
+
+    const handleItemDiscountChange = (cartItemId: string, amount: number, percent: number) => {
+        const item = items.find(i => i.cartItemId === cartItemId)
+        if (!item) return
+
+        const linePricing = PricingUtils.calculateLineFromGross(item.qty, item.unit_price_gross, amount)
+
+        updateItem(cartItemId, {
+            discount_amount: amount,
+            discount_percentage: percent,
+            total_net: linePricing.net,
+            total_gross: linePricing.gross
+        })
+    }
+
+    const handleTotalDiscountChange = (amount: number) => {
+        setTotalDiscountAmount(amount)
     }
 
     // Checkout handlers
@@ -417,10 +447,13 @@ function POSPageContent() {
                         onItemQuantityChange={updateQuantity}
                         onItemUomChange={handleItemUomChange}
                         onItemPriceChange={handleItemPriceChange}
+                        onItemDiscountChange={handleItemDiscountChange}
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}
                         onConfirmSale={handleConfirmSale}
+                        totalDiscountAmount={totalDiscountAmount}
+                        onTotalDiscountChange={setTotalDiscountAmount}
                     />
                 </div>
             </div>

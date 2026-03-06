@@ -136,12 +136,19 @@ export function useCart() {
         const prices = await fetchEffectivePrice(product, newQty, defaultUom)
 
         if (existing) {
-            // Update existing item
-            const updated = CartUtils.updateCartItemQuantity(existing, newQty, prices.net, prices.gross)
+            // Update existing item - Preserve discounts
+            const updated = CartUtils.updateCartItemQuantity(
+                existing,
+                newQty,
+                prices.net,
+                prices.gross,
+                existing.discount_percentage,
+                existing.discount_amount
+            )
             updateItem(existing.cartItemId, updated)
             toast.success(`Cantidad actualizada: ${product.name}`)
         } else {
-            // Add new item
+            // Add new item - Start with 0 discount
             const newItem = CartUtils.createCartItem(
                 product,
                 1,
@@ -149,6 +156,8 @@ export function useCart() {
                 defaultUomName,
                 prices.net,
                 prices.gross,
+                0, // discountPercentage
+                0, // discountAmount
                 manufacturingData
             )
             addItem(newItem)
@@ -178,8 +187,15 @@ export function useCart() {
         // Fetch new prices
         const prices = await fetchEffectivePrice(item, newQty, item.uom || item.id)
 
-        // Update
-        const updated = CartUtils.updateCartItemQuantity(item, newQty, prices.net, prices.gross)
+        // Update - Preserve discounts
+        const updated = CartUtils.updateCartItemQuantity(
+            item,
+            newQty,
+            prices.net,
+            prices.gross,
+            item.discount_percentage,
+            item.discount_amount
+        )
         updateItem(cartItemId, updated)
     }, [items, validateStock, fetchEffectivePrice, updateItem])
 

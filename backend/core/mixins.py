@@ -56,7 +56,7 @@ class TotalsCalculationMixin:
         import math
         
         # Check if this document uses Gross-first logic (Sales)
-        is_sales = self.__class__.__name__ in ['SaleOrder', 'SaleDelivery']
+        is_sales = self.__class__.__name__ in ['SaleOrder', 'SaleDelivery', 'DraftCart']
         
         total_sum = Decimal('0.00')
         
@@ -78,9 +78,12 @@ class TotalsCalculationMixin:
         if is_sales:
             # GROSS-first calculation (Sales/POS)
             # total_sum is already GROSS (Quantity * UnitPriceGross)
-            self.total = total_sum
+            
+            # Apply total discount if it exists (only for SaleOrder)
+            total_discount = getattr(self, 'total_discount_amount', Decimal('0.00'))
+            self.total = max(Decimal('0'), total_sum - total_discount)
+            
             # Extract Net: Net = Gross / 1.19
-            # Using str(round(...)) to ensure we get an integer-like decimal if needed
             net_val = (self.total / (Decimal('1') + (tax_rate / Decimal('100.0'))))
             self.total_net = net_val.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
             # IVA is the difference

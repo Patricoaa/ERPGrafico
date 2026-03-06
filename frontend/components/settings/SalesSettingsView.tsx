@@ -16,7 +16,9 @@ import {
     Check,
     CloudUpload,
     Scale,
+    Percent,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
@@ -41,6 +43,8 @@ const salesSchema = z.object({
     pos_other_inflow_account: accountFieldSchema,
     pos_other_outflow_account: accountFieldSchema,
     pos_default_credit_percentage: z.coerce.number().min(0).max(100).default(0),
+    pos_enable_line_discounts: z.boolean().default(false),
+    pos_enable_total_discounts: z.boolean().default(false),
     terminal_commission_bridge_account: accountFieldSchema,
     terminal_iva_bridge_account: accountFieldSchema,
 })
@@ -86,6 +90,8 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             pos_other_inflow_account: null,
             pos_other_outflow_account: null,
             pos_default_credit_percentage: 0,
+            pos_enable_line_discounts: false,
+            pos_enable_total_discounts: false,
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
         }
@@ -109,6 +115,8 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 pos_other_inflow_account: settings.pos_other_inflow_account?.toString() ?? null,
                 pos_other_outflow_account: settings.pos_other_outflow_account?.toString() ?? null,
                 pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
+                pos_enable_line_discounts: !!settings.pos_enable_line_discounts,
+                pos_enable_total_discounts: !!settings.pos_enable_total_discounts,
                 terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
                 terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
             })
@@ -213,27 +221,73 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                         <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
                                     </div>
 
-                                    <Separator className="my-6" />
-
                                     <Card className="bg-muted/30 border-dashed">
-                                        <CardHeader className="pb-2">
+                                        <CardHeader className="pb-4">
                                             <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
-                                                <Scale className="h-4 w-4" />
-                                                Crédito Fallback Automático
+                                                <Percent className="h-4 w-4" />
+                                                Configuración de Descuentos
                                             </CardTitle>
                                             <CardDescription className="text-[11px]">
-                                                Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
+                                                Habilitar y configurar parámetros de descuentos para el punto de venta.
                                             </CardDescription>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="pos_enable_line_discounts"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-background">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground">
+                                                                    Permite aplicar descuentos individuales a cada producto en el carrito.
+                                                                </p>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch
+                                                                    checked={field.value}
+                                                                    onCheckedChange={field.onChange}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="pos_enable_total_discounts"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-background">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground">
+                                                                    Permite aplicar un descuento al total de la venta.
+                                                                </p>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch
+                                                                    checked={field.value}
+                                                                    onCheckedChange={field.onChange}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <Separator className="opacity-50" />
+
                                             <FormField
                                                 control={form.control}
                                                 name="pos_default_credit_percentage"
                                                 render={({ field }) => (
                                                     <FormItem className="space-y-1">
-                                                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">% de Crédito Fallback</FormLabel>
+                                                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Crédito Fallback Automático (%)</FormLabel>
+                                                        <p className="text-[10px] text-muted-foreground mb-2">
+                                                            Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
+                                                        </p>
                                                         <FormControl>
-                                                            <div className="relative max-w-[200px]">
+                                                            <div className="relative max-w-[150px]">
                                                                 <Input
                                                                     type="number"
                                                                     {...field}

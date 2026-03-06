@@ -25,8 +25,10 @@ interface CartItemProps {
     onQuantityChange: (cartItemId: string, qty: number | string) => void
     onUomChange: (cartItemId: string, uomId: number, uomName: string) => void
     onPriceChange: (cartItemId: string, priceGross: number) => void
+    onDiscountChange: (cartItemId: string, amount: number, percent: number) => void
     onRemove: (cartItemId: string) => void
-    onOpenNumpad: (cartItemId: string, field: 'qty' | 'price', currentValue: number) => void
+    onOpenNumpad: (cartItemId: string, field: 'qty' | 'price' | 'discount', currentValue: number) => void
+    showLineDiscount?: boolean
 }
 
 function CartItemComponent({
@@ -37,8 +39,10 @@ function CartItemComponent({
     onQuantityChange,
     onUomChange,
     onPriceChange,
+    onDiscountChange,
     onRemove,
-    onOpenNumpad
+    onOpenNumpad,
+    showLineDiscount
 }: CartItemProps) {
     const { isTouchPOS } = useDeviceContext()
     const itemUom = uoms.find(u => u.id === item.uom)
@@ -63,6 +67,13 @@ function CartItemComponent({
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newGross = parseFloat(e.target.value) || 0
         onPriceChange(item.cartItemId, newGross)
+    }
+
+    const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newAmount = parseFloat(e.target.value) || 0
+        const totalBeforeDiscount = item.qty * item.unit_price_gross
+        const newPercent = totalBeforeDiscount > 0 ? (newAmount / totalBeforeDiscount) * 100 : 0
+        onDiscountChange(item.cartItemId, newAmount, newPercent)
     }
 
     const isOverLimit = maxQty !== undefined && maxQty !== Infinity && item.qty > maxQty
@@ -150,32 +161,50 @@ function CartItemComponent({
             <TableCell className="py-2 text-right align-top">
                 <div className="flex flex-col items-end gap-1">
                     {originalProduct?.is_dynamic_pricing ? (
-                        <>
-                            <Input
-                                type="number"
-                                className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
-                                value={item.unit_price_gross || ""}
-                                placeholder="0"
-                                onClick={() => onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
-                                readOnly
-                                onChange={handlePriceChange}
-                            />
-                            <span className="text-[9px] text-muted-foreground leading-none">
-                                Neto: {formatCurrency(item.unit_price_net)}
-                            </span>
-                        </>
+                        <Input
+                            type="number"
+                            className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
+                            value={item.unit_price_gross || ""}
+                            placeholder="0"
+                            onClick={() => onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
+                            readOnly
+                            onChange={handlePriceChange}
+                        />
                     ) : (
-                        <>
-                            <span className="text-xs font-medium">
-                                {formatCurrency(item.unit_price_gross)}
-                            </span>
-                            <span className="text-[9px] text-muted-foreground leading-none">
-                                Neto: {formatCurrency(item.unit_price_net)}
-                            </span>
-                        </>
+                        <span className="text-xs font-medium">
+                            {formatCurrency(item.unit_price_gross)}
+                        </span>
                     )}
+                    <span className="text-[9px] text-muted-foreground leading-none">
+                        Neto: {formatCurrency(item.unit_price_net)}
+                    </span>
                 </div>
             </TableCell>
+
+            {/* Discount */}
+            {showLineDiscount && (
+                <TableCell className="py-2 text-right align-top">
+                    <div className="flex flex-col items-end gap-1">
+                        <Input
+                            type="number"
+                            className={cn(
+                                "h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1",
+                                (item.discount_amount || 0) > 0 && "text-blue-600 font-bold"
+                            )}
+                            value={item.discount_amount || ""}
+                            placeholder="Dscto"
+                            onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
+                            readOnly
+                            onChange={handleDiscountChange}
+                        />
+                        {(item.discount_percentage || 0) > 0 && (
+                            <span className="text-[9px] text-blue-600 font-medium leading-none">
+                                -{item.discount_percentage?.toFixed(1)}%
+                            </span>
+                        )}
+                    </div>
+                </TableCell>
+            )}
 
             {/* Total */}
             <TableCell className="py-2 text-right align-top">
@@ -216,6 +245,7 @@ export const CartItem = memo(CartItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.item === nextProps.item &&
         prevProps.maxQty === nextProps.maxQty &&
-        prevProps.onQuantityChange === nextProps.onQuantityChange
+        prevProps.onQuantityChange === nextProps.onQuantityChange &&
+        prevProps.showLineDiscount === nextProps.showLineDiscount
     )
 })

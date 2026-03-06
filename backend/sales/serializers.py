@@ -35,7 +35,8 @@ class SaleLineSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'product', 'product_id', 'product_name', 'product_code', 'product_type', 'track_inventory', 
             'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
-            'unit_price', 'unit_price_gross', 'tax_rate', 'subtotal', 'quantity_delivered', 
+            'unit_price', 'unit_price_gross', 'tax_rate', 'discount_percentage', 'discount_amount',
+            'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
             'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom',
             'related_note', 'available_stock'
@@ -144,7 +145,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'number', 'customer', 'customer_name', 'date', 'status', 'channel', 'channel_display',
             'notes', 'payment_method', 'delivery_status', 'delivery_date', 'salesperson',
-            'total_net', 'total_tax', 'total', 'effective_total', 'total_paid', 'pending_amount',
+            'total_net', 'total_tax', 'total_discount_amount', 'total', 'effective_total', 'total_paid', 'pending_amount',
             'lines', 'serialized_payments', 'related_documents', 'work_orders', 
             'production_progress', 'has_pending_work_orders', 'pos_session', 'pos_session_display',
             'created_at', 'updated_at'
@@ -237,7 +238,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SaleOrder
-        fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'lines']
+        fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'total_discount_amount', 'lines']
         read_only_fields = ['id', 'number']
 
     def validate(self, attrs):

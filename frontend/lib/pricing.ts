@@ -110,17 +110,27 @@ export const PricingUtils = {
     },
 
     /**
+     * Calcula el monto de descuento desde un porcentaje
+     * @param total - Monto total (bruto o neto)
+     * @param percent - Porcentaje 
+     */
+    calculateDiscountAmount: (total: number, percent: number): number => {
+        return Math.round(total * (percent / 100));
+    },
+
+    /**
      * Calcula totales de línea desde precio BRUTO (para evitar discrepancias)
      * @param quantity - Cantidad
      * @param unitPriceGross - Precio unitario bruto (con IVA)
      * @returns Objeto con gross, net y tax de la línea
      */
-    calculateLineFromGross: (quantity: number, unitPriceGross: number): {
+    calculateLineFromGross: (quantity: number, unitPriceGross: number, discountAmount: number = 0): {
         gross: number;
         net: number;
         tax: number;
     } => {
-        const gross = Math.round(quantity * unitPriceGross);
+        const totalGross = Math.round(quantity * unitPriceGross);
+        const gross = Math.max(0, totalGross - discountAmount);
         const net = Math.round(gross / (1 + TAX_RATE));
         const tax = gross - net;
         return { gross, net, tax };

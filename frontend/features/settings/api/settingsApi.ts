@@ -38,41 +38,20 @@ export const settingsApi = {
      * Fetch sales settings
      */
     getSalesSettings: async (): Promise<SalesSettings> => {
-        const data = await settingsApi.getCurrentSettings()
-        // Extract only sales-related fields
-        const salesFields: (keyof SalesSettings)[] = [
-            'default_revenue_account',
-            'default_service_revenue_account',
-            'default_subscription_revenue_account',
-            'pos_cash_difference_gain_account',
-            'pos_cash_difference_loss_account',
-            'pos_tip_account',
-            'pos_cashback_error_account',
-            'pos_counting_error_account',
-            'pos_system_error_account',
-            'pos_rounding_adjustment_account',
-            'pos_partner_withdrawal_account',
-            'pos_theft_account',
-            'pos_other_inflow_account',
-            'pos_other_outflow_account',
-            'terminal_commission_bridge_account',
-            'terminal_iva_bridge_account',
-            'pos_default_credit_percentage',
-        ]
-        const salesSettings: Partial<SalesSettings> = {}
-        salesFields.forEach(field => {
-            if (field in data) {
-                (salesSettings as any)[field] = (data as any)[field]
-            }
-        })
-        return salesSettings as SalesSettings
+        const { data } = await api.get<SalesSettings>('/sales/settings/current/')
+        // Make sure it matches our interface shape for POS fields
+        return {
+            ...data,
+            pos_enable_line_discounts: data.pos_enable_line_discounts ?? true,
+            pos_enable_total_discounts: data.pos_enable_total_discounts ?? true,
+        }
     },
-
     /**
      * Update sales settings
      */
-    updateSalesSettings: async (payload: SalesSettingsUpdatePayload): Promise<AccountingSettings> => {
-        return settingsApi.updateCurrentSettings(payload)
+    updateSalesSettings: async (payload: SalesSettingsUpdatePayload): Promise<SalesSettings> => {
+        const { data } = await api.patch<SalesSettings>('/sales/settings/current/', payload)
+        return data
     },
 
     // ========== Billing Settings ==========

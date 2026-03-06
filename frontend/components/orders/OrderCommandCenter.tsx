@@ -269,7 +269,7 @@ export function OrderCommandCenter({
                 open={open}
                 onOpenChange={onOpenChange}
                 size="full"
-                className={cn("bg-background/95 backdrop-blur-md border-border transition-all duration-500 h-[80vh] max-h-[80vh]", maxWidth)}
+                className={cn("bg-background/95 backdrop-blur-md border-border transition-all duration-500 h-auto max-h-[90vh]", maxWidth)}
                 contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">

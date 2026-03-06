@@ -45,6 +45,8 @@ export interface CartItem extends Product {
     total_gross: number
     unit_price_net: number
     unit_price_gross: number
+    discount_percentage?: number
+    discount_amount?: number
     uom?: number
     manufacturing_data?: any
     uom_name?: string

@@ -184,6 +184,7 @@ class BillingService:
             payment_method=payment_method,
             total_net=order.total_net,
             total_tax=order.total_tax,
+            total_discount_amount=order.total_discount_amount,
             total=order.total,
             status=status
         )

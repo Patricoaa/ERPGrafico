@@ -772,10 +772,16 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                 <div className="flex flex-col">
                                                                                     <span className="font-bold text-[13px] tracking-tight leading-tight">{item.description || item.product_name}</span>
                                                                                     <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">{item.product_code}</span>
+                                                                                    {parseFloat(item.discount_amount || 0) > 0 && (
+                                                                                        <span className="text-[9px] font-black text-red-600 uppercase mt-1 flex items-center gap-1">
+                                                                                            <span className="bg-red-100 px-1 rounded-sm">DESC. {item.discount_percentage}%</span>
+                                                                                            <span>-{formatCurrency(item.discount_amount)}</span>
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
                                                                             </TableCell>
                                                                             <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
-                                                                            <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price || item.unit_cost)}</TableCell>
+                                                                            <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price_gross || item.unit_price || item.unit_cost)}</TableCell>
                                                                             <TableCell className="text-right font-black text-[14px] text-primary font-mono tracking-tighter px-6">{formatCurrency(item.subtotal)}</TableCell>
                                                                         </TableRow>
                                                                     ))}
@@ -783,6 +789,46 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                             </Table>
                                                         )}
                                                     </div>
+
+                                                    {/* Totals Summary Section */}
+                                                    {(currentType === 'sale_order' || currentType === 'invoice') && data && (
+                                                        <div className="flex justify-end pt-4">
+                                                            <div className="w-full md:w-80 space-y-3 bg-muted/30 p-6 rounded-3xl border border-border/40">
+                                                                <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                                                    <span>Suma de Productos:</span>
+                                                                    <span className="font-mono text-primary">{formatCurrency((data.lines || data.items || []).reduce((acc: number, item: any) => acc + parseFloat(item.subtotal || 0), 0))}</span>
+                                                                </div>
+
+                                                                {parseFloat(data.total_discount_amount || 0) > 0 && (
+                                                                    <div className="flex justify-between items-center text-xs font-bold text-red-600 uppercase tracking-wider bg-red-50/50 p-2 rounded-lg border border-red-100/50">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Plus className="h-3 w-3 rotate-45" />
+                                                                            <span>Descuento Global:</span>
+                                                                        </div>
+                                                                        <span className="font-mono">-{formatCurrency(data.total_discount_amount)}</span>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="pt-2 border-t border-border/60 space-y-2">
+                                                                    <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                                                                        <span>Neto:</span>
+                                                                        <span className="font-mono">{formatCurrency(data.total_net)}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
+                                                                        <span>IVA (19%):</span>
+                                                                        <span className="font-mono">{formatCurrency(data.total_tax)}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="pt-3 border-t-2 border-primary/20 flex justify-between items-center group">
+                                                                    <span className="text-sm font-black text-primary uppercase tracking-tighter">Total a Pagar:</span>
+                                                                    <span className="text-2xl font-black text-primary font-mono tracking-tighter group-hover:scale-105 transition-transform origin-right">
+                                                                        {formatCurrency(data.total)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             {/* Main Content Sections Continued */}

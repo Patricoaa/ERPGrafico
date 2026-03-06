@@ -14,7 +14,7 @@ const SalesSettingsView = lazy(() =>
 
 export default async function SalesSettingsPage({ searchParams }: PageProps) {
     const { tab } = await searchParams
-    const activeTab = tab || "revenue"
+    const activeTab = tab || "income"
 
     return (
         <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
