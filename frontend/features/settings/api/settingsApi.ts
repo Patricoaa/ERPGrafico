@@ -57,6 +57,7 @@ export const settingsApi = {
             'pos_other_outflow_account',
             'terminal_commission_bridge_account',
             'terminal_iva_bridge_account',
+            'pos_default_credit_percentage',
         ]
         const salesSettings: Partial<SalesSettings> = {}
         salesFields.forEach(field => {

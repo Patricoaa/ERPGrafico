@@ -92,13 +92,13 @@ export function OrderSummaryCard({
                     </span>
                 </div>
 
-                {customer?.credit_enabled && (
+                {!customer?.credit_blocked && (
                     <>
                         <Separator className="my-2 opacity-30" />
                         <div className="flex justify-between items-center pt-1">
                             <span className="text-xs font-bold text-muted-foreground">Crédito Disponible</span>
-                            <span className={`font-mono font-bold ${Number(customer.credit_available) < total ? 'text-destructive' : 'text-emerald-600'}`}>
-                                {formatCurrency(Number(customer.credit_available || 0))}
+                            <span className={`font-mono font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-emerald-600'}`}>
+                                {formatCurrency(Number(customer?.credit_available || 0))}
                             </span>
                         </div>
                     </>

@@ -462,15 +462,37 @@ class BillingService:
                 if not contact:
                     raise ValidationError("Se requiere un cliente asociado para asignar crédito.")
                     
-                if not contact.credit_enabled:
-                    raise ValidationError(f"El cliente {contact.name} no tiene crédito habilitado.")
-                    
+                if contact.credit_blocked:
+                    raise ValidationError("El crédito está bloqueado para este cliente.")
+
+                # Fallback Logic: check if we can bypass credit_enabled check
+                from accounting.models import AccountingSettings
+                acc_settings = AccountingSettings.objects.first()
+                fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else 0) / Decimal('100.0')
+                allowed_fallback = order.total * fallback_percentage
+                
+                has_debt = contact.credit_balance_used > 0
+                is_within_fallback = required_credit <= allowed_fallback
+                
+                # Implicit Credit: Check if we are within allowed bounds (Limit or Fallback)
                 if required_credit > contact.credit_available:
-                    raise ValidationError(
-                        f"Límite de crédito excedido. "
-                        f"Crédito requerido: ${required_credit:,.0f}, "
-                        f"Crédito disponible: ${contact.credit_available:,.0f}."
-                    )
+                    # If exceeding limit (or no limit assigned), check if fallback applies
+                    # Fallback requires: NO debt AND within fallback threshold
+                    if not has_debt and is_within_fallback:
+                        # Fallback granted
+                        pass
+                    else:
+                        if contact.credit_limit and contact.credit_limit > 0:
+                            raise ValidationError(
+                                f"Límite de crédito excedido. "
+                                f"Crédito requerido: ${required_credit:,.0f}, "
+                                f"Crédito disponible: ${contact.credit_available:,.0f}."
+                            )
+                        else:
+                            raise ValidationError(
+                                f"El cliente no tiene crédito asignado y el monto "
+                                f"(${required_credit:,.0f}) excede el límite de fallback permitido."
+                            )
         # -------------------------
         
         # 2. Confirm Order

@@ -16,7 +16,7 @@ import {
     Receipt,
     Coins,
     TrendingUp,
-    CloudCheck,
+    Check,
     CloudUpload,
     FileText,
     Users
@@ -141,7 +141,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                         </>
                     ) : (
                         <>
-                            <CloudCheck className="h-3 w-3 text-emerald-500" />
+                            <Check className="h-3 w-3 text-emerald-500" />
                             <span className="text-emerald-600">Cambios guardados</span>
                         </>
                     )}

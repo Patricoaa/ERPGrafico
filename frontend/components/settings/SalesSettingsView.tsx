@@ -1,54 +1,74 @@
 "use client"
 
 import React, { useEffect, useCallback } from "react"
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { toast } from "sonner"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
 import {
     Loader2,
-    CloudCheck,
+    Check,
     CloudUpload,
+    Scale,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { Button } from "@/components/ui/button"
+import { SalesSettings } from "@/features/settings/types"
+
+const accountFieldSchema = z.string().nullable()
 
 const salesSchema = z.object({
-    // Revenue accounts
-    default_revenue_account: z.string().nullable(),
-    default_service_revenue_account: z.string().nullable(),
-    default_subscription_revenue_account: z.string().nullable(),
-    // POS accounts
-    pos_cash_difference_gain_account: z.string().nullable(),
-    pos_cash_difference_loss_account: z.string().nullable(),
-    pos_tip_account: z.string().nullable(),
-    pos_cashback_error_account: z.string().nullable(),
-    pos_counting_error_account: z.string().nullable(),
-    pos_system_error_account: z.string().nullable(),
-    pos_rounding_adjustment_account: z.string().nullable(),
-    pos_partner_withdrawal_account: z.string().nullable(),
-    pos_theft_account: z.string().nullable(),
-    pos_other_inflow_account: z.string().nullable(),
-    pos_other_outflow_account: z.string().nullable(),
-    // Terminal accounts
-    terminal_commission_bridge_account: z.string().nullable(),
-    terminal_iva_bridge_account: z.string().nullable(),
+    default_revenue_account: accountFieldSchema,
+    default_service_revenue_account: accountFieldSchema,
+    default_subscription_revenue_account: accountFieldSchema,
+    pos_cash_difference_gain_account: accountFieldSchema,
+    pos_cash_difference_loss_account: accountFieldSchema,
+    pos_counting_error_account: accountFieldSchema,
+    pos_theft_account: accountFieldSchema,
+    pos_rounding_adjustment_account: accountFieldSchema,
+    pos_tip_account: accountFieldSchema,
+    pos_cashback_error_account: accountFieldSchema,
+    pos_system_error_account: accountFieldSchema,
+    pos_partner_withdrawal_account: accountFieldSchema,
+    pos_other_inflow_account: accountFieldSchema,
+    pos_other_outflow_account: accountFieldSchema,
+    pos_default_credit_percentage: z.coerce.number().min(0).max(100).default(0),
+    terminal_commission_bridge_account: accountFieldSchema,
+    terminal_iva_bridge_account: accountFieldSchema,
 })
 
-type SalesFormValues = z.infer<typeof salesSchema>
+const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<any>, name: string, label: string, accountType: string | string[] }) => (
+    <FormField
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+            <FormItem>
+                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
+                <FormControl>
+                    <AccountSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        accountType={accountType}
+                    />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+        )}
+    />
+)
 
-interface SalesSettingsViewProps {
-    activeTab: string
-}
-
-export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab }) => {
+export function SalesSettingsView({ activeTab }: { activeTab: string }) {
     const { settings, saving, updateSettings } = useSalesSettings()
 
-    const form = useForm<SalesFormValues>({
+    const form = useForm<z.infer<typeof salesSchema>>({
         resolver: zodResolver(salesSchema),
         defaultValues: {
             default_revenue_account: null,
@@ -56,48 +76,54 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
             default_subscription_revenue_account: null,
             pos_cash_difference_gain_account: null,
             pos_cash_difference_loss_account: null,
+            pos_counting_error_account: null,
+            pos_theft_account: null,
+            pos_rounding_adjustment_account: null,
             pos_tip_account: null,
             pos_cashback_error_account: null,
-            pos_counting_error_account: null,
             pos_system_error_account: null,
-            pos_rounding_adjustment_account: null,
             pos_partner_withdrawal_account: null,
-            pos_theft_account: null,
             pos_other_inflow_account: null,
             pos_other_outflow_account: null,
+            pos_default_credit_percentage: 0,
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
         }
     })
 
-    // Update form when settings are loaded
     useEffect(() => {
         if (settings) {
-            const formattedSettings: Partial<SalesFormValues> = {}
-            const keys = Object.keys(salesSchema.shape) as (keyof SalesFormValues)[]
-
-            keys.forEach((key) => {
-                const val = settings[key as keyof typeof settings]
-                if (val === null || val === undefined) {
-                    formattedSettings[key] = null as never
-                } else {
-                    formattedSettings[key] = val.toString() as never
-                }
+            form.reset({
+                default_revenue_account: settings.default_revenue_account?.toString() ?? null,
+                default_service_revenue_account: settings.default_service_revenue_account?.toString() ?? null,
+                default_subscription_revenue_account: settings.default_subscription_revenue_account?.toString() ?? null,
+                pos_cash_difference_gain_account: settings.pos_cash_difference_gain_account?.toString() ?? null,
+                pos_cash_difference_loss_account: settings.pos_cash_difference_loss_account?.toString() ?? null,
+                pos_counting_error_account: settings.pos_counting_error_account?.toString() ?? null,
+                pos_theft_account: settings.pos_theft_account?.toString() ?? null,
+                pos_rounding_adjustment_account: settings.pos_rounding_adjustment_account?.toString() ?? null,
+                pos_tip_account: settings.pos_tip_account?.toString() ?? null,
+                pos_cashback_error_account: settings.pos_cashback_error_account?.toString() ?? null,
+                pos_system_error_account: settings.pos_system_error_account?.toString() ?? null,
+                pos_partner_withdrawal_account: settings.pos_partner_withdrawal_account?.toString() ?? null,
+                pos_other_inflow_account: settings.pos_other_inflow_account?.toString() ?? null,
+                pos_other_outflow_account: settings.pos_other_outflow_account?.toString() ?? null,
+                pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
+                terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
+                terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
             })
-
-            form.reset(formattedSettings as SalesFormValues)
         }
     }, [settings, form])
 
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
-    const onSubmit = useCallback(async (data: SalesFormValues) => {
+    const onSubmit = useCallback(async (data: any) => {
         try {
-            await updateSettings(data)
+            await updateSettings(data as SalesSettings)
             form.reset(data)
-        } catch {
-            // Error already handled by hook
+        } catch (error) {
+            // Error handled by hook
         }
     }, [updateSettings, form])
 
@@ -112,48 +138,53 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
 
 
 
-    const tabs = [
-        { value: "revenue", label: "Ingresos", iconName: "dollar-sign", href: "/settings/sales?tab=revenue" },
-        { value: "pos", label: "Control POS", iconName: "store", href: "/settings/sales?tab=pos" },
-        { value: "terminals", label: "Terminales", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
-    ]
-
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-8 pb-12">
             <PageHeader
                 title="Configuración de Ventas"
-                description="Gestione las cuentas de ingresos, control de caja POS y terminales de pago."
-
+                description="Gestione los parámetros generales de ventas, cuentas contables y comportamiento del POS"
+                icon={Scale}
             >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                    {saving ? (
-                        <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
-                            <span className="text-blue-600">Guardando cambios...</span>
-                        </>
-                    ) : (
-                        <>
-                            <CloudCheck className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-600">Cambios guardados</span>
-                        </>
-                    )}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
+                        {saving ? (
+                            <>
+                                <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
+                                <span className="text-blue-600">Guardando cambios...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Check className="h-3 w-3 text-emerald-500" />
+                                <span className="text-emerald-600">Cambios guardados</span>
+                            </>
+                        )}
+                    </div>
                 </div>
             </PageHeader>
 
-            <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+            <ServerPageTabs
+                tabs={[
+                    { value: "income", label: "Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
+                    { value: "pos", label: "Control POS", iconName: "layout-grid", href: "/settings/sales?tab=pos" },
+                    { value: "terminals", label: "Terminales", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
+                ]}
+                activeValue={activeTab}
+                maxWidth="max-w-xl"
+            />
 
+            <div className="mt-6">
                 <Form {...form}>
-                    <form className="space-y-6">
-                        <TabsContent value="revenue" className="space-y-6">
+                    <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
+
+                        <TabsContent value="income" className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Cuentas de Ingresos</CardTitle>
-                                    <CardDescription>Cuentas predeterminadas para diferentes tipos de productos</CardDescription>
+                                    <CardTitle className="text-lg text-emerald-600">Cuentas de Ingresos Naturales</CardTitle>
+                                    <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <AccountField form={form} name="default_revenue_account" label="Ingresos por Ventas (General)" accountType="INCOME" />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
                                         <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
                                         <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
                                     </div>
@@ -164,11 +195,11 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
                         <TabsContent value="pos" className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-emerald-600">Control de Caja POS</CardTitle>
-                                    <CardDescription>Cuentas para diferencias y movimientos manuales de caja</CardDescription>
+                                    <CardTitle className="text-lg text-blue-600">Cuentas Contables POS</CardTitle>
+                                    <CardDescription>Configure las cuentas para el registro automático de transacciones de punto de venta</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante General" accountType="INCOME" />
                                         <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante General" accountType="EXPENSE" />
                                         <AccountField form={form} name="pos_counting_error_account" label="Error de Conteo" accountType="EXPENSE" />
@@ -177,10 +208,48 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
                                         <AccountField form={form} name="pos_tip_account" label="Propinas" accountType="INCOME" />
                                         <AccountField form={form} name="pos_cashback_error_account" label="Vuelto Incorrecto" accountType="EXPENSE" />
                                         <AccountField form={form} name="pos_system_error_account" label="Error de Sistema" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio" accountType="ASSET" />
+                                        <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio" accountType="EQUITY" />
                                         <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos" accountType="INCOME" />
                                         <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
                                     </div>
+
+                                    <Separator className="my-6" />
+
+                                    <Card className="bg-muted/30 border-dashed">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
+                                                <Scale className="h-4 w-4" />
+                                                Crédito Fallback Automático
+                                            </CardTitle>
+                                            <CardDescription className="text-[11px]">
+                                                Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <FormField
+                                                control={form.control}
+                                                name="pos_default_credit_percentage"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-1">
+                                                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">% de Crédito Fallback</FormLabel>
+                                                        <FormControl>
+                                                            <div className="relative max-w-[200px]">
+                                                                <Input
+                                                                    type="number"
+                                                                    {...field}
+                                                                    className="pr-8 h-9 font-bold text-center"
+                                                                    min={0}
+                                                                    max={100}
+                                                                />
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </CardContent>
+                                    </Card>
                                 </CardContent>
                             </Card>
                         </TabsContent>
@@ -197,40 +266,9 @@ export const SalesSettingsView: React.FC<SalesSettingsViewProps> = ({ activeTab 
                                 </CardContent>
                             </Card>
                         </TabsContent>
-                    </form>
+                    </Tabs>
                 </Form>
-            </Tabs>
+            </div>
         </div>
-    )
-}
-
-export default SalesSettingsView
-
-interface AccountFieldProps {
-    form: UseFormReturn<SalesFormValues>
-    name: Path<SalesFormValues>
-    label: string
-    accountType: string
-}
-
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
     )
 }

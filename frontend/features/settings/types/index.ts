@@ -7,6 +7,18 @@ export interface SalesSettings {
     default_service_revenue_account: string | null
     default_subscription_revenue_account: string | null
     // POS accounts
+    pos_default_customer: number | null
+    pos_default_warehouse: number | null
+    pos_default_journal: number | null
+    pos_cash_account: number | null
+    pos_bank_account: number | null
+    pos_receivable_account: number | null
+    pos_sales_account: number | null
+    pos_tax_account: number | null
+    pos_discount_account: number | null
+    pos_rounding_account: number | null
+    pos_cost_of_goods_sold_account: number | null
+    pos_inventory_account: number | null
     pos_cash_difference_gain_account: string | null
     pos_cash_difference_loss_account: string | null
     pos_tip_account: string | null
@@ -21,6 +33,8 @@ export interface SalesSettings {
     // Terminal accounts
     terminal_commission_bridge_account: string | null
     terminal_iva_bridge_account: string | null
+    // POS Configurations
+    pos_default_credit_percentage: number
 }
 
 export type SalesSettingsUpdatePayload = Partial<SalesSettings>

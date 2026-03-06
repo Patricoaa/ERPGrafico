@@ -645,6 +645,14 @@ class AccountingSettings(models.Model):
         help_text=_("Cuenta para registrar diferencias por redondeo en el POS.")
     )
     
+    pos_default_credit_percentage = models.DecimalField(
+        _("Porcentaje de Crédito Fallback POS"), 
+        max_digits=5, 
+        decimal_places=2, 
+        default=0,
+        help_text=_("Porcentaje de la venta que se puede asignar como crédito por defecto si el cliente no tiene línea de crédito.")
+    )
+    
 
 
     # Advanced Accounting

@@ -87,7 +87,7 @@ export function ContactsClientView() {
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
-                            {(contact.credit_enabled || Number(contact.credit_balance_used || 0) > 0) && (
+                            {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
@@ -102,8 +102,8 @@ export function ContactsClientView() {
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <div className="flex flex-col gap-1">
-                                                {contact.credit_enabled && (
-                                                    <span>Límite Habilitado: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
+                                                {Number(contact.credit_limit || 0) > 0 && (
+                                                    <span>Límite de Crédito: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
                                                 )}
                                                 {Number(contact.credit_balance_used || 0) > 0 && (
                                                     <span className="font-bold text-amber-600">

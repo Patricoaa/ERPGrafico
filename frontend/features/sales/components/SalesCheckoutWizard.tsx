@@ -136,6 +136,17 @@ export function SalesCheckoutWizard({
         (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
     );
 
+    const [salesSettings, setSalesSettings] = useState<any>(null)
+
+    // Fetch sales settings for credit fallback
+    useEffect(() => {
+        if (open) {
+            api.get('/accounting/settings/current/')
+                .then(res => setSalesSettings(res.data))
+                .catch(err => console.error("Error fetching sales settings:", err))
+        }
+    }, [open])
+
     // Auto-suggest delivery date if fabricable (includes any mfg or BOM)
     useEffect(() => {
         const fabricableLines = currentOrderLines.filter((line: any) =>
@@ -408,9 +419,29 @@ export function SalesCheckoutWizard({
                         return { isValid: false };
                     }
 
-                    // Treat credit as 0 if not enabled, which will trigger the approval flow
-                    const creditAvailable = selectedCustomer.credit_enabled ? Number(selectedCustomer.credit_available || 0) : 0;
+                    // 1. Check if credit is blocked for this contact
+                    if (selectedCustomer.credit_blocked) {
+                        toast.error("El crédito está bloqueado para este cliente.", {
+                            description: "Se requiere pago inmediato de la totalidad."
+                        });
+                        return { isValid: false };
+                    }
+
+                    // 2. Check secured credit limit
+                    // Credit is now implicit. If a limit is assigned, use it.
+                    const creditAvailable = Number(selectedCustomer.credit_available || 0);
+
                     if (requiredCredit > creditAvailable) {
+                        // 3. Fallback logic: Only if NO outstanding debt exists
+                        const hasDebt = Number(selectedCustomer.credit_balance_used || 0) > 0;
+                        const fallbackPercentage = (Number(salesSettings?.pos_default_credit_percentage) || 0) / 100;
+                        const allowedFallback = currentTotal * fallbackPercentage;
+
+                        if (!hasDebt && requiredCredit <= allowedFallback) {
+                            // Fallback applies!
+                            return { isValid: true };
+                        }
+
                         // Instead of a hard error, we allow an approval flow
                         setCreditApprovalRequired(true)
                         return { isValid: false, requireApproval: true };
@@ -711,7 +742,7 @@ export function SalesCheckoutWizard({
                                         <AlertCircle className="w-5 h-5" />
                                     </div>
                                     <div className="text-left">
-                                        <h3 className="text-sm font-bold text-warning-foreground">Crédito insuficiente</h3>
+                                        <h3 className="text-sm font-bold text-warning">Crédito insuficiente</h3>
                                         <p className="text-xs text-muted-foreground">
                                             Requiere autorización de un supervisor para continuar.
                                         </p>

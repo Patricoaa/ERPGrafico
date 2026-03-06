@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {
     Loader2,
-    CloudCheck,
+    Check,
     CloudUpload,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -128,7 +128,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                         </>
                     ) : (
                         <>
-                            <CloudCheck className="h-3 w-3 text-emerald-500" />
+                            <Check className="h-3 w-3 text-emerald-500" />
                             <span className="text-emerald-600">Cambios guardados</span>
                         </>
                     )}

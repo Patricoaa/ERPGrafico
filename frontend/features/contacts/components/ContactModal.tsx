@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
@@ -54,6 +54,7 @@ const contactSchema = z.object({
     credit_enabled: z.boolean().optional(),
     credit_limit: z.coerce.number().nullable().optional(),
     credit_days: z.coerce.number().nullable().optional(),
+    credit_blocked: z.boolean().default(false),
 })
 
 interface ContactModalProps {
@@ -92,6 +93,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             credit_enabled: !!contact.credit_enabled,
             credit_limit: contact.credit_limit || null,
             credit_days: contact.credit_days || 30,
+            credit_blocked: !!contact.credit_blocked,
         } : {
             name: "",
             tax_id: "",
@@ -99,12 +101,12 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             phone: "",
             address: "",
             city: "",
-
             is_default_customer: false,
             is_default_vendor: false,
             credit_enabled: false,
             credit_limit: null,
             credit_days: 30,
+            credit_blocked: false,
         },
     })
 
@@ -118,7 +120,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             const cust = custRes.data.results?.[0] || custRes.data?.[0]
             const vend = vendRes.data.results?.[0] || vendRes.data?.[0]
 
-            // Only set if they are different from the current contact being edited
             if (cust && cust.id !== contact?.id) setDefaultCustomer(cust)
             else setDefaultCustomer(null)
 
@@ -130,11 +131,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         }
     }
 
-
-
     useEffect(() => {
         if (open && contact?.id && !contact.name) {
-            // Fetch full contact details if only ID is provided
             api.get(`/contacts/${contact.id}/`)
                 .then(res => {
                     form.reset({
@@ -150,6 +148,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         credit_enabled: !!res.data.credit_enabled,
                         credit_limit: res.data.credit_limit || null,
                         credit_days: res.data.credit_days || 30,
+                        credit_blocked: !!res.data.credit_blocked,
                     })
                 })
                 .catch(err => {
@@ -181,7 +180,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         fetchDefaults()
 
         if (contact && contact.name) {
-            // Full contact provided
             form.reset({
                 name: contact.name,
                 tax_id: contact.tax_id || "",
@@ -195,9 +193,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 credit_enabled: !!contact.credit_enabled,
                 credit_limit: contact.credit_limit || null,
                 credit_days: contact.credit_days || 30,
+                credit_blocked: !!contact.credit_blocked,
             })
         } else if (!contact?.id) {
-            // New contact
             form.reset({
                 name: "",
                 tax_id: "",
@@ -211,6 +209,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 credit_enabled: false,
                 credit_limit: null,
                 credit_days: 30,
+                credit_blocked: false,
             })
         }
     }, [contact, open, form.reset])
@@ -230,7 +229,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
-        // Check if we are setting a new default and there's already one
         if (values.is_default_customer && defaultCustomer && defaultCustomer.id !== contact?.id) {
             setPendingValues(values)
             setConfirmReplacement({ type: 'customer', name: defaultCustomer.name })
@@ -280,8 +278,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 }
                 size="full"
                 hideScrollArea={true}
-                footer={activeTab === "profile" && (
-                    <div className="flex justify-end gap-3 w-full px-6 py-4">
+                footer={
+                    <div className="flex justify-end gap-3 w-full px-6 py-3 border-t border-border/40">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>
                             Cancelar
                         </Button>
@@ -289,76 +287,75 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                             {contact ? "Guardar Cambios" : "Crear Contacto"}
                         </Button>
                     </div>
-                )}
+                }
             >
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b bg-muted/5">
-                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
-                            <TabsTrigger
-                                value="profile"
-                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
-                            >
-                                <User className="h-4 w-4" />
-                                Perfil
-                            </TabsTrigger>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-hidden">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                            <div className="px-6 border-b bg-muted/5">
+                                <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
+                                    <TabsTrigger
+                                        value="profile"
+                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
+                                    >
+                                        <User className="h-4 w-4" />
+                                        Perfil
+                                    </TabsTrigger>
 
-                            <TabsTrigger
-                                value="sales"
-                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <ShoppingCart className="h-4 w-4" />
-                                    Cliente
-                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                        {insightsData?.sales?.count || 0}
-                                    </Badge>
-                                </div>
-                            </TabsTrigger>
+                                    <TabsTrigger
+                                        value="sales"
+                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <ShoppingCart className="h-4 w-4" />
+                                            Cliente
+                                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                                {insightsData?.sales?.count || 0}
+                                            </Badge>
+                                        </div>
+                                    </TabsTrigger>
 
-                            <TabsTrigger
-                                value="purchases"
-                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Package className="h-4 w-4" />
-                                    Proveedor
-                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                        {insightsData?.purchases?.count || 0}
-                                    </Badge>
-                                </div>
-                            </TabsTrigger>
+                                    <TabsTrigger
+                                        value="purchases"
+                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Package className="h-4 w-4" />
+                                            Proveedor
+                                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                                {insightsData?.purchases?.count || 0}
+                                            </Badge>
+                                        </div>
+                                    </TabsTrigger>
 
-                            <TabsTrigger
-                                value="work_orders"
-                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Wand2 className="h-4 w-4" />
-                                    Relacionado
-                                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                        {insightsData?.work_orders?.count || 0}
-                                    </Badge>
-                                </div>
-                            </TabsTrigger>
+                                    <TabsTrigger
+                                        value="work_orders"
+                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Wand2 className="h-4 w-4" />
+                                            Relacionado
+                                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                                {insightsData?.work_orders?.count || 0}
+                                            </Badge>
+                                        </div>
+                                    </TabsTrigger>
 
-                            <TabsTrigger
-                                value="credit"
-                                className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
-                            >
-                                <CreditCard className="h-4 w-4" />
-                                Línea de Crédito
-                            </TabsTrigger>
-                        </TabsList>
-                    </div>
+                                    <TabsTrigger
+                                        value="credit"
+                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
+                                    >
+                                        <CreditCard className="h-4 w-4" />
+                                        Línea de Crédito
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
 
-                    <div className="flex-1 flex overflow-hidden">
-                        {/* Main Content Area */}
-                        <div className="flex-1 flex flex-col min-w-0 border-r">
-                            <div className="flex-1 flex flex-col overflow-y-auto p-6 scrollbar-thin">
-                                <TabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
-                                    <div className="p-8 pb-32">
-                                        <Form {...form}>
-                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <div className="flex-1 flex overflow-hidden min-h-0">
+                                <div className="flex-1 flex flex-col min-w-0 border-r overflow-y-auto scrollbar-thin">
+                                    <TabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
+                                        <div className="p-8 pb-32">
+                                            <div className="space-y-6">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="md:col-span-2 flex items-center gap-8 p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/10">
                                                         <FormField
@@ -492,51 +489,65 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                             </FormItem>
                                                         )}
                                                     />
-
-
                                                 </div>
-                                            </form>
-                                        </Form>
-                                    </div>
-                                </TabsContent>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
-                                <TabsContent value="credit" className="h-full m-0 p-0 border-0 outline-none">
-                                    <div className="p-8 pb-32">
-
-
-                                        <Form {...form}>
-                                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                                                {/* Enabler Switch */}
-                                                <div className="p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/10 flex items-center justify-between">
-                                                    <div>
-                                                        <h4 className="font-semibold text-primary/80">Habilitar Pago a Crédito</h4>
-                                                        <p className="text-xs font-medium text-muted-foreground">Permite al cliente pagar sus compras con cargo a una línea de crédito.</p>
+                                    <TabsContent value="credit" className="h-full m-0 p-0 border-0 outline-none">
+                                        <div className="p-8 pb-32">
+                                            <div className="space-y-8">
+                                                {/* Status Banner */}
+                                                {form.watch("credit_blocked") && (
+                                                    <div className="bg-red-600 p-6 rounded-2xl flex items-center gap-4 animate-in zoom-in-95 duration-300">
+                                                        <div className="p-3 bg-white/20 rounded-xl">
+                                                            <Banknote className="h-8 w-8 text-white" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-white font-black text-lg uppercase tracking-tight">Crédito Restringido</h3>
+                                                            <p className="text-white/80 text-sm font-medium">Este contacto tiene prohibido el uso de crédito. **Requiere pago inmediato en caja.**</p>
+                                                        </div>
                                                     </div>
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="credit_enabled"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                                <FormControl>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <Checkbox
-                                                                            id="credit_enabled"
-                                                                            checked={field.value}
-                                                                            onCheckedChange={field.onChange}
-                                                                            className="h-5 w-5"
-                                                                        />
-                                                                        <label htmlFor="credit_enabled" className="text-sm font-medium leading-none cursor-pointer">
-                                                                            {field.value ? "Activado" : "Desactivado"}
-                                                                        </label>
-                                                                    </div>
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                )}
+
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    {/* Blocker Switch */}
+                                                    <div className="p-4 bg-red-500/5 rounded-2xl border border-dashed border-red-500/10 flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 bg-red-100 rounded-lg">
+                                                                <Scale className="h-4 w-4 text-red-600" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-semibold text-red-900 text-sm">Bloquear Crédito</h4>
+                                                                <p className="text-[10px] text-red-700/70">Prohibe cualquier tipo de crédito (aprobado o fallback).</p>
+                                                            </div>
+                                                        </div>
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="credit_blocked"
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                                    <FormControl>
+                                                                        <div className="flex items-center space-x-2">
+                                                                            <Checkbox
+                                                                                id="credit_blocked"
+                                                                                checked={field.value}
+                                                                                onCheckedChange={field.onChange}
+                                                                                className="h-5 w-5 border-red-200 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                                                            />
+                                                                            <label htmlFor="credit_blocked" className="text-xs font-bold leading-none cursor-pointer text-red-700">
+                                                                                {field.value ? "BLOQUEADO" : "LIBRE"}
+                                                                            </label>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 {/* Conditional Fields */}
-                                                {form.watch("credit_enabled") && (
+                                                {!form.watch("credit_blocked") && (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-1">
                                                         <FormField
                                                             control={form.control}
@@ -603,7 +614,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Credit Ledger Table */}
                                                                 <div className="mt-8">
                                                                     <CreditLedgerTable
                                                                         data={ledgerData}
@@ -614,55 +624,53 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         )}
                                                     </div>
                                                 )}
-                                            </form>
-                                        </Form>
-                                    </div>
-                                </TabsContent>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
-                                <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.sales?.orders || []}
-                                        type="sale"
-                                        title="Historial de Ventas (NV)"
-                                        icon={ShoppingCart}
-                                    />
-                                </TabsContent>
+                                    <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.sales?.orders || []}
+                                            type="sale"
+                                            title="Historial de Ventas (NV)"
+                                            icon={ShoppingCart}
+                                        />
+                                    </TabsContent>
 
-                                <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.purchases?.orders || []}
-                                        type="purchase"
-                                        title="Historial de Compras (OC)"
-                                        icon={Package}
-                                    />
-                                </TabsContent>
+                                    <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.purchases?.orders || []}
+                                            type="purchase"
+                                            title="Historial de Compras (OC)"
+                                            icon={Package}
+                                        />
+                                    </TabsContent>
 
-                                <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.work_orders?.orders || []}
-                                        type="work_order"
-                                        title="Historial de OTs"
-                                        icon={Wand2}
-                                    />
-                                </TabsContent>
-                            </div>
-                        </div>
-
-                        {/* Always Visible Sidebar */}
-                        {/* Always Visible Sidebar */}
-                        <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden">
-                            {contact ? (
-                                <ActivitySidebar entityId={contact.id} entityType="contact" />
-                            ) : (
-                                <div className="h-full p-8 flex items-center justify-center text-center bg-muted/10 rounded-xl border border-dashed m-6">
-                                    <p className="text-xs text-muted-foreground italic">
-                                        El historial de actividad estará disponible una vez que se cree el contacto.
-                                    </p>
+                                    <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.work_orders?.orders || []}
+                                            type="work_order"
+                                            title="Historial de OTs"
+                                            icon={Wand2}
+                                        />
+                                    </TabsContent>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </Tabs>
+
+                                <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden">
+                                    {contact ? (
+                                        <ActivitySidebar entityId={contact.id} entityType="contact" />
+                                    ) : (
+                                        <div className="h-full p-8 flex items-center justify-center text-center bg-muted/10 rounded-xl border border-dashed m-6">
+                                            <p className="text-xs text-muted-foreground italic">
+                                                El historial de actividad estará disponible una vez que se cree el contacto.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </Tabs>
+                    </form>
+                </Form>
 
                 <ActionConfirmModal
                     open={isConfirmModalOpen}
@@ -685,7 +693,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         </div>
                     }
                 />
-            </BaseModal>
+            </BaseModal >
         </>
     )
 }

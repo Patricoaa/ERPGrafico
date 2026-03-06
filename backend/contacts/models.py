@@ -49,6 +49,7 @@ class Contact(models.Model):
     credit_enabled = models.BooleanField(_("Crédito Habilitado"), default=False)
     credit_limit = models.DecimalField(_("Límite de Crédito"), max_digits=14, decimal_places=0, null=True, blank=True)
     credit_days = models.IntegerField(_("Días Plazo"), default=30, null=True, blank=True)
+    credit_blocked = models.BooleanField(_("Crédito Bloqueado"), default=False, help_text=_("Si se marca, el contacto no podrá usar crédito bajo ninguna circunstancia."))
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
