@@ -172,6 +172,12 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         """
         instance = self.get_object()
         
+        # Get all relevant product IDs (self + variants)
+        # This ensures that insights for a "Template" product aggregate its variants.
+        product_ids = [instance.id]
+        if instance.has_variants:
+            product_ids += list(instance.variants.values_list('id', flat=True))
+
         # 1. Price History (Calculated from HistoricalRecords)
         history = instance.history.select_related('history_user').all().order_by('history_date')
         price_history = []
@@ -189,21 +195,20 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 last_cost = h.cost_price
         price_history.reverse()
 
-        # 2. Kardex (Recent Stock Moves)
+        # 2. Kardex (Recent Stock Moves) - Including variants
         from inventory.models import StockMove
-        moves = StockMove.objects.filter(product=instance).select_related(
-            'warehouse', 'uom'
+        moves = StockMove.objects.filter(product_id__in=product_ids).select_related(
+            'warehouse', 'uom', 'product'
         ).prefetch_related(
             'sale_delivery_line',
             'purchase_receipt_line',
             'sale_return_line',
             'purchase_return_line'
-        ).all().order_by('-date', '-id')[:50]
+        ).all().order_by('-date', '-id')[:100]
         
         kardex = []
         for m in moves:
             unit_price = 0
-            # Try to get price/cost from related lines
             if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
                 unit_price = float(m.sale_delivery_line.unit_price)
             elif hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
@@ -213,9 +218,18 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
                 unit_price = float(m.purchase_return_line.unit_cost)
             
-            # If it's an adjustment, we don't have a direct line link in these relations,
-            # but we might have it in the source_quantity if it was manual (handled by StockService)
-            # However, for now, we rely on these mapped relations which cover 95% of cases.
+            # Fallback for manual adjustments or internal moves
+            # We use the cost_price at the moment of the move if possible, 
+            # but since we don't have historical stock move cost, we use the current product cost
+            # or the cost that WAS recorded in the history around that date.
+            if unit_price == 0:
+                 # If it's a consumption (OUT) or adjustment, show the product cost
+                 unit_price = float(m.product.cost_price)
+
+            description = m.description
+            if instance.has_variants and m.product_id != instance.id:
+                variant_name = m.product.variant_display_name or m.product.name
+                description = f"[{variant_name}] {description}"
 
             kardex.append({
                 'date': m.date,
@@ -224,15 +238,15 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 'unit_price': unit_price,
                 'total_price': abs(float(m.quantity) * unit_price),
                 'warehouse': m.warehouse.name,
-                'description': m.description,
+                'description': description,
                 'uom': m.uom.name if m.uom else ""
             })
 
-        # 3. Sales Analysis (from CONFIRMED deliveries)
+        # 3. Sales Analysis (from CONFIRMED deliveries) - Including variants
         from sales.models import SaleDeliveryLine
         from django.db.models import Avg, Sum, F
         sales_stats = SaleDeliveryLine.objects.filter(
-            product=instance, 
+            product_id__in=product_ids, 
             delivery__status='CONFIRMED'
         ).aggregate(
             avg_price=Avg('unit_price'),
@@ -242,18 +256,25 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             total_cost_basis=Sum(F('quantity') * F('unit_cost'))
         )
         
-        # 4. Production Analysis (Consumption in OTs)
+        # 4. Production Analysis (Consumption in OTs) - Including variants
         from production.models import ProductionConsumption
         consumptions = ProductionConsumption.objects.filter(
-            product=instance
-        ).select_related('work_order').all().order_by('-date')[:20]
+            product_id__in=product_ids
+        ).select_related('work_order', 'product').all().order_by('-date')[:20]
         
-        production_usage = [{
-            'date': c.date,
-            'ot_number': c.work_order.number,
-            'quantity': float(c.quantity),
-            'description': f"Consumo en OT-{c.work_order.number}"
-        } for c in consumptions]
+        production_usage = []
+        for c in consumptions:
+            desc = f"Consumo en OT-{c.work_order.number}"
+            if instance.has_variants and c.product_id != instance.id:
+                variant_name = c.product.variant_display_name or c.product.name
+                desc = f"[{variant_name}] {desc}"
+                
+            production_usage.append({
+                'date': c.date,
+                'ot_number': c.work_order.number,
+                'quantity': float(c.quantity),
+                'description': desc
+            })
 
         return Response({
             'price_history': price_history,
@@ -267,6 +288,7 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             },
             'production_usage': production_usage
         })
+
 
     @action(detail=True, methods=['post'])
     def generate_variants(self, request, pk=None):

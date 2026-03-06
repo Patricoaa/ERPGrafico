@@ -10,7 +10,8 @@ from accounting.models import Account, AccountType, AccountingSettings, JournalE
 from accounting.services import AccountingService
 from inventory.models import (
     ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
-    PricingRule, Subscription, ProductAttribute, ProductAttributeValue
+    PricingRule, Subscription, ProductAttribute, ProductAttributeValue,
+    ReplenishmentProposal, ReorderingRule, CustomFieldTemplate, ProductCustomField
 )
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
@@ -188,8 +189,10 @@ class Command(BaseCommand):
                     self.stdout.write(f"    - Table for {name} does not exist, skipping.")
                     return
                 self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
-                # We don't raise here to allow the rest of the purge to continue
-                # if we are in a fresh system state.
+
+        # 0. System & Logs
+        from core.models import ActionLog
+        _safe_delete(ActionLog, "ActionLog")
 
         # 1. Workflows & Transients
         _safe_delete(NoteWorkflow, "NoteWorkflow")
@@ -262,6 +265,12 @@ class Command(BaseCommand):
         except:
             pass
 
+        # 9.5 Replenishment & Rules
+        _safe_delete(ReplenishmentProposal, "ReplenishmentProposal")
+        _safe_delete(ReorderingRule, "ReorderingRule")
+        _safe_delete(ProductCustomField, "ProductCustomField")
+        _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
+
         # 10. Master Data & Basics
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
@@ -275,6 +284,22 @@ class Command(BaseCommand):
         _safe_delete(Account, "Account")
         _safe_delete(AccountingPeriod, "AccountingPeriod")
         _safe_delete(TaxPeriod, "TaxPeriod")
+
+        # 11. Clear History (Comprehensive)
+        self.stdout.write("  Clearing ALL Historical Records...")
+        historical_models = [
+            Product, StockMove, SaleOrder, PurchaseOrder, Invoice, JournalEntry,
+            Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement
+        ]
+        for model in historical_models:
+            if hasattr(model, 'history'):
+                try:
+                    model.history.model.objects.all().delete()
+                    self.stdout.write(f"    - {model.__name__} History cleared.")
+                except Exception as e:
+                    self.stdout.write(f"    - Could not clear {model.__name__} history: {str(e)}")
+
+        self.stdout.write(self.style.SUCCESS("Purge completed successfully."))
 
     def _get_account_references(self):
         # We fetch accounts by code as defined in the modernize IFRS service
@@ -745,6 +770,8 @@ class Command(BaseCommand):
             )
 
             # Update product cost PMP
+            # We set the cost_price DIRECTLY. Since the StockMove also exists, 
+            # this represents the cost of that move.
             product.cost_price = cost
             product.save()
 

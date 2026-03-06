@@ -210,23 +210,23 @@ from django.utils import timezone
 
 # FECHA DE PRUEBA: Cambia esto a la fecha que quieras simular
 # Ejemplo: 15 de Abril de 2026
-MOCK_DATE = datetime.datetime(2026, 11, 15, tzinfo=datetime.timezone.utc)
+#MOCK_DATE = datetime.datetime(2026, 11, 15, tzinfo=datetime.timezone.utc)
 
 # Activa el "Viaje en el tiempo" de forma segura para migraciones
 # Usamos una función con nombre en lugar de lambda para que sea serializable
-def get_mocked_now():
-    return MOCK_DATE
+#def get_mocked_now():
+#    return MOCK_DATE
 
 # No aplicar el mock durante la generación de migraciones para evitar problemas de serialización
 import sys
-if 'makemigrations' not in sys.argv and 'migrate' not in sys.argv:
-    timezone.now = get_mocked_now
-    print(f"\n[TESTING MODE] System clock fixed to {MOCK_DATE}\n")
-else:
-    print(f"\n[MIGRATION MODE] Mock date disabled for serialization safety.\n")
+#if 'makemigrations' not in sys.argv and 'migrate' not in sys.argv:
+#    timezone.now = get_mocked_now
+#    print(f"\n[TESTING MODE] System clock fixed to {MOCK_DATE}\n")
+#else:
+#    print(f"\n[MIGRATION MODE] Mock date disabled for serialization safety.\n")
 
 #
 # 1. Configurar la zona horaria real
-#TIME_ZONE = 'America/Santiago'  # Ajusta según tu ubicación
-#USE_TZ = True  # Mantener en True para manejo profesional de zonas horarias
+TIME_ZONE = 'America/Santiago'  # Ajusta según tu ubicación
+USE_TZ = True  # Mantener en True para manejo profesional de zonas horarias
 #
