@@ -113,10 +113,15 @@ class DraftCartViewSet(viewsets.ModelViewSet):
             
             serializer = self.get_serializer(draft)
             return Response(serializer.data)
-        except (ValueError, DraftCart.DoesNotExist) as e:
+        except ValueError as e:
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except DraftCart.DoesNotExist:
+            return Response(
+                {"error": "Borrador no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
             )
     
     def destroy(self, request, pk=None):

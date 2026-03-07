@@ -208,18 +208,23 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         
         kardex = []
         for m in moves:
-            # Priority 1: Transaction-linked price (most accurate, from actual invoice/delivery line)
-            unit_price = 0
-            if hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
-                unit_price = float(m.purchase_receipt_line.unit_cost)
-            elif hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
-                unit_price = float(m.sale_delivery_line.unit_price)
-            elif hasattr(m, 'sale_return_line') and m.sale_return_line:
-                unit_price = float(m.sale_return_line.unit_price)
-            elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
-                unit_price = float(m.purchase_return_line.unit_cost)
+            # Priority 1: StockMove's own unit_cost (represents the actual capitalized valuation)
+            # We prioritize this for IN moves to show the gross cost for Boletas.
+            unit_price = float(m.unit_cost or 0)
             
-            # Priority 2: Frozen unit_cost stored directly on the StockMove at creation time
+            # Priority 2: Transaction-linked price if move cost is 0 or it's an OUT move
+            # For OUT moves, we usually want the Sale Price, not the COGS.
+            if unit_price == 0 or m.move_type == 'OUT':
+                if hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
+                    unit_price = float(m.purchase_receipt_line.unit_cost)
+                elif hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
+                    unit_price = float(m.sale_delivery_line.unit_price)
+                elif hasattr(m, 'sale_return_line') and m.sale_return_line:
+                    unit_price = float(m.sale_return_line.unit_price)
+                elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
+                    unit_price = float(m.purchase_return_line.unit_cost)
+            
+            # Fallback to StockMove cost if still 0 (e.g. legacy data)
             if unit_price == 0 and m.unit_cost:
                 unit_price = float(m.unit_cost)
             

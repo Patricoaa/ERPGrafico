@@ -10,9 +10,11 @@ import api from '@/lib/api'
 
 export interface WizardState {
     step: number
-    dte?: any
-    payment?: any
-    delivery?: any
+    dteData?: any
+    paymentData?: any
+    deliveryData?: any
+    approvalTaskId?: number | null
+    isWaitingApproval?: boolean
 }
 
 interface POSContextValue {

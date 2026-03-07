@@ -394,7 +394,8 @@ class PurchasingService:
 
         # 1 & 2 & 4. Business Logic: Stock, Costs, and PO status
         # Use .all() to avoid caching issues with filters if the invoice was just created
-        has_boleta = any(inv.dte_type == 'BOLETA' for inv in receipt.purchase_order.invoices.all())
+        from billing.models import Invoice
+        has_boleta = any(inv.dte_type == Invoice.DTEType.BOLETA for inv in receipt.purchase_order.invoices.all())
         
         from inventory.models import StockMove
         print(f"DEBUG: has_boleta={has_boleta}, StockMove fields={[f.name for f in StockMove._meta.get_fields()]}")

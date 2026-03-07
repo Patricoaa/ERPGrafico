@@ -128,7 +128,7 @@ class BillingService:
         This is used for Boletas and Draft Facturas.
         """
         from inventory.models import StockMove
-        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
+        total_stock = product.qty_on_hand
         
         if total_stock > 0:
             current_value = product.cost_price * total_stock
@@ -140,18 +140,30 @@ class BillingService:
 
         # Retroactive Kardex Update: If an order is provided, update the moves that were recorded at Net
         if order:
-            moves = StockMove.objects.filter(
+            from purchasing.models import PurchaseReceiptLine
+            # Find all confirmed receipt lines for this order and product
+            receipt_lines = PurchaseReceiptLine.objects.filter(
+                receipt__purchase_order=order,
+                receipt__status='CONFIRMED',
                 product=product,
-                description__contains=f"OCS-{order.number}",
-                move_type='IN'
+                stock_move__isnull=False
             )
-            for move in moves:
-                # If the move was recorded at exactly unit_cost (Net), update it to Net + Tax_per_unit
-                # We assume capitalization happens for the full tax of the received qty
-                tax_per_unit = tax_amount / quantity
-                if move.unit_cost == unit_cost:
-                    move.unit_cost = (unit_cost + tax_per_unit).quantize(Decimal('1'))
-                    move.save()
+            
+            for line in receipt_lines:
+                move = line.stock_move
+                # Capitalize the tax proportionally to this specific move's quantity
+                # We use the tax_rate from the purchase line to be precise
+                tax_rate = line.purchase_line.tax_rate
+                
+                # IVA = Net * (Rate/100)
+                # Gross = Net + (Net * Rate/100) = Net * (1 + Rate/100)
+                # We update the unit_cost in the Kardex (StockMove) to reflected the capitalized tax
+                move.unit_cost = (move.unit_cost * (Decimal('1') + (tax_rate / Decimal('100.0')))).quantize(Decimal('1'))
+                move.save(update_fields=['unit_cost'])
+                
+                # Sync back to Receipt Line so UI (Kardex) reflects gross value
+                line.unit_cost = move.unit_cost
+                line.save(update_fields=['unit_cost', 'total_cost'])
     
     @staticmethod
     def _revert_tax_from_product_cost(product, tax_amount):

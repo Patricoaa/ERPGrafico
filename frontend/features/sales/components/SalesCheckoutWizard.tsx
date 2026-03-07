@@ -40,6 +40,8 @@ interface SalesCheckoutWizardProps {
     initialDteData?: any
     initialPaymentData?: any
     initialDeliveryData?: any
+    initialApprovalTaskId?: number | null
+    initialIsWaitingApproval?: boolean
     onStateChange?: (state: any) => void
 }
 
@@ -61,6 +63,8 @@ export function SalesCheckoutWizard({
     initialDteData,
     initialPaymentData,
     initialDeliveryData,
+    initialApprovalTaskId,
+    initialIsWaitingApproval,
     onStateChange
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(initialStep || 1)
@@ -68,12 +72,57 @@ export function SalesCheckoutWizard({
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
     const { dateString, serverDate } = useServerDate()
 
-    // Sync order lines when opening the wizard
+    // Use a ref to track whether we've already hydrated for the current open session
+    const didHydrateRef = useRef(false)
+
+    // Sync order lines and hydrate step data only when modal transitions from closed -> open
     useEffect(() => {
-        if (open) {
+        if (open && !didHydrateRef.current) {
+            didHydrateRef.current = true
             setCurrentOrderLines(initialOrderLines)
+            // Always reset to initial (draft restore) OR defaults (fresh sale)
+            // Using ?? so that null explicitly resets to defaults (prevents stale state leaking)
+            setStep(initialStep ?? 1)
+            setDteData(initialDteData ?? {
+                type: 'BOLETA',
+                number: '',
+                date: dateString || '',
+                attachment: null,
+                isPending: false
+            })
+            setPaymentData(initialPaymentData ?? {
+                method: '',
+                amount: 0,
+                transactionNumber: '',
+                treasuryAccountId: null,
+                isPending: false
+            })
+            setDeliveryData(initialDeliveryData ?? {
+                type: 'IMMEDIATE',
+                date: null,
+                notes: ''
+            })
+            // Restore customer from prop (important when re-loading same draft)
+            setSelectedCustomerId(initialCustomerId ?? null)
+            setSelectedCustomerName(initialCustomerName ?? null)
+            setSelectedCustomer(null) // force re-fetch of full customer details
         }
-    }, [open, initialOrderLines])
+        if (!open) {
+            // Reset flag so next open triggers hydration again
+            didHydrateRef.current = false
+        }
+    }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+    // intentionally omitting initial* from deps - only run on open/close transition
+
+    // Resume polling if opened with an active task
+    useEffect(() => {
+        if (open && initialApprovalTaskId && initialIsWaitingApproval) {
+            setIsWaitingApproval(true)
+            setCreditApprovalRequired(true)
+            setApprovalTaskId(initialApprovalTaskId)
+            pollApprovalStatus(initialApprovalTaskId)
+        }
+    }, [open])
 
     const [dteData, setDteData] = useState(initialDteData || {
         type: 'BOLETA',
@@ -117,9 +166,9 @@ export function SalesCheckoutWizard({
     })
 
     // Approval Workflow State
-    const [isWaitingApproval, setIsWaitingApproval] = useState(false)
-    const [approvalTaskId, setApprovalTaskId] = useState<number | null>(null)
-    const [creditApprovalRequired, setCreditApprovalRequired] = useState(false)
+    const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
+    const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
+    const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     // Sync payment amount when total changes
@@ -156,11 +205,13 @@ export function SalesCheckoutWizard({
             ((line.product_type === 'MANUFACTURABLE' || line.has_bom) && !line.mfg_auto_finalize)
         );
 
-        if (fabricableLines.length > 0) {
+        // Only auto-suggest if deliveryData hasn't been explicitly changed by the user
+        // We assume it's untouched if it's IMMEDIATE and date is null
+        if (fabricableLines.length > 0 && deliveryData.type === 'IMMEDIATE' && !deliveryData.date) {
             setDeliveryData((prev: any) => ({ ...prev, type: 'SCHEDULED' }));
 
             // Get the maximum default delivery days from the products
-            const maxDays = fabricableLines.reduce((max, line) => {
+            const maxDays = fabricableLines.reduce((max: number, line: any) => {
                 const days = line.mfg_default_delivery_days || 5;
                 return Math.max(max, days);
             }, 0);
@@ -172,11 +223,11 @@ export function SalesCheckoutWizard({
                 setDeliveryData((prev: any) => ({ ...prev, date: suggestedDate.toISOString().split('T')[0] }));
             }
         }
-    }, [currentOrderLines, serverDate]);
+    }, [currentOrderLines, serverDate, deliveryData.type, deliveryData.date]);
 
-    // Fetch default customer if none provided
+    // Fetch default customer if none provided, or if Quick Sale forces it
     useEffect(() => {
-        if (!initialCustomerId && open) {
+        if ((!initialCustomerId || quickSale) && open && !selectedCustomerId) {
             const fetchDefaultCustomer = async () => {
                 try {
                     const response = await api.get('/contacts/?is_default_customer=true');
@@ -193,7 +244,7 @@ export function SalesCheckoutWizard({
             };
             fetchDefaultCustomer();
         }
-    }, [initialCustomerId, open]);
+    }, [initialCustomerId, open, quickSale, selectedCustomerId]);
 
     // Fetch full customer details when ID changes
     useEffect(() => {
@@ -216,10 +267,12 @@ export function SalesCheckoutWizard({
                 step,
                 dteData,
                 paymentData,
-                deliveryData
+                deliveryData,
+                approvalTaskId,
+                isWaitingApproval
             })
         }
-    }, [step, dteData, paymentData, deliveryData, onStateChange])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, onStateChange])
 
     // Calculate step information (memoized for quickSale useEffect)
     const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
@@ -228,16 +281,18 @@ export function SalesCheckoutWizard({
     // Quick Sale Mode: Auto-fill and jump to payment step
     useEffect(() => {
         if (quickSale && open) {
-            // Auto-fill DTE as BOLETA
+            // Auto-fill DTE as BOLETA if not defined
             setDteData((prev: any) => ({ ...prev, type: 'BOLETA' }));
 
             // Auto-fill Delivery as IMMEDIATE
             setDeliveryData((prev: any) => ({ ...prev, type: 'IMMEDIATE' }));
 
-            // Jump to payment step (last step)
-            setStep(totalSteps);
+            // Jump to payment step (totalSteps usually implies payment or summary)
+            // Hardcode 2 for generic "Payment" step unless totalSteps logic requires otherwise
+            // In Quick Sale we want them immediately on the Payment step
+            setStep(2); 
         }
-    }, [quickSale, open, totalSteps]);
+    }, [quickSale, open]);
 
     // Treasury accounts and methods for validation
     const { accounts } = useTreasuryAccounts({
@@ -472,6 +527,7 @@ export function SalesCheckoutWizard({
         const formData = new FormData()
 
         const payloadOrder = order ? { id: order.id } : {
+            customer: selectedCustomerId ? parseInt(selectedCustomerId) : null,
             payment_method: paymentData.method,
             channel: channel,
             total_discount_amount: totalDiscountAmount,

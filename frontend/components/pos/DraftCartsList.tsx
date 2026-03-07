@@ -51,6 +51,8 @@ interface DraftCart {
         dteData: any
         paymentData: any
         deliveryData: any
+        approvalTaskId?: number | null
+        isWaitingApproval?: boolean
     } | null
 }
 
@@ -233,6 +235,12 @@ export function DraftCartsList({
                                                     <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 gap-1 text-[10px] items-center h-5">
                                                         <ClipboardCheck className="h-3 w-3" />
                                                         Venta en curso (Paso {draft.wizard_state.step})
+                                                    </Badge>
+                                                )}
+                                                {draft.wizard_state?.isWaitingApproval && (
+                                                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 gap-1 text-[10px] items-center h-5">
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                        Esperando Autorización
                                                     </Badge>
                                                 )}
                                             </div>

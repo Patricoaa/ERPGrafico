@@ -12,9 +12,9 @@ interface Step2_PaymentProps {
 }
 
 export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }: Step2_PaymentProps) {
-    // Initialize amount to total on mount if not set
+    // Initialize amount to total on mount if not set/zero
     useEffect(() => {
-        if (paymentData.amount === undefined || paymentData.amount === null) {
+        if (!paymentData.amount) {
             setPaymentData({ ...paymentData, amount: total })
         }
     }, [])

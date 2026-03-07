@@ -131,7 +131,8 @@ function POSPageContent() {
         loadDraft,
         drafts,
         isSaving,
-        lastSaved
+        lastSaved,
+        deleteDraft
     } = useDrafts()
 
     // Refs
@@ -291,16 +292,25 @@ function POSPageContent() {
             toast.error(check.error)
             return
         }
+        // Reset wizard state for a fresh sale (prevents stale data from previous sale)
+        setWizardState(null)
         setCheckoutOpen(true)
     }
 
-    const handleCheckoutComplete = () => {
+    const handleCheckoutComplete = async () => {
+        // If this sale was attached to a draft, destroy the draft now that it became a real sale
+        if (currentDraftId) {
+            await deleteDraft(currentDraftId)
+        }
+
         clearCart()
         setCheckoutOpen(false)
         setCurrentDraftId(null)
         setWizardState(null)
         toast.success("Venta completada exitosamente")
     }
+
+    const [isQuickSaleProps, setIsQuickSaleProps] = useState(false)
 
     const handleQuickSale = () => {
         const quickSaleCheck = Validation.canQuickSale(items, selectedCustomerId)
@@ -309,7 +319,24 @@ function POSPageContent() {
             return
         }
 
-        // Open checkout in quick sale mode
+        // Open checkout in quick sale mode, pre-filling defaults
+        setWizardState({
+            step: 2, // Jump directly to payment
+            dteData: {
+                type: 'BOLETA', // Default to Boleta
+                number: '',
+                date: new Date().toISOString().split('T')[0],
+                attachment: null,
+                isPending: false
+            },
+            deliveryData: {
+                type: 'IMMEDIATE', // Default to Immediate
+                date: null,
+                notes: ''
+            }
+        })
+        
+        setIsQuickSaleProps(true)
         setCheckoutOpen(true)
     }
 
@@ -317,6 +344,9 @@ function POSPageContent() {
     const handleLoadDraft = async (draft: any) => {
         await loadDraft(draft.id)
         setDraftsListOpen(false)
+        if (draft.wizard_state) {
+            setCheckoutOpen(true)
+        }
     }
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
@@ -469,11 +499,13 @@ function POSPageContent() {
                 initialCustomerId={selectedCustomerId?.toString()}
                 posSessionId={currentSession?.id}
                 terminalId={currentSession?.terminal}
-                quickSale={false}
+                quickSale={isQuickSaleProps}
                 initialStep={wizardState?.step}
-                initialDteData={wizardState?.dte}
-                initialPaymentData={wizardState?.payment}
-                initialDeliveryData={wizardState?.delivery}
+                initialDteData={wizardState?.dteData}
+                initialPaymentData={wizardState?.paymentData}
+                initialDeliveryData={wizardState?.deliveryData}
+                initialApprovalTaskId={wizardState?.approvalTaskId}
+                initialIsWaitingApproval={wizardState?.isWaitingApproval}
                 onStateChange={setWizardState}
             />
 

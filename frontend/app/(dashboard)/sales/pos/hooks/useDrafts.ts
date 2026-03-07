@@ -65,11 +65,11 @@ export function useDrafts() {
                     uom_id: item.uom,
                     unit_price_net: item.unit_price_net,
                     unit_price_gross: item.unit_price_gross,
-                    manufacturing_data: item.manufacturing_data
-                })),
-                customer_id: selectedCustomerId,
-                wizard_state: wizardState
-            }
+                manufacturing_data: item.manufacturing_data
+            })),
+            customer_id: selectedCustomerId,
+            wizard_state: wizardState
+        }
 
             let res;
             if (currentDraftId) {
@@ -149,9 +149,8 @@ export function useDrafts() {
             setCurrentDraftId(draft.id)
             setWizardState(draft.wizard_state)
 
-            if (draft.customer_id) {
-                setSelectedCustomerId(draft.customer_id)
-            }
+            // Set or clear customer
+            setSelectedCustomerId(draft.customer_id)
 
             toast.success(`Borrador cargado: ${draft.name}`)
         } catch (error: any) {

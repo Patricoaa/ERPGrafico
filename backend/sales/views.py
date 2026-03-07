@@ -21,24 +21,112 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
 
+    # Fields that belong to AccountingSettings but are surfaced through this endpoint
+    ACCOUNTING_SETTINGS_FIELDS = [
+        'default_revenue_account',
+        'default_service_revenue_account',
+        'default_subscription_revenue_account',
+        'pos_cash_difference_gain_account',
+        'pos_cash_difference_loss_account',
+        'pos_counting_error_account',
+        'pos_theft_account',
+        'pos_rounding_adjustment_account',
+        'pos_tip_account',
+        'pos_cashback_error_account',
+        'pos_system_error_account',
+        'pos_partner_withdrawal_account',
+        'pos_other_inflow_account',
+        'pos_other_outflow_account',
+        'pos_default_credit_percentage',
+        'terminal_commission_bridge_account',
+        'terminal_iva_bridge_account',
+    ]
+
+    def _get_accounting_settings_data(self):
+        """Read account fields from AccountingSettings and return them as a plain dict."""
+        from accounting.models import AccountingSettings
+        acc_settings = AccountingSettings.objects.first()
+        if not acc_settings:
+            return {field: None for field in self.ACCOUNTING_SETTINGS_FIELDS}
+
+        result = {}
+        for field in self.ACCOUNTING_SETTINGS_FIELDS:
+            value = getattr(acc_settings, field, None)
+            # FK fields hold Account instances; return their PK so the frontend
+            # receives the same format as when reading AccountingSettings directly.
+            if hasattr(value, 'pk'):
+                result[field] = value.pk
+            else:
+                result[field] = value
+        return result
+
+    def _update_accounting_settings(self, data):
+        """Write accounting account fields back to AccountingSettings."""
+        from accounting.models import AccountingSettings, Account
+        acc_settings, _ = AccountingSettings.objects.get_or_create()
+
+        changed = False
+        for field in self.ACCOUNTING_SETTINGS_FIELDS:
+            if field not in data:
+                continue
+            raw = data[field]
+
+            # Detect if this is a FK field using Django's meta API
+            try:
+                model_field = AccountingSettings._meta.get_field(field)
+                is_fk = model_field.is_relation
+            except Exception:
+                # Fallback heuristic: account fields are FKs
+                is_fk = field.endswith('_account')
+
+            if is_fk:
+                if raw is None or raw == '':
+                    setattr(acc_settings, field, None)
+                else:
+                    try:
+                        account = Account.objects.get(pk=int(raw))
+                        setattr(acc_settings, field, account)
+                    except (Account.DoesNotExist, ValueError, TypeError):
+                        continue
+            else:
+                setattr(acc_settings, field, raw)
+            changed = True
+
+        if changed:
+            acc_settings.save()
+
     @action(detail=False, methods=['get', 'put', 'patch'])
     def current(self, request):
         obj = SalesSettings.objects.first()
         if not obj:
-            if request.method == 'GET':
-                 # Create default if missing for easier frontend handling
-                 obj = SalesSettings.objects.create()
-            else:
-                 obj = SalesSettings.objects.create()
-        
+            obj = SalesSettings.objects.create()
+
         if request.method == 'GET':
             serializer = self.get_serializer(obj)
-            return Response(serializer.data)
+            data = serializer.data
+            # Merge accounting settings fields so the frontend gets everything in one call
+            data.update(self._get_accounting_settings_data())
+            return Response(data)
+
+        # For PUT / PATCH: split the payload between both models
+        sales_fields = {k: v for k, v in request.data.items() if k not in self.ACCOUNTING_SETTINGS_FIELDS}
+        accounting_fields = {k: v for k, v in request.data.items() if k in self.ACCOUNTING_SETTINGS_FIELDS}
+
+        # Update SalesSettings (native fields)
+        if sales_fields:
+            serializer = self.get_serializer(obj, data=sales_fields, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
         
-        serializer = self.get_serializer(obj, data=request.data, partial=(request.method == 'PATCH'))
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        # Update AccountingSettings (account fields)
+        if accounting_fields:
+            self._update_accounting_settings(accounting_fields)
+
+        # Return merged response
+        serializer = self.get_serializer(obj)
+        data = serializer.data
+        data.update(self._get_accounting_settings_data())
+        return Response(data)
 
 from core.api.permissions import StandardizedModelPermissions
 
