@@ -42,6 +42,8 @@ interface SalesCheckoutWizardProps {
     initialDeliveryData?: any
     initialApprovalTaskId?: number | null
     initialIsWaitingApproval?: boolean
+    initialIsApproved?: boolean
+    initialDraftId?: number | null
     onStateChange?: (state: any) => void
 }
 
@@ -65,6 +67,8 @@ export function SalesCheckoutWizard({
     initialDeliveryData,
     initialApprovalTaskId,
     initialIsWaitingApproval,
+    initialIsApproved,
+    initialDraftId,
     onStateChange
 }: SalesCheckoutWizardProps) {
     const [step, setStep] = useState(initialStep || 1)
@@ -80,16 +84,49 @@ export function SalesCheckoutWizard({
         if (open && !didHydrateRef.current) {
             didHydrateRef.current = true
             setCurrentOrderLines(initialOrderLines)
-            // Always reset to initial (draft restore) OR defaults (fresh sale)
-            // Using ?? so that null explicitly resets to defaults (prevents stale state leaking)
-            setStep(initialStep ?? 1)
-            setDteData(initialDteData ?? {
-                type: 'BOLETA',
-                number: '',
-                date: dateString || '',
-                attachment: null,
-                isPending: false
-            })
+            
+            // QUICK SALE OVERRIDES
+            if (quickSale) {
+                // Determine last step (Payment) based on items
+                const currentIsOnlyService = initialOrderLines.every((line: any) => line.product_type === 'SERVICE');
+                const currentHasManufacturing = initialOrderLines.some((line: any) =>
+                    (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
+                    (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
+                );
+                const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
+                
+                setStep(lastStep)
+                setDteData({
+                    type: 'BOLETA',
+                    number: '',
+                    date: dateString || '',
+                    attachment: null,
+                    isPending: false
+                })
+                setDeliveryData({
+                    type: 'IMMEDIATE',
+                    date: null,
+                    notes: ''
+                })
+            } else {
+                // NORMAL HYDRATION (Draft restore OR defaults for fresh sale)
+                // Using ?? so that null explicitly resets to defaults (prevents stale state leaking)
+                setStep(initialStep ?? 1)
+                setDteData(initialDteData ?? {
+                    type: 'BOLETA',
+                    number: '',
+                    date: dateString || '',
+                    attachment: null,
+                    isPending: false
+                })
+                setDeliveryData(initialDeliveryData ?? {
+                    type: 'IMMEDIATE',
+                    date: null,
+                    notes: ''
+                })
+            }
+            
+            // Payment Data is always hydrated from props or default
             setPaymentData(initialPaymentData ?? {
                 method: '',
                 amount: 0,
@@ -97,11 +134,7 @@ export function SalesCheckoutWizard({
                 treasuryAccountId: null,
                 isPending: false
             })
-            setDeliveryData(initialDeliveryData ?? {
-                type: 'IMMEDIATE',
-                date: null,
-                notes: ''
-            })
+
             // Restore customer from prop (important when re-loading same draft)
             setSelectedCustomerId(initialCustomerId ?? null)
             setSelectedCustomerName(initialCustomerName ?? null)
@@ -111,16 +144,22 @@ export function SalesCheckoutWizard({
             // Reset flag so next open triggers hydration again
             didHydrateRef.current = false
         }
-    }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
-    // intentionally omitting initial* from deps - only run on open/close transition
+    }, [open, initialStep, quickSale]) // eslint-disable-line react-hooks/exhaustive-deps
+    // Run on open/close transition, and re-run if initialStep is injected slightly later (e.g. via React batching in page.tsx)
 
-    // Resume polling if opened with an active task
+    // Resume polling if opened with an active task (and not already approved)
     useEffect(() => {
-        if (open && initialApprovalTaskId && initialIsWaitingApproval) {
-            setIsWaitingApproval(true)
-            setCreditApprovalRequired(true)
-            setApprovalTaskId(initialApprovalTaskId)
-            pollApprovalStatus(initialApprovalTaskId)
+        if (open && initialApprovalTaskId) {
+            if (initialIsApproved) {
+                setIsApproved(true)
+                setCreditApprovalRequired(true)
+                setApprovalTaskId(initialApprovalTaskId)
+            } else if (initialIsWaitingApproval) {
+                setIsWaitingApproval(true)
+                setCreditApprovalRequired(true)
+                setApprovalTaskId(initialApprovalTaskId)
+                pollApprovalStatus(initialApprovalTaskId)
+            }
         }
     }, [open])
 
@@ -168,7 +207,8 @@ export function SalesCheckoutWizard({
     // Approval Workflow State
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
-    const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval)
+    const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval || !!initialIsApproved)
+    const [isApproved, setIsApproved] = useState(initialIsApproved || false)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     // Sync payment amount when total changes
@@ -269,30 +309,17 @@ export function SalesCheckoutWizard({
                 paymentData,
                 deliveryData,
                 approvalTaskId,
-                isWaitingApproval
+                isWaitingApproval,
+                isApproved,
+                isLoading: loading
             })
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, onStateChange])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, onStateChange])
 
-    // Calculate step information (memoized for quickSale useEffect)
+    // Calculate step information
+    // Calculate step information
     const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
     const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
-
-    // Quick Sale Mode: Auto-fill and jump to payment step
-    useEffect(() => {
-        if (quickSale && open) {
-            // Auto-fill DTE as BOLETA if not defined
-            setDteData((prev: any) => ({ ...prev, type: 'BOLETA' }));
-
-            // Auto-fill Delivery as IMMEDIATE
-            setDeliveryData((prev: any) => ({ ...prev, type: 'IMMEDIATE' }));
-
-            // Jump to payment step (totalSteps usually implies payment or summary)
-            // Hardcode 2 for generic "Payment" step unless totalSteps logic requires otherwise
-            // In Quick Sale we want them immediately on the Payment step
-            setStep(2); 
-        }
-    }, [quickSale, open]);
 
     // Treasury accounts and methods for validation
     const { accounts } = useTreasuryAccounts({
@@ -606,6 +633,10 @@ export function SalesCheckoutWizard({
             formData.append('credit_approval_task_id', approvalTaskId.toString())
         }
 
+        if (initialDraftId) {
+            formData.append('draft_id', initialDraftId.toString())
+        }
+
         return formData
     }
 
@@ -680,17 +711,8 @@ export function SalesCheckoutWizard({
                 if (task.status === 'COMPLETED') {
                     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                     toast.success("¡Crédito aprobado!")
-                    // The task state closure issue: we need to trigger executeCheckout but within the correct closure.
-                    // The easiest is to just set approvalTaskId then call it, but React state updates batch.
-                    // Instead, we can just call the API directly here to ensure it uses the approved task.
-                    setLoading(true)
-                    const formData = buildCheckoutFormData()
-                    formData.append('credit_approval_task_id', taskId.toString())
-                    await api.post('/billing/invoices/pos_checkout/', formData)
-
-                    toast.success("Venta procesada correctamente")
-                    onComplete()
-                    onOpenChange(false)
+                    setIsWaitingApproval(false)
+                    setIsApproved(true)
                 } else if (task.status === 'REJECTED' || task.status === 'CANCELLED') {
                     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                     toast.error("La solicitud de crédito fue rechazada.")
@@ -751,7 +773,7 @@ export function SalesCheckoutWizard({
                         <Button
                             onClick={handleFinish}
                             className="w-48 h-12 bg-success hover:bg-success/90 text-success-foreground font-bold"
-                            disabled={loading}
+                            disabled={loading || isWaitingApproval}
                         >
                             {loading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -784,7 +806,7 @@ export function SalesCheckoutWizard({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
-                        {selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0 && (
+                        {selectedCustomer && !selectedCustomer.is_default_customer && Number(selectedCustomer.credit_balance_used || 0) > 0 && (
                             <Alert variant="destructive" className="mb-4 bg-amber-50 border-amber-200 text-amber-900">
                                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                                 <AlertTitle className="text-amber-800 font-bold">Deuda Activa Detectada</AlertTitle>
@@ -794,7 +816,7 @@ export function SalesCheckoutWizard({
                             </Alert>
                         )}
 
-                        {creditApprovalRequired && !isWaitingApproval && (
+                        {creditApprovalRequired && !isWaitingApproval && !isApproved && (
                             <div className="mb-4 p-3 border border-warning/50 bg-warning/5 rounded-xl flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-warning/20 rounded-full text-warning shrink-0">
@@ -837,7 +859,23 @@ export function SalesCheckoutWizard({
                             </div>
                         )}
 
-                        <div className={(creditApprovalRequired || isWaitingApproval) ? "opacity-30 pointer-events-none transition-opacity" : ""}>
+                        {isApproved && (
+                            <div className="mb-4 p-3 border border-success/50 bg-success/5 rounded-xl flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-success/20 rounded-full text-success shrink-0">
+                                        <Check className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-sm font-bold text-success">Crédito Aprobado</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            La solicitud ha sido autorizada. Ya puede finalizar la venta.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={(creditApprovalRequired || isWaitingApproval) && !isApproved ? "opacity-30 pointer-events-none transition-opacity" : ""}>
                             {renderStep()}
                         </div>
                     </div>

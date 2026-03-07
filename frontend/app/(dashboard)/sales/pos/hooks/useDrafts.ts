@@ -50,8 +50,7 @@ export function useDrafts() {
 
     // Save current cart as draft
     const saveDraft = useCallback(async (name?: string) => {
-        if (items.length === 0) {
-            toast.error("El carrito está vacío")
+        if (items.length === 0 || isLoading || isSaving) {
             return
         }
 
@@ -59,14 +58,16 @@ export function useDrafts() {
             const draftData: any = {
                 pos_session_id: currentSession?.id,
                 name: name || (currentDraftId ? undefined : `Borrador ${new Date().toLocaleString()}`),
-                items: items.map(item => ({
+                    items: items.map(item => ({
                     product_id: item.id,
                     quantity: item.qty,
                     uom_id: item.uom,
                     unit_price_net: item.unit_price_net,
                     unit_price_gross: item.unit_price_gross,
-                manufacturing_data: item.manufacturing_data
-            })),
+                    total_net: (item.qty || 0) * (item.unit_price_net || 0),
+                    total_gross: (item.qty || 0) * (item.unit_price_gross || 0),
+                    manufacturing_data: item.manufacturing_data
+                })),
             customer_id: selectedCustomerId,
             wizard_state: wizardState
         }
@@ -109,7 +110,7 @@ export function useDrafts() {
         } finally {
             setIsSaving(false)
         }
-    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId])
+    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading])
 
     // Load a draft into cart
     const loadDraft = useCallback(async (draftId: number) => {

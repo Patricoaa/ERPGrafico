@@ -132,7 +132,8 @@ function POSPageContent() {
         drafts,
         isSaving,
         lastSaved,
-        deleteDraft
+        deleteDraft,
+        fetchDrafts
     } = useDrafts()
 
     // Refs
@@ -155,14 +156,25 @@ function POSPageContent() {
 
     // Auto-save drafts
     useEffect(() => {
-        if (!currentSession?.id || items.length === 0) return
+        if (!currentSession?.id || items.length === 0 || loading) return
+
+        // Calculate if we are in the last step (Payment) to avoid auto-saving while finalizing
+        const isOnlyService = items.every(line => line.product_type === 'SERVICE');
+        const hasManufacturing = items.some(line => 
+            (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
+            (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
+        );
+        const totalSteps = (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0);
+        
+        // Skip auto-save if we are in the payment step or beyond
+        if (wizardState && wizardState.step >= totalSteps) return
 
         const timer = setTimeout(() => {
             saveDraft()
         }, 2000)
 
         return () => clearTimeout(timer)
-    }, [items, selectedCustomerId, wizardState, currentSession])
+    }, [items, selectedCustomerId, wizardState, currentSession, loading])
 
     // Product click handler
     const handleProductClick = (product: any) => {
@@ -294,19 +306,22 @@ function POSPageContent() {
         }
         // Reset wizard state for a fresh sale (prevents stale data from previous sale)
         setWizardState(null)
+        setIsQuickSaleProps(false)
         setCheckoutOpen(true)
     }
 
     const handleCheckoutComplete = async () => {
-        // If this sale was attached to a draft, destroy the draft now that it became a real sale
-        if (currentDraftId) {
-            await deleteDraft(currentDraftId)
-        }
-
-        clearCart()
-        setCheckoutOpen(false)
+        // Clear local state IMMEDIATELY to prevent auto-save from recreating the draft
+        // The backend already deleted it, so we must stop referring to it globally
         setCurrentDraftId(null)
         setWizardState(null)
+        clearCart()
+        setIsQuickSaleProps(false)
+
+        // Refresh drafts list without full loading indicator to sync with backend deletion
+        await fetchDrafts()
+
+        setCheckoutOpen(false)
         toast.success("Venta completada exitosamente")
     }
 
@@ -320,8 +335,8 @@ function POSPageContent() {
         }
 
         // Open checkout in quick sale mode, pre-filling defaults
-        setWizardState({
-            step: 2, // Jump directly to payment
+        const quickSaleState = {
+            step: 1, // Placeholder, SalesCheckoutWizard overrides this dynamically for quick sales
             dteData: {
                 type: 'BOLETA', // Default to Boleta
                 number: '',
@@ -334,10 +349,14 @@ function POSPageContent() {
                 date: null,
                 notes: ''
             }
-        })
+        }
         
+        setWizardState(quickSaleState)
         setIsQuickSaleProps(true)
-        setCheckoutOpen(true)
+        
+        // Use a small timeout to ensure wizardState is committed to React's state 
+        // before the modal opens, guaranteeing the hydration effect reads the fresh props
+        setTimeout(() => setCheckoutOpen(true), 0)
     }
 
     // Draft handlers
@@ -490,6 +509,7 @@ function POSPageContent() {
 
             {/* Modals */}
             <SalesCheckoutWizard
+                key={`checkout-wizard-${isQuickSaleProps ? 'quick' : 'normal'}-${checkoutOpen ? 'open' : 'closed'}`}
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
                 order={null}
@@ -506,6 +526,8 @@ function POSPageContent() {
                 initialDeliveryData={wizardState?.deliveryData}
                 initialApprovalTaskId={wizardState?.approvalTaskId}
                 initialIsWaitingApproval={wizardState?.isWaitingApproval}
+                initialIsApproved={wizardState?.isApproved}
+                initialDraftId={currentDraftId}
                 onStateChange={setWizardState}
             />
 

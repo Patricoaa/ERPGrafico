@@ -52,9 +52,22 @@ class DraftCartService:
         except POSSession.DoesNotExist:
             raise ValueError("La sesión POS no existe o está cerrada")
         
-        # Calcular totales
-        total_net = sum(item.get('total_net', 0) for item in items)
-        total_gross = sum(item.get('total_gross', 0) for item in items)
+        # Calcular totales (si no vienen explícitos, se calculan del precio unitario)
+        total_net = Decimal('0.00')
+        total_gross = Decimal('0.00')
+        
+        for item in items:
+            qty = Decimal(str(item.get('quantity', 0)))
+            
+            item_total_net = item.get('total_net')
+            if item_total_net is None:
+                item_total_net = Decimal(str(item.get('unit_price_net', 0))) * qty
+            total_net += Decimal(str(item_total_net))
+            
+            item_total_gross = item.get('total_gross')
+            if item_total_gross is None:
+                item_total_gross = Decimal(str(item.get('unit_price_gross', 0))) * qty
+            total_gross += Decimal(str(item_total_gross))
         
         if draft_id:
             # Actualizar borrador existente

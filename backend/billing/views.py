@@ -211,7 +211,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 pos_session_id=pos_session_id,
                 payment_method_id=payment_method_id,
                 user=request.user,
-                credit_approval_task_id=request.data.get('credit_approval_task_id')
+                credit_approval_task_id=request.data.get('credit_approval_task_id'),
+                draft_id=request.data.get('draft_id')
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

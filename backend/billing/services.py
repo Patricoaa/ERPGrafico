@@ -406,7 +406,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -679,6 +679,26 @@ class BillingService:
                 payment_method_new=payment_method_inst,
                 created_by=user
             )
+            
+        # 5. Atomic Draft Removal (NEW)
+        if draft_id:
+            from sales.models import DraftCart
+            try:
+                # Handle potential string-based 'null' or 'undefined' from frontend
+                if isinstance(draft_id, str):
+                    if draft_id.lower() in ['null', 'undefined', '']:
+                        draft_id = None
+                    else:
+                        try:
+                            draft_id = int(draft_id)
+                        except ValueError:
+                            draft_id = None
+                
+                if draft_id:
+                    DraftCart.objects.filter(id=draft_id).delete()
+            except Exception as e:
+                # Log but don't fail the whole checkout if draft deletion fails
+                print(f"WARNING: Failed to delete draft {draft_id} after checkout: {e}")
             
         return invoice
 

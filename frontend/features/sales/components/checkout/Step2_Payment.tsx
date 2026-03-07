@@ -12,13 +12,6 @@ interface Step2_PaymentProps {
 }
 
 export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }: Step2_PaymentProps) {
-    // Initialize amount to total on mount if not set/zero
-    useEffect(() => {
-        if (!paymentData.amount) {
-            setPaymentData({ ...paymentData, amount: total })
-        }
-    }, [])
-
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-1">

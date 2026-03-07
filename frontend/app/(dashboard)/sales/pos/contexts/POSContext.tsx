@@ -15,6 +15,8 @@ export interface WizardState {
     deliveryData?: any
     approvalTaskId?: number | null
     isWaitingApproval?: boolean
+    isApproved?: boolean
+    isLoading?: boolean
 }
 
 interface POSContextValue {
@@ -66,6 +68,7 @@ interface POSContextValue {
     // UI State
     loading: boolean
     setLoading: (loading: boolean) => void
+    defaultCustomerId: number | null
 }
 
 const POSContext = createContext<POSContextValue | undefined>(undefined)
@@ -82,6 +85,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+    const [defaultCustomerId, setDefaultCustomerId] = useState<number | null>(null)
     const [totalDiscountAmount, setTotalDiscountAmount] = useState<number>(0)
 
     // Draft & Wizard State
@@ -96,6 +100,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
                 const results = response.data.results || response.data
                 const defaultCustomer = results.find((c: { id: number; is_default_customer: boolean }) => c.is_default_customer)
                 if (defaultCustomer) {
+                    setDefaultCustomerId(defaultCustomer.id)
                     setSelectedCustomerId(defaultCustomer.id)
                 }
             } catch (error) {
@@ -104,6 +109,13 @@ export function POSProvider({ children }: { children: ReactNode }) {
         }
         fetchDefaultCustomer()
     }, [])
+
+    // Reset customer to default when session changes or initializes
+    useEffect(() => {
+        if (currentSession?.id && defaultCustomerId && !selectedCustomerId) {
+            setSelectedCustomerId(defaultCustomerId)
+        }
+    }, [currentSession, defaultCustomerId, selectedCustomerId])
 
     // Reset draft state when session changes - Adjust state during render pattern
     const [handledSessionId, setHandledSessionId] = useState<number | null>(null);
@@ -146,7 +158,10 @@ export function POSProvider({ children }: { children: ReactNode }) {
 
     const clearCart = useCallback(() => {
         setItems([])
-    }, [])
+        if (defaultCustomerId) {
+            setSelectedCustomerId(defaultCustomerId)
+        }
+    }, [defaultCustomerId])
 
     // Computed values
     const totals = CartUtils.calculateCartTotals(items, totalDiscountAmount)
@@ -195,7 +210,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
 
         // UI
         loading,
-        setLoading
+        setLoading,
+        defaultCustomerId
     }
 
     return <POSContext.Provider value={value}>{children}</POSContext.Provider>
