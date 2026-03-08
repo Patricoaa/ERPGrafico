@@ -824,34 +824,73 @@ class Product(models.Model):
         from decimal import Decimal
         return self.stock_moves.aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
 
-    @property
-    def qty_reserved(self):
+    def get_qty_reserved(self, exclude_draft_id=None):
         """
-        Quantity reserved for confirmed sales that haven't been fully delivered.
+        Calculates reserved quantity, optionally excluding a specific draft
+        to avoid double-counting in real-time frontend validations.
         """
-        from sales.models import SaleOrder, SaleLine
+        from sales.models import SaleOrder, SaleLine, DraftCart
+        from production.models import WorkOrder, WorkOrderMaterial
         from decimal import Decimal
         
-        # Check sales that are CONFIRMED and NOT fully delivered
-        pending_lines = SaleLine.objects.filter(
+        total_reserved = Decimal('0.0')
+        
+        # 1. Confirmed Sales (excluding fully delivered)
+        pending_sales = SaleLine.objects.filter(
             product=self,
             order__status=SaleOrder.Status.CONFIRMED
         ).exclude(
             order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED
         )
-        
-        total_reserved = Decimal('0.0')
-        for line in pending_lines:
+        for line in pending_sales:
             total_reserved += line.quantity_pending
+            
+        # 2. POS Drafts (only for OPEN sessions)
+        draft_filters = models.Q(pos_session__status='OPEN')
+        if exclude_draft_id:
+            try:
+                exclude_id = int(exclude_draft_id)
+                draft_filters &= ~models.Q(id=exclude_id)
+            except (ValueError, TypeError):
+                pass
+            
+        active_drafts = DraftCart.objects.filter(draft_filters)
+        for draft in active_drafts:
+            if draft.items and isinstance(draft.items, list):
+                for item in draft.items:
+                    item_p_id = item.get('id') or item.get('product_id')
+                    if item_p_id and int(item_p_id) == self.id:
+                        total_reserved += Decimal(str(item.get('quantity', 0)))
+
+        # 3. Work Orders
+        pending_ot_materials = WorkOrderMaterial.objects.filter(
+            component=self,
+            work_order__status__in=[
+                WorkOrder.Status.DRAFT,
+                WorkOrder.Status.PLANNED,
+                WorkOrder.Status.IN_PROGRESS
+            ]
+        )
+        for material in pending_ot_materials:
+            remaining = material.quantity_planned - material.quantity_consumed
+            if remaining > 0:
+                total_reserved += remaining
             
         return total_reserved
 
     @property
-    def qty_available(self):
+    def qty_reserved(self):
+        return self.get_qty_reserved()
+
+    def get_qty_available(self, exclude_draft_id=None):
         """
         Quantity available for new sales (On Hand - Reserved).
         """
-        return self.qty_on_hand - self.qty_reserved
+        return self.qty_on_hand - self.get_qty_reserved(exclude_draft_id)
+
+    @property
+    def qty_available(self):
+        return self.get_qty_available()
 
 
 class Warehouse(models.Model):

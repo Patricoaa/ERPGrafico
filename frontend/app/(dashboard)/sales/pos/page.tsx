@@ -97,18 +97,6 @@ function POSPageContent() {
         setTotalDiscountAmount,
     } = usePOS()
 
-    // Products management
-    const {
-        filteredProducts,
-        categories,
-        searchTerm,
-        setSearchTerm,
-        selectedCategoryId,
-        setSelectedCategoryId,
-        limits: productLimits,
-        setLimits: setProductLimits
-    } = useProducts()
-
     // Cart management
     const {
         addProductToCart,
@@ -136,6 +124,26 @@ function POSPageContent() {
         deleteDraft,
         fetchDrafts
     } = useDrafts()
+
+    // Products management
+    const {
+        filteredProducts,
+        categories,
+        searchTerm,
+        setSearchTerm,
+        selectedCategoryId,
+        setSelectedCategoryId,
+        limits: productLimits,
+        setLimits: setProductLimits,
+        refreshProducts
+    } = useProducts()
+
+    // Refresh products when a draft is saved to update stock indicators
+    useEffect(() => {
+        if (lastSaved) {
+            refreshProducts()
+        }
+    }, [lastSaved, refreshProducts])
 
     // Refs
     const sessionControlRef = useRef<SessionControlHandle>(null)

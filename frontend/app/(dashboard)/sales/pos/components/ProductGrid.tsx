@@ -56,7 +56,7 @@ function ProductGridComponent({
                     : catData?.icon) || null
 
                 // Determine if product is disabled
-                const isStorableNoStock = product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0
+                const isStorableNoStock = product.product_type === 'STORABLE' && (product.qty_available || 0) <= 0
                 const isManufacturableZero = product.product_type === 'MANUFACTURABLE'
                     && product.manufacturable_quantity === 0
                     && product.has_bom
@@ -97,11 +97,11 @@ function ProductGridComponent({
                             {/* Stock/Availability Badge */}
                             {product.product_type === 'STORABLE' && (
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                    <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.current_stock ?? 0) > 0
+                                    <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0
                                         ? 'bg-green-500'
                                         : 'bg-red-500'
                                         }`} />
-                                    {limits[`prod_${product.id}`] ?? product.current_stock ?? 0}
+                                    {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                 </div>
                             )}
 

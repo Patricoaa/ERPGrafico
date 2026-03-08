@@ -27,6 +27,8 @@ interface Variant {
     sale_price: string
     sale_price_gross: string
     current_stock: number
+    qty_available: number
+    qty_reserved?: number
     manufacturable_quantity: number | null
     has_active_bom: boolean
     product_type: string
@@ -78,7 +80,9 @@ export function POSVariantSelectorModal({
         if (!product?.id) return
         setLoading(true)
         try {
-            const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true&active=true`)
+            const storedSessionId = localStorage.getItem('shared_pos_session_id')
+            const params = storedSessionId ? `&pos_session_id=${storedSessionId}` : ''
+            const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true&active=true${params}`)
             setVariants(res.data.results || res.data)
         } catch (error) {
             console.error("Failed to fetch variants", error)
@@ -103,7 +107,7 @@ export function POSVariantSelectorModal({
     }, [variants, items, bomCache, componentCache])
 
     const handleSelect = (variant: Variant) => {
-        const maxQty = variantLimits[variant.id] ?? (variant.manufacturable_quantity ?? variant.current_stock ?? 0)
+        const maxQty = variantLimits[variant.id] ?? (variant.manufacturable_quantity ?? variant.qty_available ?? 0)
 
         if (maxQty > 0 || variant.product_type === 'SERVICE' || variant.product_type === 'CONSUMABLE') {
             onSelect(variant)
@@ -137,7 +141,7 @@ export function POSVariantSelectorModal({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
                             {variants.map((v) => {
                                 const limit = variantLimits[v.id]
-                                const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.current_stock ?? Infinity)
+                                const max = limit !== undefined ? limit : (v.manufacturable_quantity ?? v.qty_available ?? Infinity)
 
                                 const isAvailable = max > 0 || v.product_type === 'SERVICE' || v.product_type === 'CONSUMABLE'
 
@@ -191,7 +195,7 @@ export function POSVariantSelectorModal({
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
-                                                            {limit !== undefined ? limit : v.current_stock} stock
+                                                            {limit !== undefined ? limit : v.qty_available} stock
                                                         </Badge>
                                                     )
                                                 )}

@@ -17,6 +17,8 @@ export function useProducts() {
         uoms,
         setUoms,
         items,
+        currentSession,
+        currentDraftId,
         bomCache,
         componentCache,
         updateBomCache,
@@ -31,10 +33,14 @@ export function useProducts() {
     // Fetch initial data
     useEffect(() => {
         const fetchData = async () => {
+            if (!currentSession?.id) return
+
             setLoading(true)
             try {
+                const sessionParams = `&pos_session_id=${currentSession.id}`
+                const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
                 const [productsRes, categoriesRes, uomsRes] = await Promise.all([
-                    api.get('/inventory/products/?is_active=true&can_be_sold=true&include_boms=true'),
+                    api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true${sessionParams}${draftParams}`),
                     api.get('/inventory/categories/?page_size=9999'),
                     api.get('/inventory/uoms/?page_size=9999')
                 ])
@@ -64,7 +70,7 @@ export function useProducts() {
         }
 
         fetchData()
-    }, [])
+    }, [currentSession?.id, currentDraftId])
 
     // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
@@ -91,11 +97,12 @@ export function useProducts() {
         return filtered
     }, [products, searchTerm, selectedCategoryId])
 
-    // 🚀 Refresh products with stable reference
     const refreshProducts = useCallback(async () => {
+        if (!currentSession?.id) return
         setLoading(true)
         try {
-            const res = await api.get('/inventory/products/?is_active=true&can_be_sold=true&include_boms=true')
+            const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
+            const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&pos_session_id=${currentSession.id}${draftParams}`)
             setProducts(res.data.results || res.data)
             toast.success("Productos actualizados")
         } catch (error) {
@@ -103,7 +110,7 @@ export function useProducts() {
         } finally {
             setLoading(false)
         }
-    }, [setLoading, setProducts])
+    }, [setLoading, setProducts, currentSession?.id, currentDraftId])
 
     return {
         products,

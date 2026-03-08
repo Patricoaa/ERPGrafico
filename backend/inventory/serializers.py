@@ -136,8 +136,8 @@ class ProductSerializer(serializers.ModelSerializer):
     active_bom_id = serializers.SerializerMethodField()
     requires_bom_validation = serializers.SerializerMethodField()
     
-    qty_reserved = serializers.FloatField(read_only=True)
-    qty_available = serializers.FloatField(read_only=True)
+    qty_reserved = serializers.SerializerMethodField()
+    qty_available = serializers.SerializerMethodField()
     
     # Manufacturing fields: Support multiple BOMs
     boms = BillOfMaterialsSerializer(many=True, required=False)
@@ -247,6 +247,16 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_effective_price(self, obj):
         from .services import PricingService
         return PricingService.get_product_price(obj, 1)
+
+    def get_qty_reserved(self, obj):
+        request = self.context.get('request')
+        exclude_id = request.query_params.get('exclude_draft_id') if request else None
+        return float(obj.get_qty_reserved(exclude_id))
+
+    def get_qty_available(self, obj):
+        request = self.context.get('request')
+        exclude_id = request.query_params.get('exclude_draft_id') if request else None
+        return float(obj.get_qty_available(exclude_id))
 
     def get_last_purchase_price(self, obj):
         from purchasing.models import PurchaseLine

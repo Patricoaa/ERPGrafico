@@ -101,8 +101,10 @@ export async function calculateMaxQty(
     const factorToRef = getConversionFactor(itemUom, defUom, uoms)
 
     if (product.product_type === 'STORABLE') {
-        const currentStock = (product as any).current_stock || (productDef ? productDef.current_stock : 0) || 0
-        const availableRef = currentStock - (consumption[product.id] || 0)
+        const prod = product as any
+        const def = productDef as any
+        const availableStock = prod.qty_available ?? def?.qty_available ?? prod.current_stock ?? def?.current_stock ?? 0
+        const availableRef = availableStock - (consumption[product.id] || 0)
         maxQty = availableRef / factorToRef
     } else if (isManufacturable && hasBom) {
         const bom = bomCache[product.id]

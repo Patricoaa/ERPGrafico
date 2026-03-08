@@ -9,6 +9,8 @@ export interface Product {
     sale_price: string
     sale_price_gross: string
     current_stock?: number
+    qty_reserved?: number
+    qty_available?: number
     manufacturable_quantity?: number | null
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION'
     variants_count?: number
