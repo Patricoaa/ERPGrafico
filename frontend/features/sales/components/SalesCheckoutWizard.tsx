@@ -576,6 +576,8 @@ export function SalesCheckoutWizard({
                     unit_price_gross: l.unit_price_gross,
                     uom: l.uom || null,
                     tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
+                    discount_amount: l.discount_amount || 0,
+                    discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2)),
                     manufacturing_data: cleanMfgData
                 }
             })

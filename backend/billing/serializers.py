@@ -15,6 +15,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
     po_receiving_status = serializers.CharField(source='purchase_order.receiving_status', read_only=True, allow_null=True)
     partner_name = serializers.SerializerMethodField()
+    partner_id = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     related_stock_moves = serializers.SerializerMethodField()
     related_returns = serializers.SerializerMethodField()
@@ -37,7 +38,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'payment_method', 'payment_method_display', 'total_net', 'total_tax',
             'total_discount_amount', 'total', 'journal_entry', 'tax_period_closed', 'created_at',
             'updated_at', 'attachments', 'sale_order_number',
-            'purchase_order_number', 'po_receiving_status', 'partner_name',
+            'purchase_order_number', 'po_receiving_status', 'partner_name', 'partner_id',
             'related_documents', 'related_stock_moves', 'related_returns',
             'lines', 'pending_amount', 'serialized_payments', 'adjustments',
             'order_delivery_status', 'work_orders', 'is_tax_exempt', 'pos_session'
@@ -175,13 +176,22 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return docs
 
     def get_partner_name(self, obj):
-        if obj.sale_order:
+        if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
-        if obj.purchase_order:
+        if obj.purchase_order and obj.purchase_order.supplier:
             return obj.purchase_order.supplier.name
         if obj.contact:
             return obj.contact.name
         return ""
+
+    def get_partner_id(self, obj):
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.id
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.id
+        if obj.contact:
+            return obj.contact.id
+        return None
 
     def get_related_stock_moves(self, obj):
         moves = []

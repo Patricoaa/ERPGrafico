@@ -196,7 +196,7 @@ export default function PurchaseInvoicesPage() {
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
                                     doc.dte_type === 'BOLETA' ? 'BOL' :
                                         doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT'}
+                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'}
                         </span>
                     </div>
                 )
@@ -304,8 +304,8 @@ export default function PurchaseInvoicesPage() {
                                 onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
                                 className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                             >
-                                <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : 'Boleta'}</span>
-                                {inv.dte_type === 'FACTURA' ? `FACT-${inv.number}` : `BOL-${inv.number}`}
+                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : inv.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' : 'Boleta'}</span>
+                                {inv.dte_type === 'FACTURA' ? `FAC-${inv.number}` : inv.dte_type === 'FACTURA_EXENTA' ? `FAC-EX-${inv.number}` : `BOL-${inv.number}`}
                             </button>
                         ))}
 
@@ -318,7 +318,7 @@ export default function PurchaseInvoicesPage() {
                                     className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                 >
                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                    MOV-{move.id}
+                                    {move.display_id || `MOV-${move.id}`}
                                 </button>
                             ))
                         ) : (
@@ -329,7 +329,7 @@ export default function PurchaseInvoicesPage() {
                                     className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                 >
                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                    {rec.number}
+                                    {rec.display_id || rec.number}
                                 </button>
                             ))
                         )}

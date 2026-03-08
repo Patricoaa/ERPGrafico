@@ -108,7 +108,8 @@ export function translateProductType(type: string): string {
   return map[type.toUpperCase()] || type
 }
 
-export function translatePaymentMethod(method: string): string {
+export function translatePaymentMethod(method: string | null | undefined): string {
+  if (!method) return '-';
   const map: Record<string, string> = {
     'CASH': 'Efectivo',
     'CARD': 'Tarjeta',

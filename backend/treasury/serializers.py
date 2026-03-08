@@ -172,6 +172,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
 
 class TreasuryMovementSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
+    partner_id = serializers.SerializerMethodField()
     account_name = serializers.CharField(source='account.name', read_only=True)
     payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     movement_type_display = serializers.CharField(source='get_movement_type_display', read_only=True)
@@ -218,11 +219,28 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         # we can just return the movement_type and let the frontend decide based on the treasuryAccountId it has.
         return obj.movement_type == 'INBOUND'
 
+    invoice_display_id = serializers.SerializerMethodField()
+    sale_order_display_id = serializers.SerializerMethodField()
+    purchase_order_display_id = serializers.SerializerMethodField()
+    journal_entry_display_id = serializers.SerializerMethodField()
+
     class Meta:
         model = TreasuryMovement
         fields = '__all__'
         read_only_fields = ['created_by', 'created_at', 'history', 'is_pending_registration']
     
+    def get_invoice_display_id(self, obj):
+        return obj.invoice.display_id if obj.invoice else None
+
+    def get_sale_order_display_id(self, obj):
+        return obj.sale_order.display_id if obj.sale_order else None
+
+    def get_purchase_order_display_id(self, obj):
+        return obj.purchase_order.display_id if obj.purchase_order else None
+
+    def get_journal_entry_display_id(self, obj):
+        return obj.journal_entry.display_id if obj.journal_entry else None
+
     def get_journal_name(self, obj):
         # Return the name of the primary treasury account involved
         if obj.treasury_account:
@@ -251,6 +269,28 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
             
         return 'Particular'
 
+    def get_partner_id(self, obj):
+        # 1. Direct contact
+        if obj.contact:
+            return obj.contact.id
+        
+        # 2. From Invoice or its linked orders
+        if obj.invoice:
+            if obj.invoice.contact:
+                return obj.invoice.contact.id
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
+                return obj.invoice.sale_order.customer.id
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
+                return obj.invoice.purchase_order.supplier.id
+        
+        # 3. Direct Order links
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.id
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.id
+            
+        return None
+
     def get_journal_entry(self, obj):
         if obj.journal_entry:
             from accounting.serializers import JournalEntrySerializer
@@ -273,31 +313,33 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
             'type': None,
             'id': None,
             'number': None,
-            'label': None
+            'label': None,
+            'display_id': None
         }
         if obj.invoice:
             info['type'] = 'invoice'
             info['id'] = obj.invoice.id
             info['number'] = obj.invoice.number
-            
-            # Map DTE Types to internal prefixes
-            prefix = 'DOC'
-            if obj.invoice.dte_type == 'FACTURA': prefix = 'FE'
-            elif obj.invoice.dte_type == 'BOLETA': prefix = 'BOL'
-            elif obj.invoice.dte_type == 'NOTA_CREDITO': prefix = 'NC'
-            elif obj.invoice.dte_type == 'NOTA_DEBITO': prefix = 'ND'
-            
-            info['label'] = f"{prefix} {obj.invoice.number}"
+            info['display_id'] = obj.invoice.display_id
+            info['label'] = obj.invoice.display_id
         elif obj.purchase_order:
             info['type'] = 'purchase_order'
             info['id'] = obj.purchase_order.id
             info['number'] = obj.purchase_order.number
-            info['label'] = f"OC {obj.purchase_order.number}"
+            info['display_id'] = obj.purchase_order.display_id
+            info['label'] = obj.purchase_order.display_id
         elif obj.sale_order:
             info['type'] = 'sale_order'
             info['id'] = obj.sale_order.id
             info['number'] = obj.sale_order.number
-            info['label'] = f"NV {obj.sale_order.number}"
+            info['display_id'] = obj.sale_order.display_id
+            info['label'] = obj.sale_order.display_id
+        elif obj.journal_entry:
+            info['type'] = 'journal_entry'
+            info['id'] = obj.journal_entry.id
+            info['number'] = obj.journal_entry.number
+            info['display_id'] = obj.journal_entry.display_id
+            info['label'] = obj.journal_entry.display_id
         
         return info if info['type'] else None
     

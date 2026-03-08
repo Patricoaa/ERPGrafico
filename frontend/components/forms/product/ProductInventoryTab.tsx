@@ -121,6 +121,83 @@ export function ProductInventoryTab({ form, initialData, reorderingRules = [], s
                                     </FormItem>
                                 )}
                             />
+
+                            {/* Sale UoM Selection UI */}
+                            {form.watch("can_be_sold") && (
+                                <FormField<ProductFormValues>
+                                    control={form.control}
+                                    name="allowed_sale_uoms"
+                                    render={({ field }) => {
+                                        const stockUomId = form.watch("uom");
+                                        const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
+                                        const stockCategoryId = stockUom?.category;
+
+                                        const selectedIds = field.value || [];
+                                        const sortedUoms = [...uoms].sort((a, b) => a.name.localeCompare(b.name));
+
+                                        return (
+                                            <FormItem className="space-y-3 pt-4 border-t mt-2">
+                                                <div className="flex items-center justify-between">
+                                                    <FormLabel className={FORM_STYLES.label}>Unidades de Venta Permitidas</FormLabel>
+                                                    {stockUom && (
+                                                        <span className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter">
+                                                            Cat: {stockUom.category_name || "Desconocida"}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/5 min-h-[50px] items-center">
+                                                    {!stockCategoryId ? (
+                                                        <span className="text-[10px] text-muted-foreground italic px-1">
+                                                            Seleccione primero una Unidad de Stock.
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            {sortedUoms
+                                                                .filter(u => u.category === stockCategoryId)
+                                                                .map((u: any) => {
+                                                                    const isSelected = selectedIds.includes(u.id.toString());
+                                                                    const isBaseUom = u.id.toString() === stockUomId?.toString();
+
+                                                                    return (
+                                                                        <Badge
+                                                                            key={u.id}
+                                                                            variant={isSelected ? "default" : "outline"}
+                                                                            className={cn(
+                                                                                "cursor-pointer px-2 py-1 transition-all hover:scale-105 active:scale-95 border-primary/20 text-[10px]",
+                                                                                isSelected ? "bg-primary text-white shadow-sm font-bold" : "bg-background hover:bg-muted font-normal text-muted-foreground",
+                                                                                isBaseUom && "ring-1 ring-primary ring-offset-1"
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                if (isSelected) {
+                                                                                    // Don't deselect base UoM
+                                                                                    if (isBaseUom) return;
+                                                                                    const newList = selectedIds.filter((id: string) => id !== u.id.toString());
+                                                                                    field.onChange(newList);
+                                                                                } else {
+                                                                                    const newList = [...selectedIds, u.id.toString()];
+                                                                                    field.onChange(newList);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {u.name}
+                                                                            {isBaseUom && <span className="ml-1 opacity-70">(BASE)</span>}
+                                                                            {isSelected && !isBaseUom && <Plus className="ml-1.5 h-2.5 w-2.5 inline-block rotate-45" />}
+                                                                        </Badge>
+                                                                    );
+                                                                })
+                                                            }
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <FormDescription className="text-[9px]">
+                                                    Seleccione las unidades permitidas para vender este producto. La unidad base siempre es permitida.
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
 

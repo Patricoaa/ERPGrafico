@@ -12,6 +12,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -139,6 +140,9 @@ function POSPageContent() {
     // Refs
     const sessionControlRef = useRef<SessionControlHandle>(null)
     const scannerFeedbackRef = useRef<ScannerFeedbackHandle>(null)
+
+    // Query client for cache invalidation
+    const queryClient = useQueryClient()
 
     // Local UI state
     const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -320,6 +324,9 @@ function POSPageContent() {
 
         // Refresh drafts list without full loading indicator to sync with backend deletion
         await fetchDrafts()
+
+        // Invalidate sales cache so the Sales Notes modal shows the new sale immediately
+        queryClient.invalidateQueries({ queryKey: ['sales'] })
 
         setCheckoutOpen(false)
         toast.success("Venta completada exitosamente")
@@ -515,6 +522,7 @@ function POSPageContent() {
                 order={null}
                 orderLines={items}
                 total={totals.total_gross}
+                totalDiscountAmount={totalDiscountAmount}
                 onComplete={handleCheckoutComplete}
                 initialCustomerId={selectedCustomerId?.toString()}
                 posSessionId={currentSession?.id}

@@ -220,6 +220,20 @@ class WorkOrder(models.Model):
                 self.number = str(int(last_order.number) + 1).zfill(6)
             else:
                 self.number = '000001'
+        
+        # Sync related_contact from stage_data['contact_id'] if present
+        # This ensures OTs created via the checkout flow or manual wizard are correctly linked
+        if self.stage_data and isinstance(self.stage_data, dict):
+            contact_id = self.stage_data.get('contact_id')
+            if contact_id:
+                from contacts.models import Contact
+                try:
+                    # Only update if different to avoid unnecessary work
+                    if not self.related_contact_id or self.related_contact_id != int(contact_id):
+                        self.related_contact_id = int(contact_id)
+                except (Contact.DoesNotExist, ValueError, TypeError):
+                    pass
+
         super().save(*args, **kwargs)
 
 class ProductionConsumption(models.Model):

@@ -36,10 +36,11 @@ class JournalItemSerializer(serializers.ModelSerializer):
 class JournalEntrySerializer(serializers.ModelSerializer):
     items = JournalItemSerializer(many=True, read_only=True)
     source_documents = serializers.ListField(source='get_source_documents', read_only=True)
+    display_id = serializers.CharField(read_only=True)
     
     class Meta:
         model = JournalEntry
-        fields = ['id', 'number', 'date', 'description', 'reference', 'state', 'items', 'source_documents', 'created_at']
+        fields = ['id', 'number', 'display_id', 'date', 'description', 'reference', 'state', 'items', 'source_documents', 'created_at']
 
 # --- Budgeting Serializers ---
 

@@ -1092,29 +1092,21 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )}
             </div>
 
-            <BaseModal
-                open={reportDialogOpen}
-                onOpenChange={setReportDialogOpen}
-                size="full"
-                className="max-w-4xl"
-                headerClassName="sr-only"
-                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                footer={
-                    <div className="flex justify-end w-full">
-                        <Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>
+            {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
+            {reportDialogOpen && (
+                <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
+                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
+                        {reportData && (
+                            <POSReport
+                                data={reportData}
+                                type={reportType}
+                                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                                onClose={() => setReportDialogOpen(false)}
+                            />
+                        )}
                     </div>
-                }
-            >
-                <div>
-                    {reportData && (
-                        <POSReport
-                            data={reportData}
-                            type={reportType}
-                            title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                        />
-                    )}
                 </div>
-            </BaseModal>
+            )}
 
 
             {/* Session Close Modal - Using shared component */}

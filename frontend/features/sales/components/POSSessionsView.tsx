@@ -190,9 +190,21 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                 </div>
             )}
 
-            <BaseModal open={reportDialogOpen} onOpenChange={setReportDialogOpen} size="md" title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'} description="Detalles del informe de sesión" footer={<Button onClick={() => setReportDialogOpen(false)}>Cerrar</Button>}>
-                {reportData && <POSReport data={reportData} type={reportType} title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'} />}
-            </BaseModal>
+            {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
+            {reportDialogOpen && (
+                <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
+                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
+                        {reportData && (
+                            <POSReport
+                                data={reportData}
+                                type={reportType}
+                                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                                onClose={() => setReportDialogOpen(false)}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
 
             {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession} onSuccess={handleCloseSuccess} />}
         </div>

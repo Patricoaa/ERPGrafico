@@ -1,20 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, Fragment } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar, Printer } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar, Printer, Minus, MonitorSmartphone, CalendarClock, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Wallet, Activity, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate } from "@/lib/utils"
+import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate, cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { PaymentForm } from "@/components/forms/PaymentForm"
 import { Progress } from "@/components/ui/progress"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { AttachmentList } from "./AttachmentList"
+import { useRouter } from "next/navigation"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
 
@@ -53,13 +55,15 @@ const BannerStatus = ({ status, type }: { status: string, type: string }) => {
 
 const MetadataItem = ({ label, value, icon: Icon, className = "" }: { label: string, value: any, icon?: any, className?: string }) => {
     if (value === undefined || value === null || value === "") return null
+    // Fallback icon if none provided
+    const DisplayIcon = Icon || Minus
     return (
-        <div className={`space-y-1 ${className}`}>
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                {Icon && <Icon className="h-3 w-3" />}
+        <div className={`space-y-0.5 ${className}`}>
+            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <DisplayIcon className="h-3 w-3" />
                 {label}
             </h4>
-            <div className="text-sm font-semibold truncate">
+            <div className="text-[13px] font-medium text-foreground truncate">
                 {typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value}
             </div>
         </div>
@@ -67,16 +71,18 @@ const MetadataItem = ({ label, value, icon: Icon, className = "" }: { label: str
 }
 
 const SidebarSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
-    <div className="space-y-4 pt-4 first:pt-0">
-        <h3 className="text-[11px] font-black text-primary/80 uppercase tracking-tighter border-b pb-2">{title}</h3>
-        <div className="space-y-4">
+    <div className="space-y-3 pt-5 first:pt-0">
+        <h3 className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-border/80 pb-2">{title}</h3>
+        <div className="space-y-3">
             {children}
         </div>
     </div>
 )
 
-const SidebarContent = ({ data, currentType }: { data: any, currentType: string }) => {
+const SidebarContent = ({ data, currentType, closeModal }: { data: any, currentType: string, closeModal: () => void }) => {
     if (!data) return null
+    const router = useRouter()
+    const { openContact } = useGlobalModals()
 
     const renderStatusSection = () => (
         <SidebarSection title="Estado">
@@ -87,13 +93,23 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
     // Document-specific sidebar content
     const renderContent = () => {
         // Helper to render the common contact section
-        const renderContactSection = (title: string, name: string, rut?: string) => {
+        const renderContactSection = (title: string, name: string, contactId?: number | string | null, rut?: string) => {
             if (!name) return null
             return (
                 <SidebarSection title={title}>
-                    <div className="space-y-1">
-                        <div className="text-sm font-black text-primary leading-tight">{name}</div>
-                        {rut && <div className="text-xs font-mono text-muted-foreground">{rut}</div>}
+                    <div className="space-y-0.5">
+                        <div
+                            className="text-[13px] font-medium text-foreground leading-tight flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors pr-2"
+                            onClick={() => {
+                                if (contactId) {
+                                    openContact(Number(contactId));
+                                }
+                            }}
+                        >
+                            <span className="truncate">{name}</span>
+                            <ExternalLink className="h-3 w-3 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                        {rut && <div className="text-[11px] font-medium text-muted-foreground">{rut}</div>}
                     </div>
                 </SidebarSection>
             )
@@ -103,54 +119,48 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'sale_order':
                 return (
                     <>
-                        {renderContactSection('Cliente', data.customer_name || data.contact_name, data.customer_rut)}
+                        {renderContactSection('Cliente', data.customer_name || data.contact_name, data.customer_id || data.customer || data.contact_id, data.customer_rut)}
                         <SidebarSection title="Información Comercial">
                             <MetadataItem label="Vendedor" value={data.salesperson_name || data.seller_name} icon={User} />
-                            <MetadataItem label="Canal" value={data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'} />
+                            <MetadataItem label="Canal" value={data.channel === 'POS' ? 'Punto de Venta' : 'Sistema'} icon={MonitorSmartphone} />
                             <MetadataItem label="Almacén" value={data.warehouse_name} icon={Package} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
-                            <MetadataItem label="Entrega Planificada" value={formatPlainDate(data.planned_delivery_date)} />
+                            <MetadataItem label="Entrega Planificada" value={formatPlainDate(data.planned_delivery_date)} icon={CalendarClock} />
                         </SidebarSection>
                     </>
                 )
             case 'purchase_order':
                 return (
                     <>
-                        {renderContactSection('Proveedor', data.supplier_name || data.contact_name, data.supplier_rut)}
+                        {renderContactSection('Proveedor', data.supplier_name || data.contact_name, data.supplier_id || data.supplier || data.contact_id, data.supplier_rut)}
                         <SidebarSection title="Información de Compra">
                             <MetadataItem label="Almacén Destino" value={data.warehouse_name} icon={Package} />
-                            <MetadataItem label="Estado Recepción" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} />
+                            <MetadataItem label="Estado Recepción" value={data.delivery_status && translateReceivingStatus(data.delivery_status)} icon={Activity} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
-                            <MetadataItem label="Recepción Planificada" value={formatPlainDate(data.planned_receipt_date)} />
+                            <MetadataItem label="Recepción Planificada" value={formatPlainDate(data.planned_receipt_date)} icon={CalendarClock} />
                         </SidebarSection>
                     </>
                 )
             case 'invoice':
                 const isSale = data.dte_type === 'FACTURA' || data.dte_type === 'BOLETA' || data.dte_type === 'NOTA_DEBITO' || data.dte_type === 'NOTA_CREDITO'
-                // Note: Logic for 'Cliente' vs 'Proveedor' might need refinement depending on exact Invoice flows, but usually Invoice = Sale, Bill = Purchase.
-                // Assuming 'invoice' type covers both sales and purchase invoices (bills)? 
-                // Creating a generic title if unsure, or checking fields.
-                // Usually ERPGrafico separates 'invoice' (Sales) from 'bill' (Purchases)? 
-                // Based on previous context, 'invoice' model has dte_type. 
-                // Let's assume 'Cliente' for now as it's typically Sales. If `supplier_name` exists, it's likely a Purchase Invoice?
-                const contactTitle = data.supplier_name ? 'Proveedor' : 'Cliente'
-                const contactName = data.supplier_name || data.customer_name || data.contact_name
+                const contactTitle = data.supplier_name || (data.dte_type === 'PURCHASE_INV' || data.dte_type === 'FACTURA_COMPRA') ? 'Proveedor' : 'Cliente'
+                const contactName = data.supplier_name || data.customer_name || data.partner_name || data.contact_name
+                const currContactId = data.supplier_id || data.customer_id || data.partner_id || data.contact_id
                 const contactRut = data.supplier_rut || data.customer_rut
 
                 return (
                     <>
-                        {renderContactSection(contactTitle, contactName, contactRut)}
+                        {renderContactSection(contactTitle, contactName, currContactId, contactRut)}
                         <SidebarSection title="Información Tributaria">
-                            <MetadataItem label="Tipo DTE" value={data.dte_type} />
-                            <MetadataItem label="Folio" value={data.folio_number} />
+                            <MetadataItem label="Tipo DTE" value={data.dte_type} icon={Receipt} />
+                            <MetadataItem label="Folio" value={data.folio_number} icon={Hash} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Emisión" value={formatPlainDate(data.date)} icon={Calendar} />
-                            <MetadataItem label="Vencimiento" value={formatPlainDate(data.due_date)} />
                         </SidebarSection>
                         {data.attachments?.length > 0 && (
                             <SidebarSection title="Archivos">
@@ -162,12 +172,13 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'payment':
                 const payTitle = data.payment_type === 'INBOUND' ? 'Cliente' : 'Proveedor'
                 const payName = data.partner_name || data.contact_name
+                const payContactId = data.partner_id || data.contact_id
                 return (
                     <>
-                        {renderContactSection(payTitle, payName)}
+                        {renderContactSection(payTitle, payName, payContactId)}
                         <SidebarSection title="Información de Pago">
-                            <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} />
-                            <MetadataItem label="Referencia" value={data.transaction_number || data.reference} />
+                            <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} icon={Wallet} />
+                            <MetadataItem label="Referencia" value={data.reference || data.transaction_number || data.payment_reference} icon={FileText} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Fecha Pago" value={formatPlainDate(data.date)} icon={Calendar} />
@@ -177,10 +188,10 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'journal_entry':
                 return (
                     <>
-                        {renderContactSection('Entidad Relacionada', data.partner_name || data.contact_name)}
+                        {renderContactSection('Entidad Relacionada', data.partner_name || data.contact_name, data.partner_id || data.partner || data.contact_id)}
                         <SidebarSection title="Información Contable">
-                            <MetadataItem label="Período" value={data.period_name} />
-                            <MetadataItem label="Diario" value={data.journal_name} />
+                            <MetadataItem label="Período" value={data.period_name} icon={CalendarDays} />
+                            <MetadataItem label="Diario" value={data.journal_name} icon={BookOpen} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Fecha" value={formatPlainDate(data.date)} icon={Calendar} />
@@ -190,11 +201,11 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'cash_movement':
                 return (
                     <>
-                        {renderContactSection('Entidad', data.partner_name || data.contact_name)}
+                        {renderContactSection('Entidad', data.partner_name || data.contact_name, data.partner_id || data.partner || data.contact_id)}
                         <SidebarSection title="Información del Movimiento">
-                            <MetadataItem label="Tipo" value={data.movement_type} />
-                            <MetadataItem label="Contenedor Origen" value={data.from_container_name} />
-                            <MetadataItem label="Contenedor Destino" value={data.to_container_name} />
+                            <MetadataItem label="Tipo" value={data.movement_type} icon={Activity} />
+                            <MetadataItem label="Origen" value={data.from_container_name} icon={ArrowRightFromLine} />
+                            <MetadataItem label="Destino" value={data.to_container_name} icon={ArrowRightToLine} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
                             <MetadataItem label="Fecha" value={formatPlainDate(data.date)} icon={Calendar} />
@@ -204,7 +215,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
             case 'work_order':
                 return (
                     <>
-                        {renderContactSection('Cliente', data.customer_name || data.contact_name)}
+                        {renderContactSection('Cliente', data.customer_name || data.contact_name, data.customer_id || data.contact_id)}
                         <SidebarSection title="Progreso">
                             <div className="flex items-center gap-3">
                                 <Progress value={data.production_progress || 0} className="h-2 flex-1" />
@@ -213,7 +224,20 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
                         </SidebarSection>
                         <SidebarSection title="Información General">
                             <MetadataItem label="Fecha" value={formatPlainDate(data.date || data.created_at)} icon={Calendar} />
-                            <MetadataItem label="ID" value={data.display_id || data.id} className="font-mono text-[11px]" />
+                            <MetadataItem label="ID" value={data.display_id || data.id} className="font-mono text-[11px]" icon={Hash} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'sale_delivery':
+            case 'purchase_receipt':
+                const logisticsTitle = currentType === 'sale_delivery' ? 'Cliente' : 'Proveedor'
+                const logisticsName = data.customer_name || data.supplier_name || data.contact_name
+                const logisticsContactId = data.customer_id || data.customer || data.supplier_id || data.supplier || data.contact_id
+                return (
+                    <>
+                        {renderContactSection(logisticsTitle, logisticsName, logisticsContactId)}
+                        <SidebarSection title="Logística">
+                            <MetadataItem label="Fecha Esperada" value={formatPlainDate(data.expected_date || data.scheduled_date || data.date)} icon={CalendarClock} />
                         </SidebarSection>
                     </>
                 )
@@ -221,7 +245,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
                 return (
                     <SidebarSection title="Información General">
                         <MetadataItem label="Fecha" value={formatPlainDate(data.date || data.created_at)} icon={Calendar} />
-                        <MetadataItem label="ID" value={data.id} className="font-mono text-[11px]" />
+                        <MetadataItem label="ID" value={data.id} className="font-mono text-[11px]" icon={Hash} />
                     </SidebarSection>
                 )
         }
@@ -320,49 +344,81 @@ const RelatedDocumentsSection = ({ data, currentType, navigateTo }: { data: any,
                     </>
                 )}
 
+                {/* ===== LOGISTICS (DELIVERY/RECEIPT) RELATIONSHIPS ===== */}
+                {(currentType === 'sale_delivery' || currentType === 'purchase_receipt') && (
+                    <>
+                        {/* Origin Order */}
+                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+
+                        {/* Invoices */}
+                        {relatedDocs.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.type_display || 'Factura', inv.display_id || inv.number, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
+
+                        {/* Journal Entry */}
+                        {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
+                    </>
+                )}
+
                 {/* ===== PURCHASE ORDER RELATIONSHIPS ===== */}
                 {currentType === 'purchase_order' && (
                     <>
                         {/* Work Order Origin */}
-                        {data.work_order && renderCard('work_order', data.work_order, 'Orden de Trabajo Origen', `OT-${data.work_order_number || data.work_order}`, <ClipboardList className="h-5 w-5 text-indigo-600" />, 'indigo', 'indigo-50', 'indigo-200')}
+                        {data.work_order && renderCard('work_order', data.work_order, 'Orden de Trabajo Origen', data.work_order_display_id || `OT-${data.work_order_number || data.work_order}`, <ClipboardList className="h-5 w-5 text-indigo-600" />, 'indigo', 'indigo-50', 'indigo-200')}
 
                         {/* Invoices (primary invoices only) */}
-                        {relatedDocs.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.type_display || 'Factura', inv.number, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
+                        {relatedDocs.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.type_display || 'Factura', inv.display_id || inv.number, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
 
                         {/* Notes (NC/ND) */}
-                        {relatedDocs.notes?.map((note: any) => renderCard('invoice', note.id, note.type_display, note.number, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200'))}
+                        {relatedDocs.notes?.map((note: any) => renderCard('invoice', note.id, note.type_display, note.display_id || note.number, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200'))}
 
                         {/* Receipts */}
                         {relatedDocs.receipts?.map((rec: any) => {
                             // Handle both stock moves and service receipts
                             if (rec.docType === 'inventory') {
-                                return renderCard('inventory', rec.id, 'Movimiento de Inventario', rec.number, <Package className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200');
+                                return renderCard('inventory', rec.id, 'Movimiento de Inventario', rec.display_id || rec.number, <Package className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200');
                             } else {
-                                return renderCard('purchase_receipt', rec.id, 'Recepción', rec.number, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200');
+                                return renderCard('purchase_receipt', rec.id, 'Recepción', rec.display_id || rec.number, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200');
                             }
                         })}
 
                         {/* Payments */}
-                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.code, <Banknote className="h-5 w-5 text-green-600" />, 'green', 'green-50', 'green-200'))}
+                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.display_id || pay.code, <Banknote className="h-5 w-5 text-green-600" />, 'green', 'green-50', 'green-200'))}
                     </>
                 )}
 
                 {/* ===== PAYMENT RELATIONSHIPS ===== */}
                 {currentType === 'payment' && (
                     <>
-                        {/* Invoice */}
-                        {data.invoice && renderCard('invoice', data.invoice, 'Factura Vinculada', data.invoice_number || `INV-${data.invoice}`, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200')}
+                        {/* Unified Document Info from Backend */}
+                        {data.document_info && renderCard(
+                            data.document_info.type, 
+                            data.document_info.id, 
+                            'Documento Vinculado', 
+                            data.document_info.label || data.document_info.display_id, 
+                            data.document_info.type === 'invoice' ? <Receipt className="h-5 w-5 text-emerald-600" /> : 
+                            data.document_info.type === 'journal_entry' ? <Hash className="h-5 w-5 text-purple-600" /> :
+                            <ShoppingBag className="h-5 w-5 text-blue-600" />,
+                            data.document_info.type === 'invoice' ? 'emerald' : 
+                            data.document_info.type === 'journal_entry' ? 'purple' : 'blue',
+                            data.document_info.type === 'invoice' ? 'emerald-50' : 
+                            data.document_info.type === 'journal_entry' ? 'purple-50' : 'blue-50',
+                            data.document_info.type === 'invoice' ? 'emerald-200' : 
+                            data.document_info.type === 'journal_entry' ? 'purple-200' : 'blue-200'
+                        )}
 
-                        {/* Sale Order */}
-                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta', data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
-
-                        {/* Purchase Order */}
-                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra', data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {/* Fallback Legacy Fields if document_info is somehow missing or needs specific display */}
+                        {!data.document_info && (
+                            <>
+                                {data.invoice && renderCard('invoice', data.invoice, 'DTE Vinculado', data.invoice_display_id || (data.invoice_number ? `FAC-${data.invoice_number}` : `FAC-${data.invoice}`), <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200')}
+                                {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                                {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                            </>
+                        )}
                     </>
                 )}
 
                 {/* ===== COMMON: JOURNAL ENTRY ===== */}
-                {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
+                {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
             </div>
         </div>
     );
@@ -418,7 +474,7 @@ const PaymentHistorySection = ({ data, currentType, navigateTo, handleDeletePaym
     );
 }
 
-const PrintableReceipt = ({ data, currentType, mainTitle, subTitle }: { data: any, currentType: string, mainTitle: string, subTitle: string }) => {
+const PrintableReceipt = ({ data, currentType, mainTitle, subTitle, onClose, isPreview = false }: { data: any, currentType: string, mainTitle: string, subTitle: string, onClose?: () => void, isPreview?: boolean }) => {
     if (!data) return null
 
     const renderHeader = () => (
@@ -439,37 +495,65 @@ const PrintableReceipt = ({ data, currentType, mainTitle, subTitle }: { data: an
                 {contactName && (
                     <div className="border-b border-black/10 pb-2">
                         <div className="font-black uppercase text-[9px] text-black/50">Asociado a:</div>
-                        <div className="font-bold uppercase">{contactName}</div>
-                        {contactRut && <div className="font-mono text-[10px]">{contactRut}</div>}
+                        <div className="font-bold uppercase tracking-tight">{contactName}</div>
+                        {contactRut && <div className="font-mono text-[10px] opacity-70">{contactRut}</div>}
                     </div>
                 )}
 
-                {/* Specific Details */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {/* Specific Details Grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                     {currentType === 'sale_order' && (
                         <>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Vendedor:</span> {data.salesperson_name || 'N/A'}</div>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Canal:</span> {data.channel || 'SISTEMA'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Vendedor:</span> {data.salesperson_name || 'N/A'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Canal:</span> {data.channel || 'SISTEMA'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado:</span> {translateStatus(data.status)}</div>
                         </>
                     )}
                     {currentType === 'invoice' && (
                         <>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Tipo DTE:</span> {data.dte_type}</div>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Folio:</span> {data.folio_number || 'S/N'}</div>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Vencimiento:</span> {formatPlainDate(data.due_date)}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo DTE:</span> {data.dte_type}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Folio:</span> {data.folio_number || 'S/N'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Vencimiento:</span> {formatPlainDate(data.due_date)}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado Pago:</span> {data.payment_status}</div>
                         </>
                     )}
                     {currentType === 'payment' && (
                         <>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Método:</span> {translatePaymentMethod(data.payment_method)}</div>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
-                            {data.invoice_display_id && <div><span className="font-black uppercase text-[9px] text-black/50 block">Doc. Aplicado:</span> {data.invoice_display_id}</div>}
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Método:</span> {translatePaymentMethod(data.payment_method)}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
+                            {data.invoice_display_id && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Documento Relacionado:</span> {data.invoice_display_id}</div>}
                         </>
                     )}
                     {(currentType === 'sale_delivery' || currentType === 'purchase_receipt') && (
                         <>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Almacén:</span> {data.warehouse_name || '-'}</div>
-                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Estado:</span> {translateReceivingStatus(data.status)}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Almacén:</span> {data.warehouse_name || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado:</span> {translateReceivingStatus(data.status)}</div>
+                            {data.origin_document && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Origen:</span> {data.origin_document}</div>}
+                        </>
+                    )}
+                    {currentType === 'journal_entry' && (
+                        <>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Diario:</span> {data.journal_name || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Periodo:</span> {data.period_name || '-'}</div>
+                            <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {data.reference || '-'}</div>
+                        </>
+                    )}
+                    {currentType === 'inventory' && (
+                        <>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo:</span> {data.move_type_display || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Origen/Destino:</span> {data.warehouse_name || '-'}</div>
+                        </>
+                    )}
+                    {currentType === 'cash_movement' && (
+                        <>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Origen:</span> {data.from_container_name || 'Ext.'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Destino:</span> {data.to_container_name || 'Ext.'}</div>
+                        </>
+                    )}
+                    {currentType === 'work_order' && (
+                        <>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Prioridad:</span> {data.priority || 'BAJA'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Progreso:</span> {data.completion_percentage}%</div>
                         </>
                     )}
                 </div>
@@ -481,24 +565,88 @@ const PrintableReceipt = ({ data, currentType, mainTitle, subTitle }: { data: an
         const lines = data.lines || data.items || []
         if (lines.length === 0) return null
 
+        // Accounting specific table
+        if (currentType === 'journal_entry') {
+            return (
+                <div className="mb-4">
+                    <div className="grid grid-cols-[1fr,60px,60px] gap-1 border-b-2 border-black pb-1 mb-1 text-[8px] font-black uppercase tracking-widest">
+                        <div>Cuenta</div>
+                        <div className="text-right">Debe</div>
+                        <div className="text-right">Haber</div>
+                    </div>
+                    <div className="space-y-2">
+                        {lines.map((item: any, idx: number) => (
+                            <div key={item.id || idx} className="grid grid-cols-[1fr,60px,60px] gap-1 text-[9px] leading-tight border-b border-black/5 pb-1">
+                                <div className="font-bold flex flex-col">
+                                    <span>{item.account_name}</span>
+                                    <span className="text-[7px] font-mono text-black/40">{item.account_code}</span>
+                                </div>
+                                <div className="text-right font-mono">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</div>
+                                <div className="text-right font-mono">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+
+        // Logistics specific table (PrintableReceipt)
+        if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') {
+            const isOutbound = currentType === 'sale_delivery';
+            return (
+                <div className="mb-4">
+                    <div className="grid grid-cols-[1fr,40px,50px] gap-2 border-b-2 border-black pb-1 mb-1 text-[8px] font-black uppercase tracking-widest">
+                        <div>Producto</div>
+                        <div className="text-right">Cant</div>
+                        <div className="text-center">UOM</div>
+                    </div>
+                    <div className="space-y-2">
+                        {lines.map((item: any, idx: number) => (
+                            <div key={item.id || idx} className="grid grid-cols-[1fr,40px,50px] gap-2 text-[10px] leading-tight border-b border-black/5 pb-1">
+                                <div className="font-bold flex flex-col">
+                                    <span>{item.product_name || item.product?.name}</span>
+                                    {item.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{item.product_code}</span>}
+                                </div>
+                                <div className="text-right font-black font-mono">
+                                    {isOutbound ? `-${Math.round(item.quantity || 0)}` : `+${Math.round(item.quantity || 0)}`}
+                                </div>
+                                <div className="text-center font-bold text-[8px] uppercase text-black/60 pt-0.5">
+                                    {item.uom_name || item.uom?.name || 'UN'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="mb-4">
-                <div className="grid grid-cols-[1fr,60px,80px] gap-2 border-b-2 border-black pb-1 mb-1 text-[9px] font-black uppercase tracking-widest">
+                <div className="grid grid-cols-[1fr,30px,50px,40px,60px] gap-1 border-b-2 border-black pb-1 mb-1 text-[7px] font-black uppercase tracking-widest">
                     <div>Descripción</div>
                     <div className="text-center">Cant</div>
+                    <div className="text-right">P. Unit</div>
+                    <div className="text-right">Desc.</div>
                     <div className="text-right">Total</div>
                 </div>
                 <div className="space-y-2">
-                    {lines.map((line: any, idx: number) => (
-                        <div key={line.id || idx} className="grid grid-cols-[1fr,60px,80px] gap-2 text-[10px] leading-tight">
-                            <div className="font-bold flex flex-col">
-                                <span>{line.description || line.product_name}</span>
-                                {line.product_code && <span className="text-[8px] font-mono text-black/40 uppercase">{line.product_code}</span>}
+                    {lines.map((line: any, idx: number) => {
+                        const hasDiscount = parseFloat(line.discount_amount || 0) > 0;
+                        return (
+                            <div key={line.id || idx} className="grid grid-cols-[1fr,30px,50px,40px,60px] gap-1 text-[9px] leading-tight border-b border-black/5 pb-1">
+                                <div className="font-bold flex flex-col">
+                                    <span>{line.description || line.product_name}</span>
+                                    {line.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{line.product_code}</span>}
+                                </div>
+                                <div className="text-center font-mono">{Math.round(line.quantity || 0)}</div>
+                                <div className="text-right font-mono">{formatCurrency(line.unit_price_gross || line.unit_price || line.unit_cost)}</div>
+                                <div className="text-right font-mono text-black/60">{hasDiscount ? `-${formatCurrency(line.discount_amount)}` : '-'}</div>
+                                <div className="text-right font-black font-mono">
+                                    {formatCurrency(line.subtotal || line.amount || (line.unit_price * line.quantity) || 0)}
+                                </div>
                             </div>
-                            <div className="text-center font-mono">{Math.round(line.quantity || 0)}</div>
-                            <div className="text-right font-black font-mono">{formatCurrency(line.subtotal || line.amount || 0)}</div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
         )
@@ -506,51 +654,107 @@ const PrintableReceipt = ({ data, currentType, mainTitle, subTitle }: { data: an
 
     const renderTotals = () => {
         if (currentType === 'payment' || currentType === 'cash_movement') {
-             return (
+            return (
                 <div className="border-t-2 border-black pt-4 text-center">
-                    <div className="text-[10px] font-black uppercase text-black/50">Total Movimiento</div>
+                    <div className="text-[10px] font-black uppercase text-black/50 tracking-widest">Total Movimiento</div>
                     <div className="text-2xl font-black font-mono tracking-tighter">{formatCurrency(data.amount)}</div>
                 </div>
             )
         }
 
-        if (!data.total) return null
+        if (currentType === 'journal_entry') {
+            const lines = data.lines || data.items || []
+            const totalDebit = lines.reduce((acc: number, cur: any) => acc + Number(cur.debit), 0)
+            const totalCredit = lines.reduce((acc: number, cur: any) => acc + Number(cur.credit), 0)
+
+            return (
+                <div className="border-t-2 border-black pt-2 space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold">
+                        <span className="uppercase">Total Debe:</span>
+                        <span className="font-mono">{formatCurrency(totalDebit)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold">
+                        <span className="uppercase">Total Haber:</span>
+                        <span className="font-mono">{formatCurrency(totalCredit)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-dashed border-black/20 flex justify-center">
+                        <span className="text-[8px] font-black uppercase text-black/40">Asiento Cuadrado</span>
+                    </div>
+                </div>
+            )
+        }
+
+        if (!data.total && !data.amount) return null
+
+        const totalValue = data.total || data.amount
 
         return (
             <div className="border-t-2 border-black pt-2 space-y-1">
-                <div className="flex justify-between text-[10px] font-bold">
-                    <span className="uppercase">Neto:</span>
-                    <span className="font-mono">{formatCurrency(data.total_net || 0)}</span>
-                </div>
-                <div className="flex justify-between text-[10px] font-bold">
-                    <span className="uppercase">IVA (19%):</span>
-                    <span className="font-mono">{formatCurrency(data.total_tax || 0)}</span>
-                </div>
+                {data.total_net !== undefined && (
+                    <div className="flex justify-between text-[9px] font-bold opacity-60">
+                        <span className="uppercase tracking-wider">Subtotal Neto:</span>
+                        <span className="font-mono">{formatCurrency(data.total_net || 0)}</span>
+                    </div>
+                )}
+                {data.total_tax !== undefined && (
+                    <div className="flex justify-between text-[9px] font-bold opacity-60">
+                        <span className="uppercase tracking-wider">IVA (19%):</span>
+                        <span className="font-mono">{formatCurrency(data.total_tax || 0)}</span>
+                    </div>
+                )}
                 {parseFloat(data.total_discount_amount || 0) > 0 && (
-                    <div className="flex justify-between text-[10px] font-black text-red-600">
-                        <span className="uppercase">Descuento:</span>
+                    <div className="flex justify-between text-[9px] font-black text-red-600">
+                        <span className="uppercase tracking-wider">Descuento Global:</span>
                         <span className="font-mono">-{formatCurrency(data.total_discount_amount)}</span>
                     </div>
                 )}
-                <div className="flex justify-between items-center pt-2 border-t border-dashed border-black/20">
-                    <span className="text-xs font-black uppercase">Total:</span>
-                    <span className="text-xl font-black font-mono tracking-tighter">{formatCurrency(data.total)}</span>
+                <div className="flex justify-between items-center pt-2 mt-1 border-t border-dashed border-black/20">
+                    <span className="text-xs font-black uppercase tracking-tight">Total Final:</span>
+                    <span className="text-xl font-black font-mono tracking-tighter">{formatCurrency(totalValue)}</span>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="hidden print:block w-[80mm] mx-auto p-4 bg-white text-black font-sans">
+        <div className={cn(
+            "print:block w-[80mm] mx-auto bg-white text-black font-sans relative",
+            isPreview ? "block p-6 rounded-2xl shadow-2xl border border-black/5" : "hidden p-4"
+        )}>
+            {/* Close button for preview */}
+            {onClose && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg border border-black/10 hover:bg-black/5 print:hidden group z-10"
+                >
+                    <X className="h-4 w-4 text-black group-hover:scale-110 transition-transform" />
+                </Button>
+            )}
+
             {renderHeader()}
             {renderContextualInfo()}
             {renderItemsTable()}
             {renderTotals()}
-            
+
             <div className="mt-8 text-center space-y-2 border-t border-black/10 pt-4">
                 <p className="text-[9px] font-black uppercase tracking-widest text-black/40">Gracias por su preferencia</p>
                 <p className="text-[8px] font-mono text-black/20 italic">Generado por ERPGrafico</p>
             </div>
+
+            {/* Print button inside preview */}
+            {isPreview && (
+                <div className="mt-6 pt-6 border-t border-dashed border-black/20 flex justify-center print:hidden">
+                    <Button
+                        onClick={() => window.print()}
+                        className="bg-black text-white hover:bg-black/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-xl shadow-lg border-2 border-black"
+                    >
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir Ahora
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }
@@ -562,9 +766,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [editingPayment, setEditingPayment] = useState<any>(null)
+    const [showReceiptPreview, setShowReceiptPreview] = useState(false)
 
     const handlePrint = () => {
-        window.print()
+        setShowReceiptPreview(true)
     }
 
     useEffect(() => {
@@ -574,6 +779,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             setCurrentId(initialId)
             setHistory([])
             setData(null)
+            setLoading(true) // Start in loading state
+        } else {
+            // Reset state when closed to prevent showing old data on next open
+            setData(null)
+            setHistory([])
+            setEditingPayment(null)
+            setShowReceiptPreview(false)
         }
     }, [open, initialType, initialId])
 
@@ -586,9 +798,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     const fetchData = async () => {
         if (!currentId || currentId === 0) return
 
+        const idAtStart = currentId
+        const typeAtStart = currentType
+
         try {
             setLoading(true)
-            setData(null)
+            // Note: we don't null data here to avoid flicker if just refreshing same record
+            // but we null it in the useEffect above for new records
 
             let endpoint = ""
             const type = currentType?.toLowerCase()
@@ -614,14 +830,20 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
             console.log(`[TransactionViewModal] Fetching from: ${endpoint}`)
             const response = await api.get(endpoint)
-            setData(response.data)
+
+            // Only update if we're still looking at the same thing
+            if (idAtStart === currentId && typeAtStart === currentType) {
+                setData(response.data)
+            }
 
         } catch (error: any) {
             console.error("Error fetching transaction details:", error)
             const msg = error.response?.data?.error || error.message || "Error desconocido"
             toast.error(`Error al cargar: ${msg}`)
         } finally {
-            setLoading(false)
+            if (idAtStart === currentId && typeAtStart === currentType) {
+                setLoading(false)
+            }
         }
     }
 
@@ -657,27 +879,30 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
 
         switch (currentType) {
             case 'sale_order':
-                return { main: "Nota de Venta", sub: `NV-${data.number || data.id}` }
+                return { main: "Nota de Venta", sub: data.display_id || `NV-${data.number || data.id}` }
             case 'purchase_order':
-                return { main: "Orden de Compra y Servicios", sub: `OCS-${data.number || data.id}` }
+                return { main: "Orden de Compra y Servicios", sub: data.display_id || `OCS-${data.number || data.id}` }
             case 'invoice':
                 const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
                     data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
                         data.dte_type === 'BOLETA' ? 'Boleta de Venta' :
                             data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
                                 data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' : 'Factura de Venta'
+                
+                // Fallback prefix logic if display_id is missing
                 const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' :
                     data.dte_type === 'NOTA_DEBITO' ? 'ND' :
                         data.dte_type === 'BOLETA' ? 'BOL' :
-                            data.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                data.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT'
-                return { main: `Comprobante de ${typeLabel}`, sub: `${prefix}-${data.number || data.id}` }
+                            data.dte_type === 'FACTURA_EXENTA' ? 'FAC-EX' :
+                                data.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
+                                
+                return { main: `Comprobante de ${typeLabel}`, sub: data.display_id || `${prefix}-${data.number || data.id}` }
             case 'payment':
                 const payPrefix = data.payment_type === 'INBOUND' ? 'Comprobante de Ingreso' : 'Comprobante de Egreso'
                 const payId = data.display_id || (data.payment_type === 'INBOUND' ? 'DEP-' : 'RET-') + data.id
                 return { main: payPrefix, sub: payId }
             case 'journal_entry':
-                return { main: "Asiento Contable", sub: `AS-${data.number || data.id}` }
+                return { main: "Asiento Contable", sub: data.display_id || `AS-${data.number || data.id}` }
             case 'inventory':
                 return { main: "Movimiento de Inventario", sub: data.reference_code || `MOV-${data.id}` }
             case 'work_order':
@@ -736,17 +961,34 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             <BaseModal
                 open={open}
                 onOpenChange={onOpenChange}
-                title=""
+                title={mainTitle + (subTitle ? ` - ${subTitle}` : "")}
+                headerClassName="sr-only"
                 size="xl"
                 hideScrollArea={true}
                 className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black"
             >
-                {/* Printable receipt for thermal printers (Hidden in UI, Visible in Print) */}
-                <PrintableReceipt 
-                    data={data} 
-                    currentType={currentType} 
-                    mainTitle={mainTitle} 
-                    subTitle={subTitle} 
+                {/* Simplified Overlay for Receipts - As per user request */}
+                {showReceiptPreview && (
+                    <div className="fixed inset-0 z-[110] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden">
+                        <div className="w-full max-w-[400px] animate-in zoom-in-95 duration-200">
+                            <PrintableReceipt
+                                data={data}
+                                currentType={currentType}
+                                mainTitle={mainTitle}
+                                subTitle={subTitle}
+                                onClose={() => setShowReceiptPreview(false)}
+                                isPreview={true}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Standard hidden receipt for actual browser print command */}
+                <PrintableReceipt
+                    data={data}
+                    currentType={currentType}
+                    mainTitle={mainTitle}
+                    subTitle={subTitle}
                 />
 
                 <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background print:hidden">
@@ -889,31 +1131,38 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 <TableHeader className="bg-muted/30">
                                                                     <TableRow className="hover:bg-transparent border-none">
                                                                         <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Producto</TableHead>
-                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">Cant. Orden</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">Cantidad</TableHead>
                                                                         <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[100px]">UOM</TableHead>
-                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px] px-6">Procesado</TableHead>
+                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[140px] px-6">Tipo</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.lines || []).map((line: any) => (
-                                                                        <TableRow key={line.id} className="hover:bg-muted/5 border-border/40">
-                                                                            <TableCell className="px-6 py-4">
-                                                                                <div className="flex flex-col">
-                                                                                    <span className="font-bold text-[13px] tracking-tight">{line.product_name}</span>
-                                                                                    <span className="text-[9px] font-mono text-muted-foreground uppercase">{line.product_code}</span>
-                                                                                </div>
-                                                                            </TableCell>
-                                                                            <TableCell className="text-right font-bold text-[13px] text-muted-foreground font-mono">
-                                                                                {Number(line.order_quantity).toLocaleString()}
-                                                                            </TableCell>
-                                                                            <TableCell className="text-center font-black text-[10px] uppercase text-muted-foreground/60">
-                                                                                {line.uom_name || 'UN'}
-                                                                            </TableCell>
-                                                                            <TableCell className="text-right font-black text-base text-orange-600 font-mono tracking-tighter px-6">
-                                                                                {Number(line.quantity).toLocaleString()}
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    ))}
+                                                                    {(data.lines || []).map((line: any) => {
+                                                                        const isExit = currentType === 'sale_delivery';
+                                                                        return (
+                                                                            <TableRow key={line.id} className="hover:bg-muted/5 border-border/40">
+                                                                                <TableCell className="px-6 py-4">
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="font-bold text-[13px] tracking-tight">{line.product_name}</span>
+                                                                                        <span className="text-[9px] font-mono text-muted-foreground uppercase">{line.product_code}</span>
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-right font-black text-lg text-primary font-mono tracking-tighter">
+                                                                                    {Number(line.quantity).toLocaleString()}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center font-black text-[10px] uppercase text-muted-foreground/60">
+                                                                                    {line.uom_name || 'UN'}
+                                                                                </TableCell>
+                                                                                <TableCell className="text-center font-bold text-[11px] uppercase px-6">
+                                                                                    {isExit ? (
+                                                                                        <span className="text-orange-600 bg-orange-600/10 px-2 py-1 rounded-md">Salida</span>
+                                                                                    ) : (
+                                                                                        <span className="text-emerald-600 bg-emerald-600/10 px-2 py-1 rounded-md">Entrada</span>
+                                                                                    )}
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        )
+                                                                    })}
                                                                 </TableBody>
                                                             </Table>
                                                         ) : (
@@ -921,31 +1170,40 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                 <TableHeader className="bg-muted/30">
                                                                     <TableRow className="hover:bg-transparent border-none">
                                                                         <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Descripción del Producto</TableHead>
-                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[100px]">Cant.</TableHead>
-                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">P. Unit.</TableHead>
-                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[160px] px-6">Subtotal</TableHead>
+                                                                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[80px]">Cant.</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[120px]">P. Unit.</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[120px]">Descuento</TableHead>
+                                                                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px] px-6">Subtotal</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.lines || data.items || []).map((item: any, idx: number) => (
-                                                                        <TableRow key={item.id || idx} className="hover:bg-muted/5 border-border/40">
-                                                                            <TableCell className="px-6 py-4">
-                                                                                <div className="flex flex-col">
-                                                                                    <span className="font-bold text-[13px] tracking-tight leading-tight">{item.description || item.product_name}</span>
-                                                                                    <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">{item.product_code}</span>
-                                                                                    {parseFloat(item.discount_amount || 0) > 0 && (
-                                                                                        <span className="text-[9px] font-black text-red-600 uppercase mt-1 flex items-center gap-1">
-                                                                                            <span className="bg-red-100 px-1 rounded-sm">DESC. {item.discount_percentage}%</span>
-                                                                                            <span>-{formatCurrency(item.discount_amount)}</span>
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            </TableCell>
-                                                                            <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
-                                                                            <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price_gross || item.unit_price || item.unit_cost)}</TableCell>
-                                                                            <TableCell className="text-right font-black text-[14px] text-primary font-mono tracking-tighter px-6">{formatCurrency(item.subtotal)}</TableCell>
-                                                                        </TableRow>
-                                                                    ))}
+                                                                    {(data.lines || data.items || []).map((item: any, idx: number) => {
+                                                                        const hasLineDiscount = parseFloat(item.discount_amount || 0) > 0
+                                                                        return (
+                                                                            <Fragment key={item.id || idx}>
+                                                                                <TableRow className="hover:bg-muted/5 border-border/40">
+                                                                                    <TableCell className="px-6 py-4">
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="font-bold text-[13px] tracking-tight leading-tight">{item.description || item.product_name}</span>
+                                                                                            <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">{item.product_code}</span>
+                                                                                        </div>
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
+                                                                                    <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price_gross || item.unit_price || item.unit_cost)}</TableCell>
+                                                                                    <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">
+                                                                                        {hasLineDiscount ? (
+                                                                                            <span className="text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-sm">
+                                                                                                -{formatCurrency(item.discount_amount)}
+                                                                                            </span>
+                                                                                        ) : '-'}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right font-black text-[14px] text-primary font-mono tracking-tighter px-6">
+                                                                                        {formatCurrency(item.subtotal)}
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            </Fragment>
+                                                                        )
+                                                                    })}
                                                                 </TableBody>
                                                             </Table>
                                                         )}
@@ -1049,6 +1307,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                         <SidebarContent
                                             currentType={currentType}
                                             data={data}
+                                            closeModal={() => onOpenChange(false)}
                                         />
                                     </div>
                                 </div>

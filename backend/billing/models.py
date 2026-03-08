@@ -136,10 +136,10 @@ class Invoice(models.Model):
     @property
     def display_id(self):
         """Retorna ID del documento con prefijo apropiado"""
-        prefix = 'FACT'
+        prefix = 'FAC'
         if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
         elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'
         elif self.dte_type == 'BOLETA': prefix = 'BOL'
-        elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BOL-EX'
-        elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FACT-EX'
+        elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BE'
+        elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FAC-EX'
         return f"{prefix}-{self.number or 'Draft'}"

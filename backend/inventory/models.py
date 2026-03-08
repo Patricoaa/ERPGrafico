@@ -1,4 +1,4 @@
-﻿from django.utils import timezone
+from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
@@ -927,7 +927,7 @@ class StockMove(models.Model):
 
     @property
     def display_id(self):
-        return f"MOV-{str(self.id).zfill(6)}"
+        return f"MOV-{str(self.id).zfill(5)}"
 
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):

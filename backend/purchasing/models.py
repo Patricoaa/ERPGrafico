@@ -235,7 +235,7 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     
     @property
     def display_id(self):
-        return f"MOV-{self.number}"
+        return f"REC-{self.number}"
     
     def save(self, *args, **kwargs):
         if not self.number:

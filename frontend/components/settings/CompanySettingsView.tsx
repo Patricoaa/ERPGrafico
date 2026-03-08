@@ -71,6 +71,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     const [contacts, setContacts] = useState<any[]>([])
     const [uploadingLogo, setUploadingLogo] = useState(false)
     const [isEditContactOpen, setIsEditContactOpen] = useState(false)
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     const form = useForm<CompanyFormValues>({
         resolver: zodResolver(companySchema) as any,
@@ -471,34 +472,57 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                     <div className="space-y-4">
                                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</FormLabel>
                                         <div className="flex flex-col md:flex-row gap-6 items-start">
-                                            <div className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner">
+                                            <div 
+                                                className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
+                                                onClick={() => !settings?.logo && fileInputRef.current?.click()}
+                                            >
                                                 {uploadingLogo ? (
                                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                                 ) : settings?.logo ? (
-                                                    <div className="relative w-full h-full group">
-                                                        <img src={settings.logo} alt="Logo" className="max-h-full max-w-full object-contain p-2" />
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                handleRemoveLogo()
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
+                                                    <div className="relative w-full h-full">
+                                                        <img 
+                                                            src={settings.logo} 
+                                                            alt="Logo" 
+                                                            className="max-h-full max-w-full object-contain p-2 w-full h-full" 
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                            <Button
+                                                                type="button"
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className="h-8 px-2 text-[10px] font-bold"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    fileInputRef.current?.click()
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-3 w-3 mr-1" />
+                                                                Cambiar
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleRemoveLogo()
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     <div className="text-center p-2 text-muted-foreground">
                                                         <Upload className="h-8 w-8 mx-auto mb-1 opacity-50" />
-                                                        <span className="text-[10px]">Sin Logo</span>
+                                                        <span className="text-[10px] font-bold uppercase tracking-tight">Subir Logo</span>
                                                     </div>
                                                 )}
                                                 <input 
                                                     type="file" 
-                                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                    ref={fileInputRef}
+                                                    className="hidden"
                                                     accept="image/*"
                                                     onChange={handleLogoUpload}
                                                     disabled={uploadingLogo}

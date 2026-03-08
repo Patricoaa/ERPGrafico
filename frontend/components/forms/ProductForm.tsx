@@ -171,6 +171,39 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
         }
     }, [productType, form])
 
+    // Synchronize allowed_sale_uoms with base UoM and filter incompatible units
+    const stockUomId = form.watch("uom")
+    useEffect(() => {
+        if (!stockUomId) return
+
+        const currentAllowed = form.getValues("allowed_sale_uoms") || []
+        const currentSaleUom = form.getValues("sale_uom")
+        const stockUom = uoms.find(u => u.id.toString() === stockUomId.toString())
+
+        if (!stockUom) return
+
+        // 1. Filter out UoMs that are not in the same category
+        const filteredAllowed = currentAllowed.filter(id => {
+            const u = uoms.find(uom => uom.id.toString() === id.toString())
+            return u?.category === stockUom.category
+        })
+
+        // 2. Ensure stock UoM is always in allowed_sale_uoms
+        if (!filteredAllowed.includes(stockUomId.toString())) {
+            filteredAllowed.push(stockUomId.toString())
+        }
+
+        // 3. Update if changed
+        if (JSON.stringify(filteredAllowed.sort()) !== JSON.stringify(currentAllowed.sort())) {
+            form.setValue("allowed_sale_uoms", filteredAllowed)
+        }
+
+        // 4. Default sale_uom to base if not set or no longer allowed
+        if (!currentSaleUom || !filteredAllowed.includes(currentSaleUom.toString())) {
+            form.setValue("sale_uom", stockUomId.toString())
+        }
+    }, [stockUomId, uoms, form])
+
     const fetchCategories = async () => {
         try {
             const res = await api.get('/inventory/categories/')

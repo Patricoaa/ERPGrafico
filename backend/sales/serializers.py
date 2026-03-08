@@ -140,10 +140,12 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     def get_pos_session_display(self, obj):
         return str(obj.pos_session) if obj.pos_session else None
 
+    display_id = serializers.CharField(read_only=True)
+
     class Meta:
         model = SaleOrder
         fields = [
-            'id', 'number', 'customer', 'customer_name', 'date', 'status', 'channel', 'channel_display',
+            'id', 'number', 'display_id', 'customer', 'customer_name', 'date', 'status', 'channel', 'channel_display',
             'notes', 'payment_method', 'delivery_status', 'delivery_date', 'salesperson',
             'total_net', 'total_tax', 'total_discount_amount', 'total', 'effective_total', 'total_paid', 'pending_amount',
             'lines', 'serialized_payments', 'related_documents', 'work_orders', 
@@ -164,6 +166,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             doc_info = {
                 'id': inv.id,
                 'number': inv.number or 'Draft',
+                'display_id': inv.display_id,
                 'dte_type': inv.dte_type,
                 'type_display': inv.get_dte_type_display(),
                 'status': inv.status,
@@ -186,8 +189,6 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             })
 
         for pay in obj.payments.all():
-            prefix = 'ING' if pay.movement_type == 'INBOUND' else 'EGR'
-            code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
                 'id': pay.id,
                 'amount': pay.amount,
@@ -199,7 +200,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 'is_pending_registration': pay.is_pending_registration,
                 'reference': pay.reference,
                 'invoice_id': pay.invoice_id,
-                'code': code
+                'display_id': pay.display_id,
+                'code': pay.display_id # Use display_id for consistency
             })
 
         return docs
@@ -281,6 +283,8 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     lines = SaleDeliveryLineSerializer(many=True, read_only=True)
     sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    customer_name = serializers.CharField(source='sale_order.customer.name', read_only=True)
+    customer_id = serializers.IntegerField(source='sale_order.customer_id', read_only=True)
     
     class Meta:
         model = SaleDelivery

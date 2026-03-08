@@ -68,10 +68,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     work_order_number = serializers.CharField(source='work_order.number', read_only=True, allow_null=True)
     related_documents = serializers.SerializerMethodField()
 
+    display_id = serializers.CharField(read_only=True)
+
     class Meta:
         model = PurchaseOrder
         fields = [
-            'id', 'number', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
+            'id', 'number', 'display_id', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
             'date', 'status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
             'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments',
             'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at'
@@ -144,6 +146,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             doc_info = {
                 'id': inv.id,
                 'number': inv.number or 'Draft',
+                'display_id': inv.display_id,
                 'dte_type': inv.dte_type,
                 'type_display': inv.get_dte_type_display(),
                 'status': inv.status,
@@ -163,10 +166,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 if line.stock_move and line.stock_move_id not in processed_moves:
                     move = line.stock_move
                     processed_moves.add(move.id)
-                    move_code = f"MOV-{str(move.id).zfill(6)}"
                     docs['receipts'].append({
                         'id': move.id,
-                        'number': move_code,
+                        'number': move.display_id,
+                        'display_id': move.display_id,
                         'date': rec.receipt_date,
                         'docType': 'inventory',
                         'stock_moves': [{
@@ -181,7 +184,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if rec.lines.filter(product__product_type__in=['SERVICE', 'SUBSCRIPTION']).exists():
                 docs['receipts'].append({
                     'id': rec.id,
-                    'number': f"REC-{str(rec.id).zfill(5)}",
+                    'number': rec.display_id,
+                    'display_id': rec.display_id,
                     'date': rec.receipt_date,
                     'docType': 'purchase_receipt',
                     'is_service': True
@@ -192,8 +196,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             if pay.invoice and pay.invoice.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
                 continue
 
-            prefix = 'ING' if pay.movement_type == 'INBOUND' else 'EGR'
-            code = f"{prefix}-{str(pay.id).zfill(5)}"
             docs['payments'].append({
                 'id': pay.id,
                 'amount': pay.amount,
@@ -204,7 +206,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                 'is_pending_registration': pay.is_pending_registration,
                 'invoice_id': pay.invoice_id,
                 'payment_type': pay.movement_type,
-                'code': code
+                'display_id': pay.display_id,
+                'code': pay.display_id
             })
         
         return docs
@@ -284,6 +287,8 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     lines = PurchaseReceiptLineSerializer(many=True, read_only=True)
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
+    supplier_name = serializers.CharField(source='purchase_order.supplier.name', read_only=True)
+    supplier_id = serializers.IntegerField(source='purchase_order.supplier_id', read_only=True)
     
     class Meta:
         model = PurchaseReceipt
@@ -303,6 +308,8 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
     purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    supplier_name = serializers.CharField(source='purchase_order.supplier.name', read_only=True)
+    supplier_id = serializers.IntegerField(source='purchase_order.supplier_id', read_only=True)
     
     class Meta:
         model = PurchaseReturn
