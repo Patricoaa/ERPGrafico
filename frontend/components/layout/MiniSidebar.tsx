@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
 import { motion, AnimatePresence } from "framer-motion"
+import { useBranding } from "@/contexts/BrandingProvider"
 
 interface MiniSidebarProps {
     activeCategory: string | null
@@ -46,6 +47,7 @@ const mainItems = [
 export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory }: MiniSidebarProps) {
     const router = useRouter()
     const { logout, user } = useAuth()
+    const { logo } = useBranding()
 
     const handleLogout = () => {
         logout()
@@ -64,8 +66,12 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
                 className="mb-6 cursor-pointer"
                 onClick={() => onCategoryChange("dashboard")}
             >
-                <div className="w-11 h-11 rounded-[14px] bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-[0_8px_16px_rgba(var(--primary),0.3)]">
-                    ES
+                <div className="w-11 h-11 rounded-[14px] bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-[0_8px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+                    {logo ? (
+                        <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                        "ES"
+                    )}
                 </div>
             </motion.div>
 

@@ -122,6 +122,9 @@ class AttachmentSerializer(serializers.ModelSerializer):
         return f"{size:.1f} TB"
 
 class CompanySettingsSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False, allow_blank=True)
+    tax_id = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = CompanySettings
         fields = '__all__'

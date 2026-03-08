@@ -54,35 +54,19 @@ class CompanySettings(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # 1. Save ourselves first. This ensures that when the Contact signal
-        # queries CompanySettings, it sees the updated values.
-        super().save(*args, **kwargs)
-
-        # 2. Sync to Contact if linked
+        # Enforce "Single Source of Truth":
+        # If a contact is linked, company details MUST match that contact.
+        # We pull from contact instead of pushing to it, to avoid overwriting
+        # contact data with stale or empty company settings data.
         if self.contact:
             c = self.contact
-            updated = False
-            if c.name != self.name:
-                c.name = self.name
-                updated = True
-            if c.tax_id != self.tax_id:
-                c.tax_id = self.tax_id
-                updated = True
-            if c.email != self.email:
-                c.email = self.email
-                updated = True
-            if c.phone != self.phone:
-                c.phone = self.phone
-                updated = True
-            if c.address != self.address:
-                c.address = self.address
-                updated = True
-            
-            if updated:
-                # This will trigger the sync_contact_to_company_settings signal,
-                # but since we already saved 'self' with the same values, 
-                # that signal will see no differences and stop.
-                c.save()
+            self.name = c.name
+            self.tax_id = c.tax_id
+            self.email = c.email
+            self.phone = c.phone
+            self.address = c.address
+
+        super().save(*args, **kwargs)
 
 class ActionLog(models.Model):
     class Type(models.TextChoices):
