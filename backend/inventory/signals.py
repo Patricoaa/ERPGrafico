@@ -8,13 +8,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=StockMove)
-def trigger_replenishment_check(sender, instance, created, **kwargs):
+def handle_stock_move_updates(sender, instance, created, **kwargs):
     """
-    Triggers a replenishment check whenever a stock move is recorded.
-    Specifically important for OUT and ADJ (negative) moves.
+    Handles side effects of stock movements:
+    1. Triggers replenishment checks.
+    2. Resets unit cost to 0 if stock is zero (requested by business rule).
     """
-    if instance.product.track_inventory:
-         ProcurementService.check_replenishment(instance.product, instance.warehouse)
+    product = instance.product
+    if not product.track_inventory:
+        return
+
+    # 1. Replenishment Check
+    ProcurementService.check_replenishment(product, instance.warehouse)
+
+    # 2. Reset Cost if stock reached zero or less
+    # Note: We check physical stock (qty_on_hand)
+    if product.qty_on_hand <= 0 and product.cost_price != 0:
+        product.cost_price = 0
+        product.save(update_fields=['cost_price'])
 
 
 @receiver(post_save, sender=Product)

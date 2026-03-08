@@ -141,6 +141,11 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             # moves_out should be positive for display, but moves have negative quantity
             moves_out = abs(p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
             
+            # Cost and valuation logic (requested by business rule)
+            # If stock is 0, cost should be 0 in the report.
+            unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
+            total_value = float(stock_qty * Decimal(str(unit_cost)))
+
             report.append({
                 'id': p.id,
                 'code': p.code,
@@ -151,8 +156,8 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 'uom_category_id': p.uom.category_id if p.uom else None,
                 'uom_name': p.uom.name if p.uom else '',
                 'stock_qty': float(stock_qty),
-                'unit_cost': float(p.cost_price),
-                'total_value': float(stock_qty * p.cost_price),
+                'unit_cost': unit_cost,
+                'total_value': total_value,
                 'moves_in': float(moves_in),
                 'moves_out': float(moves_out),
                 'qty_reserved': float(p.qty_reserved),
@@ -237,7 +242,37 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 variant_name = m.product.variant_display_name or m.product.name
                 description = f"[{variant_name}] {description}"
 
+            # Determine related document info and custom display_id based on prefixes
+            display_id = m.display_id # Default MOV-XXXX
+            related_id = m.id
+            related_type = 'inventory'
+            
+            if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
+                # Already DES-
+                display_id = m.sale_delivery_line.delivery.display_id
+                related_id = m.sale_delivery_line.delivery.id
+                related_type = 'sale_delivery'
+            elif hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
+                # Already REC-
+                display_id = m.purchase_receipt_line.receipt.display_id
+                related_id = m.purchase_receipt_line.receipt.id
+                related_type = 'purchase_receipt'
+            elif hasattr(m, 'sale_return_line') and m.sale_return_line:
+                # Return from customer = Stock Input -> REC
+                display_id = f"REC-{m.sale_return_line.return_doc.number}"
+                related_id = m.sale_return_line.return_doc.id
+                related_type = 'sale_return'
+            elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
+                # Return to supplier = Stock Output -> DES
+                display_id = f"DES-{m.purchase_return_line.return_doc.number}"
+                related_id = m.purchase_return_line.return_doc.id
+                related_type = 'purchase_return'
+
             kardex.append({
+                'id': m.id,
+                'display_id': display_id,
+                'related_id': related_id,
+                'related_type': related_type,
                 'date': m.date,
                 'type': m.move_type,
                 'quantity': float(m.quantity),
@@ -248,20 +283,43 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 'uom': m.uom.name if m.uom else ""
             })
 
-        # 3. Sales Analysis (from CONFIRMED deliveries) - Including variants
-        from sales.models import SaleDeliveryLine
+        # 3. Sales Analysis (from CONFIRMED deliveries and returns) - Including variants
+        from sales.models import SaleDeliveryLine, SaleReturnLine
+        from django.db import models
         from django.db.models import Avg, Sum, F
-        sales_stats = SaleDeliveryLine.objects.filter(
+        
+        # Aggregate Deliveries
+        delivery_stats = SaleDeliveryLine.objects.filter(
             product_id__in=product_ids, 
             delivery__status='CONFIRMED'
         ).aggregate(
-            avg_price=Avg('unit_price'),
-            avg_cost=Avg('unit_cost'),
+            avg_price=Avg('unit_price', filter=models.Q(unit_price__gt=0)),
+            avg_cost=Avg('unit_cost', filter=models.Q(unit_cost__gt=0)),
             total_qty=Sum('quantity'),
             total_revenue=Sum(F('quantity') * F('unit_price')),
             total_cost_basis=Sum(F('quantity') * F('unit_cost'))
         )
         
+        # Aggregate Returns (Subtraction)
+        return_stats = SaleReturnLine.objects.filter(
+            product_id__in=product_ids,
+            return_doc__status='CONFIRMED'
+        ).aggregate(
+            total_qty=Sum('quantity'),
+            total_revenue=Sum(F('quantity') * F('unit_price')),
+            total_cost_basis=Sum(F('quantity') * F('unit_cost'))
+        )
+        
+        # Calculate NET totals
+        net_qty = (delivery_stats['total_qty'] or 0) - (return_stats['total_qty'] or 0)
+        net_revenue = (delivery_stats['total_revenue'] or 0) - (return_stats['total_revenue'] or 0)
+        net_cost_basis = (delivery_stats['total_cost_basis'] or 0) - (return_stats['total_cost_basis'] or 0)
+        
+        # Effective averages (weighted by volume to be more accurate if mixed data exists)
+        # However, for simplicity and matching old UI, we use the delivery averages but Net totals for the cards
+        avg_price = float(delivery_stats['avg_price'] or 0)
+        avg_cost = float(delivery_stats['avg_cost'] or 0)
+
         # 4. Production Analysis (Consumption in OTs) - Including variants
         from production.models import ProductionConsumption
         consumptions = ProductionConsumption.objects.filter(
@@ -277,6 +335,7 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
                 
             production_usage.append({
                 'date': c.date,
+                'ot_id': c.work_order.id,
                 'ot_number': c.work_order.number,
                 'quantity': float(c.quantity),
                 'description': desc
@@ -286,11 +345,11 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             'price_history': price_history,
             'kardex': kardex,
             'sales_analysis': {
-                'avg_price': float(sales_stats['avg_price'] or 0),
-                'avg_cost': float(sales_stats['avg_cost'] or 0),
-                'total_sold': float(sales_stats['total_qty'] or 0),
-                'total_revenue': float(sales_stats['total_revenue'] or 0),
-                'total_cost_basis': float(sales_stats['total_cost_basis'] or 0),
+                'avg_price': avg_price,
+                'avg_cost': avg_cost,
+                'total_sold': float(net_qty),
+                'total_revenue': float(net_revenue),
+                'total_cost_basis': float(net_cost_basis),
             },
             'production_usage': production_usage
         })

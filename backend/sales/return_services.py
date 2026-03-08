@@ -106,14 +106,27 @@ class ReturnService:
             
             original_cost = original_delivery_line.unit_cost if original_delivery_line else product.cost_price
 
+            # Determine unit prices (prefer provided, then original sale line, then product)
+            unit_price = item.get('unit_price')
+            unit_price_gross = item.get('unit_price_gross')
+            
+            if unit_price is None and original_delivery_line:
+                unit_price = original_delivery_line.unit_price
+                unit_price_gross = original_delivery_line.unit_price_gross
+            elif unit_price is None: # Fallback to product current prices
+                unit_price = product.sale_price
+                # Note: gross calculation if product doesn't have it explicitly stored
+                unit_price_gross = product.sale_price * Decimal('1.19')
+
             # Create Line
             SaleReturnLine.objects.create(
                 return_doc=ret_doc,
                 product=product,
                 quantity=quantity,
-                uom_id=item.get('uom_id'), # Optional UoM
-                unit_price=item.get('unit_price', 0), # Optional reference
-                unit_cost=original_cost # Snapshot ORIGINAL cost
+                uom_id=item.get('uom_id'),
+                unit_price=unit_price,
+                unit_price_gross=unit_price_gross,
+                unit_cost=original_cost
             )
 
         # VALIDATION: Check total returned quantity against Credit Note limits

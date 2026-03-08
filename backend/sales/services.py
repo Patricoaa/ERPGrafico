@@ -361,6 +361,8 @@ class SalesService:
             product=product,
             uom=uom or sale_line.uom,
             quantity=quantity,
+            unit_price=sale_line.unit_price,
+            unit_price_gross=sale_line.unit_price_gross,
             unit_cost=unit_cost
         )
         

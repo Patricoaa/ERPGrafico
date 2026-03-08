@@ -138,10 +138,10 @@ function POSPageContent() {
         refreshProducts
     } = useProducts()
 
-    // Refresh products when a draft is saved to update stock indicators
+    // Refresh products when a draft is saved to update stock indicators (silent)
     useEffect(() => {
         if (lastSaved) {
-            refreshProducts()
+            refreshProducts(true)
         }
     }, [lastSaved, refreshProducts])
 
@@ -182,7 +182,7 @@ function POSPageContent() {
         if (wizardState && wizardState.step >= totalSteps) return
 
         const timer = setTimeout(() => {
-            saveDraft()
+            saveDraft(undefined, true)
         }, 2000)
 
         return () => clearTimeout(timer)

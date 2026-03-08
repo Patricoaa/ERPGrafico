@@ -97,16 +97,20 @@ export function useProducts() {
         return filtered
     }, [products, searchTerm, selectedCategoryId])
 
-    const refreshProducts = useCallback(async () => {
+    const refreshProducts = useCallback(async (silent = false) => {
         if (!currentSession?.id) return
         setLoading(true)
         try {
             const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
             const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&pos_session_id=${currentSession.id}${draftParams}`)
             setProducts(res.data.results || res.data)
-            toast.success("Productos actualizados")
+            if (!silent) {
+                toast.success("Productos actualizados")
+            }
         } catch (error) {
-            toast.error("Error al actualizar productos")
+            if (!silent) {
+                toast.error("Error al actualizar productos")
+            }
         } finally {
             setLoading(false)
         }

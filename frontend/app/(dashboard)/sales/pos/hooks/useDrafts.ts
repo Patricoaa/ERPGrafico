@@ -49,7 +49,7 @@ export function useDrafts() {
     }, [])
 
     // Save current cart as draft
-    const saveDraft = useCallback(async (name?: string) => {
+    const saveDraft = useCallback(async (name?: string, silent = false) => {
         if (items.length === 0 || isLoading || isSaving) {
             return
         }
@@ -84,7 +84,9 @@ export function useDrafts() {
                         // Retry as post
                         res = await api.post('/sales/pos-drafts/', draftData)
                         setCurrentDraftId(res.data.id)
-                        toast.success("Borrador guardado (nuevo)")
+                        if (!silent) {
+                            toast.success("Borrador guardado (nuevo)")
+                        }
                     } else {
                         throw err
                     }
@@ -93,7 +95,9 @@ export function useDrafts() {
                 // Create new
                 res = await api.post('/sales/pos-drafts/', draftData)
                 setCurrentDraftId(res.data.id)
-                toast.success("Borrador guardado")
+                if (!silent) {
+                    toast.success("Borrador guardado")
+                }
             }
 
             setLastSaved(new Date())
@@ -106,7 +110,9 @@ export function useDrafts() {
             return res.data
         } catch (error: any) {
             console.error("Error saving draft:", error)
-            toast.error(error.response?.data?.error || "Error al guardar borrador")
+            if (!silent) {
+                toast.error(error.response?.data?.error || "Error al guardar borrador")
+            }
         } finally {
             setIsSaving(false)
         }

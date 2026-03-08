@@ -22,14 +22,18 @@ import {
     DollarSign,
     ArrowUpRight,
     ArrowDownRight,
-    Search
+    Search,
+    Eye
 } from "lucide-react"
 import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
 import {
     ResponsiveContainer,
     LineChart,
@@ -59,6 +63,10 @@ interface PriceHistoryEntry {
 }
 
 interface KardexEntry {
+    id: number
+    display_id: string
+    related_id: number
+    related_type: string
     date: string
     type: string
     quantity: number
@@ -71,6 +79,7 @@ interface KardexEntry {
 
 interface ProductionUsage {
     date: string
+    ot_id: number
     ot_number: string
     quantity: number
     description: string
@@ -94,6 +103,8 @@ interface ProductInsights {
 export function ProductInsightsDialog({ productId, productName, open, onOpenChange }: ProductInsightsDialogProps) {
     const [data, setData] = useState<ProductInsights | null>(null)
     const [loading, setLoading] = useState(false)
+    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: any } | null>(null)
+    const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
     useEffect(() => {
         if (open && productId) {
@@ -339,12 +350,13 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                         <TableHeader>
                                             <TableRow className="bg-muted/50">
                                                 <TableHead>Fecha</TableHead>
+                                                <TableHead>N°</TableHead>
                                                 <TableHead>Tipo</TableHead>
                                                 <TableHead>Cantidad</TableHead>
                                                 <TableHead>P. Unitario</TableHead>
                                                 <TableHead>Total</TableHead>
                                                 <TableHead>Bodega</TableHead>
-                                                <TableHead>Motivo / Doc</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -353,12 +365,15 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                     <TableCell className="text-xs">
                                                         {format(new Date(move.date), "dd/MM/yyyy")}
                                                     </TableCell>
+                                                    <TableCell className="font-mono text-[10px] font-bold">
+                                                        {move.display_id}
+                                                    </TableCell>
                                                     <TableCell>
                                                         <Badge
                                                             variant={move.type === 'IN' ? 'success' : move.type === 'OUT' ? 'destructive' : 'outline'}
                                                             className="text-[10px] uppercase font-bold"
                                                         >
-                                                            {move.type}
+                                                            {move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
@@ -371,14 +386,27 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         <DataCell.Currency value={move.total_price || 0} className="text-left" />
                                                     </TableCell>
                                                     <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                    <TableCell className="text-xs text-muted-foreground truncate max-w-[150px]" title={move.description}>
-                                                        {move.description || "-"}
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-primary"
+                                                            onClick={() => {
+                                                                if (move.related_type === 'work_order') {
+                                                                    setActiveWorkOrderId(move.related_id)
+                                                                } else {
+                                                                    setSelectedTransaction({ id: move.related_id, type: move.related_type })
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
                                             {data.kardex.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground italic">
+                                                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground italic">
                                                         Sin movimientos registrados
                                                     </TableCell>
                                                 </TableRow>
@@ -397,7 +425,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                 <TableHead>Fecha</TableHead>
                                                 <TableHead>N° OT</TableHead>
                                                 <TableHead>Cantidad Consumida</TableHead>
-                                                <TableHead>Descripción</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -414,8 +442,15 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                     <TableCell>
                                                         <DataCell.Number value={usage.quantity} className="text-left" decimals={2} />
                                                     </TableCell>
-                                                    <TableCell className="text-xs text-muted-foreground">
-                                                        {usage.description}
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-indigo-600"
+                                                            onClick={() => setActiveWorkOrderId(usage.ot_id)}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -434,6 +469,24 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                     </Tabs>
                 )}
             </div>
+
+            {selectedTransaction && (
+                <TransactionViewModal
+                    open={!!selectedTransaction}
+                    onOpenChange={(open) => !open && setSelectedTransaction(null)}
+                    type={selectedTransaction.type}
+                    id={selectedTransaction.id}
+                />
+            )}
+
+            {activeWorkOrderId && (
+                <WorkOrderWizard
+                    orderId={activeWorkOrderId}
+                    open={!!activeWorkOrderId}
+                    onOpenChange={(open) => !open && setActiveWorkOrderId(null)}
+                    onSuccess={() => fetchInsights()}
+                />
+            )}
         </BaseModal>
     )
 }
