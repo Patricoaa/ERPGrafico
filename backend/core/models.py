@@ -19,13 +19,30 @@ class User(AbstractUser):
     history = HistoricalRecords()
 
 class CompanySettings(models.Model):
-    name = models.CharField(_("Nombre de la Empresa"), max_length=255)
+    name = models.CharField(_("Razón Social"), max_length=255)
+    trade_name = models.CharField(_("Nombre de Fantasía"), max_length=255, blank=True)
     tax_id = models.CharField(_("RUT/Tax ID"), max_length=20)
     address = models.TextField(_("Dirección"), blank=True)
     phone = models.CharField(_("Teléfono"), max_length=20, blank=True)
     email = models.EmailField(_("Email"), blank=True)
     website = models.URLField(_("Sitio Web"), blank=True)
     logo_url = models.URLField(_("URL del Logo"), blank=True)
+    logo = models.ImageField(_("Logo"), upload_to='company/logos/', null=True, blank=True)
+    
+    # Association with Contact
+    contact = models.ForeignKey(
+        'contacts.Contact', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='company_settings',
+        help_text=_("Vínculo con el contacto que representa a esta empresa")
+    )
+    
+    # Corporate Identity
+    primary_color = models.CharField(_("Color Primario"), max_length=7, default="#000000", blank=True)
+    secondary_color = models.CharField(_("Color Secundario"), max_length=7, default="#ffffff", blank=True)
+    business_activity = models.CharField(_("Giro / Actividad Económica"), max_length=255, blank=True)
     
     history = HistoricalRecords()
 
@@ -35,6 +52,37 @@ class CompanySettings(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        # 1. Save ourselves first. This ensures that when the Contact signal
+        # queries CompanySettings, it sees the updated values.
+        super().save(*args, **kwargs)
+
+        # 2. Sync to Contact if linked
+        if self.contact:
+            c = self.contact
+            updated = False
+            if c.name != self.name:
+                c.name = self.name
+                updated = True
+            if c.tax_id != self.tax_id:
+                c.tax_id = self.tax_id
+                updated = True
+            if c.email != self.email:
+                c.email = self.email
+                updated = True
+            if c.phone != self.phone:
+                c.phone = self.phone
+                updated = True
+            if c.address != self.address:
+                c.address = self.address
+                updated = True
+            
+            if updated:
+                # This will trigger the sync_contact_to_company_settings signal,
+                # but since we already saved 'self' with the same values, 
+                # that signal will see no differences and stop.
+                c.save()
 
 class ActionLog(models.Model):
     class Type(models.TextChoices):

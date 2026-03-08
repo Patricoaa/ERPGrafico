@@ -87,3 +87,22 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
 
 // Combined settings type
 export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings
+
+// Company Settings
+export interface CompanySettings {
+    name: string
+    trade_name: string
+    tax_id: string
+    address: string
+    phone: string
+    email: string
+    website: string
+    logo_url: string
+    logo: string | null // This will be the URL of the uploaded file
+    primary_color: string
+    secondary_color: string
+    business_activity: string
+    contact: number | null
+}
+
+export type CompanySettingsUpdatePayload = Partial<CompanySettings> | FormData

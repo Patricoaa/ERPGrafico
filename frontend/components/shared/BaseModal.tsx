@@ -83,28 +83,30 @@ export function BaseModal({
                     className
                 )}
             >
-                <DialogHeader className={headerStyles}>
-                    <div className="flex items-center justify-between gap-4 w-full">
-                        <div className={cn("flex flex-col gap-1 w-full", isWizard && "items-center")}>
-                            <DialogTitle className={titleStyles}>
-                                {title}
-                            </DialogTitle>
-                            {description && (
-                                <DialogDescription
-                                    asChild={typeof description !== "string"}
-                                    className={cn(isTransaction && "text-primary-foreground/80")}
-                                >
-                                    {description}
-                                </DialogDescription>
+                {(title || description || headerActions) && (
+                    <DialogHeader className={headerStyles}>
+                        <div className="flex items-center justify-between gap-4 w-full">
+                            <div className={cn("flex flex-col gap-1 w-full", isWizard && "items-center")}>
+                                <DialogTitle className={titleStyles}>
+                                    {title}
+                                </DialogTitle>
+                                {description && (
+                                    <DialogDescription
+                                        asChild={typeof description !== "string"}
+                                        className={cn(isTransaction && "text-primary-foreground/80")}
+                                    >
+                                        {description}
+                                    </DialogDescription>
+                                )}
+                            </div>
+                            {headerActions && (
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    {headerActions}
+                                </div>
                             )}
                         </div>
-                        {headerActions && (
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                {headerActions}
-                            </div>
-                        )}
-                    </div>
-                </DialogHeader>
+                    </DialogHeader>
+                )}
 
                 {/* Content Area */}
                 {hideScrollArea || isRaw ? (

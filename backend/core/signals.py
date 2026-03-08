@@ -1,23 +1,35 @@
-from django.contrib.auth.signals import user_logged_in, user_logged_out
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import ActionLog
-from .services import ActionLoggingService
+from contacts.models import Contact
+from .models import CompanySettings
 
-@receiver(user_logged_in)
-def on_user_login(sender, request, user, **kwargs):
-    ActionLoggingService.log_action(
-        user=user,
-        action_type=ActionLog.Type.LOGIN,
-        description=f"Usuario {user.username} ha iniciado sesión.",
-        request=request
-    )
-
-@receiver(user_logged_out)
-def on_user_logout(sender, request, user, **kwargs):
-    if user:
-        ActionLoggingService.log_action(
-            user=user,
-            action_type=ActionLog.Type.LOGOUT,
-            description=f"Usuario {user.username} ha cerrado sesión.",
-            request=request
-        )
+@receiver(post_save, sender=Contact)
+def sync_contact_to_company_settings(sender, instance, **kwargs):
+    """
+    Update CompanySettings if the modified contact is linked to it.
+    Avoids infinite loops by checking values before saving.
+    """
+    settings = CompanySettings.objects.filter(contact=instance).first()
+    if settings:
+        updated = False
+        if settings.name != instance.name:
+            settings.name = instance.name
+            updated = True
+        if settings.tax_id != instance.tax_id:
+            settings.tax_id = instance.tax_id
+            updated = True
+        if settings.email != instance.email:
+            settings.email = instance.email
+            updated = True
+        if settings.phone != instance.phone:
+            settings.phone = instance.phone
+            updated = True
+        if settings.address != instance.address:
+            settings.address = instance.address
+            updated = True
+            
+        if updated:
+            # We use save() but carefully. 
+            # The CompanySettings.save() will trigger another Contact.save(), 
+            # but since we check values here, it should terminate.
+            settings.save()

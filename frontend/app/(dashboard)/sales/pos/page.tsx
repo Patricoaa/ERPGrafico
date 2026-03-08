@@ -156,7 +156,7 @@ function POSPageContent() {
 
     // Auto-save drafts
     useEffect(() => {
-        if (!currentSession?.id || items.length === 0 || loading) return
+        if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading) return
 
         // Calculate if we are in the last step (Payment) to avoid auto-saving while finalizing
         const isOnlyService = items.every(line => line.product_type === 'SERVICE');

@@ -25,7 +25,7 @@ from treasury.models import (
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
-from core.models import User
+from core.models import User, CompanySettings
 from workflow.models import Task, Notification, TaskAssignmentRule
 
 class Command(BaseCommand):
@@ -109,6 +109,9 @@ class Command(BaseCommand):
             if not options['no_demo_flows'] and not options['only_infra']:
                 self.stdout.write('Creating Sales & Purchasing Demo Flow...')
                 self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
+
+            self.stdout.write('Initializing Company Settings...')
+            self._initialize_company_settings()
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
@@ -998,6 +1001,7 @@ class Command(BaseCommand):
                 'bank': b_chile
             }
         )
+
         
         
         # Payment Methods for Bank Account (Chile)
@@ -1161,5 +1165,40 @@ class Command(BaseCommand):
                 date=timezone.now().date()
             )
             self.stdout.write(f"    ✓ Demo Sale Flow: FACT-{invoice.number} created.")
+
+    def _initialize_company_settings(self):
+        """
+        Creates or updates the singleton CompanySettings and links it to 
+        the internal company contact.
+        """
+        # Create/Get Internal Company Contact
+        contact, created = Contact.objects.get_or_create(
+            tax_id="76.000.000-0",
+            defaults={
+                'name': "Mi Empresa ERP",
+                'email': "administracion@miempresa.cl",
+                'phone': "+56 9 1234 5678",
+                'address': "Av. Principal 123, Santiago, Chile",
+            }
+        )
+        if created:
+            self.stdout.write(f"  ✓ Created internal company contact: {contact.name}")
+
+        # Initialize Company Settings
+        settings, _ = CompanySettings.objects.update_or_create(
+            id=1,  # Ensure it's the singleton
+            defaults={
+                'name': "Mi Empresa ERP",
+                'tax_id': "76.000.000-0",
+                'email': "administracion@miempresa.cl",
+                'phone': "+56 9 1234 5678",
+                'address': "Av. Principal 123, Santiago, Chile",
+                'business_activity': "Servicios de Impresión y Diseño",
+                'contact': contact,
+                'primary_color': "#5b21b6", # purple-800
+                'secondary_color': "#3b82f6", # blue-500
+            }
+        )
+        self.stdout.write("  ✓ Initialized/Updated company settings singleton")
 
 

@@ -6,7 +6,9 @@ import type {
     BillingSettingsUpdatePayload,
     InventorySettings,
     InventorySettingsUpdatePayload,
-    AccountingSettings
+    AccountingSettings,
+    CompanySettings,
+    CompanySettingsUpdatePayload
 } from '../types'
 
 /**
@@ -129,5 +131,27 @@ export const settingsApi = {
      */
     updateInventorySettings: async (payload: InventorySettingsUpdatePayload): Promise<AccountingSettings> => {
         return settingsApi.updateCurrentSettings(payload)
+    },
+
+    // ========== Company Settings ==========
+
+    /**
+     * Fetch company settings
+     */
+    getCompanySettings: async (): Promise<CompanySettings> => {
+        const { data } = await api.get<CompanySettings>('/core/company/current/')
+        return data
+    },
+
+    /**
+     * Update company settings
+     */
+    updateCompanySettings: async (payload: CompanySettingsUpdatePayload): Promise<CompanySettings> => {
+        const config = payload instanceof FormData 
+            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            : undefined
+        
+        const { data } = await api.patch<CompanySettings>('/core/company/current/', payload, config)
+        return data
     },
 }

@@ -126,6 +126,24 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
         model = CompanySettings
         fields = '__all__'
 
+    def validate(self, attrs):
+        # If a contact is provided but basic fields are missing, we could auto-populate them
+        # However, it's better to let the frontend handle the 'sync' button or logic
+        # But we can at least ensure RUT/Tax ID is consistent if contact is present
+        contact = attrs.get('contact')
+        if contact:
+            if not attrs.get('name'):
+                attrs['name'] = contact.name
+            if not attrs.get('tax_id'):
+                attrs['tax_id'] = contact.tax_id
+            if not attrs.get('email') and contact.email:
+                attrs['email'] = contact.email
+            if not attrs.get('phone') and contact.phone:
+                attrs['phone'] = contact.phone
+            if not attrs.get('address') and contact.address:
+                attrs['address'] = contact.address
+        return attrs
+
 class ActionLogSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')
     action_type_display = serializers.CharField(source='get_action_type_display', read_only=True)

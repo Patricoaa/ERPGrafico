@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -77,6 +77,12 @@ const SidebarSection = ({ title, children }: { title: string, children: React.Re
 
 const SidebarContent = ({ data, currentType }: { data: any, currentType: string }) => {
     if (!data) return null
+
+    const renderStatusSection = () => (
+        <SidebarSection title="Estado">
+            <BannerStatus status={data.status || data.state} type={currentType} />
+        </SidebarSection>
+    )
 
     // Document-specific sidebar content
     const renderContent = () => {
@@ -223,6 +229,7 @@ const SidebarContent = ({ data, currentType }: { data: any, currentType: string 
 
     return (
         <div className="space-y-8 divide-y divide-border/20">
+            {renderStatusSection()}
             {renderContent()}
         </div>
     )
@@ -411,6 +418,143 @@ const PaymentHistorySection = ({ data, currentType, navigateTo, handleDeletePaym
     );
 }
 
+const PrintableReceipt = ({ data, currentType, mainTitle, subTitle }: { data: any, currentType: string, mainTitle: string, subTitle: string }) => {
+    if (!data) return null
+
+    const renderHeader = () => (
+        <div className="text-center space-y-1 mb-4 border-b-2 border-black pb-4">
+            <h1 className="text-sm font-black uppercase tracking-widest leading-tight">{mainTitle}</h1>
+            <h2 className="text-lg font-black font-mono tracking-tighter">{subTitle}</h2>
+            <p className="text-[10px] font-bold uppercase text-black/60">{formatPlainDate(data.date || data.created_at)}</p>
+        </div>
+    )
+
+    const renderContextualInfo = () => {
+        const contactName = data.customer_name || data.supplier_name || data.partner_name || data.contact_name
+        const contactRut = data.customer_rut || data.supplier_rut || data.partner_rut
+
+        return (
+            <div className="space-y-4 mb-4 text-[11px] leading-tight">
+                {/* Contact Section */}
+                {contactName && (
+                    <div className="border-b border-black/10 pb-2">
+                        <div className="font-black uppercase text-[9px] text-black/50">Asociado a:</div>
+                        <div className="font-bold uppercase">{contactName}</div>
+                        {contactRut && <div className="font-mono text-[10px]">{contactRut}</div>}
+                    </div>
+                )}
+
+                {/* Specific Details */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {currentType === 'sale_order' && (
+                        <>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Vendedor:</span> {data.salesperson_name || 'N/A'}</div>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Canal:</span> {data.channel || 'SISTEMA'}</div>
+                        </>
+                    )}
+                    {currentType === 'invoice' && (
+                        <>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Tipo DTE:</span> {data.dte_type}</div>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Folio:</span> {data.folio_number || 'S/N'}</div>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Vencimiento:</span> {formatPlainDate(data.due_date)}</div>
+                        </>
+                    )}
+                    {currentType === 'payment' && (
+                        <>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Método:</span> {translatePaymentMethod(data.payment_method)}</div>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
+                            {data.invoice_display_id && <div><span className="font-black uppercase text-[9px] text-black/50 block">Doc. Aplicado:</span> {data.invoice_display_id}</div>}
+                        </>
+                    )}
+                    {(currentType === 'sale_delivery' || currentType === 'purchase_receipt') && (
+                        <>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Almacén:</span> {data.warehouse_name || '-'}</div>
+                            <div><span className="font-black uppercase text-[9px] text-black/50 block">Estado:</span> {translateReceivingStatus(data.status)}</div>
+                        </>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    const renderItemsTable = () => {
+        const lines = data.lines || data.items || []
+        if (lines.length === 0) return null
+
+        return (
+            <div className="mb-4">
+                <div className="grid grid-cols-[1fr,60px,80px] gap-2 border-b-2 border-black pb-1 mb-1 text-[9px] font-black uppercase tracking-widest">
+                    <div>Descripción</div>
+                    <div className="text-center">Cant</div>
+                    <div className="text-right">Total</div>
+                </div>
+                <div className="space-y-2">
+                    {lines.map((line: any, idx: number) => (
+                        <div key={line.id || idx} className="grid grid-cols-[1fr,60px,80px] gap-2 text-[10px] leading-tight">
+                            <div className="font-bold flex flex-col">
+                                <span>{line.description || line.product_name}</span>
+                                {line.product_code && <span className="text-[8px] font-mono text-black/40 uppercase">{line.product_code}</span>}
+                            </div>
+                            <div className="text-center font-mono">{Math.round(line.quantity || 0)}</div>
+                            <div className="text-right font-black font-mono">{formatCurrency(line.subtotal || line.amount || 0)}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
+    const renderTotals = () => {
+        if (currentType === 'payment' || currentType === 'cash_movement') {
+             return (
+                <div className="border-t-2 border-black pt-4 text-center">
+                    <div className="text-[10px] font-black uppercase text-black/50">Total Movimiento</div>
+                    <div className="text-2xl font-black font-mono tracking-tighter">{formatCurrency(data.amount)}</div>
+                </div>
+            )
+        }
+
+        if (!data.total) return null
+
+        return (
+            <div className="border-t-2 border-black pt-2 space-y-1">
+                <div className="flex justify-between text-[10px] font-bold">
+                    <span className="uppercase">Neto:</span>
+                    <span className="font-mono">{formatCurrency(data.total_net || 0)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold">
+                    <span className="uppercase">IVA (19%):</span>
+                    <span className="font-mono">{formatCurrency(data.total_tax || 0)}</span>
+                </div>
+                {parseFloat(data.total_discount_amount || 0) > 0 && (
+                    <div className="flex justify-between text-[10px] font-black text-red-600">
+                        <span className="uppercase">Descuento:</span>
+                        <span className="font-mono">-{formatCurrency(data.total_discount_amount)}</span>
+                    </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-dashed border-black/20">
+                    <span className="text-xs font-black uppercase">Total:</span>
+                    <span className="text-xl font-black font-mono tracking-tighter">{formatCurrency(data.total)}</span>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="hidden print:block w-[80mm] mx-auto p-4 bg-white text-black font-sans">
+            {renderHeader()}
+            {renderContextualInfo()}
+            {renderItemsTable()}
+            {renderTotals()}
+            
+            <div className="mt-8 text-center space-y-2 border-t border-black/10 pt-4">
+                <p className="text-[9px] font-black uppercase tracking-widest text-black/40">Gracias por su preferencia</p>
+                <p className="text-[8px] font-mono text-black/20 italic">Generado por ERPGrafico</p>
+            </div>
+        </div>
+    )
+}
+
 export function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
     const [history, setHistory] = useState<{ type: string, id: number | string }[]>([])
     const [currentType, setCurrentType] = useState<any>(initialType)
@@ -418,6 +562,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [editingPayment, setEditingPayment] = useState<any>(null)
+
+    const handlePrint = () => {
+        window.print()
+    }
 
     useEffect(() => {
         if (open) {
@@ -591,16 +739,24 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 title=""
                 size="xl"
                 hideScrollArea={true}
-                className="overflow-hidden p-0 gap-0"
+                className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black"
             >
-                <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background">
+                {/* Printable receipt for thermal printers (Hidden in UI, Visible in Print) */}
+                <PrintableReceipt 
+                    data={data} 
+                    currentType={currentType} 
+                    mainTitle={mainTitle} 
+                    subTitle={subTitle} 
+                />
+
+                <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background print:hidden">
                     {/* Header Banner */}
                     <div className="border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 relative">
                         {/* Back button and Basic Info */}
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4">
                                 {history.length > 0 && (
-                                    <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50">
+                                    <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50 print:hidden">
                                         <ArrowLeft className="h-5 w-5" />
                                     </Button>
                                 )}
@@ -616,15 +772,20 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                             </div>
                         </div>
 
-                        {/* Status Banner */}
-                        {data && (
-                            <div className="flex items-center gap-4">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Estado</span>
-                                    <BannerStatus status={data.status || data.state} type={currentType} />
-                                </div>
-                            </div>
-                        )}
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 print:hidden">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handlePrint}
+                                className="font-bold border-2 hover:bg-primary hover:text-primary-foreground gap-2 transition-all rounded-xl h-10 px-4"
+                            >
+                                <Printer className="h-4 w-4" />
+                                Imprimir
+                            </Button>
+                        </div>
+
+                        {/* Status removed from here and moved to sidebar */}
                     </div>
 
                     {/* Main Scrollable Area */}
@@ -883,7 +1044,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                 </div>
 
                                 {/* Right Content Area (25%) - Metadata Sidebar */}
-                                <div className="w-full lg:w-[320px] bg-muted/20 border-l border-border/50 lg:min-h-full">
+                                <div className="w-full lg:w-[320px] bg-muted/20 border-l border-border/50 lg:min-h-full print:hidden">
                                     <div className="p-8 lg:p-10 lg:sticky lg:top-0 space-y-10">
                                         <SidebarContent
                                             currentType={currentType}
