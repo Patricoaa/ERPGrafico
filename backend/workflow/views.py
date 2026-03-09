@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Task, Notification, TaskAssignmentRule
-from .serializers import TaskSerializer, NotificationSerializer, TaskAssignmentRuleSerializer
+from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings
+from .serializers import (
+    TaskSerializer, NotificationSerializer, TaskAssignmentRuleSerializer,
+    WorkflowSettingsSerializer
+)
 from django.utils import timezone
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -33,21 +36,31 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Get user's groups
         user_groups = user.groups.values_list('name', flat=True)
         
-        # Filter strictly:
+        # Filter:
         # 1. Assigned directly to user
         # 2. Key 'candidate_group' in data matches one of user's groups
+        # 3. Assigned group matches one of user's groups
+        # 4. TASK-category tasks with no assignment (visible to all)
         
         from django.db.models import Q
         
         return qs.filter(
             Q(assigned_to=user) | 
             Q(assigned_group__in=user.groups.all()) |
-            Q(data__candidate_group__in=list(user_groups)) # Keep legacy support
+            Q(data__candidate_group__in=list(user_groups)) |
+            Q(category='TASK', assigned_to__isnull=True, assigned_group__isnull=True)
         ).distinct()
 
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         task = self.get_object()
+        
+        # TASK category tasks (HUB stages) can only be auto-completed by the system
+        if task.category == Task.Category.TASK:
+            return Response(
+                {'error': 'Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Security Check: Can this user complete this task?
         if not request.user.is_superuser:
@@ -122,3 +135,27 @@ class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
     queryset = TaskAssignmentRule.objects.all()
     serializer_class = TaskAssignmentRuleSerializer
     permission_classes = [IsAuthenticated] # Should refine to specific permission later
+
+
+class WorkflowSettingsViewSet(viewsets.ModelViewSet):
+    """
+    Manage global workflow settings (Singleton).
+    """
+    queryset = WorkflowSettings.objects.all()
+    serializer_class = WorkflowSettingsSerializer
+    permission_classes = [IsAuthenticated] # Should refine to specific permission later
+
+    def get_object(self):
+        return WorkflowSettings.get_settings()
+
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def current(self, request):
+        settings = self.get_object()
+        if request.method == 'GET':
+            serializer = self.get_serializer(settings)
+            return Response(serializer.data)
+        
+        serializer = self.get_serializer(settings, data=request.data, partial=(request.method == 'PATCH'))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

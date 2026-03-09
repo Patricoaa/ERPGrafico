@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -150,3 +151,46 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user}: {self.title}"
+
+
+class WorkflowSettings(models.Model):
+    """
+    Singleton model for global workflow configurations.
+    """
+    # F29 Recurring Task Days
+    f29_creation_day = models.PositiveIntegerField(
+        _("Día Creación F29"),
+        default=12,
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text=_("Día del mes para generar la tarea de creación del F29")
+    )
+    f29_payment_day = models.PositiveIntegerField(
+        _("Día Pago F29"),
+        default=20,
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text=_("Día del mes para generar la tarea de pago del F29")
+    )
+    period_close_day = models.PositiveIntegerField(
+        _("Día Cierre Periodo"),
+        default=5,
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+        help_text=_("Día del mes para generar la tarea de cierre de periodo contable")
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Configuración de Flujo")
+        verbose_name_plural = _("Configuración de Flujos")
+
+    def __str__(self):
+        return "Configuración de Flujo Global"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Force singleton
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_settings(cls):
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings

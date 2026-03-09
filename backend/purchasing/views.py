@@ -43,6 +43,11 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if order.status == 'DRAFT':
             order.status = 'CONFIRMED'
             order.save()
+            
+            # Create HUB stage tasks for the inbox
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+            
             return Response({'status': 'confirmed'})
         return Response({'error': 'Order not in draft'}, status=400)
 

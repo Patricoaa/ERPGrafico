@@ -80,6 +80,11 @@ class SalesService:
 
         # NOTE: Accounting entry moved to BillingService.create_sale_invoice
         
+        # Create HUB stage tasks for the inbox
+        # HUB Tasks Sync
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(order)
+        
         return order
 
     @staticmethod
@@ -169,6 +174,11 @@ class SalesService:
         # Update order delivery status
         order.delivery_status = SaleOrder.DeliveryStatus.DELIVERED
         order.save()
+        
+        # Auto-complete logistics HUB task
+        # HUB Tasks Sync
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(order)
         
         return delivery
     
@@ -554,6 +564,15 @@ class SalesService:
         # 4. Confirm delivery
         delivery.status = SaleDelivery.Status.CONFIRMED
         delivery.save()
+        
+        # Auto-complete logistics HUB task if order is fully dispatched
+        from workflow.services import WorkflowService
+        order = delivery.sale_order
+        original_lines = order.lines.filter(related_note__isnull=True)
+        total_qty = sum(l.quantity for l in original_lines)
+        total_delivered = sum(l.quantity_delivered for l in original_lines)
+        if total_delivered >= total_qty:
+            WorkflowService.sync_hub_tasks(order)
         
         return delivery
     

@@ -317,6 +317,12 @@ class BillingService:
              order.status = SaleOrder.Status.INVOICED
         order.save()
 
+        # Auto-complete billing HUB task ONLY if posted
+        if status == Invoice.Status.POSTED:
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+
+
         return invoice
 
     @staticmethod
@@ -433,6 +439,12 @@ class BillingService:
         else:
             order.status = PurchaseOrder.Status.INVOICED
         order.save()
+
+        # Auto-complete billing HUB task ONLY if posted
+        if status == Invoice.Status.POSTED:
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+
 
         return invoice
 
@@ -797,6 +809,8 @@ class BillingService:
         # Adjust Journal Entry
         entry = invoice.journal_entry
         if entry:
+            from accounting.services import JournalEntryService
+            from accounting.models import JournalEntry
             # 1. Update Description
             if invoice.purchase_order:
                 entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.purchase_order.number}"
@@ -809,6 +823,12 @@ class BillingService:
             # Post entry if it's still in DRAFT (which it is for Draft/Paid-Draft invoices)
             if entry.state == JournalEntry.State.DRAFT:
                 JournalEntryService.post_entry(entry)
+
+        from workflow.services import WorkflowService
+        if invoice.sale_order:
+            WorkflowService.sync_hub_tasks(invoice.sale_order)
+        elif invoice.purchase_order:
+            WorkflowService.sync_hub_tasks(invoice.purchase_order)
 
         return invoice
 

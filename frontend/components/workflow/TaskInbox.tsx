@@ -5,13 +5,21 @@ import { getTasks, Task } from "@/lib/workflow/api"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink } from "lucide-react"
+import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, MapPin, TrendingUp } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import { useRef } from "react"
+
+const HUB_STAGE_LABELS: Record<string, string> = {
+    origin: 'Origen',
+    logistics: 'Logística',
+    billing: 'Facturación',
+    treasury: 'Tesorería',
+}
 
 export function TaskInbox() {
     const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
@@ -23,30 +31,57 @@ export function TaskInbox() {
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const { openWorkOrder, openCommandCenter, openContact } = useGlobalModals()
     const { user } = useAuth()
+    
+    // Track counts for notifications
+    const lastApprovalsCount = useRef<number | null>(null)
+    const lastTasksCount = useRef<number | null>(null)
 
-    const fetchTasks = async () => {
-        setLoading(true)
+    const fetchTasks = async (silent = false) => {
+        if (!silent) setLoading(true)
         try {
-            // Fetch approval tasks (pending + completed for audit trail)
+            // Fetch approval tasks
             const approvalsRes = await getTasks({ category: 'APPROVAL' })
             const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
             setApprovalTasks(approvals)
 
-            // Fetch operational tasks (only pending and active)
+            // Fetch operational tasks
             const tasksRes = await getTasks({ category: 'TASK', status: 'PENDING' })
             const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
             setOperationalTasks(tasks)
+
+            // Notifications logic
+            const currentPendingApprovals = approvals.filter((t: any) => t.status === 'PENDING').length
+            const currentPendingTasks = tasks.length
+
+            if (silent) {
+                if (lastApprovalsCount.current !== null && currentPendingApprovals > lastApprovalsCount.current) {
+                    toast.success("Nueva aprobación recibida", {
+                        description: "Tienes una nueva solicitud pendiente de revisión.",
+                        duration: 5000,
+                    })
+                }
+                if (lastTasksCount.current !== null && currentPendingTasks > lastTasksCount.current) {
+                    toast.info("Nueva tarea recibida", {
+                        description: "Se ha asignado una nueva tarea operativa a tu bandeja.",
+                        duration: 5000,
+                    })
+                }
+            }
+            
+            lastApprovalsCount.current = currentPendingApprovals
+            lastTasksCount.current = currentPendingTasks
+
         } catch (error) {
-            toast.error("Error al cargar tareas")
+            if (!silent) toast.error("Error al cargar tareas")
         } finally {
-            setLoading(false)
+            if (!silent) setLoading(false)
         }
     }
 
     useEffect(() => {
         fetchTasks()
-        // Refresh every 60s for new tasks
-        const interval = setInterval(fetchTasks, 60000)
+        // Silent refresh every 30s
+        const interval = setInterval(() => fetchTasks(true), 30000)
         return () => clearInterval(interval)
     }, [])
 
@@ -70,10 +105,23 @@ export function TaskInbox() {
             // Credit/Debit notes - determine type from context
             // For now, default to 'sale' - could be enhanced based on task metadata
             openCommandCenter(task.object_id, 'sale')
+        } else if (task.task_type?.startsWith('HUB_')) {
+            // HUB stage tasks → open Command Center
+            const orderType = task.data?.order_type || 'sale'
+            openCommandCenter(task.object_id, orderType)
         } else if (task.task_type === 'CREDIT_POS_REQUEST') {
             // No full document, just a quick approval
             toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
             return
+        } else if (task.task_type === 'F29_CREATE' || task.task_type === 'F29_PAY') {
+            const year = task.data?.year || ''
+            const month = task.data?.month || ''
+            const action = task.task_type === 'F29_PAY' ? 'pay' : 'create'
+            window.location.href = `/tax/declarations?year=${year}&month=${month}&action=${action}`
+        } else if (task.task_type === 'PERIOD_CLOSE') {
+            const year = task.data?.year || ''
+            const month = task.data?.month || ''
+            window.location.href = `/accounting/periods?year=${year}&month=${month}`
         } else {
             // Generic fallback
             toast.info("Navegación específica no configurada para este tipo de tarea")
@@ -118,7 +166,7 @@ export function TaskInbox() {
         }
     }
 
-    const getDocumentId = (task: Task): string => {
+    const getDocumentId = (task: Task): string | null => {
         // Extract document ID from task metadata
         if (task.object_id) {
             // Try to infer document type from task_type
@@ -134,7 +182,13 @@ export function TaskInbox() {
         }
         if (task.task_type === 'CREDIT_POS_REQUEST') return `CREDITO`
 
-        return "Sin documento"
+        return null
+    }
+
+    const formatShortDate = (dateStr: string) => {
+        if (!dateStr) return '-'
+        const val = new Date(dateStr)
+        return val.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
     }
 
     const renderTaskCard = (task: Task) => {
@@ -153,8 +207,21 @@ export function TaskInbox() {
             >
                 {/* Row 1: Task Name | Avatar */}
                 <div className="flex items-center justify-between gap-3 mb-3">
-                    <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1 group-hover:text-primary transition-colors">
-                        {task.task_type === 'CREDIT_POS_REQUEST' ? `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}` : task.title}
+                    <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-2">
+                        {task.task_type === 'CREDIT_POS_REQUEST' ? (
+                            `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
+                        ) : task.task_type?.startsWith('HUB_') ? (
+                            <>
+                                {task.data?.stage === 'origin' && <TrendingUp className="h-4 w-4 text-slate-300" />}
+                                {task.data?.stage === 'logistics' && <Package className="h-4 w-4 text-slate-300" />}
+                                {task.data?.stage === 'billing' && <FileText className="h-4 w-4 text-slate-300" />}
+                                {task.data?.stage === 'treasury' && <Wallet className="h-4 w-4 text-slate-300" />}
+                                <span className="uppercase">{HUB_STAGE_LABELS[task.data?.stage as keyof typeof HUB_STAGE_LABELS] || task.data?.stage}</span>:
+                                {task.data?.order_type === 'purchase' ? `OC-${task.data?.order_number}` : `NV-${task.data?.order_number}`}
+                            </>
+                        ) : (
+                            task.title
+                        )}
                     </h3>
                     <Avatar className="h-8 w-8 shrink-0 border border-primary/20">
                         <AvatarFallback className="text-xs bg-primary/20 text-primary font-bold">
@@ -163,11 +230,53 @@ export function TaskInbox() {
                     </Avatar>
                 </div>
 
-                {/* Row 2: Document ID */}
+                {/* HUB Stage Context Card */}
+                {task.task_type?.startsWith('HUB_') && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                        <div className="text-[11px] text-muted-foreground space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
+                            {task.data?.contact_name && (
+                                <div className="flex justify-between items-center">
+                                    <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
+                                    <span className="font-medium text-slate-200">{task.data.contact_name}</span>
+                                </div>
+                            )}
+                            {task.data?.stage === 'logistics' ? (
+                                <div className="flex justify-between items-center">
+                                    <span className="opacity-70">Fecha {task.data?.order_type === 'purchase' ? 'Recepción' : 'Entrega'}:</span>
+                                    <span className="font-medium text-slate-200">
+                                        {task.data.delivery_date ? formatShortDate(task.data.delivery_date) : 'Pendiente'}
+                                    </span>
+                                </div>
+                            ) : task.data?.order_total ? (
+                                <div className="flex justify-between items-center">
+                                    <span className="opacity-70">Total Orden:</span>
+                                    <span className="font-mono font-bold text-emerald-400">
+                                        ${Number(task.data.order_total).toLocaleString('es-CL')}
+                                    </span>
+                                </div>
+                            ) : null}
+                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
+                                <span className="font-bold text-warning/90">Acción Requerida:</span>
+                                <span className="font-medium text-warning text-right">
+                                    {task.data?.stage === 'logistics' && 'Registrar Despacho'}
+                                    {task.data?.stage === 'billing' && 'Registrar Factura'}
+                                    {task.data?.stage === 'treasury' && 'Registrar Pago'}
+                                    {task.data?.stage === 'origin' && 'Confirmar Orden'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Row 2: Status & Timeline */}
                 <div className="flex items-center justify-between text-[11px] font-medium tracking-tight">
-                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 font-mono">
-                        {docId}
-                    </span>
+                    <div>
+                        {!task.task_type?.startsWith('HUB_') && docId && (
+                            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 font-mono">
+                                {docId}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-200 transition-colors">
                         {isCompleted ? (
                             <span className="flex items-center gap-1 text-green-400">
@@ -303,23 +412,31 @@ export function TaskInbox() {
                 <TabsList className="grid w-full grid-cols-2 bg-slate-900/50 p-1 border border-slate-700/50 backdrop-blur-md rounded-xl">
                     <TabsTrigger
                         value="approvals"
-                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg"
+                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
                     >
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Aprobaciones</span>
                         <span className="sm:hidden">Aprob.</span>
-                        <span className="opacity-70 text-[10px] ml-1 px-1.5 py-0.5 bg-background/20 rounded-full">
+                        <span className={cn(
+                            "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
+                            "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
+                            approvalsPending.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                        )}>
                             {approvalsPending.length}
                         </span>
                     </TabsTrigger>
                     <TabsTrigger
                         value="tasks"
-                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg"
+                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
                     >
                         <ListTodo className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Tareas Operativas</span>
+                        <span className="hidden sm:inline">Tareas</span>
                         <span className="sm:hidden">Tareas</span>
-                        <span className="opacity-70 text-[10px] ml-1 px-1.5 py-0.5 bg-background/20 rounded-full">
+                        <span className={cn(
+                            "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
+                            "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
+                            operationalTasks.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                        )}>
                             {operationalTasks.length}
                         </span>
                     </TabsTrigger>

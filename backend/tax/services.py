@@ -7,6 +7,7 @@ from .models import TaxPeriod, F29Declaration, F29Payment
 from billing.models import Invoice
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
+from workflow.services import WorkflowService
 
 
 class F29CalculationService:
@@ -198,6 +199,13 @@ class F29CalculationService:
         declaration, _ = F29Declaration.objects.update_or_create(
             tax_period=tax_period,
             defaults=declaration_data
+        )
+        
+        # Auto-complete recurrent task if exists
+        WorkflowService.complete_periodic_task(
+            WorkflowService.F29_CREATE,
+            year,
+            month
         )
         
         return declaration
@@ -647,6 +655,14 @@ class F29PaymentService:
         payment.journal_entry = journal_entry
         payment.save()
         
+        # Auto-complete recurrent task if exists
+        # Note: We use the period of the declaration
+        WorkflowService.complete_periodic_task(
+            WorkflowService.F29_PAY,
+            declaration.tax_period.year,
+            declaration.tax_period.month
+        )
+        
         return payment
 
 
@@ -702,6 +718,13 @@ class AccountingPeriodService:
         period.closed_at = timezone.now()
         period.closed_by = user
         period.save()
+        
+        # Auto-complete recurrent task if exists
+        WorkflowService.complete_periodic_task(
+            WorkflowService.PERIOD_CLOSE,
+            year,
+            month
+        )
         
         # Signal will handle marking entries as closed
         

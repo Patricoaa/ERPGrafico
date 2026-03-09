@@ -181,23 +181,22 @@ class TreasuryService:
                               setattr(target, status_field, target.Status.PAID)
                               target.save()
                           else:
-                              # If it was PAID but now we see it's missing TR (maybe reverted?), 
-                              # we might want to revert to INVOICED/CONFIRMED?
-                              # For now, let's just NOT set it to PAID.
-                              # If we want to support "Un-paying", we'd need to check if current status IS Paid and revert it.
-                              # That's safer to ensure sync.
-                              if target.status == target.Status.PAID:
-                                   # Revert to valid previous state
-                                   # This is tricky without state machine. 
-                                   # Suggestion: If Invoiced -> INVOICED, else CONFIRMED
-                                   new_status = target.Status.CONFIRMED
-                                   if hasattr(target.Status, 'INVOICED'):
-                                        # Check if it has invoices
-                                        # (Simple heuristic)
-                                        new_status = target.Status.INVOICED
-                                   
-                                   setattr(target, status_field, new_status)
-                                   target.save()
+                               if target.status == target.Status.PAID:
+                                    new_status = target.Status.CONFIRMED
+                                    if hasattr(target.Status, 'INVOICED'):
+                                         new_status = target.Status.INVOICED
+                                    setattr(target, status_field, new_status)
+                                    target.save()
+
+                 # Sync HUB Tasks
+                 from workflow.services import WorkflowService
+                 if target._meta.model_name in ['saleorder', 'purchaseorder']:
+                     WorkflowService.sync_hub_tasks(target)
+                 elif target._meta.model_name == 'invoice':
+                     if hasattr(target, 'sale_order') and target.sale_order:
+                         WorkflowService.sync_hub_tasks(target.sale_order)
+                     if hasattr(target, 'purchase_order') and target.purchase_order:
+                         WorkflowService.sync_hub_tasks(target.purchase_order)
 
     @staticmethod
     def _update_pos_session(movement, pos_session):

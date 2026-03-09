@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { DeclarationWizard } from "@/components/tax/DeclarationWizard"
 import { PeriodChecklist } from "@/components/tax/PeriodChecklist"
 import { F29PaymentModal } from "@/components/tax/F29PaymentModal"
+import { useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, Row } from "@tanstack/react-table"
@@ -30,6 +31,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { cn, formatCurrency } from "@/lib/utils"
 
 export default function TaxDeclarationsPage() {
+    const searchParams = useSearchParams()
     const [periods, setPeriods] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
@@ -45,6 +47,24 @@ export default function TaxDeclarationsPage() {
             const response = await api.get("/tax/periods/?page_size=100")
             const fetchedPeriods = response.data.results || response.data
             setPeriods(fetchedPeriods)
+            
+            // Check for query params to auto-open
+            const year = searchParams.get('year')
+            const month = searchParams.get('month')
+            const action = searchParams.get('action') // 'create' or 'pay'
+
+            if (year && month && fetchedPeriods.length > 0) {
+                const target = fetchedPeriods.find((p: any) => 
+                    p.year.toString() === year && p.month.toString() === month
+                )
+                if (target) {
+                    if (action === 'pay') {
+                        handleOpenPayment(target)
+                    } else {
+                        handleOpenChecklist(target)
+                    }
+                }
+            }
         } catch (error) {
             console.error("Error fetching tax periods:", error)
             toast.error("Error al cargar los períodos tributarios")
@@ -237,7 +257,7 @@ export default function TaxDeclarationsPage() {
                             >
                                 {isFullyPaid ? (
                                     <>
-                                        <History className="h-4 w-4 mr-2" />
+                                        <HistoryIcon className="h-4 w-4 mr-2" />
                                         Ver Pagos
                                     </>
                                 ) : (

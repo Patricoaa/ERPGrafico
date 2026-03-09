@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Lock, LockOpen, Calendar, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatPlainDate } from '@/lib/utils';
+import { formatPlainDate, cn } from '@/lib/utils';
 import api from '@/lib/api';
 
 interface AccountingPeriod {
@@ -33,9 +34,13 @@ interface PeriodStatus {
 }
 
 export default function AccountingPeriodsPage() {
+    const searchParams = useSearchParams();
     const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+    const targetYear = searchParams.get('year');
+    const targetMonth = searchParams.get('month');
 
     useEffect(() => {
         fetchPeriods();
@@ -136,8 +141,16 @@ export default function AccountingPeriodsPage() {
                 />
 
                 <div className="grid gap-4">
-                    {periods.map((period) => (
-                        <Card key={period.id}>
+                    {periods.map((period) => {
+                        const isTarget = targetYear === period.year.toString() && targetMonth === period.month.toString();
+                        return (
+                            <Card 
+                                key={period.id}
+                                className={cn(
+                                    "transition-all duration-500",
+                                    isTarget ? "border-primary border-2 shadow-lg shadow-primary/20 bg-primary/5 ring-1 ring-primary/20" : ""
+                                )}
+                            >
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -216,8 +229,8 @@ export default function AccountingPeriodsPage() {
                                     </div>
                                 )}
                             </CardContent>
-                        </Card>
-                    ))}
+                        );
+                    })}
 
                     {periods.length === 0 && (
                         <Card>

@@ -1,9 +1,18 @@
+import { Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { WorkflowSettings } from "@/components/workflow/WorkflowSettings"
 
-export default function WorkflowSettingsPage() {
+interface PageProps {
+    searchParams: Promise<{ tab?: string }>
+}
+
+export default async function WorkflowSettingsPage({ searchParams }: PageProps) {
+    const { tab } = await searchParams
+    const activeTab = tab || "approvals"
+
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <WorkflowSettings />
-        </div>
+        <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
+            <WorkflowSettings activeTab={activeTab} />
+        </Suspense>
     )
 }

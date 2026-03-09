@@ -6,10 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { UserSelector } from "../selectors/UserSelector"
 import { GroupSelector } from "../selectors/GroupSelector"
-import { Settings, Save, AlertCircle, CheckCircle2, User, Users } from "lucide-react"
+import { Settings, Save, AlertCircle, CheckCircle2, User, Users, CloudUpload, Check } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { Input } from "@/components/ui/input"
+import { LucideIcon, CalendarClock, CreditCard, Lock } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -22,11 +27,30 @@ const TASK_TYPES = [
     { id: 'CREDIT_POS_REQUEST', name: 'Aprobación de Crédito (POS)', description: 'Autorización para sobregiros y ventas a crédito no habilitadas.' },
 ]
 
-export function WorkflowSettings() {
+const HUB_TASK_TYPES = [
+    { id: 'HUB_ORIGIN', name: 'Origen (Confirmación)', description: 'Confirmar la orden de venta/compra.' },
+    { id: 'HUB_LOGISTICS', name: 'Logística', description: 'Despachar o recepcionar productos.' },
+    { id: 'HUB_BILLING', name: 'Facturación', description: 'Emitir o registrar factura.' },
+    { id: 'HUB_TREASURY', name: 'Tesorería', description: 'Registrar pagos y conciliar.' },
+]
+
+const RECURRENT_TASK_TYPES = [
+    { id: 'F29_CREATE', name: 'Creación F29', description: 'Generar la declaración F29 del periodo anterior.', dayField: 'f29_creation_day' },
+    { id: 'F29_PAY', name: 'Pago F29', description: 'Registrar el pago del F29 del periodo anterior.', dayField: 'f29_payment_day' },
+    { id: 'PERIOD_CLOSE', name: 'Cierre Contable', description: 'Realizar el cierre del periodo contable.', dayField: 'period_close_day' },
+]
+
+interface WorkflowSettingsProps {
+    activeTab: string
+}
+
+export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     const [rules, setRules] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null)
     const [uiModes, setUiModes] = useState<Record<string, 'user' | 'group'>>({})
+    const [recurrentSettings, setRecurrentSettings] = useState<any>(null)
+    const [recurrentLoading, setRecurrentLoading] = useState(false)
 
     const fetchRules = async () => {
         try {
@@ -47,8 +71,21 @@ export function WorkflowSettings() {
         }
     }
 
+    const fetchRecurrentSettings = async () => {
+        setRecurrentLoading(true)
+        try {
+            const res = await api.get('/workflow/settings/current/')
+            setRecurrentSettings(res.data)
+        } catch (e) {
+            toast.error("Error al cargar configuración recurrente")
+        } finally {
+            setRecurrentLoading(false)
+        }
+    }
+
     useEffect(() => {
         fetchRules()
+        fetchRecurrentSettings()
     }, [])
 
     const handleUpdateRule = async (taskType: string, value: any, isGroup: boolean) => {
@@ -78,126 +115,214 @@ export function WorkflowSettings() {
         }
     }
 
+    const handleUpdateRecurrentSetting = async (field: string, value: string) => {
+        const numVal = parseInt(value)
+        if (isNaN(numVal) || numVal < 1 || numVal > 28) {
+            toast.error("El día debe estar entre 1 y 28")
+            return
+        }
+
+        setSaving(field)
+        try {
+            const res = await api.patch('/workflow/settings/current/', { [field]: numVal })
+            setRecurrentSettings(res.data)
+            toast.success("Configuración guardada")
+        } catch (e) {
+            toast.error("Error al guardar configuración")
+        } finally {
+            setSaving(null)
+        }
+    }
+
     if (loading) {
         return <div className="p-8 text-center text-muted-foreground italic">Cargando configuración...</div>
     }
 
-    return (
-        <div className="space-y-4 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-2">
-                <div className="space-y-0.5">
-                    <h2 className="text-xl font-bold tracking-tight">Configuración de Workflow</h2>
-                    <p className="text-muted-foreground text-xs">
-                        Defina los responsables por defecto para cada etapa.
-                    </p>
-                </div>
-            </div>
+    const tabs = [
+        { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow?tab=approvals" },
+        { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow?tab=tasks" },
+    ]
 
-            <div className="grid gap-2">
-                {TASK_TYPES.map((type) => {
-                    const rule = rules.find(r => r.task_type === type.id)
-                    const currentMode = uiModes[type.id] || (rule?.assigned_user === null ? 'group' : 'user')
-                    const isGroupMode = currentMode === 'group'
+    const renderRuleRows = (taskTypes: any[]) => (
+        <div className="grid gap-2">
+            {taskTypes.map((type) => {
+                const rule = rules.find(r => r.task_type === type.id)
+                const currentMode = uiModes[type.id] || (rule?.assigned_user === null ? 'group' : 'user')
+                const isGroupMode = currentMode === 'group'
+                const isRecurrent = !!type.dayField
 
-                    return (
-                        <div key={type.id} className="group relative bg-card border rounded-xl p-3 hover:shadow-md transition-all">
-                            <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                {/* Stage identification */}
-                                <div className="flex items-center gap-3 min-w-[200px] flex-1">
-                                    <div className="p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
+                return (
+                    <div key={type.id} className="group relative bg-card border rounded-xl p-3 hover:shadow-md transition-all">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4">
+                            {/* Stage identification */}
+                            <div className="flex items-center gap-3 min-w-[200px] flex-1">
+                                <div className="p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
+                                    {isRecurrent ? (
+                                        <CalendarClock className="h-4 w-4 text-primary/70" />
+                                    ) : (
                                         <Settings className="h-4 w-4 text-primary/70" />
+                                    )}
+                                </div>
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-semibold leading-none">{type.name}</h3>
+                                        <Badge variant="outline" className="h-4 px-1 text-[9px] font-mono text-muted-foreground uppercase opacity-50">
+                                            {isRecurrent ? 'RECURRENTE' : type.id.replace('OT_', '').replace('HUB_', '').replace('_APPROVAL', '')}
+                                        </Badge>
                                     </div>
-                                    <div className="space-y-0.5">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-sm font-semibold leading-none">{type.name}</h3>
-                                            <Badge variant="outline" className="h-4 px-1 text-[9px] font-mono text-muted-foreground uppercase opacity-50">
-                                                {type.id.replace('OT_', '').replace('_APPROVAL', '')}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground line-clamp-1">{type.description}</p>
-                                    </div>
+                                    <p className="text-[10px] text-muted-foreground line-clamp-1">{type.description}</p>
+                                </div>
+                            </div>
+
+                            {/* Recurrent Day Configuration */}
+                            {isRecurrent && (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg border border-border/50">
+                                    <Label className="text-[10px] whitespace-nowrap">Día Gen:</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="28"
+                                        className="h-7 w-12 text-center text-xs p-0 font-mono"
+                                        defaultValue={recurrentSettings?.[type.dayField]}
+                                        onBlur={(e) => handleUpdateRecurrentSetting(type.dayField, e.target.value)}
+                                        disabled={saving === type.dayField}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Controls */}
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
+                                {/* Selector Toggle */}
+                                <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm shrink-0 scale-90 sm:scale-100">
+                                    <button
+                                        className={cn(
+                                            "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                                            !isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                        )}
+                                        onClick={() => handleUpdateRule(type.id, null, false)}
+                                        disabled={saving === type.id}
+                                    >
+                                        <User className="h-3 w-3" />
+                                        Usuario
+                                    </button>
+                                    <button
+                                        className={cn(
+                                            "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                                            isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                        )}
+                                        onClick={() => handleUpdateRule(type.id, "", true)}
+                                        disabled={saving === type.id}
+                                    >
+                                        <Users className="h-3 w-3" />
+                                        Grupo
+                                    </button>
                                 </div>
 
-                                {/* Controls */}
-                                <div className="flex flex-col sm:flex-row items-center gap-3">
-                                    {/* Selector Toggle */}
-                                    <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm shrink-0 scale-90 sm:scale-100">
-                                        <button
-                                            className={cn(
-                                                "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                                                !isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                            )}
-                                            onClick={() => handleUpdateRule(type.id, null, false)}
+                                {/* Assignment Selector */}
+                                <div className="w-full sm:w-[220px]">
+                                    {isGroupMode ? (
+                                        <GroupSelector
+                                            value={rule?.assigned_group}
+                                            onChange={(val) => handleUpdateRule(type.id, val, true)}
                                             disabled={saving === type.id}
-                                        >
-                                            <User className="h-3 w-3" />
-                                            Usuario
-                                        </button>
-                                        <button
-                                            className={cn(
-                                                "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                                                isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                            )}
-                                            onClick={() => handleUpdateRule(type.id, "", true)}
+                                            placeholder="Sel. grupo..."
+                                        />
+                                    ) : (
+                                        <UserSelector
+                                            value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                            onChange={(val: any) => handleUpdateRule(type.id, val, false)}
                                             disabled={saving === type.id}
-                                        >
-                                            <Users className="h-3 w-3" />
-                                            Grupo
-                                        </button>
-                                    </div>
+                                            placeholder="Sel. usuario..."
+                                        />
+                                    )}
+                                </div>
 
-                                    {/* Assignment Selector */}
-                                    <div className="w-full sm:w-[280px]">
-                                        {isGroupMode ? (
-                                            <GroupSelector
-                                                value={rule?.assigned_group}
-                                                onChange={(val) => handleUpdateRule(type.id, val, true)}
-                                                disabled={saving === type.id}
-                                                placeholder="Sel. grupo..."
-                                            />
-                                        ) : (
-                                            <UserSelector
-                                                value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
-                                                onChange={(val: any) => handleUpdateRule(type.id, val, false)}
-                                                disabled={saving === type.id}
-                                                placeholder="Sel. usuario..."
-                                            />
-                                        )}
-                                    </div>
-
-                                    {/* Status Badge (Compact) */}
-                                    <div className="shrink-0 flex items-center">
-                                        {rule?.assigned_user ? (
-                                            <div className="h-8 w-8 flex items-center justify-center rounded-full bg-green-50 text-green-600 border border-green-100" title={`Asignado a: ${rule.assigned_user_data?.username}`}>
-                                                <CheckCircle2 className="h-4 w-4" />
-                                            </div>
-                                        ) : rule?.assigned_group ? (
-                                            <div className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100" title={`Grupo: ${rule.assigned_group}`}>
-                                                <Users className="h-4 w-4" />
-                                            </div>
-                                        ) : (
-                                            <div className="h-8 w-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 border border-amber-100" title="Sin asignar">
-                                                <AlertCircle className="h-4 w-4" />
-                                            </div>
-                                        )}
-                                    </div>
+                                {/* Status Badge (Compact) */}
+                                <div className="shrink-0 flex items-center">
+                                    {rule?.assigned_user ? (
+                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-green-50 text-green-600 border border-green-100" title={`Asignado a: ${rule.assigned_user_data?.username}`}>
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        </div>
+                                    ) : rule?.assigned_group ? (
+                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100" title={`Grupo: ${rule.assigned_group}`}>
+                                            <Users className="h-4 w-4" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-amber-50 text-amber-600 border border-amber-100" title="Sin asignar">
+                                            <AlertCircle className="h-4 w-4" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                    )
-                })}
-            </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
 
-            <Card className="border-dashed border-2 bg-muted/5">
-                <CardHeader>
-                    <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
-                    <CardDescription className="text-xs">
-                        Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
-                        <br />
-                        Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un "Pool" visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+    return (
+        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
+            <PageHeader
+                title="Configuración de Workflow"
+                description="Defina los responsables por defecto para cada etapa y tarea automática del sistema."
+            >
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
+                    {saving ? (
+                        <>
+                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
+                            <span className="text-blue-600">Actualizando...</span>
+                        </>
+                    ) : (
+                        <>
+                            <Check className="h-3 w-3 text-emerald-500" />
+                            <span className="text-emerald-600">Sincronizado</span>
+                        </>
+                    )}
+                </div>
+            </PageHeader>
+
+            <Tabs value={activeTab} className="space-y-4">
+                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+
+                <TabsContent value="approvals">
+                    {renderRuleRows(TASK_TYPES)}
+
+                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                        <CardHeader>
+                            <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
+                            <CardDescription className="text-xs">
+                                Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
+                                <br />
+                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un "Pool" visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="tasks" className="space-y-6">
+                    <div>
+                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                        {renderRuleRows(HUB_TASK_TYPES)}
+                    </div>
+
+                    <div className="pt-4 border-t border-border/50">
+                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
+                        {renderRuleRows(RECURRENT_TASK_TYPES)}
+                    </div>
+
+                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                        <CardHeader className="py-4">
+                            <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
+                            <CardDescription className="text-[10px]">
+                                Las tareas se generan y completan automáticamente según el flujo del sistema.
+                                <br />
+                                Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

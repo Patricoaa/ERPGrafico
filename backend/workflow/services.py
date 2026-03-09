@@ -1,4 +1,6 @@
 from django.utils import timezone
+from django.db import transaction
+
 from .models import Task, Notification, TaskAssignmentRule
 
 class WorkflowService:
@@ -43,7 +45,7 @@ class WorkflowService:
         
         # If pool assignment (Group but no User)
         if candidate_group and not assigned_user:
-            task_data['candidate_group'] = candidate_group
+            task_data = {**task_data, 'candidate_group': candidate_group}
         
         task = Task.objects.create(
             title=title,
@@ -63,6 +65,259 @@ class WorkflowService:
             WorkflowService.notify_group_assignment(task, candidate_group)
             
         return task
+
+    # --- HUB Stage Tasks ---
+    
+    HUB_STAGES = [
+        ('origin', 'Origen (Confirmación)'),
+        ('logistics', 'Despacho / Recepción'),
+        ('billing', 'Facturación'),
+        ('treasury', 'Tesorería'),
+    ]
+
+    HUB_STAGE_TASK_TYPES = {
+        'origin': 'HUB_ORIGIN',
+        'logistics': 'HUB_LOGISTICS',
+        'billing': 'HUB_BILLING',
+        'treasury': 'HUB_TREASURY',
+    }
+
+    # Recurring F29 Tasks
+    F29_CREATE = 'F29_CREATE'
+    F29_PAY = 'F29_PAY'
+    PERIOD_CLOSE = 'PERIOD_CLOSE'
+
+    @staticmethod
+    def create_hub_stage_tasks(order, order_type='sale'):
+        """
+        Creates TASK-category tasks for each pending HUB stage.
+        Called when an order is confirmed.
+        
+        order_type: 'sale' or 'purchase'
+        """
+        from django.contrib.contenttypes.models import ContentType
+        
+        content_type = ContentType.objects.get_for_model(order)
+        
+        # Don't create duplicates
+        existing = Task.objects.filter(
+            content_type=content_type,
+            object_id=order.pk,
+            category=Task.Category.TASK,
+            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+        ).values_list('task_type', flat=True)
+        
+        order_label = f"NV-{order.number}" if order_type == 'sale' else f"OC-{order.number}"
+        
+        # Gather context for richer task cards
+        contact_name = ''
+        try:
+            if order_type == 'sale' and hasattr(order, 'customer'):
+                contact_name = str(order.customer.name) if order.customer else ''
+            elif order_type == 'purchase' and hasattr(order, 'supplier'):
+                contact_name = str(order.supplier.name) if order.supplier else ''
+        except Exception:
+            pass
+        
+    @staticmethod
+    def is_hub_stage_complete(order, stage_key):
+        """
+        Calculates ground truth for a HUB stage completion.
+        """
+        if getattr(order, 'status', None) == 'CANCELLED':
+            return True
+            
+        if stage_key == 'origin':
+            # Origin is complete once confirmed (not DRAFT)
+            return getattr(order, 'status', 'DRAFT') != 'DRAFT'
+            
+        if stage_key == 'logistics':
+            # SaleOrder delivery
+            if hasattr(order, 'delivery_status'):
+                return order.delivery_status == 'DELIVERED'
+            # PurchaseOrder receiving
+            if hasattr(order, 'receiving_status'):
+                return order.receiving_status == 'RECEIVED'
+            return False
+            
+        if stage_key == 'billing':
+            # Check for any POSTED invoice with a number
+            if hasattr(order, 'invoices'):
+                return order.invoices.filter(status='POSTED').exclude(number='').exists()
+            if hasattr(order, 'purchase_invoices'):
+                return order.purchase_invoices.filter(status='POSTED').exclude(number='').exists()
+            return False
+            
+        if stage_key == 'treasury':
+            # Check if PAID status and no pending registration for Card/Transfer
+            is_paid = getattr(order, 'status', None) == 'PAID' or getattr(order, 'payment_status', None) == 'PAID'
+            if not is_paid:
+                return False
+                
+            if hasattr(order, 'payments'):
+                # Exact same logic as frontend: complete only if no payments are pending registration
+                has_pending = order.payments.filter(
+                    movement_type__in=['INBOUND', 'OUTBOUND', 'TRANSFER'],
+                    payment_method__in=['CARD', 'TRANSFER'],
+                    transaction_number__isnull=True
+                ).exclude(transaction_number__exact='').exists()
+                return not has_pending
+            return True
+            
+        return False
+
+    @staticmethod
+    @transaction.atomic
+    def sync_hub_tasks(order):
+        """
+        Centralized method to ensure HUB tasks match the actual order state.
+        Ensures tasks exist and their status (Pending/Completed) is correct.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        
+        # 1. Ensure tasks exist (reusing create_hub_stage_tasks logic)
+        order_type = 'sale'
+        if hasattr(order, 'supplier_id'): # simplistic check for PurchaseOrder
+            order_type = 'purchase'
+            
+        WorkflowService.create_hub_stage_tasks(order, order_type)
+        
+        # 2. Re-evaluate all HUB tasks for this object
+        content_type = ContentType.objects.get_for_model(order)
+        tasks = Task.objects.filter(
+            content_type=content_type,
+            object_id=order.pk,
+            task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values()
+        )
+        
+        # Build inversion map
+        type_to_stage = {v: k for k, v in WorkflowService.HUB_STAGE_TASK_TYPES.items()}
+        
+        for task in tasks:
+            stage_key = type_to_stage.get(task.task_type)
+            if not stage_key: continue
+            
+            should_be_complete = WorkflowService.is_hub_stage_complete(order, stage_key)
+            
+            if should_be_complete and task.status != Task.Status.COMPLETED:
+                task.status = Task.Status.COMPLETED
+                task.completed_at = task.completed_at or timezone.now()
+                task.save()
+            elif not should_be_complete and task.status == Task.Status.COMPLETED:
+                # Revert to pending if no longer complete (e.g. invoice deleted)
+                task.status = Task.Status.PENDING
+                task.completed_at = None
+                task.save()
+
+    @staticmethod
+    def create_hub_stage_tasks(order, order_type):
+        """
+        Ensures the 4 HUB tasks are created for an order.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        content_type = ContentType.objects.get_for_model(order)
+        
+        # Get existing to avoid duplicates
+        existing = set(Task.objects.filter(
+            content_type=content_type,
+            object_id=order.pk,
+            task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values()
+        ).values_list('task_type', flat=True))
+        
+        order_label = f"{'NV' if order_type == 'sale' else 'OC'}-{order.number}"
+        
+        contact_name = ''
+        try:
+            if order_type == 'sale' and hasattr(order, 'customer'):
+                contact_name = str(order.customer.name) if order.customer else ''
+            elif order_type == 'purchase' and hasattr(order, 'supplier'):
+                contact_name = str(order.supplier.name) if order.supplier else ''
+        except Exception:
+            pass
+        
+        order_total = float(order.total) if hasattr(order, 'total') else 0
+        
+        # Determine the relevant date (delivery_date for sales, receipt_date for purchases)
+        order_delivery_date = ''
+        if hasattr(order, 'delivery_date') and order.delivery_date:
+            order_delivery_date = str(order.delivery_date)
+        elif hasattr(order, 'receipt_date') and order.receipt_date:
+            order_delivery_date = str(order.receipt_date)
+        
+        for stage_key, stage_name in WorkflowService.HUB_STAGES:
+            task_type = WorkflowService.HUB_STAGE_TASK_TYPES[stage_key]
+            
+            if task_type in existing:
+                continue
+            
+            # Use is_hub_stage_complete to set initial status
+            is_complete = WorkflowService.is_hub_stage_complete(order, stage_key)
+            
+            task = WorkflowService.create_task(
+                task_type=task_type,
+                title=f"{stage_name}: {order_label}",
+                description=f"Etapa '{stage_name}' pendiente para {order_label}.",
+                content_object=order,
+                priority=Task.Priority.MEDIUM,
+                data={
+                    'stage': stage_key,
+                    'order_type': order_type,
+                    'order_number': str(order.number),
+                    'contact_name': contact_name,
+                    'order_total': order_total,
+                    'delivery_date': order_delivery_date,
+                },
+                category=Task.Category.TASK
+            )
+            
+            if is_complete:
+                task.status = Task.Status.COMPLETED
+                task.completed_at = timezone.now()
+                task.save()
+
+    @staticmethod
+    def complete_hub_stage_task(content_object, stage):
+        """
+        Auto-completes the pending HUB stage task for a given object.
+        Called during stage transitions (dispatch, invoice, payment).
+        """
+        from django.contrib.contenttypes.models import ContentType
+        
+        task_type = WorkflowService.HUB_STAGE_TASK_TYPES.get(stage)
+        if not task_type:
+            return
+        
+        content_type = ContentType.objects.get_for_model(content_object)
+        
+        pending_tasks = Task.objects.filter(
+            content_type=content_type,
+            object_id=content_object.pk,
+            task_type=task_type,
+            category=Task.Category.TASK,
+            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+        )
+        
+        for task in pending_tasks:
+            task.status = Task.Status.COMPLETED
+            task.completed_at = timezone.now()
+            task.save()
+
+    @staticmethod
+    def complete_periodic_task(task_type, year, month):
+        """
+        Completes a periodic task (F29_CREATE, F29_PAY, PERIOD_CLOSE) 
+        for a specific period.
+        """
+        tasks = Task.objects.filter(
+            task_type=task_type,
+            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
+            data__year=year,
+            data__month=month
+        )
+        for task in tasks:
+            task.status = Task.Status.COMPLETED
+            task.completed_at = timezone.now()
+            task.save()
 
     @staticmethod
     def _get_link_for_task(task):
