@@ -76,16 +76,17 @@ export const saleOrderActions: ActionRegistry = {
         actions: [
             {
                 id: 'create-work-order',
-                label: 'Crear OT Manual',
+                label: 'Crear Orden de Trabajo',
                 icon: FileEdit,
                 requiredPermissions: ['production.add_workorder'],
                 checkAvailability: (order) => {
+                    // Show if there is at least one line with advanced manufacturing pending
                     const lines = order.lines || order.items || []
-                    const hasManufacturable = lines.some((l: any) => l.is_manufacturable)
-                    const ots = order.work_orders || []
-                    const noActiveOts = ots.length === 0 || ots.every((ot: any) => ot.status === 'CANCELLED')
-
-                    return hasManufacturable && noActiveOts
+                    return lines.some((l: any) =>
+                        l.product_type === 'MANUFACTURABLE' &&
+                        l.requires_advanced_manufacturing &&
+                        !l.work_order_summary
+                    )
                 }
             }
         ]

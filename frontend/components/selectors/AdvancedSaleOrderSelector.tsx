@@ -29,13 +29,15 @@ interface AdvancedSaleOrderSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     disabled?: boolean
+    customFilter?: (order: any) => boolean
 }
 
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
     placeholder = "Seleccionar nota de venta...",
-    disabled = false
+    disabled = false,
+    customFilter
 }: AdvancedSaleOrderSelectorProps) {
     const [open, setOpen] = useState(false)
     const [previewOpen, setPreviewOpen] = useState(false)
@@ -76,7 +78,11 @@ export function AdvancedSaleOrderSelector({
                 // Or just show all available for OT creation.
 
                 const res = await api.get(`/sales/orders/?${params.toString()}`)
-                setOrders(res.data.results || res.data)
+                let allOrders = res.data.results || res.data
+                if (customFilter) {
+                    allOrders = allOrders.filter(customFilter)
+                }
+                setOrders(allOrders)
             } catch (error) {
                 console.error("Error searching sale orders", error)
             } finally {

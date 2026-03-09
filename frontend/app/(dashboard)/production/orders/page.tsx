@@ -135,23 +135,22 @@ export default function WorkOrdersPage() {
         {
             accessorKey: "status",
             header: "Estado",
-            // We can keep it or hide it, but we need it for faceted filter to work easily
-            // Actually, if we use it in facetedFilters, DataTable needs this column.
-            cell: ({ row }) => null,
-            enableHiding: true,
+            cell: ({ row }) => (
+                <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
+                    {statusMap[row.original.status as string]?.label || row.original.status}
+                </Badge>
+            ),
+            filterFn: (row, id, value) => {
+                return value.includes(row.getValue(id))
+            },
         },
         {
-            id: "status_stage",
-            header: "Estado / Etapa",
+            accessorKey: "current_stage",
+            header: "Etapa",
             cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
-                        {statusMap[row.original.status as string]?.label || row.original.status}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px] whitespace-nowrap">
-                        {translateProductionStage(row.original.current_stage)}
-                    </Badge>
-                </div>
+                <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                    {translateProductionStage(row.original.current_stage)}
+                </Badge>
             ),
         },
         {

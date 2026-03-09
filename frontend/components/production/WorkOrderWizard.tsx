@@ -1327,9 +1327,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 </p>
                                             </div>
                                             <div className="flex gap-3">
-                                                <Button variant="outline" onClick={() => onOpenChange(false)} className="gap-2">
-                                                    Cerrar Wizard
-                                                </Button>
+
                                                 <Button onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')} className="gap-2 font-semibold">
                                                     <LayoutDashboard className="h-4 w-4" />
                                                     Ir al HUB de Venta

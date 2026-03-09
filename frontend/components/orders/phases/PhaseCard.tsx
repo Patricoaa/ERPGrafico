@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge"
 import { ActionCategory } from "../ActionCategory"
 import { Eye, Settings2 } from "lucide-react"
 
@@ -164,15 +165,23 @@ export function PhaseCard({
                 <div className="space-y-2 min-h-[40px]">
                     {documents.length > 0 ? (
                         documents.map((doc: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12">
+                            <div key={i} className={cn(
+                                "flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12",
+                                doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed"
+                            )}>
                                 <div className="flex items-center gap-2.5 overflow-hidden">
                                     <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">
                                         <doc.icon className="h-4 w-4 text-primary/80" />
                                     </div>
                                     <div className="flex flex-col overflow-hidden">
-                                        <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
-                                            {doc.number}
-                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
+                                                {doc.number}
+                                            </span>
+                                            {doc.status === 'CANCELLED' && (
+                                                <Badge variant="outline" className="text-[7px] h-3 px-1 border-slate-400 text-slate-500 font-bold uppercase">Anulada</Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 

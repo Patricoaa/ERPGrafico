@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import { DocumentListModal } from './DocumentListModal'
 import { TransactionViewModal } from "../shared/TransactionViewModal"
 import { NoteLogisticsModal } from "./NoteLogisticsModal"
+import { WorkOrderForm } from "../forms/WorkOrderForm"
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
@@ -110,7 +111,7 @@ export const ActionCategory = forwardRef(({
                 handleRegenerateDocument()
                 break
             case 'create-work-order':
-                router.push(`/production/work-orders/new?sale_order_id=${order?.id}`)
+                setActiveModal(actionId)
                 break
             case 'view-work-orders':
                 // For Work Orders we'll keep it as a list for now or open specific one
@@ -404,6 +405,26 @@ export const ActionCategory = forwardRef(({
                     onItemClick={(type, id) => {
                         setViewConfig({ type, id })
                         setActiveModal('transaction-view')
+                    }}
+                />
+            )}
+
+            {activeModal === 'create-work-order' && (
+                <WorkOrderForm
+                    open={true}
+                    onOpenChange={closeModal}
+                    initialData={{
+                        sale_order: order?.id?.toString(),
+                        // Find the first manufacturable line that doesn't have an active OT
+                        sale_line: (order.lines || order.items || []).find((l: any) =>
+                            l.product_type === 'MANUFACTURABLE' &&
+                            l.requires_advanced_manufacturing &&
+                            !l.work_order_summary
+                        )?.id?.toString()
+                    }}
+                    onSuccess={() => {
+                        closeModal()
+                        onActionSuccess?.()
                     }}
                 />
             )}

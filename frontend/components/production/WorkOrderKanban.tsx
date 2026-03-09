@@ -13,7 +13,8 @@ import {
     Printer,
     FileText,
     Layers,
-    CheckCircle2
+    CheckCircle2,
+    Ban
 } from "lucide-react"
 
 interface KanbanProps {
@@ -29,6 +30,7 @@ const STAGES = [
     { id: 'PRESS', label: 'Impresión', color: 'bg-orange-50', icon: Printer },
     { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-cyan-50', icon: Layers },
     { id: 'FINISHED', label: 'Finalizado', color: 'bg-green-50', icon: CheckCircle2 },
+    { id: 'CANCELLED', label: 'Anulada', color: 'bg-slate-200/50', icon: Ban },
 ]
 
 export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps) {
