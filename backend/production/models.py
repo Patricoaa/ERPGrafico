@@ -24,6 +24,7 @@ class WorkOrder(models.Model):
         PRESS = 'PRESS', _('Impresión')
         POSTPRESS = 'POSTPRESS', _('Post-Impresión')
         OUTSOURCING_VERIFICATION = 'OUTSOURCING_VERIFICATION', _('Verificación de Tercerizados')
+        RECTIFICATION = 'RECTIFICATION', _('Rectificación')
         FINISHED = 'FINISHED', _('Finalizada')
         CANCELLED = 'CANCELLED', _('Cancelada')
 
@@ -103,6 +104,21 @@ class WorkOrder(models.Model):
 
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
     start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
+
+    # Rectification fields
+    actual_quantity_produced = models.DecimalField(
+        _("Cantidad Real Producida"),
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Cantidad real fabricada declarada en la rectificación (OTs manuales)"
+    )
+    is_rectified = models.BooleanField(
+        _("Rectificada"),
+        default=False,
+        help_text="Indica si la OT pasó por el paso de rectificación antes de finalizar"
+    )
 
     attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
@@ -202,6 +218,7 @@ class WorkOrder(models.Model):
             self.Stage.PRESS,
             self.Stage.POSTPRESS,
             self.Stage.OUTSOURCING_VERIFICATION,
+            self.Stage.RECTIFICATION,
             self.Stage.FINISHED
         ]
         

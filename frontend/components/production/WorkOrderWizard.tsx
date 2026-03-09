@@ -29,7 +29,8 @@ import {
     Info,
     AlertTriangle,
     X,
-    Briefcase
+    Briefcase,
+    ClipboardList
 } from "lucide-react"
 import { cn, formatBytes, translateStatus } from "@/lib/utils"
 import { formatCurrency } from "@/lib/currency"
@@ -65,6 +66,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { WizardHeader } from "./WizardHeader"
 import { WizardStickyFooter } from "./WizardStickyFooter"
 import { WizardRightSidebar } from "./WizardRightSidebar"
+import { RectificationStep } from "./steps/RectificationStep"
 
 const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
@@ -112,6 +114,7 @@ const BASE_STAGES = [
     { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
     { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers, alwaysShow: false },
     { id: 'OUTSOURCING_VERIFICATION', label: 'Verificación de Tercerizados', icon: LayoutDashboard, alwaysShow: false },
+    { id: 'RECTIFICATION', label: 'Rectificación', icon: ClipboardList, alwaysShow: false },
     { id: 'FINISHED', label: 'Finalizada', icon: CheckCircle2, alwaysShow: true },
 ]
 
@@ -147,6 +150,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
     const [pendingPrevStage, setPendingPrevStage] = useState<string | null>(null)
+    // Rectification state
+    const [rectificationAdjustments, setRectificationAdjustments] = useState<{material_id: number, actual_quantity: number}[]>([])
+    const [rectificationProducedQty, setRectificationProducedQty] = useState<number | null>(null)
+    const [isRectifying, setIsRectifying] = useState(false)
     const { user } = useAuth()
     const { openCommandCenter } = useGlobalModals()
 
@@ -191,6 +198,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             if (stage.id === 'PRESS') return orderData.current_stage === 'PRESS' || orderData.requires_press
             if (stage.id === 'POSTPRESS') return orderData.current_stage === 'POSTPRESS' || orderData.requires_postpress
             if (stage.id === 'OUTSOURCING_VERIFICATION') return orderData.current_stage === 'OUTSOURCING_VERIFICATION' || (orderData.materials || []).some((m: any) => m.is_outsourced)
+            // RECTIFICATION: show if OT has at least 1 material OR it's already in this stage
+            if (stage.id === 'RECTIFICATION') {
+                return orderData.current_stage === 'RECTIFICATION' ||
+                    (!orderData.no_materials_required && (orderData.materials || []).length > 0)
+            }
             return false
         })
     }
@@ -206,8 +218,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             setOrder(response.data)
 
             const filteredStages = getFilteredStages(response.data)
-            const index = filteredStages.findIndex(s => s.id === response.data.current_stage)
-            const resolvedIndex = index !== -1 ? index : 0
+            const currentIndex = filteredStages.findIndex(s => s.id === response.data.current_stage)
+            let resolvedIndex = currentIndex !== -1 ? currentIndex : 0
+
+            // If a specific target stage was requested (e.g. from Kanban button), jump to it
+            if (targetStage) {
+                const targetIndex = filteredStages.findIndex(s => s.id === targetStage)
+                if (targetIndex !== -1) {
+                    resolvedIndex = targetIndex
+                }
+            }
+
             setViewingStepIndex(resolvedIndex)
 
             // Sync Pre-press state from order data
@@ -405,6 +426,27 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         }
     }
 
+    const handleRectifyAndFinish = async () => {
+        if (!order) return
+
+        setIsRectifying(true)
+        try {
+            // Step 1: Call rectify endpoint with adjustments
+            await api.post(`/production/orders/${orderId}/rectify/`, {
+                material_adjustments: rectificationAdjustments,
+                produced_quantity: rectificationProducedQty,
+                notes: 'Rectificación desde wizard'
+            })
+
+            // Step 2: Transition to FINISHED
+            await handleTransition('FINISHED')
+        } catch (err) {
+            const error: any = err
+            toast.error(error.response?.data?.error || "Error al rectificar y finalizar la OT")
+        } finally {
+            setIsRectifying(false)
+        }
+    }
 
 
     useEffect(() => {
@@ -1312,6 +1354,45 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         </div>
                                     )}
 
+                                    {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
+                                        <div className="space-y-6">
+                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_OUTSOURCING_VERIFICATION_APPROVAL').map((task: any) => (
+                                                <TaskActionCard
+                                                    key={task.id}
+                                                    task={task}
+                                                    canComplete={canUserCompleteTask(task)}
+                                                    onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
+                                                    onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
+                                                    notesValue={taskNotes[task.id] || ""}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {STAGES[viewingStepIndex]?.id === 'RECTIFICATION' && (
+                                        <div className="space-y-6">
+                                            {/* Rectification approval task (if any) */}
+                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_RECTIFICATION_APPROVAL').map((task: any) => (
+                                                <TaskActionCard
+                                                    key={task.id}
+                                                    task={task}
+                                                    canComplete={canUserCompleteTask(task)}
+                                                    onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
+                                                    onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
+                                                    notesValue={taskNotes[task.id] || ""}
+                                                />
+                                            ))}
+                                            {/* Rectification input form */}
+                                            <RectificationStep
+                                                order={order}
+                                                onChange={(adjustments, producedQty) => {
+                                                    setRectificationAdjustments(adjustments)
+                                                    setRectificationProducedQty(producedQty)
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
                                     {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
                                         <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
                                             <div className="relative">
@@ -1348,14 +1429,23 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             viewingStepIndex={viewingStepIndex}
                             actualStepIndex={actualStepIndex}
                             stages={STAGES}
-                            transitioning={transitioning}
+                            transitioning={transitioning || isRectifying}
                             onTransition={handleTransition}
                             onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
+                            onBack={() => {
+                                const prevStage = STAGES[actualStepIndex - 1]
+                                if (prevStage) {
+                                    setPendingPrevStage(prevStage.id)
+                                    setIsBackwardModalOpen(true)
+                                }
+                            }}
                             isMaterialApprovalIncomplete={
                                 STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
                                 order?.materials?.some((m: any) => !m.is_available)
                             }
                             hasMaterials={orderHasMaterials}
+                            isRectificationStep={STAGES[viewingStepIndex]?.id === 'RECTIFICATION'}
+                            onRectifyAndFinish={handleRectifyAndFinish}
                         />
                     </div>
 

@@ -143,9 +143,10 @@ export function OrderCommandCenter({
     }
 
     // Production Progress
-    const totalOTs = activeDoc.work_orders?.length || 0
+    const activeOTs = activeDoc.work_orders?.filter((ot: any) => ot.status !== 'CANCELLED') || []
+    const totalOTs = activeOTs.length
     const totalOTProgress = totalOTs > 0
-        ? (activeDoc.work_orders || []).reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        ? activeOTs.reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
         : 0
 
     // Calculate if there are issues with invoices (drafts or missing folio)

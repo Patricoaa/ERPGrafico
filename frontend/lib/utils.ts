@@ -33,6 +33,7 @@ export function translateStatus(status: string | null | undefined): string {
     'PREPRESS': 'Pre-Impresión',
     'PRESS': 'Impresión',
     'POSTPRESS': 'Post-Impresión',
+    'RECTIFICATION': 'Rectificación',
     'PARTIAL': 'Parcial',
     'SUBSCRIPTION_IN_PROGRESS': 'Suscripción en Proceso',
   }
@@ -47,6 +48,7 @@ export function translateProductionStage(stage: string): string {
     'PREPRESS': 'Pre-Impresión',
     'PRESS': 'Impresión',
     'POSTPRESS': 'Post-Impresión',
+    'RECTIFICATION': 'Rectificación',
     'FINISHED': 'Finalizada',
   }
   return map[stage.toUpperCase()] || stage.toLowerCase().replace(/_/g, ' ')

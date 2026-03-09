@@ -26,8 +26,11 @@ interface WizardStickyFooterProps {
     actualStepIndex: number
     onBackToCurrent: () => void
     onTransition: (stageId: string) => void
+    onBack?: () => void
     isMaterialApprovalIncomplete: boolean
     hasMaterials: boolean
+    isRectificationStep?: boolean
+    onRectifyAndFinish?: () => void
 }
 
 export function WizardStickyFooter({
@@ -42,8 +45,11 @@ export function WizardStickyFooter({
     actualStepIndex,
     onBackToCurrent,
     onTransition,
+    onBack,
     isMaterialApprovalIncomplete,
-    hasMaterials
+    hasMaterials,
+    isRectificationStep = false,
+    onRectifyAndFinish
 }: WizardStickyFooterProps) {
     const [showAlert, setShowAlert] = useState(false)
     const [alertConfig, setAlertConfig] = useState<{
@@ -92,13 +98,27 @@ export function WizardStickyFooter({
             <div className="sticky bottom-0 border-t bg-background py-3 px-6 flex items-center justify-between z-10">
                 {isViewingCurrentStage ? (
                     <>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onClose}
-                        >
-                            Cerrar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onClose}
+                            >
+                                Cerrar
+                            </Button>
+
+                            {actualStepIndex > 0 && order?.status !== 'FINISHED' && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onBack}
+                                    disabled={transitioning}
+                                    className="text-muted-foreground hover:text-foreground"
+                                >
+                                    Anterior
+                                </Button>
+                            )}
+                        </div>
 
                         <div className="flex items-center gap-2">
                             {pendingTasks.length > 0 && !canApproveAll && (
@@ -109,29 +129,60 @@ export function WizardStickyFooter({
                             )}
 
                             {order?.status !== 'FINISHED' && stages[viewingStepIndex]?.id !== 'FINISHED' && (
-                                <Button
-                                    disabled={isNextDisabled}
-                                    onClick={handleNextClick}
-                                    className="gap-2"
-                                    aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
-                                >
-                                    {transitioning ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Procesando...
-                                        </>
-                                    ) : viewingStepIndex === stages.length - 2 ? (
-                                        <>
-                                            Finalizar Producción
-                                            <Check className="ml-2 h-4 w-4" aria-hidden="true" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            Siguiente Etapa
-                                            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                                        </>
-                                    )}
-                                </Button>
+                                isRectificationStep ? (
+                                    <Button
+                                        disabled={isNextDisabled}
+                                        onClick={() => {
+                                            setAlertConfig({
+                                                title: "¿Rectificar y Finalizar Producción?",
+                                                description: "Se ajustarán las cantidades de materiales consumidos (y producción en OTs de stock) y la OT pasará a estado Finalizado. Los movimientos de inventario y costos serán calculados con las cantidades reales declaradas. Esta acción no se puede deshacer.",
+                                                onConfirm: () => {
+                                                    onRectifyAndFinish?.()
+                                                    setShowAlert(false)
+                                                }
+                                            })
+                                            setShowAlert(true)
+                                        }}
+                                        className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                        aria-label="Rectificar y Finalizar Producción"
+                                    >
+                                        {transitioning ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Procesando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Rectificar y Finalizar
+                                                <Check className="ml-2 h-4 w-4" aria-hidden="true" />
+                                            </>
+                                        )}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        disabled={isNextDisabled}
+                                        onClick={handleNextClick}
+                                        className="gap-2"
+                                        aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
+                                    >
+                                        {transitioning ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Procesando...
+                                            </>
+                                        ) : viewingStepIndex === stages.length - 2 ? (
+                                            <>
+                                                Finalizar Producción
+                                                <Check className="ml-2 h-4 w-4" aria-hidden="true" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                Siguiente Etapa
+                                                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                                            </>
+                                        )}
+                                    </Button>
+                                )
                             )}
                         </div>
                     </>

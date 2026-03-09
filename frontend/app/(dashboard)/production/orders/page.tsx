@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -31,6 +31,14 @@ interface WorkOrder {
     sale_customer_name?: string
     materials?: any[]
 }
+
+const statusOptions = [
+    { label: "Borrador", value: "DRAFT" },
+    { label: "Planificada", value: "PLANNED" },
+    { label: "En Proceso", value: "IN_PROGRESS" },
+    { label: "Terminada", value: "FINISHED" },
+    { label: "Anulada", value: "CANCELLED" },
+]
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "outline" | "destructive" }> = {
     'DRAFT': { label: 'Borrador', variant: 'secondary' },
@@ -111,7 +119,7 @@ export default function WorkOrdersPage() {
         fetchOrders()
     }, [])
 
-    const columns: ColumnDef<WorkOrder>[] = [
+    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
         {
             accessorKey: "number",
             header: ({ column }) => (
@@ -215,7 +223,7 @@ export default function WorkOrdersPage() {
                 </div>
             ),
         },
-    ]
+    ], [])
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
@@ -268,13 +276,7 @@ export default function WorkOrdersPage() {
                         {
                             column: "status",
                             title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Planificada", value: "PLANNED" },
-                                { label: "En Proceso", value: "IN_PROGRESS" },
-                                { label: "Terminada", value: "FINISHED" },
-                                { label: "Anulada", value: "CANCELLED" },
-                            ]
+                            options: statusOptions
                         }
                     ]}
                     useAdvancedFilter={true}

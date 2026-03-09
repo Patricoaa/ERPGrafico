@@ -208,7 +208,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             WorkOrder.Stage.PREPRESS.value: 45,
             WorkOrder.Stage.PRESS.value: 60,
             WorkOrder.Stage.POSTPRESS.value: 75,
-            WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 90,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 88,
+            WorkOrder.Stage.RECTIFICATION.value: 95,
             WorkOrder.Stage.FINISHED.value: 100,
             WorkOrder.Stage.CANCELLED.value: 0
         }
@@ -319,6 +320,8 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
     lines_count = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
     
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False, allow_null=True)
+
     class Meta:
         model = BillOfMaterials
         fields = '__all__'

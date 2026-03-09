@@ -172,6 +172,35 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def rectify(self, request, pk=None):
+        """
+        Declare real quantities consumed and produced before finalizing the OT.
+        Must be called while the OT is in RECTIFICATION stage.
+        
+        Body:
+            material_adjustments: list of {material_id, actual_quantity}  (optional)
+            produced_quantity: number  (only for manual OTs with track_inventory=True)
+            notes: string  (optional)
+        """
+        work_order = self.get_object()
+        try:
+            material_adjustments = request.data.get('material_adjustments', [])
+            produced_quantity = request.data.get('produced_quantity')
+            notes = request.data.get('notes', '')
+            
+            WorkOrderService.rectify_production(
+                work_order=work_order,
+                material_adjustments=material_adjustments,
+                produced_quantity=produced_quantity,
+                user=request.user,
+                notes=notes
+            )
+            work_order.refresh_from_db()
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
     def transition(self, request, pk=None):
         """Transition OT to next stage with optional data"""
         work_order = self.get_object()

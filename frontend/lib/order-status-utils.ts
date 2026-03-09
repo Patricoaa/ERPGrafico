@@ -3,9 +3,12 @@ export const getHubStatuses = (order: any) => {
     // 1. Production
     // Visible if order has manufacturable items or existing work orders
     const showProduction = order.work_orders?.length > 0 || (order.lines || order.items || []).some((l: any) => l.is_manufacturable)
-    const totalOTs = order.work_orders?.length || 0
-    const totalOTProgress = order.production_progress || 0
-
+    const activeOTs = order.work_orders?.filter((ot: any) => ot.status !== 'CANCELLED') || []
+    const totalOTs = activeOTs.length
+    const totalOTProgress = totalOTs > 0
+        ? activeOTs.reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        : 0
+    
     let prodStatus = 'neutral' // default / pending
     if (!showProduction) prodStatus = 'not_applicable'
     else if (totalOTs > 0 && totalOTProgress === 100) prodStatus = 'success'

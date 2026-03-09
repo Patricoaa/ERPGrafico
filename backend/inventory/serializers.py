@@ -57,6 +57,7 @@ class CustomFieldTemplateSerializer(serializers.ModelSerializer):
 
 class ProductCustomFieldSerializer(serializers.ModelSerializer):
     template_data = CustomFieldTemplateSerializer(source='template', read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
     
     class Meta:
         model = ProductCustomField
@@ -70,6 +71,8 @@ class ReorderingRuleSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='product.category.name', read_only=True)
     warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
     
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
+
     class Meta:
         model = ReorderingRule
         fields = '__all__'
@@ -330,11 +333,15 @@ class ProductSerializer(serializers.ModelSerializer):
         pcf_data = validated_data.pop('product_custom_fields', [])
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         rules_data = validated_data.pop('reordering_rules', [])
+        attribute_values = validated_data.pop('attribute_values', [])
         
         product = Product.objects.create(**validated_data)
         
         if allowed_sale_uoms:
             product.allowed_sale_uoms.set(allowed_sale_uoms)
+            
+        if attribute_values:
+            product.attribute_values.set(attribute_values)
         
         for bom_data in boms_data:
             lines_data = bom_data.pop('lines', [])
@@ -352,15 +359,22 @@ class ProductSerializer(serializers.ModelSerializer):
         return product
 
     def update(self, instance, validated_data):
-        boms_data = validated_data.pop('boms', None)
+        boms_data = validated_data.pop('boms', None) # If None, don't touch
         pcf_data = validated_data.pop('product_custom_fields', None)
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         rules_data = validated_data.pop('reordering_rules', None)
+        attribute_values = validated_data.pop('attribute_values', None)
         
-        product = super().update(instance, validated_data)
+        # Standard update
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
         
         if allowed_sale_uoms is not None:
-            product.allowed_sale_uoms.set(allowed_sale_uoms)
+            instance.allowed_sale_uoms.set(allowed_sale_uoms)
+            
+        if attribute_values is not None:
+            instance.attribute_values.set(attribute_values)
         
         if boms_data is not None:
             # Simple sync: Delete missing BOMs, update existing ones, create new ones.

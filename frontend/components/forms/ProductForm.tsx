@@ -549,11 +549,27 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
             if (errorData) {
                 if (typeof errorData === 'object') {
-                    // Extract first field error if available
-                    const firstError = Object.entries(errorData)[0]
-                    if (firstError) {
-                        const [field, message] = firstError
-                        errorMessage = `${field}: ${Array.isArray(message) ? message[0] : message}`
+                    // Recursive function to extract all error messages
+                    const extractErrors = (obj: any, prefix = ''): string[] => {
+                        let messages: string[] = []
+                        for (const [key, value] of Object.entries(obj)) {
+                            const label = FIELD_LABELS[key] || key
+                            const currentPrefix = prefix ? `${prefix} -> ${label}` : label
+
+                            if (Array.isArray(value)) {
+                                messages.push(`${currentPrefix}: ${value.join(', ')}`)
+                            } else if (typeof value === 'object' && value !== null) {
+                                messages = [...messages, ...extractErrors(value, currentPrefix)]
+                            } else {
+                                messages.push(`${currentPrefix}: ${value}`)
+                            }
+                        }
+                        return messages
+                    }
+
+                    const allErrors = extractErrors(errorData)
+                    if (allErrors.length > 0) {
+                        errorMessage = allErrors.join('\n')
                     }
                 } else if (typeof errorData === 'string') {
                     errorMessage = errorData
@@ -561,7 +577,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             }
 
             toast.error("Error al guardar", {
-                description: errorMessage,
+                description: (
+                    <pre className="mt-2 font-sans text-[10px] text-destructive-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {errorMessage}
+                    </pre>
+                ),
+                duration: 10000,
             })
         } finally {
             setLoading(false)

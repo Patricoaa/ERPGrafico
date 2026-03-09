@@ -225,8 +225,8 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return obj.effective_total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
-        # Only calculate progress for OTs NOT linked to notes
-        wos = obj.work_orders.filter(related_note__isnull=True)
+        # Only calculate progress for OTs NOT linked to notes and NOT cancelled
+        wos = obj.work_orders.filter(related_note__isnull=True).exclude(status='CANCELLED')
         if not wos.exists():
             return 0
         total_progress = sum(WorkOrderSerializer(wo).data.get('production_progress', 0) for wo in wos)

@@ -508,6 +508,15 @@ class WorkOrderService:
                 content_object=work_order,
                 created_by=user
             )
+
+        if next_stage == WorkOrder.Stage.RECTIFICATION:
+             WorkflowService.create_task(
+                task_type='OT_RECTIFICATION_APPROVAL',
+                title=f"Rectificación: OT-{work_order.number}",
+                description=f"Revise y confirme las cantidades reales de materiales consumidos y producción para la OT-{work_order.number}.",
+                content_object=work_order,
+                created_by=user
+            )
         # --- END WORKFLOW INTEGRATION ---
 
         # When moving forward from OUTSOURCING_ASSIGNMENT, create POs for outsourced services
@@ -560,6 +569,7 @@ class WorkOrderService:
             WorkOrder.Stage.PRESS,
             WorkOrder.Stage.POSTPRESS,
             WorkOrder.Stage.OUTSOURCING_VERIFICATION,
+            WorkOrder.Stage.RECTIFICATION,
             WorkOrder.Stage.FINISHED
         ]
         
@@ -691,7 +701,11 @@ class WorkOrderService:
             uom = work_order.sale_line.uom
         elif work_order.product:
             product = work_order.product
-            quantity = Decimal(str(work_order.stage_data.get('quantity', 0)))
+            # Use actual_quantity_produced if set (from rectification), otherwise planned quantity
+            if work_order.actual_quantity_produced is not None:
+                quantity = work_order.actual_quantity_produced
+            else:
+                quantity = Decimal(str(work_order.stage_data.get('quantity', 0)))
             uom = product.uom
 
         if product and product.track_inventory:
@@ -804,6 +818,98 @@ class WorkOrderService:
         if work_order.sale_line:
             # Possible logic to mark line as 'Produced' or 'Ready for dispatch'
             pass
+
+    @staticmethod
+    @transaction.atomic
+    def rectify_production(work_order, material_adjustments=None, produced_quantity=None, user=None, notes=""):
+        """
+        Declares actual quantities consumed and produced before transitioning to FINISHED.
+        
+        This method ADJUSTS the planned quantities on WorkOrderMaterials so that when
+        finalize_production runs (at FINISHED transition), it uses the real values.
+        
+        Args:
+            work_order: WorkOrder instance (must be in RECTIFICATION stage)
+            material_adjustments: list of dicts: [{material_id, actual_quantity}]
+                                  If empty or None, quantities remain unchanged.
+            produced_quantity: Decimal. Real quantity produced (only for manual OTs with track_inventory).
+            user: User performing the action.
+            notes: Optional notes to record in the history.
+        """
+        if work_order.current_stage != WorkOrder.Stage.RECTIFICATION:
+            raise ValidationError(
+                f"La OT debe estar en etapa de Rectificación para rectificar. "
+                f"Etapa actual: {work_order.get_current_stage_display()}"
+            )
+        
+        if work_order.status == WorkOrder.Status.FINISHED:
+            raise ValidationError("No se puede rectificar una OT ya finalizada.")
+        
+        changes_summary = []
+        
+        # 1. Adjust material quantities
+        if material_adjustments:
+            for adj in material_adjustments:
+                material_id = adj.get('material_id')
+                actual_qty_raw = adj.get('actual_quantity')
+                
+                if material_id is None or actual_qty_raw is None:
+                    continue
+                
+                try:
+                    material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+                except WorkOrderMaterial.DoesNotExist:
+                    raise ValidationError(f"Material con ID {material_id} no encontrado en esta OT.")
+                
+                actual_qty = Decimal(str(actual_qty_raw))
+                if actual_qty < Decimal('0'):
+                    raise ValidationError(f"La cantidad real para '{material.component.name}' no puede ser negativa.")
+                
+                original_qty = material.quantity_planned
+                if original_qty != actual_qty:
+                    changes_summary.append(
+                        f"{material.component.name}: {original_qty} → {actual_qty} {material.uom.name}"
+                    )
+                    material.quantity_planned = actual_qty
+                    material.save()
+        
+        # 2. Adjust produced quantity (only for manual OTs)
+        if produced_quantity is not None:
+            if not work_order.is_manual:
+                raise ValidationError(
+                    "Solo se puede ajustar la cantidad producida en OTs manuales. "
+                    "Las OTs vinculadas a Notas de Venta producen según la línea de venta."
+                )
+            
+            produced_qty = Decimal(str(produced_quantity))
+            if produced_qty <= Decimal('0'):
+                raise ValidationError("La cantidad real producida debe ser mayor a 0.")
+            
+            planned_qty = Decimal(str(work_order.stage_data.get('quantity', 0)))
+            if planned_qty != produced_qty:
+                changes_summary.append(f"Cantidad producida: {planned_qty} → {produced_qty}")
+            
+            work_order.actual_quantity_produced = produced_qty
+        
+        # 3. Mark as rectified and save
+        work_order.is_rectified = True
+        work_order.save()
+        
+        # 4. Record in history
+        change_text = "\n".join(changes_summary) if changes_summary else "Sin cambios en cantidades."
+        history_notes = f"Rectificación registrada.\n{change_text}"
+        if notes:
+            history_notes += f"\nNotas: {notes}"
+        
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=WorkOrder.Stage.RECTIFICATION,
+            status=work_order.status,
+            notes=history_notes,
+            user=user
+        )
+        
+        return work_order
 
     @staticmethod
     @transaction.atomic
