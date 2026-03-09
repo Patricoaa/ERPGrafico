@@ -164,18 +164,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                                     checked={field.value}
                                                     onCheckedChange={(val) => {
                                                         field.onChange(val)
-                                                        if (val) {
-                                                            // Ensure it's manufacturable if variants are enabled
-                                                            // (Requirement says variants only for Express/Advanced)
-                                                            const mfgMode = form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")
-                                                            if (mfgMode === "simple") {
-                                                                // Force to express if it's currently simple?
-                                                                // User said Express/Advanced only.
-                                                                form.setValue("mfg_auto_finalize", true)
-                                                                form.setValue("has_bom", true)
-                                                                form.setValue("track_inventory", false)
-                                                            }
-                                                        }
+                                                        // Removed auto-switch to express mode to allow Simple + Variants
                                                     }}
                                                 />
                                             </FormControl>

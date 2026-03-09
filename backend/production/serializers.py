@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
 from core.serializers import AttachmentSerializer
+from inventory.models import Product, UoM, Warehouse
 
 class ProductionConsumptionSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -350,12 +351,13 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         if not product and self.instance:
             product = self.instance.product
             
-        effective_uom = product.uom or product.sale_uom or product.purchase_uom
-        if product and product.track_inventory and not effective_uom:
-            raise serializers.ValidationError(
-                f"El producto '{product.name}' requiere una Unidad de Medida (UoM) porque tiene activado 'Controlar Inventario'. "
-                f"Asigne una unidad o desactive el control de inventario en la ficha del producto."
-            )
+        if product:
+            effective_uom = product.uom or product.sale_uom or product.purchase_uom
+            if product.track_inventory and not effective_uom:
+                raise serializers.ValidationError(
+                    f"El producto '{product.name}' requiere una Unidad de Medida (UoM) porque tiene activado 'Controlar Inventario'. "
+                    f"Asigne una unidad o desactive el control de inventario en la ficha del producto."
+                )
         return data
 
     def create(self, validated_data):

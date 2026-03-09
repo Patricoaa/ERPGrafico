@@ -27,6 +27,7 @@ export const productSchema = z.object({
     parent_template: z.string().optional().or(z.literal("")).nullable(),
     attribute_values: z.array(z.string()).default([]),
     variant_display_name: z.string().optional().or(z.literal("")),
+    variant_updates: z.array(z.any()).default([]), // Tracks pending local updates to variants
     mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),
@@ -79,6 +80,10 @@ export const productSchema = z.object({
         order: z.number().default(0)
     })).default([]),
 }).refine((data) => {
+    // If has_variants is true, skip sale_price validation (price is per variant)
+    if (data.has_variants) {
+        return true;
+    }
     // If can_be_sold is true AND NOT dynamic pricing, sale_price must be > 0
     // Dynamic pricing allows sale_price to be 0 (set at POS)
     if (data.can_be_sold && !data.is_dynamic_pricing && (!data.sale_price || data.sale_price <= 0)) {

@@ -52,7 +52,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
-    const [editingVariant, setEditingVariant] = useState<any>(null)
 
     // State for Replenishment Rules
     const [reorderingRules, setReorderingRules] = useState<any[]>([])
@@ -485,6 +484,9 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
                 formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
             }
+            if (data.variant_updates && data.variant_updates.length > 0) {
+                formData.append('variant_updates', JSON.stringify(data.variant_updates))
+            }
 
             // Append Subscription fields
             if (data.product_type === 'SUBSCRIPTION') {
@@ -534,10 +536,23 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 })
                 toast.success("Producto actualizado")
             } else {
-                await api.post('/inventory/products/', formData, {
+                const res = await api.post('/inventory/products/', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 })
                 toast.success("Producto creado")
+                // If it has variants, we don't close the modal, instead we "promote" it to edit mode
+                if (data.has_variants) {
+                    onSuccess() // Refresh list in background
+                    // Re-fetch or use response to update initialData in parent is tricky
+                    // But we can just call onSuccess and maybe NOT close?
+                    // The safest is to signal the parent to re-open this product or just keep it active.
+                    // However, we don't have the new product ID easily here unless we reload.
+                    // Let's at least allow the user to stay if they want to generate combos.
+                    // But without initialData, the tabs might still be restricted.
+                    // Let's just close as usual for now BUT ensure validation doesn't block them.
+                    // WAIT: If I don't close, the user can generate? NO, they need the ID.
+                    // Let's stick to the validation fix first, it's the biggest blocker.
+                }
             }
             onSuccess()
             onOpenChange(false)
@@ -718,7 +733,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                 key={variantsRefreshKey}
                                 form={form as any}
                                 initialData={initialData}
-                                onEditVariant={(variant) => setEditingVariant(variant)}
+                                onTabChange={(tab: string) => setActiveTab(tab)}
                             />
 
                             <ProductInventoryTab
@@ -761,24 +776,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             </div>
 
             {/* Nested Modals */}
-            {editingVariant && (
-                <ProductForm
-                    open={!!editingVariant}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            setEditingVariant(null)
-                            setVariantsRefreshKey(prev => prev + 1)
-                        }
-                    }}
-                    initialData={editingVariant}
-                    onSuccess={() => {
-                        setVariantsRefreshKey(prev => prev + 1)
-                        setEditingVariant(null)
-                    }}
-                    variantMode={true}
-                />
-            )}
-
             <PricingRuleForm
                 open={pricingRuleDialogOpen}
                 onOpenChange={(open) => {

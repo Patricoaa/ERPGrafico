@@ -533,18 +533,8 @@ class Product(models.Model):
             except Exception as e:
                 print(f"Image compression warning: {str(e)}")
 
-        # Variant Restrictions & Logic
-        if self.has_variants:
-            # Only allow Express or Advanced manufacturing types to have variants
-            # Express: mfg_auto_finalize=True
-            # Advanced: requires_advanced_manufacturing=True
-            is_valid_type = (
-                self.product_type == self.Type.MANUFACTURABLE and 
-                (self.mfg_auto_finalize or self.requires_advanced_manufacturing)
-            )
-            if not is_valid_type:
-                # If it's not a valid type, force has_variants to False
-                self.has_variants = False
+        # Variant Restrictions & Logic removed to allow has_variants on any product type/mode
+        # as per user requirement for Simple mode and standard products.
 
         # Automatic variant display name generation if empty
         if self.parent_template and not self.variant_display_name:

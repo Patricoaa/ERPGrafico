@@ -197,14 +197,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values']:
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values', 'variant_updates']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
         
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values', 'variant_updates']:
             if field in ret:
                 raw_value = ret[field]
                 
@@ -364,6 +364,7 @@ class ProductSerializer(serializers.ModelSerializer):
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         rules_data = validated_data.pop('reordering_rules', None)
         attribute_values = validated_data.pop('attribute_values', None)
+        variant_updates = validated_data.pop('variant_updates', None)
         
         # Standard update
         for attr, value in validated_data.items():
@@ -444,6 +445,32 @@ class ProductSerializer(serializers.ModelSerializer):
                 else:
                     ReorderingRule.objects.create(product=instance, **rule_item)
                 
+        if variant_updates:
+            for update_data in variant_updates:
+                variant_id = update_data.get('id')
+                if not variant_id:
+                    continue
+                
+                try:
+                    variant_product = Product.objects.get(id=variant_id, parent_template=instance)
+                    
+                    # Fields we allow to update via variant_updates
+                    for field in ['sale_price', 'code', 'has_bom', 'product_type']:
+                        if field in update_data:
+                            setattr(variant_product, field, update_data[field])
+                    
+                    # Special handlings
+                    if 'sale_uom' in update_data:
+                        uom_id = update_data['sale_uom']
+                        if uom_id:
+                            variant_product.sale_uom_id = uom_id
+                        else:
+                            variant_product.sale_uom = None
+
+                    variant_product.save()
+                except Product.DoesNotExist:
+                    pass
+
         return instance
 
 
@@ -597,4 +624,3 @@ class ReplenishmentProposalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReplenishmentProposal
         fields = '__all__'
-
