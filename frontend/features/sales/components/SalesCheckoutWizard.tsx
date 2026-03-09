@@ -15,7 +15,18 @@ import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./checkout/Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2, Paintbrush, ShoppingCart, AlertCircle, Clock, Banknote, AlertTriangle } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, AlertCircle as AlertCircleIcon, ShieldAlert } from "lucide-react"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -217,6 +228,9 @@ export function SalesCheckoutWizard({
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
     const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval || !!initialIsApproved)
+    const [approvedTaskData, setApprovedTaskData] = useState<any | null>(null)
+    const [securityErrorMessage, setSecurityErrorMessage] = useState<string | null>(null)
+    const [hasHydrated, setHasHydrated] = useState(false)
     const [isApproved, setIsApproved] = useState(initialIsApproved || false)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -294,6 +308,15 @@ export function SalesCheckoutWizard({
             fetchDefaultCustomer();
         }
     }, [initialCustomerId, open, quickSale, selectedCustomerId]);
+
+    // Fetch task data if already approved (Resuming draft)
+    useEffect(() => {
+        if (open && isApproved && approvalTaskId && !approvedTaskData) {
+            api.get(`/workflow/tasks/${approvalTaskId}/`)
+                .then(res => setApprovedTaskData(res.data.data))
+                .catch(err => console.error("Error fetching approved task data:", err))
+        }
+    }, [open, isApproved, approvalTaskId, approvedTaskData])
 
     // Fetch full customer details when ID changes
     useEffect(() => {
@@ -661,9 +684,23 @@ export function SalesCheckoutWizard({
             onOpenChange(false)
         } catch (error: any) {
             console.error("Checkout error:", error)
-            toast.error(error.response?.data?.error || "Error al procesar la venta")
+            const rawError = error.response?.data?.error || "Error al procesar la venta"
+            const errorMessage = Array.isArray(rawError) ? rawError[0] : String(rawError)
+            
+            // Check for specific security errors (Anti-fraud)
+            if (errorMessage.includes("Intento de aumento de crédito") || 
+                errorMessage.includes("Aprobación de crédito fue emitida para otro cliente") ||
+                errorMessage.includes("Seguridad:")) {
+                setSecurityErrorMessage(errorMessage)
+            } else {
+                toast.error(errorMessage)
+            }
+
+            // Reset loading state on error
+            setLoading(false)
+
             // If the bypass failed (e.g. task rejected), reset it
-            if (approvalTaskId) {
+            if (approvalTaskId && !errorMessage.includes("Intento de aumento") && !errorMessage.includes("Seguridad:")) {
                 setApprovalTaskId(null)
                 setIsWaitingApproval(false)
             }
@@ -722,6 +759,7 @@ export function SalesCheckoutWizard({
                 if (task.status === 'COMPLETED') {
                     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                     toast.success("¡Crédito aprobado!")
+                    setApprovedTaskData(task.data)
                     setIsWaitingApproval(false)
                     setIsApproved(true)
                 } else if (task.status === 'REJECTED' || task.status === 'CANCELLED') {
@@ -746,6 +784,7 @@ export function SalesCheckoutWizard({
     }, [])
 
     return (
+        <>
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
@@ -904,6 +943,57 @@ export function SalesCheckoutWizard({
                 </div>
             </div>
         </BaseModal>
+
+        {/* Security Discrepancy Recovery Dialog */}
+        <AlertDialog open={!!securityErrorMessage} onOpenChange={(open) => !open && setSecurityErrorMessage(null)}>
+            <AlertDialogContent className="max-w-md border-destructive/20 shadow-2xl">
+                <AlertDialogHeader>
+                    <div className="mx-auto bg-destructive/10 p-3 rounded-full mb-4">
+                        <ShieldAlert className="h-10 w-10 text-destructive" />
+                    </div>
+                    <AlertDialogTitle className="text-center text-xl font-black tracking-tight text-destructive uppercase">
+                        Discrepancia de Seguridad
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-center text-slate-300 pt-2">
+                        {securityErrorMessage}
+                        <br /><br />
+                        Los montos de la venta o el cliente no coinciden con la autorización previa. ¿Deseas restaurar los valores que fueron autorizados originalmente?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-col gap-2 mt-4">
+                    <AlertDialogAction 
+                        className="bg-primary hover:bg-primary/90 font-bold h-12"
+                        onClick={() => {
+                            if (approvedTaskData) {
+                                // Restore customer if mismatch
+                                if (approvedTaskData.customer_id) {
+                                    setSelectedCustomerId(approvedTaskData.customer_id.toString())
+                                }
+                                // Restore payment amount to match required credit
+                                if (approvedTaskData.required_credit) {
+                                    const approvedCreditUsage = parseFloat(approvedTaskData.required_credit)
+                                    const restoredPayment = Math.max(0, currentTotal - approvedCreditUsage)
+                                    setPaymentData({
+                                        ...paymentData,
+                                        amount: restoredPayment
+                                    })
+                                    toast.success("Valores restaurados a los niveles autorizados.")
+                                }
+                            }
+                            setSecurityErrorMessage(null)
+                        }}
+                    >
+                        Restaurar valores aprobados
+                    </AlertDialogAction>
+                    <AlertDialogCancel 
+                        className="border-none hover:bg-white/5 text-xs text-muted-foreground"
+                    >
+                        Cancelar y corregir manualmente
+                    </AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }
 

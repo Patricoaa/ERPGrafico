@@ -51,18 +51,49 @@ class Command(BaseCommand):
         
         operator_codenames = [
             # Dashboards
-            'view_dashboard_production',
-            'view_dashboard_inventory',
+            'view_dashboard_production', 'view_dashboard_inventory',
+            'view_dashboard_sales', 'view_dashboard_billing',
+            'view_dashboard_purchasing', 'view_dashboard_contacts',
+            'view_dashboard_treasury',
+            
+            # Core / Settings
+            'view_companysettings', 'view_user',
+            
+            # Accounting & Auxiliary reads
+            'view_account', 'view_tax', 'view_pricelist', 'view_cashbox',
+            
             # Production
             'view_workorder', 'add_workorder', 'change_workorder',
-            'view_productionconsumption', 'add_productionconsumption',
+            'view_productionconsumption', 'add_productionconsumption', 'change_productionconsumption',
             'view_billofmaterials',
+            
             # Inventory
-            'view_product', 'view_warehouse', 'view_uom',
-            # Inventory
-            'view_product', 'view_warehouse', 'view_uom',
+            'view_product', 'view_warehouse', 'view_uom', 'view_productcategory',
+            
+            # Sales & POS
+            'view_saleorder', 'add_saleorder', 'change_saleorder',
+            'view_saleline', 'add_saleline', 'change_saleline',
+            'view_saledelivery', 'add_saledelivery', 'change_saledelivery',
+            'view_salereturn', 'add_salereturn', 'change_salereturn',
+            'view_draftcart', 'add_draftcart', 'change_draftcart', 'delete_draftcart',
+            
+            # Billing / Invoicing
+            'view_invoice', 'add_invoice', 'change_invoice',
+            
+            # Purchasing
+            'view_purchaseorder', 'add_purchaseorder', 'change_purchaseorder',
+            'view_purchaseline', 'add_purchaseline', 'change_purchaseline',
+            'view_purchasereceipt', 'add_purchasereceipt', 'change_purchasereceipt',
+            'view_purchasereturn', 'add_purchasereturn', 'change_purchasereturn',
+            
             # Contacts
-            'view_contact',
+            'view_contact', 'add_contact', 'change_contact',
+            
+            # Treasury (for POS and basic payments)
+            'view_possession', 'add_possession', 'change_possession',
+            'view_posterminal', 'view_paymentmethod',
+            'view_treasuryaccount', 'view_treasurymovement', 'add_treasurymovement',
+            
             # Workflow
             'view_task', 'add_task', 'change_task',
         ]

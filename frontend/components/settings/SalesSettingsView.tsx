@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
+import React, { useEffect, useCallback, useState } from "react"
 import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -11,19 +11,29 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import {
+    Save,
+    TrendingUp,
+    LayoutGrid,
+    CreditCard,
     Loader2,
     Check,
     CloudUpload,
     Scale,
     Percent,
+    User as UserIcon,
+    Users as UsersIcon,
+    Settings,
 } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { UserSelector } from "@/components/selectors/UserSelector"
+import { GroupSelector } from "@/components/selectors/GroupSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Button } from "@/components/ui/button"
 import { SalesSettings } from "@/features/settings/types"
+import { cn } from "@/lib/utils"
 
 const accountFieldSchema = z.string().nullable()
 
@@ -45,6 +55,10 @@ const salesSchema = z.object({
     pos_default_credit_percentage: z.coerce.number().min(0).max(100).default(0),
     pos_enable_line_discounts: z.boolean().default(false),
     pos_enable_total_discounts: z.boolean().default(false),
+    pos_line_discount_user: z.number().nullable().default(null),
+    pos_line_discount_group: z.string().default(""),
+    pos_global_discount_user: z.number().nullable().default(null),
+    pos_global_discount_group: z.string().default(""),
     terminal_commission_bridge_account: accountFieldSchema,
     terminal_iva_bridge_account: accountFieldSchema,
 })
@@ -69,6 +83,74 @@ const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<
     />
 )
 
+const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<any>, userField: string, groupField: string }) => {
+    const groupVal = form.watch(groupField)
+    const [mode, setMode] = useState<'user' | 'group'>(groupVal ? 'group' : 'user')
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm w-fit self-start">
+                <button
+                    type="button"
+                    className={cn(
+                        "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                        mode === 'user' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => {
+                        setMode('user')
+                        form.setValue(groupField, "")
+                    }}
+                >
+                    <UserIcon className="h-3 w-3" />
+                    Usuario
+                </button>
+                <button
+                    type="button"
+                    className={cn(
+                        "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                        mode === 'group' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => {
+                        setMode('group')
+                        form.setValue(userField, null)
+                    }}
+                >
+                    <UsersIcon className="h-3 w-3" />
+                    Grupo
+                </button>
+            </div>
+
+            <div className="w-full">
+                {mode === 'user' ? (
+                    <FormField
+                        control={form.control}
+                        name={userField}
+                        render={({ field }) => (
+                            <UserSelector
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="Sel. usuario con permiso..."
+                            />
+                        )}
+                    />
+                ) : (
+                    <FormField
+                        control={form.control}
+                        name={groupField}
+                        render={({ field }) => (
+                            <GroupSelector
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="Sel. grupo con permiso..."
+                            />
+                        )}
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
+
 export function SalesSettingsView({ activeTab }: { activeTab: string }) {
     const { settings, saving, updateSettings } = useSalesSettings()
 
@@ -92,6 +174,10 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             pos_default_credit_percentage: 0,
             pos_enable_line_discounts: false,
             pos_enable_total_discounts: false,
+            pos_line_discount_user: null,
+            pos_line_discount_group: "",
+            pos_global_discount_user: null,
+            pos_global_discount_group: "",
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
         }
@@ -117,6 +203,10 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
                 pos_enable_line_discounts: !!settings.pos_enable_line_discounts,
                 pos_enable_total_discounts: !!settings.pos_enable_total_discounts,
+                pos_line_discount_user: settings.pos_line_discount_user ?? null,
+                pos_line_discount_group: settings.pos_line_discount_group ?? "",
+                pos_global_discount_user: settings.pos_global_discount_user ?? null,
+                pos_global_discount_group: settings.pos_global_discount_group ?? "",
                 terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
                 terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
             })
@@ -144,8 +234,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
         }
     }, [watchedValues, isDirty, form, onSubmit])
 
-
-
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-12">
             <PageHeader
@@ -172,9 +260,10 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
 
             <ServerPageTabs
                 tabs={[
-                    { value: "income", label: "Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
-                    { value: "pos", label: "Control POS", iconName: "layout-grid", href: "/settings/sales?tab=pos" },
-                    { value: "terminals", label: "Terminales", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
+                    { value: "config_pos", label: "Configuración POS", iconName: "settings", href: "/settings/sales?tab=config_pos" },
+                    { value: "income", label: "Cuentas Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
+                    { value: "pos", label: "Cuentas POS", iconName: "layout-grid", href: "/settings/sales?tab=pos" },
+                    { value: "terminals", label: "Cuentas Terminal", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
                 ]}
                 activeValue={activeTab}
                 maxWidth="max-w-xl"
@@ -220,90 +309,126 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                         <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos" accountType="INCOME" />
                                         <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
                                     </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                                    <Card className="bg-muted/30 border-dashed">
-                                        <CardHeader className="pb-4">
-                                            <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary">
-                                                <Percent className="h-4 w-4" />
-                                                Configuración de Descuentos
-                                            </CardTitle>
-                                            <CardDescription className="text-[11px]">
-                                                Habilitar y configurar parámetros de descuentos para el punto de venta.
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-6">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="pos_enable_line_discounts"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-background">
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground">
-                                                                    Permite aplicar descuentos individuales a cada producto en el carrito.
-                                                                </p>
+                        <TabsContent value="config_pos" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
+                                    <CardDescription>Configure el comportamiento y permisos del punto de venta</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    {/* Descuentos Section */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-primary px-1">
+                                            <Percent className="h-4 w-4" />
+                                            Configuración de Descuentos
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Line Discounts */}
+                                            <Card className="bg-muted/10 border shadow-none overflow-hidden">
+                                                <div className="p-4 space-y-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="pos_enable_line_discounts"
+                                                        render={({ field }) => (
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
+                                                                    <p className="text-[10px] text-muted-foreground">Habilitar en el carrito</p>
+                                                                </div>
+                                                                <FormControl>
+                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                                </FormControl>
                                                             </div>
-                                                            <FormControl>
-                                                                <Switch
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {watchedValues.pos_enable_line_discounts && (
+                                                        <div className="pt-2 space-y-3 border-t border-dashed">
+                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                            <DiscountPermissionControl
+                                                                form={form}
+                                                                userField="pos_line_discount_user"
+                                                                groupField="pos_line_discount_group"
+                                                            />
+                                                        </div>
                                                     )}
-                                                />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="pos_enable_total_discounts"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-background">
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground">
-                                                                    Permite aplicar un descuento al total de la venta.
-                                                                </p>
+                                                </div>
+                                            </Card>
+
+                                            {/* Global Discounts */}
+                                            <Card className="bg-muted/10 border shadow-none overflow-hidden">
+                                                <div className="p-4 space-y-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="pos_enable_total_discounts"
+                                                        render={({ field }) => (
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
+                                                                    <p className="text-[10px] text-muted-foreground">Habilitar al total</p>
+                                                                </div>
+                                                                <FormControl>
+                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                                </FormControl>
                                                             </div>
-                                                            <FormControl>
-                                                                <Switch
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
+                                                        )}
+                                                    />
+
+                                                    {watchedValues.pos_enable_total_discounts && (
+                                                        <div className="pt-2 space-y-3 border-t border-dashed">
+                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                            <DiscountPermissionControl
+                                                                form={form}
+                                                                userField="pos_global_discount_user"
+                                                                groupField="pos_global_discount_group"
+                                                            />
+                                                        </div>
                                                     )}
-                                                />
-                                            </div>
+                                                </div>
+                                            </Card>
+                                        </div>
+                                    </div>
 
-                                            <Separator className="opacity-50" />
+                                    <Separator className="opacity-50" />
 
-                                            <FormField
-                                                control={form.control}
-                                                name="pos_default_credit_percentage"
-                                                render={({ field }) => (
-                                                    <FormItem className="space-y-1">
-                                                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Crédito Fallback Automático (%)</FormLabel>
-                                                        <p className="text-[10px] text-muted-foreground mb-2">
-                                                            Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
-                                                        </p>
-                                                        <FormControl>
-                                                            <div className="relative max-w-[150px]">
-                                                                <Input
-                                                                    type="number"
-                                                                    {...field}
-                                                                    className="pr-8 h-9 font-bold text-center"
-                                                                    min={0}
-                                                                    max={100}
-                                                                />
-                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
-                                                            </div>
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </CardContent>
-                                    </Card>
+                                    {/* Credit Section */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-primary px-1">
+                                            <Scale className="h-4 w-4" />
+                                            Línea de Crédito Preaprobada
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name="pos_default_credit_percentage"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1 bg-muted/20 p-4 rounded-lg border border-dashed">
+                                                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Crédito Preaprobado (%)</FormLabel>
+                                                    <p className="text-[10px] text-muted-foreground mb-3">
+                                                        Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
+                                                    </p>
+                                                    <FormControl>
+                                                        <div className="relative max-w-[150px]">
+                                                            <Input
+                                                                type="number"
+                                                                {...field}
+                                                                className="pr-8 h-9 font-bold text-center"
+                                                                min={0}
+                                                                max={100}
+                                                            />
+                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>

@@ -205,12 +205,14 @@ export function TaskInbox() {
                             </button>
                         </div>
                         <div className="text-[11px] text-muted-foreground mb-3 space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
-                            <div className="flex justify-between items-center text-red-400/90">
-                                <span className="opacity-70">Deuda Pendiente:</span>
-                                <span className="font-mono font-bold">
-                                    ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}
-                                </span>
-                            </div>
+                            {!task.data?.is_default_customer && task.data?.customer_name !== 'Publico General' && (
+                                <div className="flex justify-between items-center text-red-400/90">
+                                    <span className="opacity-70">Deuda Pendiente:</span>
+                                    <span className="font-mono font-bold">
+                                        ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Línea de Crédito:</span>
                                 <span className="font-mono font-bold text-emerald-400">

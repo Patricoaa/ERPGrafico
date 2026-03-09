@@ -646,7 +646,7 @@ class AccountingSettings(models.Model):
     )
     
     pos_default_credit_percentage = models.DecimalField(
-        _("Porcentaje de Crédito Fallback POS"), 
+        _("Crédito Preaprobado POS (%)"), 
         max_digits=5, 
         decimal_places=2, 
         default=0,

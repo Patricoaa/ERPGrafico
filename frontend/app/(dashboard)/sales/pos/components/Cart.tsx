@@ -67,10 +67,10 @@ export function Cart({
     onTotalDiscountChange
 }: CartProps) {
     const { isTouchPOS } = useDeviceContext()
-    const { settings } = useSalesSettings()
+    const { canApplyLineDiscount, canApplyGlobalDiscount } = useSalesSettings()
 
-    const showLineDiscounts = settings?.pos_enable_line_discounts || false
-    const showTotalDiscounts = settings?.pos_enable_total_discounts || false
+    const showLineDiscounts = canApplyLineDiscount
+    const showTotalDiscounts = canApplyGlobalDiscount
 
     return (
         <Card className="flex-1 flex flex-col overflow-hidden border">

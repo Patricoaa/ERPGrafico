@@ -9,9 +9,16 @@ from .services import JournalEntryService, AccountingService, BudgetService
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin
 
+from rest_framework.permissions import IsAuthenticated
+
 class AccountingSettingsViewSet(viewsets.ModelViewSet):
     queryset = AccountingSettings.objects.all()
     serializer_class = AccountingSettingsSerializer
+
+    def get_permissions(self):
+        if self.action == 'current' and self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def current(self, request):

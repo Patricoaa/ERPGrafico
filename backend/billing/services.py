@@ -96,6 +96,7 @@ class BillingService:
                 'customer_id': customer.id, 
                 'customer_name': customer.name,
                 'customer_tax_id': customer.tax_id,
+                'is_default_customer': customer.is_default_customer,
                 'customer_debt': str(customer.credit_balance_used),
                 'required_credit': str(required_credit),
                 'explicit_credit': str(customer.credit_available),

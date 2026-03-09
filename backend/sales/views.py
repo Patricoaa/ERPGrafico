@@ -17,9 +17,16 @@ from decimal import Decimal
 from core.mixins import BulkImportMixin
 from core.views import AuditHistoryMixin
 
+from rest_framework.permissions import IsAuthenticated
+
 class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
+
+    def get_permissions(self):
+        if self.action == 'current' and self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     # Fields that belong to AccountingSettings but are surfaced through this endpoint
     ACCOUNTING_SETTINGS_FIELDS = [

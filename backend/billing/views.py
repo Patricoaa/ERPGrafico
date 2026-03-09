@@ -216,8 +216,9 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            print(f"DEBUG: pos_checkout ValidationError: {e}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            print(f"DEBUG: pos_checkout ValidationError: {msg}")
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -243,7 +244,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             )
             return Response({'task_id': task.id}, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -259,7 +261,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             BillingService.annul_invoice(invoice, force=force)
             return Response(InvoiceSerializer(invoice).data)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -291,6 +294,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'display_id': doc.display_id
             })
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

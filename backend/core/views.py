@@ -140,10 +140,21 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
         
+        # Check permission for PUT/PATCH manually if we're bypassing StandardizedModelPermissions
+        # But actually, get_permissions is better
         serializer = self.get_serializer(obj, data=request.data, partial=(request.method == 'PATCH'))
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+    def get_permissions(self):
+        """
+        Allow any authenticated user to GET current company settings (needed for dashboard).
+        Maintain model permissions for other actions and methods.
+        """
+        if self.action == 'current' and self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
 class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ActionLog.objects.all()

@@ -220,6 +220,32 @@ class SalesSettings(models.Model):
         default=True
     )
 
+    # Permission fields for discounts
+    pos_line_discount_user = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='+',
+        verbose_name=_("Usuario con permiso para Descuento por Línea")
+    )
+    pos_line_discount_group = models.CharField(
+        _("Grupo con permiso para Descuento por Línea"),
+        max_length=100, 
+        blank=True
+    )
+    pos_global_discount_user = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='+',
+        verbose_name=_("Usuario con permiso para Descuento Global")
+    )
+    pos_global_discount_group = models.CharField(
+        _("Grupo con permiso para Descuento Global"),
+        max_length=100, 
+        blank=True
+    )
+
     class Meta:
         verbose_name = _("Configuración de Ventas")
         verbose_name_plural = _("Configuración de Ventas")

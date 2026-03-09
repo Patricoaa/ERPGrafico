@@ -37,6 +37,11 @@ export interface SalesSettings {
     pos_default_credit_percentage: number
     pos_enable_line_discounts: boolean
     pos_enable_total_discounts: boolean
+    // Permission fields for discounts
+    pos_line_discount_user: number | null
+    pos_line_discount_group: string
+    pos_global_discount_user: number | null
+    pos_global_discount_group: string
 }
 
 export type SalesSettingsUpdatePayload = Partial<SalesSettings>
