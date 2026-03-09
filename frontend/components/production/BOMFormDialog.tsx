@@ -35,6 +35,8 @@ import { FORM_STYLES } from "@/lib/styles"
 const bomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     active: z.boolean().default(true),
+    yield_quantity: z.coerce.number().min(0.0001, "El rendimiento debe ser mayor a 0").default(1),
+    yield_uom: z.string().optional(),
     notes: z.string().optional(),
     lines: z.array(z.object({
         component: z.string().min(1, "Componente requerido"), // ID as string
@@ -52,6 +54,8 @@ const bomSchema = z.object({
 type BOMFormValues = {
     name: string
     active: boolean
+    yield_quantity: number
+    yield_uom?: string
     notes?: string
     lines: {
         component: string
@@ -122,7 +126,16 @@ export function BOMFormDialog({
             setLoadingVariants(true)
             try {
                 const res = await api.get(`/inventory/products/?parent_template=${selectedProduct.id}`)
-                setVariants(res.data.results || res.data)
+                const loadedVariants = res.data.results || res.data
+                setVariants(loadedVariants)
+                
+                // If editing/cloning, pre-select the variant that matches the BOM's product
+                if (bomToEdit && bomToEdit.product) {
+                    const activeVariant = loadedVariants.find((v: any) => v.id === bomToEdit.product)
+                    if (activeVariant) {
+                        setSelectedVariant(activeVariant)
+                    }
+                }
             } catch (error) {
                 console.error("Error fetching variants:", error)
                 toast.error("Error al cargar variantes")
@@ -131,7 +144,7 @@ export function BOMFormDialog({
             }
         }
         fetchVariants()
-    }, [selectedProduct])
+    }, [selectedProduct, bomToEdit])
 
     // Form
     const form = useForm<BOMFormValues>({
@@ -139,6 +152,8 @@ export function BOMFormDialog({
         defaultValues: {
             name: "",
             active: true,
+            yield_quantity: 1,
+            yield_uom: "",
             notes: "",
             lines: []
         }
@@ -156,6 +171,8 @@ export function BOMFormDialog({
                 form.reset({
                     name: bomToEdit.name,
                     active: bomToEdit.active,
+                    yield_quantity: bomToEdit.yield_quantity || 1,
+                    yield_uom: bomToEdit.yield_uom?.toString() || "",
                     notes: bomToEdit.notes || "",
                     lines: bomToEdit.lines.map((l: any) => ({
                         component: l.component.toString(),
@@ -172,6 +189,8 @@ export function BOMFormDialog({
                 form.reset({
                     name: "Nueva Lista de Materiales",
                     active: true,
+                    yield_quantity: 1,
+                    yield_uom: "",
                     notes: "",
                     lines: []
                 })
@@ -199,6 +218,8 @@ export function BOMFormDialog({
             const payload = {
                 product: targetProductId,
                 ...data,
+                yield_quantity: data.yield_quantity,
+                yield_uom: data.yield_uom ? parseInt(data.yield_uom) : null,
                 lines: data.lines.map(l => ({
                     component: parseInt(l.component),
                     quantity: l.quantity,
@@ -207,7 +228,7 @@ export function BOMFormDialog({
                 }))
             }
 
-            if (bomToEdit) {
+            if (bomToEdit && bomToEdit.id) {
                 await api.patch(`/production/boms/${bomToEdit.id}/`, payload)
                 toast.success("BOM actualizada correctamente")
             } else {
@@ -349,6 +370,55 @@ export function BOMFormDialog({
                                                     />
                                                 </FormControl>
                                             </div>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Yield Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div className="md:col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="yield_quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>Esta receta rinde / produce:</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    type="number" 
+                                                    min="0.0001" 
+                                                    step="any" 
+                                                    placeholder="1" 
+                                                    {...field} 
+                                                    className={FORM_STYLES.input} 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <div className="md:col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="yield_uom"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>Unidad de Rendimiento (Opcional)</FormLabel>
+                                            <FormControl>
+                                                <UoMSelector
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
+                                                    categoryId={selectedProduct?.uom_category}
+                                                    uoms={uoms}
+                                                />
+                                            </FormControl>
+                                            <FormDescription className="text-[10px] mt-1">
+                                                Si se omite, se usa la unidad base del producto.
+                                            </FormDescription>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
+import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -225,6 +226,22 @@ export default function WorkOrdersPage() {
         },
     ], [])
 
+    const renderKanbanView = useCallback((table: any) => (
+        <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
+            {loading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
+                    <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
+                </div>
+            ) : (
+                <WorkOrderKanban
+                    orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                    onTransition={handleKanbanTransition}
+                    onManage={(id) => setActiveWizardId(id)}
+                />
+            )}
+        </div>
+    ), [loading, handleKanbanTransition])
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <PageHeader
@@ -268,7 +285,7 @@ export default function WorkOrdersPage() {
             <div className="mt-2">
                 <DataTable
                     columns={columns}
-                    data={orders}
+                    data={filteredOrders}
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
                     searchPlaceholder="Buscar por número, descripción o cliente..."
@@ -298,20 +315,7 @@ export default function WorkOrdersPage() {
                             </TabsList>
                         </Tabs>
                     }
-                    renderCustomView={viewMode === "kanban" ? (table) => (
-                        <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
-                            {loading ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
-                                    <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
-                                </div>
-                            ) : null}
-                            <WorkOrderKanban
-                                orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
-                                onTransition={handleKanbanTransition}
-                                onManage={(id) => setActiveWizardId(id)}
-                            />
-                        </div>
-                    ) : undefined}
+                    renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
                 />
             </div>
         </div >

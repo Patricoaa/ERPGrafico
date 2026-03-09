@@ -459,6 +459,10 @@ class ProductSerializer(serializers.ModelSerializer):
                         if field in update_data:
                             setattr(variant_product, field, update_data[field])
                     
+                    # Force has_bom for variants as per user requirement
+                    variant_product.has_bom = True
+                    variant_product.product_type = Product.Type.MANUFACTURABLE
+                    
                     # Special handlings
                     if 'sale_uom' in update_data:
                         uom_id = update_data['sale_uom']

@@ -318,6 +318,7 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
     product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
     category_name = serializers.CharField(source='product.category.name', read_only=True)
+    yield_uom_name = serializers.CharField(source='yield_uom.name', read_only=True)
     lines_count = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
     
@@ -344,6 +345,11 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
                     # In case of error (e.g. incompatible categories), use original quantity
                     pass
             total += qty * line.component.cost_price
+            
+        # Divide by yield quantity to get cost per produced unit
+        if obj.yield_quantity and obj.yield_quantity > 0:
+            total = total / obj.yield_quantity
+            
         return float(total)
 
     def validate(self, data):

@@ -11,6 +11,7 @@ from .serializers import (
 from .services import WorkOrderService
 from inventory.models import Product, Warehouse, UoM
 from decimal import Decimal
+from django.db.models import Q
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
@@ -28,6 +29,15 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         try:
             data = request.data
+            import json
+            
+            stage_data = data.get('stage_data', {})
+            if isinstance(stage_data, str):
+                try:
+                    stage_data = json.loads(stage_data)
+                except (json.JSONDecodeError, TypeError):
+                    stage_data = {}
+
             product_id = data.get('product_id')
             sale_line_id = data.get('sale_line')
             
@@ -373,12 +383,19 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def create_manual(self, request):
         """Create a manual OT"""
         try:
+            import json
             product_id = request.data.get('product_id')
             quantity = Decimal(str(request.data.get('quantity')))
             description = request.data.get('description', '')
             warehouse_id = request.data.get('warehouse_id')
             uom_id = request.data.get('uom_id')
             stage_data = request.data.get('stage_data', {})
+            
+            if isinstance(stage_data, str):
+                try:
+                    stage_data = json.loads(stage_data)
+                except (json.JSONDecodeError, TypeError):
+                    stage_data = {}
             
             product = Product.objects.get(pk=product_id)
             
@@ -390,6 +407,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
             
             warehouse = Warehouse.objects.get(pk=warehouse_id) if warehouse_id else Warehouse.objects.first()
+            if not uom_id:
+                return Response({'error': 'La unidad de medida es requerida para fabricaciones manuales.'}, status=status.HTTP_400_BAD_REQUEST)
+                
             uom = UoM.objects.get(pk=uom_id) if uom_id else None
             
             work_order = WorkOrderService.create_manual(
@@ -412,9 +432,14 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         product_id = self.request.query_params.get('product_id')
+        parent_id = self.request.query_params.get('parent_id')
+        
         if product_id:
             queryset = queryset.filter(product_id=product_id)
-        return queryset
+        elif parent_id:
+            queryset = queryset.filter(Q(product_id=parent_id) | Q(product__parent_template_id=parent_id))
+            
+        return queryset.select_related('product', 'product__parent_template')
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

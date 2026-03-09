@@ -10,7 +10,7 @@ import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
 import {
-    Plus, Edit, Trash2, Check, X, Loader2, Workflow, Box
+    Plus, Edit, Trash2, Check, X, Loader2, Workflow, Box, Layers, Copy
 } from "lucide-react"
 import { BOMFormDialog } from "./BOMFormDialog"
 import api from "@/lib/api"
@@ -49,9 +49,14 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
         if (!product?.id) return
         setLoading(true)
         try {
-            // Determine target ID: if specific variant selected, use it. Otherwise use product ID.
-            const targetId = (selectedVariantId && selectedVariantId !== "all") ? selectedVariantId : product.id
-            const res = await api.get(`/production/boms/?product_id=${targetId}`)
+            const params: any = {}
+            if (selectedVariantId && selectedVariantId !== "all") {
+                params.product_id = selectedVariantId
+            } else {
+                params.parent_id = product.id
+            }
+            
+            const res = await api.get(`/production/boms/`, { params })
             setBoms(res.data)
         } catch (error) {
             console.error("Error fetching BOMs:", error)
@@ -92,6 +97,18 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
 
     const handleEdit = (bom: any) => {
         setEditingBom(bom)
+        setDialogOpen(true)
+    }
+
+    const handleClone = (bom: any) => {
+        // Clone but remove IDs to trigger creation
+        const cloned = {
+            ...bom,
+            id: undefined,
+            name: `${bom.name} (Copia)`,
+            // Keep the lines but they'll be processed by the dialog
+        }
+        setEditingBom(cloned)
         setDialogOpen(true)
     }
 
@@ -154,42 +171,53 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                     </div>
 
                     {product?.has_variants && (
-                        <div className="mt-4 flex items-center gap-4 bg-muted/20 p-3 rounded-lg border">
-                            <Workflow className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1 flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Gestionar variante:</Label>
-                                <Select
-                                    value={selectedVariantId}
-                                    onValueChange={setSelectedVariantId}
-                                >
-                                    <SelectTrigger className="w-[300px] h-9 bg-white">
-                                        <SelectValue placeholder="Seleccione variante..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            -- Variantes --
-                                        </SelectItem>
-                                        {variants.map(v => (
-                                            <SelectItem key={v.id} value={v.id.toString()}>
-                                                {v.variant_display_name || v.name} ({v.internal_code || v.code})
+                        <div className="mt-4 bg-primary/5 p-4 rounded-2xl border border-primary/10 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <div className="p-2 bg-primary/10 rounded-xl">
+                                        <Layers className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs font-bold uppercase tracking-wider text-primary">Gestionar Receta por Variante</Label>
+                                        <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Seleccione una variante para configurar su proceso propio.</p>
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col md:flex-row items-center gap-3">
+                                    <Select
+                                        value={selectedVariantId}
+                                        onValueChange={setSelectedVariantId}
+                                    >
+                                        <SelectTrigger className="w-full md:w-[320px] h-10 bg-white shadow-soft rounded-xl border-primary/20">
+                                            <SelectValue placeholder="Seleccione variante..." />
+                                        </SelectTrigger>
+                                        <SelectContent align="start" className="rounded-xl">
+                                            <SelectItem value="all" className="font-bold text-primary">
+                                                -- Ver Todas las Recetas --
                                             </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                            {variants.map(v => (
+                                                <SelectItem key={v.id} value={v.id.toString()}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-[10px] bg-muted px-1 rounded">{v.internal_code || v.code}</span>
+                                                        <span>{v.variant_display_name || v.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleCreate()
+                                        }}
+                                        className="w-full md:w-auto gap-2 rounded-xl font-bold shadow-soft"
+                                        disabled={selectedVariantId === "all"}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Configurar Receta
+                                    </Button>
+                                </div>
                             </div>
-                            <Button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleCreate()
-                                }}
-                                size="sm"
-                                className="gap-2"
-                                disabled={selectedVariantId === "all"}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Validar / Crear BOM
-                            </Button>
                         </div>
                     )}
 
@@ -238,10 +266,12 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
-                                <TableHead className="w-[40%]">Nombre</TableHead>
-                                <TableHead className="w-[15%] text-center">Estado</TableHead>
-                                <TableHead className="w-[15%] text-center">Componentes</TableHead>
-                                <TableHead className="w-[15%] text-right">Actualizado</TableHead>
+                                <TableHead className="w-[20%]">Nombre</TableHead>
+                                <TableHead className="w-[15%]">Variante / Producto</TableHead>
+                                <TableHead className="w-[15%]">Rendimiento</TableHead>
+                                <TableHead className="w-[12%] text-center">Estado</TableHead>
+                                <TableHead className="w-[10%] text-center">Items</TableHead>
+                                <TableHead className="w-[13%] text-right">Actualizado</TableHead>
                                 <TableHead className="w-[15%] text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -254,8 +284,26 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                                 </TableRow>
                             ) : boms.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                        No hay listas de materiales definidas {selectedVariantId !== "all" ? "para esta variante" : ""}.
+                                    <TableCell colSpan={6} className="text-center py-12">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="p-3 bg-muted/50 rounded-full">
+                                                <Workflow className="h-8 w-8 text-muted-foreground/50" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-bold text-muted-foreground">No hay recetas definidas {selectedVariantId !== "all" ? "para esta variante" : "aún"}</p>
+                                                <p className="text-xs text-muted-foreground">Para comenzar a fabricar, debe definir los componentes necesarios.</p>
+                                            </div>
+                                            <div className="flex gap-2 mt-4">
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="rounded-xl border-primary/20 hover:bg-primary/5 h-8 text-xs font-bold"
+                                                    onClick={handleCreate}
+                                                >
+                                                    Crear Nueva Receta
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -263,10 +311,29 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                                     <TableRow key={bom.id} className="hover:bg-muted/5">
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
-                                                <DataCell.Text>{bom.name}</DataCell.Text>
+                                                <DataCell.Text className="font-bold">{bom.name}</DataCell.Text>
                                                 {bom.notes && (
-                                                    <DataCell.Secondary className="max-w-[200px]">{bom.notes}</DataCell.Secondary>
+                                                    <DataCell.Secondary className="max-w-[200px] line-clamp-1">{bom.notes}</DataCell.Secondary>
                                                 )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                {bom.product_id === product.id ? (
+                                                    <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground bg-muted/30 border-dashed">Base</Badge>
+                                                ) : (
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-mono text-primary font-bold">{bom.product_internal_code || 'VAR'}</span>
+                                                        <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">{bom.product_name}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <DataCell.Text className="font-bold text-emerald-700">
+                                                    {bom.yield_quantity} {bom.yield_uom_name || product.uom_name}
+                                                </DataCell.Text>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center">
@@ -295,7 +362,18 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 hover:text-blue-600"
+                                                    title="Clonar Receta"
+                                                    className="h-8 w-8 hover:text-emerald-600 hover:bg-emerald-50"
+                                                    onClick={() => handleClone(bom)}
+                                                >
+                                                    <Copy className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    title="Editar"
+                                                    className="h-8 w-8 hover:text-blue-600 hover:bg-blue-50"
                                                     onClick={() => handleEdit(bom)}
                                                 >
                                                     <Edit className="h-3.5 w-3.5" />
@@ -304,7 +382,8 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 hover:text-red-600"
+                                                    title="Eliminar"
+                                                    className="h-8 w-8 hover:text-red-600 hover:bg-red-50"
                                                     onClick={() => handleDelete(bom)}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />

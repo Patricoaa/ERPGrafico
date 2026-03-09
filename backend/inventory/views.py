@@ -128,7 +128,8 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
         from django.db.models import Sum, Q
         
         products = Product.objects.filter(
-            product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]
+            Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
+            Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True)
         ).select_related('category')
         report = []
         
@@ -716,10 +717,13 @@ class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
         """
         Runs the replenishment planifier for all active storable products.
         """
+        from django.db.models import Q
         products = Product.objects.filter(
             active=True, 
-            product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE],
             track_inventory=True
+        ).filter(
+            Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
+            Q(product_type=Product.Type.MANUFACTURABLE)
         )
         warehouses = Warehouse.objects.all()
         

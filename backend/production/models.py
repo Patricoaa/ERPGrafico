@@ -366,6 +366,23 @@ class BillOfMaterials(models.Model):
     active = models.BooleanField(_("Activo"), default=True, help_text="Solo puede haber un BOM activo por producto")
     notes = models.TextField(_("Notas"), blank=True)
     
+    yield_quantity = models.DecimalField(
+        _("Rendimiento"), 
+        max_digits=12, 
+        decimal_places=4,
+        default=1,
+        validators=[MinValueValidator(0.0001)],
+        help_text="Cantidad producida por esta receta"
+    )
+    yield_uom = models.ForeignKey(
+        UoM, 
+        on_delete=models.SET_NULL, 
+        related_name='bom_yields',
+        verbose_name=_("Unidad de Rendimiento"),
+        null=True, blank=True,
+        help_text="Unidad en la que se expresa el rendimiento (se usa la unidad base del producto si se omite)"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -376,7 +393,8 @@ class BillOfMaterials(models.Model):
 
     def __str__(self):
         status = "✓" if self.active else "✗"
-        return f"{status} {self.name} - {self.product.name}"
+        yield_str = f" ({self.yield_quantity} {self.yield_uom.name if self.yield_uom else ''})".strip() if self.yield_quantity != 1 else ""
+        return f"{status} {self.name}{yield_str} - {self.product.name}"
     
     def save(self, *args, **kwargs):
         # If this BOM is being set as active, deactivate other BOMs for the same product

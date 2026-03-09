@@ -67,6 +67,15 @@ const workOrderSchema = z.object({
     product_id: z.string().optional().or(z.literal("")),
     quantity: z.string().optional(), 
     uom_id: z.string().optional().or(z.literal("")),
+}).superRefine((data, ctx) => {
+    // If it's a manual creation (product_id is set), uom_id is required
+    if (data.product_id && !data.uom_id) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "La unidad de medida es requerida para producción manual",
+            path: ["uom_id"],
+        })
+    }
 })
 
 type WorkOrderFormValues = z.infer<typeof workOrderSchema>

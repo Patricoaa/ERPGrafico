@@ -92,11 +92,32 @@ class WorkOrderService:
         # Auto-assign materials from BOM if active
         active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
         if active_bom:
+            from inventory.services import UoMService
+            
+            # Convert yield quantity to product's base UoM for accurate scaling
+            # (In case yield is defined in 'kg' but base is 'g', or yield is 100 units)
+            bom_yield_base = active_bom.yield_quantity
+            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
+                try:
+                    bom_yield_base = UoMService.convert_quantity(
+                        active_bom.yield_quantity,
+                        from_uom=active_bom.yield_uom,
+                        to_uom=product.uom
+                    )
+                except Exception:
+                    pass
+            
+            # The sales quantity requested
+            requested_qty_base = Decimal(str(sale_line.quantity))
+            
+            # How many "BOM yield batches" do we need to make the requested amount?
+            factor = requested_qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
+            
             for line in active_bom.lines.all():
                 WorkOrderMaterial.objects.create(
                     work_order=work_order,
                     component=line.component,
-                    quantity_planned=line.quantity * sale_line.quantity,
+                    quantity_planned=line.quantity * factor,
                     uom=line.uom or line.component.uom,
                     source='BOM'
                 )
@@ -147,6 +168,9 @@ class WorkOrderService:
                 f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
             )
 
+        if not uom:
+            raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
+
         final_stage_data = {'quantity': float(quantity)}
         if uom:
              final_stage_data['uom_id'] = uom.id
@@ -175,13 +199,30 @@ class WorkOrderService:
             
             qty_base = Decimal(str(quantity))
             if uom and uom != product.uom:
-                 qty_base = UoMService.convert_quantity(Decimal(str(quantity)), uom, product.uom)
+                 try:
+                     qty_base = UoMService.convert_quantity(Decimal(str(quantity)), uom, product.uom)
+                 except Exception:
+                     pass
+
+            # Convert yield quantity to product base UoM
+            bom_yield_base = active_bom.yield_quantity
+            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
+                try:
+                    bom_yield_base = UoMService.convert_quantity(
+                        active_bom.yield_quantity,
+                        from_uom=active_bom.yield_uom,
+                        to_uom=product.uom
+                    )
+                except Exception:
+                    pass
+            
+            factor = qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
 
             for line in active_bom.lines.all():
                 WorkOrderMaterial.objects.create(
                     work_order=work_order,
                     component=line.component,
-                    quantity_planned=line.quantity * qty_base,
+                    quantity_planned=line.quantity * factor,
                     uom=line.uom or line.component.uom,
                     source='BOM'
                 )
@@ -242,18 +283,35 @@ class WorkOrderService:
         if active_bom:
             from inventory.services import UoMService
             
-            # Convert delivered quantity to product base UoM for BOM calculation
-            qty_base = UoMService.convert_quantity(
-                delivery_line.quantity,
-                from_uom=delivery_line.uom or sale_line.uom,
-                to_uom=product.uom
-            )
+            qty_base = Decimal(str(delivery_line.quantity))
+            try:
+                qty_base = UoMService.convert_quantity(
+                    delivery_line.quantity,
+                    from_uom=delivery_line.uom or sale_line.uom,
+                    to_uom=product.uom
+                )
+            except Exception:
+                pass
+            
+            # Convert yield quantity to product base UoM
+            bom_yield_base = active_bom.yield_quantity
+            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
+                try:
+                    bom_yield_base = UoMService.convert_quantity(
+                        active_bom.yield_quantity,
+                        from_uom=active_bom.yield_uom,
+                        to_uom=product.uom
+                    )
+                except Exception:
+                    pass
+            
+            factor = qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
             
             for bom_line in active_bom.lines.all():
                 WorkOrderMaterial.objects.create(
                     work_order=work_order,
                     component=bom_line.component,
-                    quantity_planned=bom_line.quantity * qty_base,
+                    quantity_planned=bom_line.quantity * factor,
                     uom=bom_line.uom or bom_line.component.uom,
                     source='BOM'
                 )
