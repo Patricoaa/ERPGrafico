@@ -74,11 +74,25 @@ export function canQuickSale(
     }
 
     // Check for manufacturing products
-    const manufacturingProducts = items.filter(i =>
-        i.product_type === 'MANUFACTURABLE' || i.requires_advanced_manufacturing
-    )
+    const manufacturingProducts = items.filter(i => {
+        const isManufacturable = i.product_type === 'MANUFACTURABLE' || i.has_bom;
+        if (!isManufacturable) return false;
+
+        // ALLOW EXCEPTION: Express products (auto-finalize) skip the restriction
+        if (i.mfg_auto_finalize) return false;
+
+        // ALLOW EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) can be quick-sold
+        const isSimple = !i.requires_advanced_manufacturing;
+        const totalAvailability = (i.qty_available || 0) + (i.manufacturable_quantity || 0);
+        const hasAvailability = totalAvailability >= (i.qty || 0);
+
+        if (isSimple && hasAvailability) return false;
+
+        return true;
+    });
+
     if (manufacturingProducts.length > 0) {
-        return { allowed: false, reason: "El carrito contiene productos que requieren fabricación" }
+        return { allowed: false, reason: "El carrito contiene productos que requieren fabricación o no tienen disponibilidad inmediata (stock o componentes)" }
     }
 
     return { allowed: true, reason: "" }

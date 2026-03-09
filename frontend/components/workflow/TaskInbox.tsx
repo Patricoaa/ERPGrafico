@@ -5,7 +5,7 @@ import { getTasks, Task } from "@/lib/workflow/api"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User } from "lucide-react"
+import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -154,7 +154,7 @@ export function TaskInbox() {
                 {/* Row 1: Task Name | Avatar */}
                 <div className="flex items-center justify-between gap-3 mb-3">
                     <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1 group-hover:text-primary transition-colors">
-                        {task.task_type === 'CREDIT_POS_REQUEST' ? `Aprobación Crédito: ${task.data?.customer_name || 'Cliente'}` : task.title}
+                        {task.task_type === 'CREDIT_POS_REQUEST' ? `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}` : task.title}
                     </h3>
                     <Avatar className="h-8 w-8 shrink-0 border border-primary/20">
                         <AvatarFallback className="text-xs bg-primary/20 text-primary font-bold">
@@ -192,30 +192,42 @@ export function TaskInbox() {
                 {task.task_type === 'CREDIT_POS_REQUEST' && !isCompleted && task.status !== 'REJECTED' && (
                     <div className="mt-3 pt-3 border-t border-border/50">
                         <div className="flex items-center justify-between mb-2">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {task.data?.customer_name || 'Cliente'}
-                            </div>
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 px-2 text-[10px] text-primary hover:bg-primary/10"
+                            <button
+                                className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 hover:text-primary transition-colors group/name"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (task.data?.customer_id) openContact(task.data.customer_id);
                                 }}
                             >
-                                Ver Ficha
-                            </Button>
+                                <User className="h-3 w-3" />
+                                <span className="underline decoration-transparent group-hover/name:decoration-primary underline-offset-2">{task.data?.customer_name || 'Cliente'}</span>
+                                <ExternalLink className="h-3 w-3 opacity-70 group-hover/name:opacity-100" />
+                            </button>
                         </div>
-                        <div className="text-xs text-muted-foreground mb-3 space-y-1 bg-black/10 p-2 rounded-md">
-                            <div className="flex justify-between">
-                                <span>Disponible:</span>
-                                <span className="font-mono font-bold">${Number(task.data?.credit_available || 0).toLocaleString('es-CL')}</span>
+                        <div className="text-[11px] text-muted-foreground mb-3 space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
+                            <div className="flex justify-between items-center text-red-400/90">
+                                <span className="opacity-70">Deuda Pendiente:</span>
+                                <span className="font-mono font-bold">
+                                    ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}
+                                </span>
                             </div>
-                            <div className="flex justify-between text-warning">
-                                <span>Requerido:</span>
-                                <span className="font-mono font-bold">${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}</span>
+                            <div className="flex justify-between items-center">
+                                <span className="opacity-70">Línea de Crédito:</span>
+                                <span className="font-mono font-bold text-emerald-400">
+                                    ${Number(task.data?.explicit_credit || task.data?.credit_available || 0).toLocaleString('es-CL')}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="opacity-70">Crédito Pre-aprobado:</span>
+                                <span className="font-mono font-bold text-blue-400">
+                                    ${Number(task.data?.pos_credit || 0).toLocaleString('es-CL')}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
+                                <span className="font-bold text-warning/90">Crédito pendiente de aprobación:</span>
+                                <span className="font-mono font-bold text-warning underline decoration-warning/30 underline-offset-2">
+                                    ${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}
+                                </span>
                             </div>
                         </div>
 

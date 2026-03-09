@@ -99,7 +99,7 @@ export function useProducts() {
 
     const refreshProducts = useCallback(async (silent = false) => {
         if (!currentSession?.id) return
-        setLoading(true)
+        if (!silent) setLoading(true)
         try {
             const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
             const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&pos_session_id=${currentSession.id}${draftParams}`)
@@ -112,7 +112,7 @@ export function useProducts() {
                 toast.error("Error al actualizar productos")
             }
         } finally {
-            setLoading(false)
+            if (!silent) setLoading(false)
         }
     }, [setLoading, setProducts, currentSession?.id, currentDraftId])
 

@@ -96,13 +96,20 @@ export function canAddToCart(product: Product): { canAdd: boolean, reason?: stri
         return { canAdd: false, reason: 'Sin stock disponible' }
     }
 
-    // Check if MANUFACTURABLE with 0 quantity
-    if (
-        product.product_type === 'MANUFACTURABLE' &&
-        product.manufacturable_quantity === 0 &&
-        product.has_bom
-    ) {
-        return { canAdd: false, reason: 'No hay componentes disponibles para fabricar' }
+    // Check if MANUFACTURABLE
+    if (product.product_type === 'MANUFACTURABLE' || product.has_bom) {
+        // EXCEPTION: Simple manufacturable products with sufficient stock can be sold (they are stockable)
+        const isSimple = !product.requires_advanced_manufacturing;
+        const hasStock = (product.qty_available || 0) > 0;
+
+        if (isSimple && hasStock) return { canAdd: true };
+
+        // Otherwise, it MUST be possible to manufacture it
+        const canManufacture = (product.manufacturable_quantity || 0) > 0;
+
+        if (product.has_bom && !canManufacture) {
+            return { canAdd: false, reason: 'No hay componentes disponibles para fabricar ni stock disponible' }
+        }
     }
 
     return { canAdd: true }

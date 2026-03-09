@@ -17,6 +17,7 @@ export interface WizardState {
     isWaitingApproval?: boolean
     isApproved?: boolean
     isLoading?: boolean
+    isQuickSale?: boolean
 }
 
 interface POSContextValue {

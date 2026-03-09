@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
@@ -259,21 +259,21 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     </div>
                 }
                 description={
-                    contact ? (
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <span>{contact.display_id}</span>
-                            <span className="opacity-30">|</span>
-                            <span>{contact.name}</span>
-                            {contact.tax_id && (
-                                <>
-                                    <span className="opacity-30">|</span>
-                                    <span>{formatRUT(contact.tax_id)}</span>
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        "Complete la información del contacto"
-                    )
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {contact?.display_id && (
+                            <>
+                                <span>{contact.display_id}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Nuevo Contacto"}</span>
+                        {form.watch("tax_id") && (
+                            <>
+                                <span className="opacity-30">|</span>
+                                <span>{formatRUT(form.watch("tax_id"))}</span>
+                            </>
+                        )}
+                    </div>
                 }
                 size="full"
                 hideScrollArea={true}

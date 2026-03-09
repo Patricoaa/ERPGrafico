@@ -54,6 +54,7 @@ export function useDrafts() {
             return
         }
 
+        setIsSaving(true)
         try {
             const draftData: any = {
                 pos_session_id: currentSession?.id,

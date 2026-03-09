@@ -29,6 +29,7 @@ class BillingService:
         from decimal import Decimal
         
         customer_id = None
+        # 1. Total calculation improvement
         if 'id' in order_data:
             order = SaleOrder.objects.get(id=order_data['id'])
             customer = order.customer
@@ -38,7 +39,17 @@ class BillingService:
             if not customer_id:
                 raise ValidationError("Se requiere un cliente asociado para solicitar crédito.")
             customer = Contact.objects.get(id=customer_id)
-            total = sum(Decimal(str(item.get('unit_price_gross', 0))) * Decimal(str(item.get('quantity', 0))) for item in order_data.get('lines', []))
+            
+            # Robust total calculation for POS:
+            # We must account for gross prices and total discounts
+            lines_total = Decimal('0')
+            for item in order_data.get('lines', []):
+                qty = Decimal(str(item.get('quantity', item.get('qty', 0))))
+                price = Decimal(str(item.get('unit_price_gross', item.get('unit_price', 0))))
+                lines_total += qty * price
+            
+            total_discount = Decimal(str(order_data.get('total_discount_amount', 0)))
+            total = max(Decimal('0'), lines_total - total_discount)
 
         paid_amount = Decimal(str(amount)) if amount is not None else (Decimal('0') if payment_method == 'CREDIT' else total)
         required_credit = total - paid_amount
@@ -46,11 +57,20 @@ class BillingService:
         from workflow.services import WorkflowService
         from workflow.models import Task
         
+        # Calculate POS Fallback Credit
+        from accounting.models import AccountingSettings
+        acc_settings = AccountingSettings.objects.first()
+        # Ensure we use a safe division and handle None/0
+        fb_val = acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')
+        fallback_percentage = Decimal(str(fb_val)) / Decimal('100.0')
+        pos_credit = total * fallback_percentage
+
         description = (
             f"Venta POS requiere aprobación de crédito.\n"
             f"Cliente: {customer.name}\n"
-            f"Crédito Disponible: ${customer.credit_available:,.0f}\n"
-            f"Crédito Requerido para la venta: ${required_credit:,.0f}\n"
+            f"Línea de Crédito: ${customer.credit_available:,.0f}\n"
+            f"Crédito POS (Fallback): ${pos_credit:,.0f}\n"
+            f"Crédito Requerido: ${required_credit:,.0f}\n"
             f"Monto Total Venta: ${total:,.0f}"
         )
         
@@ -59,13 +79,28 @@ class BillingService:
         # The frontend handles file uploads separately or we assume POS credit requests don't have manufacturing files uploaded AT THIS POLLING STAGE.
         clean_request_data = {k: v for k, v in full_request_data.items() if not k.startswith('line_')}
 
+        # Calculate POS Fallback Credit
+        from accounting.models import AccountingSettings
+        acc_settings = AccountingSettings.objects.first()
+        fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')) / Decimal('100.0')
+        pos_credit = total * fallback_percentage
+
         task = WorkflowService.create_task(
             task_type='CREDIT_POS_REQUEST',
             title=f"Aprobación Crédito: {customer.name}",
             description=description,
             priority=Task.Priority.HIGH,
             created_by=requesting_user,
-            data={'request_data': clean_request_data, 'customer_id': customer.id, 'required_credit': str(required_credit)},
+            data={
+                'request_data': clean_request_data, 
+                'customer_id': customer.id, 
+                'customer_name': customer.name,
+                'customer_tax_id': customer.tax_id,
+                'customer_debt': str(customer.credit_balance_used),
+                'required_credit': str(required_credit),
+                'explicit_credit': str(customer.credit_available),
+                'pos_credit': str(pos_credit)
+            },
             category=Task.Category.APPROVAL
         )
 
@@ -470,7 +505,8 @@ class BillingService:
         # --- CREDIT VALIDATION ---
         # Determine the amount paid versus the order total
         # If no amount is explicitly provided, we assume the full total is being paid UNLESS payment_method is CREDIT
-        paid_amount = Decimal(str(amount)) if amount is not None else (Decimal('0') if payment_method == 'CREDIT' else order.total)
+        paid_amount = Decimal(str(amount)) if (amount is not None and str(amount) != '') else (Decimal('0') if payment_method == 'CREDIT' else order.total)
+        required_credit = max(Decimal('0'), order.total - paid_amount)
         
         # Credit bypass by approved task
         bypass_credit_validation = False
@@ -479,51 +515,69 @@ class BillingService:
             try:
                 task = Task.objects.get(id=credit_approval_task_id, task_type='CREDIT_POS_REQUEST')
                 if task.status == Task.Status.COMPLETED:
+                    # SECURE VALIDATION: Verify task data matches current checkout
+                    task_data = task.data or {}
+                    approved_customer_id = task_data.get('customer_id')
+                    approved_credit_str = task_data.get('required_credit', '0')
+                    approved_credit = Decimal(approved_credit_str)
+
+                    # 1. Check Customer
+                    if approved_customer_id and int(approved_customer_id) != order.customer_id:
+                        raise ValidationError(
+                            f"Seguridad: La aprobación de crédito fue emitida para otro cliente (ID {approved_customer_id})."
+                        )
+                    
+                    # 2. Check Amount (Anti-fraud check)
+                    if required_credit > approved_credit:
+                        raise ValidationError(
+                            f"Intento de aumento de crédito no autorizado. "
+                            f"El crédito requerido (${required_credit:,.0f}) excede el monto "
+                            f"que fue aprobado previamente (${approved_credit:,.0f})."
+                        )
+
                     bypass_credit_validation = True
                 else:
                     raise ValidationError(f"La tarea de aprobación de crédito {task.id} aún no está completada.")
             except Task.DoesNotExist:
                 raise ValidationError("Tarea de aprobación de crédito no encontrada.")
 
-        if not bypass_credit_validation:
-            if paid_amount < order.total:
-                required_credit = order.total - paid_amount
-                contact = order.customer
-                
-                if not contact:
-                    raise ValidationError("Se requiere un cliente asociado para asignar crédito.")
+        if not bypass_credit_validation and required_credit > 0:
+            contact = order.customer
+            
+            if not contact:
+                raise ValidationError("Se requiere un cliente asociado para asignar crédito.")
                     
-                if contact.credit_blocked:
-                    raise ValidationError("El crédito está bloqueado para este cliente.")
+            if contact.credit_blocked:
+                raise ValidationError("El crédito está bloqueado para este cliente.")
 
-                # Fallback Logic: check if we can bypass credit_enabled check
-                from accounting.models import AccountingSettings
-                acc_settings = AccountingSettings.objects.first()
-                fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else 0) / Decimal('100.0')
-                allowed_fallback = order.total * fallback_percentage
-                
-                has_debt = contact.credit_balance_used > 0
-                is_within_fallback = required_credit <= allowed_fallback
-                
-                # Implicit Credit: Check if we are within allowed bounds (Limit or Fallback)
-                if required_credit > contact.credit_available:
-                    # If exceeding limit (or no limit assigned), check if fallback applies
-                    # Fallback requires: NO debt AND within fallback threshold
-                    if not has_debt and is_within_fallback:
-                        # Fallback granted
-                        pass
+            # Fallback Logic: check if we can bypass credit_enabled check
+            from accounting.models import AccountingSettings
+            acc_settings = AccountingSettings.objects.first()
+            fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else 0) / Decimal('100.0')
+            allowed_fallback = order.total * fallback_percentage
+            
+            has_debt = contact.credit_balance_used > 0
+            is_within_fallback = required_credit <= allowed_fallback
+            
+            # Implicit Credit: Check if we are within allowed bounds (Limit or Fallback)
+            if required_credit > contact.credit_available:
+                # If exceeding limit (or no limit assigned), check if fallback applies
+                # Fallback requires: NO debt AND within fallback threshold
+                if not has_debt and is_within_fallback:
+                    # Fallback granted
+                    pass
+                else:
+                    if contact.credit_limit and contact.credit_limit > 0:
+                        raise ValidationError(
+                            f"Límite de crédito excedido. "
+                            f"Crédito requerido: ${required_credit:,.0f}, "
+                            f"Crédito disponible: ${contact.credit_available:,.0f}."
+                        )
                     else:
-                        if contact.credit_limit and contact.credit_limit > 0:
-                            raise ValidationError(
-                                f"Límite de crédito excedido. "
-                                f"Crédito requerido: ${required_credit:,.0f}, "
-                                f"Crédito disponible: ${contact.credit_available:,.0f}."
-                            )
-                        else:
-                            raise ValidationError(
-                                f"El cliente no tiene crédito asignado y el monto "
-                                f"(${required_credit:,.0f}) excede el límite de fallback permitido."
-                            )
+                        raise ValidationError(
+                            f"El cliente no tiene crédito asignado y el monto "
+                            f"(${required_credit:,.0f}) excede el límite de fallback permitido."
+                        )
         # -------------------------
         
         # 2. Confirm Order

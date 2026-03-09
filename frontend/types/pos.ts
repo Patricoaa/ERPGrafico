@@ -17,6 +17,7 @@ export interface Product {
     has_variants?: boolean
     image?: string | null
     requires_advanced_manufacturing?: boolean
+    mfg_auto_finalize?: boolean
     is_dynamic_pricing?: boolean
     has_bom?: boolean
     category?: {

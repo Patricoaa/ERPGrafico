@@ -95,19 +95,28 @@ export function SalesCheckoutWizard({
                 );
                 const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
                 
-                setStep(lastStep)
-                setDteData({
+                // Force jump to last step unless we have a specific advanced step from a draft
+                const jumpStep = (initialStep && initialStep > 1) ? initialStep : lastStep
+                setStep(jumpStep)
+
+                setDteData(initialDteData ?? {
                     type: 'BOLETA',
                     number: '',
                     date: dateString || '',
                     attachment: null,
                     isPending: false
                 })
-                setDeliveryData({
+                setDeliveryData(initialDeliveryData ?? {
                     type: 'IMMEDIATE',
                     date: null,
                     notes: ''
                 })
+
+                // For quick sale, if no customer is in prop, we'll wait for the default customer effect
+                // but if it IS in prop (FORCED from POSPage), we set it now
+                if (initialCustomerId) {
+                    setSelectedCustomerId(initialCustomerId)
+                }
             } else {
                 // NORMAL HYDRATION (Draft restore OR defaults for fresh sale)
                 // Using ?? so that null explicitly resets to defaults (prevents stale state leaking)

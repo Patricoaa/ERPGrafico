@@ -82,6 +82,8 @@ function POSPageContent() {
         currentSession,
         setCurrentSession,
         selectedCustomerId,
+        setSelectedCustomerId,
+        defaultCustomerId,
         items,
         totals,
         loading,
@@ -170,16 +172,8 @@ function POSPageContent() {
     useEffect(() => {
         if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading) return
 
-        // Calculate if we are in the last step (Payment) to avoid auto-saving while finalizing
-        const isOnlyService = items.every(line => line.product_type === 'SERVICE');
-        const hasManufacturing = items.some(line => 
-            (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
-            (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
-        );
-        const totalSteps = (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0);
-        
-        // Skip auto-save if we are in the payment step or beyond
-        if (wizardState && wizardState.step >= totalSteps) return
+        // Skip auto-save if the wizard is in a loading/transition state (e.g. processing final checkout)
+        if (wizardState?.isLoading) return
 
         const timer = setTimeout(() => {
             saveDraft(undefined, true)
@@ -317,8 +311,10 @@ function POSPageContent() {
             return
         }
         // Reset wizard state for a fresh sale (prevents stale data from previous sale)
-        setWizardState(null)
-        setIsQuickSaleProps(false)
+        setWizardState({
+            step: 1,
+            isQuickSale: false
+        })
         setCheckoutOpen(true)
     }
 
@@ -328,7 +324,6 @@ function POSPageContent() {
         setCurrentDraftId(null)
         setWizardState(null)
         clearCart()
-        setIsQuickSaleProps(false)
 
         // Refresh drafts list without full loading indicator to sync with backend deletion
         await fetchDrafts()
@@ -340,7 +335,6 @@ function POSPageContent() {
         toast.success("Venta completada exitosamente")
     }
 
-    const [isQuickSaleProps, setIsQuickSaleProps] = useState(false)
 
     const handleQuickSale = () => {
         const quickSaleCheck = Validation.canQuickSale(items, selectedCustomerId)
@@ -349,9 +343,22 @@ function POSPageContent() {
             return
         }
 
+        // Force default customer for quick sale if none selected
+        if (!selectedCustomerId && defaultCustomerId) {
+            setSelectedCustomerId(defaultCustomerId)
+        }
+
+        // Determine last step (Payment) based on items
+        const currentIsOnlyService = items.every(line => line.product_type === 'SERVICE');
+        const currentHasManufacturing = items.some(line =>
+            (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
+            (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
+        );
+        const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
+
         // Open checkout in quick sale mode, pre-filling defaults
         const quickSaleState = {
-            step: 1, // Placeholder, SalesCheckoutWizard overrides this dynamically for quick sales
+            step: lastStep,
             dteData: {
                 type: 'BOLETA', // Default to Boleta
                 number: '',
@@ -366,8 +373,10 @@ function POSPageContent() {
             }
         }
         
-        setWizardState(quickSaleState)
-        setIsQuickSaleProps(true)
+        setWizardState({
+            ...quickSaleState,
+            isQuickSale: true
+        } as any)
         
         // Use a small timeout to ensure wizardState is committed to React's state 
         // before the modal opens, guaranteeing the hydration effect reads the fresh props
@@ -524,7 +533,7 @@ function POSPageContent() {
 
             {/* Modals */}
             <SalesCheckoutWizard
-                key={`checkout-wizard-${isQuickSaleProps ? 'quick' : 'normal'}-${checkoutOpen ? 'open' : 'closed'}`}
+                key={`checkout-wizard-${wizardState?.isQuickSale ? 'quick' : 'normal'}-${checkoutOpen ? 'open' : 'closed'}`}
                 open={checkoutOpen}
                 onOpenChange={setCheckoutOpen}
                 order={null}
@@ -532,10 +541,10 @@ function POSPageContent() {
                 total={totals.total_gross}
                 totalDiscountAmount={totalDiscountAmount}
                 onComplete={handleCheckoutComplete}
-                initialCustomerId={selectedCustomerId?.toString()}
+                initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                 posSessionId={currentSession?.id}
                 terminalId={currentSession?.terminal}
-                quickSale={isQuickSaleProps}
+                quickSale={wizardState?.isQuickSale}
                 initialStep={wizardState?.step}
                 initialDteData={wizardState?.dteData}
                 initialPaymentData={wizardState?.paymentData}

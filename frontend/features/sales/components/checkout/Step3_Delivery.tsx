@@ -90,10 +90,21 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     // Proposal: Change to catch ALL manufacturable items that are NOT service/consumable/storable-only.
     // Ideally, if it is 'MANUFACTURABLE', it goes to this list.
-    const strictManufacturableItems = orderLines.filter(line =>
-        (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-        !line.mfg_auto_finalize
-    );
+    const strictManufacturableItems = orderLines.filter(line => {
+        const isManufacturable = line.product_type === 'MANUFACTURABLE' || line.has_bom;
+        if (!isManufacturable) return false;
+        if (line.mfg_auto_finalize) return false;
+
+        // EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) can be dispatched immediately
+        const isSimple = !line.requires_advanced_manufacturing;
+        const lineQty = line.qty || line.quantity || 0;
+        const totalAvailability = (line.qty_available || 0) + (line.manufacturable_quantity || 0);
+        const hasAvailability = totalAvailability >= lineQty;
+
+        if (isSimple && hasAvailability) return false;
+
+        return true;
+    });
 
     const hasRestrictedItems = strictManufacturableItems.length > 0;
 
@@ -152,7 +163,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         setDeliveryData((prev: any) => {
                             if (val === 'PARTIAL') {
                                 const partialQuantities = orderLines
-                                    .filter(line => ((line.product_type !== 'MANUFACTURABLE' && !line.has_bom) || line.mfg_auto_finalize)) // Explicitly exclude manufacturable unless express
+                                    .filter(line => {
+                                        const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
+                                            !line.requires_advanced_manufacturing &&
+                                            ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
+
+                                        return (line.product_type !== 'MANUFACTURABLE' && !line.has_bom) ||
+                                            line.mfg_auto_finalize ||
+                                            isSimpleManufacturableWithAvailability;
+                                    })
                                     .map(line => ({
                                         lineId: line.id,
                                         productId: line.product,
@@ -235,7 +254,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                 </TableHeader>
                                 <TableBody>
                                     {orderLines.map((line, idx) => {
-                                        const isEligible = (line.product_type !== 'MANUFACTURABLE' && !line.has_bom) || line.mfg_auto_finalize;
+                                        const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
+                                            !line.requires_advanced_manufacturing &&
+                                            ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
+
+                                        const isEligible = (line.product_type !== 'MANUFACTURABLE' && !line.has_bom) ||
+                                            line.mfg_auto_finalize ||
+                                            isSimpleManufacturableWithAvailability;
+
                                         const pendingQty = line.qty || line.quantity;
                                         const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
 
