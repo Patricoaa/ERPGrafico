@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
@@ -16,6 +17,7 @@ import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionM
 import { Progress } from "@/components/ui/progress"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -166,10 +168,10 @@ export default function PurchaseInvoicesPage() {
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="N° Documento" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <span className="font-mono font-medium">{row.getValue("number")}</span>
+                <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />
             ),
         },
         {
@@ -214,8 +216,8 @@ export default function PurchaseInvoicesPage() {
                 <DataTableColumnHeader column={column} title="Total" />
             ),
             cell: ({ row }) => (
-                <div className="text-right font-medium">
-                    ${Number(row.getValue("total")).toLocaleString()}
+                <div className="text-right">
+                    <MoneyDisplay amount={Number(row.getValue("total"))} showColor={false} />
                 </div>
             ),
         },
@@ -232,7 +234,7 @@ export default function PurchaseInvoicesPage() {
                     <div className="space-y-1 w-32">
                         <div className="flex justify-between text-[10px] font-bold">
                             <span>{percentage}%</span>
-                            <span>${paid.toLocaleString()}</span>
+                            <MoneyDisplay amount={paid} showColor={false} className="text-[10px]" />
                         </div>
                         <Progress value={percentage} className="h-1" />
                     </div>
@@ -275,25 +277,25 @@ export default function PurchaseInvoicesPage() {
                 const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
 
                 return (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col items-center gap-1">
                         {/* Purchase Order Link (Only for non-Notes or if Note has no originating inv) */}
                         {doc.purchase_order && !isNote && (
                             <button
                                 onClick={() => setViewingTransaction({ type: 'purchase_order', id: doc.purchase_order!, view: 'details' })}
-                                className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                className="text-blue-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                             >
                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground">Orden de Compra</span>
-                                OCS-{doc.purchase_order_number || doc.purchase_order}
+                                <DataCell.DocumentId type="PURCHASE_ORDER" number={doc.purchase_order_number || doc.purchase_order} />
                             </button>
                         )}
 
                         {doc.service_obligation && (
                             <button
                                 onClick={() => setViewingTransaction({ type: 'service_obligation', id: doc.service_obligation!, view: 'details' })}
-                                className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                className="text-indigo-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                             >
                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground">Servicio Recurrente</span>
-                                OB-{doc.service_obligation}
+                                <DataCell.DocumentId type="SERVICE_OBLIGATION" number={doc.service_obligation} />
                             </button>
                         )}
 
@@ -302,10 +304,10 @@ export default function PurchaseInvoicesPage() {
                             <button
                                 key={inv.id}
                                 onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                className="text-indigo-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                className="text-indigo-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                             >
                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">Origen: {inv.dte_type === 'FACTURA' ? 'Factura' : inv.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' : 'Boleta'}</span>
-                                {inv.dte_type === 'FACTURA' ? `FAC-${inv.number}` : inv.dte_type === 'FACTURA_EXENTA' ? `FAC-EX-${inv.number}` : `BOL-${inv.number}`}
+                                <DataCell.DocumentId type={inv.dte_type} number={inv.number} />
                             </button>
                         ))}
 
@@ -315,10 +317,10 @@ export default function PurchaseInvoicesPage() {
                                 <button
                                     key={move.id}
                                     onClick={() => setViewingTransaction({ type: 'inventory', id: move.id, view: 'details' })}
-                                    className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                    className="text-orange-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                                 >
                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                    {move.display_id || `MOV-${move.id}`}
+                                    <DataCell.DocumentId type="MOV" number={move.display_id?.split('-')[1] || move.id} />
                                 </button>
                             ))
                         ) : (
@@ -326,10 +328,10 @@ export default function PurchaseInvoicesPage() {
                                 <button
                                     key={rec.id}
                                     onClick={() => setViewingTransaction({ type: 'inventory', id: rec.id, view: 'details' })}
-                                    className="text-orange-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                    className="text-orange-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                                 >
                                     <span className="font-semibold uppercase text-[8px] text-muted-foreground">Mov. Stock</span>
-                                    {rec.display_id || rec.number}
+                                    <DataCell.DocumentId type="REC" number={rec.display_id?.split('-')[1] || rec.number || rec.id} />
                                 </button>
                             ))
                         )}
@@ -339,10 +341,10 @@ export default function PurchaseInvoicesPage() {
                             <button
                                 key={pay.id}
                                 onClick={() => setViewingTransaction({ type: 'payment', id: pay.id, view: 'details' })}
-                                className="text-emerald-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                className="text-emerald-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                             >
                                 <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">Pago</span>
-                                {pay.code}
+                                <DataCell.DocumentId type={pay.payment_type} number={pay.id} />
                             </button>
                         ))}
                     </div>

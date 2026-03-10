@@ -12,6 +12,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 // Lazy load feature components
 const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -80,11 +81,9 @@ export function TerminalBatchesManagement({
             accessorKey: "net_amount",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Depósito Neto" />,
             cell: ({ row }: any) => {
-                const amount = parseFloat(row.getValue("net_amount"))
+                const amount = row.getValue("net_amount")
                 return (
-                    <div className="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                        {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(amount)}
-                    </div>
+                    <MoneyDisplay amount={amount} />
                 )
             }
         },
@@ -92,11 +91,11 @@ export function TerminalBatchesManagement({
             accessorKey: "commission_total",
             header: "Comisión (Total)",
             cell: ({ row }: any) => {
-                const amount = parseFloat(row.original.commission_total)
+                const amount = row.original.commission_total
                 return (
-                    <span className="text-destructive font-medium">
-                        -{new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(amount)}
-                    </span>
+                    <MoneyDisplay 
+                        amount={amount ? -Math.abs(parseFloat(amount)) : 0} 
+                    />
                 )
             }
         },

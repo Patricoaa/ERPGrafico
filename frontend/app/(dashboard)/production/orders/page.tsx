@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
@@ -124,9 +125,13 @@ export default function WorkOrdersPage() {
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => <div className="font-medium">OT-{row.getValue("number")}</div>,
+            cell: ({ row }) => (
+                <div className="flex flex-col items-center">
+                    <DataCell.DocumentId type="PRODUCTION_ORDER" number={row.getValue("number")} />
+                </div>
+            ),
         },
         {
             accessorKey: "start_date",
@@ -145,9 +150,11 @@ export default function WorkOrdersPage() {
             accessorKey: "status",
             header: "Estado",
             cell: ({ row }) => (
-                <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
-                    {statusMap[row.original.status as string]?.label || row.original.status}
-                </Badge>
+                <div className="flex justify-center">
+                    <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
+                        {statusMap[row.original.status as string]?.label || row.original.status}
+                    </Badge>
+                </div>
             ),
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
@@ -157,9 +164,11 @@ export default function WorkOrdersPage() {
             accessorKey: "current_stage",
             header: "Etapa",
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] whitespace-nowrap">
-                    {translateProductionStage(row.original.current_stage)}
-                </Badge>
+                <div className="flex justify-center">
+                    <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                        {translateProductionStage(row.original.current_stage)}
+                    </Badge>
+                </div>
             ),
         },
         {
@@ -288,7 +297,7 @@ export default function WorkOrdersPage() {
                     data={filteredOrders}
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
-                    searchPlaceholder="Buscar por número, descripción o cliente..."
+                    searchPlaceholder="Buscar por folio, descripción o cliente..."
                     facetedFilters={[
                         {
                             column: "status",

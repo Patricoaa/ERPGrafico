@@ -9,7 +9,9 @@ import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -78,11 +80,10 @@ export function TreasuryMovementsClientView() {
         {
             accessorKey: "display_id",
             header: "Folio",
-            cell: ({ row }) => (
-                <span className="font-mono text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
-                    {row.getValue("display_id")}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const m = row.original
+                return <DataCell.DocumentId type={m.movement_type} number={m.id} />
+            },
         },
         {
             accessorKey: "date",
@@ -156,9 +157,9 @@ export function TreasuryMovementsClientView() {
             accessorKey: "payment_method",
             header: "Método",
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] h-5 font-mono uppercase bg-muted/30">
+                <span className="text-[10px] uppercase bg-muted/30 px-1.5 py-0.5 rounded border border-border/50">
                     {row.original.payment_method_display}
-                </Badge>
+                </span>
             )
         },
         {
@@ -172,7 +173,7 @@ export function TreasuryMovementsClientView() {
                 if (doc) {
                     return (
                         <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-primary/80">{doc.label}</span>
+                            <DataCell.DocumentId type={doc.type || undefined} number={doc.number} />
                             {m.reference && <span className="text-[10px] text-muted-foreground italic">{m.reference}</span>}
                         </div>
                     )
@@ -191,8 +192,12 @@ export function TreasuryMovementsClientView() {
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const colorClass = type === 'OUTBOUND' ? 'text-destructive' : 'text-success'
-                return <div className={`text-right font-bold font-mono ${colorClass}`}>{formatCurrency(amount)}</div>
+                const signedAmount = type === 'OUTBOUND' ? -amount : amount
+                return (
+                    <div className="text-right">
+                        <MoneyDisplay amount={signedAmount} className="font-bold" />
+                    </div>
+                )
             },
         },
         {
@@ -202,15 +207,15 @@ export function TreasuryMovementsClientView() {
                 const session = row.original.pos_session
                 if (session) {
                     return (
-                        <Badge variant="outline" className="font-mono text-[10px] w-fit bg-info/5 border-info/20 text-info">
+                        <div className="text-[10px] text-info font-medium">
                             POS #{session}
-                        </Badge>
+                        </div>
                     )
                 }
                 return (
-                    <Badge variant="secondary" className="text-[10px] w-fit bg-muted/50 text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground font-medium">
                         SISTEMA
-                    </Badge>
+                    </div>
                 )
             },
         },

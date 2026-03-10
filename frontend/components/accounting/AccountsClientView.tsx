@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Search, Plus, Book, Trash2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { AccountForm } from "@/components/forms/AccountForm"
 import { DataManagement } from "@/components/shared/DataManagement"
 import { LedgerModal } from "@/components/shared/LedgerModal"
@@ -61,30 +62,44 @@ export function AccountsClientView() {
             header: ({ column }) => (
                 <div className="text-right"><DataTableColumnHeader column={column} title="Debe" /></div>
             ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("debit_total"))
-                return <div className="text-right text-muted-foreground">{val !== 0 ? val.toLocaleString() : '-'}</div>
-            },
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <MoneyDisplay 
+                        amount={parseFloat(row.getValue("debit_total"))} 
+                        showColor={false}
+                        className="text-muted-foreground font-normal"
+                    />
+                </div>
+            ),
         },
         {
             accessorKey: "credit_total",
             header: ({ column }) => (
                 <div className="text-right"><DataTableColumnHeader column={column} title="Haber" /></div>
             ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("credit_total"))
-                return <div className="text-right text-muted-foreground">{val !== 0 ? val.toLocaleString() : '-'}</div>
-            },
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <MoneyDisplay 
+                        amount={parseFloat(row.getValue("credit_total"))} 
+                        showColor={false}
+                        className="text-muted-foreground font-normal"
+                    />
+                </div>
+            ),
         },
         {
             accessorKey: "balance",
             header: ({ column }) => (
                 <div className="text-right"><DataTableColumnHeader column={column} title="Saldo" /></div>
             ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("balance"))
-                return <div className="text-right font-bold">${val.toLocaleString()}</div>
-            },
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <MoneyDisplay 
+                        amount={parseFloat(row.getValue("balance"))} 
+                        className="font-bold"
+                    />
+                </div>
+            ),
         },
         {
             id: "actions",

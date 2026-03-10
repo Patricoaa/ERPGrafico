@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -79,9 +80,9 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         {
             id: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => <div className="font-mono text-[10px] text-muted-foreground">MOV-{row.original.id.toString().padStart(6, '0')}</div>,
+            cell: ({ row }) => <DataCell.DocumentId type="MOV" number={row.original.id} />,
         },
         {
             accessorKey: "date",
@@ -180,14 +181,10 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                                         onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
                                         className="text-primary hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
                                     >
-                                        <span className="font-bold uppercase text-[7px] text-muted-foreground/70">
-                                            {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
-                                                doc.name.includes('NC') ? 'Nota de Crédito' :
-                                                    doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
-                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                    doc.type === 'sale_order' ? 'Nota de Venta' : doc.type}
-                                        </span>
-                                        <span className="truncate w-full">{doc.name}</span>
+                                        <DataCell.DocumentId
+                                            type={doc.type === 'invoice' ? (doc.name.includes('FAC') ? 'FACTURA' : doc.name.includes('BOL') ? 'BOLETA' : doc.name.includes('NC') ? 'NOTA_CREDITO' : 'NOTA_DEBITO') : doc.type}
+                                            number={doc.name.split('-')[1] || doc.id}
+                                        />
                                     </button>
                                 ))
                         ) : (

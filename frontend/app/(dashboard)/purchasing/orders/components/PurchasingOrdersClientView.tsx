@@ -78,7 +78,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    
+
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
 
@@ -222,23 +222,23 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                 <DataTableColumnHeader column={column} title="Documento" />
             ),
             cell: ({ row }) => (
-                <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>
+                <div className="flex flex-col items-center text-center">
+                    <span className="font-bold">{row.original.dte_type_display}</span>
+                </div>
             ),
             meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="text-muted-foreground text-[10px] sm:text-xs">
-                        {row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}
-                    </span>
+                <div className="flex flex-col items-center">
+                    <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />
                 </div>
             ),
-            meta: { title: "Número" },
+            meta: { title: "Folio" },
         },
         {
             accessorKey: "date",
@@ -306,10 +306,14 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => <DataCell.Code>OCS-{row.getValue("number")}</DataCell.Code>,
-            meta: { title: "Número" },
+            cell: ({ row }) => (
+                <div className="flex flex-col items-center">
+                    <DataCell.DocumentId type="PURCHASE_ORDER" number={row.getValue("number")} />
+                </div>
+            ),
+            meta: { title: "Folio" },
         },
         {
             accessorKey: "date",
@@ -453,7 +457,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                         columns={viewMode === 'orders' ? columns : noteColumns}
                         data={viewMode === 'orders' ? filteredOrders : filteredNotes}
                         filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
-                        searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por número..."}
+                        searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
                         facetedFilters={[
                             {
                                 column: "status",

@@ -44,9 +44,9 @@ export function StockReport() {
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
+                    <div className="flex flex-col items-center gap-1 py-1 text-center">
                         <span className="font-medium text-xs leading-tight">{item.name}</span>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap justify-center gap-1">
                             {item.internal_code && (
                                 <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
                                     {item.internal_code}
@@ -85,7 +85,7 @@ export function StockReport() {
                 <DataCell.Number
                     value={row.getValue("qty_reserved")}
                     decimals={2}
-                    className="text-amber-600"
+                    suffix={row.original.uom_name}
                 />
             ),
         },
@@ -96,7 +96,7 @@ export function StockReport() {
                 <DataCell.Number
                     value={row.getValue("qty_available")}
                     decimals={2}
-                    className="text-emerald-600 font-bold"
+                    suffix={row.original.uom_name}
                 />
             ),
         },
@@ -114,22 +114,22 @@ export function StockReport() {
             accessorKey: "moves_in",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ent." className="justify-end" />,
             cell: ({ row }) => (
-                <DataCell.Variance
-                    value={Number(row.getValue("moves_in"))}
-                    decimals={2}
-                    className="text-xs"
-                />
+                <div className="flex justify-end">
+                    <Badge variant="success" className="text-[10px] h-5 px-2">
+                        +{Number(row.getValue("moves_in")).toFixed(2)}
+                    </Badge>
+                </div>
             ),
         },
         {
             accessorKey: "moves_out",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sal." className="justify-end" />,
             cell: ({ row }) => (
-                <DataCell.Variance
-                    value={-Number(row.getValue("moves_out"))}
-                    decimals={2}
-                    className="text-xs"
-                />
+                <div className="flex justify-end">
+                    <Badge variant="warning" className="text-[10px] h-5 px-2">
+                        -{Number(row.getValue("moves_out")).toFixed(2)}
+                    </Badge>
+                </div>
             ),
         },
         {

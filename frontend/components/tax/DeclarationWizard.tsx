@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { useServerDate } from "@/hooks/useServerDate"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -331,24 +332,24 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <div className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border/50">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Ventas Afectas</span>
-                                        <span className="font-medium">{formatCurrency(calcData?.sales_taxed)}</span>
+                                        <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-medium" />
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Ventas Exentas</span>
-                                        <span className="font-medium">{formatCurrency(calcData?.sales_exempt)}</span>
+                                        <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-medium" />
                                     </div>
-                                    <div className="flex justify-between text-sm text-emerald-600">
-                                        <span>Notas de Crédito (-)</span>
-                                        <span>-{formatCurrency(calcData?.credit_notes_taxed)}</span>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-emerald-600">Notas de Crédito (-)</span>
+                                        <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-medium" />
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between font-bold text-base pt-1">
                                         <span>Total Neto Ventas</span>
-                                        <span>{formatCurrency(calcData?.net_taxed_sales)}</span>
+                                        <MoneyDisplay amount={calcData?.net_taxed_sales} showColor={false} />
                                     </div>
                                     <div className="flex justify-between font-bold text-primary text-lg">
                                         <span>IVA Débito ({manualFields.tax_rate}%)</span>
-                                        <span>{formatCurrency(calcData?.vat_debit)}</span>
+                                        <MoneyDisplay amount={calcData?.vat_debit} />
                                     </div>
                                 </div>
                             </section>
@@ -361,24 +362,24 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <div className="space-y-3 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Compras Afectas</span>
-                                        <span className="font-medium">{formatCurrency(calcData?.purchases_taxed)}</span>
+                                        <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-medium" />
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Compras Exentas</span>
-                                        <span className="font-medium">{formatCurrency(calcData?.purchases_exempt)}</span>
+                                        <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-medium" />
                                     </div>
                                     <div className="flex justify-between text-sm text-amber-600">
                                         <span>Notas de Crédito (-)</span>
-                                        <span>-{formatCurrency(calcData?.purchase_credit_notes)}</span>
+                                        <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-medium" />
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between font-bold text-base pt-1">
                                         <span>Total Neto Compras</span>
-                                        <span>{formatCurrency(calcData?.net_taxed_purchases)}</span>
+                                        <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} />
                                     </div>
                                     <div className="flex justify-between font-bold text-indigo-600 text-lg">
                                         <span>IVA Crédito ({manualFields.tax_rate}%)</span>
-                                        <span>{formatCurrency(calcData?.vat_credit)}</span>
+                                        <MoneyDisplay amount={calcData?.vat_credit} />
                                     </div>
                                 </div>
                             </section>
@@ -499,33 +500,33 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
                             <div className="flex justify-between py-2">
                                 <span className="text-muted-foreground">Débitos F. (Ventas)</span>
-                                <span className="font-medium text-indigo-600">{formatCurrency(vatDebit)}</span>
+                                <MoneyDisplay amount={vatDebit} className="font-medium text-indigo-600" />
                             </div>
                             <div className="flex justify-between py-2">
                                 <span className="text-muted-foreground">Créditos F. y Reajuste</span>
-                                <span className="font-medium text-emerald-600">-{formatCurrency(totalVATCredits)}</span>
+                                <MoneyDisplay amount={-totalVATCredits} className="font-medium" />
                             </div>
                             <div className="flex justify-between py-2 border-dashed">
                                 <span className="font-medium">Total IVA a Pagar</span>
-                                <span className={cn("font-bold", vatToPay > 0 ? "text-red-500" : "text-emerald-500")}>{formatCurrency(vatToPay)}</span>
+                                <MoneyDisplay amount={vatToPay} className="text-base" />
                             </div>
                             {vatRemanent > 0 && (
                                 <div className="flex justify-between py-2 bg-emerald-500/5 px-2 -mx-2 rounded-lg">
                                     <span className="text-emerald-700 font-medium">Nuevo Remanente a Favor</span>
-                                    <span className="font-bold text-emerald-600">{formatCurrency(vatRemanent)}</span>
+                                    <MoneyDisplay amount={vatRemanent} className="text-emerald-600" />
                                 </div>
                             )}
                             <div className="flex justify-between py-2">
                                 <span className="text-muted-foreground">Retenciones e Impuesto</span>
-                                <span className="font-medium text-amber-600">{formatCurrency(manualFields.withholding_tax + manualFields.second_category_tax)}</span>
+                                <MoneyDisplay amount={manualFields.withholding_tax + manualFields.second_category_tax} className="font-medium text-amber-600" />
                             </div>
                             <div className="flex justify-between py-2">
                                 <span className="text-muted-foreground">Pago Provisional PPM</span>
-                                <span className="font-medium text-amber-600">{formatCurrency(manualFields.ppm_amount)}</span>
+                                <MoneyDisplay amount={manualFields.ppm_amount} className="font-medium text-amber-600" />
                             </div>
                             <div className="flex justify-between py-4 text-xl font-black border-t-2 border-border mt-2">
                                 <span>TOTAL A PAGAR AL SII</span>
-                                <span className="text-primary">{formatCurrency(finalToPay)}</span>
+                                <MoneyDisplay amount={finalToPay} />
                             </div>
                         </div>
 

@@ -169,3 +169,50 @@ export function formatPlainDate(value: string | Date | null | undefined): string
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
+
+export function formatDocumentId(type: string | null | undefined, number: string | number | null | undefined): string {
+  if (!number) return '---'
+  
+  const prefixes: Record<string, string> = {
+    'FACTURA': 'FAC-',
+    'BOLETA': 'BOL-',
+    'BOLETA_ELECTRONICA': 'BOL-',
+    'RECEPTION': 'REC-',
+    'RECEIPT': 'REC-',
+    'GUIA_DESPACHO': 'DES-',
+    'DELIVERY': 'DES-',
+    'WITHDRAWAL': 'RET-',
+    'RETIRO': 'RET-',
+    'DEPOSIT': 'DEP-',
+    'DEPOSITO': 'DEP-',
+    'SALE_ORDER': 'NV-',
+    'SALE': 'NV-',
+    'NV': 'NV-',
+    'PURCHASE_ORDER': 'OCS-',
+    'PURCHASE': 'OCS-',
+    'OCS': 'OCS-',
+    'NOTA_CREDITO': 'NC-',
+    'NOTA_DEBITO': 'ND-',
+    'SERVICE_OBLIGATION': 'OB-',
+    'OB': 'OB-',
+    'INVENTORY_MOVEMENT': 'MOV-',
+    'MOV': 'MOV-',
+    'JOURNAL_ENTRY': 'AS-',
+    'AS': 'AS-',
+    'INBOUND': 'ING-',
+    'ING': 'ING-',
+    'OUTBOUND': 'EGR-',
+    'EGR': 'EGR-',
+    'TRANSFER': 'TRAS-',
+    'TRAS': 'TRAS-',
+    'ADJUSTMENT': 'ADJ-',
+    'ADJ': 'ADJ-',
+    'PRODUCTION_ORDER': 'OT-',
+    'OT': 'OT-',
+  }
+
+  const prefix = prefixes[type?.toUpperCase() || ''] || ''
+  const numStr = number.toString().padStart(5, '0')
+  
+  return `${prefix}${numStr}`
+}

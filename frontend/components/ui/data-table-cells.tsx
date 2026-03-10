@@ -1,8 +1,10 @@
 import { Badge } from "@/components/ui/badge"
-import { cn, formatCurrency, translateStatus, formatPlainDate } from "@/lib/utils"
+import { cn, formatCurrency, translateStatus, formatPlainDate, formatDocumentId } from "@/lib/utils"
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
+
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
@@ -25,10 +27,17 @@ export const DataCell = {
         <div className={cn("text-xs text-muted-foreground truncate", className)} {...props}>{children}</div>
     ),
 
-    /** Monospace text for identifiers like SKU, Codes, IDs */
+    /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("font-mono text-xs font-medium text-foreground/90", className)} {...props}>
+        <div className={cn("text-xs font-medium text-foreground/90", className)} {...props}>
             {children || "-"}
+        </div>
+    ),
+
+    /** Standardized Document ID with prefix and padding */
+    DocumentId: ({ type, number, className, ...props }: { type?: string, number: string | number | null | undefined, className?: string }) => (
+        <div className={cn("text-sm font-medium", className)} {...props}>
+            {formatDocumentId(type, number)}
         </div>
     ),
 
@@ -72,29 +81,24 @@ export const DataCell = {
     },
 
     /** Currency formatted cell */
-    Currency: ({ value, className, ...props }: ValueCellProps<number | string>) => {
-        if (value === null || value === undefined) return <div className={cn("text-right text-muted-foreground", className)} {...props}>-</div>
+    Currency: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-right font-semibold tabular-nums tracking-tight", className)} {...props}>
-                {formatCurrency(Number(value))}
+            <div className={cn("text-right", className)} {...props}>
+                <MoneyDisplay amount={value} currency={currency} digits={digits} />
             </div>
         )
     },
 
     /** Variance cell that colors red/green based on value */
-    Variance: ({ value, currency = false, className, decimals = 0, ...props }: ValueCellProps<number> & { currency?: boolean, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("text-right text-muted-foreground", className)} {...props}>-</div>
-        const isPositive = value > 0
-        const isNegative = value < 0
-
+    Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string | boolean, digits?: number }) => {
         return (
-            <div className={cn(
-                "text-right font-mono font-medium tabular-nums",
-                isPositive && "text-emerald-600",
-                isNegative && "text-red-600 space-x-0.5", // space for minus sign layout if needed
-                className
-            )} {...props}>
-                {currency ? formatCurrency(value) : value.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
+            <div className={cn("text-right", className)} {...props}>
+                <MoneyDisplay 
+                    amount={value} 
+                    currency={typeof currency === "string" ? currency : "CLP"} 
+                    digits={digits} 
+                    showColor={true} 
+                />
             </div>
         )
     },

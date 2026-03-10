@@ -8,6 +8,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 
 interface CashFlowItem {
     name: string;
@@ -33,9 +34,11 @@ interface CashFlowTableProps {
     data: CashFlowData;
     embedded?: boolean;
     showComparison?: boolean;
+    periodLabel?: string;
+    compPeriodLabel?: string;
 }
 
-import { formatCurrency } from "@/lib/currency";
+
 
 const SectionHeader = ({ title, showComparison }: { title: string, showComparison?: boolean }) => (
     <TableRow className="bg-muted/50 font-bold">
@@ -46,28 +49,32 @@ const SectionHeader = ({ title, showComparison }: { title: string, showCompariso
 const SectionTotal = ({ title, amount, amountComp, showComparison }: { title: string, amount: number, amountComp?: number, showComparison?: boolean }) => (
     <TableRow className="font-semibold border-t">
         <TableCell className="pl-8 italic">{title}</TableCell>
-        <TableCell className="text-right font-mono">{formatCurrency(amount)}</TableCell>
+        <TableCell className="text-right">
+            <MoneyDisplay amount={amount} showColor={false} className="font-mono text-sm" />
+        </TableCell>
         {showComparison && (
             <>
-                <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(amountComp)}</TableCell>
-                <TableCell className={cn("text-right font-mono", (amount - (amountComp || 0)) > 0 ? "text-emerald-600" : (amount - (amountComp || 0)) < 0 ? "text-red-600" : "")}>
-                    {formatCurrency(amount - (amountComp || 0))}
+                <TableCell className="text-right">
+                    <MoneyDisplay amount={amountComp} showColor={false} className="font-mono text-sm text-muted-foreground" />
+                </TableCell>
+                <TableCell className="text-right">
+                    <MoneyDisplay amount={amount - (amountComp || 0)} className="font-mono text-sm" />
                 </TableCell>
             </>
         )}
     </TableRow>
 );
 
-export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison }) => {
+export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel }) => {
     const tableContent = (
         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Concepto</TableHead>
-                    <TableHead className="text-right w-[200px]">Actual</TableHead>
+                    <TableHead className="text-right w-[200px]">{periodLabel || 'Actual'}</TableHead>
                     {showComparison && (
                         <>
-                            <TableHead className="text-right w-[200px]">Anterior</TableHead>
+                            <TableHead className="text-right w-[200px]">{compPeriodLabel || 'Anterior'}</TableHead>
                             <TableHead className="text-right w-[200px]">Var.</TableHead>
                         </>
                     )}
@@ -80,12 +87,16 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 {data.operating.map((item, idx) => (
                     <TableRow key={idx}>
                         <TableCell className="pl-4">{item.name}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-right">
+                            <MoneyDisplay amount={item.amount} showColor={false} className="font-mono text-sm" />
+                        </TableCell>
                         {showComparison && (
                             <>
-                                <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(item.amount_comp)}</TableCell>
-                                <TableCell className={cn("text-right font-mono", (item.amount - (item.amount_comp || 0)) > 0 ? "text-emerald-600" : (item.amount - (item.amount_comp || 0)) < 0 ? "text-red-600" : "")}>
-                                    {formatCurrency(item.amount - (item.amount_comp || 0))}
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount_comp} showColor={false} className="font-mono text-sm text-muted-foreground" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount - (item.amount_comp || 0)} className="font-mono text-sm" />
                                 </TableCell>
                             </>
                         )}
@@ -101,12 +112,16 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 {data.investing.map((item, idx) => (
                     <TableRow key={idx}>
                         <TableCell className="pl-4">{item.name}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-right">
+                            <MoneyDisplay amount={item.amount} showColor={false} className="font-mono text-sm" />
+                        </TableCell>
                         {showComparison && (
                             <>
-                                <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(item.amount_comp)}</TableCell>
-                                <TableCell className={cn("text-right font-mono", (item.amount - (item.amount_comp || 0)) > 0 ? "text-emerald-600" : (item.amount - (item.amount_comp || 0)) < 0 ? "text-red-600" : "")}>
-                                    {formatCurrency(item.amount - (item.amount_comp || 0))}
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount_comp} showColor={false} className="font-mono text-sm text-muted-foreground" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount - (item.amount_comp || 0)} className="font-mono text-sm" />
                                 </TableCell>
                             </>
                         )}
@@ -122,12 +137,16 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 {data.financing.map((item, idx) => (
                     <TableRow key={idx}>
                         <TableCell className="pl-4">{item.name}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-right">
+                            <MoneyDisplay amount={item.amount} showColor={false} className="font-mono text-sm" />
+                        </TableCell>
                         {showComparison && (
                             <>
-                                <TableCell className="text-right font-mono text-muted-foreground">{formatCurrency(item.amount_comp)}</TableCell>
-                                <TableCell className={cn("text-right font-mono", (item.amount - (item.amount_comp || 0)) > 0 ? "text-emerald-600" : (item.amount - (item.amount_comp || 0)) < 0 ? "text-red-600" : "")}>
-                                    {formatCurrency(item.amount - (item.amount_comp || 0))}
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount_comp} showColor={false} className="font-mono text-sm text-muted-foreground" />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <MoneyDisplay amount={item.amount - (item.amount_comp || 0)} className="font-mono text-sm" />
                                 </TableCell>
                             </>
                         )}
@@ -138,16 +157,16 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 {/* Total */}
                 <TableRow className="bg-muted font-bold border-t-2 text-lg">
                     <TableCell className="pt-4">Aumento (Disminución) Neto de Efectivo</TableCell>
-                    <TableCell className="text-right pt-4 font-mono">
-                        {formatCurrency(data.net_increase)}
+                    <TableCell className="text-right pt-4">
+                        <MoneyDisplay amount={data.net_increase} showColor={false} className="text-lg" />
                     </TableCell>
                     {showComparison && (
                         <>
-                            <TableCell className="text-right pt-4 font-mono text-muted-foreground">
-                                {formatCurrency(data.net_increase_comp)}
+                            <TableCell className="text-right pt-4">
+                                <MoneyDisplay amount={data.net_increase_comp} showColor={false} className="text-lg text-muted-foreground" />
                             </TableCell>
-                            <TableCell className={cn("text-right pt-4 font-mono", (data.net_increase - (data.net_increase_comp || 0)) > 0 ? "text-emerald-600" : (data.net_increase - (data.net_increase_comp || 0)) < 0 ? "text-red-600" : "")}>
-                                {formatCurrency(data.net_increase - (data.net_increase_comp || 0))}
+                            <TableCell className="text-right pt-4">
+                                <MoneyDisplay amount={data.net_increase - (data.net_increase_comp || 0)} className="text-lg" />
                             </TableCell>
                         </>
                     )}

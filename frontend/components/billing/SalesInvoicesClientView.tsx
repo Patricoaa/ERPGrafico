@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -11,6 +12,7 @@ import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
 import { toast } from "sonner"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
@@ -76,8 +78,8 @@ export function SalesInvoicesClientView() {
     const columns: ColumnDef<Invoice>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
-            cell: ({ row }) => <span className="font-mono font-medium">{row.getValue("number") || '---'}</span>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.original.number} />,
         },
         { accessorKey: "date", header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" /> },
         { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
@@ -87,23 +89,22 @@ export function SalesInvoicesClientView() {
             header: "Origen",
             cell: ({ row }) => {
                 const inv = row.original
+                if (!inv.sale_order) return '---'
                 return (
-                    <div className="flex flex-col gap-1">
-                        <button
-                            onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order ?? 0 })}
-                            className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                        >
-                            <span className="font-semibold uppercase text-[8px] text-muted-foreground">Nota de Venta</span>
-                            NV-{inv.sale_order_number}
-                        </button>
-                    </div>
+                    <DataCell.Link onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order ?? 0 })}>
+                        <DataCell.DocumentId type="SALE_ORDER" number={inv.sale_order_number} />
+                    </DataCell.Link>
                 )
             },
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
-            cell: ({ row }) => <div className="text-right font-medium">${Number(row.getValue("total")).toLocaleString()}</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <MoneyDisplay amount={Number(row.getValue("total"))} showColor={false} />
+                </div>
+            ),
         },
         {
             accessorKey: "status",

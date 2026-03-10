@@ -8,6 +8,7 @@ import { OrderHubStatus } from "./OrderHubStatus"
 import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 interface OrderCardProps {
     item: any
@@ -139,12 +140,18 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
                         {isLedger ? 'Saldo Pendiente' : 'Total'}
                     </div>
-                    <div className={cn("text-sm font-bold", isLedger ? "text-red-600" : "text-primary")}>
-                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(displayTotal))}
-                    </div>
+                    <MoneyDisplay 
+                        amount={displayTotal} 
+                        showColor={!isLedger} 
+                        className={cn("text-sm", isLedger && "text-red-600 dark:text-red-400")}
+                    />
                     {isLedger && originalTotal !== displayTotal && (
                         <div className="text-[10px] text-muted-foreground line-through opacity-50">
-                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(parseFloat(originalTotal))}
+                            <MoneyDisplay 
+                                amount={originalTotal} 
+                                showColor={false} 
+                                className="font-medium"
+                            />
                         </div>
                     )}
                 </div>

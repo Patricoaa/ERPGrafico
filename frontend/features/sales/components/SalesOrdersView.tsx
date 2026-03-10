@@ -63,9 +63,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const columns: ColumnDef<SaleOrder>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
-            cell: ({ row }) => <DataCell.Code>NV-{row.getValue("number")}</DataCell.Code>,
-            meta: { title: "Número" },
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => <DataCell.DocumentId type="SALE_ORDER" number={row.getValue("number")} />,
+            meta: { title: "Folio" },
         },
         {
             accessorKey: "date",
@@ -118,17 +118,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" />,
-            cell: ({ row }) => <span className="font-mono font-bold text-xs">{row.original.dte_type_display}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.dte_type_display}</span>,
             meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
-            cell: ({ row }) => (
-                <span className="text-muted-foreground text-[10px] sm:text-xs font-mono">
-                    {row.getValue("number") ? (row.original.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-') + row.getValue("number") : '---'}
-                </span>
-            ),
+            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />,
             meta: { title: "Número" },
         },
         {

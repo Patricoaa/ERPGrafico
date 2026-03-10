@@ -106,7 +106,11 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
-                return <div className="text-right font-mono text-xs">{val > 0 ? val.toLocaleString() : '-'}</div>
+                return (
+                    <div className="text-right">
+                        <MoneyDisplay amount={val} showZeroAsDash />
+                    </div>
+                )
             },
         },
         {
@@ -116,7 +120,11 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
-                return <div className="text-right font-mono text-xs">{val > 0 ? val.toLocaleString() : '-'}</div>
+                return (
+                    <div className="text-right">
+                        <MoneyDisplay amount={val} showZeroAsDash />
+                    </div>
+                )
             },
         },
         {
@@ -127,8 +135,8 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("balance"))
                 return (
-                    <div className={`text-right font-mono text-xs font-bold ${val < 0 ? 'text-red-500' : ''}`}>
-                        ${val.toLocaleString()}
+                    <div className="text-right">
+                        <MoneyDisplay amount={val} showColor={true} />
                     </div>
                 )
             },

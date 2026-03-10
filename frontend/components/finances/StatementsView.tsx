@@ -119,6 +119,24 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         }
     }
 
+    const getPeriodLabel = (range: DateRange | undefined) => {
+        if (!range?.from || !range?.to) return ""
+        const fromYear = range.from.getFullYear()
+        const toYear = range.to.getFullYear()
+        
+        if (fromYear === toYear) {
+            // Same year, check if it's the whole year
+            const isFullYear = range.from.getMonth() === 0 && range.from.getDate() === 1 &&
+                             range.to.getMonth() === 11 && range.to.getDate() === 31
+            if (isFullYear) return `${fromYear}`
+            return `${format(range.from, 'MMM', { locale: es })}-${format(range.to, 'MMM yyyy', { locale: es })}`
+        }
+        return `${format(range.from, 'yyyy', { locale: es })}-${format(range.to, 'yyyy', { locale: es })}`
+    }
+
+    const periodLabel = getPeriodLabel(date)
+    const compPeriodLabel = getPeriodLabel(compDate)
+
     const ReportHeader = ({ title, dateRange }: { title: string, dateRange?: DateRange }) => (
         <div className="flex flex-col items-center text-center space-y-1 mb-8 pb-6 border-b">
             <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h2>
@@ -222,6 +240,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 totalLabel="Total Activos"
                                                 totalValue={bsData.total_assets}
                                                 totalValueComp={bsData.total_assets_comp}
+                                                compPeriodLabel={compPeriodLabel}
+                                                periodLabel={periodLabel}
                                                 showComparison={showComparison}
                                                 embedded
                                             />
@@ -231,6 +251,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 totalLabel="Total Pasivos"
                                                 totalValue={bsData.total_liabilities}
                                                 totalValueComp={bsData.total_liabilities_comp}
+                                                compPeriodLabel={compPeriodLabel}
+                                                periodLabel={periodLabel}
                                                 showComparison={showComparison}
                                                 embedded
                                             />
@@ -240,6 +262,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 totalLabel="Total Patrimonio"
                                                 totalValue={bsData.total_equity}
                                                 totalValueComp={bsData.total_equity_comp}
+                                                compPeriodLabel={compPeriodLabel}
+                                                periodLabel={periodLabel}
                                                 showComparison={showComparison}
                                                 embedded
                                             />
@@ -278,14 +302,14 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                     <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
                                                     <div className="flex space-x-12 items-center">
                                                         <div className="text-right">
-                                                            <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>Actual</div>
+                                                            <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
                                                             <div className="text-2xl font-black font-mono">
                                                                 {(section.total || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                             </div>
                                                         </div>
                                                         {showComparison && (
                                                             <div className={cn("text-right border-l pl-12", idx === (plData.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border-slate-300")}>
-                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>Anterior</div>
+                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
                                                                 <div className={cn("text-2xl font-black font-mono opacity-80", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
                                                                     {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                                 </div>
@@ -328,7 +352,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                             <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
                                 {cfData ? (
-                                    <CashFlowTable data={cfData} embedded showComparison={showComparison} />
+                                    <CashFlowTable 
+                                        data={cfData} 
+                                        embedded 
+                                        showComparison={showComparison} 
+                                        periodLabel={periodLabel}
+                                        compPeriodLabel={compPeriodLabel}
+                                    />
                                 ) : (
                                     <div className="p-8 text-center animate-pulse">Cargando flujo de caja...</div>
                                 )}

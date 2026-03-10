@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 
 interface AccountNode {
     id: number | string;
@@ -28,6 +29,8 @@ interface FinancialStatementTableProps {
     title: string;
     showComparison?: boolean;
     embedded?: boolean;
+    periodLabel?: string;
+    compPeriodLabel?: string;
 }
 
 const formatCurrency = (val: number | undefined | null) => {
@@ -57,16 +60,16 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
                         <span>{node.name}</span>
                     </div>
                 </TableCell>
-                <TableCell className="text-right p-2 font-mono">
-                    {formatCurrency(node.balance)}
+                <TableCell className="text-right p-2">
+                    <MoneyDisplay amount={node.balance} showColor={false} className="font-mono text-sm" />
                 </TableCell>
                 {showComparison && (
                     <>
-                        <TableCell className="text-right p-2 font-mono text-muted-foreground">
-                            {formatCurrency(node.comp_balance)}
+                        <TableCell className="text-right p-2">
+                            <MoneyDisplay amount={node.comp_balance} showColor={false} className="font-mono text-sm text-muted-foreground" />
                         </TableCell>
-                        <TableCell className={cn("text-right p-2 font-mono", (node.variance || 0) > 0 ? "text-emerald-600" : (node.variance || 0) < 0 ? "text-red-600" : "")}>
-                            {formatCurrency(node.variance)}
+                        <TableCell className="text-right p-2">
+                             <MoneyDisplay amount={node.variance} className="font-mono text-sm" />
                         </TableCell>
                     </>
                 )}
@@ -78,16 +81,16 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
     );
 };
 
-export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = ({ data, totalLabel, totalValue, totalValueComp, title, showComparison, embedded }) => {
+export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = ({ data, totalLabel, totalValue, totalValueComp, title, showComparison, embedded, periodLabel, compPeriodLabel }) => {
     const tableContent = (
         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Cuenta</TableHead>
-                    <TableHead className="text-right w-[150px]">Saldo</TableHead>
+                    <TableHead className="text-right w-[150px]">{periodLabel || 'Saldo'}</TableHead>
                     {showComparison && (
                         <>
-                            <TableHead className="text-right w-[150px]">Anterior</TableHead>
+                            <TableHead className="text-right w-[150px]">{compPeriodLabel || 'Anterior'}</TableHead>
                             <TableHead className="text-right w-[150px]">Var.</TableHead>
                         </>
                     )}
@@ -100,16 +103,16 @@ export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = (
                 {totalLabel && totalValue !== undefined && (
                     <TableRow className="bg-muted/50 font-bold border-t-2">
                         <TableCell className="p-4 text-primary">{totalLabel}</TableCell>
-                        <TableCell className="text-right p-4 font-mono text-lg">
-                            {formatCurrency(totalValue)}
+                        <TableCell className="text-right p-4">
+                            <MoneyDisplay amount={totalValue} showColor={false} className="text-lg" />
                         </TableCell>
                         {showComparison && totalValueComp !== undefined && (
                             <>
-                                <TableCell className="text-right p-4 font-mono text-lg text-muted-foreground">
-                                    {formatCurrency(totalValueComp)}
+                                <TableCell className="text-right p-4">
+                                    <MoneyDisplay amount={totalValueComp} showColor={false} className="text-lg text-muted-foreground" />
                                 </TableCell>
-                                <TableCell className={cn("text-right p-4 font-mono text-lg", (totalValue - totalValueComp) > 0 ? "text-emerald-600" : "text-red-600")}>
-                                    {formatCurrency(totalValue - totalValueComp)}
+                                <TableCell className="text-right p-4">
+                                    <MoneyDisplay amount={totalValue - totalValueComp} className="text-lg" />
                                 </TableCell>
                             </>
                         )}

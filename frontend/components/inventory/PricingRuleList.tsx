@@ -11,6 +11,7 @@ import { PricingRuleForm } from "@/components/forms/PricingRuleForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 interface PricingRule {
     id: number
@@ -169,7 +170,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                 return (
                     <div className="text-right font-bold">
                         {rule.rule_type === "FIXED"
-                            ? `$${Number(rule.fixed_price).toLocaleString()}`
+                            ? <MoneyDisplay amount={Number(rule.fixed_price)} showColor={false} />
                             : `${Number(rule.discount_percentage)}%`}
                     </div>
                 )

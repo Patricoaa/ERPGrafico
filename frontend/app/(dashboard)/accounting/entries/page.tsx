@@ -15,6 +15,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { formatPlainDate } from "@/lib/utils"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 interface JournalEntry {
     id: number
@@ -91,10 +92,10 @@ export default function EntriesPage() {
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Número" />
+                <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <span className="font-medium">AS-{row.getValue("number")}</span>
+                <DataCell.DocumentId type="JOURNAL_ENTRY" number={row.getValue("number")} />
             ),
         },
         {
@@ -118,28 +119,22 @@ export default function EntriesPage() {
             cell: ({ row }) => {
                 const entry = row.original
                 return (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col items-center gap-1">
                         {entry.source_documents && entry.source_documents.length > 0 ? (
                             entry.source_documents.map((doc, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                    className="text-blue-600 hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
+                                    className="text-blue-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
                                 >
-                                    <span className="font-semibold uppercase text-[8px] text-muted-foreground whitespace-nowrap">
-                                        {doc.type === 'invoice' ? (doc.name.includes('BOL') ? 'Boleta' :
-                                            doc.name.includes('NC') ? 'Nota de Crédito' :
-                                                doc.name.includes('ND') ? 'Nota de Débito' : 'Factura') :
-                                            doc.type === 'payment' ? (doc.name.includes('ING') ? 'Comprobante Ingreso' : 'Comprobante Egreso') :
-                                                doc.type === 'purchase_order' ? 'Orden de Compra' :
-                                                    doc.type === 'sale_order' ? 'Nota de Venta' :
-                                                        doc.type === 'inventory' ? 'Movimiento' : doc.type}
-                                    </span>
-                                    {doc.name}
+                                    <DataCell.DocumentId
+                                        type={doc.type === 'invoice' ? (doc.name.includes('FAC') ? 'FACTURA' : doc.name.includes('BOL') ? 'BOLETA' : doc.name.includes('NC') ? 'NOTA_CREDITO' : 'NOTA_DEBITO') : doc.type}
+                                        number={doc.name.split('-')[1] || doc.id}
+                                    />
                                 </button>
                             ))
                         ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
+                            <span className="text-muted-foreground text-xs font-normal">-</span>
                         )}
                     </div>
                 )

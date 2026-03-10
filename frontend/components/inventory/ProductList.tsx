@@ -136,9 +136,9 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTableColumnHeader column={column} title="Cód. Interno" />
             ),
             cell: ({ row }) => (
-                <div className="font-mono text-[10px] text-muted-foreground">
+                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
                     {row.getValue("internal_code")}
-                </div>
+                </Badge>
             ),
         },
         {
@@ -147,9 +147,9 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTableColumnHeader column={column} title="SKU" />
             ),
             cell: ({ row }) => (
-                <div className="font-mono text-[10px] text-muted-foreground">
+                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
                     {row.getValue("code")}
-                </div>
+                </Badge>
             ),
         },
         {

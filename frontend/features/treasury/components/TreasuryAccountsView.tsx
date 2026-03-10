@@ -29,6 +29,7 @@ import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 
 
@@ -125,14 +126,12 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 <DataTableColumnHeader column={column} title="Saldo" />
             ),
             cell: ({ row }: { row: any }) => {
-                const balance = parseFloat(row.getValue("current_balance") || "0")
+                const balance = row.getValue("current_balance")
                 return (
-                    <div className={`font-bold ${balance < 0 ? "text-destructive" : "text-success"}`}>
-                        {new Intl.NumberFormat("es-CL", {
-                            style: "currency",
-                            currency: row.original.currency
-                        }).format(balance)}
-                    </div>
+                    <MoneyDisplay 
+                        amount={balance} 
+                        currency={row.original.currency}
+                    />
                 )
             },
         },
