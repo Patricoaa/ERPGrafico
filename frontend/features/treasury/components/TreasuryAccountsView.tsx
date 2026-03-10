@@ -87,9 +87,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     'CASH': 'Efectivo',
                 }
                 return (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col items-center text-center">
                         <span className="font-bold text-primary">{acc.name}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
                             <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 uppercase bg-muted/50">
                                 {labels[acc.account_type] || acc.account_type}
                             </Badge>
@@ -113,9 +113,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const name = row.original.account_name
                 if (!name) return <span className="text-muted-foreground italic text-xs">No vinculada</span>
                 return (
-                    <div className="flex flex-col">
-                        <span className="text-sm font-medium">{name}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{row.original.account || ''}</span>
+                    <div className="flex justify-center w-full" title={`${row.original.account_code || ''} - ${name}`}>
+                        <div className="text-center text-xs truncate max-w-[200px] flex items-center justify-center gap-1">
+                            <span className="font-mono font-bold whitespace-nowrap">{row.original.account_code}</span>
+                            <span className="text-muted-foreground font-medium truncate">{name}</span>
+                        </div>
                     </div>
                 )
             }
@@ -128,8 +130,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             cell: ({ row }: { row: any }) => {
                 const balance = row.getValue("current_balance")
                 return (
-                    <MoneyDisplay 
-                        amount={balance} 
+                    <MoneyDisplay
+                        amount={balance}
                         currency={row.original.currency}
                     />
                 )

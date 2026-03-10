@@ -114,33 +114,6 @@ export default function EntriesPage() {
             ),
         },
         {
-            id: "documents",
-            header: "Documentos",
-            cell: ({ row }) => {
-                const entry = row.original
-                return (
-                    <div className="flex flex-col items-center gap-1">
-                        {entry.source_documents && entry.source_documents.length > 0 ? (
-                            entry.source_documents.map((doc, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                    className="text-blue-600 hover:underline text-[10px] flex flex-col items-center text-center leading-tight"
-                                >
-                                    <DataCell.DocumentId
-                                        type={doc.type === 'invoice' ? (doc.name.includes('FAC') ? 'FACTURA' : doc.name.includes('BOL') ? 'BOLETA' : doc.name.includes('NC') ? 'NOTA_CREDITO' : 'NOTA_DEBITO') : doc.type}
-                                        number={doc.name.split('-')[1] || doc.id}
-                                    />
-                                </button>
-                            ))
-                        ) : (
-                            <span className="text-muted-foreground text-xs font-normal">-</span>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
             accessorKey: "state",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" />

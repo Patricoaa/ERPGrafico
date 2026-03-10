@@ -164,37 +164,6 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             },
         },
         {
-            id: "documents",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Documentos" />
-            ),
-            cell: ({ row }) => {
-                const move = row.original
-                return (
-                    <div className="flex flex-col gap-1 max-w-[200px]">
-                        {move.related_documents && move.related_documents.filter(d => d.type !== 'inventory').length > 0 ? (
-                            move.related_documents
-                                .filter(d => d.type !== 'inventory')
-                                .map((doc, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setViewingTransaction({ type: doc.type, id: doc.id })}
-                                        className="text-primary hover:underline text-[10px] flex flex-col text-left items-start leading-tight"
-                                    >
-                                        <DataCell.DocumentId
-                                            type={doc.type === 'invoice' ? (doc.name.includes('FAC') ? 'FACTURA' : doc.name.includes('BOL') ? 'BOLETA' : doc.name.includes('NC') ? 'NOTA_CREDITO' : 'NOTA_DEBITO') : doc.type}
-                                            number={doc.name.split('-')[1] || doc.id}
-                                        />
-                                    </button>
-                                ))
-                        ) : (
-                            <span className="text-muted-foreground text-xs italic opacity-50">-</span>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
             id: "actions",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Ver" className="text-center" />

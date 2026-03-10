@@ -85,19 +85,6 @@ export function SalesInvoicesClientView() {
         { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
         { accessorKey: "partner_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" /> },
         {
-            id: "origin",
-            header: "Origen",
-            cell: ({ row }) => {
-                const inv = row.original
-                if (!inv.sale_order) return '---'
-                return (
-                    <DataCell.Link onClick={() => setViewingTransaction({ type: 'sale_order', id: inv.sale_order ?? 0 })}>
-                        <DataCell.DocumentId type="SALE_ORDER" number={inv.sale_order_number} />
-                    </DataCell.Link>
-                )
-            },
-        },
-        {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
             cell: ({ row }) => (

@@ -163,30 +163,6 @@ export function TreasuryMovementsClientView() {
             )
         },
         {
-            id: "reference",
-            header: "Referencia / Documento",
-            cell: ({ row }) => {
-                const m = row.original;
-                const doc = m.document_info;
-                const motive = m.justify_reason_display;
-
-                if (doc) {
-                    return (
-                        <div className="flex flex-col">
-                            <DataCell.DocumentId type={doc.type || undefined} number={doc.number} />
-                            {m.reference && <span className="text-[10px] text-muted-foreground italic">{m.reference}</span>}
-                        </div>
-                    )
-                }
-
-                return (
-                    <span className="text-xs text-muted-foreground italic">
-                        {motive || m.reference || "-"}
-                    </span>
-                )
-            }
-        },
-        {
             accessorKey: "amount",
             header: () => <div className="text-right">Monto</div>,
             cell: ({ row }) => {

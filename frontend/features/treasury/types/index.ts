@@ -32,6 +32,7 @@ export interface TreasuryAccount {
     currency: string
     account: number | null
     account_name?: string
+    account_code?: string | null
     account_type: 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'
     allows_cash: boolean
     allows_card: boolean
