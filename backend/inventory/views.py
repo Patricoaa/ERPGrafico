@@ -4,17 +4,16 @@ from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, ReorderingRuleSerializer,
-    ReplenishmentProposalSerializer, SubscriptionSerializer,
+    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
     ProductAttributeSerializer, ProductAttributeValueSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal, Subscription,
+    CustomFieldTemplate, ProductCustomField, Subscription,
     ProductAttribute, ProductAttributeValue
 )
 from django.shortcuts import get_object_or_404
-from .services import StockService, ProcurementService, UoMService
+from .services import StockService, UoMService
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
@@ -40,7 +39,6 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
             'attribute_values__attribute',
             'allowed_sale_uoms',
             'product_custom_fields',
-            'reordering_rules',
             'attachments'
         ).annotate(
             annotated_current_stock=Sum('stock_moves__quantity'),
@@ -683,67 +681,6 @@ class ProductCustomFieldViewSet(viewsets.ModelViewSet):
     serializer_class = ProductCustomFieldSerializer
     filterset_fields = ['product']
 
-class ReorderingRuleViewSet(AuditHistoryMixin, viewsets.ModelViewSet):
-    queryset = ReorderingRule.objects.all()
-    serializer_class = ReorderingRuleSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product', 'warehouse', 'active']
-
-
-class ReplenishmentProposalViewSet(viewsets.ModelViewSet):
-    queryset = ReplenishmentProposal.objects.all()
-    serializer_class = ReplenishmentProposalSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product', 'warehouse', 'status']
-
-    @action(detail=False, methods=['post'])
-    def create_po(self, request):
-        """
-        Creates Purchase Orders from a list of proposal IDs.
-        """
-        proposal_ids = request.data.get('proposal_ids', [])
-        if not proposal_ids:
-            return Response({'error': 'No se proporcionaron IDs de propuestas.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            created_pos = ProcurementService.create_purchase_order_from_proposals(proposal_ids, user=request.user)
-            from purchasing.serializers import PurchaseOrderSerializer
-            return Response(PurchaseOrderSerializer(created_pos, many=True).data, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'])
-    def run_planifier(self, request):
-        """
-        Runs the replenishment planifier for all active storable products.
-        """
-        from django.db.models import Q
-        products = Product.objects.filter(
-            active=True, 
-            track_inventory=True
-        ).filter(
-            Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
-            Q(product_type=Product.Type.MANUFACTURABLE)
-        )
-        warehouses = Warehouse.objects.all()
-        
-        count = 0
-        for warehouse in warehouses:
-            for product in products:
-                proposal = ProcurementService.check_replenishment(product, warehouse)
-                if proposal:
-                    count += 1
-                    
-        return Response({'status': 'ok', 'proposals_created_or_updated': count})
-
-    @action(detail=False, methods=['post'])
-    def ignore(self, request):
-        """
-        Marks proposals as ignored.
-        """
-        proposal_ids = request.data.get('proposal_ids', [])
-        ReplenishmentProposal.objects.filter(id__in=proposal_ids).update(status=ReplenishmentProposal.Status.IGNORED)
-        return Response({'status': 'ok'})
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):

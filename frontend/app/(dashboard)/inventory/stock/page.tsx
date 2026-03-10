@@ -3,8 +3,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { WarehouseList } from "@/components/inventory/WarehouseList"
 import { MovementList } from "@/components/inventory/MovementList"
 import { StockReport } from "@/components/inventory/StockReport"
-import { ReplenishmentDashboard } from "@/components/inventory/ReplenishmentDashboard"
-import { Warehouse, History, FileBarChart, RefreshCw, PlayCircle } from "lucide-react"
+import { Warehouse, History, FileBarChart } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -27,7 +26,6 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "report", label: "Stock", iconName: "file-bar-chart", href: "/inventory/stock?tab=report" },
         { value: "movements", label: "Movimientos", iconName: "history", href: "/inventory/stock?tab=movements" },
-        { value: "replenishment", label: "Reabastecimiento", iconName: "refresh-cw", href: "/inventory/stock?tab=replenishment" },
         { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory/stock?tab=warehouses" },
     ]
 
@@ -51,28 +49,6 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                                 title="Nuevo Ajuste"
                             />
                         </Link>
-                    )
-                }
-            case "replenishment":
-                return {
-                    title: "Gestión de Reabastecimiento",
-                    description: "Análisis de stock crítico y sugerencias de compra.",
-                    actions: (
-                        <div className="flex items-center gap-2">
-                            <Link href="/inventory/stock?tab=replenishment&modal=planifier">
-                                <Button variant="outline" size="sm" className="h-8 rounded-full">
-                                    <PlayCircle className="mr-2 h-4 w-4" />
-                                    Planificar
-                                </Button>
-                            </Link>
-                            <Link href="/inventory/stock?tab=replenishment&modal=rule">
-                                <PageHeaderButton
-                                    iconName="plus"
-                                    circular
-                                    title="Nueva Regla"
-                                />
-                            </Link>
-                        </div>
                     )
                 }
             case "warehouses":
@@ -114,12 +90,6 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList
                             externalOpen={activeTab === 'movements' && modal === 'adjustment'}
-                        />
-                    </TabsContent>
-                    <TabsContent value="replenishment" className="mt-0 outline-none">
-                        <ReplenishmentDashboard
-                            externalRunPlanifier={activeTab === 'replenishment' && modal === 'planifier'}
-                            externalOpenRule={activeTab === 'replenishment' && modal === 'rule'}
                         />
                     </TabsContent>
                     <TabsContent value="warehouses" className="mt-0 outline-none">

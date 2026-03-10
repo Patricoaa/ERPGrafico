@@ -11,7 +11,7 @@ from accounting.services import AccountingService
 from inventory.models import (
     ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
     PricingRule, Subscription, ProductAttribute, ProductAttributeValue,
-    ReplenishmentProposal, ReorderingRule, CustomFieldTemplate, ProductCustomField
+    CustomFieldTemplate, ProductCustomField
 )
 from contacts.models import Contact
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
@@ -268,9 +268,6 @@ class Command(BaseCommand):
         except:
             pass
 
-        # 9.5 Replenishment & Rules
-        _safe_delete(ReplenishmentProposal, "ReplenishmentProposal")
-        _safe_delete(ReorderingRule, "ReorderingRule")
         _safe_delete(ProductCustomField, "ProductCustomField")
         _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
 

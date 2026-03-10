@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, ReorderingRule, ReplenishmentProposal,
+    CustomFieldTemplate, ProductCustomField,
     Subscription, ProductAttribute, ProductAttributeValue
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
@@ -64,30 +64,6 @@ class ProductCustomFieldSerializer(serializers.ModelSerializer):
         fields = ['id', 'template', 'template_data', 'order']
 
 
-class ReorderingRuleSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
-    category_name = serializers.CharField(source='product.category.name', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
-
-    class Meta:
-        model = ReorderingRule
-        fields = '__all__'
-
-
-class ReplenishmentProposalSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
-    category_name = serializers.CharField(source='product.category.name', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    
-    class Meta:
-        model = ReplenishmentProposal
-        fields = '__all__'
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -145,8 +121,6 @@ class ProductSerializer(serializers.ModelSerializer):
     # Manufacturing fields: Support multiple BOMs
     boms = BillOfMaterialsSerializer(many=True, required=False)
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
-    # Replenishment Rules
-    reordering_rules = ReorderingRuleSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, read_only=True)
     available_uoms = serializers.SerializerMethodField()
     
@@ -167,7 +141,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
             'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
             'manufacturable_quantity', 'bom_cost', 'qty_reserved', 'qty_available',
-            'boms', 'product_custom_fields', 'reordering_rules',
+            'boms', 'product_custom_fields',
             # Subscription Fields
             'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
             'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
@@ -197,14 +171,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values', 'variant_updates']:
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
         
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'reordering_rules', 'attribute_values', 'variant_updates']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates']:
             if field in ret:
                 raw_value = ret[field]
                 
@@ -332,7 +306,6 @@ class ProductSerializer(serializers.ModelSerializer):
         boms_data = validated_data.pop('boms', [])
         pcf_data = validated_data.pop('product_custom_fields', [])
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
-        rules_data = validated_data.pop('reordering_rules', [])
         attribute_values = validated_data.pop('attribute_values', [])
         
         product = Product.objects.create(**validated_data)
@@ -353,8 +326,6 @@ class ProductSerializer(serializers.ModelSerializer):
         for pcf in pcf_data:
             ProductCustomField.objects.create(product=product, **pcf)
         
-        for rule_data in rules_data:
-            ReorderingRule.objects.create(product=product, **rule_data)
             
         return product
 
@@ -362,7 +333,6 @@ class ProductSerializer(serializers.ModelSerializer):
         boms_data = validated_data.pop('boms', None) # If None, don't touch
         pcf_data = validated_data.pop('product_custom_fields', None)
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
-        rules_data = validated_data.pop('reordering_rules', None)
         attribute_values = validated_data.pop('attribute_values', None)
         variant_updates = validated_data.pop('variant_updates', None)
         
@@ -420,30 +390,6 @@ class ProductSerializer(serializers.ModelSerializer):
             for pcf in pcf_data:
                 ProductCustomField.objects.create(product=instance, **pcf)
         
-        if rules_data is not None:
-            # Sync Reordering Rules
-            existing_rules = {r.id: r for r in instance.reordering_rules.all()}
-            incoming_ids = [r.get('id') for r in rules_data if r.get('id')]
-            
-            # Delete removed
-            for rule_id, rule_obj in existing_rules.items():
-                if rule_id not in incoming_ids:
-                    rule_obj.delete()
-            
-            # Update/Create
-            for rule_item in rules_data:
-                rule_id = rule_item.get('id')
-                # Warehouse is FK, if passed as ID (int) OK, if object need extraction.
-                # DRF nested usually handles simple data. 
-                # ReorderingRuleSerializer accepts 'warehouse' as PK by default.
-                
-                if rule_id and rule_id in existing_rules:
-                    rule = existing_rules[rule_id]
-                    for attr, value in rule_item.items():
-                        setattr(rule, attr, value)
-                    rule.save()
-                else:
-                    ReorderingRule.objects.create(product=instance, **rule_item)
                 
         if variant_updates:
             for update_data in variant_updates:
@@ -611,20 +557,3 @@ class StockMoveSerializer(serializers.ModelSerializer):
         return None
 
 
-class ReplenishmentProposalSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-    purchase_order_number = serializers.CharField(source='purchase_order.number', read_only=True, allow_null=True)
-    uom_name = serializers.SerializerMethodField()
-
-    def get_uom_name(self, obj):
-        if obj.product.purchase_uom:
-            return obj.product.purchase_uom.name
-        return obj.product.uom.name if obj.product.uom else ''
-
-    class Meta:
-        model = ReplenishmentProposal
-        fields = '__all__'

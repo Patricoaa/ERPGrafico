@@ -3,8 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet, 
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
-    CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ReorderingRuleViewSet,
-    ReplenishmentProposalViewSet, ProductAttributeViewSet, ProductAttributeValueViewSet
+    ProductAttributeViewSet, ProductAttributeValueViewSet,
+    CustomFieldTemplateViewSet, ProductCustomFieldViewSet
 )
 from .subscription_views import SubscriptionViewSet
 
@@ -19,8 +19,6 @@ router.register(r'uom-categories', UoMCategoryViewSet)
 router.register(r'pricing-rules', PricingRuleViewSet)
 router.register(r'custom-field-templates', CustomFieldTemplateViewSet)
 router.register(r'product-custom-fields', ProductCustomFieldViewSet)
-router.register(r'reordering-rules', ReorderingRuleViewSet)
-router.register(r'replenishment-proposals', ReplenishmentProposalViewSet)
 router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'attributes', ProductAttributeViewSet)
 router.register(r'attribute-values', ProductAttributeValueViewSet)

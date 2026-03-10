@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check } from "lucide-react"
+import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check, Barcode } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { BarcodeDialog } from "@/components/inventory/BarcodeDialog"
+import { useState } from "react"
 
 interface ProductBasicInfoProps {
     form: UseFormReturn<ProductFormValues>
@@ -18,6 +20,8 @@ interface ProductBasicInfoProps {
 }
 
 export function ProductIdentitySection({ form, isEditing }: { form: UseFormReturn<ProductFormValues>, isEditing: boolean }) {
+    const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false)
+
     return (
         <div className="p-4 rounded-2xl border bg-primary/5 space-y-4 border-primary/10">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -73,9 +77,27 @@ export function ProductIdentitySection({ form, isEditing }: { form: UseFormRetur
                             <FormItem>
                                 <FormLabel className={FORM_STYLES.label}>SKU / Código EAN</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: 100000001" {...field} className={cn(FORM_STYLES.input, "font-bold")} />
+                                    <div className="flex gap-2">
+                                        <Input placeholder="Ej: 100000001" {...field} className={cn(FORM_STYLES.input, "font-bold")} />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="shrink-0 h-11 w-11 rounded-xl"
+                                            onClick={() => setIsBarcodeDialogOpen(true)}
+                                            title="Gestionar Código de Barras"
+                                        >
+                                            <Barcode className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
+                                <BarcodeDialog
+                                    open={isBarcodeDialogOpen}
+                                    onOpenChange={setIsBarcodeDialogOpen}
+                                    initialValue={field.value}
+                                    onApply={(val) => form.setValue("code", val, { shouldDirty: true, shouldValidate: true })}
+                                />
                             </FormItem>
                         )}
                     />

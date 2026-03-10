@@ -1071,60 +1071,6 @@ class ProductCustomField(models.Model):
     def __str__(self):
         return f"{self.product.internal_code} - {self.template.name}"
 
-class ReorderingRule(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reordering_rules')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='reordering_rules')
-    min_quantity = models.DecimalField(_("Cantidad Mínima"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
-    max_quantity = models.DecimalField(_("Cantidad Máxima"), max_digits=12, decimal_places=4, default=0, validators=[MinValueValidator(0)])
-    
-    active = models.BooleanField(_("Activo"), default=True)
-    
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = _("Regla de Reabastecimiento")
-        verbose_name_plural = _("Reglas de Reabastecimiento")
-        unique_together = ['product', 'warehouse']
-
-    def __str__(self):
-        return f"{self.product.internal_code} - {self.warehouse.name}"
-
-
-class ReplenishmentProposal(models.Model):
-    class Status(models.TextChoices):
-        PENDING = 'PENDING', _('Pendiente')
-        CONVERTED = 'CONVERTED', _('Convertido a OC')
-        IGNORED = 'IGNORED', _('Ignorado')
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='replenishment_proposals')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='replenishment_proposals')
-    qty_to_order = models.DecimalField(_("Cantidad a Pedir"), max_digits=12, decimal_places=4)
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.PENDING)
-    rule = models.ForeignKey(ReorderingRule, on_delete=models.SET_NULL, null=True, blank=True, related_name='proposals')
-    supplier = models.ForeignKey(
-        'contacts.Contact', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='replenishment_proposals'
-    )
-    
-    purchase_order = models.ForeignKey(
-        'purchasing.PurchaseOrder', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='replenishment_proposals'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = _("Propuesta de Reabastecimiento")
-        verbose_name_plural = _("Propuestas de Reabastecimiento")
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Propuesta: {self.product.internal_code} ({self.qty_to_order})"
 
 
 class Subscription(models.Model):
