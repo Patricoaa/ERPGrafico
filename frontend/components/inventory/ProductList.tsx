@@ -129,6 +129,27 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         }
     }, [externalOpen])
 
+    useEffect(() => {
+        const action = searchParams.get('action')
+        const idParam = searchParams.get('id')
+        
+        if (action === 'edit' && idParam && products && products.length > 0) {
+            const productId = parseInt(idParam)
+            const targetProduct = products.find(p => p.id === productId)
+            
+            if (targetProduct && (!isFormOpen || editingProduct?.id !== productId)) {
+                setEditingProduct(targetProduct)
+                setIsFormOpen(true)
+
+                // Clean up the URL parameters so it doesn't reopen unnecessarily on refresh
+                const newParams = new URLSearchParams(searchParams.toString())
+                newParams.delete('action')
+                newParams.delete('id')
+                router.replace(`${pathname}?${newParams.toString()}`)
+            }
+        }
+    }, [searchParams, products, isFormOpen, editingProduct, router, pathname])
+
     const columns: ColumnDef<Product>[] = [
         {
             accessorKey: "internal_code",

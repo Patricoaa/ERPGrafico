@@ -14,7 +14,8 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Input } from "@/components/ui/input"
-import { LucideIcon, CalendarClock, CreditCard, Lock } from "lucide-react"
+import { LucideIcon, CalendarClock, CreditCard, Lock, Bell, BellRing, UserCheck } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 import { cn } from "@/lib/utils"
 
@@ -40,6 +41,12 @@ const RECURRENT_TASK_TYPES = [
     { id: 'PERIOD_CLOSE', name: 'Cierre Contable', description: 'Realizar el cierre del periodo contable.', dayField: 'period_close_day' },
 ]
 
+const NOTIFICATION_TYPES = [
+    { id: 'POS_CREDIT_APPROVAL', name: 'Aprobaciones de Crédito (POS)', description: 'Notificar resultados de solicitudes de crédito.' },
+    { id: 'SUBSCRIPTION_OC_CREATED', name: 'Órdenes de Compra (Suscripciones)', description: 'Notificar cuando se generan OCs automáticas.' },
+    { id: 'LOW_MARGIN_ALERT', name: 'Alerta de Margen Bajo', description: 'Notificar cuando el costo de un producto almacenable deja el margen por debajo del umbral.' },
+]
+
 interface WorkflowSettingsProps {
     activeTab: string
 }
@@ -51,6 +58,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     const [uiModes, setUiModes] = useState<Record<string, 'user' | 'group'>>({})
     const [recurrentSettings, setRecurrentSettings] = useState<any>(null)
     const [recurrentLoading, setRecurrentLoading] = useState(false)
+    const [notificationRules, setNotificationRules] = useState<any[]>([])
 
     const fetchRules = async () => {
         try {
@@ -83,9 +91,19 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
         }
     }
 
+    const fetchNotificationRules = async () => {
+        try {
+            const res = await api.get('/workflow/notification-rules/')
+            setNotificationRules(res.data.results || res.data)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     useEffect(() => {
         fetchRules()
         fetchRecurrentSettings()
+        fetchNotificationRules()
     }, [])
 
     const handleUpdateRule = async (taskType: string, value: any, isGroup: boolean) => {
@@ -134,6 +152,28 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
         }
     }
 
+    const handleUpdateNotificationRule = async (notifType: string, field: string, value: any) => {
+        setSaving(`${notifType}-${field}`)
+        try {
+            const existingRule = notificationRules.find((r: any) => r.notification_type === notifType)
+            const payload = {
+                notification_type: notifType,
+                [field]: value
+            }
+
+            if (existingRule) {
+                await api.patch(`/workflow/notification-rules/${existingRule.id}/`, payload)
+            } else {
+                await api.post('/workflow/notification-rules/', payload)
+            }
+            fetchNotificationRules()
+        } catch (e) {
+            toast.error("Error al actualizar la regla de notificación")
+        } finally {
+            setSaving(null)
+        }
+    }
+
     if (loading) {
         return <div className="p-8 text-center text-muted-foreground italic">Cargando configuración...</div>
     }
@@ -141,6 +181,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     const tabs = [
         { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow?tab=approvals" },
         { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow?tab=tasks" },
+        { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow?tab=notif" },
     ]
 
     const renderRuleRows = (taskTypes: any[]) => (
@@ -225,14 +266,14 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                             value={rule?.assigned_group}
                                             onChange={(val) => handleUpdateRule(type.id, val, true)}
                                             disabled={saving === type.id}
-                                            placeholder="Sel. grupo..."
+                                            placeholder="Añadir grupo..."
                                         />
                                     ) : (
                                         <UserSelector
                                             value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
                                             onChange={(val: any) => handleUpdateRule(type.id, val, false)}
                                             disabled={saving === type.id}
-                                            placeholder="Sel. usuario..."
+                                            placeholder="Añadir usuario..."
                                         />
                                     )}
                                 </div>
@@ -252,6 +293,118 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                             <AlertCircle className="h-4 w-4" />
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+
+    const renderNotificationRuleRows = () => (
+        <div className="grid gap-4">
+            {NOTIFICATION_TYPES.map((type) => {
+                const rule = notificationRules.find((r: any) => r.notification_type === type.id)
+                const isGroupMode = !!rule?.assigned_group && !rule?.assigned_user
+
+                return (
+                    <div key={type.id} className="group relative bg-card border rounded-xl p-4 hover:shadow-md transition-all">
+                        <div className="flex flex-col md:flex-row md:items-center gap-6">
+                            <div className="flex items-center gap-4 min-w-[250px] flex-1">
+                                <div className="p-3 bg-primary/5 rounded-xl group-hover:bg-primary/10 transition-colors">
+                                    <BellRing className="h-5 w-5 text-primary/70" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-bold leading-none">{type.name}</h3>
+                                    <p className="text-xs text-muted-foreground line-clamp-1">{type.description}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-6">
+                                {/* Conditional Margin Threshold Input */}
+                                {type.id === 'LOW_MARGIN_ALERT' && (
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[10px] font-bold uppercase tracking-tight">Umbral Mínimo (%)</Label>
+                                            <p className="text-[9px] text-muted-foreground leading-none text-right">0 = Apagado</p>
+                                        </div>
+                                        <div className="flex items-center gap-1 relative w-[72px]">
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                className="h-8 text-xs text-right pr-5"
+                                                defaultValue={recurrentSettings?.low_margin_threshold_percent}
+                                                onBlur={(e) => handleUpdateRecurrentSetting('low_margin_threshold_percent', e.target.value)}
+                                                disabled={saving === 'low_margin_threshold_percent'}
+                                            />
+                                            <span className="absolute right-2 text-muted-foreground text-[10px] font-medium">%</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Conditional Creator Toggle */}
+                                {type.id === 'POS_CREDIT_APPROVAL' && (
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-[10px] font-bold uppercase tracking-tight">Notificar Creador</Label>
+                                            <p className="text-[9px] text-muted-foreground leading-none">Quien inició acción</p>
+                                        </div>
+                                        <Switch
+                                            checked={rule ? rule.notify_creator : true}
+                                            onCheckedChange={(val) => handleUpdateNotificationRule(type.id, 'notify_creator', val)}
+                                            disabled={saving === `${type.id}-notify_creator`}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Additional Notifiers */}
+                                <div className="flex items-center gap-3">
+                                    {type.id === 'POS_CREDIT_APPROVAL' && (
+                                        <div className="space-y-0.5 min-w-[120px]">
+                                            <Label className="text-[10px] font-bold uppercase tracking-tight">Notificadores Extra</Label>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm scale-90">
+                                            <button
+                                                className={cn(
+                                                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                                                    !isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                                onClick={() => handleUpdateNotificationRule(type.id, 'assigned_group', null)}
+                                            >
+                                                <User className="h-3 w-3" /> Usuario
+                                            </button>
+                                            <button
+                                                className={cn(
+                                                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                                                    isGroupMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                                onClick={() => handleUpdateNotificationRule(type.id, 'assigned_user', null)}
+                                            >
+                                                <Users className="h-3 w-3" /> Grupo
+                                            </button>
+                                        </div>
+
+                                        <div className="w-[200px]">
+                                            {isGroupMode ? (
+                                                <GroupSelector
+                                                    value={rule?.assigned_group}
+                                                    onChange={(val) => handleUpdateNotificationRule(type.id, 'assigned_group', val)}
+                                                    placeholder="Añadir grupo..."
+                                                />
+                                            ) : (
+                                                <UserSelector
+                                                    value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                                    onChange={(val: any) => handleUpdateNotificationRule(type.id, 'assigned_user', val)}
+                                                    placeholder="Añadir usuario..."
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -318,6 +471,33 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                 Las tareas se generan y completan automáticamente según el flujo del sistema.
                                 <br />
                                 Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="notif" className="space-y-6">
+
+                    <div className="space-y-1 px-1">
+                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
+                        <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
+                    </div>
+
+                    {renderNotificationRuleRows()}
+
+                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                        <CardHeader className="py-4">
+                            <CardTitle className="text-xs flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-primary" />
+                                Lógica de Notificaciones
+                            </CardTitle>
+                            <CardDescription className="text-[10px] space-y-2">
+                                <p>
+                                    Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
+                                </p>
+                                <p>
+                                    Los <strong>Notificadores Extra</strong> permiten que supervisores o equipos completos (vía Grupos) estén al tanto de lo que sucede, ideal para monitoreo o auditoría.
+                                </p>
                             </CardDescription>
                         </CardHeader>
                     </Card>

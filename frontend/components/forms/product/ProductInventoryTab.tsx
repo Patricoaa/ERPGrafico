@@ -283,7 +283,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     )}
                                 </div>
                             )}
-                        </div>
+                        />
                     </div>
                 </div>
             </div>

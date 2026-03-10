@@ -21,7 +21,12 @@ interface PageProps {
 
 export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const resolvedParams = await searchParams
-    const activeTab = resolvedParams.tab || "products"
+    let activeTab = resolvedParams.tab || "products"
+    
+    // Fallback for legacy notification links
+    if (activeTab === "general") {
+        activeTab = "products"
+    }
 
     const tabs = [
         { value: "products", label: "Productos", iconName: "package", href: "/inventory/products?tab=products" },

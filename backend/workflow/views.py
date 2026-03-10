@@ -4,11 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings
+from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
 from .serializers import (
     TaskSerializer, NotificationSerializer, TaskAssignmentRuleSerializer,
-    WorkflowSettingsSerializer
+    WorkflowSettingsSerializer, NotificationRuleSerializer
 )
+from .services import WorkflowService
 from django.utils import timezone
 from purchasing.models import PurchaseOrder
 
@@ -68,20 +69,22 @@ class TaskViewSet(viewsets.ModelViewSet):
             if updated_task.status == Task.Status.COMPLETED and updated_task.category == Task.Category.APPROVAL and updated_task.created_by and updated_task.task_type == 'CREDIT_POS_REQUEST':
                 draft_id = updated_task.data.get('request_data', {}).get('draft_id')
                 link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
-                Notification.objects.create(
-                    user=updated_task.created_by,
+                WorkflowService.send_notification(
+                    notification_type='POS_CREDIT_APPROVAL',
                     title=f"Aprobación de Crédito Completada: {updated_task.title}",
                     message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                    type=Notification.Type.SUCCESS,
-                    link=link
+                    link=link,
+                    creator=updated_task.created_by,
+                    level=Notification.Type.SUCCESS
                 )
             elif updated_task.status == Task.Status.REJECTED and updated_task.category == Task.Category.APPROVAL and updated_task.created_by and updated_task.task_type == 'CREDIT_POS_REQUEST':
-                Notification.objects.create(
-                    user=updated_task.created_by,
+                WorkflowService.send_notification(
+                    notification_type='POS_CREDIT_APPROVAL',
                     title=f"Aprobación de Crédito Rechazada: {updated_task.title}",
                     message="La solicitud de crédito para el POS ha sido rechazada.",
-                    type=Notification.Type.ERROR,
-                    link="/sales/pos"
+                    link="/sales/pos",
+                    creator=updated_task.created_by,
+                    level=Notification.Type.ERROR
                 )
 
     @action(detail=True, methods=['post'])
@@ -133,11 +136,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             # Para las solicitudes de crédito desde POS, el draft_id puede venir en data (si se guardó) o no haber link
             draft_id = task.data.get('request_data', {}).get('draft_id')
             link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
-            Notification.objects.create(
+            WorkflowService.send_notification(
+                notification_type='POS_CREDIT_APPROVAL',
                 user=task.created_by,
                 title=f"Aprobación de Crédito Completada: {task.title}",
                 message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                type=Notification.Type.SUCCESS,
+                level=Notification.Type.SUCCESS,
                 link=link
             )
             
@@ -204,3 +208,12 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class NotificationRuleViewSet(viewsets.ModelViewSet):
+    """
+    Manage notification rules.
+    Only admins should edit this.
+    """
+    queryset = NotificationRule.objects.all()
+    serializer_class = NotificationRuleSerializer
+    permission_classes = [IsAuthenticated] # Should refine to specific permission later

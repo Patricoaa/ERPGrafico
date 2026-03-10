@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell } from "lucide-react"
+import { Bell, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -13,8 +13,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, Notification } from "@/lib/workflow/api"
 import { cn, formatPlainDate } from "@/lib/utils"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export function NotificationBell() {
+    const router = useRouter()
     const [open, setOpen] = useState(false)
     const [count, setCount] = useState(0)
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -73,6 +75,9 @@ export function NotificationBell() {
             setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n))
         }
         setOpen(false)
+        if (notif.link) {
+            router.push(notif.link)
+        }
     }
 
     return (
@@ -85,7 +90,7 @@ export function NotificationBell() {
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-[380px] md:w-[450px] p-0" align="end">
                 <div className="flex items-center justify-between p-4 border-b">
                     <h4 className="font-semibold text-sm">Notificaciones</h4>
                     {count > 0 && (
@@ -121,9 +126,17 @@ export function NotificationBell() {
                                             {formatPlainDate(notif.created_at)}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
                                         {notif.message}
                                     </p>
+
+                                    {notif.link && (
+                                        <div className="mt-2 flex justify-end">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors">
+                                                Ver producto <ArrowRight className="h-3 w-3" />
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

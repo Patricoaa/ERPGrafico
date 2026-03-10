@@ -107,14 +107,15 @@ def generate_subscription_orders(self):
                             
                             # Notify superusers about the new order
                             superusers = User.objects.filter(is_superuser=True)
-                            for user_obj in superusers:
-                                Notification.objects.create(
-                                    user=user_obj,
-                                    title=f"Nueva Orden de Suscripción: OC-{order.number}",
-                                    message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
-                                    type=Notification.Type.INFO,
-                                    link=f"/purchasing/orders?openHub={order.id}"
-                                )
+                            # Notify configured recipients about the new order
+                            WorkflowService.send_notification(
+                                notification_type='SUBSCRIPTION_OC_CREATED',
+                                title=f"Nueva Orden de Suscripción: OC-{order.number}",
+                                message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
+                                level=Notification.Type.INFO,
+                                link=f"/purchasing/orders?openHub={order.id}",
+                                content_object=order
+                            )
                         except Exception as e:
                             logger.error(f"Failed to auto-confirm Order {order.number}: {str(e)}")
                     else:

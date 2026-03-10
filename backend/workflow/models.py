@@ -176,6 +176,16 @@ class WorkflowSettings(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(28)],
         help_text=_("Día del mes para generar la tarea de cierre de periodo contable")
     )
+    
+    # Notification Settings
+    low_margin_threshold_percent = models.DecimalField(
+        _("Umbral de Margen Bajo (%)"),
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,
+        validators=[MinValueValidator(0)],
+        help_text=_("Si el margen de un producto baja de este porcentaje, se envía una notificación (0 para desactivar).")
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -194,3 +204,51 @@ class WorkflowSettings(models.Model):
     def get_settings(cls):
         settings, _ = cls.objects.get_or_create(pk=1)
         return settings
+
+class NotificationRule(models.Model):
+    """
+    Defines who gets notified for specific system events.
+    """
+    notification_type = models.CharField(
+        _("Tipo de Notificación"), 
+        max_length=100, 
+        unique=True, 
+        help_text="Identificador único (ej: POS_CREDIT_APPROVAL, SUBSCRIPTION_OC_CREATED)"
+    )
+    description = models.CharField(_("Descripción"), max_length=255, blank=True)
+    
+    notify_creator = models.BooleanField(
+        _("Notificar al Creador"), 
+        default=True,
+        help_text="Si está marcado, se notificará al usuario que inició la acción (ej: quien pidió el crédito)."
+    )
+
+    assigned_user = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='notification_rules',
+        verbose_name=_("Usuario Extra a Notificar")
+    )
+    
+    assigned_group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='notification_rules',
+        verbose_name=_("Grupo Extra a Notificar")
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Regla de Notificación")
+        verbose_name_plural = _("Reglas de Notificación")
+
+    def __str__(self):
+        destinatarios = []
+        if self.notify_creator: destinatarios.append("Creador")
+        if self.assigned_user: destinatarios.append(str(self.assigned_user))
+        if self.assigned_group: destinatarios.append(f"Grupo:{self.assigned_group.name}")
+        return f"{self.notification_type} -> {', '.join(destinatarios)}"

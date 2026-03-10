@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt, Bell, CheckCircle2 } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt, Bell, CheckCircle2, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -196,7 +196,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
                                 Notificaciones
                             </TooltipContent>
                         </Tooltip>
-                        <DropdownMenuContent className="w-80 border-sidebar-border shadow-2xl p-0 overflow-hidden" align="end" side="right" sideOffset={10}>
+                        <DropdownMenuContent className="w-[380px] md:w-[450px] border-sidebar-border shadow-2xl p-0 overflow-hidden" align="end" side="right" sideOffset={10}>
                             <div className="bg-muted/50 p-3 border-b border-border/50 flex justify-between items-center">
                                 <div className="flex flex-col">
                                     <span className="font-bold text-sm tracking-tight">Notificaciones</span>
@@ -258,9 +258,16 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
                                                         <span className={cn("text-xs truncate", !notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
                                                             {notification.title}
                                                         </span>
-                                                        <p className="text-[11px] text-muted-foreground/80 line-clamp-2 leading-relaxed mt-0.5">
+                                                        <p className="text-[11px] text-muted-foreground/80 whitespace-pre-wrap leading-relaxed mt-0.5">
                                                             {notification.message}
                                                         </p>
+                                                        {notification.link && (
+                                                            <div className="mt-2 flex justify-end">
+                                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider hover:bg-primary/20 transition-colors">
+                                                                    Ver detalle <ArrowRight className="h-3 w-3" />
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         <span className="text-[9px] text-muted-foreground/50 mt-1.5 font-medium flex items-center gap-1">
                                                             {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: es })}
                                                         </span>

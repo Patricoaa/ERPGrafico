@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.db import transaction
 
-from .models import Task, Notification, TaskAssignmentRule
+from .models import Task, Notification, TaskAssignmentRule, NotificationRule
 
 class WorkflowService:
     """
@@ -428,3 +428,71 @@ class WorkflowService:
             completed_by=None
         )
         return reset_count
+
+    @staticmethod
+    def send_notification(notification_type, title, message, link="", creator=None, content_object=None, level=Notification.Type.INFO):
+        """
+        Sends notifications based on configured NotificationRules.
+        """
+        try:
+            rule = NotificationRule.objects.get(notification_type=notification_type)
+            
+            # 1. Notify Creator?
+            if rule.notify_creator and creator:
+                Notification.objects.create(
+                    user=creator,
+                    title=title,
+                    message=message,
+                    link=link,
+                    type=level,
+                    content_object=content_object
+                )
+            
+            # 2. Notify assigned user?
+            if rule.assigned_user:
+                Notification.objects.create(
+                    user=rule.assigned_user,
+                    title=title,
+                    message=message,
+                    link=link,
+                    type=level,
+                    content_object=content_object
+                )
+            
+            # 3. Notify assigned group?
+            if rule.assigned_group:
+                users = rule.assigned_group.user_set.all()
+                for u in users:
+                    Notification.objects.create(
+                        user=u,
+                        title=title,
+                        message=message,
+                        link=link,
+                        type=level,
+                        content_object=content_object
+                    )
+                    
+        except NotificationRule.DoesNotExist:
+            # Fallback for credit approvals if no rule defined: notify creator
+            if notification_type == 'POS_CREDIT_APPROVAL' and creator:
+                Notification.objects.create(
+                    user=creator,
+                    title=title,
+                    message=message,
+                    link=link,
+                    type=level,
+                    content_object=content_object
+                )
+            # Fallback for subscription OC if no rule: notify superusers
+            elif notification_type == 'SUBSCRIPTION_OC_CREATED':
+                from core.models import User
+                superusers = User.objects.filter(is_superuser=True)
+                for su in superusers:
+                    Notification.objects.create(
+                        user=su,
+                        title=title,
+                        message=message,
+                        link=link,
+                        type=level,
+                        content_object=content_object
+                    )

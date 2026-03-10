@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings
+from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
 from core.serializers import UserSerializer, AttachmentSerializer
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -42,5 +42,13 @@ class TaskAssignmentRuleSerializer(serializers.ModelSerializer):
 class WorkflowSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowSettings
-        fields = ['f29_creation_day', 'f29_payment_day', 'period_close_day', 'updated_at']
+        fields = ['f29_creation_day', 'f29_payment_day', 'period_close_day', 'low_margin_threshold_percent', 'updated_at']
         read_only_fields = ['updated_at']
+
+class NotificationRuleSerializer(serializers.ModelSerializer):
+    assigned_user_data = UserSerializer(source='assigned_user', read_only=True)
+    assigned_group_name = serializers.ReadOnlyField(source='assigned_group.name')
+
+    class Meta:
+        model = NotificationRule
+        fields = '__all__'

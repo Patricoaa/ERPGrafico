@@ -1,11 +1,50 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import StockMove, Product, Subscription
 from .models import StockMove, Product, Subscription
 import logging
 
 logger = logging.getLogger(__name__)
+
+@receiver(pre_save, sender=Product)
+def product_pre_save(sender, instance, **kwargs):
+    """
+    Store the old cost_price to detect changes after save.
+    """
+    if instance.pk:
+        try:
+            old_instance = Product.objects.get(pk=instance.pk)
+            instance._old_cost_price = old_instance.cost_price
+            instance._old_sale_price = old_instance.sale_price
+        except Product.DoesNotExist:
+            instance._old_cost_price = None
+            instance._old_sale_price = None
+    else:
+        instance._old_cost_price = None
+        instance._old_sale_price = None
+
+@receiver(post_save, sender=Product)
+def product_post_save(sender, instance, created, **kwargs):
+    """
+    Handles side effects of product updates:
+    1. Synchronize subscriptions.
+    2. Check for low margin if cost price changed.
+    """
+    # 1. Low Margin Check
+    # Only if the cost price or sale price has actually changed (or it's a new product with cost/sale price)
+    old_cost = getattr(instance, '_old_cost_price', None)
+    old_sale = getattr(instance, '_old_sale_price', None)
+    
+    cost_changed = (created and instance.cost_price > 0) or (not created and old_cost != instance.cost_price)
+    sale_changed = (created and instance.sale_price > 0) or (not created and old_sale != instance.sale_price)
+    
+    if cost_changed or sale_changed:
+        try:
+            from .tasks import check_product_margin_task
+            # Delay the task to run asynchronously
+            check_product_margin_task.delay(instance.id)
+        except Exception as e:
+            logger.error(f"Failed to queue margin check for product {instance.id}: {e}")
 
 @receiver(post_save, sender=StockMove)
 def handle_stock_move_updates(sender, instance, created, **kwargs):
