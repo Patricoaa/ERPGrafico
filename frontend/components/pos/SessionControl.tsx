@@ -19,8 +19,9 @@ import { Badge } from "@/components/ui/badge"
 import {
     Loader2, Lock, Unlock, Calculator, Banknote,
     CreditCard, ArrowRightLeft, FileText, Users, LogOut,
-    Vault, AlertTriangle
+    Vault, AlertTriangle, Search, ChevronsUpDown, Check
 } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
@@ -663,36 +664,90 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">Motivo (Requerido)</Label>
-                                    <Select value={openingJustifyReason} onValueChange={setOpeningJustifyReason}>
-                                        <SelectTrigger className="bg-background h-9">
-                                            <SelectValue placeholder="Seleccione motivo..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {diff < 0 ? (
-                                                <>
-                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Faltante (Menos dinero del esperado)</div>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
-                                                    <SelectItem value="TRANSFER">Traspaso (Dinero enviado a otra caja)</SelectItem>
-                                                    {accountingSettings?.pos_partner_withdrawal_account && (
-                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
-                                                    )}
-                                                    {accountingSettings?.pos_theft_account && (
-                                                        <SelectItem value="THEFT">Faltante / Robo</SelectItem>
-                                                    )}
-                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Sobrante (Más dinero del esperado)</div>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
-                                                    <SelectItem value="TIP">Propina</SelectItem>
-                                                    <SelectItem value="TRANSFER">Traspaso (Dinero recibido de otra caja)</SelectItem>
-                                                    <SelectItem value="OTHER_IN">Otro Depósito</SelectItem>
-                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                </>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between h-9 bg-background font-normal"
+                                            >
+                                                {openingJustifyReason
+                                                    ? (diff < 0
+                                                        ? [
+                                                            { value: "COUNTING_ERROR", label: "Error de Conteo / Ajuste" },
+                                                            { value: "TRANSFER", label: "Traspaso (Dinero enviado a otra caja)" },
+                                                            { value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" },
+                                                            { value: "THEFT", label: "Faltante / Robo" },
+                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
+                                                          ].find(opt => opt.value === openingJustifyReason)?.label
+                                                        : [
+                                                            { value: "COUNTING_ERROR", label: "Error de Conteo / Ajuste" },
+                                                            { value: "TIP", label: "Propina" },
+                                                            { value: "TRANSFER", label: "Traspaso (Dinero recibido de otra caja)" },
+                                                            { value: "OTHER_IN", label: "Otro Depósito" },
+                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
+                                                          ].find(opt => opt.value === openingJustifyReason)?.label
+                                                      ) || "Seleccione motivo..."
+                                                    : "Seleccione motivo..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                            <div className="p-2">
+                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <input
+                                                        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                        placeholder="Buscar motivo..."
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.toLowerCase()
+                                                            const inputs = document.querySelectorAll('.justify-popover-item')
+                                                            inputs.forEach((el) => {
+                                                                if (el.textContent?.toLowerCase().includes(val)) {
+                                                                    (el as HTMLElement).style.display = 'flex'
+                                                                } else {
+                                                                    (el as HTMLElement).style.display = 'none'
+                                                                }
+                                                            })
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    {(diff < 0
+                                                        ? [
+                                                            { value: "COUNTING_ERROR", label: "Error de Conteo (Ajuste)" },
+                                                            { value: "TRANSFER", label: "Traspaso (Dinero Enviado)" },
+                                                            ...(accountingSettings?.pos_partner_withdrawal_account ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" }] : []),
+                                                            ...(accountingSettings?.pos_theft_account ? [{ value: "THEFT", label: "Faltante / Robo" }] : []),
+                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
+                                                          ]
+                                                        : [
+                                                            { value: "COUNTING_ERROR", label: "Error de Conteo (Ajuste)" },
+                                                            { value: "TIP", label: "Propina" },
+                                                            { value: "TRANSFER", label: "Traspaso (Dinero Recibido)" },
+                                                            { value: "OTHER_IN", label: "Otro Depósito" },
+                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
+                                                          ]).map((opt) => (
+                                                            <div
+                                                                key={opt.value}
+                                                                className={cn(
+                                                                    "justify-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    openingJustifyReason === opt.value && "bg-accent"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setOpeningJustifyReason(opt.value)
+                                                                    document.body.click()
+                                                                }}
+                                                            >
+                                                                <span>{opt.label}</span>
+                                                                {openingJustifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                                            </div>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
                                 {/* Dynamic selector for Transfer justification */}
@@ -896,7 +951,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <Label className="text-xs font-bold uppercase text-muted-foreground">
                                         {moveImpact === 'IN' ? 'Origen (¿De dónde viene?)' : 'Destino (¿A dónde va?)'}
                                     </Label>
-                                    <CashContainerSelector
+                                    <TreasuryAccountSelector
                                         value={transferTargetId}
                                         onChange={setTransferTargetId}
                                         placeholder={moveImpact === 'IN' ? "Seleccione origen" : "Seleccione destino"}

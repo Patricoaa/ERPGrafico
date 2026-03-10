@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check } from "lucide-react"
+import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
@@ -41,7 +43,7 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<any[]>([])
-    const [contacts, setContacts] = useState<any[]>([])
+    const [availableGroups, setAvailableGroups] = useState<any[]>([])
 
     // Helper to parse groups from initialData
     const parseInitialGroups = () => {
@@ -72,10 +74,9 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
         if (open) {
             const fetchDisplayData = async () => {
                 try {
-                    const [rolesRes, groupsRes, contactsRes] = await Promise.all([
+                    const [rolesRes, groupsRes] = await Promise.all([
                         api.get('/core/users/roles/'),
-                        api.get('/core/groups/'),
-                        api.get('/contacts/')
+                        api.get('/core/groups/')
                     ])
 
                     setAvailableRoles(rolesRes.data)
@@ -86,8 +87,6 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                         (g: any) => !systemRoles.includes(g.name)
                     )
                     setAvailableGroups(functionalGroupsData)
-
-                    setContacts(contactsRes.data.results || contactsRes.data)
 
                 } catch (error) {
                     console.error("Error fetching form data", error)
@@ -215,24 +214,11 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     render={({ field }) => (
                                                         <FormItem className="md:col-span-2">
                                                             <FormLabel className={FORM_STYLES.label}>Contacto Vinculado</FormLabel>
-                                                            <Select
-                                                                onValueChange={(val) => field.onChange(parseInt(val))}
-                                                                value={field.value?.toString()}
+                                                            <AdvancedContactSelector
+                                                                value={field.value?.toString() || ""}
+                                                                onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
                                                                 disabled={!!initialData}
-                                                            >
-                                                                <FormControl>
-                                                                    <SelectTrigger className={FORM_STYLES.input}>
-                                                                        <SelectValue placeholder="Seleccione la persona" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {contacts.map((contact) => (
-                                                                        <SelectItem key={contact.id} value={contact.id.toString()}>
-                                                                            {contact.name} ({contact.tax_id})
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
+                                                            />
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
@@ -307,23 +293,65 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                         name="primary_role"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <Select
-                                                                    onValueChange={field.onChange}
-                                                                    defaultValue={field.value}
-                                                                >
-                                                                    <FormControl>
-                                                                        <SelectTrigger className="h-11">
-                                                                            <SelectValue placeholder="Seleccione un rol de sistema" />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        {availableRoles.map(([val, label]) => (
-                                                                            <SelectItem key={val} value={val}>
-                                                                                {label}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                <Popover>
+                                                                    <PopoverTrigger asChild>
+                                                                        <FormControl>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                role="combobox"
+                                                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                                            >
+                                                                                {field.value
+                                                                                    ? availableRoles.find(([val]) => val === field.value)?.[1]
+                                                                                    : "Seleccione un rol de sistema"}
+                                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                            </Button>
+                                                                        </FormControl>
+                                                                    </PopoverTrigger>
+                                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                                        <div className="p-2">
+                                                                            <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                                <input
+                                                                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                                    placeholder="Buscar rol..."
+                                                                                    onChange={(e) => {
+                                                                                        const val = e.target.value.toLowerCase()
+                                                                                        const inputs = document.querySelectorAll('.role-item')
+                                                                                        inputs.forEach((el) => {
+                                                                                            if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                                (el as HTMLElement).style.display = 'flex'
+                                                                                            } else {
+                                                                                                (el as HTMLElement).style.display = 'none'
+                                                                                            }
+                                                                                        })
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                                {availableRoles.map(([val, label]) => (
+                                                                                    <div
+                                                                                        key={val}
+                                                                                        className={cn(
+                                                                                            "role-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                            field.value === val && "bg-accent"
+                                                                                        )}
+                                                                                        onClick={() => {
+                                                                                            field.onChange(val)
+                                                                                            // Find popover close trigger to dismiss, usually popover closes on click outside but let's emulate
+                                                                                            document.body.click()
+                                                                                        }}
+                                                                                    >
+                                                                                        <span>{label}</span>
+                                                                                        {field.value === val && (
+                                                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </PopoverContent>
+                                                                </Popover>
                                                                 <FormDescription className="text-xs">
                                                                     Define los permisos técnicos de seguridad (Qué módulos puede ver).
                                                                 </FormDescription>

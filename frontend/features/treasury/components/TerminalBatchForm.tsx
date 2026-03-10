@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, Loader2, Calculator, Info } from "lucide-react"
+import { CalendarIcon, Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -121,16 +121,67 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 <div className="space-y-4">
                     <div className="grid gap-2">
                         <Label>Terminal de Cobro</Label>
-                        <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccione terminal..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {terminals.map(t => (
-                                    <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between font-normal"
+                                >
+                                    {paymentMethodId
+                                        ? terminals.find(t => t.id.toString() === paymentMethodId)?.name
+                                        : "Seleccione terminal..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                <div className="p-2">
+                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                        <input
+                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                            placeholder="Buscar terminal..."
+                                            onChange={(e) => {
+                                                const val = e.target.value.toLowerCase()
+                                                const inputs = document.querySelectorAll('.terminal-item')
+                                                inputs.forEach((el) => {
+                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                        (el as HTMLElement).style.display = 'flex'
+                                                    } else {
+                                                        (el as HTMLElement).style.display = 'none'
+                                                    }
+                                                })
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                        {terminals.map((t) => (
+                                            <div
+                                                key={t.id}
+                                                className={cn(
+                                                    "terminal-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                    paymentMethodId === t.id.toString() && "bg-accent"
+                                                )}
+                                                onClick={() => {
+                                                    setPaymentMethodId(t.id.toString())
+                                                    document.body.click()
+                                                }}
+                                            >
+                                                <span>{t.name}</span>
+                                                {paymentMethodId === t.id.toString() && (
+                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                )}
+                                            </div>
+                                        ))}
+                                        {terminals.length === 0 && (
+                                            <div className="p-4 text-sm text-center text-muted-foreground">
+                                                No hay terminales disponibles
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="grid gap-2">

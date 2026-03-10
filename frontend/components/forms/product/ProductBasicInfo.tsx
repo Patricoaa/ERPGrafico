@@ -1,8 +1,9 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Plus, ShoppingCart, Truck } from "lucide-react"
+import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
@@ -99,18 +100,70 @@ export function ProductCategorizationSection({ form, categories, isEditing, onAd
                     <FormItem>
                         <FormLabel className={FORM_STYLES.label}>Categoría del Producto</FormLabel>
                         <div className="flex gap-2">
-                            <Select onValueChange={field.onChange} value={field.value} disabled={isEditing}>
-                                <FormControl>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Seleccionar categoría" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            disabled={isEditing}
+                                            className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                        >
+                                            {field.value
+                                                ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
+                                                : "Seleccionar categoría"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <div className="p-2">
+                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                            <input
+                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                placeholder="Buscar categoría..."
+                                                onChange={(e) => {
+                                                    const val = e.target.value.toLowerCase()
+                                                    const inputs = document.querySelectorAll('.category-item')
+                                                    inputs.forEach((el) => {
+                                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                                            (el as HTMLElement).style.display = 'flex'
+                                                        } else {
+                                                            (el as HTMLElement).style.display = 'none'
+                                                        }
+                                                    })
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                            {categories.map((cat) => (
+                                                <div
+                                                    key={cat.id}
+                                                    className={cn(
+                                                        "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                        field.value === cat.id.toString() && "bg-accent"
+                                                    )}
+                                                    onClick={() => {
+                                                        field.onChange(cat.id.toString())
+                                                        document.body.click()
+                                                    }}
+                                                >
+                                                    <span>{cat.name}</span>
+                                                    {field.value === cat.id.toString() && (
+                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {categories.length === 0 && (
+                                                <div className="p-4 text-sm text-center text-muted-foreground">
+                                                    No hay categorías
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                             {!isEditing && (
                                 <Button
                                     type="button"

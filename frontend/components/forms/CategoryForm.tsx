@@ -37,6 +37,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 
@@ -96,39 +97,62 @@ function RichIconSelector({ value, onChange }: { value: string, onChange: (val: 
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between px-3 h-10">
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className={cn("w-full justify-between font-normal", FORM_STYLES.input)}>
                     <div className="flex items-center gap-2">
                         <SelectedIcon className="h-4 w-4" />
                         <span>{selectedLabel}</span>
                     </div>
+                    <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[300px] h-[300px]" align="start">
-                <DropdownMenuLabel>Seleccionar Icono</DropdownMenuLabel>
-                <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
-                    {ICON_OPTIONS.map((item) => {
-                        const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
-                        const isSelected = value === item.name
-                        return (
-                            <DropdownMenuItem
-                                key={item.name}
-                                className={cn(
-                                    "flex items-center gap-2 cursor-pointer p-2 rounded-sm",
-                                    isSelected && "bg-accent"
-                                )}
-                                onClick={() => onChange(item.name)}
-                            >
-                                <Icon className="h-4 w-4 shrink-0" />
-                                <span className="flex-1 truncate text-xs">{item.label}</span>
-                                {isSelected && <Check className="h-3 w-3 text-primary opacity-100" />}
-                            </DropdownMenuItem>
-                        )
-                    })}
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <div className="p-2">
+                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                        <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                        <input
+                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                            placeholder="Buscar icono..."
+                            onChange={(e) => {
+                                const val = e.target.value.toLowerCase()
+                                const inputs = document.querySelectorAll('.icon-item')
+                                inputs.forEach((el) => {
+                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                        (el as HTMLElement).style.display = 'flex'
+                                    } else {
+                                        (el as HTMLElement).style.display = 'none'
+                                    }
+                                })
+                            }}
+                        />
+                    </div>
+                    <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
+                        {ICON_OPTIONS.map((item) => {
+                            const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                            const isSelected = value === item.name
+                            return (
+                                <div
+                                    key={item.name}
+                                    className={cn(
+                                        "icon-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                        isSelected && "bg-accent"
+                                    )}
+                                    onClick={() => {
+                                        onChange(item.name)
+                                        document.body.click()
+                                    }}
+                                >
+                                    <Icon className="h-4 w-4 shrink-0 mr-2" />
+                                    <span className="flex-1 truncate text-xs">{item.label}</span>
+                                    {isSelected && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </PopoverContent>
+        </Popover>
     )
 }
 

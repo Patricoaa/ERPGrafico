@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Loader2, Check } from "lucide-react"
+import { Loader2, Check, Search, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export interface Terminal {
     id: number
@@ -293,22 +294,77 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                 {selectedAccountIds.length > 0 && (
                     <div className="space-y-1.5">
                         <Label htmlFor="defaultAccount" className="text-xs font-semibold">Cuenta Predeterminada (Inicio de Sesión)</Label>
-                        <Select value={defaultTreasuryAccount} onValueChange={setDefaultTreasuryAccount}>
-                            <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="Seleccionar..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="__none__">-- Ninguna --</SelectItem>
-                                {treasuryAccounts
-                                    .filter(acc => selectedAccountIds.includes(acc.id))
-                                    .map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name}
-                                        </SelectItem>
-                                    ))
-                                }
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-full justify-between h-8 text-sm font-normal"
+                                >
+                                    {defaultTreasuryAccount === "__none__" || !defaultTreasuryAccount
+                                        ? "Seleccionar..."
+                                        : treasuryAccounts.find(acc => acc.id.toString() === defaultTreasuryAccount)?.name}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                <div className="p-2">
+                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                        <input
+                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                            placeholder="Buscar cuenta..."
+                                            onChange={(e) => {
+                                                const val = e.target.value.toLowerCase()
+                                                const inputs = document.querySelectorAll('.account-popover-item')
+                                                inputs.forEach((el) => {
+                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                        (el as HTMLElement).style.display = 'flex'
+                                                    } else {
+                                                        (el as HTMLElement).style.display = 'none'
+                                                    }
+                                                })
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                        <div
+                                            className={cn(
+                                                "account-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                defaultTreasuryAccount === "__none__" && "bg-accent"
+                                            )}
+                                            onClick={() => {
+                                                setDefaultTreasuryAccount("__none__")
+                                                document.body.click()
+                                            }}
+                                        >
+                                            <span>-- Ninguna --</span>
+                                            {defaultTreasuryAccount === "__none__" && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                        </div>
+                                        {treasuryAccounts
+                                            .filter(acc => selectedAccountIds.includes(acc.id))
+                                            .map((account) => (
+                                                <div
+                                                    key={account.id}
+                                                    className={cn(
+                                                        "account-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                        defaultTreasuryAccount === account.id.toString() && "bg-accent"
+                                                    )}
+                                                    onClick={() => {
+                                                        setDefaultTreasuryAccount(account.id.toString())
+                                                        document.body.click()
+                                                    }}
+                                                >
+                                                    <span>{account.name}</span>
+                                                    {defaultTreasuryAccount === account.id.toString() && (
+                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 )}
             </form>

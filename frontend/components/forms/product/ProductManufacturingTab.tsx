@@ -12,6 +12,8 @@ import { useState } from "react"
 import { BOMManager } from "@/components/production/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { Label } from "@/components/ui/label"
@@ -539,18 +541,69 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         const availableUoms = uoms.filter((u: any) => uomIds.has(u.id.toString()));
 
                                                         return (
-                                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger className="h-8 text-[10px] px-1 justify-center">
-                                                                        <SelectValue placeholder="-" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {availableUoms.map((u: any) => (
-                                                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <FormControl>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            role="combobox"
+                                                                            className="h-8 text-[10px] px-2 w-full justify-between font-normal"
+                                                                        >
+                                                                            {field.value
+                                                                                ? availableUoms.find((u: any) => u.id.toString() === field.value.toString())?.name
+                                                                                : "-"}
+                                                                            <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                                                        </Button>
+                                                                    </FormControl>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                                    <div className="p-2">
+                                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                                            <Search className="mr-2 h-3 w-3 shrink-0 opacity-50" />
+                                                                            <input
+                                                                                className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
+                                                                                placeholder="Buscar UdM..."
+                                                                                onChange={(e) => {
+                                                                                    const val = e.target.value.toLowerCase()
+                                                                                    const inputs = document.querySelectorAll('.uom-item-mfg')
+                                                                                    inputs.forEach((el) => {
+                                                                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                            (el as HTMLElement).style.display = 'flex'
+                                                                                        } else {
+                                                                                            (el as HTMLElement).style.display = 'none'
+                                                                                        }
+                                                                                    })
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[150px] overflow-y-auto space-y-1">
+                                                                            {availableUoms.map((u: any) => (
+                                                                                <div
+                                                                                    key={u.id}
+                                                                                    className={cn(
+                                                                                        "uom-item-mfg relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                        field.value === u.id.toString() && "bg-accent"
+                                                                                    )}
+                                                                                    onClick={() => {
+                                                                                        field.onChange(u.id.toString())
+                                                                                        document.body.click()
+                                                                                    }}
+                                                                                >
+                                                                                    <span>{u.name}</span>
+                                                                                    {field.value === u.id.toString() && (
+                                                                                        <Check className="ml-auto h-3 w-3 opacity-100" />
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                            {availableUoms.length === 0 && (
+                                                                                <div className="p-3 text-[10px] text-center text-muted-foreground">
+                                                                                    Seleccione componente
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </PopoverContent>
+                                                            </Popover>
                                                         );
                                                     }}
                                                 />
