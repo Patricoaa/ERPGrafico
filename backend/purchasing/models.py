@@ -1,3 +1,4 @@
+import re
 from django.db import models
 from django.utils import timezone
 from core.utils import get_current_date
@@ -10,7 +11,6 @@ from core.mixins import TotalsCalculationMixin
 from simple_history.models import HistoricalRecords
 from core.services import SequenceService
 from decimal import Decimal
-from simple_history.models import HistoricalRecords
 
 class PurchaseOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
@@ -25,6 +25,10 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         PENDING = 'PENDING', _('Pendiente')
         PARTIAL = 'PARTIAL', _('Parcial')
         RECEIVED = 'RECEIVED', _('Recibido')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initial_status = self.status
 
     class PaymentMethod(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
@@ -122,9 +126,53 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         return base
 
     def save(self, *args, **kwargs):
-        if not self.number:
+        is_new = not self.pk
+        if is_new:
             self.number = SequenceService.get_next_number(PurchaseOrder)
+        
+        # Check for transition to PAID to advance subscriptions
+        # Transition happens if it was NOT paid and now IS paid, or if it's NEW and paid
+        is_paying = (self.status == self.Status.PAID and (is_new or self._initial_status != self.Status.PAID))
+        
         super().save(*args, **kwargs)
+        
+        if is_paying:
+            self._handle_subscription_advancement()
+        
+        self._initial_status = self.status
+
+    def _handle_subscription_advancement(self):
+        """
+        Check if this PO is associated with a subscription and advance its payment date.
+        """
+        if not self.notes:
+            return
+            
+        # Look for subscription_id and period_date in notes
+        # Format: [METADATA] subscription_id=X, period_date=YYYY-MM-DD
+        sub_id_match = re.search(r'subscription_id=(\d+)', self.notes)
+        period_match = re.search(r'period_date=(\d{4}-\d{2}-\d{2})', self.notes)
+        
+        if sub_id_match:
+            try:
+                subscription_id = int(sub_id_match.group(1))
+                from inventory.models import Subscription
+                from inventory.subscription_service import SubscriptionService
+                
+                sub = Subscription.objects.filter(id=subscription_id).first()
+                if sub:
+                    # Determine current next_payment_date from metadata in note to ensure we don't double advance
+                    # if for some reason multiple POs were paid.
+                    # Actually, SubscriptionService.calculate_next_payment_date uses sub.next_payment_date by default.
+                    
+                    old_date = sub.next_payment_date
+                    new_date = SubscriptionService.calculate_next_payment_date(sub)
+                    
+                    sub.next_payment_date = new_date
+                    sub.save()
+                    print(f"Subscription {sub.id} advanced from {old_date} to {new_date} due to PO {self.number} payment.")
+            except Exception as e:
+                print(f"Error advancing subscription for PO {self.number}: {str(e)}")
 
 class PurchaseLine(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='lines')

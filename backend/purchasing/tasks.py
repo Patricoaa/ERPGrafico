@@ -1,5 +1,7 @@
+import logging
 from celery import shared_task
 from django.utils import timezone
+from django.db import transaction
 from dateutil.relativedelta import relativedelta
 from inventory.models import Subscription, Product
 from purchasing.models import PurchaseOrder, PurchaseLine
@@ -7,8 +9,15 @@ from purchasing.serializers import WritePurchaseOrderSerializer
 from workflow.models import Notification
 from core.models import User
 
-@shared_task
-def generate_subscription_orders():
+logger = logging.getLogger(__name__)
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True
+)
+def generate_subscription_orders(self):
     """
     Generates draft purchase orders for active subscriptions that are due for renewal.
     Runs daily.
@@ -23,105 +32,116 @@ def generate_subscription_orders():
     generated_count = 0
 
     for sub in upcoming_subscriptions:
-        # 1. DUPLICATE/SAFETY CHECK
-        # Avoid generating multiple orders for the same period.
-        # We check if there's any PO for this supplier & product created in the last 20 days.
-        # (Assuming monthly frequency as default roughly, 20 days is a safe buffer to not dup)
-        cutoff_date = today - timezone.timedelta(days=20)
-        
-        # Look for existing orders (Draft or Confirmed) that contain this subscription's product
-        duplicate_exists = PurchaseOrder.objects.filter(
-            supplier=sub.supplier,
-            lines__product=sub.product,
-            date__gte=cutoff_date
-        ).exclude(status=PurchaseOrder.Status.CANCELLED).exists()
-        
-        if duplicate_exists:
-            print(f"Skipping Subscription {sub.id}: Order already exists recently.")
-            continue
+        try:
+            with transaction.atomic():
+                # 1. DUPLICATE/SAFETY CHECK
+                # We check if there's any PO that already contains the subscription metadata for this specific period.
+                # This prevents creating multiple orders if the current one is still unpaid or in draft.
+                period_marker = f"subscription_id={sub.id}, period_date={sub.next_payment_date.isoformat()}"
+                
+                duplicate_exists = PurchaseOrder.objects.filter(
+                    notes__contains=period_marker
+                ).exclude(status=PurchaseOrder.Status.CANCELLED).exists()
+                
+                if duplicate_exists:
+                    logger.info(f"Skipping Subscription {sub.id}: Order for period {sub.next_payment_date} already exists.")
+                    continue
 
-        # 2. CALCULATE NEXT DATE
-        from inventory.subscription_service import SubscriptionService
-        new_next_date = SubscriptionService.calculate_next_payment_date(sub)
-        
-        product = sub.product
-        
-        # 3. WAREHOUSE LOGIC (Optional for Services)
-        warehouse_id = None
-        if sub.product.receiving_warehouse:
-            warehouse_id = sub.product.receiving_warehouse.id
-        # Note: We NO LONGER force a default warehouse if product doesn't have one.
-        
-        # 4. VARIABLE AMOUNT LOGIC
-        # If product has variable amount (e.g. Electricity bill), we cannot know the cost.
-        # Set cost to 0 (or 1 as placeholder?) and keep as DRAFT.
-        is_variable = product.is_variable_amount
-        
-        estimated_cost = sub.amount if not is_variable else 0
-        if estimated_cost is None: 
-            estimated_cost = 0
+                product = sub.product
+                
+                # 2. WAREHOUSE LOGIC (Optional for Services)
+                warehouse_id = None
+                if sub.product.receiving_warehouse:
+                    warehouse_id = sub.product.receiving_warehouse.id
+                
+                # 3. VARIABLE AMOUNT LOGIC
+                is_variable = product.is_variable_amount
+                
+                estimated_cost = sub.amount if not is_variable else 0
+                if estimated_cost is None: 
+                    estimated_cost = 0
 
-        # Create Purchase Order with metadata
-        order_data = {
-            'supplier': sub.supplier.id,
-            'warehouse': warehouse_id, 
-            'date': today,
-            'notes': f"renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
-            'currency': sub.currency,
-            'lines': [
-                {
-                    'product': sub.product.id,
-                    'quantity': 1,
-                    'unit_cost': round(estimated_cost, 0),
-                    'tax_rate': 0, # Should fetch from product taxes ideally
+                # Create Purchase Order with metadata
+                order_data = {
+                    'supplier': sub.supplier.id,
+                    'warehouse': warehouse_id, 
+                    'date': today,
+                    'notes': f"renovación automática de suscripción #{sub.id} para el periodo {sub.next_payment_date}",
+                    'currency': sub.currency,
+                    'lines': [
+                        {
+                            'product': sub.product.id,
+                            'quantity': 1,
+                            'unit_cost': round(estimated_cost, 0),
+                            'tax_rate': 0, # Should fetch from product taxes ideally
+                        }
+                    ]
                 }
-            ]
-        }
-        
-        serializer = WritePurchaseOrderSerializer(data=order_data)
-        if serializer.is_valid():
-            order = serializer.save()
-            
-            # Metadata notes
-            metadata_note = f"\n[METADATA] subscription_id={sub.id}"
-            if product.default_invoice_type:
-                metadata_note += f", invoice_type={product.default_invoice_type}"
-            
-            order.notes = (order.notes or "") + metadata_note
-            order.save()
-            
-            # 5. AUTO-CONFIRMATION LOGIC
-            # Only auto-confirm if it's NOT a variable amount order.
-            # Variable amounts need manual input of the actual bill value.
-            if not is_variable:
-                try:
-                    order.status = PurchaseOrder.Status.CONFIRMED
-                    order.save()
-                    print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
+                
+                serializer = WritePurchaseOrderSerializer(data=order_data)
+                if serializer.is_valid():
+                    order = serializer.save()
                     
-                    # Notify superusers about the new order
-                    superusers = User.objects.filter(is_superuser=True)
-                    for user in superusers:
-                        Notification.objects.create(
-                            user=user,
-                            title=f"Nueva Orden de Suscripción: OC-{order.number}",
-                            message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
-                            type=Notification.Type.INFO,
-                            link=f"/purchasing/orders?openHub={order.id}"
-                        )
-                except Exception as e:
-                    print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
-            else:
-                print(f"Created DRAFT Order {order.number} for Variable Subscription {sub.id}")
-            
-            # Update Subscription
-            sub.next_payment_date = new_next_date
-            sub.save()
-            
-            generated_count += 1
-            print(f"Generated Order {order.number} for Subscription {sub.id}")
-        else:
-            print(f"Failed to generate order for Subscription {sub.id}: {serializer.errors}")
+                    # 4. METADATA PERSISTENCE
+                    # We include the period_date to robustly track duplicates and advance the subscription only when THIS PO is paid.
+                    metadata_note = f"\n[METADATA] subscription_id={sub.id}, period_date={sub.next_payment_date.isoformat()}"
+                    if product.default_invoice_type:
+                        metadata_note += f", invoice_type={product.default_invoice_type}"
+                    
+                    order.notes = (order.notes or "") + metadata_note
+                    order.save()
+                    
+                    # 5. AUTO-CONFIRMATION LOGIC
+                    if not is_variable:
+                        try:
+                            order.status = PurchaseOrder.Status.CONFIRMED
+                            order.save()
+                            logger.info(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
 
+                            # Ensure workflow tasks are created
+                            try:
+                                from workflow.services import WorkflowService
+                                WorkflowService.sync_hub_tasks(order)
+                            except Exception as e:
+                                logger.error(f"Failed to sync hub tasks for Order {order.number}: {str(e)}")
+                            
+                            # Notify superusers about the new order
+                            superusers = User.objects.filter(is_superuser=True)
+                            for user_obj in superusers:
+                                Notification.objects.create(
+                                    user=user_obj,
+                                    title=f"Nueva Orden de Suscripción: OC-{order.number}",
+                                    message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
+                                    type=Notification.Type.INFO,
+                                    link=f"/purchasing/orders?openHub={order.id}"
+                                )
+                        except Exception as e:
+                            logger.error(f"Failed to auto-confirm Order {order.number}: {str(e)}")
+                    else:
+                        logger.info(f"Created DRAFT Order {order.number} for Variable Subscription {sub.id}")
+                        # Create the origin task for the draft OC
+                        try:
+                            from workflow.services import WorkflowService
+                            WorkflowService.create_draft_purchase_order_task(order)
+                        except Exception as e:
+                            logger.error(f"Failed to create draft task for Order {order.number}: {str(e)}")
+                    
+                    # CRITICAL: We NO LONGER update sub.next_payment_date here.
+                    # It will be updated in PurchaseOrder.save() when status becomes PAID.
+                    
+                    generated_count += 1
+                    logger.info(f"Generated Order {order.number} for Subscription {sub.id}")
+                else:
+                    logger.error(f"Failed to generate order for Subscription {sub.id}: {serializer.errors}")
+
+        except Exception as e:
+            logger.error(f"Error processing Subscription {sub.id}: {str(e)}", exc_info=True)
+            # We don't re-raise here to allow the loop to continue with other subscriptions.
+            # If a massive failure occurs (e.g. lost DB connection), Celery's autoretry will catch it in the outer block or next run.
+            # Actually, to trigger autoretry on DB failure, we might want to re-raise if it's an operational error.
+            # For simplicity, we assume individual data validation errors are caught here safely.
+            from django.db import OperationalError
+            if isinstance(e, OperationalError):
+                raise e
 
     return f"Se han creado {generated_count} órdenes de compra asociadas a suscripciones."

@@ -154,6 +154,26 @@ services:
         limits:
           memory: 256M
 
+  # ── Monitor Celery (Flower) ──────────────────────────────
+  flower:
+    image: mher/flower:latest
+    restart: unless-stopped
+    env_file: .env.dev
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_PORT=5555
+    ports:
+      - "5555:5555"
+    networks:
+      - backend_net
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   # ── Frontend Next.js (Dev Mode) ─────────────────────────
   frontend:
     build:

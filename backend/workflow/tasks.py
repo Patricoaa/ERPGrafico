@@ -1,11 +1,20 @@
+import logging
 from celery import shared_task
 from django.utils import timezone
+from django.db import transaction
 from datetime import date, timedelta
 from .models import WorkflowSettings, Task
 from .services import WorkflowService
 
-@shared_task
-def daily_workflow_checks():
+logger = logging.getLogger(__name__)
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True
+)
+def daily_workflow_checks(self):
     """
     Daily task to check and generate recurring tasks.
     Runs every day and checks WorkflowSettings.
@@ -52,26 +61,37 @@ def daily_workflow_checks():
         )
 
 def _create_f29_periodic_task(task_type, title, description, year, month):
-    """Helper to create task only if it doesn't exist for that period"""
-    # Check if task already exists for this type and period in 'data'
-    # Since we don't have a direct link to a model yet (declaration doesn't exist),
-    # we use the 'data' field to store period info.
-    existing = Task.objects.filter(
-        task_type=task_type,
-        data__year=year,
-        data__month=month
-    ).exists()
-    
-    if not existing:
-        WorkflowService.create_task(
-            task_type=task_type,
-            title=title,
-            description=description,
-            priority=Task.Priority.HIGH,
-            category=Task.Category.TASK,
-            data={
-                'year': year,
-                'month': month,
-                'is_recurring': True
-            }
-        )
+    """Helper to create task only if it doesn't exist for that period safely."""
+    try:
+        with transaction.atomic():
+            # Check if task already exists for this type and period in 'data'
+            # Since we don't have a direct link to a model yet (declaration doesn't exist),
+            # we use the 'data' field to store period info.
+            existing = Task.objects.filter(
+                task_type=task_type,
+                data__year=year,
+                data__month=month
+            ).exists()
+            
+            if not existing:
+                task = WorkflowService.create_task(
+                    task_type=task_type,
+                    title=title,
+                    description=description,
+                    priority=Task.Priority.HIGH,
+                    category=Task.Category.TASK,
+                    data={
+                        'year': year,
+                        'month': month,
+                        'is_recurring': True
+                    }
+                )
+                logger.info(f"Created periodic task: {title} (ID: {task.id})")
+            else:
+                logger.debug(f"Task already exists: {title}")
+    except Exception as e:
+        logger.error(f"Failed to create periodic task '{title}': {str(e)}", exc_info=True)
+        # We don't re-raise here so that one failing task creation doesn't stop others.
+        from django.db import OperationalError
+        if isinstance(e, OperationalError):
+            raise e

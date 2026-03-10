@@ -27,10 +27,12 @@ import { formatCurrency } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ProductForm } from "@/components/forms/ProductForm"
 import { SubscriptionHistoryModal } from "@/components/inventory/SubscriptionHistoryModal"
+import { ArchivingRestrictionsDialog } from "@/components/inventory/ArchivingRestrictionsDialog"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { Restriction } from "@/features/inventory/types"
 
 interface Subscription {
     id: number
@@ -77,6 +79,11 @@ export default function SubscriptionsPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
     const [currentHistorySubscriptionId, setCurrentHistorySubscriptionId] = useState<number | null>(null)
 
+    // Restrictions state
+    const [restrictions, setRestrictions] = useState<Restriction[]>([])
+    const [isRestrictionsDialogOpen, setIsRestrictionsDialogOpen] = useState(false)
+    const [isRetrying, setIsRetrying] = useState(false)
+
     const fetchSubscriptions = async () => {
         try {
             setLoading(true)
@@ -117,14 +124,32 @@ export default function SubscriptionsPage() {
 
     const handleArchive = async () => {
         if (!currentArchivingProduct) return
+
+        if (isRestrictionsDialogOpen) {
+            setIsRetrying(true)
+        }
+
         try {
             await api.patch(`/inventory/products/${currentArchivingProduct.id}/`, { active: false })
             toast.success("Producto archivado correctamente")
             fetchSubscriptions()
             setIsConfirmModalOpen(false)
-        } catch (error) {
+            setIsRestrictionsDialogOpen(false)
+        } catch (error: any) {
             console.error("Error archiving product:", error)
-            toast.error("Error al archivar producto")
+
+            if (error.response?.status === 400 && error.response?.data?.restrictions) {
+                setRestrictions(error.response.data.restrictions)
+                setIsRestrictionsDialogOpen(true)
+                setIsConfirmModalOpen(false)
+                if (isRestrictionsDialogOpen) {
+                    toast.error("Aún existen dependencias por resolver.")
+                }
+            } else {
+                toast.error("Error al archivar producto")
+            }
+        } finally {
+            setIsRetrying(false)
         }
     }
 
@@ -357,15 +382,7 @@ export default function SubscriptionsPage() {
                 }
             >
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 rounded-full"
-                        onClick={() => toast.info("Funcionalidad de planificación en desarrollo")}
-                    >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Planificación
-                    </Button>
+
                     <Button
                         variant="outline"
                         size="sm"
@@ -448,6 +465,15 @@ export default function SubscriptionsPage() {
                 open={isHistoryOpen}
                 onOpenChange={setIsHistoryOpen}
                 subscriptionId={currentHistorySubscriptionId}
+            />
+
+            <ArchivingRestrictionsDialog
+                open={isRestrictionsDialogOpen}
+                onOpenChange={setIsRestrictionsDialogOpen}
+                productName={currentArchivingProduct?.name || ""}
+                restrictions={restrictions}
+                onRetry={handleArchive}
+                isRetrying={isRetrying}
             />
         </div>
     )

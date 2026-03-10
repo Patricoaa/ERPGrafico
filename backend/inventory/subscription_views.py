@@ -128,19 +128,20 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def trigger_inspection(self, request):
         """
-        Manually trigger the daily subscription inspection task.
+        Manually trigger the daily subscription inspection task async.
         """
         from purchasing.tasks import generate_subscription_orders
         
-        # Run synchronously to give immediate feedback
+        # Run asynchronously so the frontend doesn't hang
         try:
-            result = generate_subscription_orders()
-            return Response({'message': result})
+            generate_subscription_orders.delay()
+            return Response({'message': 'Inspección de suscripciones encolada (ejecución asíncrona).'})
         except Exception as e:
             return Response(
-                {'error': str(e)},
+                {'error': f"Error al encolar la tarea: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
     @action(detail=True, methods=['get'])
     def history(self, request, pk=None):
         """

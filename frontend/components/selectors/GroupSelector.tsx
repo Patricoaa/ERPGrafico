@@ -120,7 +120,7 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <div className="p-2">
                     <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
