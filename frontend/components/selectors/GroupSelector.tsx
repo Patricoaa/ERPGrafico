@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -107,13 +107,29 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-10"
+                    className="w-full justify-between h-auto py-2 px-3"
                     disabled={disabled}
                 >
                     {selectedGroup ? (
-                        <span className="truncate">{selectedGroup.name}</span>
+                        <div className="flex items-center gap-2 truncate text-left">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                <Users className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col items-start truncate leading-tight">
+                                <span className="font-medium text-sm truncate w-full">{selectedGroup.name}</span>
+                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
+                            </div>
+                        </div>
                     ) : value ? (
-                        <span className="truncate">{value}</span> // Fallback if object not found but value exists
+                        <div className="flex items-center gap-2 truncate text-left">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                <Users className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col items-start truncate leading-tight">
+                                <span className="font-medium text-sm truncate w-full">{value}</span>
+                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
+                            </div>
+                        </div>
                     ) : (
                         <span className="text-muted-foreground">{placeholder}</span>
                     )}

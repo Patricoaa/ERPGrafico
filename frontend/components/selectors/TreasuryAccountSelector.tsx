@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,6 +10,8 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
+import { Input } from "@/components/ui/input"
+import { formatCurrency } from "@/lib/utils"
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null
@@ -41,6 +43,7 @@ export function TreasuryAccountSelector({
     excludeId
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
+    const [search, setSearch] = useState("")
     const { accounts, loading } = useTreasuryAccounts({
         context,
         terminalId,
@@ -48,14 +51,28 @@ export function TreasuryAccountSelector({
         excludeId
     })
 
-    // Filter by legacy type if provided (on top of hook filters)
-    const filteredAccounts = type
-        ? accounts.filter(a => a.account_type === type)
-        : accounts
-
-    const selectedAccount = value && filteredAccounts.length > 0
-        ? filteredAccounts.find(a => a.id.toString() === value.toString()) || null
+    // Filter by search and legacy type
+    const filteredAccounts = accounts.filter(a => {
+        const matchesType = !type || a.account_type === type
+        const searchLower = search.toLowerCase()
+        const matchesSearch = !search || 
+            a.name.toLowerCase().includes(searchLower) || 
+            a.account_type.toLowerCase().includes(searchLower)
+        return matchesType && matchesSearch
+    })
+    
+    const selectedAccount = value && accounts.length > 0
+        ? accounts.find(a => a.id.toString() === value.toString()) || null
         : null
+
+    const getIcon = (accountType: string) => {
+        switch (accountType) {
+            case 'BANK': return <Landmark className="h-4 w-4" />
+            case 'CASH': return <Wallet className="h-4 w-4" />
+            case 'CARD': return <CreditCard className="h-4 w-4" />
+            default: return <Banknote className="h-4 w-4" />
+        }
+    }
 
     const handleSelect = (account: any) => {
         onChange(account ? account.id.toString() : null)
@@ -69,17 +86,40 @@ export function TreasuryAccountSelector({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between"
+                    className="w-full justify-between h-auto py-2 px-3"
                     disabled={disabled}
                 >
-                    {selectedAccount
-                        ? `${selectedAccount.name} (${selectedAccount.currency})`
-                        : placeholder}
+                    {selectedAccount ? (
+                        <div className="flex items-center gap-2 truncate">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                {getIcon(selectedAccount.account_type)}
+                            </div>
+                            <div className="flex flex-col items-start truncate">
+                                <span className="font-medium text-sm leading-tight">{selectedAccount.name}</span>
+                                <span className="text-[10px] text-muted-foreground leading-tight">
+                                    {selectedAccount.account_type} • {formatCurrency(selectedAccount.current_balance || 0)}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <span className="text-muted-foreground">{placeholder}</span>
+                    )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                <div className="p-2 max-h-[200px] overflow-y-auto space-y-1">
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <div className="p-2 border-b">
+                    <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar cuenta..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-8 h-8 text-xs border-none bg-muted focus-visible:ring-0"
+                        />
+                    </div>
+                </div>
+                <div className="p-1 max-h-[300px] overflow-y-auto space-y-0.5">
                     {loading ? (
                         <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                     ) : filteredAccounts.length === 0 ? (

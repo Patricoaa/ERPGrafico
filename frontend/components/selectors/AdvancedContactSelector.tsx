@@ -110,13 +110,20 @@ export function AdvancedContactSelector({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-auto py-2"
+                    className="w-full justify-between h-auto py-2 px-3"
                     disabled={disabled}
                 >
                     {selectedContact ? (
-                        <div className="flex flex-col items-start text-left overflow-hidden">
-                            <span className="font-medium truncate w-full">{selectedContact.name}</span>
-                            <span className="text-xs text-muted-foreground">{selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}</span>
+                        <div className="flex items-center gap-2 truncate text-left">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                {selectedContact.contact_type === 'COMPANY' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                            </div>
+                            <div className="flex flex-col items-start truncate leading-tight">
+                                <span className="font-medium text-sm truncate w-full">{selectedContact.name}</span>
+                                <span className="text-[10px] text-muted-foreground truncate w-full">
+                                    {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
+                                </span>
+                            </div>
                         </div>
                     ) : (
                         <span className="text-muted-foreground">{placeholder}</span>

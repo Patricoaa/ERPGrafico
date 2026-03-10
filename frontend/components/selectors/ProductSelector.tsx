@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, AlertCircle } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
@@ -228,18 +228,23 @@ export function ProductSelector({
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
-                        className="flex-1 justify-between h-9 px-3 min-w-0"
+                        className="flex-1 justify-between h-auto py-2 px-3 min-w-0"
                     >
-                        <div className="flex items-center gap-2 truncate">
-                            {selectedProduct ? (
-                                <span className="truncate">
-                                    <span className="font-mono text-muted-foreground mr-2">{selectedProduct.internal_code || selectedProduct.code}</span>
-                                    {selectedProduct.name}
-                                </span>
-                            ) : (
-                                <span className="text-muted-foreground truncate">{placeholder}</span>
-                            )}
-                        </div>
+                        {selectedProduct ? (
+                            <div className="flex items-center gap-2 truncate text-left">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                    <Package className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start truncate leading-tight">
+                                    <span className="font-medium text-sm truncate w-full">{selectedProduct.name}</span>
+                                    <span className="text-[10px] text-muted-foreground truncate w-full">
+                                        {selectedProduct.internal_code || selectedProduct.code} • {selectedProduct.product_type}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground truncate">{placeholder}</span>
+                        )}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>

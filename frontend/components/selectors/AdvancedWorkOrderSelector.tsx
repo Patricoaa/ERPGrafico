@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, Package, Eye, Calendar, X } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, Package, Eye, Calendar, X, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -123,13 +123,16 @@ export function AdvancedWorkOrderSelector({
                         )}
                     >
                         {selectedOrder ? (
-                            <div className="flex flex-col items-start text-left overflow-hidden">
-                                <span className="font-bold text-indigo-700 truncate w-full flex items-center gap-2">
-                                    <Package className="h-3.5 w-3.5" /> OT-{selectedOrder.number}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate w-full">
-                                    {selectedOrder.product_name}
-                                </span>
+                            <div className="flex items-center gap-2 truncate text-left">
+                                <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
+                                    <ClipboardList className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start truncate leading-tight">
+                                    <span className="font-medium text-sm truncate w-full text-indigo-700">OT-{selectedOrder.number}</span>
+                                    <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
+                                        {selectedOrder.product_name}
+                                    </span>
+                                </div>
                             </div>
                         ) : (
                             <span className="text-muted-foreground italic text-sm">{placeholder}</span>

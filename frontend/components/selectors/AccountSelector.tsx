@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, BookKey } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -88,13 +88,21 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="flex-1 justify-between overflow-hidden"
+                        className="flex-1 justify-between overflow-hidden h-auto py-2 px-3"
                     >
-                        <span className="truncate">
-                            {selectedAccount
-                                ? `${selectedAccount.code} - ${selectedAccount.name}`
-                                : placeholder}
-                        </span>
+                        {selectedAccount ? (
+                            <div className="flex items-center gap-2 truncate text-left">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                    <BookKey className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start truncate leading-tight">
+                                    <span className="font-medium text-sm truncate w-full">{selectedAccount.code}</span>
+                                    <span className="text-[10px] text-muted-foreground truncate w-full">{selectedAccount.name}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground">{placeholder}</span>
+                        )}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>

@@ -26,7 +26,7 @@ import api from "@/lib/api"
 import { POSReport } from "@/components/pos/POSReport"
 import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
 import { Numpad } from "@/components/ui/numpad"
-import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
@@ -701,7 +701,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <Label className="text-xs">
                                             {diff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
                                         </Label>
-                                        <CashContainerSelector
+                                        <TreasuryAccountSelector
                                             value={openingJustifyTargetId}
                                             onChange={setOpeningJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}

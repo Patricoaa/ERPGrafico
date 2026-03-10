@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, ShoppingBag, Eye, Calendar } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, ShoppingBag, Eye, Calendar, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -123,13 +123,16 @@ export function AdvancedSaleOrderSelector({
                         )}
                     >
                         {selectedOrder ? (
-                            <div className="flex flex-col items-start text-left overflow-hidden">
-                                <span className="font-bold text-primary truncate w-full flex items-center gap-2">
-                                    <ShoppingBag className="h-3.5 w-3.5" /> NV-{selectedOrder.number}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate w-full">
-                                    {selectedOrder.customer_name}
-                                </span>
+                             <div className="flex items-center gap-2 truncate text-left">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                    <FileText className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start truncate leading-tight">
+                                    <span className="font-medium text-sm truncate w-full">NV-{selectedOrder.number}</span>
+                                    <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
+                                        {selectedOrder.customer_name}
+                                    </span>
+                                </div>
                             </div>
                         ) : (
                             <span className="text-muted-foreground">{placeholder}</span>

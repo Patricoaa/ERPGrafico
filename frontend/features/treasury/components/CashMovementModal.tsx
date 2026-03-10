@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CashContainerSelector } from "@/components/selectors/CashContainerSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { PaymentMethodSelector } from "@/components/shared/PaymentMethodSelector"
 import {
     Select,
@@ -281,12 +281,11 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                         className="mb-2"
                                     />
                                 ) : (
-                                    <CashContainerSelector
+                                    <TreasuryAccountSelector
                                         value={fromId}
                                         onChange={(val) => setFromId(val || "")}
                                         placeholder={tab === 'DEPOSIT' ? "Exterior / Aporte" : "Seleccione cuenta..."}
                                         disabled={tab === 'DEPOSIT'}
-                                        physicalOnly={false}
                                     />
                                 )}
                             </div>
@@ -296,12 +295,11 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                 <Label className={FORM_STYLES.label}>
                                     {tab === 'TRANSFER' ? 'Cuenta de Destino (Entra)' : 'Cuenta de Destino'}
                                 </Label>
-                                <CashContainerSelector
+                                <TreasuryAccountSelector
                                     value={toId}
                                     onChange={(val) => setToId(val || "")}
                                     placeholder={tab === 'WITHDRAWAL' ? "Gasto / Retiro" : "Seleccione cuenta..."}
                                     disabled={tab === 'WITHDRAWAL'}
-                                    physicalOnly={false}
                                 />
                             </div>
                         </div>
