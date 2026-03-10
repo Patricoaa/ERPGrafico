@@ -649,7 +649,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         </TabsTrigger>
                     )}
 
-                    {form.watch("can_be_sold") && (
+                    {form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
                         <TabsTrigger
                             value="pricing"
                             className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"

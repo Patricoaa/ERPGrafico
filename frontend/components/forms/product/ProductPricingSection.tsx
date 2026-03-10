@@ -39,6 +39,9 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     // Hide pricing section if product cannot be sold
     if (!canBeSold) return null;
 
+    // Hide pricing section if product is a subscription (uses the Commercial tab instead)
+    if (productType === 'SUBSCRIPTION') return null;
+
     // Hide pricing section if product has variants enabled (prices are set per variant)
     // UNLESS forceEdit is true (for simplified variant editing)
     if (hasVariants && !forceEdit) {

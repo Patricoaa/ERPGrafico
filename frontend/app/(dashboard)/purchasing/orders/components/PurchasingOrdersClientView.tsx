@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -77,6 +78,20 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+    
+    const searchParams = useSearchParams()
+    const hubOpenedFromUrl = useRef(false)
+
+    useEffect(() => {
+        const openHubStr = searchParams.get('openHub')
+        if (openHubStr && !hubOpenedFromUrl.current) {
+            const id = parseInt(openHubStr, 10)
+            if (!isNaN(id)) {
+                hubOpenedFromUrl.current = true
+                setSelectedOrderId(id)
+            }
+        }
+    }, [searchParams])
 
     const filteredOrders = orders.filter(order => {
         if (!dateRange || !dateRange.from) return true

@@ -88,38 +88,6 @@ class WorkflowService:
     PERIOD_CLOSE = 'PERIOD_CLOSE'
 
     @staticmethod
-    def create_hub_stage_tasks(order, order_type='sale'):
-        """
-        Creates TASK-category tasks for each pending HUB stage.
-        Called when an order is confirmed.
-        
-        order_type: 'sale' or 'purchase'
-        """
-        from django.contrib.contenttypes.models import ContentType
-        
-        content_type = ContentType.objects.get_for_model(order)
-        
-        # Don't create duplicates
-        existing = Task.objects.filter(
-            content_type=content_type,
-            object_id=order.pk,
-            category=Task.Category.TASK,
-            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
-        ).values_list('task_type', flat=True)
-        
-        order_label = f"NV-{order.number}" if order_type == 'sale' else f"OC-{order.number}"
-        
-        # Gather context for richer task cards
-        contact_name = ''
-        try:
-            if order_type == 'sale' and hasattr(order, 'customer'):
-                contact_name = str(order.customer.name) if order.customer else ''
-            elif order_type == 'purchase' and hasattr(order, 'supplier'):
-                contact_name = str(order.supplier.name) if order.supplier else ''
-        except Exception:
-            pass
-        
-    @staticmethod
     def is_hub_stage_complete(order, stage_key):
         """
         Calculates ground truth for a HUB stage completion.
@@ -208,6 +176,56 @@ class WorkflowService:
                 task.status = Task.Status.PENDING
                 task.completed_at = None
                 task.save()
+
+    @staticmethod
+    def create_draft_purchase_order_task(order):
+        """
+        Creates only the HUB_ORIGIN task for a DRAFT purchase order.
+        Called when a purchase order is created in DRAFT state
+        (e.g. from replenishment proposals / subscriptions) so the
+        assigned user knows they need to complete or delete it.
+        The remaining 3 HUB tasks (logistics, billing, treasury) will
+        be created later via sync_hub_tasks when the order is confirmed.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(order)
+
+        # Avoid duplicates
+        already_exists = Task.objects.filter(
+            content_type=content_type,
+            object_id=order.pk,
+            task_type='HUB_ORIGIN',
+        ).exists()
+        if already_exists:
+            return
+
+        order_label = f"OC-{order.number}"
+        contact_name = ''
+        try:
+            if hasattr(order, 'supplier') and order.supplier:
+                contact_name = str(order.supplier.name)
+        except Exception:
+            pass
+
+        order_total = float(order.total) if hasattr(order, 'total') else 0
+
+        WorkflowService.create_task(
+            task_type='HUB_ORIGIN',
+            title=f"Origen (Confirmación): {order_label}",
+            description=f"OC en borrador pendiente de completar o eliminar: {order_label}.",
+            content_object=order,
+            priority=Task.Priority.MEDIUM,
+            data={
+                'stage': 'origin',
+                'order_type': 'purchase',
+                'order_number': str(order.number),
+                'contact_name': contact_name,
+                'order_total': order_total,
+                'is_draft': True,
+            },
+            category=Task.Category.TASK
+        )
 
     @staticmethod
     def create_hub_stage_tasks(order, order_type):
@@ -337,43 +355,16 @@ class WorkflowService:
         """
         Notify all users in the specific group about a new unassigned task (Pool).
         """
-        from django.contrib.auth.models import Group
-        try:
-            group = Group.objects.get(name=group_name)
-            users = group.user_set.all()
-            
-            link = WorkflowService._get_link_for_task(task)
-            
-            for user in users:
-                Notification.objects.create(
-                    user=user,
-                    title=f"Disponible: {task.title}",
-                    message=f"Nueva tarea para {group_name}. Estado: Pendiente",
-                    type=Notification.Type.INFO,
-                    link=link,
-                    content_object=task
-                )
-        except Group.DoesNotExist:
-            pass
+        # Notifications disabled to focus only on credit approvals and subscription OCS
+        pass
 
     @staticmethod
     def notify_assignment(task):
         """
         Creates an in-app notification for the user assigned to the task.
         """
-        if not task.assigned_to:
-            return
-
-        link = WorkflowService._get_link_for_task(task)
-
-        Notification.objects.create(
-            user=task.assigned_to,
-            title=f"Asignación: {task.title}",
-            message=f"{task.description or task.task_type}. Estado: Pendiente",
-            type=Notification.Type.INFO,
-            link=link,
-            content_object=task
-        )
+        # Notifications disabled to focus only on credit approvals and subscription OCS
+        pass
 
     @staticmethod
     def auto_complete_approval_tasks(content_object, user):
@@ -405,15 +396,8 @@ class WorkflowService:
             task.save()
             
             # Notify the assignee (if any) that the task was completed
-            if task.assigned_to:
-                Notification.objects.create(
-                    user=task.assigned_to,
-                    title=f"Aprobación Completada: {task.title}",
-                    message=f"Aprobada por {user.username}",
-                    type=Notification.Type.SUCCESS,
-                    link=WorkflowService._get_link_for_task(task),
-                    content_object=task
-                )
+            # Notifications disabled to focus only on credit approvals and subscription OCS
+            pass
 
     @staticmethod
     def reset_tasks_for_object(content_object, stage_ids=None):

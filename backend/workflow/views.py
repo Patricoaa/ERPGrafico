@@ -10,6 +10,7 @@ from .serializers import (
     WorkflowSettingsSerializer
 )
 from django.utils import timezone
+from purchasing.models import PurchaseOrder
 
 class TaskViewSet(viewsets.ModelViewSet):
     """
@@ -48,8 +49,40 @@ class TaskViewSet(viewsets.ModelViewSet):
             Q(assigned_to=user) | 
             Q(assigned_group__in=user.groups.all()) |
             Q(data__candidate_group__in=list(user_groups)) |
-            Q(category='TASK', assigned_to__isnull=True, assigned_group__isnull=True)
+            Q(category='TASK', assigned_to__isnull=True, assigned_group__isnull=True) |
+            Q(created_by=user)
         ).distinct()
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        old_status = instance.status
+        
+        updated_task = serializer.save()
+        
+        if old_status != updated_task.status and updated_task.status in [Task.Status.COMPLETED, Task.Status.REJECTED]:
+            if not updated_task.completed_by:
+                updated_task.completed_by = self.request.user
+                updated_task.completed_at = timezone.now()
+                updated_task.save(update_fields=['completed_by', 'completed_at'])
+            
+            if updated_task.status == Task.Status.COMPLETED and updated_task.category == Task.Category.APPROVAL and updated_task.created_by and updated_task.task_type == 'CREDIT_POS_REQUEST':
+                draft_id = updated_task.data.get('request_data', {}).get('draft_id')
+                link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+                Notification.objects.create(
+                    user=updated_task.created_by,
+                    title=f"Aprobación de Crédito Completada: {updated_task.title}",
+                    message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                    type=Notification.Type.SUCCESS,
+                    link=link
+                )
+            elif updated_task.status == Task.Status.REJECTED and updated_task.category == Task.Category.APPROVAL and updated_task.created_by and updated_task.task_type == 'CREDIT_POS_REQUEST':
+                Notification.objects.create(
+                    user=updated_task.created_by,
+                    title=f"Aprobación de Crédito Rechazada: {updated_task.title}",
+                    message="La solicitud de crédito para el POS ha sido rechazada.",
+                    type=Notification.Type.ERROR,
+                    link="/sales/pos"
+                )
 
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
@@ -95,7 +128,19 @@ class TaskViewSet(viewsets.ModelViewSet):
                     object_id=task.id,
                     user=request.user
                 )
-        
+        # Create notification if it's an approval task related to POS credit and has a creator
+        if task.category == Task.Category.APPROVAL and task.created_by and task.task_type == 'CREDIT_POS_REQUEST':
+            # Para las solicitudes de crédito desde POS, el draft_id puede venir en data (si se guardó) o no haber link
+            draft_id = task.data.get('request_data', {}).get('draft_id')
+            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+            Notification.objects.create(
+                user=task.created_by,
+                title=f"Aprobación de Crédito Completada: {task.title}",
+                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                type=Notification.Type.SUCCESS,
+                link=link
+            )
+            
         return Response({'status': 'completed'})
 
 class NotificationViewSet(viewsets.ModelViewSet):

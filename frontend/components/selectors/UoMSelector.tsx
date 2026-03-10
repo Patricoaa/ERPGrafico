@@ -53,7 +53,7 @@ export function UoMSelector({
 
         if (!product) return []
 
-        const productUomId = typeof product.uom === 'object' ? product.uom.id : product.uom
+        const productUomId = product.uom && typeof product.uom === 'object' ? product.uom.id : product.uom
         if (!productUomId) return []
 
         const baseUom = uoms.find(u => u.id === productUomId)
@@ -78,7 +78,7 @@ export function UoMSelector({
     const conversionHint = useMemo(() => {
         if (!showConversionHint || !product || !value || !quantity) return null
 
-        const productUomId = typeof product.uom === 'object' ? product.uom.id : product.uom
+        const productUomId = product.uom && typeof product.uom === 'object' ? product.uom.id : product.uom
         const selectedUom = uoms.find(u => u.id === parseInt(value))
         const baseUom = uoms.find(u => u.id === productUomId)
 

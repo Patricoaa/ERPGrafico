@@ -84,6 +84,10 @@ export const productSchema = z.object({
     if (data.has_variants) {
         return true;
     }
+    // If SUBSCRIPTION, price is not mandatory here
+    if (data.product_type === 'SUBSCRIPTION') {
+        return true;
+    }
     // If can_be_sold is true AND NOT dynamic pricing, sale_price must be > 0
     // Dynamic pricing allows sale_price to be 0 (set at POS)
     if (data.can_be_sold && !data.is_dynamic_pricing && (!data.sale_price || data.sale_price <= 0)) {
@@ -95,10 +99,10 @@ export const productSchema = z.object({
     path: ["sale_price"]
 }).refine((data) => {
     // UoM is required for inventory-tracked products (STORABLE, CONSUMABLE, MANUFACTURABLE)
-    // and for SERVICE/SUBSCRIPTION when can_be_sold is true
+    // and for SERVICE when can_be_sold is true
     const requiresUom =
         ['STORABLE', 'CONSUMABLE', 'MANUFACTURABLE'].includes(data.product_type) ||
-        (['SERVICE', 'SUBSCRIPTION'].includes(data.product_type) && data.can_be_sold);
+        (data.product_type === 'SERVICE' && data.can_be_sold);
 
     if (requiresUom && (!data.uom || data.uom === "")) {
         return false;
@@ -110,6 +114,7 @@ export const productSchema = z.object({
 }).refine((data) => {
     // If can_be_sold is true, sale_uom must be selected
     // EXCEPTION: If has_variants is true, sale_uom might be defined per variant
+    if (data.product_type === 'SUBSCRIPTION') return true;
     if (data.can_be_sold && !data.has_variants && (!data.sale_uom || data.sale_uom === "")) {
         return false;
     }
@@ -122,6 +127,7 @@ export const productSchema = z.object({
     // EXCEPTION: If has_variants is true, this might be handled per variant.
     // However, usually allowed UoMs are global? If the user request implies they are per variant or just hidden, we skip.
     // The user said: "Unidad de medida de venta deberia asignarse a cada variante".
+    if (data.product_type === 'SUBSCRIPTION') return true;
     if (data.can_be_sold && !data.has_variants && (!data.allowed_sale_uoms || data.allowed_sale_uoms.length === 0)) {
         return false;
     }

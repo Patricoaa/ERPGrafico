@@ -12,6 +12,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
@@ -153,7 +154,8 @@ function POSPageContent() {
 
     // Query client for cache invalidation
     const queryClient = useQueryClient()
-
+    const searchParams = useSearchParams()
+    
     // Local UI state
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [draftsListOpen, setDraftsListOpen] = useState(false)
@@ -167,6 +169,28 @@ function POSPageContent() {
     } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
+    const draftLoadedFromUrl = useRef(false)
+
+    // Load Draft from URL if present
+    useEffect(() => {
+        const draftIdStr = searchParams.get('draftId')
+        if (draftIdStr && currentSession?.id && !loading && !draftLoadedFromUrl.current) {
+            const dId = parseInt(draftIdStr)
+            if (!isNaN(dId)) {
+                draftLoadedFromUrl.current = true
+                console.log("Loading draft from URL:", dId)
+                // Small delay to ensure POS is fully initialized
+                setTimeout(() => {
+                    loadDraft(dId).then(() => {
+                        // Drafts from approval (from notifications) are essentially checkouts in progress
+                        setCheckoutOpen(true)
+                    }).catch((err) => {
+                        console.error("Failed to load draft from URL", err)
+                    })
+                }, 500)
+            }
+        }
+    }, [searchParams, currentSession?.id, loading, loadDraft])
 
     // Auto-save drafts
     useEffect(() => {

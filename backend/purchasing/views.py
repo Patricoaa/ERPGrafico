@@ -217,6 +217,10 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 receipt_type=request.data.get('receipt_type', 'IMMEDIATE'),
                 receipt_data=receipt_data
             )
+
+            # Create HUB tasks for the completed purchase order
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(result['order'])
             
             # Serialize response
             from billing.serializers import InvoiceSerializer

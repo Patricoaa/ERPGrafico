@@ -4,6 +4,8 @@ from dateutil.relativedelta import relativedelta
 from inventory.models import Subscription, Product
 from purchasing.models import PurchaseOrder, PurchaseLine
 from purchasing.serializers import WritePurchaseOrderSerializer
+from workflow.models import Notification
+from core.models import User
 
 @shared_task
 def generate_subscription_orders():
@@ -96,6 +98,17 @@ def generate_subscription_orders():
                     order.status = PurchaseOrder.Status.CONFIRMED
                     order.save()
                     print(f"Auto-confirmed Order {order.number} for Subscription {sub.id}")
+                    
+                    # Notify superusers about the new order
+                    superusers = User.objects.filter(is_superuser=True)
+                    for user in superusers:
+                        Notification.objects.create(
+                            user=user,
+                            title=f"Nueva Orden de Suscripción: OC-{order.number}",
+                            message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
+                            type=Notification.Type.INFO,
+                            link=f"/purchasing/orders?openHub={order.id}"
+                        )
                 except Exception as e:
                     print(f"Failed to auto-confirm Order {order.number}: {str(e)}")
             else:

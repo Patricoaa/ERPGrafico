@@ -649,6 +649,14 @@ class ProcurementService:
             # Recalculate totals
             po.recalculate_totals()
             po.save()
+
+            # Notify the assigned user that a DRAFT purchase order needs attention
+            try:
+                from workflow.services import WorkflowService
+                WorkflowService.create_draft_purchase_order_task(po)
+            except Exception:
+                pass  # Task creation must never block PO creation
+
             created_pos.append(po)
             
         return created_pos

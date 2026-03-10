@@ -1,9 +1,14 @@
 "use client"
 
-import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt, Bell, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { toast } from "sonner"
+import { useState, useEffect, useCallback } from "react"
+import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, Notification } from "@/lib/workflow/api"
+import { formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
     Tooltip,
@@ -48,6 +53,56 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
     const router = useRouter()
     const { logout, user } = useAuth()
     const { logo } = useBranding()
+    const [notifications, setNotifications] = useState<Notification[]>([])
+    const [unreadCount, setUnreadCount] = useState(0)
+    const [displayLimit, setDisplayLimit] = useState(5)
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const [data, count] = await Promise.all([
+                getNotifications(),
+                getUnreadNotificationCount()
+            ])
+            setNotifications(data.results || data)
+            setUnreadCount(count)
+        } catch (error) {
+            console.error("Error fetching notifications:", error)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (user) {
+            fetchNotifications()
+            const interval = setInterval(fetchNotifications, 30000) // refresh every 30 seconds
+            return () => clearInterval(interval)
+        }
+    }, [user, fetchNotifications])
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.read) {
+            try {
+                await markNotificationRead(notification.id)
+                setUnreadCount(prev => Math.max(0, prev - 1))
+                setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n))
+            } catch (error) {
+                console.error("Error marking notification as read:", error)
+            }
+        }
+        if (notification.link) {
+            router.push(notification.link)
+        }
+    }
+
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllNotificationsRead()
+            setUnreadCount(0)
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+            toast.success("Todas las notificaciones marcadas como leídas")
+        } catch (error) {
+            console.error("Error marking all as read:", error)
+        }
+    }
 
     const handleLogout = () => {
         logout()
@@ -115,8 +170,126 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
                     ))}
                 </div>
 
-                {/* User Menu at Bottom */}
-                <div className="mt-auto pt-6 border-t border-sidebar-border/20">
+                {/* Notifications & User Menu at Bottom */}
+                <div className="mt-auto pt-4 flex flex-col gap-4 border-t border-sidebar-border/20 items-center w-full">
+                    {/* Notifications Dropdown */}
+                    <DropdownMenu>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="relative p-2.5 rounded-[12px] text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+                                    >
+                                        <Bell className="h-5 w-5" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                                            </span>
+                                        )}
+                                    </motion.button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border px-3 py-1.5 shadow-xl">
+                                Notificaciones
+                            </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent className="w-80 border-sidebar-border shadow-2xl p-0 overflow-hidden" align="end" side="right" sideOffset={10}>
+                            <div className="bg-muted/50 p-3 border-b border-border/50 flex justify-between items-center">
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-sm tracking-tight">Notificaciones</span>
+                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{unreadCount} pendientes</span>
+                                </div>
+                                {unreadCount > 0 && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-7 text-[10px] font-bold uppercase tracking-tighter hover:bg-primary/10 hover:text-primary"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMarkAllRead();
+                                        }}
+                                    >
+                                        Marcar todo como leído
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                                {notifications.length === 0 ? (
+                                    <div className="p-8 flex flex-col items-center justify-center text-muted-foreground text-center">
+                                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                            <CheckCircle2 className="h-6 w-6 opacity-20" />
+                                        </div>
+                                        <p className="text-xs font-medium">No tienes notificaciones</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {notifications.slice(0, displayLimit).map((notification) => (
+                                            <DropdownMenuItem 
+                                                key={notification.id} 
+                                                className={cn(
+                                                    "p-3.5 cursor-pointer border-b border-border/5 last:border-0 hover:bg-muted/50 flex flex-col items-start gap-1 transition-colors relative",
+                                                    !notification.read && "bg-primary/5 hover:bg-primary/10"
+                                                )}
+                                                onClick={() => handleNotificationClick(notification)}
+                                            >
+                                                {!notification.read && (
+                                                    <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full" />
+                                                )}
+                                                <div className="flex items-start gap-3 w-full">
+                                                    <div className={cn(
+                                                        "mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm",
+                                                        notification.type === 'SUCCESS' ? "bg-emerald-500/10 text-emerald-600" :
+                                                        notification.type === 'ERROR' ? "bg-rose-500/10 text-rose-600" :
+                                                        notification.type === 'WARNING' ? "bg-amber-500/10 text-amber-600" :
+                                                        "bg-primary/10 text-primary"
+                                                    )}>
+                                                        {notification.link?.includes('pos') ? (
+                                                            <ShoppingCart className="h-4 w-4" />
+                                                        ) : notification.link?.includes('purchasing') ? (
+                                                            <Package className="h-4 w-4" />
+                                                        ) : (
+                                                            <Bell className="h-4 w-4" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col flex-1 min-w-0">
+                                                        <span className={cn("text-xs truncate", !notification.read ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
+                                                            {notification.title}
+                                                        </span>
+                                                        <p className="text-[11px] text-muted-foreground/80 line-clamp-2 leading-relaxed mt-0.5">
+                                                            {notification.message}
+                                                        </p>
+                                                        <span className="text-[9px] text-muted-foreground/50 mt-1.5 font-medium flex items-center gap-1">
+                                                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: es })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                        {notifications.length > displayLimit && (
+                                            <div className="p-2 border-t border-border/5 bg-muted/20">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="w-full h-8 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDisplayLimit(prev => prev + 5);
+                                                    }}
+                                                >
+                                                    Mostrar {Math.min(5, notifications.length - displayLimit)} más...
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* User Menu */}
                     <DropdownMenu>
                         <Tooltip>
                             <TooltipTrigger asChild>
