@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { formatCurrency, cn } from "@/lib/utils"
 import { Printer, Calculator, TrendingUp, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useBranding } from "@/contexts/BrandingProvider"
 
 interface POSReportProps {
     data: {
@@ -39,9 +40,7 @@ interface POSReportProps {
 }
 
 export function POSReport({ data, title = "Informe de Caja", type = "X", onClose }: POSReportProps) {
-    const handlePrint = () => {
-        window.print()
-    }
+    const { logo } = useBranding()
 
     // Calcular totales para validación visual
     const totalInflows = data.total_manual_inflow || 0
@@ -66,7 +65,12 @@ export function POSReport({ data, title = "Informe de Caja", type = "X", onClose
             )}
 
             {/* Header */}
-            <div className="text-center space-y-1 mb-6 border-b-2 border-black pb-4">
+            <div className="text-center space-y-1 mb-6 border-b-2 border-black pb-4 flex flex-col items-center">
+                {logo && (
+                    <div className="mb-2">
+                        <img src={logo} alt="Logo" className="max-h-16 object-contain" />
+                    </div>
+                )}
                 <h1 className="text-sm font-black uppercase tracking-widest leading-tight">{title}</h1>
                 <div className="flex justify-center items-center gap-2 mt-1">
                     <span className="bg-black text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">Informe {type}</span>
@@ -194,7 +198,7 @@ export function POSReport({ data, title = "Informe de Caja", type = "X", onClose
             {/* Print button inside preview */}
             <div className="mt-6 pt-6 border-t border-dashed border-black/20 flex justify-center print:hidden">
                 <Button 
-                    onClick={handlePrint} 
+                    onClick={() => window.print()} 
                     className="bg-black text-white hover:bg-black/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-xl shadow-lg border-2 border-black"
                 >
                     <Printer className="mr-2 h-4 w-4" />

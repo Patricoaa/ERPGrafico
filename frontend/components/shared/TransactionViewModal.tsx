@@ -17,6 +17,7 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { AttachmentList } from "./AttachmentList"
 import { useRouter } from "next/navigation"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useBranding } from "@/contexts/BrandingProvider"
 
 type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
 
@@ -475,10 +476,16 @@ const PaymentHistorySection = ({ data, currentType, navigateTo, handleDeletePaym
 }
 
 const PrintableReceipt = ({ data, currentType, mainTitle, subTitle, onClose, isPreview = false }: { data: any, currentType: string, mainTitle: string, subTitle: string, onClose?: () => void, isPreview?: boolean }) => {
+    const { logo } = useBranding()
     if (!data) return null
 
     const renderHeader = () => (
-        <div className="text-center space-y-1 mb-4 border-b-2 border-black pb-4">
+        <div className="text-center space-y-1 mb-4 border-b-2 border-black pb-4 flex flex-col items-center">
+            {logo && (
+                <div className="mb-2">
+                    <img src={logo} alt="Logo" className="max-h-16 object-contain" />
+                </div>
+            )}
             <h1 className="text-sm font-black uppercase tracking-widest leading-tight">{mainTitle}</h1>
             <h2 className="text-lg font-black font-mono tracking-tighter">{subTitle}</h2>
             <p className="text-[10px] font-bold uppercase text-black/60">{formatPlainDate(data.date || data.created_at)}</p>
