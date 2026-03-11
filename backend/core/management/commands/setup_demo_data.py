@@ -24,6 +24,7 @@ from treasury.models import (
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
+from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
 from core.models import User, CompanySettings
 from workflow.models import Task, Notification, TaskAssignmentRule
@@ -112,6 +113,9 @@ class Command(BaseCommand):
 
             self.stdout.write('Initializing Company Settings...')
             self._initialize_company_settings()
+
+            self.stdout.write('Seeding Chilean HR Data...')
+            self._create_hr_demo_data(accounts)
 
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
@@ -327,6 +331,11 @@ class Command(BaseCommand):
             'ila_tax': Account.objects.get(code='2.1.02.06'),
             'vat_withholding': Account.objects.get(code='2.1.02.07'),
             'correction_income': Account.objects.get(code='4.2.07'),
+            'salary_payable': Account.objects.get(code='2.1.03.01'),
+            'previred_payable': Account.objects.get(code='2.1.03.02'),
+            'salary_advance': Account.objects.get(code='1.1.02.03'),
+            'expense_salary': Account.objects.get(code='5.2.01.01'),
+            'expense_prevision': Account.objects.get(code='5.2.01.02'),
         }
 
     def _create_partners(self, accounts):
@@ -1197,5 +1206,174 @@ class Command(BaseCommand):
             }
         )
         self.stdout.write("  ✓ Initialized/Updated company settings singleton")
+
+    def _create_hr_demo_data(self, accounts):
+        """Seeds Chilean HR parameters, AFPs, and Concepts."""
+        # 1. Global HR Settings
+        hr_settings, _ = GlobalHRSettings.objects.get_or_create(
+            id=1,
+            defaults={
+                'uf_current_value': Decimal('37000.00'),
+                'utm_current_value': Decimal('65000.00'),
+                'min_wage_value': Decimal('500000.00'),
+                'account_remuneraciones_por_pagar': accounts['salary_payable'],
+                'account_previred_por_pagar': accounts['previred_payable'],
+                'account_anticipos': accounts['salary_advance'],
+            }
+        )
+        self.stdout.write("    ✓ Global HR Settings initialized.")
+
+        # 2. AFPs
+        afps_data = [
+            ('Habitat', Decimal('11.27')),
+            ('Provida', Decimal('11.45')),
+            ('Modelo', Decimal('10.58')),
+        ]
+        for name, pct in afps_data:
+            AFP.objects.get_or_create(
+                name=name,
+                defaults={
+                    'percentage': pct,
+                    'account': accounts['previred_payable']
+                }
+            )
+        self.stdout.write("    ✓ Standard AFPs created.")
+
+        # 3. Payroll Concepts
+        concepts_data = [
+            # Haberes Imponibles
+            {
+                'name': 'Sueldo Base',
+                'category': PayrollConcept.Category.HABER_IMPONIBLE,
+                'account': accounts['expense_salary'],
+                'formula_type': PayrollConcept.FormulaType.FIXED,
+                'is_system': True
+            },
+            {
+                'name': 'Gratificación Legal',
+                'category': PayrollConcept.Category.HABER_IMPONIBLE,
+                'account': accounts['expense_salary'],
+                'formula_type': PayrollConcept.FormulaType.FORMULA,
+                'formula': "min(IMPONIBLE * 0.25, (4.75 * MIN_WAGE) / 12)",
+                'is_system': True
+            },
+            # Haberes No Imponibles
+            {
+                'name': 'Asignación de Colación',
+                'category': PayrollConcept.Category.HABER_NO_IMPONIBLE,
+                'account': Account.objects.get(code='5.2.18'),
+                'formula_type': PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
+                'is_system': True
+            },
+            {
+                'name': 'Asignación de Movilización',
+                'category': PayrollConcept.Category.HABER_NO_IMPONIBLE,
+                'account': Account.objects.get(code='5.2.18'),
+                'formula_type': PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
+                'is_system': True
+            },
+            {
+                'name': 'Seguro Cesantía (Aporte Trabajador)',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                'account': accounts['previred_payable'],
+                'formula_type': PayrollConcept.FormulaType.FORMULA,
+                'formula': "IMPONIBLE * 0.006 if CONTRATO_INDEFINIDO else 0",
+                'is_system': True
+            },
+            # Descuentos Legales (Empleador)
+            {
+                'name': 'AFP (Descuento)',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                'account': accounts['previred_payable'],
+                'formula_type': PayrollConcept.FormulaType.FORMULA,
+                'formula': "IMPONIBLE * AFP_PERCENT",
+                'is_system': True
+            },
+            {
+                'name': 'Salud',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                'account': accounts['previred_payable'],
+                'formula_type': PayrollConcept.FormulaType.FORMULA,
+                'formula': "max(IMPONIBLE * 0.07, ISAPRE_UF * UF)",
+                'is_system': True
+            },
+            {
+                'name': 'AFP (Aporte Empleador)',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                'account': accounts['expense_prevision'],
+                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
+                'default_amount': Decimal('0.10'),
+                'is_system': True
+            },
+            {
+                'name': 'Seguro Social (Cotización expectativa de vida)',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                'account': accounts['expense_prevision'],
+                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
+                'default_amount': Decimal('0.90'),
+                'is_system': True
+            },
+            {
+                'name': 'SIS (Seguro Invalidez)',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                'account': accounts['expense_prevision'],
+                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
+                'default_amount': Decimal('1.54'),
+                'is_system': True
+            },
+            {
+                'name': 'Ley Accidente de trabajo',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                'account': accounts['expense_prevision'],
+                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
+                'default_amount': Decimal('0.93'),
+                'is_system': True
+            },
+            {
+                'name': 'Seguro Cesantía Aporte Empleador',
+                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                'account': accounts['expense_prevision'],
+                'formula_type': PayrollConcept.FormulaType.FORMULA,
+                'formula': "IMPONIBLE * 0.024 if CONTRATO_INDEFINIDO else IMPONIBLE * 0.03",
+                'is_system': True
+            },
+            # Otros
+            {
+                'name': 'Anticipo de Sueldo',
+                'category': PayrollConcept.Category.OTRO_DESCUENTO,
+                'account': accounts['salary_advance'],
+                'formula_type': PayrollConcept.FormulaType.FIXED,
+                'is_system': True
+            },
+        ]
+        
+        for data in concepts_data:
+            name = data.pop('name')
+            PayrollConcept.objects.update_or_create(
+                name=name,
+                defaults=data
+            )
+        self.stdout.write("    ✓ Payroll Concepts created.")
+
+        # 4. Demo Employee
+        admin_contact = Contact.objects.filter(tax_id='USER-ADMIN').first()
+        if admin_contact:
+            emp, created = Employee.objects.get_or_create(
+                contact=admin_contact,
+                defaults={
+                    'position': 'Gerente de Operaciones',
+                    'base_salary': Decimal('1200000'),
+                    'afp': AFP.objects.filter(name='Habitat').first(),
+                    'salud_type': Employee.SaludType.FONASA,
+                    'start_date': timezone.now().date().replace(month=1, day=1),
+                }
+            )
+            if created:
+                # Add some specific amounts
+                colacion = PayrollConcept.objects.get(name='Asignación de Colación')
+                movilidad = PayrollConcept.objects.get(name='Asignación de Movilización')
+                EmployeeConceptAmount.objects.create(employee=emp, concept=colacion, amount=Decimal('60000'))
+                EmployeeConceptAmount.objects.create(employee=emp, concept=movilidad, amount=Decimal('40000'))
+            self.stdout.write(f"    ✓ Demo Employee '{admin_contact.name}' created.")
 
 

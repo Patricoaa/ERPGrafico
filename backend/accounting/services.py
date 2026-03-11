@@ -108,6 +108,7 @@ class AccountingService:
             ('1.1.02', 'Deudores Comerciales', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.02.01', 'Clientes Locales', AccountType.ASSET, '1.1.02', None, None, None),
             ('1.1.02.02', 'Anticipos a Proveedores', AccountType.ASSET, '1.1.02', None, None, None),
+            ('1.1.02.03', 'Anticipos de Remuneraciones', AccountType.ASSET, '1.1.02', None, None, None),
             
             ('1.1.03', 'Inventarios', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.03.01', 'Mercaderías / Productos Terminados', AccountType.ASSET, '1.1.03', None, None, None),
@@ -181,6 +182,8 @@ class AccountingService:
             
             ('5.2', 'Gastos de Administración y Ventas', AccountType.EXPENSE, None, ISCategory.OPERATING_EXPENSE, None, None),
             ('5.2.01', 'Sueldos y Remuneraciones', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.01.01', 'Sueldo Base y Gratificaciones', AccountType.EXPENSE, '5.2.01', None, None, None),
+            ('5.2.01.02', 'Cotizaciones Previsionales Patronales', AccountType.EXPENSE, '5.2.01', None, None, None),
             ('5.2.02', 'Arriendos', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.03', 'Servicios Básicos (Agua, Luz, Tel)', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.04', 'Honorarios Profesionales', AccountType.EXPENSE, '5.2', None, None, None),

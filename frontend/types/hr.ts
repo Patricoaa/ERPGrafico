@@ -1,0 +1,134 @@
+// HR TypeScript types
+
+export type EmployeeStatus = 'ACTIVE' | 'INACTIVE'
+export type PayrollStatus = 'DRAFT' | 'POSTED'
+export type ContractType = 'INDEFINIDO' | 'PLAZO_FIJO'
+export type SaludType = 'FONASA' | 'ISAPRE'
+
+export type ConceptCategory = 
+  | 'HABER_IMPONIBLE' 
+  | 'HABER_NO_IMPONIBLE' 
+  | 'DESCUENTO_LEGAL_TRABAJADOR' 
+  | 'DESCUENTO_LEGAL_EMPLEADOR'
+  | 'OTRO_DESCUENTO'
+
+export type FormulaType = 'FIXED' | 'PERCENTAGE' | 'EMPLOYEE_SPECIFIC' | 'FORMULA' | 'CHILEAN_LAW'
+
+export interface GlobalHRSettings {
+  id: number
+  uf_current_value: string
+  utm_current_value: string
+  account_remuneraciones_por_pagar: number | null
+  account_previred_por_pagar: number | null
+  account_anticipos: number | null
+}
+
+export interface AFP {
+  id: number
+  name: string
+  slug: string
+  percentage: string
+  account: number | null
+  is_active: boolean
+}
+
+export interface PayrollConcept {
+  id: number
+  name: string
+  category: ConceptCategory
+  category_display: string
+  account: number
+  account_code?: string
+  account_name?: string
+  formula_type: FormulaType
+  formula_type_display: string
+  formula: string
+  default_amount: string
+  is_system: boolean
+}
+
+export interface EmployeeConceptAmount {
+  id: number
+  employee: number
+  concept: number
+  concept_name?: string
+  amount: string
+}
+
+export interface ContactMini {
+  id: number
+  name: string
+  tax_id: string
+  display_id: string
+  phone: string
+  email: string
+}
+
+export interface Employee {
+  id: number
+  code: string
+  display_id: string
+  contact: number
+  contact_detail: ContactMini
+  position: string
+  department: string
+  start_date: string | null
+  end_date: string | null
+  status: EmployeeStatus
+  status_display: string
+  contract_type: ContractType
+  contract_type_display: string
+  base_salary: string
+  afp: number | null
+  afp_detail?: AFP
+  salud_type: SaludType
+  salud_type_display: string
+  isapre_amount_uf: string
+  concept_amounts?: EmployeeConceptAmount[]
+  created_at: string
+  updated_at: string
+}
+
+export interface PayrollItem {
+  id: number
+  payroll: number
+  concept: number
+  concept_detail?: PayrollConcept
+  description: string
+  amount: string
+  is_previred: boolean
+}
+
+export interface Payroll {
+  id: number
+  number: string
+  display_id: string
+  employee: number
+  employee_name?: string
+  employee_display_id?: string
+  employee_detail?: Employee
+  period_year: number
+  period_month: number
+  period_label: string
+  status: PayrollStatus
+  status_display: string
+  base_salary: string
+  total_haberes: string
+  total_descuentos: string
+  net_salary: string
+  journal_entry: number | null
+  previred_journal_entry: number | null
+  items?: PayrollItem[]
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
+// Legacy support or constants if needed
+export const CATEGORY_LABELS: Record<ConceptCategory, string> = {
+  HABER_IMPONIBLE: 'Haber Imponible',
+  HABER_NO_IMPONIBLE: 'Haber No Imponible',
+  DESCUENTO_LEGAL_TRABAJADOR: 'Desc. Legal (Trabajador)',
+  DESCUENTO_LEGAL_EMPLEADOR: 'Desc. Legal (Empleador)',
+  OTRO_DESCUENTO: 'Otro Descuento',
+}

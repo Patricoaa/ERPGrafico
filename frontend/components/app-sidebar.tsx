@@ -70,6 +70,11 @@ const categoryItems: Record<string, any> = {
         { title: "Análisis", url: "/finances/analysis" },
         { title: "Presupuestos", url: "/finances/budgets" },
     ],
+    "hr": [
+        { title: "Configuración RRHH", url: "/settings/hr" },
+        { title: "Personal", url: "/hr/employees" },
+        { title: "Liquidaciones", url: "/hr/payrolls" },
+    ],
 }
 
 const titles: Record<string, string> = {
@@ -84,6 +89,7 @@ const titles: Record<string, string> = {
     "treasury": "Tesorería",
     "purchasing": "Compras",
     "finances": "Finanzas",
+    "hr": "Recursos Humanos",
 }
 
 interface AppSidebarProps {

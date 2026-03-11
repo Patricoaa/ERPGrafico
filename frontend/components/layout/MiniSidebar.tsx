@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt, Bell, CheckCircle2, ArrowRight } from "lucide-react"
+import { Home, Calculator, Users, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, User, Settings, LogOut, FileText, Receipt, Bell, CheckCircle2, ArrowRight, UserCog } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -47,6 +47,7 @@ const mainItems = [
     { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
     { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
     { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
+    { id: "hr", icon: UserCog, label: "RRHH", permission: "hr.view_dashboard_hr" },
 ]
 
 export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory }: MiniSidebarProps) {

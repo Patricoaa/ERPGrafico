@@ -55,6 +55,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         "purchasing": "/purchasing/orders",
         "finances": "/finances/statements",
         "tax": "/tax/declarations",
+        "hr": "/hr/employees",
     }
 
     const displayCategory = hoveredCategory || activeCategory
