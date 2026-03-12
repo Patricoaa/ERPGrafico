@@ -765,8 +765,8 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 </div>
 
                 {/* Activity Sidebar */}
-                {initialData && (
-                    <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden">
+                {initialData?.id && (
+                    <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="product"

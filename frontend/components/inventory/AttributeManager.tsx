@@ -14,6 +14,8 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table" // Ensure this is installed/available
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ProductAttribute {
     id: number
@@ -228,49 +230,51 @@ export function AttributeManager() {
             <BaseModal
                 open={isAttrModalOpen}
                 onOpenChange={setIsAttrModalOpen}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Tag className="h-5 w-5 text-primary" />
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Tag className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>Nuevo Atributo de Variante</span>
                     </div>
-                    <span>{selectedAttribute ? "Ficha de Atributo" : "Nuevo Atributo"}</span>
-                </div>
-            }
-            footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <Button variant="outline" onClick={() => setIsAttrModalOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
-                </div>
-            }
-            hideScrollArea={true}
-            className="sm:max-w-[700px] h-[500px]"
-        >
-            <div className="flex flex-1 overflow-hidden h-full">
-                <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="attr-name">Nombre (ej: Color, Talla)</Label>
-                        <Input
-                            id="attr-name"
-                            value={newAttrName}
-                            onChange={(e) => setNewAttrName(e.target.value)}
-                            placeholder="Escribe el nombre..."
-                        />
+                }
+                description="Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."
+                footer={
+                    <div className="flex justify-end gap-2 w-full">
+                        <Button variant="outline" onClick={() => { setIsAttrModalOpen(false); setSelectedAttribute(null); }}>Cancelar</Button>
+                        <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
                     </div>
-                </div>
+                }
+                hideScrollArea={true}
+                className={cn("transition-all duration-300", selectedAttribute?.id ? "sm:max-w-[1000px]" : "sm:max-w-[600px]")}
+            >
+                <div className="flex flex-1 overflow-hidden min-h-[400px]">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="attr-name" className={FORM_STYLES.label}>Nombre (ej: Color, Talla)</Label>
+                            <Input
+                                id="attr-name"
+                                value={newAttrName}
+                                onChange={(e) => setNewAttrName(e.target.value)}
+                                placeholder="Escribe el nombre..."
+                                className={FORM_STYLES.input}
+                            />
+                        </div>
+                    </div>
 
-                {/* Right Side: Activity Sidebar */}
-                {selectedAttribute && (
-                    <div className="w-[300px] border-l flex flex-col bg-muted/10 shrink-0">
-                        <ActivitySidebar
-                            entityType="attribute"
-                            entityId={selectedAttribute.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                    </div>
-                )}
-            </div>
-        </BaseModal>
+                    {/* Right Side: Activity Sidebar */}
+                    {selectedAttribute?.id && (
+                        <div className="w-[300px] border-l flex flex-col bg-muted/5 shrink-0 pt-4 hidden lg:flex">
+                            <ActivitySidebar
+                                entityType="attribute"
+                                entityId={selectedAttribute.id}
+                                className="h-full border-none"
+                                title="Historial"
+                            />
+                        </div>
+                    )}
+                </div>
+            </BaseModal>
 
             {/* Modal para Valor */}
             <BaseModal
@@ -293,12 +297,13 @@ export function AttributeManager() {
             >
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="val-name">Nombre del Valor (ej: Rojo, XL)</Label>
+                        <Label htmlFor="val-name" className={FORM_STYLES.label}>Nombre del Valor (ej: Rojo, XL)</Label>
                         <Input
                             id="val-name"
                             value={newValueName}
                             onChange={(e) => setNewValueName(e.target.value)}
                             placeholder="Escribe el valor..."
+                            className={FORM_STYLES.input}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") handleCreateValue()
                             }}

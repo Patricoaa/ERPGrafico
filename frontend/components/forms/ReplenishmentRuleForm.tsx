@@ -66,7 +66,7 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="md"
+            size={initialData ? "lg" : "md"}
             hideScrollArea={true}
             contentClassName="p-0"
             title={initialData ? "Editar Regla" : "Nueva Regla de Reabastecimiento"}
@@ -154,7 +154,7 @@ export function ReplenishmentRuleForm({ open, onOpenChange, onSave, initialData,
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col overflow-hidden">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="reordering_rule"

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 from .models import Contact
 from .serializers import ContactSerializer, ContactListSerializer
 

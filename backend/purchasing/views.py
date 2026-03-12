@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PurchaseOrder.objects.all()

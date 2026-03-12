@@ -287,11 +287,11 @@ export function CategoryForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "sm"}
+                size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
-                            <LucideIcons.Layers className="h-5 w-5 text-primary" />
+                            <LucideIcons.Tag className="h-5 w-5 text-primary" />
                         </div>
                         <span>{initialData ? "Ficha de Categoría" : "Crear Categoría"}</span>
                     </div>
@@ -452,7 +452,7 @@ export function CategoryForm({
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="category"

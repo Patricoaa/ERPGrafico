@@ -265,6 +265,35 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                 />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="serial_number"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>N° Serie</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="SN-XXXX" className={FORM_STYLES.input} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ip_address"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>IP / Red</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="192.168.1.XX" className={FORM_STYLES.input} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
                             <FormField
                                 control={form.control}
                                 name="location"
@@ -285,7 +314,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                 render={({ field }) => (
                                     <FormItem className="space-y-2 border rounded-xl p-4 bg-muted/10 shadow-sm">
                                         <div className="flex justify-between items-center mb-2">
-                                            <FormLabel className="text-sm font-bold uppercase text-muted-foreground tracking-tight">Cuentas Permitidas</FormLabel>
+                                            <FormLabel className={cn(FORM_STYLES.label, "mb-0")}>Cuentas Permitidas</FormLabel>
                                             <Badge variant="secondary" className="font-mono">{field.value.length} SELECCIONADAS</Badge>
                                         </div>
                                         <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
@@ -428,7 +457,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                 </div>
 
                 {terminal?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         <ActivitySidebar
                             entityId={terminal.id}
                             entityType="terminal"

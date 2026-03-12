@@ -30,8 +30,8 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { LAYOUT_TOKENS } from "@/lib/styles"
-
+import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 
 interface TreasuryAccountsViewProps {
@@ -396,8 +396,15 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="xl"
-            title={account ? "Editar Cuenta" : "Nueva Cuenta"}
+            size={account ? "xl" : "lg"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Landmark className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{account ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
+                </div>
+            }
             description={account ? "Modifique los detalles de la cuenta y revise su historial." : "Complete la información para registrar una nueva cuenta."}
             hideScrollArea={true}
             className="h-[85vh]"
@@ -417,14 +424,14 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-4">
                                 <div className="grid gap-2">
-                                    <Label>Nombre de la Cuenta</Label>
-                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" required />
+                                    <Label className={FORM_STYLES.label}>Nombre de la Cuenta</Label>
+                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" className={FORM_STYLES.input} required />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="grid gap-2">
-                                        <Label>Tipo</Label>
+                                        <Label className={FORM_STYLES.label}>Tipo</Label>
                                         <Select value={type} onValueChange={(v: any) => setType(v)}>
-                                            <SelectTrigger>
+                                            <SelectTrigger className={FORM_STYLES.input}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -437,9 +444,9 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                                         </Select>
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label>Moneda</Label>
+                                        <Label className={FORM_STYLES.label}>Moneda</Label>
                                         <Select value={currency} onValueChange={setCurrency}>
-                                            <SelectTrigger>
+                                            <SelectTrigger className={FORM_STYLES.input}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -452,11 +459,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
 
                                 {requiresBank(type) && (
                                     <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                        <Label className="text-info font-semibold flex items-center gap-1">
+                                        <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
                                             <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
                                         </Label>
                                         <Select value={bank?.toString() || ""} onValueChange={(v) => setBank(v ? Number(v) : null)}>
-                                            <SelectTrigger className="border-info/20 bg-info/5">
+                                            <SelectTrigger className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}>
                                                 <SelectValue placeholder="Seleccione banco..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -470,20 +477,20 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
 
                                 {requiresBank(type) && (
                                     <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                        <Label className="text-info font-semibold flex items-center gap-1">
+                                        <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
                                             <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
                                         </Label>
                                         <Input
                                             value={accountNumber}
                                             onChange={e => setAccountNumber(e.target.value)}
                                             placeholder="Ej: 0123456789"
-                                            className="border-info/20 bg-info/5"
+                                            className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}
                                         />
                                     </div>
                                 )}
 
                                 <div className="grid gap-2">
-                                    <Label>Cuenta Contable</Label>
+                                    <Label className={FORM_STYLES.label}>Cuenta Contable</Label>
                                     <AccountSelector
                                         value={accountingAccount?.toString() || null}
                                         onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
@@ -506,11 +513,11 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                                     {isPhysical && (
                                         <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
                                             <div className="grid gap-1.5">
-                                                <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Ubicación</Label>
-                                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className="h-8 text-xs bg-white" />
+                                                <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Ubicación</Label>
+                                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className={cn(FORM_STYLES.input, "h-8 text-xs bg-white")} />
                                             </div>
                                             <div className="grid gap-1.5">
-                                                <Label className="text-[11px] uppercase tracking-wider text-warning font-bold">Custodio</Label>
+                                                <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Custodio</Label>
                                                 <UserSelector value={custodian} onChange={setCustodian} />
                                             </div>
                                         </div>
@@ -522,21 +529,16 @@ function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, 
                     </form>
                 </div>
 
-                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                    {account ? (
+                {account?.id && (
+                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityType="treasuryaccount"
                             entityId={account.id}
                             className="h-full border-none"
                             title="Historial de Cambios"
                         />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                            <History className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm">El historial estará disponible una vez creada la cuenta.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </BaseModal>
     )

@@ -15,7 +15,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 from django.contrib.contenttypes.models import ContentType
 from core.models import Attachment
 

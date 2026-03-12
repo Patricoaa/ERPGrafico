@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 
 from rest_framework.permissions import IsAuthenticated
 

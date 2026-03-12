@@ -15,7 +15,7 @@ from billing.note_serializers import (
     CancelWorkflowSerializer,
     FullNoteCheckoutSerializer
 )
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 
 
 class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

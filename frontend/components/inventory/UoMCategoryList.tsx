@@ -11,6 +11,9 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { FORM_STYLES } from "@/lib/styles"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { cn } from "@/lib/utils"
 
 interface UoMCategory {
     id: number
@@ -128,6 +131,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     setIsModalOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
+                size={currentCategory.id ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -136,6 +140,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                         <span>{currentCategory.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}</span>
                     </div>
                 }
+                description={currentCategory.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo (ej: Peso, Volumen)."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
@@ -143,17 +148,28 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     </div>
                 }
             >
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="cat-name" className="text-right">Nombre</Label>
-                        <Input
-                            id="cat-name"
-                            className="col-span-3"
-                            placeholder="Ej: Peso, Volumen, Unidades"
-                            value={currentCategory.name || ''}
-                            onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
-                        />
+                <div className="flex flex-1 overflow-hidden min-h-[400px]">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="cat-name" className={FORM_STYLES.label}>Nombre</Label>
+                            <Input
+                                id="cat-name"
+                                className={FORM_STYLES.input}
+                                placeholder="Ej: Peso, Volumen, Unidades"
+                                value={currentCategory.name || ''}
+                                onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
+                            />
+                        </div>
                     </div>
+
+                    {currentCategory.id && (
+                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 shrink-0 hidden lg:flex">
+                            <ActivitySidebar
+                                entityId={currentCategory.id}
+                                entityType="uom_category"
+                            />
+                        </div>
+                    )}
                 </div>
             </BaseModal>
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
@@ -18,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { ActivitySidebar } from "../audit/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
-import { Warehouse } from "lucide-react"
+import { List, Warehouse } from "lucide-react"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -93,13 +94,13 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "sm"}
+                size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
-                            <Warehouse className="h-5 w-5 text-primary" />
+                            <List className="h-5 w-5 text-primary" />
                         </div>
-                        <span>{initialData ? "Ficha de Almacén" : "Crear Almacén"}</span>
+                        <span>{initialData ? "Editar Almacén" : "Nuevo Almacén"}</span>
                     </div>
                 }
                 description={
@@ -132,32 +133,34 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                     <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Bodega Principal" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="code"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="BOD01" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Bodega Principal" className={FORM_STYLES.input} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="BOD01" className={FORM_STYLES.input} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <FormField
                             control={form.control}
                             name="address"
@@ -176,7 +179,7 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="warehouse"

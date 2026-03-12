@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status
+from core.mixins import BulkImportMixin, AuditHistoryMixin
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action, api_view
@@ -72,17 +73,6 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-class AuditHistoryMixin:
-    """Mixin to add history action to ViewSets"""
-    @action(detail=True, methods=['get'])
-    def history(self, request, pk=None):
-        instance = self.get_object()
-        if not hasattr(instance, 'history'):
-            return Response({"detail": "History not tracked for this model."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        history = instance.history.all()
-        serializer = HistoricalRecordSerializer(history, many=True)
-        return Response(serializer.data)
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = User.objects.all()

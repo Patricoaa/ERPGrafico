@@ -114,7 +114,7 @@ export function GroupForm({
                 }
                 description={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <span>{form.watch("name") || "Configuración de grupo funcional"}</span>
+                        <span>Configuración de grupo funcional y permisos de acceso</span>
                     </div>
                 }
                 footer={

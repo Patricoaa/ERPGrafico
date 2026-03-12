@@ -10,6 +10,8 @@ import { Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface MonthlyInvoiceDialogProps {
     open: boolean
@@ -114,9 +116,9 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
         >
             <div className="grid gap-4 py-4 px-1">
                 <div className="grid gap-2">
-                    <Label>Proveedor (Terminal)</Label>
+                    <Label className={FORM_STYLES.label}>Proveedor (Terminal)</Label>
                     <Select value={supplierId} onValueChange={setSupplierId}>
-                        <SelectTrigger>
+                        <SelectTrigger className={FORM_STYLES.input}>
                             <SelectValue placeholder="Seleccione proveedor..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -129,9 +131,9 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                        <Label>Mes</Label>
+                        <Label className={FORM_STYLES.label}>Mes</Label>
                         <Select value={month} onValueChange={setMonth}>
-                            <SelectTrigger>
+                            <SelectTrigger className={FORM_STYLES.input}>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -144,9 +146,9 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
                         </Select>
                     </div>
                     <div className="grid gap-2">
-                        <Label>Año</Label>
+                        <Label className={FORM_STYLES.label}>Año</Label>
                         <Select value={year} onValueChange={setYear}>
-                            <SelectTrigger>
+                            <SelectTrigger className={FORM_STYLES.input}>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -160,30 +162,32 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
 
                 <div className="border-t pt-4 space-y-4">
                     <div className="grid gap-2">
-                        <Label>N° de Factura <span className="text-destructive">*</span></Label>
+                        <Label className={FORM_STYLES.label}>N° de Factura <span className="text-destructive">*</span></Label>
                         <Input
                             placeholder="Ej: 84729"
                             value={number}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
+                            className={FORM_STYLES.input}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Fecha de Emisión <span className="text-destructive">*</span></Label>
+                        <Label className={FORM_STYLES.label}>Fecha de Emisión <span className="text-destructive">*</span></Label>
                         <Input
                             type="date"
                             value={date}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
+                            className={FORM_STYLES.input}
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Adjuntar Factura (PDF) <span className="text-destructive">*</span></Label>
+                        <Label className={FORM_STYLES.label}>Adjuntar Factura (PDF) <span className="text-destructive">*</span></Label>
                         <Input
                             type="file"
                             accept="application/pdf,image/*"
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAttachment(e.target.files?.[0] || null)}
-                            className="cursor-pointer"
+                            className={cn("cursor-pointer", FORM_STYLES.input)}
                         />
                     </div>
                 </div>

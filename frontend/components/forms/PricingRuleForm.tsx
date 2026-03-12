@@ -170,7 +170,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="lg"
+            size={initialData ? "lg" : "md"}
             title={
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -491,7 +491,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="pricing_rule"

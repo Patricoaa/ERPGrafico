@@ -14,6 +14,7 @@ class ProductCategory(models.Model):
     prefix = models.CharField(_("Prefijo"), max_length=10, null=True, blank=True, help_text=_("Usado para generar el código interno (ej: IMP, DIS)"))
     icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    history = HistoricalRecords()
     
     # Default Accounting Config for this category
     asset_account = models.ForeignKey(
@@ -39,6 +40,7 @@ class ProductCategory(models.Model):
 
 class UoMCategory(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Categoría de Medida")
@@ -60,6 +62,7 @@ class UoM(models.Model):
     ratio = models.DecimalField(_("Ratio"), max_digits=12, decimal_places=5, default=1.0)
     rounding = models.DecimalField(_("Redondeo"), max_digits=12, decimal_places=5, default=0.01000)
     active = models.BooleanField(default=True)
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Unidad de Medida")
@@ -73,6 +76,7 @@ class ProductAttribute(models.Model):
     """Atributo maestro (ej: Color, Talla)"""
     name = models.CharField(_("Nombre"), max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Atributo de Producto")
@@ -86,6 +90,7 @@ class ProductAttributeValue(models.Model):
     """Valor específico de un atributo (ej: Rojo, XL)"""
     attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name='values')
     value = models.CharField(_("Valor"), max_length=100)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Valor de Atributo")
@@ -887,6 +892,7 @@ class Warehouse(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, unique=True)
     address = models.CharField(_("Dirección"), max_length=255, blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Almacén/Bodega")

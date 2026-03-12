@@ -41,6 +41,7 @@ class Account(models.Model):
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))
     is_reconcilable = models.BooleanField(_("Conciliable"), default=False)
+    history = HistoricalRecords()
 
     @property
     def is_selectable(self):

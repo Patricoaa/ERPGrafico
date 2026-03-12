@@ -7,7 +7,7 @@ from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetIte
 from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer, BudgetSerializer, BudgetItemSerializer
 from .services import JournalEntryService, AccountingService, BudgetService
 from django.core.exceptions import ValidationError
-from core.mixins import BulkImportMixin
+from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
 from rest_framework.permissions import IsAuthenticated
 
@@ -37,7 +37,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
+class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
@@ -185,9 +185,8 @@ class AccountViewSet(BulkImportMixin, viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-from core.views import AuditHistoryMixin
 
-class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
     

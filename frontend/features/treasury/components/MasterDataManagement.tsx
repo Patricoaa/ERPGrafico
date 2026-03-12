@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History } from "lucide-react"
+import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag } from "lucide-react"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
@@ -11,6 +11,8 @@ import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -189,7 +191,7 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="xl"
+            size={bank ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -217,44 +219,40 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
                     <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="bank-name">Nombre</Label>
-                                <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" required />
+                                <Label htmlFor="bank-name" className={FORM_STYLES.label}>Nombre</Label>
+                                <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" className={FORM_STYLES.input} required />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="bank-code">Código (Alias)</Label>
-                                <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" />
+                                <Label htmlFor="bank-code" className={FORM_STYLES.label}>Código (Alias)</Label>
+                                <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" className={FORM_STYLES.input} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="bank-swift">Código SWIFT/BIC</Label>
+                                <Label htmlFor="bank-swift" className={FORM_STYLES.label}>Código SWIFT/BIC</Label>
                                 <Input
                                     id="bank-swift"
                                     value={swiftCode}
                                     onChange={e => setSwiftCode(e.target.value)}
                                     placeholder="Ej: BCHICLRM"
                                     maxLength={11}
+                                    className={FORM_STYLES.input}
                                 />
-                                <p className="text-xs text-muted-foreground">Código internacional para transferencias</p>
+                                <p className="text-[10px] text-muted-foreground italic">Código internacional para transferencias</p>
                             </div>
                         </div>
                     </form>
                 </div>
 
                 {/* Right Side: Activity Sidebar */}
-                <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                    {bank ? (
+                {bank?.id && (
+                    <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityType="bank"
                             entityId={bank.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                            <History className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm">El historial estará disponible una vez creado el banco.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </BaseModal>
     )
@@ -535,7 +533,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="xl"
+            size={method ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -563,14 +561,14 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                     <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label>Nombre</Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Visa Santander Debito" required />
+                                <Label className={FORM_STYLES.label}>Nombre</Label>
+                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Visa Santander Debito" className={FORM_STYLES.input} required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Tipo</Label>
+                                    <Label className={FORM_STYLES.label}>Tipo</Label>
                                     <Select value={type} onValueChange={handleTypeChange}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className={FORM_STYLES.input}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -584,9 +582,9 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                     </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Cuenta</Label>
+                                    <Label className={FORM_STYLES.label}>Cuenta</Label>
                                     <Select value={accountId || ""} onValueChange={setAccountId}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className={FORM_STYLES.input}>
                                             <SelectValue placeholder="Seleccionar..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -698,21 +696,16 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                 </div>
 
                 {/* Right Side: Activity Sidebar */}
-                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                    {method ? (
+                {method?.id && (
+                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityType="paymentmethod"
                             entityId={method.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                            <History className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm">El historial estará disponible una vez creado el método.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </BaseModal>
     )

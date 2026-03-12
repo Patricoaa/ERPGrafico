@@ -44,6 +44,19 @@ class BulkImportMixin:
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class AuditHistoryMixin:
+    """Mixin to add history action to ViewSets"""
+    @action(detail=True, methods=['get'])
+    def history(self, request, pk=None):
+        instance = self.get_object()
+        if not hasattr(instance, 'history'):
+            return Response({"detail": "History not tracked for this model."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from .serializers import HistoricalRecordSerializer
+        history = instance.history.all()
+        serializer = HistoricalRecordSerializer(history, many=True)
+        return Response(serializer.data)
+
 class TotalsCalculationMixin:
     """
     Mixin to automatically calculate totals based on related lines.

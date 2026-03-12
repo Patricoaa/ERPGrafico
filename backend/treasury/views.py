@@ -24,7 +24,7 @@ from .reports_service import ReportsService
 from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
-from core.views import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin
 
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

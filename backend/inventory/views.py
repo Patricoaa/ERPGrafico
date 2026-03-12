@@ -17,12 +17,11 @@ from .services import StockService, UoMService
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
-from core.mixins import BulkImportMixin
-from core.views import AuditHistoryMixin
+from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
 from .filters import ProductFilter, StockMoveFilter
 
-class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
+class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -579,24 +578,24 @@ class ProductViewSet(BulkImportMixin, AuditHistoryMixin, viewsets.ModelViewSet):
 
 
 
-class ProductAttributeViewSet(viewsets.ModelViewSet):
+class ProductAttributeViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
 
-class ProductAttributeValueViewSet(viewsets.ModelViewSet):
+class ProductAttributeValueViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
     serializer_class = ProductAttributeValueSerializer
     filterset_fields = ['attribute']
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
 
-class WarehouseViewSet(viewsets.ModelViewSet):
+class WarehouseViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
 
-class UoMViewSet(viewsets.ModelViewSet):
+class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
     filter_backends = [DjangoFilterBackend]
@@ -626,11 +625,11 @@ class UoMViewSet(viewsets.ModelViewSet):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class UoMCategoryViewSet(viewsets.ModelViewSet):
+class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
 
-class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistoryMixin):
+class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
     filter_backends = [DjangoFilterBackend]
@@ -666,7 +665,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class PricingRuleViewSet(AuditHistoryMixin, viewsets.ModelViewSet):
+class PricingRuleViewSet(AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
     filter_backends = [DjangoFilterBackend]

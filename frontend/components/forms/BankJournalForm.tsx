@@ -106,7 +106,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
         <BaseModal
             open={open}
             onOpenChange={setOpen}
-            size={initialData ? "lg" : "sm"}
+            size={initialData ? "lg" : "md"}
             title={
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -158,41 +158,43 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="code"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="currency"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="code"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
                                     <FormControl>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue placeholder="Seleccione moneda" />
-                                        </SelectTrigger>
+                                        <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
                                     </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="CLP">CLP (Peso Chileno)</SelectItem>
-                                        <SelectItem value="USD">USD (Dólar)</SelectItem>
-                                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="currency"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className={FORM_STYLES.input}>
+                                                <SelectValue placeholder="Seleccione moneda" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="CLP">CLP (Peso Chileno)</SelectItem>
+                                            <SelectItem value="USD">USD (Dólar)</SelectItem>
+                                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                     <FormField
                         control={form.control}
                         name="account"
@@ -217,7 +219,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                 </div>
 
                 {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         <ActivitySidebar
                             entityId={initialData.id}
                             entityType="bank_journal"
