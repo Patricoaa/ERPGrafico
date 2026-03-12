@@ -103,9 +103,9 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-500">
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                <Card className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-primary">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Ratio de Liquidez</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Ratio de Liquidez</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">{data.liquidity.current_ratio.toFixed(2)}</div>
@@ -118,9 +118,9 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                <Card className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-amber-500">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Endeudamiento (D/E)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-amber-600/70">Endeudamiento (D/E)</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">{data.structure.debt_to_equity.toFixed(2)}</div>
@@ -133,9 +133,9 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                <Card className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-indigo-500">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Solvencia</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-indigo-600/70">Solvencia</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">{data.solvency.solvency_ratio.toFixed(2)}</div>
@@ -148,9 +148,9 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                <Card className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-emerald-500">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Capital de Trabajo</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-emerald-600/70">Capital de Trabajo</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">
@@ -164,7 +164,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
             {/* Charts Section */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Debt Structure */}
-                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-emerald-500">
                     <CardHeader>
                         <CardTitle>Estructura de Financiamiento</CardTitle>
                         <CardDescription>Distribución entre Deuda y Patrimonio</CardDescription>
@@ -194,7 +194,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                 </Card>
 
                 {/* Assets Composition */}
-                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-blue-500">
                     <CardHeader>
                         <CardTitle>Composición de Activos</CardTitle>
                         <CardDescription>Corrientes vs No Corrientes</CardDescription>

@@ -121,7 +121,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
             </div>
 
             {/* Sales Trend */}
-            <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+            <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-primary">
                 <CardHeader>
                     <CardTitle>Tendencia de Ventas</CardTitle>
                     <CardDescription>Evolución mensual de ventas</CardDescription>
@@ -151,7 +151,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
             {/* Two column layout for detailed insights */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Top Customers */}
-                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-blue-500">
                     <CardHeader>
                         <CardTitle>Top 5 Clientes</CardTitle>
                         <CardDescription>Por volumen de ventas</CardDescription>
@@ -170,7 +170,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 </Card>
 
                 {/* Inventory Distribution */}
-                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-purple-500">
                     <CardHeader>
                         <CardTitle>Distribución de Inventario</CardTitle>
                         <CardDescription>Por categoría de producto</CardDescription>
