@@ -85,7 +85,7 @@ class PayrollConcept(models.Model):
         HABER_IMPONIBLE = 'HABER_IMPONIBLE', _('Haber Imponible')
         HABER_NO_IMPONIBLE = 'HABER_NO_IMPONIBLE', _('Haber No Imponible')
         DESCUENTO_LEGAL_TRABAJADOR = 'DESCUENTO_LEGAL_TRABAJADOR', _('Descuento Legal (Cargo Trabajador)')
-        DESCUENTO_LEGAL_EMPLEADOR = 'DESCUENTO_LEGAL_EMPLEADOR', _('Descuento Legal (Cargo Empleador)')
+        DESCUENTO_LEGAL_EMPLEADOR = 'DESCUENTO_LEGAL_EMPLEADOR', _('Aporte del Empleador')
         OTRO_DESCUENTO = 'OTRO_DESCUENTO', _('Otro Descuento')
 
     class FormulaType(models.TextChoices):
@@ -368,3 +368,67 @@ class Absence(models.Model):
 
     def __str__(self):
         return f"{self.get_absence_type_display()} - {self.employee} ({self.days} días)"
+
+
+class SalaryAdvance(models.Model):
+    """
+    Anticipo de sueldo entregado al trabajador.
+    """
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name='advances', verbose_name=_("Empleado"))
+    payroll = models.ForeignKey(
+        'Payroll', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='advances', verbose_name=_("Liquidación Asociada"),
+        help_text=_("Si ya fue descontado de una liquidación, se vincula aquí.")
+    )
+    amount = models.DecimalField(_("Monto"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal('0.01'))])
+    date = models.DateField(_("Fecha del Anticipo"))
+    notes = models.TextField(_("Notas"), blank=True)
+    is_discounted = models.BooleanField(_("Descontado en Liquidación"), default=False)
+    journal_entry = models.ForeignKey(
+        'accounting.JournalEntry', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='salary_advances', verbose_name=_("Asiento Contable")
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = _("Anticipo de Sueldo")
+        verbose_name_plural = _("Anticipos de Sueldo")
+
+    def __str__(self):
+        return f"Anticipo {self.employee} - ${self.amount} ({self.date})"
+
+
+class PayrollPayment(models.Model):
+    """
+    Registro del pago efectivo de remuneraciones o previred.
+    """
+    class PaymentType(models.TextChoices):
+        SALARIO = 'SALARIO', _('Pago de Remuneración')
+        PREVIRED = 'PREVIRED', _('Pago de Previred')
+
+    payroll = models.ForeignKey(
+        'Payroll', on_delete=models.CASCADE, related_name='payments',
+        verbose_name=_("Liquidación")
+    )
+    payment_type = models.CharField(_("Tipo"), max_length=10, choices=PaymentType.choices, default=PaymentType.SALARIO)
+    amount = models.DecimalField(_("Monto Pagado"), max_digits=14, decimal_places=0, validators=[MinValueValidator(Decimal('0.01'))])
+    date = models.DateField(_("Fecha de Pago"))
+    notes = models.TextField(_("Notas"), blank=True)
+    journal_entry = models.ForeignKey(
+        'accounting.JournalEntry', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='payroll_payments', verbose_name=_("Asiento Contable")
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = _("Pago de Remuneración")
+        verbose_name_plural = _("Pagos de Remuneración")
+
+    def __str__(self):
+        return f"{self.get_payment_type_display()} - {self.payroll.display_id} (${self.amount})"

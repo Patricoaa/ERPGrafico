@@ -13,6 +13,7 @@ class TreasuryService:
                         date=None, created_by=None,
                         from_account=None, to_account=None,
                         partner=None, invoice=None, sale_order=None, purchase_order=None,
+                        payroll=None, payroll_payment_type=None,
                         pos_session=None, pos_session_id=None, reference='', notes='', justify_reason=None,
                         transaction_number=None, is_pending_registration=False,
                         payment_method_new=None, is_reconciled=False):
@@ -25,6 +26,9 @@ class TreasuryService:
         4. Updating Business Documents (Invoices, Orders)
         5. Updating POS Session totals
         """
+        if amount is not None:
+            amount = Decimal(str(amount))
+            
         if amount <= 0:
             raise ValidationError("El monto debe ser mayor a cero.")
         
@@ -66,6 +70,8 @@ class TreasuryService:
             invoice=invoice,
             sale_order=sale_order,
             purchase_order=purchase_order,
+            payroll=payroll,
+            payroll_payment_type=payroll_payment_type,
             reference=reference or '',
             notes=notes or '',
             justify_reason=justify_reason,
@@ -76,7 +82,7 @@ class TreasuryService:
         )
 
         # 3. Handle Business Documents (Status Updates)
-        TreasuryService.update_related_document_status(movement, invoice, sale_order, purchase_order)
+        TreasuryService.update_related_document_status(movement, invoice, sale_order, purchase_order, payroll)
 
         # 4. Handle POS Session Totals
         if pos_session:
@@ -123,17 +129,19 @@ class TreasuryService:
         )
 
     @staticmethod
-    def update_related_document_status(movement, invoice=None, sale_order=None, purchase_order=None):
+    def update_related_document_status(movement, invoice=None, sale_order=None, purchase_order=None, payroll=None):
         # Logic to update status to PAID
         targets = []
         if invoice: targets.append(invoice)
         if sale_order and not invoice: targets.append(sale_order)
         if purchase_order and not invoice: targets.append(purchase_order)
+        if payroll: targets.append(payroll)
         
         # If arguments are missing, try to resolve from movement
         if not invoice and movement.invoice: targets.append(movement.invoice)
         if not sale_order and movement.sale_order and not movement.invoice: targets.append(movement.sale_order)
         if not purchase_order and movement.purchase_order and not movement.invoice: targets.append(movement.purchase_order)
+        if not payroll and movement.payroll: targets.append(movement.payroll)
 
         targets = list(set(targets)) # unique
 
@@ -289,6 +297,17 @@ class TreasuryService:
              
              if not target_acc and movement.contact:
                   target_acc = movement.contact.account_payable
+
+             if not target_acc and movement.payroll:
+                  from hr.models import GlobalHRSettings
+                  hr_settings = GlobalHRSettings.objects.first()
+                  if hr_settings:
+                       if movement.payroll_payment_type == 'SALARY':
+                            target_acc = hr_settings.account_remuneraciones_por_pagar
+                       elif movement.payroll_payment_type == 'PREVIRED':
+                            target_acc = hr_settings.account_previred_por_pagar
+                       elif movement.payroll_payment_type == 'ADVANCE':
+                            target_acc = hr_settings.account_anticipos
 
              if target_acc:
                   JournalItem.objects.create(entry=entry, account=target_acc, debit=movement.amount, credit=0)

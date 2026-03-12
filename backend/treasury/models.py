@@ -150,6 +150,19 @@ class TreasuryMovement(models.Model):
     invoice = models.ForeignKey('billing.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     sale_order = models.ForeignKey('sales.SaleOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     purchase_order = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    class PayrollPaymentType(models.TextChoices):
+        SALARY = 'SALARY', _('Sueldo')
+        PREVIRED = 'PREVIRED', _('Previred')
+        ADVANCE = 'ADVANCE', _('Anticipo')
+
+    payroll = models.ForeignKey('hr.Payroll', on_delete=models.SET_NULL, null=True, blank=True, related_name='treasury_movements')
+    payroll_payment_type = models.CharField(
+        _("Tipo de Pago RRHH"), 
+        max_length=20, 
+        blank=True, 
+        null=True, 
+        choices=PayrollPaymentType.choices
+    )
 
     # Link to Accounting
     journal_entry = models.OneToOneField(

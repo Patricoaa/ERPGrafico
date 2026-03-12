@@ -137,7 +137,43 @@ export interface Payroll {
   journal_entry: number | null
   previred_journal_entry: number | null
   items?: PayrollItem[]
+  advances?: SalaryAdvance[]
+  payments?: PayrollPayment[]
   notes: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SalaryAdvance {
+  id: number
+  employee: number
+  employee_name?: string
+  employee_display_id?: string
+  payroll: number | null
+  payroll_display_id?: string
+  amount: string
+  date: string
+  notes: string
+  is_discounted: boolean
+  journal_entry: number | null
+  payment_method_name?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type PaymentType = 'SALARIO' | 'PREVIRED'
+
+export interface PayrollPayment {
+  id: number
+  payroll: number
+  payroll_display_id?: string
+  employee_name?: string
+  payment_type: PaymentType
+  payment_type_display?: string
+  amount: string
+  date: string
+  notes: string
+  journal_entry: number | null
   created_at: string
   updated_at: string
 }
@@ -147,6 +183,6 @@ export const CATEGORY_LABELS: Record<ConceptCategory, string> = {
   HABER_IMPONIBLE: 'Haber Imponible',
   HABER_NO_IMPONIBLE: 'Haber No Imponible',
   DESCUENTO_LEGAL_TRABAJADOR: 'Desc. Legal (Trabajador)',
-  DESCUENTO_LEGAL_EMPLEADOR: 'Desc. Legal (Empleador)',
+  DESCUENTO_LEGAL_EMPLEADOR: 'Aporte del Empleador',
   OTRO_DESCUENTO: 'Otro Descuento',
 }

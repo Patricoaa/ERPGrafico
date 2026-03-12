@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount, Absence
+from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount, Absence, SalaryAdvance, PayrollPayment
 from contacts.models import Contact
 
 
@@ -164,12 +164,42 @@ class PayrollListSerializer(serializers.ModelSerializer):
         ]
 
 
+class SalaryAdvanceSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='employee.contact.name', read_only=True)
+    employee_display_id = serializers.CharField(source='employee.display_id', read_only=True)
+    payroll_display_id = serializers.CharField(source='payroll.display_id', read_only=True)
+    payment_method_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SalaryAdvance
+        fields = [
+            'id', 'employee', 'employee_name', 'employee_display_id',
+            'payroll', 'payroll_display_id',
+            'amount', 'date', 'notes', 'is_discounted',
+            'journal_entry', 'payment_method_name', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_payment_method_name(self, obj):
+        if obj.journal_entry:
+            # Try to get the treasury movement associated with this journal entry
+            try:
+                movement = obj.journal_entry.treasury_movement
+                if movement.payment_method_new:
+                    return movement.payment_method_new.name
+                return movement.get_payment_method_display()
+            except:
+                pass
+        return None
+
+
 class PayrollDetailSerializer(serializers.ModelSerializer):
     employee_detail = EmployeeSerializer(source='employee', read_only=True)
     display_id = serializers.CharField(read_only=True)
     period_label = serializers.CharField(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     items = PayrollItemSerializer(many=True, read_only=True)
+    advances = SalaryAdvanceSerializer(many=True, read_only=True)
 
     class Meta:
         model = Payroll
@@ -181,7 +211,7 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             'base_salary', 'agreed_days', 'absent_days', 'worked_days',
             'total_haberes', 'total_descuentos', 'net_salary',
             'journal_entry', 'previred_journal_entry',
-            'items', 'notes',
+            'items', 'advances', 'notes',
             'created_at', 'updated_at',
         ]
         read_only_fields = [
@@ -189,3 +219,19 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             'total_haberes', 'total_descuentos', 'net_salary', 
             'journal_entry', 'previred_journal_entry'
         ]
+
+
+class PayrollPaymentSerializer(serializers.ModelSerializer):
+    payroll_display_id = serializers.CharField(source='payroll.display_id', read_only=True)
+    employee_name = serializers.CharField(source='payroll.employee.contact.name', read_only=True)
+    payment_type_display = serializers.CharField(source='get_payment_type_display', read_only=True)
+
+    class Meta:
+        model = PayrollPayment
+        fields = [
+            'id', 'payroll', 'payroll_display_id', 'employee_name',
+            'payment_type', 'payment_type_display',
+            'amount', 'date', 'notes', 'journal_entry',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']

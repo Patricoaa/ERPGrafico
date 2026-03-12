@@ -24,6 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -54,6 +55,7 @@ interface DataTableProps<TData, TValue> {
     renderCustomView?: (table: any) => React.ReactNode
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
+    onRowClick?: (row: TData) => void
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -76,6 +78,7 @@ export function DataTable<TData, TValue>({
     renderCustomView,
     rightAction,
     showToolbarSort,
+    onRowClick,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -185,7 +188,11 @@ export function DataTable<TData, TValue>({
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && "selected"}
-                                        className="group hover:bg-muted/20 transition-colors"
+                                        className={cn(
+                                            "group hover:bg-muted/20 transition-colors",
+                                            onRowClick && "cursor-pointer"
+                                        )}
+                                        onClick={() => onRowClick?.(row.original)}
                                     >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell key={cell.id}>

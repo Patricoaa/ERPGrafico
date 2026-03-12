@@ -157,7 +157,9 @@ export default function AbsencesPage() {
                             ],
                         },
                     ]}
+                    useAdvancedFilter={true}
                     defaultPageSize={20}
+                    onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                 />
             )}
         </div>

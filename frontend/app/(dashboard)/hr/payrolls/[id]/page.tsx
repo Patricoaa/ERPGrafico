@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
@@ -9,9 +10,11 @@ import * as z from "zod"
 import {
     getPayroll, postPayroll, recalculatePayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem,
-    getPayrollConcepts, generateProformaPayroll
+    getPayrollConcepts, generateProformaPayroll, payPrevired, paySalary,
+    getPayrollPayments
 } from "@/lib/hr/api"
-import type { Payroll, PayrollItem, PayrollConcept } from "@/types/hr"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,10 +39,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
     Loader2, Plus, Trash2, Pencil, ArrowLeft, BookOpen,
-    TrendingUp, TrendingDown, DollarSign, ShieldCheck, AlertCircle, Sparkles
+    TrendingUp, TrendingDown, DollarSign, ShieldCheck, AlertCircle, Sparkles,
+    CreditCard, CheckCircle2, Clock
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),
@@ -59,19 +64,24 @@ export default function PayrollDetailPage({ params }: Props) {
 
     const [payroll, setPayroll] = useState<Payroll | null>(null)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
+    const [payments, setPayments] = useState<PayrollPayment[]>([])
     const [loading, setLoading] = useState(true)
     const [posting, setPosting] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [editingItem, setEditingItem] = useState<PayrollItem | null>(null)
+    const [previredDialog, setPreviredDialog] = useState(false)
+    const [salaryDialog, setSalaryDialog] = useState(false)
 
     const fetchPayroll = useCallback(async () => {
         try {
-            const [payrollData, conceptsData] = await Promise.all([
+            const [payrollData, conceptsData, paymentsData] = await Promise.all([
                 getPayroll(payrollId),
-                getPayrollConcepts()
+                getPayrollConcepts(),
+                getPayrollPayments({ payroll: String(payrollId) })
             ])
             setPayroll(payrollData)
             setConcepts(conceptsData)
+            setPayments(paymentsData)
         } catch {
             toast.error("Error al cargar liquidación")
         } finally {
@@ -143,24 +153,30 @@ export default function PayrollDetailPage({ params }: Props) {
 
     if (!payroll) return null
 
-    const haberes = payroll.items?.filter(i => 
-        i.concept_detail?.category === 'HABER_IMPONIBLE' || 
+    const haberes = payroll.items?.filter(i =>
+        i.concept_detail?.category === 'HABER_IMPONIBLE' ||
         i.concept_detail?.category === 'HABER_NO_IMPONIBLE'
     ) || []
-    
-    const workerLegalDiscounts = payroll.items?.filter(i => 
+
+    const workerLegalDiscounts = payroll.items?.filter(i =>
         i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR'
     ) || []
 
-    const employerLegalDiscounts = payroll.items?.filter(i => 
+    const employerContributions = payroll.items?.filter(i =>
         i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR'
     ) || []
-    
-    const otherDiscounts = payroll.items?.filter(i => 
+
+    const otherDiscounts = payroll.items?.filter(i =>
         i.concept_detail?.category === 'OTRO_DESCUENTO'
     ) || []
 
     const isPosted = payroll.status === 'POSTED'
+    const salaroPaid = payments.some(p => p.payment_type === 'SALARIO')
+    const previredPaid = payments.some(p => p.payment_type === 'PREVIRED')
+
+    const workerDiscountsTotal = workerLegalDiscounts.reduce((s, i) => s + parseFloat(i.amount), 0)
+    const otherDiscountsTotal = otherDiscounts.reduce((s, i) => s + parseFloat(i.amount), 0)
+    const netSalary = parseFloat(payroll.net_salary || "0")
 
     return (
         <div className="flex-1 space-y-6 p-8 pt-6">
@@ -171,8 +187,8 @@ export default function PayrollDetailPage({ params }: Props) {
                 <div className="flex gap-2">
                     {!isPosted && (
                         <>
-                            <Button 
-                                variant="outline" size="sm" 
+                            <Button
+                                variant="outline" size="sm"
                                 className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
                                 onClick={handleGenerateProforma}
                                 disabled={generating}
@@ -201,6 +217,38 @@ export default function PayrollDetailPage({ params }: Props) {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
+                        </>
+                    )}
+                    {isPosted && (
+                        <>
+                            <Button
+                                variant="outline" size="sm"
+                                className={cn(
+                                    "gap-2",
+                                    salaroPaid
+                                        ? "border-emerald-500/30 text-emerald-600"
+                                        : "border-amber-500/30 text-amber-600 hover:bg-amber-50"
+                                )}
+                                onClick={() => !salaroPaid && setSalaryDialog(true)}
+                                disabled={salaroPaid}
+                            >
+                                {salaroPaid ? <CheckCircle2 className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                                {salaroPaid ? "Sueldo Pagado" : "Pagar Sueldo"}
+                            </Button>
+                            <Button
+                                variant="outline" size="sm"
+                                className={cn(
+                                    "gap-2",
+                                    previredPaid
+                                        ? "border-emerald-500/30 text-emerald-600"
+                                        : "border-rose-500/30 text-rose-600 hover:bg-rose-50"
+                                )}
+                                onClick={() => !previredPaid && setPreviredDialog(true)}
+                                disabled={previredPaid}
+                            >
+                                {previredPaid ? <CheckCircle2 className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                                {previredPaid ? "Previred Pagado" : "Pagar Previred"}
+                            </Button>
                         </>
                     )}
                     {payroll.status === 'DRAFT' && (
@@ -267,7 +315,7 @@ export default function PayrollDetailPage({ params }: Props) {
 
                 <CardContent className="p-0">
                     <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-                        
+
                         {/* IZQUIERDA: HABERES */}
                         <div className="p-6">
                             <div className="flex flex-row items-center justify-between pb-3">
@@ -296,21 +344,21 @@ export default function PayrollDetailPage({ params }: Props) {
                                 onDelete={handleDeleteItem}
                                 accentColor="text-emerald-700 font-black"
                             />
-                            
+
                             <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm font-bold">
                                 <span>Total Haberes</span>
                                 <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-emerald-600 text-lg font-black" />
                             </div>
                         </div>
 
-                        {/* DERECHA: DESCUENTOS Y TOTALES */}
-                        <div className="p-6 space-y-6">
-                            
-                            {/* Descuentos del Trabajador */}
+                        {/* DERECHA: DESCUENTOS SEPARADOS */}
+                        <div className="p-6 space-y-5">
+
+                            {/* Descuentos Legales del Trabajador */}
                             <div>
                                 <div className="flex flex-row items-center justify-between pb-3">
                                     <h3 className="text-sm font-bold uppercase tracking-widest text-amber-600 flex items-center gap-2">
-                                        <ShieldCheck className="h-4 w-4" /> Descuentos (Trabajador)
+                                        <ShieldCheck className="h-4 w-4" /> Descuentos Legales
                                     </h3>
                                     {!isPosted && (
                                         <PayrollItemDialog
@@ -334,7 +382,13 @@ export default function PayrollDetailPage({ params }: Props) {
                                     onDelete={handleDeleteItem}
                                     accentColor="text-amber-700"
                                 />
+                                <div className="mt-2 pt-2 border-t flex justify-between items-center text-xs">
+                                    <span className="text-muted-foreground font-semibold uppercase">Subtotal Desc. Legales</span>
+                                    <MoneyDisplay amount={workerDiscountsTotal} className="text-amber-700 font-bold" />
+                                </div>
                             </div>
+
+                            <Separator />
 
                             {/* Otros Descuentos */}
                             <div>
@@ -364,52 +418,131 @@ export default function PayrollDetailPage({ params }: Props) {
                                     onDelete={handleDeleteItem}
                                     accentColor="text-rose-600"
                                 />
-                                
-                                <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground font-bold uppercase text-[10px]">Total Descuentos</span>
+                                <div className="mt-2 pt-2 border-t flex justify-between items-center text-xs">
+                                    <span className="text-muted-foreground font-semibold uppercase">Total Desc.</span>
                                     <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-rose-600 font-bold" />
                                 </div>
                             </div>
 
+                            <Separator />
+
                             {/* LIQUIDO A PAGO */}
-                            <div className="mt-8 bg-primary/5 p-5 rounded-xl border border-primary/20 flex items-center justify-between shadow-sm">
+                            <div className="bg-primary/5 p-5 rounded-xl border border-primary/20 flex items-center justify-between shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                                         <DollarSign className="h-5 w-5 text-primary" />
                                     </div>
                                     <span className="text-sm font-black uppercase tracking-widest text-primary">Sueldo Líquido</span>
                                 </div>
-                                <MoneyDisplay amount={parseFloat(payroll.net_salary || "0")} className="text-3xl font-black text-primary" />
+                                <MoneyDisplay amount={netSalary} className="text-3xl font-black text-primary" />
                             </div>
 
-                            {/* APORTES EMPLEADOR (SOLO INFORMATIVO) */}
-                            {employerLegalDiscounts.length > 0 && (
-                                <div className="pt-6 border-t border-dashed">
+                            {/* ANTICIPOS (DESPUES DEL LIQUIDO) */}
+                            {payroll.advances && payroll.advances.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-dashed">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 pb-2">
+                                        <Clock className="h-3 w-3" /> Anticipos Entregados (Ya pagados)
+                                    </h3>
+                                    <div className="space-y-1">
+                                        {payroll.advances.map(adv => (
+                                            <div key={adv.id} className="flex justify-between items-center text-xs py-1 px-2 rounded bg-muted/20 border border-transparent hover:border-muted-foreground/10 transition-colors">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Anticipo de Sueldo</span>
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {new Date(adv.date).toLocaleDateString('es-CL')} • {adv.payment_method_name || "Manual"}
+                                                    </span>
+                                                </div>
+                                                <MoneyDisplay amount={parseFloat(adv.amount)} className="font-bold text-rose-600" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-3 flex justify-between items-center px-2 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                                        <span className="text-[10px] font-black uppercase text-primary">Saldo Final a Pagar</span>
+                                        <MoneyDisplay 
+                                            amount={netSalary - (payroll.advances?.reduce((s, a) => s + parseFloat(a.amount), 0) || 0)} 
+                                            className="text-lg font-black text-primary" 
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Remuneraciones por Pagar */}
+                            {isPosted && (
+                                <div className="flex items-center justify-between px-1 py-2 rounded-lg bg-muted/30">
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+                                        {salaroPaid
+                                            ? <><CheckCircle2 className="h-3 w-3 text-emerald-500" /> Remuneración Pagada</>
+                                            : <><Clock className="h-3 w-3 text-amber-500" /> Remuneraciones por Pagar</>
+                                        }
+                                    </div>
+                                    <MoneyDisplay amount={netSalary} className={cn("text-sm font-bold", salaroPaid ? "text-emerald-600" : "text-amber-600")} />
+                                </div>
+                            )}
+
+                            {/* APORTES EMPLEADOR (INFORMATIVO) */}
+                            {employerContributions.length > 0 && (
+                                <div className="pt-2 border-t border-dashed">
                                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 pb-3 mb-2">
-                                        <AlertCircle className="h-3 w-3" /> Aportes Empleador (Info)
+                                        <AlertCircle className="h-3 w-3" /> Aportes del Empleador
                                     </h3>
                                     <ItemsTable
-                                        items={employerLegalDiscounts}
+                                        items={employerContributions}
                                         isPosted={isPosted}
                                         onEdit={setEditingItem}
                                         onDelete={handleDeleteItem}
                                         accentColor="text-muted-foreground"
                                     />
+                                    {previredPaid && (
+                                        <div className="mt-2 flex items-center gap-2 text-xs text-emerald-600 font-semibold">
+                                            <CheckCircle2 className="h-3 w-3" /> Previred pagado
+                                        </div>
+                                    )}
                                 </div>
                             )}
-
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Payment Dialogs */}
+            <PaymentDialog
+                open={salaryDialog}
+                onOpenChange={setSalaryDialog}
+                title="Registrar Pago de Sueldo"
+                total={netSalary}
+                pendingAmount={netSalary}
+                isPurchase={true} 
+                hideDteFields={true}
+                onConfirm={async (data) => {
+                    await paySalary(payrollId, data)
+                    toast.success("Pago de sueldo registrado")
+                    fetchPayroll()
+                    setSalaryDialog(false)
+                }}
+            />
+            <PaymentDialog
+                open={previredDialog}
+                onOpenChange={setPreviredDialog}
+                title="Registrar Pago de Previred"
+                total={workerDiscountsTotal + employerContributions.reduce((s, i) => s + parseFloat(i.amount), 0)}
+                pendingAmount={workerDiscountsTotal + employerContributions.reduce((s, i) => s + parseFloat(i.amount), 0)}
+                isPurchase={true}
+                hideDteFields={true}
+                onConfirm={async (data) => {
+                    await payPrevired(payrollId, data)
+                    toast.success("Pago de Previred registrado")
+                    fetchPayroll()
+                    setPreviredDialog(false)
+                }}
+            />
         </div>
     )
 }
 
-function ItemsTable({ items, isPosted, onEdit, onDelete, accentColor }: { 
-    items: PayrollItem[], isPosted: boolean, onEdit: (i: PayrollItem) => void, onDelete: (i: PayrollItem) => void, accentColor: string 
+function ItemsTable({ items, isPosted, onEdit, onDelete, accentColor }: {
+    items: PayrollItem[], isPosted: boolean, onEdit: (i: PayrollItem) => void, onDelete: (i: PayrollItem) => void, accentColor: string
 }) {
-    if (items.length === 0) return <div className="px-4 py-6 text-center text-xs text-muted-foreground italic">Sin movimientos</div>
+    if (items.length === 0) return <div className="px-4 py-4 text-center text-xs text-muted-foreground italic">Sin movimientos</div>
     return (
         <Table>
             <TableBody>

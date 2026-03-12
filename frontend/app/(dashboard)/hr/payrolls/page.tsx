@@ -174,19 +174,37 @@ export default function PayrollsPage() {
                 title="Liquidaciones"
                 description="Gestión de pagos de remuneraciones mensuales."
                 titleActions={
-                    <CreatePayrollDialog
-                        open={dialogOpen}
-                        onOpenChange={setDialogOpen}
-                        onSaved={(id) => { setDialogOpen(false); router.push(`/hr/payrolls/${id}`) }}
-                        trigger={
-                            <PageHeaderButton
-                                onClick={() => setDialogOpen(true)}
-                                icon={Plus}
-                                circular
-                                title="Nueva Liquidación"
-                            />
-                        }
-                    />
+                    <div className="flex items-center gap-2">
+                        <PageHeaderButton
+                            onClick={async () => {
+                                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
+                                    try {
+                                        const res = await (await import("@/lib/hr/api")).triggerDraftPayrolls()
+                                        toast.success(res.detail)
+                                        fetchPayrolls()
+                                    } catch {
+                                        toast.error("Error al iniciar tarea")
+                                    }
+                                }
+                            }}
+                            icon={FileText}
+                            variant="outline"
+                            label="Generar Borradores"
+                        />
+                        <CreatePayrollDialog
+                            open={dialogOpen}
+                            onOpenChange={setDialogOpen}
+                            onSaved={(id) => { setDialogOpen(false); router.push(`/hr/payrolls/${id}`) }}
+                            trigger={
+                                <PageHeaderButton
+                                    onClick={() => setDialogOpen(true)}
+                                    icon={Plus}
+                                    circular
+                                    title="Nueva Liquidación"
+                                />
+                            }
+                        />
+                    </div>
                 }
             />
 
@@ -210,8 +228,9 @@ export default function PayrollsPage() {
                             ],
                         },
                     ]}
+                    useAdvancedFilter={true}
                     defaultPageSize={20}
-                    onRowClick={(row) => router.push(`/hr/payrolls/${row.id}`)}
+                    onRowClick={(row: Payroll) => router.push(`/hr/payrolls/${row.id}`)}
                 />
             )}
         </div>

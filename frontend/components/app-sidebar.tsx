@@ -73,6 +73,7 @@ const categoryItems: Record<string, any> = {
         { title: "Configuración RRHH", url: "/settings/hr" },
         { title: "Personal", url: "/hr/employees" },
         { title: "Inasistencias", url: "/hr/absences" },
+        { title: "Anticipos", url: "/hr/advances" },
         { title: "Liquidaciones", url: "/hr/payrolls" },
     ],
 }

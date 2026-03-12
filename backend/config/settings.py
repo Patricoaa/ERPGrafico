@@ -199,6 +199,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'purchasing.tasks.generate_subscription_orders',
         'schedule': crontab(hour=7, minute=0), # Run daily at 7:00 AM
     },
+    'create_monthly_draft_payrolls': {
+        'task': 'hr.tasks.create_monthly_draft_payrolls',
+        'schedule': crontab(hour=7, minute=30, day_of_month=1),  # 1st of each month, 7:30 AM
+    },
 }
 
 # --- TIME TRAVEL PATCH FOR TESTING ---

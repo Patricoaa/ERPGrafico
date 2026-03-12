@@ -8,7 +8,9 @@ from .views import (
     PayrollViewSet, 
     PayrollItemViewSet,
     EmployeeConceptAmountViewSet,
-    AbsenceViewSet
+    AbsenceViewSet,
+    SalaryAdvanceViewSet,
+    PayrollPaymentViewSet,
 )
 
 router = DefaultRouter()
@@ -19,6 +21,8 @@ router.register(r'employees', EmployeeViewSet, basename='employees')
 router.register(r'employee-concept-amounts', EmployeeConceptAmountViewSet, basename='employee-concept-amounts')
 router.register(r'payrolls', PayrollViewSet, basename='payrolls')
 router.register(r'absences', AbsenceViewSet, basename='absences')
+router.register(r'advances', SalaryAdvanceViewSet, basename='advances')
+router.register(r'payroll-payments', PayrollPaymentViewSet, basename='payroll-payments')
 
 # Nested payroll items under /payrolls/{payroll_pk}/items/
 payroll_items_router = DefaultRouter()

@@ -7,7 +7,9 @@ import type {
   AFP, 
   PayrollConcept,
   EmployeeConceptAmount,
-  Absence
+  Absence,
+  SalaryAdvance,
+  PayrollPayment,
 } from "@/types/hr"
 
 // ---- Global HR Settings (Singleton) ----
@@ -146,6 +148,11 @@ export async function generateProformaPayroll(data: { employee: number; period_y
   return res.data
 }
 
+export async function triggerDraftPayrolls(): Promise<{ detail: string; task_id: string }> {
+  const res = await api.post('/hr/payrolls/create_draft_payrolls/')
+  return res.data
+}
+
 // ---- Payroll Items ----
 export async function createPayrollItem(payrollId: number, data: Partial<PayrollItem>): Promise<PayrollItem> {
   const res = await api.post(`/hr/payrolls/${payrollId}/items/`, data)
@@ -159,4 +166,40 @@ export async function updatePayrollItem(payrollId: number, itemId: number, data:
 
 export async function deletePayrollItem(payrollId: number, itemId: number): Promise<void> {
   await api.delete(`/hr/payrolls/${payrollId}/items/${itemId}/`)
+}
+
+// ---- Payroll Actions ----
+export async function payPrevired(payrollId: number, data: any): Promise<PayrollPayment> {
+  const res = await api.post(`/hr/payrolls/${payrollId}/pay_previred/`, data)
+  return res.data
+}
+
+export async function paySalary(payrollId: number, data: any): Promise<PayrollPayment> {
+  const res = await api.post(`/hr/payrolls/${payrollId}/pay_salary/`, data)
+  return res.data
+}
+
+export async function getPayrollPayments(params?: Record<string, string>): Promise<PayrollPayment[]> {
+  const res = await api.get('/hr/payroll-payments/', { params })
+  return res.data.results ?? res.data
+}
+
+// ---- Salary Advances ----
+export async function getAdvances(params?: Record<string, string>): Promise<SalaryAdvance[]> {
+  const res = await api.get('/hr/advances/', { params })
+  return res.data.results ?? res.data
+}
+
+export async function createAdvance(data: Partial<SalaryAdvance>): Promise<SalaryAdvance> {
+  const res = await api.post('/hr/advances/', data)
+  return res.data
+}
+
+export async function updateAdvance(id: number, data: Partial<SalaryAdvance>): Promise<SalaryAdvance> {
+  const res = await api.patch(`/hr/advances/${id}/`, data)
+  return res.data
+}
+
+export async function deleteAdvance(id: number): Promise<void> {
+  await api.delete(`/hr/advances/${id}/`)
 }
