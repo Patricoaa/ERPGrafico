@@ -11,7 +11,7 @@ export default function ProductionPage() {
             <PageHeader
                 title="Módulo de Producción"
                 description="Gestión de órdenes de trabajo, planificación y control de procesos productivos."
-                icon={PenTool}
+                iconName="pen-tool"
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/production/orders">

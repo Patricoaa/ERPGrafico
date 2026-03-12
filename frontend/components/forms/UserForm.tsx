@@ -43,7 +43,6 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<any[]>([])
-    const [availableGroups, setAvailableGroups] = useState<any[]>([])
 
     // Helper to parse groups from initialData
     const parseInitialGroups = () => {

@@ -10,6 +10,7 @@ import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check } from "lucide-reac
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import {
     Select,

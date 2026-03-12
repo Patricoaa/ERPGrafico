@@ -27,7 +27,7 @@ export default function SalesPage() {
             <PageHeader
                 title="Ventas"
                 description="Gestión integral de ingresos, puntos de venta y flujo de caja operativo."
-                icon={ShoppingCart}
+                iconName="shopping-cart"
             />
 
             <motion.div

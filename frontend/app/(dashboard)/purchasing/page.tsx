@@ -11,7 +11,7 @@ export default function PurchasingPage() {
             <PageHeader
                 title="Módulo de Compras"
                 description="Control de proveedores, órdenes de compra y adquisición de existencias."
-                icon={ShoppingBag}
+                iconName="shopping-bag"
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/purchasing/orders">

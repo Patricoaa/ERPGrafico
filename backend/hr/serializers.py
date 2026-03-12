@@ -150,6 +150,69 @@ class PayrollListSerializer(serializers.ModelSerializer):
     period_label = serializers.CharField(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
+    legal_deductions_worker = serializers.SerializerMethodField()
+    employer_contribution = serializers.SerializerMethodField()
+    other_deductions = serializers.SerializerMethodField()
+    advances_total = serializers.SerializerMethodField()
+    previred_paid_amount = serializers.SerializerMethodField()
+    remuneration_paid_amount = serializers.SerializerMethodField()
+    remuneration_paid_status = serializers.SerializerMethodField()
+    previred_paid_status = serializers.SerializerMethodField()
+    total_previred = serializers.SerializerMethodField()
+
+    def get_legal_deductions_worker(self, obj):
+        from django.db.models import Sum
+        return obj.items.filter(concept__category='DESCUENTO_LEGAL_TRABAJADOR').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_employer_contribution(self, obj):
+        from django.db.models import Sum
+        return obj.items.filter(concept__category='DESCUENTO_LEGAL_EMPLEADOR').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_other_deductions(self, obj):
+        from django.db.models import Sum
+        return obj.items.filter(concept__category='OTRO_DESCUENTO').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_advances_total(self, obj):
+        from django.db.models import Sum
+        return obj.advances.aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_previred_paid_amount(self, obj):
+        from django.db.models import Sum
+        from .models import PayrollPayment
+        return obj.payments.filter(payment_type=PayrollPayment.PaymentType.PREVIRED).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_remuneration_paid_amount(self, obj):
+        from django.db.models import Sum
+        from .models import PayrollPayment
+        return obj.payments.filter(payment_type=PayrollPayment.PaymentType.SALARIO).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    def get_total_previred(self, obj):
+        from django.db.models import Sum
+        from .models import PayrollConcept
+        return obj.items.filter(
+            concept__category__in=[
+                PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR
+            ]
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+    def _get_payment_status(self, paid, total):
+        if total <= 0: return "PAID"
+        if paid >= total: return "PAID"
+        if paid > 0: return "PARTIAL"
+        return "PENDING"
+
+    def get_remuneration_paid_status(self, obj):
+        paid = self.get_remuneration_paid_amount(obj)
+        advances = self.get_advances_total(obj)
+        total = obj.net_salary - advances
+        return self._get_payment_status(paid, total)
+
+    def get_previred_paid_status(self, obj):
+        paid = self.get_previred_paid_amount(obj)
+        total = self.get_total_previred(obj)
+        return self._get_payment_status(paid, total)
+
     class Meta:
         model = Payroll
         fields = [
@@ -159,6 +222,9 @@ class PayrollListSerializer(serializers.ModelSerializer):
             'status', 'status_display',
             'base_salary', 'agreed_days', 'absent_days', 'worked_days',
             'total_haberes', 'total_descuentos', 'net_salary',
+            'legal_deductions_worker', 'employer_contribution', 'other_deductions',
+            'advances_total', 'previred_paid_amount', 'remuneration_paid_amount',
+            'remuneration_paid_status', 'previred_paid_status', 'total_previred',
             'journal_entry', 'previred_journal_entry',
             'created_at', 'updated_at',
         ]

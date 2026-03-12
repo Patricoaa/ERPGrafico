@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { getPayrolls, createPayroll, getEmployees, deletePayroll } from "@/lib/hr/api"
+import { getPayrolls, createPayroll, getEmployees, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
 import type { Payroll, Employee } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
@@ -28,9 +28,10 @@ import {
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import { Loader2, Plus, FileText, Eye, Trash2 } from "lucide-react"
+import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
+import { PaymentDialog } from "@/components/shared/PaymentDialog"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -55,6 +56,10 @@ export default function PayrollsPage() {
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
 
+    // State for payment dialogs
+    const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
+    const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
+
     const fetchPayrolls = useCallback(async () => {
         try {
             const data = await getPayrolls()
@@ -67,6 +72,35 @@ export default function PayrollsPage() {
     }, [])
 
     useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
+
+    const handleConfirmPayment = async (data: any) => {
+        if (!selectedPayroll || !paymentMode) return
+
+        try {
+            if (paymentMode === 'SALARY') {
+                await paySalary(selectedPayroll.id, data)
+                toast.success("Pago de remuneración registrado")
+            } else if (paymentMode === 'PREVIRED') {
+                await payPrevired(selectedPayroll.id, data)
+                toast.success("Pago Previred registrado")
+            } else if (paymentMode === 'ADVANCE') {
+                await createAdvance({
+                    employee: selectedPayroll.employee,
+                    payroll: selectedPayroll.id,
+                    amount: data.amount,
+                    date: data.documentDate || new Date().toISOString().split('T')[0],
+                    notes: "Anticipo de sueldo",
+                    ...data
+                })
+                toast.success("Anticipo registrado")
+            }
+            setPaymentMode(null)
+            setSelectedPayroll(null)
+            fetchPayrolls()
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || "Error al procesar")
+        }
+    }
 
     const columns: ColumnDef<Payroll>[] = [
         {
@@ -95,11 +129,38 @@ export default function PayrollsPage() {
             ),
         },
         {
-            accessorKey: "total_descuentos",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Descuentos" />,
+            accessorKey: "legal_deductions_worker",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-80 font-medium">
-                    <MoneyDisplay amount={parseFloat(row.getValue("total_descuentos"))} className="text-rose-600" />
+                <div className="flex justify-end opacity-70">
+                    <MoneyDisplay amount={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "employer_contribution",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." />,
+            cell: ({ row }) => (
+                <div className="flex justify-end opacity-70">
+                    <MoneyDisplay amount={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "other_deductions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." />,
+            cell: ({ row }) => (
+                <div className="flex justify-end opacity-70">
+                    <MoneyDisplay amount={parseFloat((row.original as any).other_deductions || 0)} className="text-muted-foreground text-[11px]" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "advances_total",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" />,
+            cell: ({ row }) => (
+                <div className="flex justify-end opacity-70">
+                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-blue-600 text-[11px]" />
                 </div>
             ),
         },
@@ -107,45 +168,106 @@ export default function PayrollsPage() {
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" />,
             cell: ({ row }) => (
-                <div className="flex justify-end font-bold text-base">
+                <div className="flex justify-end font-bold text-sm">
                     <MoneyDisplay amount={parseFloat(row.getValue("net_salary"))} />
                 </div>
             ),
         },
         {
-            accessorKey: "status",
-            header: "Estado",
+            accessorKey: "remuneration_paid_status",
+            header: "Remuneración",
             cell: ({ row }) => {
-                const p = row.original;
+                const s = (row.original as any).remuneration_paid_status;
                 return (
-                    <Badge
-                        variant="secondary"
-                        className={cn(
-                            "text-[10px] font-bold uppercase",
-                            p.status === 'POSTED'
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                        )}
-                    >
-                        {p.status_display}
+                    <Badge variant="outline" className={cn(
+                        "text-[9px] uppercase font-bold",
+                        s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
+                        s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
+                    )}>
+                        {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
                     </Badge>
-                );
-            },
+                )
+            }
+        },
+        {
+            accessorKey: "previred_paid_status",
+            header: "Previred",
+            cell: ({ row }) => {
+                const s = (row.original as any).previred_paid_status;
+                return (
+                    <Badge variant="outline" className={cn(
+                        "text-[9px] uppercase font-bold",
+                        s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
+                        s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
+                    )}>
+                        {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
+                    </Badge>
+                )
+            }
         },
         {
             id: "actions",
             cell: ({ row }) => {
                 const p = row.original;
                 return (
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/hr/payrolls/${p.id}`) }}>
-                            <Eye className="h-4 w-4" />
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); router.push(`/hr/payrolls/${p.id}`) }}>
+                            <Eye className="h-3.5 w-3.5" />
                         </Button>
+
                         {p.status === 'DRAFT' && (
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                title="Registrar Anticipo"
+                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPayroll(p);
+                                    setPaymentMode('ADVANCE');
+                                }}
+                            >
+                                <Wallet className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+
+                        {p.status === 'POSTED' && (row.original as any).remuneration_paid_status !== 'PAID' && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="Registrar Pago Sueldo"
+                                className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPayroll(p);
+                                    setPaymentMode('SALARY');
+                                }}
+                            >
+                                <Coins className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+
+                        {p.status === 'POSTED' && (row.original as any).previred_paid_status !== 'PAID' && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                title="Pagar Previred"
+                                className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPayroll(p);
+                                    setPaymentMode('PREVIRED');
+                                }}
+                            >
+                                <CreditCard className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+
+                        {p.status === 'DRAFT' && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (confirm("¿Eliminar borrador?")) {
@@ -159,7 +281,7 @@ export default function PayrollsPage() {
                                     }
                                 }}
                             >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         )}
                     </div>
@@ -213,6 +335,7 @@ export default function PayrollsPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
             ) : (
+                <>
                 <DataTable
                     columns={columns}
                     data={payrolls}
@@ -232,11 +355,33 @@ export default function PayrollsPage() {
                     defaultPageSize={20}
                     onRowClick={(row: Payroll) => router.push(`/hr/payrolls/${row.id}`)}
                 />
+
+                <PaymentDialog
+                    open={!!paymentMode}
+                    onOpenChange={(o) => !o && setPaymentMode(null)}
+                    isPurchase={true}
+                    title={
+                        paymentMode === 'SALARY' ? `Pagar Remuneración: ${selectedPayroll?.employee_name}` :
+                        paymentMode === 'PREVIRED' ? `Pagar Previred: ${selectedPayroll?.employee_name}` :
+                        `Registrar Anticipo: ${selectedPayroll?.employee_name}`
+                    }
+                    total={
+                        paymentMode === 'SALARY' ? (selectedPayroll ? (selectedPayroll.net_salary - (selectedPayroll as any).advances_total) : 0) :
+                        paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
+                        (selectedPayroll?.net_salary || 0)
+                    }
+                    pendingAmount={
+                        paymentMode === 'SALARY' ? (selectedPayroll ? (selectedPayroll.net_salary - (selectedPayroll as any).advances_total) : 0) :
+                        paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
+                        (selectedPayroll?.net_salary || 0)
+                    }
+                    onConfirm={handleConfirmPayment}
+                />
+                </>
             )}
         </div>
     )
 }
-
 interface CreatePayrollDialogProps {
     open: boolean
     onOpenChange: (o: boolean) => void

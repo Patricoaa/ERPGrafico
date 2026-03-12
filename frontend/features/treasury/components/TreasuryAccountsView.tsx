@@ -169,6 +169,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             }
         },
         {
+            accessorKey: "account_type",
+            header: "Tipo",
+            enableHiding: true,
+        },
+        {
             id: "actions",
             cell: ({ row }: { row: any }) => {
                 const acc = row.original
@@ -248,6 +253,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         data={accounts}
                         searchPlaceholder="Buscar cuentas por nombre..."
                         filterColumn="name"
+                        initialColumnVisibility={{
+                            account_type: false
+                        }}
                         facetedFilters={[
                             {
                                 column: "account_type",

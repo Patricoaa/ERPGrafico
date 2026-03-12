@@ -229,8 +229,9 @@ export default function AccountingPeriodsPage() {
                                     </div>
                                 )}
                             </CardContent>
-                        );
-                    })}
+                        </Card>
+                    );
+                })}
 
                     {periods.length === 0 && (
                         <Card>
