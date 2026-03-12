@@ -172,12 +172,17 @@ export function StockReport() {
                 onOpenChange={(open) => !open && setAdjustingProduct(null)}
                 size="lg"
                 title={
-                    <div>
-                        <div className="text-xl font-bold">Ajustar Stock: {adjustingProduct?.name}</div>
-                        <p className="text-sm text-muted-foreground font-normal mt-1">
-                            Stock actual: <span className="font-bold">{adjustingProduct?.stock_qty} {adjustingProduct?.uom_name}</span> •
-                            Costo unitario: <span className="font-bold">${adjustingProduct?.unit_cost}</span>
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <ArrowRightLeft className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <div className="text-xl font-bold">Ajustar Stock: {adjustingProduct?.name}</div>
+                            <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                                Stock actual: <span className="font-bold">{adjustingProduct?.stock_qty} {adjustingProduct?.uom_name}</span> •
+                                Costo: <span className="font-bold">${adjustingProduct?.unit_cost}</span>
+                            </p>
+                        </div>
                     </div>
                 }
             >

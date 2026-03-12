@@ -437,7 +437,14 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Nueva Liquidación de Sueldo</DialogTitle>
+                    <DialogTitle>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <span>Nueva Liquidación de Sueldo</span>
+                        </div>
+                    </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

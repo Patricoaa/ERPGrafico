@@ -244,7 +244,14 @@ function AbsenceDialog({ open, onOpenChange, absence, onSaved, trigger }: {
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{absence ? "Editar Inasistencia" : "Registrar Inasistencia"}</DialogTitle>
+                    <DialogTitle>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <CalendarX2 className="h-5 w-5 text-primary" />
+                            </div>
+                            <span>{absence ? "Editar Inasistencia" : "Registrar Inasistencia"}</span>
+                        </div>
+                    </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

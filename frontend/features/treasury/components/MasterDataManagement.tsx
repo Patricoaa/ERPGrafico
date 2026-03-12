@@ -190,7 +190,14 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
             open={open}
             onOpenChange={onOpenChange}
             size="xl"
-            title={bank ? "Editar Banco" : "Nuevo Banco"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Landmark className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{bank ? "Ficha de Banco" : "Nuevo Banco"}</span>
+                </div>
+            }
             description={bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
             hideScrollArea={true}
             className="h-[80vh]"
@@ -529,7 +536,14 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             open={open}
             onOpenChange={onOpenChange}
             size="xl"
-            title={method ? "Editar Método de Pago" : "Nuevo Método de Pago"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{method ? "Ficha de Método de Pago" : "Nuevo Método de Pago"}</span>
+                </div>
+            }
             description={method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
             hideScrollArea={true}
             className="h-[85vh]"

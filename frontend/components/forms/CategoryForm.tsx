@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 import {
@@ -286,9 +287,26 @@ export function CategoryForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size="sm"
-                title={initialData ? "Editar Categoría" : "Crear Categoría"}
-                description={initialData ? "Modifique los datos de la categoría." : "Ingrese los datos de la nueva categoría y sus cuentas contables asociadas."}
+                size={initialData ? "lg" : "sm"}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <LucideIcons.Layers className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{initialData ? "Ficha de Categoría" : "Crear Categoría"}</span>
+                    </div>
+                }
+                description={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {form.watch("prefix") && (
+                            <>
+                                <span>{form.watch("prefix")}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Nueva Categoría"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
                         <Button
@@ -304,8 +322,10 @@ export function CategoryForm({
                     </div>
                 }
             >
-                <Form {...form}>
-                    <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -429,6 +449,17 @@ export function CategoryForm({
                         />
                     </form>
                 </Form>
+                </div>
+
+                {initialData?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                        <ActivitySidebar
+                            entityId={initialData.id}
+                            entityType="category"
+                        />
+                    </div>
+                )}
+            </div>
             </BaseModal>
         </>
     )

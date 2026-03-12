@@ -11,7 +11,7 @@ import { translateFieldName } from "@/lib/utils"
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account'
     className?: string
     title?: string
 }
@@ -35,7 +35,13 @@ const ENDPOINT_MAP: Record<string, string> = {
     'treasuryaccount': '/treasury/accounts',
     'bank': '/treasury/banks',
     'paymentmethod': '/treasury/payment-methods',
-    'terminal': '/treasury/pos-terminals'
+    'terminal': '/treasury/pos-terminals',
+    'category': '/inventory/categories',
+    'warehouse': '/inventory/warehouses',
+    'uom': '/inventory/uoms',
+    'uom_category': '/inventory/uom-categories',
+    'attribute': '/inventory/attributes',
+    'account': '/accounting/accounts'
 }
 
 const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']

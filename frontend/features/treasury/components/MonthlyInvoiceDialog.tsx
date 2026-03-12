@@ -91,7 +91,14 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title="Generar Factura Mensual"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>Generar Factura Mensual</span>
+                </div>
+            }
             description="Ingrese los datos de la factura mensual del proveedor para agrupar las liquidaciones."
             footer={(
                 <div className="flex justify-end gap-2 w-full">

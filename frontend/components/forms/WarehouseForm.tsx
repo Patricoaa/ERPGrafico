@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { ActivitySidebar } from "../audit/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
+import { Warehouse } from "lucide-react"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -92,9 +93,26 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size="sm"
-                title={initialData ? "Editar Almacén" : "Crear Almacén"}
-                description={initialData ? "Modifique los datos del almacén." : "Ingrese los datos del nuevo almacén."}
+                size={initialData ? "lg" : "sm"}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Warehouse className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{initialData ? "Ficha de Almacén" : "Crear Almacén"}</span>
+                    </div>
+                }
+                description={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {initialData?.code && (
+                            <>
+                                <span>{initialData.code}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Nuevo Almacén"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button
@@ -110,8 +128,10 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                     </div>
                 }
             >
-                <Form {...form}>
-                    <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -153,6 +173,17 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
                         />
                     </form>
                 </Form>
+                </div>
+
+                {initialData?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                        <ActivitySidebar
+                            entityId={initialData.id}
+                            entityType="warehouse"
+                        />
+                    </div>
+                )}
+            </div>
             </BaseModal>
         </>
     )

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Plus } from "lucide-react"
+import { Plus, BookOpen } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 
 // ... imports remain mostly the same, removing Dialog specific ones
@@ -33,6 +33,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -184,9 +185,26 @@ export function AccountForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size="sm"
-                title={initialData ? "Editar Cuenta" : "Crear Cuenta Contable"}
-                description={initialData ? "Modifique los detalles de la cuenta contable." : "Ingrese los datos de la nueva cuenta del plan de cuentas."}
+                size={initialData ? "lg" : "sm"}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <BookOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{initialData ? "Ficha de Cuenta" : "Crear Cuenta Contable"}</span>
+                    </div>
+                }
+                description={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {initialData?.code && (
+                            <>
+                                <span>{initialData.code}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Nueva Cuenta"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
                         <Button
@@ -202,9 +220,11 @@ export function AccountForm({
                     </div>
                 }
             >
-                <Form {...form}>
-                    <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                        <FormField
+                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
+                                <FormField
                             control={form.control}
                             name="code"
                             render={({ field }) => (
@@ -395,6 +415,17 @@ export function AccountForm({
                         />
                     </form>
                 </Form>
+                    </div>
+
+                    {initialData?.id && (
+                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="account"
+                            />
+                        </div>
+                    )}
+                </div>
             </BaseModal>
         </>
     )

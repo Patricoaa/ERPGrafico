@@ -208,7 +208,14 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
             open={open}
             onOpenChange={onOpenChange}
             size="xl"
-            title="Registrar Liquidación de Terminal"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Plus className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>Registrar Liquidación de Terminal</span>
+                </div>
+            }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal."
         >
             <TerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />

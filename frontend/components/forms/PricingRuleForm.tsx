@@ -29,7 +29,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Plus } from "lucide-react"
+import { Plus, Tags } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
@@ -171,7 +171,25 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             open={open}
             onOpenChange={onOpenChange}
             size="lg"
-            title={initialData ? "Editar Regla" : "Nueva Regla de Precio"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Tags className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{initialData ? "Ficha de Regla de Precio" : "Nueva Regla de Precio"}</span>
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    {initialData?.rule_type && (
+                        <>
+                            <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
+                            <span className="opacity-30">|</span>
+                        </>
+                    )}
+                    <span>{form.watch("name") || "Configuración de regla activa"}</span>
+                </div>
+            }
             footer={
                 <div className="flex justify-end space-x-2 w-full">
                     <Button type="submit" form="pricing-rule-form">

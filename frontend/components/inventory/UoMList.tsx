@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -186,7 +186,14 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                     setIsUoMModalOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
-                title={`${currentUoM.id ? 'Editar' : 'Crear'} Unidad de Medida`}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Ruler className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{currentUoM.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsUoMModalOpen(false)}>Cancelar</Button>

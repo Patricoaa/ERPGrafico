@@ -13,6 +13,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table" // Ensure this is installed/available
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 
 interface ProductAttribute {
     id: number
@@ -227,15 +228,25 @@ export function AttributeManager() {
             <BaseModal
                 open={isAttrModalOpen}
                 onOpenChange={setIsAttrModalOpen}
-                title="Crear Nuevo Atributo"
-                footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsAttrModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Tag className="h-5 w-5 text-primary" />
                     </div>
-                }
-            >
-                <div className="space-y-4 py-4">
+                    <span>{selectedAttribute ? "Ficha de Atributo" : "Nuevo Atributo"}</span>
+                </div>
+            }
+            footer={
+                <div className="flex justify-end gap-2 w-full">
+                    <Button variant="outline" onClick={() => setIsAttrModalOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
+                </div>
+            }
+            hideScrollArea={true}
+            className="sm:max-w-[700px] h-[500px]"
+        >
+            <div className="flex flex-1 overflow-hidden h-full">
+                <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="attr-name">Nombre (ej: Color, Talla)</Label>
                         <Input
@@ -246,13 +257,33 @@ export function AttributeManager() {
                         />
                     </div>
                 </div>
-            </BaseModal>
+
+                {/* Right Side: Activity Sidebar */}
+                {selectedAttribute && (
+                    <div className="w-[300px] border-l flex flex-col bg-muted/10 shrink-0">
+                        <ActivitySidebar
+                            entityType="attribute"
+                            entityId={selectedAttribute.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
+                    </div>
+                )}
+            </div>
+        </BaseModal>
 
             {/* Modal para Valor */}
             <BaseModal
                 open={isValueModalOpen}
                 onOpenChange={setIsValueModalOpen}
-                title={`Añadir Valor a ${selectedAttribute?.name}`}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Plus className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>Añadir Valor a {selectedAttribute?.name}</span>
+                </div>
+            }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsValueModalOpen(false)}>Cancelar</Button>

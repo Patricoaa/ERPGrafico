@@ -309,9 +309,13 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <WalletCards className="h-4 w-4 text-primary" />
-                        {advance ? "Editar Anticipo" : "Registrar Anticipo"}
+                    <DialogTitle>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <WalletCards className="h-5 w-5 text-primary" />
+                            </div>
+                            <span>{advance ? "Editar Anticipo" : "Registrar Anticipo"}</span>
+                        </div>
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>

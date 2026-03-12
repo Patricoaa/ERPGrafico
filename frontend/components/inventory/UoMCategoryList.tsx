@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Ruler } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -128,7 +128,14 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     setIsModalOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
-                title={`${currentCategory.id ? 'Editar' : 'Crear'} Categoría de Medida`}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Ruler className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{currentCategory.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

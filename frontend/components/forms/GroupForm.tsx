@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Users } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 
 const formSchema = z.object({
@@ -104,10 +104,19 @@ export function GroupForm({
                 open={isOpen}
                 onOpenChange={setOpen}
                 size="sm"
-                title={initialData ? "Editar Grupo" : "Nuevo Grupo"}
-                description={initialData
-                    ? "Modifica el nombre del grupo o equipo."
-                    : "Crea un nuevo grupo funcional para asignar tareas."}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Users className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{initialData ? "Ficha de Grupo" : "Nuevo Grupo"}</span>
+                    </div>
+                }
+                description={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <span>{form.watch("name") || "Configuración de grupo funcional"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
                         <Button

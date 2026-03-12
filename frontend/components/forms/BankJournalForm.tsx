@@ -26,6 +26,7 @@ import api from "@/lib/api"
 import { ActivitySidebar } from "../audit/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { WalletCards } from "lucide-react"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -105,11 +106,28 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
         <BaseModal
             open={open}
             onOpenChange={setOpen}
-            size="sm"
-            title={initialData ? "Editar Caja o Banco" : "Crear Caja o Banco"}
-            description={initialData ? "Modifique los datos de la cuenta de tesorería." : "Ingrese los datos de la nueva cuenta de tesorería (Caja, Banco, etc)."}
+            size={initialData ? "lg" : "sm"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <WalletCards className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}</span>
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    {initialData?.code && (
+                        <>
+                            <span>{initialData.code}</span>
+                            <span className="opacity-30">|</span>
+                        </>
+                    )}
+                    <span>{form.watch("name") || "Nueva Cuenta de Tesorería"}</span>
+                </div>
+            }
             footer={
-                <>
+                <div className="flex justify-end space-x-2 w-full">
                     <Button
                         type="button"
                         variant="outline"
@@ -120,11 +138,13 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                     <Button type="submit" form="bank-journal-form" disabled={loading}>
                         {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
                     </Button>
-                </>
+                </div>
             }
         >
-            <Form {...form}>
-                <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                    <Form {...form}>
+                        <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
                     <FormField
                         control={form.control}
                         name="name"
@@ -192,8 +212,19 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
                             </FormItem>
                         )}
                     />
-                </form>
-            </Form>
+                    </form>
+                </Form>
+                </div>
+
+                {initialData?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
+                        <ActivitySidebar
+                            entityId={initialData.id}
+                            entityType="bank_journal"
+                        />
+                    </div>
+                )}
+            </div>
         </BaseModal>
     )
 }

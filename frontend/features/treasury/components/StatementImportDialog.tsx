@@ -253,7 +253,14 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
         <BaseModal
             open={open}
             onOpenChange={handleClose}
-            title={step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <Upload className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}</span>
+                </div>
+            }
             description={step === 'MAPPING'
                 ? 'Asigna cada columna de tu archivo a los campos del sistema'
                 : 'Sube tu cartola bancaria para conciliar movimientos'}

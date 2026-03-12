@@ -12,12 +12,12 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -120,13 +120,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <div className="grid gap-2">
-                        <Label>Terminal de Cobro</Label>
+                        <Label className={FORM_STYLES.label}>Terminal de Cobro</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
                                     role="combobox"
-                                    className="w-full justify-between font-normal"
+                                    className={cn(FORM_STYLES.input, "w-full justify-between font-normal")}
                                 >
                                     {paymentMethodId
                                         ? terminals.find(t => t.id.toString() === paymentMethodId)?.name
@@ -143,8 +143,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                             placeholder="Buscar terminal..."
                                             onChange={(e) => {
                                                 const val = e.target.value.toLowerCase()
-                                                const inputs = document.querySelectorAll('.terminal-item')
-                                                inputs.forEach((el) => {
+                                                const items = document.querySelectorAll('.terminal-item')
+                                                items.forEach((el) => {
                                                     if (el.textContent?.toLowerCase().includes(val)) {
                                                         (el as HTMLElement).style.display = 'flex'
                                                     } else {
@@ -185,12 +185,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Fecha de Ventas</Label>
+                        <Label className={FORM_STYLES.label}>Fecha de Ventas</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
+                                        FORM_STYLES.input,
                                         "w-full justify-start text-left font-normal",
                                         !date && "text-muted-foreground"
                                     )}
@@ -211,11 +212,12 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>N° Lote / Referencia (Opcional)</Label>
+                        <Label className={FORM_STYLES.label}>N° Lote / Referencia (Opcional)</Label>
                         <Input
                             value={reference}
                             onChange={e => setReference(e.target.value)}
                             placeholder="Ej: LOTE-123456"
+                            className={FORM_STYLES.input}
                         />
                     </div>
                 </div>
@@ -231,14 +233,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Monto Bruto (Ventas)</Label>
+                        <Label className={FORM_STYLES.label}>Monto Bruto (Ventas)</Label>
                         <Input
                             type="number"
                             step="1"
                             value={grossAmount}
                             onChange={e => setGrossAmount(e.target.value)}
                             disabled={selectedMovements.length > 0}
-                            className={cn("font-bold", selectedMovements.length > 0 && "bg-muted")}
+                            className={cn(FORM_STYLES.input, "font-bold", selectedMovements.length > 0 && "bg-muted")}
                         />
                         {selectedMovements.length > 0 && (
                             <p className="text-[10px] text-primary font-bold">
@@ -249,7 +251,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="grid gap-2">
-                            <Label className="text-xs">Comisión Neta</Label>
+                            <Label className={cn(FORM_STYLES.label, "text-xs")}>Comisión Neta</Label>
                             <Input
                                 type="number"
                                 step="1"
@@ -261,29 +263,29 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                     const net = parseFloat(val) || 0
                                     setCommissionTax(Math.round(net * 0.19).toString())
                                 }}
-                                className="text-right"
+                                className={cn(FORM_STYLES.input, "text-right")}
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label className="text-xs">IVA Comisión</Label>
+                            <Label className={cn(FORM_STYLES.label, "text-xs")}>IVA Comisión</Label>
                             <Input
                                 type="number"
                                 step="1"
                                 value={commissionTax}
                                 readOnly
-                                className="text-right bg-muted"
+                                className={cn(FORM_STYLES.input, "text-right bg-muted")}
                             />
                         </div>
                     </div>
 
                     <div className="grid gap-2 pt-2 border-t border-dashed border-gray-300">
-                        <Label className="text-emerald-700 font-bold">Monto Neto a Depositar</Label>
+                        <Label className={cn(FORM_STYLES.label, "text-emerald-700 font-bold")}>Monto Neto a Depositar</Label>
                         <Input
                             type="number"
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className="font-bold text-lg text-right text-emerald-600 border-emerald-200 bg-emerald-50 bg-muted cursor-not-allowed"
+                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-emerald-600 border-emerald-200 bg-emerald-50 bg-muted cursor-not-allowed")}
                         />
                     </div>
                 </div>

@@ -228,7 +228,14 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                     }
                 }}
                 size="lg"
-                title="Nuevo Ajuste de Stock"
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <ArrowRightLeft className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>Nuevo Ajuste de Stock</span>
+                    </div>
+                }
             >
                 <AdjustmentForm
                     onSuccess={() => {
