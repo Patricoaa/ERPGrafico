@@ -224,25 +224,26 @@ export function AccountForm({
                     <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                                <FormField
-                            control={form.control}
-                            name="code"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={initialData ? "" : "Automático"}
-                                            {...field}
-                                            readOnly={!!initialData}
-                                            className={cn(FORM_STYLES.input, initialData && "bg-muted")}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder={initialData ? "" : "Automático"}
+                                                {...field}
+                                                readOnly={!!initialData}
+                                                className={cn(FORM_STYLES.input, initialData && "bg-muted")}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                                    <FormField
                             control={form.control}
                             name="name"
                             render={({ field }) => (
@@ -255,7 +256,9 @@ export function AccountForm({
                                 </FormItem>
                             )}
                         />
-                        <FormField
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
                             control={form.control}
                             name="account_type"
                             render={({ field }) => (
@@ -279,7 +282,7 @@ export function AccountForm({
                                 </FormItem>
                             )}
                         />
-                        <FormField
+                                    <FormField
                             control={form.control}
                             name="parent"
                             render={({ field }) => (
@@ -297,7 +300,13 @@ export function AccountForm({
                                 </FormItem>
                             )}
                         />
+                                </div>
 
+                        <div className="flex items-center gap-2 pt-2">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Mapeo Financiero</span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}

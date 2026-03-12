@@ -9,6 +9,8 @@ import { ProductFormValues } from "./schema"
 import { CalendarClock, DollarSign, Users, Calendar } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface ProductSubscriptionTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -19,15 +21,12 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
     return (
         <div className="space-y-6">
             {/* 1. Activación de Suscripción (Ahora primero) */}
-            <Card className="border-primary/20 shadow-sm">
-                <CardHeader className="bg-primary/5">
-                    <CardTitle className="flex items-center gap-2 text-lg text-primary">
-                        <Users className="h-5 w-5" />
-                        Datos de Suscripción
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-6 rounded-2xl border bg-card/50 space-y-4">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                    <Users className="h-4 w-4" />
+                    Datos de Suscripción
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="subscription_supplier"
@@ -73,19 +72,16 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             )}
                         />
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 2. Configuración de Recurrencia */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <CalendarClock className="h-5 w-5 text-primary" />
-                            Configuración de Recurrencia
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                <div className="p-6 rounded-2xl border bg-card/50 space-y-4">
+                    <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                        <CalendarClock className="h-4 w-4" />
+                        Configuración de Recurrencia
+                    </h3>
                         <FormField
                             control={form.control}
                             name="recurrence_period"
@@ -197,18 +193,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 />
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                </div>
 
                 {/* 3. Configuración de Facturación */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <DollarSign className="h-5 w-5 text-primary" />
-                            Configuración de Facturación
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                <div className="p-6 rounded-2xl border bg-card/50 space-y-4">
+                    <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                        <DollarSign className="h-4 w-4" />
+                        Configuración de Facturación
+                    </h3>
                         <FormField
                             control={form.control}
                             name="default_invoice_type"
@@ -293,18 +285,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 </FormItem>
                             )}
                         />
-                    </CardContent>
-                </Card>
+                </div>
 
                 {/* 4. Configuración Contable (Haber / Debe) */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg text-emerald-600">
-                            <DollarSign className="h-5 w-5" />
-                            Mapeo Contable de Suscripción
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                <div className="p-6 rounded-2xl border bg-card/50 space-y-4">
+                    <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                        <DollarSign className="h-4 w-4" />
+                        Mapeo Contable de Suscripción
+                    </h3>
                         <FormField
                             control={form.control}
                             name="income_account"
@@ -348,18 +336,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 </FormItem>
                             )}
                         />
-                    </CardContent>
-                </Card>
+                </div>
 
                 {/* 5. Duración del Contrato */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Calendar className="h-5 w-5 text-primary" />
-                            Duración del Contrato
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                <div className="p-6 rounded-2xl border bg-card/50 space-y-4">
+                    <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                        <Calendar className="h-4 w-4" />
+                        Duración del Contrato
+                    </h3>
                         <FormField
                             control={form.control}
                             name="is_indefinite"
@@ -400,8 +384,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 )}
                             />
                         )}
-                    </CardContent>
-                </Card>
+                </div>
             </div>
         </div>
     )

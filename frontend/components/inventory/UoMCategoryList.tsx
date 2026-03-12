@@ -148,7 +148,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     </div>
                 }
             >
-                <div className="flex flex-1 overflow-hidden min-h-[400px]">
+                <div className="flex flex-1 overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="cat-name" className={FORM_STYLES.label}>Nombre</Label>

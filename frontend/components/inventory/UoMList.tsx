@@ -218,6 +218,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                                 onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className={FORM_STYLES.label}>Categoría</Label>
                             <Popover>
@@ -238,7 +239,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                                         <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                             <input
-                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
                                                 placeholder="Buscar categoría..."
                                                 onChange={(e) => {
                                                     const val = e.target.value.toLowerCase()
@@ -303,7 +304,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                                         <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                             <input
-                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
                                                 placeholder="Buscar tipo..."
                                                 onChange={(e) => {
                                                     const val = e.target.value.toLowerCase()
@@ -345,6 +346,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                                     </div>
                                 </PopoverContent>
                             </Popover>
+                        </div>
                         </div>
                         {currentUoM.uom_type !== 'REFERENCE' && (
                             <div className="space-y-2">

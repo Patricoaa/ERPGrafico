@@ -339,6 +339,7 @@ export function CategoryForm({
                                 </FormItem>
                             )}
                         />
+                        <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="prefix"
@@ -368,6 +369,7 @@ export function CategoryForm({
                                 </FormItem>
                             )}
                         />
+                        </div>
                         <FormField
                             control={form.control}
                             name="parent"
@@ -393,18 +395,26 @@ export function CategoryForm({
                                 </FormItem>
                             )}
                         />
+
+                        <div className="flex items-center gap-2 pt-1">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Cuentas Contables</span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
                         <FormField
                             control={form.control}
                             name="asset_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta de Activo (Inventario)</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Activo (Inventario)</FormLabel>
                                     <FormControl>
                                         <AccountSelector
                                             value={field.value}
                                             onChange={field.onChange}
                                             accountType="ASSET"
-                                            placeholder="Seleccionar cuenta..."
+                                            placeholder="Seleccionar..."
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -416,13 +426,13 @@ export function CategoryForm({
                             name="income_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta de Ingresos (Ventas)</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Ingresos (Ventas)</FormLabel>
                                     <FormControl>
                                         <AccountSelector
                                             value={field.value}
                                             onChange={field.onChange}
                                             accountType="INCOME"
-                                            placeholder="Seleccionar cuenta..."
+                                            placeholder="Seleccionar..."
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -434,19 +444,20 @@ export function CategoryForm({
                             name="expense_account"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta de Gastos (Costo)</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Gastos (Costo)</FormLabel>
                                     <FormControl>
                                         <AccountSelector
                                             value={field.value}
                                             onChange={field.onChange}
                                             accountType="EXPENSE"
-                                            placeholder="Seleccionar cuenta..."
+                                            placeholder="Seleccionar..."
                                         />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
+                        </div>
                     </form>
                 </Form>
                 </div>

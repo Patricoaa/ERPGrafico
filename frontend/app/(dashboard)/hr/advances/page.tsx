@@ -9,6 +9,8 @@ import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees,
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -30,7 +32,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog"
 import {
-    Plus, Pencil, Trash2, Loader2, WalletCards, CheckCircle2, Clock
+    Plus, Pencil, Trash2, Loader2, WalletCards, CheckCircle2, Clock, History
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { format } from "date-fns"
@@ -307,119 +309,134 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[85vh] p-0 flex flex-col gap-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-2">
-                    <DialogTitle>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <WalletCards className="h-5 w-5 text-primary" />
-                            </div>
-                            <span>{advance ? "Editar Anticipo" : "Registrar Anticipo"}</span>
-                        </div>
-                    </DialogTitle>
-                </DialogHeader>
-
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left: Form */}
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <FormField control={form.control} name="employee" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue placeholder="Seleccionar empleado..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {employees.map(e => (
-                                                    <SelectItem key={e.id} value={e.id.toString()}>
-                                                        {e.contact_detail?.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <FormField control={form.control} name="amount" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} type="number" placeholder="0" className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="date" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Fecha Propuesta</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} type="date" className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                </div>
-
-                                <FormField control={form.control} name="payroll" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Vincular a Liquidación (Obligatorio)</FormLabel>
-                                        <Select 
-                                            onValueChange={field.onChange} 
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue placeholder="Seleccionar liquidación..." />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {employeePayrolls.map(p => (
-                                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                                        {p.display_id} – {p.period_label} ({p.status_display})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-
-                                <FormField control={form.control} name="notes" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Notas</FormLabel>
-                                        <FormControl>
-                                            <Textarea {...field} rows={2} placeholder="Descripción opcional..." className={FORM_STYLES.input} />
-                                        </FormControl>
-                                    </FormItem>
-                                )} />
-                            </form>
-                        </Form>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size={advance ? "xl" : "md"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <WalletCards className="h-5 w-5 text-primary" />
                     </div>
-
-                    {/* Right: Activity Sidebar placeholder */}
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground gap-2">
-                            <Plus className="h-8 w-8 opacity-20" />
-                            <p className="text-xs">El historial estará disponible una vez registrado el anticipo.</p>
-                        </div>
-                    </div>
+                    <span>{advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}</span>
                 </div>
-
-                <div className="p-6 border-t flex justify-end gap-2 bg-muted/10">
+            }
+            description={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
+            hideScrollArea={true}
+            className="h-[80vh]"
+            footer={
+                <div className="flex justify-end gap-2 w-full">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)}>
+                    <Button type="submit" form="advance-form" disabled={saving}>
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {advance ? "Actualizar" : "Registrar"}
                     </Button>
                 </div>
-            </DialogContent>
-        </Dialog>
+            }
+        >
+            <div className="flex-1 flex overflow-hidden h-full">
+                {/* Left: Form */}
+                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
+                    <Form {...form}>
+                        <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                            <FormField control={form.control} name="employee" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className={FORM_STYLES.input}>
+                                                <SelectValue placeholder="Seleccionar empleado..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {employees.map(e => (
+                                                <SelectItem key={e.id} value={e.id.toString()}>
+                                                    {e.contact_detail?.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={form.control} name="amount" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} type="number" placeholder="0" className={FORM_STYLES.input} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="date" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Fecha Propuesta</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} type="date" className={FORM_STYLES.input} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+
+                            <FormField control={form.control} name="payroll" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Vincular a Liquidación (Obligatorio)</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        value={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger className={FORM_STYLES.input}>
+                                                <SelectValue placeholder="Seleccionar liquidación..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {employeePayrolls.map(p => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>
+                                                    {p.display_id} – {p.period_label} ({p.status_display})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <FormField control={form.control} name="notes" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Notas</FormLabel>
+                                    <FormControl>
+                                        <Textarea {...field} rows={2} placeholder="Descripción opcional..." className={FORM_STYLES.input} />
+                                    </FormControl>
+                                </FormItem>
+                            )} />
+                        </form>
+                    </Form>
+                </div>
+
+                {/* Right: Activity Sidebar */}
+                {advance?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-0 hidden lg:flex">
+                        <ActivitySidebar
+                            entityId={advance.id}
+                            entityType="salaryadvance"
+                            title="Historial"
+                            className="h-full border-none"
+                        />
+                    </div>
+                )}
+                {!advance?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground gap-2">
+                            <History className="h-8 w-8 opacity-20" />
+                            <p className="text-xs">El historial estará disponible una vez registrado el anticipo.</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </BaseModal>
     )
 }

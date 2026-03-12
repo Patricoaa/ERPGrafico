@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Plus, Trash2, Pencil } from "lucide-react"
+import { CalendarIcon, Plus, Trash2, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -42,6 +42,7 @@ import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
+import { ActivitySidebar } from "../audit/ActivitySidebar"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -251,9 +252,26 @@ export function JournalEntryForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size="xl"
-                title={initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}
-                description="Ingrese los detalles del movimiento contable."
+                size={initialData ? "xl" : "lg"}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <BookOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <span>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</span>
+                    </div>
+                }
+                description={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {initialData?.reference && (
+                            <>
+                                <span>Ref: {initialData.reference}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("description") || "Registro manual de movimiento"}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
                         <Button
@@ -269,9 +287,11 @@ export function JournalEntryForm({
                     </div>
                 }
             >
-                <Form {...form}>
-                    <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                        <div className="grid grid-cols-12 gap-4">
+                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
+                                <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-3">
                                 <FormField
                                     control={form.control}
@@ -348,14 +368,25 @@ export function JournalEntryForm({
                             </div>
                         </div>
 
+                        <div className="relative py-4">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-border" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground font-semibold tracking-widest text-[10px]">
+                                    LÍNEAS DEL ASIENTO
+                                </span>
+                            </div>
+                        </div>
+
                         <div className="border rounded-md p-2">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-[300px]">Cuenta</TableHead>
-                                        <TableHead>Glosa</TableHead>
-                                        <TableHead className="w-[150px]">Debe</TableHead>
-                                        <TableHead className="w-[150px]">Haber</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[300px]")}>Cuenta</TableHead>
+                                        <TableHead className={FORM_STYLES.label}>Glosa</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px]")}>Debe</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px]")}>Haber</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -451,8 +482,19 @@ export function JournalEntryForm({
                                 {form.formState.errors.items.root.message}
                             </div>
                         )}
-                    </form>
-                </Form>
+                            </form>
+                        </Form>
+                    </div>
+
+                    {initialData?.id && (
+                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="journal_entry"
+                            />
+                        </div>
+                    )}
+                </div>
             </BaseModal>
         </>
     )

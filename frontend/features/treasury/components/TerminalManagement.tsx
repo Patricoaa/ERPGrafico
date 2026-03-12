@@ -11,9 +11,11 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History } from "lucide-react"
+import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 
 
@@ -352,9 +354,26 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size="xl"
-            title={terminal ? "Editar Terminal" : "Nuevo Terminal"}
-            description={terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}
+            size={terminal ? "xl" : "lg"}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <MonitorSmartphone className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    {terminal?.code && (
+                        <>
+                            <span>{terminal.code}</span>
+                            <span className="opacity-30">|</span>
+                        </>
+                    )}
+                    <span>{terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}</span>
+                </div>
+            }
             hideScrollArea={true}
             className="h-[90vh]"
             footer={
@@ -373,26 +392,26 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                     <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Nombre <span className="text-red-500">*</span></Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required />
+                                <Label className={FORM_STYLES.label}>Nombre <span className="text-red-500">*</span></Label>
+                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required className={FORM_STYLES.input} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Código <span className="text-red-500">*</span></Label>
-                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className="uppercase" />
+                                <Label className={FORM_STYLES.label}>Código <span className="text-red-500">*</span></Label>
+                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className={cn(FORM_STYLES.input, "uppercase")} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Ubicación</Label>
-                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" />
+                                <Label className={FORM_STYLES.label}>Ubicación</Label>
+                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" className={FORM_STYLES.input} />
                             </div>
                             <div className="space-y-2">
-                                <Label>IP (Opcional)</Label>
-                                <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" />
+                                <Label className={FORM_STYLES.label}>IP (Opcional)</Label>
+                                <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" className={FORM_STYLES.input} />
                             </div>
                         </div>
 
                         <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
-                                <Label className="text-sm font-bold">Métodos de Pago Permitidos</Label>
+                                <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
                                 <Badge variant="outline" className="text-[10px] bg-white">
                                     {selectedMethodIds.length} seleccionados
                                 </Badge>
@@ -450,21 +469,16 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                 </div>
 
                 {/* Right Side: Activity Sidebar */}
-                <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden">
-                    {terminal ? (
+                {terminal?.id && (
+                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
                         <ActivitySidebar
                             entityType="terminal"
                             entityId={terminal.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                            <History className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm">El historial estará disponible una vez creado el terminal.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </BaseModal>
     )

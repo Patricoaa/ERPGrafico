@@ -53,8 +53,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
 
-    // State for Replenishment Rules
-    const [reorderingRules, setReorderingRules] = useState<any[]>([])
     const [activeTab, setActiveTab] = useState("general")
 
     const form = useForm<ProductFormValues>({
@@ -333,7 +331,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 })
                 setImagePreview(initialData.image || null)
                 fetchPricingRules()
-                setReorderingRules(initialData.reordering_rules || [])
             } else {
                 form.reset({
                     code: "",
@@ -379,7 +376,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 })
                 setImagePreview(null)
                 setPricingRules([])
-                setReorderingRules([])
             }
         }
     }, [open, initialData])
@@ -515,10 +511,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
 
 
-            // Append Replenishment Rules
-            if (reorderingRules && reorderingRules.length > 0) {
-                formData.append('reordering_rules', JSON.stringify(reorderingRules))
-            }
 
             if (data.custom_fields_schema) {
                 formData.append('custom_fields_schema', data.custom_fields_schema)
@@ -739,8 +731,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                             <ProductInventoryTab
                                 form={form as any}
                                 initialData={initialData}
-                                reorderingRules={reorderingRules}
-                                setReorderingRules={setReorderingRules}
                                 warehouses={warehouses}
                                 uoms={uoms}
                             />

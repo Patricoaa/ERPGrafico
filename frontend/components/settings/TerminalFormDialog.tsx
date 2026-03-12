@@ -391,10 +391,10 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                     <div className="p-2">
-                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background focus-within:ring-1 focus-within:ring-primary/30">
                                                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                             <input
-                                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground")}
                                                                 placeholder="Buscar cuenta..."
                                                                 onChange={(e) => {
                                                                     const val = e.target.value.toLowerCase()

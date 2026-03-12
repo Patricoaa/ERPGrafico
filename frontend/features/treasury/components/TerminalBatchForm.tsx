@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 
 interface TerminalBatchFormProps {
@@ -139,7 +140,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                     <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                         <input
-                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                            className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
                                             placeholder="Buscar terminal..."
                                             onChange={(e) => {
                                                 const val = e.target.value.toLowerCase()
@@ -340,7 +341,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                     movement_type: 'INBOUND',
                     terminal_batch__isnull: 'True'
                 }
-            }).then(res => {
+            }).then((res: any) => {
                 const data = res.data.results || res.data
 
                 // Sort: Prioritize selected date, then by date descending

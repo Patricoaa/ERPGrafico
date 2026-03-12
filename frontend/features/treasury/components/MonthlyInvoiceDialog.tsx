@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Loader2 } from "lucide-react"
+import { Loader2, FileText } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -161,24 +161,26 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
                 </div>
 
                 <div className="border-t pt-4 space-y-4">
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>N° de Factura <span className="text-destructive">*</span></Label>
-                        <Input
-                            placeholder="Ej: 84729"
-                            value={number}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
-                            className={FORM_STYLES.input}
-                        />
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label className={FORM_STYLES.label}>N° de Factura <span className="text-destructive">*</span></Label>
+                            <Input
+                                placeholder="Ej: 84729"
+                                value={number}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
+                                className={FORM_STYLES.input}
+                            />
+                        </div>
 
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Fecha de Emisión <span className="text-destructive">*</span></Label>
-                        <Input
-                            type="date"
-                            value={date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
-                            className={FORM_STYLES.input}
-                        />
+                        <div className="grid gap-2">
+                            <Label className={FORM_STYLES.label}>Fecha de Emisión <span className="text-destructive">*</span></Label>
+                            <Input
+                                type="date"
+                                value={date}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
+                                className={FORM_STYLES.input}
+                            />
+                        </div>
                     </div>
 
                     <div className="grid gap-2">

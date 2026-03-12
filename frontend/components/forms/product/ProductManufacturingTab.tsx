@@ -42,12 +42,10 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                 {!variantMode && (
                     <div className="md:col-span-4 space-y-6">
                         <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
-                            <div className="flex items-center gap-3 border-b pb-4">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                    <Settings2 className="h-5 w-5 text-primary" />
-                                </div>
-                                <h3 className="font-bold">Ajustes de Producción</h3>
-                            </div>
+                            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
+                                <Settings2 className="h-4 w-4" />
+                                Ajustes de Producción
+                            </h3>
 
                             <FormField<ProductFormValues>
                                 control={form.control}
@@ -56,7 +54,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     <FormItem>
                                         <div className="flex items-center gap-2 mb-2">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <FormLabel className="mb-0">Días de Entrega Estándar</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Días de Entrega Estándar</FormLabel>
                                         </div>
                                         <FormControl>
                                             <div className="relative">
@@ -129,7 +127,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     return (
                                         <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
-                                                <FormLabel className="font-bold">Posee Receta (BOM)</FormLabel>
+                                                <FormLabel className={FORM_STYLES.label}>Posee Receta (BOM)</FormLabel>
                                                 <FormDescription className="text-[10px]">
                                                     {shouldDisable
                                                         ? "Los productos Express requieren BOM obligatorio."
@@ -156,7 +154,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     !variantMode ? (
                                         <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
-                                                <FormLabel className="font-bold">Posee Variantes</FormLabel>
+                                                <FormLabel className={FORM_STYLES.label}>Posee Variantes</FormLabel>
                                                 <FormDescription className="text-[10px]">
                                                     Permite generar múltiples versiones de este producto.
                                                 </FormDescription>
@@ -303,8 +301,8 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <h3 className="text-lg font-bold flex items-center gap-2">
-                                        <Layers className="h-5 w-5 text-primary" />
+                                    <h3 className="text-sm font-bold flex items-center gap-2 mb-0 text-primary">
+                                        <Layers className="h-4 w-4" />
                                         Gestión de Recetas (BOM)
                                     </h3>
                                     <p className="text-xs text-muted-foreground">Define los componentes y procesos necesarios para fabricar este producto.</p>

@@ -191,7 +191,7 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size={bank ? "xl" : "lg"}
+            size={bank ? "xl" : "md"}
             title={
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
@@ -222,21 +222,23 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
                                 <Label htmlFor="bank-name" className={FORM_STYLES.label}>Nombre</Label>
                                 <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" className={FORM_STYLES.input} required />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="bank-code" className={FORM_STYLES.label}>Código (Alias)</Label>
-                                <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" className={FORM_STYLES.input} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="bank-swift" className={FORM_STYLES.label}>Código SWIFT/BIC</Label>
-                                <Input
-                                    id="bank-swift"
-                                    value={swiftCode}
-                                    onChange={e => setSwiftCode(e.target.value)}
-                                    placeholder="Ej: BCHICLRM"
-                                    maxLength={11}
-                                    className={FORM_STYLES.input}
-                                />
-                                <p className="text-[10px] text-muted-foreground italic">Código internacional para transferencias</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="bank-code" className={FORM_STYLES.label}>Código (Alias)</Label>
+                                    <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" className={FORM_STYLES.input} />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="bank-swift" className={FORM_STYLES.label}>Código SWIFT/BIC</Label>
+                                    <Input
+                                        id="bank-swift"
+                                        value={swiftCode}
+                                        onChange={e => setSwiftCode(e.target.value)}
+                                        placeholder="Ej: BCHICLRM"
+                                        maxLength={11}
+                                        className={FORM_STYLES.input}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">Código internacional para transferencias</p>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -630,7 +632,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                 <div className="grid gap-2">
                                     <Label className="text-xs">Proveedor (Contacto)</Label>
                                     <Select value={cardProviderId || ""} onValueChange={setCardProviderId}>
-                                        <SelectTrigger className="bg-white">
+                                        <SelectTrigger className={cn(FORM_STYLES.input, "bg-white")}>
                                             <SelectValue placeholder="Seleccionar contacto del proveedor..." />
                                         </SelectTrigger>
                                         <SelectContent>

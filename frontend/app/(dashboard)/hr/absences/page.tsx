@@ -280,25 +280,44 @@ function AbsenceDialog({ open, onOpenChange, absence, onSaved, trigger }: {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                <FormField control={form.control} name="absence_type" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Tipo de Inasistencia</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="absence_type" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>Tipo de Inasistencia</FormLabel>
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <FormControl>
+                                                    <SelectTrigger className={FORM_STYLES.input}>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="AUSENTISMO">Ausentismo Injustificado</SelectItem>
+                                                    <SelectItem value="LICENCIA">Licencia Médica</SelectItem>
+                                                    <SelectItem value="PERMISO_SIN_GOCE">Permiso sin Goce de Sueldo</SelectItem>
+                                                    <SelectItem value="AUSENCIA_HORAS">Ausencia de Horas</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="days" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>Días Totales</FormLabel>
                                             <FormControl>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
+                                                <Input 
+                                                    {...field} 
+                                                    type="number" 
+                                                    step="0.5" 
+                                                    min="0" 
+                                                    className={FORM_STYLES.input}
+                                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                                                />
                                             </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="AUSENTISMO">Ausentismo Injustificado</SelectItem>
-                                                <SelectItem value="LICENCIA">Licencia Médica</SelectItem>
-                                                <SelectItem value="PERMISO_SIN_GOCE">Permiso sin Goce de Sueldo</SelectItem>
-                                                <SelectItem value="AUSENCIA_HORAS">Ausencia de Horas</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                            <p className="text-[10px] text-muted-foreground italic">Para ausencia de horas, calcule su equivalente en días (ej. 0.5).</p>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="start_date" render={({ field }) => (
                                         <FormItem>
@@ -319,23 +338,6 @@ function AbsenceDialog({ open, onOpenChange, absence, onSaved, trigger }: {
                                         </FormItem>
                                     )} />
                                 </div>
-                                <FormField control={form.control} name="days" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Días Totales</FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                {...field} 
-                                                type="number" 
-                                                step="0.5" 
-                                                min="0" 
-                                                className={FORM_STYLES.input}
-                                                onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                                            />
-                                        </FormControl>
-                                        <p className="text-[10px] text-muted-foreground italic">Para ausencia de horas, calcule su equivalente en días (ej. 0.5).</p>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
                                 <FormField control={form.control} name="notes" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className={FORM_STYLES.label}>Notas Adicionales</FormLabel>
