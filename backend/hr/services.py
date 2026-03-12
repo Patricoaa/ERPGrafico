@@ -334,11 +334,31 @@ def post_payroll(payroll):
                 debit=Decimal('0'), credit=previred_credit
             )
             
-        # 6. Pasivo Sueldo Líquido (CREDIT)
+        # 6. Rebaja de Anticipos (CREDIT) y Ajuste de Remuneraciones por Pagar
+        # Si hay anticipos asociados, debemos rebajarlos de la cuenta de Anticipos (Activo)
+        # y el saldo a Remuneraciones por Pagar será el Neto - Anticipos.
+        total_advances = Decimal('0')
+        advances = payroll.advances.all()
+        for adv in advances:
+            total_advances += adv.amount
+            if settings.account_anticipos:
+                JournalItem.objects.create(
+                    entry=entry, account=settings.account_anticipos,
+                    label=f"Rebaja Anticipo {adv.date} - {employee_name}",
+                    debit=Decimal('0'), credit=adv.amount
+                )
+            adv.is_discounted = True
+            adv.save(update_fields=['is_discounted'])
+
+        # 7. Pasivo Sueldo Líquido Ajustado (CREDIT)
+        # El sueldo líquido ya tiene los descuentos aplicados, pero el asiento contable
+        # debe reflejar que una parte ya se pagó (Anticipos) y el resto queda por pagar.
+        rem_por_pagar = payroll.net_salary - total_advances
+        
         JournalItem.objects.create(
             entry=entry, account=settings.account_remuneraciones_por_pagar,
-            label=f"Remuneraciones por Pagar - {employee_name}",
-            debit=Decimal('0'), credit=payroll.net_salary
+            label=f"Remuneraciones por Pagar (Saldo) - {employee_name}",
+            debit=Decimal('0'), credit=rem_por_pagar
         )
         
         entry.check_balance()

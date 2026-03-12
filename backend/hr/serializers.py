@@ -179,6 +179,10 @@ class SalaryAdvanceSerializer(serializers.ModelSerializer):
             'journal_entry', 'payment_method_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+    def validate_payroll(self, value):
+        if value and value.status == Payroll.Status.POSTED:
+            raise serializers.ValidationError("No se pueden asignar anticipos a liquidaciones ya contabilizadas.")
+        return value
 
     def get_payment_method_name(self, obj):
         if obj.journal_entry:

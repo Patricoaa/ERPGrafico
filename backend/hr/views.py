@@ -1,5 +1,7 @@
 from decimal import Decimal
+from django.db import transaction, models
 from django.db.models import Sum
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -186,17 +188,12 @@ class PayrollViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def pay_previred(self, request, pk=None):
         """Registra el pago de obligaciones Previred (descuentos legales + aportes empleador)."""
-        from decimal import Decimal
-        from django.utils import timezone
-        from django.db.models import Sum
         from .models import PayrollConcept
         payroll = self.get_object()
         if payroll.status != Payroll.Status.POSTED:
             return Response({'detail': 'Solo se puede pagar Previred de liquidaciones contabilizadas.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if PayrollPayment.objects.filter(payroll=payroll, payment_type=PayrollPayment.PaymentType.PREVIRED).exists():
-            return Response({'detail': 'El Previred ya fue pagado para esta liquidación.'}, status=status.HTTP_400_BAD_REQUEST)
-
+        # Calculate total Previred (Employee + Employer)
         previred_total = payroll.items.filter(
             concept__category__in=[
                 PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
@@ -204,8 +201,16 @@ class PayrollViewSet(viewsets.ModelViewSet):
             ]
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
-        if previred_total <= 0:
-            return Response({'detail': 'No hay montos de Previred para pagar.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check existing payments
+        paid_previred = PayrollPayment.objects.filter(
+            payroll=payroll, 
+            payment_type=PayrollPayment.PaymentType.PREVIRED
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        remaining_previred = previred_total - paid_previred
+
+        if remaining_previred <= 0:
+            return Response({'detail': 'Las obligaciones de Previred ya están pagadas en su totalidad.'}, status=status.HTTP_400_BAD_REQUEST)
 
         payment_date = request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat()
         notes = request.data.get('notes', '')
@@ -233,7 +238,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             movement = TreasuryService.create_movement(
-                amount=previred_total,
+                amount=remaining_previred,
                 movement_type=TreasuryMovement.Type.OUTBOUND,
                 payment_method=request.data.get('paymentMethod', TreasuryMovement.Method.TRANSFER),
                 payment_method_new=payment_method_obj,
@@ -242,7 +247,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
                 partner=payroll.employee.contact,
                 payroll=payroll,
                 payroll_payment_type=TreasuryMovement.PayrollPaymentType.PREVIRED,
-                reference=f"Previred {payroll.display_id}",
+                reference=f"Pago Previred {payroll.display_id} - {payroll.period_label}",
                 notes=notes,
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
@@ -252,7 +257,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
             payment = PayrollPayment.objects.create(
                 payroll=payroll,
                 payment_type=PayrollPayment.PaymentType.PREVIRED,
-                amount=previred_total,
+                amount=remaining_previred,
                 date=payment_date,
                 notes=notes,
                 journal_entry=movement.journal_entry
@@ -263,19 +268,25 @@ class PayrollViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def pay_salary(self, request, pk=None):
         """Registra el pago del sueldo líquido al trabajador."""
-        from decimal import Decimal
-        from django.utils import timezone
         payroll = self.get_object()
         if payroll.status != Payroll.Status.POSTED:
             return Response({'detail': 'Solo se puede registrar pago de liquidaciones contabilizadas.'}, status=status.HTTP_400_BAD_REQUEST)
-        if PayrollPayment.objects.filter(payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO).exists():
-            return Response({'detail': 'El sueldo ya fue pagado para esta liquidación.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Calculate what's actually pending:
+        # Net Salary - Advances - Previous Salary Payments
+        total_advances = payroll.advances.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        paid_salary = PayrollPayment.objects.filter(
+            payroll=payroll, 
+            payment_type=PayrollPayment.PaymentType.SALARIO
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        remaining_salary = payroll.net_salary - total_advances - paid_salary
+
+        if remaining_salary <= 0:
+            return Response({'detail': 'El sueldo líquido ya ha sido pagado en su totalidad (incluyendo anticipos).'}, status=status.HTTP_400_BAD_REQUEST)
 
         settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
         if not settings.account_remuneraciones_por_pagar:
             return Response({'detail': 'Falta configurar la cuenta Remuneraciones por Pagar en ajustes globales.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        from django.db import transaction
         payment_date = request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat()
         notes = request.data.get('notes', '')
         
@@ -300,11 +311,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
             except (PaymentMethod.DoesNotExist, ValueError):
                 pass
 
-        salary_amount = payroll.net_salary
-
         with transaction.atomic():
             movement = TreasuryService.create_movement(
-                amount=salary_amount,
+                amount=remaining_salary,
                 movement_type=TreasuryMovement.Type.OUTBOUND,
                 payment_method=request.data.get('paymentMethod', TreasuryMovement.Method.TRANSFER),
                 payment_method_new=payment_method_obj,
@@ -313,7 +322,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
                 partner=payroll.employee.contact,
                 payroll=payroll,
                 payroll_payment_type=TreasuryMovement.PayrollPaymentType.SALARY,
-                reference=f"Sueldo {payroll.display_id}",
+                reference=f"Pago Sueldo {payroll.display_id} - {payroll.period_label}",
                 notes=notes,
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
@@ -323,7 +332,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
             payment = PayrollPayment.objects.create(
                 payroll=payroll,
                 payment_type=PayrollPayment.PaymentType.SALARIO,
-                amount=salary_amount,
+                amount=remaining_salary,
                 date=payment_date,
                 notes=notes,
                 journal_entry=movement.journal_entry
@@ -397,7 +406,6 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         from treasury.services import TreasuryService
         from treasury.models import TreasuryMovement
-        from django.db import transaction
 
         # The advance itself is saved first
         # We ensure amount and date are taken from request if provided (e.g. from PaymentDialog)

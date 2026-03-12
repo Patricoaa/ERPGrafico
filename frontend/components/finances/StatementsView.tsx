@@ -220,7 +220,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             <div className="max-w-5xl mx-auto w-full pt-4">
                 <TabsContent value="bs">
                     {activeTab === "bs" && (
-                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                        <Card className="shadow-xl border-t-4 border-t-primary overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Balance General</CardTitle>
@@ -279,7 +279,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                 <TabsContent value="pl">
                     {activeTab === "pl" && (
-                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                        <Card className="shadow-xl border-t-4 border-t-emerald-500 overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Estado de Resultados</CardTitle>
@@ -341,7 +341,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                 <TabsContent value="cf">
                     {activeTab === "cf" && (
-                        <Card className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800">
+                        <Card className="shadow-xl border-t-4 border-t-blue-500 overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Flujo de Efectivo</CardTitle>

@@ -303,7 +303,7 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
     }
 
     const selectedEmployee = form.watch("employee")
-    const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee)
+    const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
