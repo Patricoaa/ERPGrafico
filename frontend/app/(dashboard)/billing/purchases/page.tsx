@@ -21,6 +21,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PurchaseDocument {
     id: number
@@ -402,7 +403,7 @@ export default function PurchaseInvoicesPage() {
     ]
 
     return (
-        <div className="p-6 space-y-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Documentos Recibidos"
                 description="Gestión de facturas y boletas de compra"

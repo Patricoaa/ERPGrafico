@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -193,7 +195,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     }
 
     return (
-        <>
+        <div className={LAYOUT_TOKENS.view}>
             <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Estados Financieros</h2>
@@ -218,9 +220,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             </div>
 
             <div className="max-w-5xl mx-auto w-full pt-4">
-                <TabsContent value="bs">
+                <TabsContent value="bs" className="mt-0 outline-none">
                     {activeTab === "bs" && (
-                        <Card className="shadow-xl border-t-4 border-t-primary overflow-hidden">
+                        <IndustrialCard variant="industrial" className="shadow-xl border-t-primary overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Balance General</CardTitle>
@@ -273,13 +275,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <div className="p-8 text-center animate-pulse">Cargando datos del balance...</div>
                                 )}
                             </CardContent>
-                        </Card>
+                        </IndustrialCard>
                     )}
                 </TabsContent>
 
-                <TabsContent value="pl">
+                <TabsContent value="pl" className="mt-0 outline-none">
                     {activeTab === "pl" && (
-                        <Card className="shadow-xl border-t-4 border-t-emerald-500 overflow-hidden">
+                        <IndustrialCard variant="industrial" className="shadow-xl border-t-emerald-500 overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Estado de Resultados</CardTitle>
@@ -335,13 +337,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <div className="p-8 text-center animate-pulse">Cargando estado de resultados...</div>
                                 )}
                             </CardContent>
-                        </Card>
+                        </IndustrialCard>
                     )}
                 </TabsContent>
 
-                <TabsContent value="cf">
+                <TabsContent value="cf" className="mt-0 outline-none">
                     {activeTab === "cf" && (
-                        <Card className="shadow-xl border-t-4 border-t-blue-500 overflow-hidden">
+                        <IndustrialCard variant="industrial" className="shadow-xl border-t-blue-500 overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Flujo de Efectivo</CardTitle>
@@ -363,10 +365,10 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <div className="p-8 text-center animate-pulse">Cargando flujo de caja...</div>
                                 )}
                             </CardContent>
-                        </Card>
+                        </IndustrialCard>
                     )}
                 </TabsContent>
             </div>
-        </>
+        </div>
     )
 }

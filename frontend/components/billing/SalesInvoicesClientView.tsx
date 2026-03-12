@@ -19,6 +19,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
@@ -212,7 +213,7 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className="p-6 space-y-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Documentos Emitidos"
                 description="Gestión de facturas y boletas de venta"

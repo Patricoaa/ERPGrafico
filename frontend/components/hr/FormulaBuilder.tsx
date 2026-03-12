@@ -6,7 +6,6 @@ import {
     Calculator, 
     Variable, 
     FunctionSquare, 
-    Info,
     Plus,
     Minus,
     X,
@@ -19,6 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 interface FormulaBuilderProps {
     value: string;
@@ -58,7 +58,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
     }
 
     return (
-        <div className="flex flex-col gap-3 rounded-md border border-primary/20 bg-primary/5 p-3">
+        <IndustrialCard variant="standard" className="flex flex-col gap-3 border-primary/20 bg-primary/5 p-4">
             <div className="flex items-center gap-2 mb-1">
                 <Calculator className="h-4 w-4 text-primary" />
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">Asistente de Fórmulas</span>
@@ -158,6 +158,6 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                     </div>
                 </div>
             </TooltipProvider>
-        </div>
+        </IndustrialCard>
     )
 }

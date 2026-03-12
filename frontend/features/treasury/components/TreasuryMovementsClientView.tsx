@@ -12,6 +12,7 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -223,7 +224,7 @@ export function TreasuryMovementsClientView() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Movimientos de Tesorería"
                 description="Registro histórico de ingresos, egresos y traslados de fondos."

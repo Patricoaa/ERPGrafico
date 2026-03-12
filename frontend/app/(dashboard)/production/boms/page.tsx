@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface BOM {
     id: number
@@ -183,7 +184,7 @@ export default function BOMsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Listas de Materiales (BOM)"
                 description="Gestión de estructuras de productos y costos de fabricación."

@@ -5,6 +5,7 @@ interface MoneyDisplayProps {
     amount: number | string | null | undefined
     currency?: string
     showColor?: boolean
+    showZeroAsDash?: boolean
     className?: string
     digits?: number
 }
@@ -13,6 +14,7 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     amount,
     currency = "CLP",
     showColor = true,
+    showZeroAsDash = false,
     className,
     digits = 0
 }) => {
@@ -22,6 +24,10 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
 
     const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount
     if (isNaN(numericAmount)) {
+        return <span className={cn("font-mono text-muted-foreground", className)}>-</span>
+    }
+
+    if (showZeroAsDash && numericAmount === 0) {
         return <span className={cn("font-mono text-muted-foreground", className)}>-</span>
     }
 

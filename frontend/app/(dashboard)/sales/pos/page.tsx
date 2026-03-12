@@ -29,6 +29,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import * as Validation from '@/lib/pos/validation'
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 // Context and Hooks
 import { POSProvider, usePOS } from './contexts/POSContext'
@@ -419,7 +421,7 @@ function POSPageContent() {
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
 
     return (
-        <div className="flex flex-col h-[calc(100vh-4rem)] p-4 space-y-4">
+        <div className={cn(LAYOUT_TOKENS.view, "h-[calc(100vh-4rem)] flex flex-col")}>
             {/* Header */}
             <div className="flex items-center justify-between py-1 px-1 mb-1">
                 <div className="flex items-center gap-4">

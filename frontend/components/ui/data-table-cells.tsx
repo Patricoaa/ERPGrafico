@@ -29,14 +29,14 @@ export const DataCell = {
 
     /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("text-xs font-medium text-foreground/90", className)} {...props}>
+        <div className={cn("text-xs font-mono font-medium text-foreground/90", className)} {...props}>
             {children || "-"}
         </div>
     ),
 
     /** Standardized Document ID with prefix and padding */
     DocumentId: ({ type, number, className, ...props }: { type?: string, number: string | number | null | undefined, className?: string }) => (
-        <div className={cn("text-sm font-medium", className)} {...props}>
+        <div className={cn("text-sm font-mono font-medium", className)} {...props}>
             {formatDocumentId(type, number)}
         </div>
     ),

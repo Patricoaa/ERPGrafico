@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Plus } from "lucide-react"
 
+import { LAYOUT_TOKENS } from "@/lib/styles"
+
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
     description: "Gestión de catálogo, categorías y reglas de precios.",
@@ -65,7 +67,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const { title, description, actionTitle, tabValue } = getHeaderConfig()
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
                 <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 

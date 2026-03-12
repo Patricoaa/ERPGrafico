@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Sum
+import re
 
 
 class PayrollService:
@@ -59,17 +60,29 @@ class PayrollService:
                 "abs": abs,
             }
             
-            allowed_chars = "0123456789.+-*/(), " + "".join(context.keys()) + "minaxifelseabs"
-            sanitized = "".join([c for c in formula if c in allowed_chars])
+            # Permitir letras, números y operadores comunes para evitar truncamiento por error
+            allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+-*/()[],_<>!=% "
+            sanitized = "".join([c for c in formula if c in allowed_chars]).strip()
             
-            # Reemplazar variables por sus valores
+            # Reemplazar variables por sus valores (Insensible a mayúsculas y palabras completas)
             for var in sorted(context.keys(), key=len, reverse=True):
                 val = float(context[var]) if context[var] is not None else 0.0
-                sanitized = sanitized.replace(var, str(val))
+                # Regex para reemplazar solo palabras completas (evita sub-strings) e ignorar mayúsculas
+                pattern = re.compile(r'\b' + re.escape(var) + r'\b', re.IGNORECASE)
+                sanitized = pattern.sub(str(val), sanitized)
+            
+            # Limpieza final: eliminar operadores al final que causan invalid syntax (ej: "10 * 2 /")
+            sanitized = sanitized.strip()
+            while sanitized and sanitized[-1] in "+-*/%":
+                sanitized = sanitized[:-1].strip()
             
             # Evaluar (restringido)
-            result = eval(sanitized, eval_globals, {})
-            return Decimal(str(result)).quantize(Decimal('1'))
+            try:
+                result = eval(sanitized, eval_globals, {})
+                return Decimal(str(result)).quantize(Decimal('1'))
+            except Exception as e:
+                print(f"Error evaluando sanitized '{sanitized}': {e}")
+                raise e
         except Exception as e:
             print(f"Error evaluando fórmula '{formula}': {e}")
             return Decimal('0')

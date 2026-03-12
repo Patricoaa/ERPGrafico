@@ -16,6 +16,8 @@ import { LedgerModal } from "@/components/shared/LedgerModal"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
 
@@ -41,21 +43,21 @@ export function AccountsClientView() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Código" />
             ),
-            cell: ({ row }) => <span className="font-mono text-xs">{row.getValue("code")}</span>,
+            cell: ({ row }) => <DataCell.Code>{row.original.code}</DataCell.Code>,
         },
         {
             accessorKey: "name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.original.name}</DataCell.Text>,
         },
         {
             accessorKey: "account_type",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Tipo" />
             ),
-            cell: ({ row }) => <span className="text-xs text-muted-foreground uppercase font-semibold">{row.original.account_type_display}</span>,
+            cell: ({ row }) => <DataCell.Badge variant="secondary" className="text-[10px]">{row.original.account_type_display}</DataCell.Badge>,
         },
         {
             accessorKey: "debit_total",
@@ -136,7 +138,7 @@ export function AccountsClientView() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Plan de Cuentas"
                 description="Administra la estructura de cuentas contables y su jerarquía."

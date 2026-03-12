@@ -30,6 +30,7 @@ import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
 
@@ -231,7 +232,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const { title, description, actions } = getHeaderConfig()
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
                 <ServerPageTabs tabs={tabs} activeValue={activeTab} />
 

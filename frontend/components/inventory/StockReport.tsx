@@ -13,6 +13,7 @@ import { AdjustmentForm } from "@/components/inventory/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ProductInsightsDialog } from "@/components/inventory/ProductInsightsDialog"
 import { Badge } from "@/components/ui/badge"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
@@ -44,18 +45,12 @@ export function StockReport() {
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col items-center gap-1 py-1 text-center">
-                        <span className="font-medium text-xs leading-tight">{item.name}</span>
-                        <div className="flex flex-wrap justify-center gap-1">
-                            {item.internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                                    {item.internal_code}
-                                </Badge>
-                            )}
+                    <div className="flex flex-col gap-1 py-1">
+                        <DataCell.Text>{item.name}</DataCell.Text>
+                        <div className="flex gap-1">
+                            {item.internal_code && <DataCell.Code>{item.internal_code}</DataCell.Code>}
                             {item.code && item.code !== item.internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                                    {item.code}
-                                </Badge>
+                                <DataCell.Badge variant="secondary" className="text-[10px] h-4">{item.code}</DataCell.Badge>
                             )}
                         </div>
                     </div>
@@ -162,7 +157,7 @@ export function StockReport() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className={LAYOUT_TOKENS.view}>
             <DataTable
                 columns={columns}
                 data={report}
