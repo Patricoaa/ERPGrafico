@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount
+from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount, Absence
 from contacts.models import Contact
 
 
@@ -54,6 +54,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     salud_type_display = serializers.CharField(source='get_salud_type_display', read_only=True)
     contract_type_display = serializers.CharField(source='get_contract_type_display', read_only=True)
+    jornada_type_display = serializers.CharField(source='get_jornada_type_display', read_only=True)
+    asignacion_familiar_display = serializers.CharField(source='get_asignacion_familiar_display', read_only=True)
     concept_amounts = EmployeeConceptAmountSerializer(many=True, required=False)
 
     class Meta:
@@ -69,6 +71,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'afp', 'afp_detail',
             'salud_type', 'salud_type_display',
             'isapre_amount_uf',
+            'jornada_type', 'jornada_type_display', 'jornada_hours',
+            'trabajo_pesado', 'trabajo_agricola',
+            'gratificacion', 'dias_pactados',
+            'asignacion_familiar', 'asignacion_familiar_display', 'cargas_familiares',
             'concept_amounts'
         ]
         read_only_fields = ['id', 'code', 'display_id', 'created_at', 'updated_at']
@@ -104,6 +110,22 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return employee
 
 
+class AbsenceSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='employee.contact.name', read_only=True)
+    employee_display_id = serializers.CharField(source='employee.display_id', read_only=True)
+    absence_type_display = serializers.CharField(source='get_absence_type_display', read_only=True)
+
+    class Meta:
+        model = Absence
+        fields = [
+            'id', 'employee', 'employee_name', 'employee_display_id',
+            'absence_type', 'absence_type_display',
+            'start_date', 'end_date', 'days', 'notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
 # --- Payroll ---
 
 class PayrollItemSerializer(serializers.ModelSerializer):
@@ -135,7 +157,8 @@ class PayrollListSerializer(serializers.ModelSerializer):
             'employee', 'employee_name', 'employee_display_id',
             'period_year', 'period_month', 'period_label',
             'status', 'status_display',
-            'base_salary', 'total_haberes', 'total_descuentos', 'net_salary',
+            'base_salary', 'agreed_days', 'absent_days', 'worked_days',
+            'total_haberes', 'total_descuentos', 'net_salary',
             'journal_entry', 'previred_journal_entry',
             'created_at', 'updated_at',
         ]
@@ -155,7 +178,8 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             'employee', 'employee_detail',
             'period_year', 'period_month', 'period_label',
             'status', 'status_display',
-            'base_salary', 'total_haberes', 'total_descuentos', 'net_salary',
+            'base_salary', 'agreed_days', 'absent_days', 'worked_days',
+            'total_haberes', 'total_descuentos', 'net_salary',
             'journal_entry', 'previred_journal_entry',
             'items', 'notes',
             'created_at', 'updated_at',

@@ -5,8 +5,7 @@ from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
-
-from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount
+from .models import GlobalHRSettings, AFP, PayrollConcept, Employee, Payroll, PayrollItem, EmployeeConceptAmount, Absence
 from .serializers import (
     GlobalHRSettingsSerializer,
     AFPSerializer,
@@ -16,6 +15,7 @@ from .serializers import (
     PayrollDetailSerializer,
     PayrollItemSerializer,
     EmployeeConceptAmountSerializer,
+    AbsenceSerializer,
 )
 from . import services
 
@@ -93,6 +93,24 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = EmployeeFilter
+
+
+# --- Absence ---
+
+class AbsenceFilter(django_filters.FilterSet):
+    employee = django_filters.NumberFilter(field_name='employee__id')
+    start_date = django_filters.DateFromToRangeFilter()
+    absence_type = django_filters.CharFilter()
+
+    class Meta:
+        model = Absence
+        fields = ['employee', 'absence_type', 'start_date']
+
+class AbsenceViewSet(viewsets.ModelViewSet):
+    queryset = Absence.objects.select_related('employee', 'employee__contact').all()
+    serializer_class = AbsenceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AbsenceFilter
 
 
 # --- Payroll ---

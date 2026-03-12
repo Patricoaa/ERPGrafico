@@ -154,6 +154,18 @@ class Employee(models.Model):
         FONASA = 'FONASA', _('Fonasa')
         ISAPRE = 'ISAPRE', _('Isapre')
 
+    class JornadaType(models.TextChoices):
+        ORDINARIA_22 = 'ORDINARIA_22', _('Ordinaria Art. 22')
+        PARCIAL_40BIS = 'PARCIAL_40BIS', _('Parcial Art 40 BIS')
+        EXENTA_22 = 'EXENTA_22', _('Exenta Art. 22')
+        EXTRAORDINARIA_30 = 'EXTRAORDINARIA_30', _('Extraordinaria Art. 30')
+
+    class AsignacionFamiliarTramo(models.TextChoices):
+        TRAMO_A = 'A', _('Tramo A')
+        TRAMO_B = 'B', _('Tramo B')
+        TRAMO_C = 'C', _('Tramo C')
+        TRAMO_D = 'D', _('Sin derecho (Tramo D)')
+
     code = models.CharField(_("Código"), max_length=20, unique=True, editable=False, null=True)
     contact = models.ForeignKey(
         'contacts.Contact',
@@ -182,6 +194,20 @@ class Employee(models.Model):
         _("Monto Pactado Isapre (UF)"), max_digits=6, decimal_places=4, default=Decimal('0'),
         help_text=_("Solo si usa Isapre. Cantidad de UF pactadas.")
     )
+
+    # Jornada y Condiciones
+    jornada_type = models.CharField(_("Tipo de Jornada"), max_length=20, choices=JornadaType.choices, default=JornadaType.ORDINARIA_22)
+    jornada_hours = models.DecimalField(_("Horas de Jornada"), max_digits=5, decimal_places=2, default=Decimal('44.0'))
+    trabajo_pesado = models.BooleanField(_("Trabajo Pesado"), default=False)
+    trabajo_agricola = models.BooleanField(_("Trabajo Agrícola"), default=False)
+    
+    # Remuneración Adicional
+    gratificacion = models.BooleanField(_("Gratificación Legal"), default=True)
+    dias_pactados = models.IntegerField(_("Días Pactados"), default=30, validators=[MinValueValidator(1), MaxValueValidator(31)])
+    
+    # Asignación Familiar
+    asignacion_familiar = models.CharField(_("Asignación Familiar"), max_length=2, choices=AsignacionFamiliarTramo.choices, default=AsignacionFamiliarTramo.TRAMO_D)
+    cargas_familiares = models.IntegerField(_("Número de Cargas"), default=0, validators=[MinValueValidator(0)])
 
     history = HistoricalRecords()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -225,6 +251,9 @@ class Payroll(models.Model):
 
     # Snapshots para auditoría
     base_salary = models.DecimalField(_("Sueldo Base (snapshot)"), max_digits=14, decimal_places=0, default=Decimal('0'))
+    agreed_days = models.IntegerField(_("Días Pactados"), default=30)
+    absent_days = models.DecimalField(_("Días Inasistencia"), max_digits=5, decimal_places=2, default=Decimal('0'))
+    worked_days = models.DecimalField(_("Días Trabajados"), max_digits=5, decimal_places=2, default=Decimal('30'))
     
     # Totales Finales
     total_haberes = models.DecimalField(_("Total Haberes"), max_digits=14, decimal_places=0, default=Decimal('0'))
@@ -306,3 +335,36 @@ class PayrollItem(models.Model):
             PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
             PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR
         ]
+
+
+class Absence(models.Model):
+    """
+    Registro de inasistencias del empleado.
+    """
+    class AbsenceType(models.TextChoices):
+        AUSENTISMO = 'AUSENTISMO', _('Ausentismo')
+        LICENCIA = 'LICENCIA', _('Licencia Médica')
+        PERMISO_SIN_GOCE = 'PERMISO_SIN_GOCE', _('Permiso sin goce de sueldo')
+        AUSENCIA_HORAS = 'AUSENCIA_HORAS', _('Ausencia de horas')
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='absences', verbose_name=_("Empleado"))
+    absence_type = models.CharField(_("Tipo de Inasistencia"), max_length=20, choices=AbsenceType.choices)
+    start_date = models.DateField(_("Fecha de Inicio"))
+    end_date = models.DateField(_("Fecha de Fin"))
+    days = models.DecimalField(
+        _("Días de Ausencia"), max_digits=5, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text=_("Cantidad de días o fracción (ej: 0.5 para medio día).")
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date']
+        verbose_name = _("Inasistencia")
+        verbose_name_plural = _("Inasistencias")
+
+    def __str__(self):
+        return f"{self.get_absence_type_display()} - {self.employee} ({self.days} días)"

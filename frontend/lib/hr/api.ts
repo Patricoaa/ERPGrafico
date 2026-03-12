@@ -6,7 +6,8 @@ import type {
   GlobalHRSettings, 
   AFP, 
   PayrollConcept,
-  EmployeeConceptAmount
+  EmployeeConceptAmount,
+  Absence
 } from "@/types/hr"
 
 // ---- Global HR Settings (Singleton) ----
@@ -83,6 +84,26 @@ export async function updateEmployee(id: number, data: Partial<Employee>): Promi
 
 export async function deleteEmployee(id: number): Promise<void> {
   await api.delete(`/hr/employees/${id}/`)
+}
+
+// ---- Absences ----
+export async function getAbsences(params?: Record<string, string>): Promise<Absence[]> {
+  const res = await api.get('/hr/absences/', { params })
+  return res.data.results ?? res.data
+}
+
+export async function createAbsence(data: Partial<Absence>): Promise<Absence> {
+  const res = await api.post('/hr/absences/', data)
+  return res.data
+}
+
+export async function updateAbsence(id: number, data: Partial<Absence>): Promise<Absence> {
+  const res = await api.patch(`/hr/absences/${id}/`, data)
+  return res.data
+}
+
+export async function deleteAbsence(id: number): Promise<void> {
+  await api.delete(`/hr/absences/${id}/`)
 }
 
 // ---- Payrolls ----

@@ -110,9 +110,39 @@ class PayrollService:
             payroll.save()
             
         # --- MOTOR DE CÁLCULO ---
+        from .models import Absence
+        from django.db.models import Sum
+        
+        # Determine absent days for the period
+        # Absences in this period
+        absences = Absence.objects.filter(
+            employee=employee,
+            start_date__year=year,
+            start_date__month=month
+        )
+        total_absent = absences.aggregate(total=Sum('days'))['total'] or Decimal('0')
+        
+        dias_pactados = Decimal(str(employee.dias_pactados))
+        dias_trabajados = dias_pactados - total_absent
+        if dias_trabajados < Decimal('0'):
+            dias_trabajados = Decimal('0')
+            
+        # Prorrateo del sueldo base
+        sueldo_base_prorrateado = (employee.base_salary / dias_pactados) * dias_trabajados
+        sueldo_base_prorrateado = sueldo_base_prorrateado.quantize(Decimal('1'))
+        
+        # Save snapshots in payroll
+        payroll.agreed_days = employee.dias_pactados
+        payroll.absent_days = total_absent
+        payroll.worked_days = dias_trabajados
+        payroll.save(update_fields=['agreed_days', 'absent_days', 'worked_days'])
+
         # Contexto base para fórmulas
         context = {
-            'BASE': employee.base_salary,
+            'BASE': sueldo_base_prorrateado,
+            'BASE_PACTADO': employee.base_salary,
+            'DIAS_PACTADOS': dias_pactados,
+            'DIAS_TRABAJADOS': dias_trabajados,
             'UF': settings.uf_current_value,
             'UTM': settings.utm_current_value,
             'MIN_WAGE': settings.min_wage_value,
@@ -149,8 +179,8 @@ class PayrollService:
                     'account': sb_account
                 }
             )
-        haberes_imponibles.append({'concept': sb_concept, 'amount': employee.base_salary})
-        context['IMPONIBLE'] = employee.base_salary
+        haberes_imponibles.append({'concept': sb_concept, 'amount': sueldo_base_prorrateado})
+        context['IMPONIBLE'] = sueldo_base_prorrateado
 
         # Otros haberes dinámicos o de ficha
         for concept in concepts.filter(category__in=[PayrollConcept.Category.HABER_IMPONIBLE, PayrollConcept.Category.HABER_NO_IMPONIBLE]):

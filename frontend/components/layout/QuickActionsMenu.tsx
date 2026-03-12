@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator } from "lucide-react"
+import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator, Users } from "lucide-react"
 
 // Lazy load: solo se descarga y compila cuando el usuario abre la calculadora
 const CostCalculatorModal = dynamic(
@@ -49,6 +49,13 @@ const actions = [
         url: "/production/orders",
         color: "text-purple-500",
         permission: "production.view_dashboard_production",
+    },
+    {
+        title: "Contactos",
+        icon: Users,
+        url: "/contacts",
+        color: "text-indigo-500",
+        permission: "contacts.view_dashboard_contacts",
     },
 ]
 

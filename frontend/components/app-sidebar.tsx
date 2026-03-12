@@ -34,7 +34,6 @@ const categoryItems: Record<string, any> = {
         { title: "Documentos Recibidos", url: "/billing/purchases" },
         { title: "Declaraciones F29", url: "/tax/declarations" },
     ],
-    "contacts": [], // Simple list
     "sales": [
         { title: "Configuración Ventas", url: "/settings/sales" },
         { title: "Notas de Venta", url: "/sales/orders" },
@@ -73,6 +72,7 @@ const categoryItems: Record<string, any> = {
     "hr": [
         { title: "Configuración RRHH", url: "/settings/hr" },
         { title: "Personal", url: "/hr/employees" },
+        { title: "Inasistencias", url: "/hr/absences" },
         { title: "Liquidaciones", url: "/hr/payrolls" },
     ],
 }
@@ -81,7 +81,6 @@ const titles: Record<string, string> = {
     "dashboard": "Inicio",
     "accounting": "Contabilidad",
     "billing": "Facturación",
-    "contacts": "Contactos",
     "sales": "Ventas",
 
     "inventory": "Inventario",

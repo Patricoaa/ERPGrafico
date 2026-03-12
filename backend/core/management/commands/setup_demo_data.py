@@ -24,7 +24,7 @@ from treasury.models import (
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
-from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount
+from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount, Payroll, PayrollItem
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
 from core.models import User, CompanySettings
 from workflow.models import Task, Notification, TaskAssignmentRule
@@ -275,6 +275,15 @@ class Command(BaseCommand):
         _safe_delete(ProductCustomField, "ProductCustomField")
         _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
 
+        # 9.5 HR Module
+        _safe_delete(PayrollItem, "PayrollItem")
+        _safe_delete(Payroll, "Payroll")
+        _safe_delete(EmployeeConceptAmount, "EmployeeConceptAmount")
+        _safe_delete(Employee, "Employee")
+        _safe_delete(PayrollConcept, "PayrollConcept")
+        _safe_delete(AFP, "AFP")
+        _safe_delete(GlobalHRSettings, "GlobalHRSettings")
+
         # 10. Master Data & Basics
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
@@ -292,6 +301,7 @@ class Command(BaseCommand):
         # 11. Clear History (Comprehensive)
         self.stdout.write("  Clearing ALL Historical Records...")
         historical_models = [
+            Employee, Payroll,
             Product, StockMove, SaleOrder, PurchaseOrder, Invoice, JournalEntry,
             Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement
         ]
@@ -1330,7 +1340,7 @@ class Command(BaseCommand):
                 'is_system': True
             },
             {
-                'name': 'Seguro Cesantía Aporte Empleador',
+                'name': 'Seguro Cesantía (Aporte Empleador)',
                 'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
                 'account': accounts['expense_prevision'],
                 'formula_type': PayrollConcept.FormulaType.FORMULA,

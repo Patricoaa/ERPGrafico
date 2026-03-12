@@ -13,6 +13,7 @@ export type ConceptCategory =
   | 'OTRO_DESCUENTO'
 
 export type FormulaType = 'FIXED' | 'PERCENTAGE' | 'EMPLOYEE_SPECIFIC' | 'FORMULA' | 'CHILEAN_LAW'
+export type AbsenceType = 'AUSENTISMO' | 'LICENCIA' | 'PERMISO_SIN_GOCE' | 'AUSENCIA_HORAS'
 
 export interface GlobalHRSettings {
   id: number
@@ -89,6 +90,20 @@ export interface Employee {
   updated_at: string
 }
 
+export interface Absence {
+  id: number
+  employee: number
+  employee_name?: string
+  absence_type: AbsenceType
+  absence_type_display: string
+  start_date: string
+  end_date: string
+  days: number
+  notes: string
+  created_at: string
+  updated_at: string
+}
+
 export interface PayrollItem {
   id: number
   payroll: number
@@ -112,6 +127,9 @@ export interface Payroll {
   period_label: string
   status: PayrollStatus
   status_display: string
+  agreed_days: number
+  absent_days: number
+  worked_days: number
   base_salary: string
   total_haberes: string
   total_descuentos: string

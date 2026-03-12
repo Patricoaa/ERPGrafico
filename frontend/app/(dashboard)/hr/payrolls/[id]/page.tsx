@@ -148,8 +148,11 @@ export default function PayrollDetailPage({ params }: Props) {
         i.concept_detail?.category === 'HABER_NO_IMPONIBLE'
     ) || []
     
-    const legalDiscounts = payroll.items?.filter(i => 
-        i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR' ||
+    const workerLegalDiscounts = payroll.items?.filter(i => 
+        i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR'
+    ) || []
+
+    const employerLegalDiscounts = payroll.items?.filter(i => 
         i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR'
     ) || []
     
@@ -160,32 +163,16 @@ export default function PayrollDetailPage({ params }: Props) {
     const isPosted = payroll.status === 'POSTED'
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-5xl mx-auto">
-            <PageHeader
-                title={`Liquidación ${payroll.display_id}`}
-                description={`${payroll.employee_detail?.contact_detail?.name} — ${payroll.period_label}`}
-            >
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => router.push('/hr/payrolls')}>
-                        <ArrowLeft className="h-4 w-4 mr-1" /> Volver
-                    </Button>
-                    <Badge
-                        variant="secondary"
-                        className={cn(
-                            "text-[10px] font-bold uppercase",
-                            isPosted
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                        )}
-                    >
-                        {payroll.status_display}
-                    </Badge>
-                    
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex items-center justify-between mb-2">
+                <Button variant="ghost" size="sm" onClick={() => router.push('/hr/payrolls')} className="text-muted-foreground">
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Volver a Liquidaciones
+                </Button>
+                <div className="flex gap-2">
                     {!isPosted && (
                         <>
                             <Button 
-                                variant="outline" 
-                                size="sm" 
+                                variant="outline" size="sm" 
                                 className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
                                 onClick={handleGenerateProforma}
                                 disabled={generating}
@@ -217,151 +204,204 @@ export default function PayrollDetailPage({ params }: Props) {
                         </>
                     )}
                     {payroll.status === 'DRAFT' && (
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                            onClick={handleDeletePayroll}
-                        >
-                            <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+                        <Button variant="ghost" size="sm" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={handleDeletePayroll}>
+                            <Trash2 className="h-4 w-4" />
                         </Button>
                     )}
                 </div>
-            </PageHeader>
-
-            <div className="grid grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold">
-                            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> Total Haberes
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <MoneyDisplay amount={parseFloat(payroll.total_haberes)} className="text-2xl font-black text-emerald-600" />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold">
-                            <TrendingDown className="h-3.5 w-3.5 text-rose-500" /> Total Descuentos
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <MoneyDisplay amount={parseFloat(payroll.total_descuentos)} className="text-2xl font-black text-rose-600" />
-                    </CardContent>
-                </Card>
-                <Card className="border-primary/30 bg-primary/5">
-                    <CardHeader className="pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-primary/70">
-                            <DollarSign className="h-3.5 w-3.5 text-primary" /> Sueldo Líquido
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <MoneyDisplay amount={parseFloat(payroll.net_salary)} className="text-2xl font-black text-primary" />
-                    </CardContent>
-                </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* HABERES */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <Card className="max-w-5xl mx-auto shadow-sm">
+                {/* ENCABEZADO HOJA UNICA */}
+                <CardHeader className="border-b bg-muted/20 pb-6">
+                    <div className="flex justify-between items-start">
                         <div>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4 text-emerald-500" /> Haberes
-                            </CardTitle>
+                            <div className="flex items-center gap-3">
+                                <CardTitle className="text-2xl font-black uppercase tracking-wider">
+                                    Liquidación de Sueldo
+                                </CardTitle>
+                                <Badge
+                                    variant="secondary"
+                                    className={cn(
+                                        "text-[10px] font-bold uppercase",
+                                        isPosted
+                                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                            : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                    )}
+                                >
+                                    {payroll.status_display}
+                                </Badge>
+                            </div>
+                            <CardDescription className="text-sm mt-1">
+                                <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.name}</span> • {payroll.period_label}
+                            </CardDescription>
                         </div>
-                        {!isPosted && (
-                            <PayrollItemDialog
-                                payrollId={payrollId}
-                                concepts={concepts.filter(c => c.category.startsWith('HABER'))}
-                                item={editingItem && (editingItem.concept_detail?.category.startsWith('HABER')) ? editingItem : null}
-                                onSaved={fetchPayroll}
-                                onEditCleared={() => setEditingItem(null)}
-                                trigger={
-                                    <Button variant="outline" size="sm" className="gap-1 h-7 text-xs">
-                                        <Plus className="h-3.5 w-3.5" /> Agregar
-                                    </Button>
-                                }
-                            />
-                        )}
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <ItemsTable
-                            items={haberes}
-                            isPosted={isPosted}
-                            onEdit={setEditingItem}
-                            onDelete={handleDeleteItem}
-                            accentColor="text-emerald-600"
-                        />
-                    </CardContent>
-                </Card>
+                        <div className="text-right space-y-1">
+                            <div className="font-mono text-xs text-muted-foreground mr-1">Folio: <span className="font-bold text-foreground">{payroll.display_id}</span></div>
+                            <div className="font-mono text-[10px] text-muted-foreground mr-1">RUT: {payroll.employee_detail?.contact_detail?.tax_id}</div>
+                        </div>
+                    </div>
 
-                {/* DESCUENTOS */}
-                <div className="space-y-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-3">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4 text-amber-500" /> Legales / Previred
-                            </CardTitle>
-                            {!isPosted && (
-                                <PayrollItemDialog
-                                    payrollId={payrollId}
-                                    concepts={concepts.filter(c => c.category === 'DESCUENTO_LEGAL_TRABAJADOR' || c.category === 'DESCUENTO_LEGAL_EMPLEADOR')}
-                                    item={editingItem && (editingItem.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR' || editingItem.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') ? editingItem : null}
-                                    onSaved={fetchPayroll}
-                                    onEditCleared={() => setEditingItem(null)}
-                                    trigger={
-                                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs">
-                                            <Plus className="h-3.5 w-3.5" /> Agregar
-                                        </Button>
-                                    }
-                                />
-                            )}
-                        </CardHeader>
-                        <CardContent className="p-0">
+                    <div className="mt-6 flex flex-wrap gap-6 items-center bg-background rounded-md border p-4 shadow-sm">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Días Pactados</span>
+                            <span className="font-mono text-sm">{payroll.agreed_days || 0}</span>
+                        </div>
+                        <Separator orientation="vertical" className="h-8" />
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Inasistencias</span>
+                            <span className="font-mono text-sm text-amber-600 font-bold">{payroll.absent_days || 0}</span>
+                        </div>
+                        <Separator orientation="vertical" className="h-8" />
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Días Trabajados</span>
+                            <span className="font-mono text-sm text-emerald-600 font-bold">{payroll.worked_days || 0}</span>
+                        </div>
+                        <Separator orientation="vertical" className="h-8" />
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Sueldo Base Liq.</span>
+                            <MoneyDisplay amount={parseFloat(payroll.base_salary || "0")} className="font-mono text-sm" />
+                        </div>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="p-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
+                        
+                        {/* IZQUIERDA: HABERES */}
+                        <div className="p-6">
+                            <div className="flex flex-row items-center justify-between pb-3">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-600 flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" /> Haberes
+                                </h3>
+                                {!isPosted && (
+                                    <PayrollItemDialog
+                                        payrollId={payrollId}
+                                        concepts={concepts.filter(c => c.category.startsWith('HABER'))}
+                                        item={editingItem && (editingItem.concept_detail?.category.startsWith('HABER')) ? editingItem : null}
+                                        onSaved={fetchPayroll}
+                                        onEditCleared={() => setEditingItem(null)}
+                                        trigger={
+                                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] uppercase font-bold text-muted-foreground">
+                                                <Plus className="h-3 w-3 mr-1" /> Agregar
+                                            </Button>
+                                        }
+                                    />
+                                )}
+                            </div>
                             <ItemsTable
-                                items={legalDiscounts}
+                                items={haberes}
                                 isPosted={isPosted}
                                 onEdit={setEditingItem}
                                 onDelete={handleDeleteItem}
-                                accentColor="text-amber-600"
+                                accentColor="text-emerald-700 font-black"
                             />
-                        </CardContent>
-                    </Card>
+                            
+                            <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm font-bold">
+                                <span>Total Haberes</span>
+                                <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-emerald-600 text-lg font-black" />
+                            </div>
+                        </div>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-3">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <TrendingDown className="h-4 w-4 text-rose-500" /> Otros Descuentos
-                            </CardTitle>
-                            {!isPosted && (
-                                <PayrollItemDialog
-                                    payrollId={payrollId}
-                                    concepts={concepts.filter(c => c.category === 'OTRO_DESCUENTO')}
-                                    item={editingItem && editingItem.concept_detail?.category === 'OTRO_DESCUENTO' ? editingItem : null}
-                                    onSaved={fetchPayroll}
-                                    onEditCleared={() => setEditingItem(null)}
-                                    trigger={
-                                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs">
-                                            <Plus className="h-3.5 w-3.5" /> Agregar
-                                        </Button>
-                                    }
+                        {/* DERECHA: DESCUENTOS Y TOTALES */}
+                        <div className="p-6 space-y-6">
+                            
+                            {/* Descuentos del Trabajador */}
+                            <div>
+                                <div className="flex flex-row items-center justify-between pb-3">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-amber-600 flex items-center gap-2">
+                                        <ShieldCheck className="h-4 w-4" /> Descuentos (Trabajador)
+                                    </h3>
+                                    {!isPosted && (
+                                        <PayrollItemDialog
+                                            payrollId={payrollId}
+                                            concepts={concepts.filter(c => c.category === 'DESCUENTO_LEGAL_TRABAJADOR')}
+                                            item={editingItem && editingItem.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR' ? editingItem : null}
+                                            onSaved={fetchPayroll}
+                                            onEditCleared={() => setEditingItem(null)}
+                                            trigger={
+                                                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] uppercase font-bold text-muted-foreground">
+                                                    <Plus className="h-3 w-3 mr-1" /> Agregar
+                                                </Button>
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <ItemsTable
+                                    items={workerLegalDiscounts}
+                                    isPosted={isPosted}
+                                    onEdit={setEditingItem}
+                                    onDelete={handleDeleteItem}
+                                    accentColor="text-amber-700"
                                 />
+                            </div>
+
+                            {/* Otros Descuentos */}
+                            <div>
+                                <div className="flex flex-row items-center justify-between pb-3">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-rose-500 flex items-center gap-2">
+                                        <TrendingDown className="h-4 w-4" /> Otros Descuentos
+                                    </h3>
+                                    {!isPosted && (
+                                        <PayrollItemDialog
+                                            payrollId={payrollId}
+                                            concepts={concepts.filter(c => c.category === 'OTRO_DESCUENTO')}
+                                            item={editingItem && editingItem.concept_detail?.category === 'OTRO_DESCUENTO' ? editingItem : null}
+                                            onSaved={fetchPayroll}
+                                            onEditCleared={() => setEditingItem(null)}
+                                            trigger={
+                                                <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] uppercase font-bold text-muted-foreground">
+                                                    <Plus className="h-3 w-3 mr-1" /> Agregar
+                                                </Button>
+                                            }
+                                        />
+                                    )}
+                                </div>
+                                <ItemsTable
+                                    items={otherDiscounts}
+                                    isPosted={isPosted}
+                                    onEdit={setEditingItem}
+                                    onDelete={handleDeleteItem}
+                                    accentColor="text-rose-600"
+                                />
+                                
+                                <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground font-bold uppercase text-[10px]">Total Descuentos</span>
+                                    <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-rose-600 font-bold" />
+                                </div>
+                            </div>
+
+                            {/* LIQUIDO A PAGO */}
+                            <div className="mt-8 bg-primary/5 p-5 rounded-xl border border-primary/20 flex items-center justify-between shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <DollarSign className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <span className="text-sm font-black uppercase tracking-widest text-primary">Sueldo Líquido</span>
+                                </div>
+                                <MoneyDisplay amount={parseFloat(payroll.net_salary || "0")} className="text-3xl font-black text-primary" />
+                            </div>
+
+                            {/* APORTES EMPLEADOR (SOLO INFORMATIVO) */}
+                            {employerLegalDiscounts.length > 0 && (
+                                <div className="pt-6 border-t border-dashed">
+                                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 pb-3 mb-2">
+                                        <AlertCircle className="h-3 w-3" /> Aportes Empleador (Info)
+                                    </h3>
+                                    <ItemsTable
+                                        items={employerLegalDiscounts}
+                                        isPosted={isPosted}
+                                        onEdit={setEditingItem}
+                                        onDelete={handleDeleteItem}
+                                        accentColor="text-muted-foreground"
+                                    />
+                                </div>
                             )}
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <ItemsTable
-                                items={otherDiscounts}
-                                isPosted={isPosted}
-                                onEdit={setEditingItem}
-                                onDelete={handleDeleteItem}
-                                accentColor="text-rose-600"
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }

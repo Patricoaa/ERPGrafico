@@ -8,7 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getPayrolls, createPayroll, getEmployees, deletePayroll } from "@/lib/hr/api"
 import type { Payroll, Employee } from "@/types/hr"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { ColumnDef } from "@tanstack/react-table"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -64,114 +68,152 @@ export default function PayrollsPage() {
 
     useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
 
-    return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            <PageHeader title="Liquidaciones" description="Gestión de pagos de remuneraciones mensuales.">
-                <CreatePayrollDialog
-                    open={dialogOpen}
-                    onOpenChange={setDialogOpen}
-                    onSaved={(id) => { setDialogOpen(false); router.push(`/hr/payrolls/${id}`) }}
-                    trigger={
-                        <Button size="sm" className="gap-2">
-                            <Plus className="h-4 w-4" /> Nueva Liquidación
+    const columns: ColumnDef<Payroll>[] = [
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
+        },
+        {
+            accessorFn: (row) => row.employee_name || "",
+            id: "employee",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" />,
+            cell: ({ row }) => <div className="font-medium text-sm">{row.original.employee_name}</div>,
+        },
+        {
+            accessorKey: "period_label",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
+            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("period_label")}</div>,
+        },
+        {
+            accessorKey: "total_haberes",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" />,
+            cell: ({ row }) => (
+                <div className="flex justify-end opacity-80 font-medium">
+                    <MoneyDisplay amount={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "total_descuentos",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Descuentos" />,
+            cell: ({ row }) => (
+                <div className="flex justify-end opacity-80 font-medium">
+                    <MoneyDisplay amount={parseFloat(row.getValue("total_descuentos"))} className="text-rose-600" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "net_salary",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" />,
+            cell: ({ row }) => (
+                <div className="flex justify-end font-bold text-base">
+                    <MoneyDisplay amount={parseFloat(row.getValue("net_salary"))} />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "status",
+            header: "Estado",
+            cell: ({ row }) => {
+                const p = row.original;
+                return (
+                    <Badge
+                        variant="secondary"
+                        className={cn(
+                            "text-[10px] font-bold uppercase",
+                            p.status === 'POSTED'
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        )}
+                    >
+                        {p.status_display}
+                    </Badge>
+                );
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const p = row.original;
+                return (
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); router.push(`/hr/payrolls/${p.id}`) }}>
+                            <Eye className="h-4 w-4" />
                         </Button>
-                    }
-                />
-            </PageHeader>
+                        {p.status === 'DRAFT' && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm("¿Eliminar borrador?")) {
+                                        try {
+                                            await deletePayroll(p.id);
+                                            toast.success("Borrador eliminado");
+                                            fetchPayrolls();
+                                        } catch {
+                                            toast.error("Error al eliminar");
+                                        }
+                                    }
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
+        },
+    ]
 
-            <Card>
-                <CardContent className="p-0">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-48">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                    ) : payrolls.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-3">
-                            <FileText className="h-10 w-10 opacity-20" />
-                            <p className="text-sm font-medium">No hay liquidaciones registradas</p>
-                            <p className="text-xs opacity-60">Crea la primera liquidación con el botón superior</p>
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[120px]">Número</TableHead>
-                                    <TableHead>Empleado</TableHead>
-                                    <TableHead>Período</TableHead>
-                                    <TableHead className="text-right">Haberes</TableHead>
-                                    <TableHead className="text-right">Descuentos</TableHead>
-                                    <TableHead className="text-right">Líquido</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                    <TableHead className="w-[60px]" />
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {payrolls.map(p => (
-                                    <TableRow
-                                        key={p.id}
-                                        className="cursor-pointer hover:bg-muted/50"
-                                        onClick={() => router.push(`/hr/payrolls/${p.id}`)}
-                                    >
-                                        <TableCell className="font-mono text-xs text-muted-foreground">{p.display_id}</TableCell>
-                                        <TableCell className="font-medium">{p.employee_name}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{p.period_label}</TableCell>
-                                        <TableCell className="text-right">
-                                            <MoneyDisplay amount={parseFloat(p.total_haberes)} className="text-emerald-600" />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <MoneyDisplay amount={parseFloat(p.total_descuentos)} className="text-rose-600" />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <MoneyDisplay amount={parseFloat(p.net_salary)} className="font-bold" />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                variant="secondary"
-                                                className={cn(
-                                                    "text-[10px] font-bold uppercase",
-                                                    p.status === 'POSTED'
-                                                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                                        : "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                                )}
-                                            >
-                                                {p.status_display}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); router.push(`/hr/payrolls/${p.id}`) }}>
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                </Button>
-                                                {p.status === 'DRAFT' && (
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            if (confirm("¿Eliminar borrador?")) {
-                                                                try {
-                                                                    await deletePayroll(p.id);
-                                                                    toast.success("Borrador eliminado");
-                                                                    fetchPayrolls();
-                                                                } catch {
-                                                                    toast.error("Error al eliminar");
-                                                                }
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
+    return (
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PageHeader
+                title="Liquidaciones"
+                description="Gestión de pagos de remuneraciones mensuales."
+                titleActions={
+                    <CreatePayrollDialog
+                        open={dialogOpen}
+                        onOpenChange={setDialogOpen}
+                        onSaved={(id) => { setDialogOpen(false); router.push(`/hr/payrolls/${id}`) }}
+                        trigger={
+                            <PageHeaderButton
+                                onClick={() => setDialogOpen(true)}
+                                icon={Plus}
+                                circular
+                                title="Nueva Liquidación"
+                            />
+                        }
+                    />
+                }
+            />
+
+            {loading ? (
+                <div className="flex items-center justify-center h-48">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={payrolls}
+                    globalFilterFields={["display_id", "employee"]}
+                    searchPlaceholder="Buscar liquidación o empleado..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Contabilizado", value: "POSTED" },
+                            ],
+                        },
+                    ]}
+                    defaultPageSize={20}
+                    onRowClick={(row) => router.push(`/hr/payrolls/${row.id}`)}
+                />
+            )}
         </div>
     )
 }
