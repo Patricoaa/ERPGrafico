@@ -794,10 +794,10 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             contentClassName="p-0 overflow-hidden flex flex-col"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-xl">
                         <Package className="h-5 w-5 text-primary" />
                     </div>
-                    <span>{initialData?.name || form.watch("name") || 'Nuevo Producto'}</span>
+                    <span className="font-bold tracking-tight">{initialData?.name || form.watch("name") || 'Nuevo Producto'}</span>
                     {initialData?.internal_code && (
                         <Badge variant="outline" className="font-mono text-[10px] bg-primary/5 text-primary border-primary/20">
                             {initialData.internal_code}
@@ -811,10 +811,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-3 w-full px-6 py-4">
+                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
+                        className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
                     >
                         Cancelar
                     </Button>
@@ -822,6 +823,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         form="product-form"
                         type="submit"
                         disabled={loading}
+                        className="rounded-xl text-xs font-bold"
                     >
                         {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}

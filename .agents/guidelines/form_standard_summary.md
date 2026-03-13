@@ -8,28 +8,37 @@ Este documento resume las reglas de diseño aplicadas de forma consistente para 
 - **Padding**: Usar siempre `p-2` con `rounded-xl` para el contenedor de icono (ej: Contactos, Productos, BOM).
 - **Título**: El título principal debe usar `font-bold tracking-tight`.
 - **Descripción**: Texto pequeño (`text-xs`) o `Badge` (ej: "BOM", "Variante") que muestra metadatos relevantes.
+### 1. Header (Premium Style)
+- **Component**: `BaseModal` header sections.
+- **Alignment**: Use the default (left-aligned) header. Avoid `variant="wizard"` unless a centered layout is explicitly required for a simplified flow.
+- **Icon Container**: `p-2 rounded-xl bg-primary/10 text-primary`.
+- **Description**: Use the `description` prop in `BaseModal`. Wrapper: `div` with `flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest`.
+- **Description Separators**: Use `<span className="opacity-30">|</span>` between metadata items.
 
-## 2. Tipografía y Etiquetas (Labels)
-- **Clase**: `FORM_STYLES.label`.
-- **Atributos**: `10px`, `Font Black`, `Uppercase`, `Tracking Widest`.
-- **Posición**: Siempre en la parte superior del campo para `Input`, `Select` y `Dropdown`.
+### 2. Buttons & Actions
+- **Placement**: Footer should use `flex justify-end gap-3 w-full px-6 py-4` (add `border-t border-border/40` if not in Wizard mode).
+- **Style**: All buttons in footer must use `rounded-xl text-xs font-bold`.
+- **Cancel Button**: `variant="outline"` with `border-primary/20 hover:bg-primary/5`.
+- **Submit Button**: Standard primary variant (or `success` variant if using a specialized library, but generally standard primary). Avoid over-styling with `font-black` or custom gradients unless explicitly needed for a "Hero" action.
 
-## 3. Disposición y Layout (Grid)
-- **Multi-columna**: Evitar formularios alargados de una sola columna. Se utilizan grids de 2 a 4 columnas según el tipo de dato.
-- **Jerarquía**: Campos anchos (ej: Nombre) ocupan más columnas que campos cortos (ej: Prioridad, Siglas).
-- **Responsive**: Ajuste dinámico de columnas según el tamaño del modal.
-
-## 4. Secciones y Separadores
-- **Visual**: Doble línea horizontal tenue (`flex-1 h-px bg-border`) con texto centrado.
-- **Markup**: 
+### 3. Layout & Separators
+- **Grid**: Use `grid-cols-12` for responsive layouts.
+- **Row Alignment**: Common related fields (like Month/Year) should be on the same row as their primary selector (like Supplier) when possible.
+- **Section Dividers**:
   ```tsx
   <div className="flex items-center gap-2 pt-2 pb-2">
       <div className="flex-1 h-px bg-border" />
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">TÍTULO</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+        Section Title
+      </span>
       <div className="flex-1 h-px bg-border" />
   </div>
   ```
-- **Propósito**: Agrupar campos relacionados (General, Logística, Contabilidad) para reducir la carga cognitiva.
+
+### 4. Interactive Elements
+- **Switches**: Use `p-4 border rounded-xl` containers for main toggles (e.g., Active/Inactive).
+- **Inputs**: Use `FORM_STYLES.input` (usually `rounded-xl`).
+- **Labels**: Use `FORM_STYLES.label` (usually `text-xs font-bold uppercase tracking-wider`).
 
 ## 5. Sidebar de Actividad (Audit)
 - **Visibilidad**: Solo en modo **Edición** (`initialData` presente).

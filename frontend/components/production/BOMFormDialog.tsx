@@ -255,49 +255,32 @@ export function BOMFormDialog({
             open={open}
             onOpenChange={onOpenChange}
             size="full"
-            variant="wizard"
             className="max-w-[1200px]"
             title={
-                <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
-                        <Workflow className="h-6 w-6" />
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary shadow-sm border border-primary/5">
+                        <Workflow className="h-5 w-5" />
                     </div>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                             <span className="font-bold tracking-tight">Lista de Materiales (BOM)</span>
-                            <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">
-                                {bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
-                            </div>
-                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-primary/5 border-primary/20 text-primary/80">
-                                BOM
-                            </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            {selectedVariant ? (
-                                <>
-                                    <Layers className="h-3 w-3" />
-                                    <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
-                                        Variante: {selectedVariant.variant_display_name || selectedVariant.name}
-                                    </span>
-                                </>
-                            ) : selectedProduct ? (
-                                <>
-                                    <Box className="h-3 w-3" />
-                                    <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
-                                        Producto: {selectedProduct.name}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
-                                    Definición de Receta de Fabricación
-                                </span>
-                            )}
-                        </div>
-                    </div>
+                    <span className="font-bold tracking-tight">
+                        {bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
+                    </span>
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <span>BOM</span>
+                    <span className="opacity-30">|</span>
+                    {selectedVariant ? (
+                        <span>Variante: {selectedVariant.variant_display_name || selectedVariant.name}</span>
+                    ) : selectedProduct ? (
+                        <span>Producto: {selectedProduct.name}</span>
+                    ) : (
+                        <span>Receta de Fabricación</span>
+                    )}
                 </div>
             }
             footer={
-                <div className="flex justify-between items-center w-full">
+                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
                         Cancelar
                     </Button>
@@ -305,13 +288,13 @@ export function BOMFormDialog({
                         form="bom-form"
                         type="submit"
                         disabled={form.formState.isSubmitting}
-                        className={cn(
-                            "rounded-xl px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
-                            "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
-                        )}
+                        className="rounded-xl text-xs font-bold"
                     >
-                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {!form.formState.isSubmitting && <Save className="mr-2 h-4 w-4" />}
+                        {form.formState.isSubmitting ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                            <Save className="mr-2 h-3.5 w-3.5" />
+                        )}
                         {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
                     </Button>
                 </div>
@@ -553,7 +536,7 @@ export function BOMFormDialog({
                                                         name={`lines.${index}.component`}
                                                         render={({ field: propField }) => (
                                                             <FormItem>
-                                                                <FormControl>
+                                                                 <FormControl>
                                                                     <ProductSelector
                                                                         value={propField.value}
                                                                         onChange={(val: string | null) => {
@@ -660,7 +643,7 @@ export function BOMFormDialog({
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="text-[10px] text-muted-foreground font-mono">
+                                                    <div className="text-[10px] text-muted-foreground font-mono text-right">
                                                         {formatCurrency(form.watch(`lines.${index}.component_cost`) || 0)}
                                                     </div>
                                                 </TableCell>
@@ -713,8 +696,6 @@ export function BOMFormDialog({
 
                             {form.formState.errors.lines && (
                                 <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive mt-4">
-
-
                                     {form.formState.errors.lines.root?.message
                                         ? form.formState.errors.lines.root.message
                                         : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`
@@ -725,7 +706,6 @@ export function BOMFormDialog({
                     </form>
                 </Form>
             </div>
-
-        </BaseModal >
+        </BaseModal>
     )
 }
