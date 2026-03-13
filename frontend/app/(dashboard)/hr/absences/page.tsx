@@ -144,6 +144,7 @@ export default function AbsencesPage() {
                 <DataTable
                     columns={columns}
                     data={absences}
+                    cardMode
                     globalFilterFields={["employee_name", "absence_type_display"]}
                     searchPlaceholder="Buscar por empleado o tipo..."
                     facetedFilters={[

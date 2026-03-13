@@ -456,6 +456,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     <DataTable
                         columns={viewMode === 'orders' ? columns : noteColumns}
                         data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                        cardMode
                         filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
                         searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
                         facetedFilters={[

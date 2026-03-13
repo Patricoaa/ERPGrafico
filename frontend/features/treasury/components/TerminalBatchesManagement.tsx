@@ -52,11 +52,11 @@ export function TerminalBatchesManagement({
     const columns = [
         {
             accessorKey: "sales_date",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" />,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
+                    <span className="font-medium text-center">
                         {format(new Date(row.original.sales_date), "dd/MM/yyyy")}
                     </span>
                 </div>
@@ -64,44 +64,50 @@ export function TerminalBatchesManagement({
         },
         {
             accessorKey: "payment_method_name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Terminal" />,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Terminal" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex flex-col">
-                    <span className="font-bold flex items-center gap-1.5">
+            cell: ({ row }: any) => (
+                <div className="flex flex-col items-center">
+                    <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
                         <CreditCard className="h-3.5 w-3.5 text-primary" />
                         {row.original.payment_method_name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide text-center">
                         {row.original.supplier_name}
                     </span>
                 </div>
             )
+            )
         },
         {
             accessorKey: "net_amount",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Depósito Neto" />,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Depósito Neto" className="justify-center" />,
             cell: ({ row }: any) => {
                 const amount = row.getValue("net_amount")
                 return (
-                    <MoneyDisplay amount={amount} />
+                    <div className="flex justify-center">
+                        <MoneyDisplay amount={amount} />
+                    </div>
                 )
             }
         },
         {
             accessorKey: "commission_total",
-            header: "Comisión (Total)",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Comisión (Total)" className="justify-center" />,
             cell: ({ row }: any) => {
                 const amount = row.original.commission_total
                 return (
-                    <MoneyDisplay 
-                        amount={amount ? -Math.abs(parseFloat(amount)) : 0} 
-                    />
+                    <div className="flex justify-center">
+                        <MoneyDisplay 
+                            amount={amount ? -Math.abs(parseFloat(amount)) : 0} 
+                        />
+                    </div>
                 )
             }
         },
         {
             accessorKey: "status",
-            header: "Estado",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }: any) => {
                 const status = row.original.status
                 const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -123,13 +129,17 @@ export function TerminalBatchesManagement({
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : ""
 
-                return <Badge variant={variants[status] || "outline"} className={className}>{labels[status] || status}</Badge>
+                return (
+                    <div className="flex justify-center">
+                        <Badge variant={variants[status] || "outline"} className={className}>{labels[status] || status}</Badge>
+                    </div>
+                )
             }
         },
         {
             id: "actions",
             cell: ({ row }: any) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-center gap-2">
                 </div>
             )
         }
@@ -165,14 +175,13 @@ export function TerminalBatchesManagement({
                 </div>
             )}
 
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl border shadow-sm p-1">
-                <DataTable
-                    columns={columns}
-                    data={batches}
-                    searchPlaceholder="Buscar por terminal o referencia..."
-                    filterColumn="payment_method_name"
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={batches}
+                cardMode
+                searchPlaceholder="Buscar por terminal o referencia..."
+                filterColumn="payment_method_name"
+            />
 
             <Suspense fallback={null}>
                 <TerminalBatchDialog

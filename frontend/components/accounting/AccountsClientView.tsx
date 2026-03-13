@@ -158,6 +158,7 @@ export function AccountsClientView() {
             <DataTable
                 columns={columns}
                 data={accounts}
+                cardMode
                 globalFilterFields={["code", "name"]}
                 searchPlaceholder="Buscar por código o nombre..."
                 facetedFilters={[

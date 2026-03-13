@@ -339,6 +339,8 @@ export default function PayrollsPage() {
                 <DataTable
                     columns={columns}
                     data={payrolls}
+                    cardMode
+                    filterColumn="employee_name"
                     globalFilterFields={["display_id", "employee"]}
                     searchPlaceholder="Buscar liquidación o empleado..."
                     facetedFilters={[
@@ -366,14 +368,14 @@ export default function PayrollsPage() {
                         `Registrar Anticipo: ${selectedPayroll?.employee_name}`
                     }
                     total={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? (selectedPayroll.net_salary - (selectedPayroll as any).advances_total) : 0) :
+                        paymentMode === 'SALARY' ? (selectedPayroll ? ((selectedPayroll as any).net_salary - ((selectedPayroll as any).advances_total || 0)) : 0) :
                         paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
-                        (selectedPayroll?.net_salary || 0)
+                        ((selectedPayroll as any)?.net_salary || 0)
                     }
                     pendingAmount={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? (selectedPayroll.net_salary - (selectedPayroll as any).advances_total) : 0) :
+                        paymentMode === 'SALARY' ? (selectedPayroll ? ((selectedPayroll as any).net_salary - ((selectedPayroll as any).advances_total || 0)) : 0) :
                         paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
-                        (selectedPayroll?.net_salary || 0)
+                        ((selectedPayroll as any)?.net_salary || 0)
                     }
                     onConfirm={handleConfirmPayment}
                 />

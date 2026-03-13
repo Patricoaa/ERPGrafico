@@ -247,7 +247,8 @@ export default function AuditHubPage() {
                     <DataTable
                         columns={columns}
                         data={logs}
-                        globalFilterFields={["description", "user_name", "entity_label"]}
+                        cardMode
+                        globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
                         searchPlaceholder="Buscar en la bitácora..."
                         useAdvancedFilter={true}
                         facetedFilters={facetedFilters}

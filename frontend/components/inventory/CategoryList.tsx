@@ -139,8 +139,9 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             <DataTable
                 columns={columns}
                 data={categories}
-                filterColumn="name"
-                searchPlaceholder="Buscar categoría..."
+                cardMode
+                isLoading={loading}
+                searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={["name", "parent_name"]}
                 useAdvancedFilter={true}
             />

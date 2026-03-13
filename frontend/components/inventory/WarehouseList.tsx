@@ -123,6 +123,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             <DataTable
                 columns={columns}
                 data={warehouses}
+                cardMode
                 useAdvancedFilter={true}
                 filterColumn="name"
                 searchPlaceholder="Buscar almacén..."

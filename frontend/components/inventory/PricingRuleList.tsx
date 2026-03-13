@@ -243,6 +243,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                 <DataTable
                     columns={columns}
                     data={rules}
+                    cardMode
                     globalFilterFields={["name"]}
                     searchPlaceholder="Buscar por nombre o producto..."
                     facetedFilters={[

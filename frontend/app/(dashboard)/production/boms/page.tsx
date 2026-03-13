@@ -80,21 +80,21 @@ export default function BOMsPage() {
         {
             accessorKey: "product_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" />
+                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const bom = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <span className="font-medium text-xs leading-tight">{bom.product_name}</span>
-                        <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight text-center">{bom.product_name}</span>
+                        <div className="flex flex-wrap justify-center gap-1">
                             {bom.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {bom.product_internal_code}
                                 </Badge>
                             )}
                             {bom.product_code && bom.product_code !== bom.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {bom.product_code}
                                 </Badge>
                             )}
@@ -106,13 +106,14 @@ export default function BOMsPage() {
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre / Versión" />
+                <DataTableColumnHeader column={column} title="Nombre / Versión" className="justify-center" />
             ),
+            cell: ({ row }) => <div className="text-center">{row.getValue("name")}</div>,
         },
         {
             accessorKey: "lines_count",
             header: ({ column }) => (
-                <div className="text-center"><DataTableColumnHeader column={column} title="Componentes" /></div>
+                <DataTableColumnHeader column={column} title="Componentes" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
@@ -126,11 +127,11 @@ export default function BOMsPage() {
         {
             accessorKey: "total_cost",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Costo Total" /></div>
+                <DataTableColumnHeader column={column} title="Costo Total" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("total_cost")) || 0
-                return <div className="text-right font-mono">
+                return <div className="text-center font-mono">
                     {formatCurrency(amount)}
                 </div>
             },
@@ -138,7 +139,7 @@ export default function BOMsPage() {
         {
             accessorKey: "active",
             header: ({ column }) => (
-                <div className="text-center"><DataTableColumnHeader column={column} title="Estado" /></div>
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
@@ -159,7 +160,7 @@ export default function BOMsPage() {
             cell: ({ row }) => {
                 const bom = row.original
                 return (
-                    <div className="text-right">
+                    <div className="text-center">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -206,6 +207,7 @@ export default function BOMsPage() {
                 <DataTable
                     columns={columns}
                     data={boms}
+                    cardMode
                     defaultPageSize={20}
                     filterColumn="product_name"
                     searchPlaceholder="Buscar por producto..."

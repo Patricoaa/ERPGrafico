@@ -129,24 +129,24 @@ export function AttributeManager() {
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Atributo" />
+                <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 font-medium">
+                <div className="flex items-center justify-center gap-2 font-medium">
                     <Tag className="h-4 w-4 text-primary" />
-                    {row.getValue("name")}
+                    <span className="text-center">{row.getValue("name")}</span>
                 </div>
             ),
         },
         {
             accessorKey: "values",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Valores" />
+                <DataTableColumnHeader column={column} title="Valores" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const values = row.original.values || []
                 return (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap justify-center gap-1">
                         {values.map((val) => (
                             <Badge key={val.id} variant="secondary" className="flex items-center gap-1 group">
                                 {val.value}
@@ -162,7 +162,7 @@ export function AttributeManager() {
                                 </button>
                             </Badge>
                         ))}
-                        {values.length === 0 && <span className="text-muted-foreground text-xs italic">Sin valores</span>}
+                        {values.length === 0 && <span className="text-muted-foreground text-xs italic text-center w-full">Sin valores</span>}
                     </div>
                 )
             },
@@ -171,7 +171,7 @@ export function AttributeManager() {
             id: "actions",
             header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-center gap-2">
                     <Button
                         variant="outline"
                         size="sm"
@@ -220,6 +220,8 @@ export function AttributeManager() {
                 <DataTable
                     columns={columns}
                     data={attributes}
+                    cardMode
+                    isLoading={loading}
                     filterColumn="name"
                     searchPlaceholder="Buscar atributos..."
                     useAdvancedFilter={true}

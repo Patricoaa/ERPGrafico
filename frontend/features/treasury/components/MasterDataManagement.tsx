@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag } from "lucide-react"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
@@ -86,18 +87,22 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
     const columns = [
         {
             accessorKey: "name",
-            header: "Nombre",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                     <Landmark className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{row.original.name}</span>
+                    <span className="font-medium text-center">{row.original.name}</span>
                 </div>
             )
         },
         {
             accessorKey: "code",
-            header: "Código",
-            cell: ({ row }: any) => <Badge variant="outline" className="font-mono text-[10px]">{row.original.code || 'N/A'}</Badge>
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex justify-center">
+                    <Badge variant="outline" className="font-mono text-[10px]">{row.original.code || 'N/A'}</Badge>
+                </div>
+            )
         },
         {
             id: "actions",
@@ -131,6 +136,8 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
             <DataTable
                 columns={columns}
                 data={banks}
+                cardMode
+                isLoading={loading}
                 searchPlaceholder="Buscar bancos..."
                 filterColumn="name"
                 useAdvancedFilter={true}
@@ -339,9 +346,9 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
     const columns = [
         {
             accessorKey: "name",
-            header: "Nombre",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                     {row.original.is_terminal ? (
                         <div className="bg-primary/10 p-1 rounded" title="Terminal de Cobro">
                             <CreditCard className="h-4 w-4 text-primary" />
@@ -349,25 +356,29 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
                     ) : (
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <div className="flex flex-col">
-                        <span className="font-medium">{row.original.name}</span>
-                        {row.original.is_terminal && <span className="text-[10px] text-primary font-semibold uppercase">Terminal</span>}
+                    <div className="flex flex-col items-center">
+                        <span className="font-medium text-center">{row.original.name}</span>
+                        {row.original.is_terminal && <span className="text-[10px] text-primary font-semibold uppercase text-center">Terminal</span>}
                     </div>
                 </div>
             )
         },
         {
             accessorKey: "method_type_display",
-            header: "Tipo",
-            cell: ({ row }: any) => <Badge variant="secondary">{row.original.method_type_display}</Badge>
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex justify-center">
+                    <Badge variant="secondary" className="text-center">{row.original.method_type_display}</Badge>
+                </div>
+            )
         },
         {
             accessorKey: "treasury_account_name",
-            header: "Cuenta de Tesorería",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex flex-col gap-1">
-                    <span className="text-xs text-muted-foreground">{row.original.treasury_account_name}</span>
-                    <div className="flex gap-1">
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs text-muted-foreground text-center">{row.original.treasury_account_name}</span>
+                    <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-green-50 text-green-700 border-green-200">Ventas</Badge>}
                         {row.original.allow_for_purchases && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-blue-50 text-blue-700 border-blue-200">Compras</Badge>}
                     </div>
@@ -406,6 +417,8 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
             <DataTable
                 columns={columns}
                 data={methods}
+                cardMode
+                isLoading={loading}
                 searchPlaceholder="Buscar por nombre o cuenta..."
                 filterColumn="name"
                 useAdvancedFilter={true}

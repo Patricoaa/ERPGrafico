@@ -181,7 +181,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     <DataTable
                         columns={columns}
                         data={sessions}
-                        filterColumn="user_name"
+                        cardMode
+                        globalFilterFields={["user_name", "status_display", "id"]}
                         searchPlaceholder="Buscar por cajero..."
                         facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
                         useAdvancedFilter={true}

@@ -164,6 +164,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         <DataTable
                             columns={viewMode === 'orders' ? columns : noteColumns}
                             data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                            cardMode
                             filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
                             searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
                             facetedFilters={[

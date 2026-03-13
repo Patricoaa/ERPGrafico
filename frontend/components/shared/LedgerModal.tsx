@@ -286,6 +286,8 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         <DataTable
                             columns={columns}
                             data={data?.movements || []}
+                            cardMode
+                            isLoading={loading}
                             useAdvancedFilter={false}
                             globalFilterFields={["description", "partner", "reference"]}
                             searchPlaceholder="Filtrar movimientos..."

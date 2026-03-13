@@ -324,6 +324,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTable
                     columns={columns}
                     data={displayProducts}
+                    cardMode
                     globalFilterFields={["name", "code", "internal_code"]}
                     searchPlaceholder="Buscar por nombre, SKU o código..."
                     initialColumnVisibility={{ active: false }}

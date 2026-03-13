@@ -192,6 +192,7 @@ export function ContactsClientView() {
             <DataTable
                 columns={columns}
                 data={contacts}
+                cardMode
                 globalFilterFields={["name", "tax_id", "code"]}
                 searchPlaceholder="Buscar por nombre, RUT o código..."
                 facetedFilters={[

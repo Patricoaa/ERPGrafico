@@ -129,21 +129,15 @@ export default function AccountLedgerPage() {
                 </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Movimientos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        columns={columns}
-                        data={movements}
-                        useAdvancedFilter={true}
-                        globalFilterFields={["date", "description", "partner"]}
-                        searchPlaceholder="Buscar por fecha, descripción o tercero..."
-                        defaultPageSize={50}
-                    />
-                </CardContent>
-            </Card>
+            <DataTable
+                columns={columns}
+                data={movements}
+                cardMode
+                useAdvancedFilter={true}
+                globalFilterFields={["date", "description", "partner"]}
+                searchPlaceholder="Buscar por fecha, descripción o tercero..."
+                defaultPageSize={50}
+            />
         </div>
     )
 }

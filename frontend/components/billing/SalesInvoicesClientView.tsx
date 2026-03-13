@@ -223,6 +223,7 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
+                cardMode
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por cliente..."
                 facetedFilters={[

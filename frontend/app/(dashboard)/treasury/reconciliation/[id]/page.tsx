@@ -498,30 +498,28 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 </div>
             </div>
 
-            {/* Lines DataTable */}
-            <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={statement.lines}
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción o referencia..."
-                    facetedFilters={[
-                        {
-                            column: "reconciliation_state",
-                            title: "Estado Reconciliación",
-                            options: [
-                                { label: "Sin Conciliar", value: "UNRECONCILED" },
-                                { label: "Conciliado", value: "RECONCILED" },
-                                { label: "Sugerencia (Match)", value: "MATCHED" },
-                                { label: "Excluido", value: "EXCLUDED" },
-                                { label: "En Disputa", value: "DISPUTED" },
-                            ]
-                        }
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                />
-            </div>
+            <DataTable
+                columns={columns}
+                data={statement.lines}
+                cardMode
+                filterColumn="description"
+                searchPlaceholder="Buscar por descripción o referencia..."
+                facetedFilters={[
+                    {
+                        column: "reconciliation_state",
+                        title: "Estado Reconciliación",
+                        options: [
+                            { label: "Sin Conciliar", value: "UNRECONCILED" },
+                            { label: "Conciliado", value: "RECONCILED" },
+                            { label: "Sugerencia (Match)", value: "MATCHED" },
+                            { label: "Excluido", value: "EXCLUDED" },
+                            { label: "En Disputa", value: "DISPUTED" },
+                        ]
+                    }
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+            />
 
             {/* Metadata Footer */}
             <div className="flex items-center justify-between px-2 pt-2">

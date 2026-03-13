@@ -80,7 +80,7 @@ export function TreasuryMovementsClientView() {
     const columns: ColumnDef<TreasuryMovement>[] = [
         {
             accessorKey: "display_id",
-            header: "Folio",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
             cell: ({ row }) => {
                 const m = row.original
                 return <DataCell.DocumentId type={m.movement_type} number={m.id} />
@@ -88,7 +88,7 @@ export function TreasuryMovementsClientView() {
         },
         {
             accessorKey: "date",
-            header: "Fecha",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
             cell: ({ row }) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-xs">{formatPlainDate(row.getValue("date"))}</span>
@@ -97,7 +97,7 @@ export function TreasuryMovementsClientView() {
         },
         {
             accessorKey: "movement_type",
-            header: "Tipo",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
             cell: ({ row }) => {
                 const type = row.getValue("movement_type") as string
                 let label = row.original.movement_type_display
@@ -156,7 +156,7 @@ export function TreasuryMovementsClientView() {
         },
         {
             accessorKey: "payment_method",
-            header: "Método",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Método" />,
             cell: ({ row }) => (
                 <span className="text-[10px] uppercase bg-muted/30 px-1.5 py-0.5 rounded border border-border/50">
                     {row.original.payment_method_display}
@@ -165,7 +165,7 @@ export function TreasuryMovementsClientView() {
         },
         {
             accessorKey: "amount",
-            header: () => <div className="text-right">Monto</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" />,
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
@@ -198,7 +198,7 @@ export function TreasuryMovementsClientView() {
         },
         {
             accessorKey: "created_by_name",
-            header: "Usuario",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" />,
             cell: ({ row }) => (
                 <span className="text-xs text-muted-foreground truncate max-w-[100px]">
                     {row.getValue("created_by_name")}
@@ -246,14 +246,11 @@ export function TreasuryMovementsClientView() {
                 />
             </Suspense>
 
-            {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando movimientos...</div>
-                </div>
-            ) : (
-                <DataTable
+            <DataTable
                     columns={columns}
                     data={movements}
+                    cardMode
+                    isLoading={loading}
                     globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
                     searchPlaceholder="Buscar movimientos..."
                     useAdvancedFilter={true}
@@ -270,7 +267,6 @@ export function TreasuryMovementsClientView() {
                         },
                     ]}
                 />
-            )}
 
             <Suspense fallback={null}>
                 <TransactionViewModal

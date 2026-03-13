@@ -165,8 +165,9 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             <DataTable
                 columns={columns}
                 data={uoms}
+                cardMode
                 filterColumn="name"
-                searchPlaceholder="Buscar unidad..."
+                searchPlaceholder="Buscar por nombre..."
                 globalFilterFields={["name", "category_name"]}
                 facetedFilters={[
                     {

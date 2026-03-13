@@ -213,7 +213,8 @@ export default function EmployeesPage() {
                 <DataTable
                     columns={columns}
                     data={employees}
-                    globalFilterFields={["display_id", "nombre", "position", "department"]}
+                    cardMode
+                    globalFilterFields={["name", "identity_document", "code", "position", "department"]}
                     searchPlaceholder="Buscar por nombre, RUT, o cargo..."
                     facetedFilters={[
                         {

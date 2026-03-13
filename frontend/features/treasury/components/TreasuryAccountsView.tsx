@@ -251,6 +251,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     <DataTable
                         columns={columns}
                         data={accounts}
+                        cardMode
                         searchPlaceholder="Buscar cuentas por nombre..."
                         filterColumn="name"
                         initialColumnVisibility={{

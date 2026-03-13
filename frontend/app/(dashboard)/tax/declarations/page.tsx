@@ -358,6 +358,7 @@ export default function TaxDeclarationsPage() {
             <DataTable
                 columns={columns}
                 data={periods}
+                cardMode
                 filterColumn="period_display"
                 searchPlaceholder="Buscar período..."
                 useAdvancedFilter={true}

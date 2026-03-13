@@ -113,6 +113,8 @@ export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupMan
                 <DataTable
                     columns={columns}
                     data={groups}
+                    cardMode
+                    filterColumn="name"
                     searchPlaceholder="Buscar grupo..."
                     useAdvancedFilter={true}
                 />

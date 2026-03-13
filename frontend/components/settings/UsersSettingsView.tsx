@@ -194,6 +194,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                             <DataTable
                                 columns={columns}
                                 data={users}
+                                cardMode
                                 globalFilterFields={["username", "email", "first_name", "last_name"]}
                                 searchPlaceholder="Buscar usuario por nombre, email o username..."
                                 useAdvancedFilter={true}

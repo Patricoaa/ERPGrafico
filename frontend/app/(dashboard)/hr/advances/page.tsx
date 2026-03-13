@@ -187,6 +187,8 @@ export default function AdvancesPage() {
             <DataTable
                 columns={columns}
                 data={advances}
+                cardMode
+                filterColumn="employee"
                 defaultPageSize={20}
                 useAdvancedFilter={true}
             />
@@ -422,7 +424,7 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-0 hidden lg:flex">
                         <ActivitySidebar
                             entityId={advance.id}
-                            entityType="salaryadvance"
+                            entityType={"salaryadvance" as any}
                             title="Historial"
                             className="h-full border-none"
                         />

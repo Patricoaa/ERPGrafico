@@ -194,6 +194,7 @@ export default function EntriesPage() {
                     <DataTable
                         columns={columns}
                         data={entries}
+                        cardMode
                         filterColumn="description"
                         searchPlaceholder="Buscar por descripción..."
                         facetedFilters={[

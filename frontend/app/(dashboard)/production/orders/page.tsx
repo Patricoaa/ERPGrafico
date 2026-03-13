@@ -125,10 +125,10 @@ export default function WorkOrdersPage() {
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" />
+                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex flex-col items-center">
+                <div className="flex justify-center">
                     <DataCell.DocumentId type="PRODUCTION_ORDER" number={row.getValue("number")} />
                 </div>
             ),
@@ -136,19 +136,22 @@ export default function WorkOrdersPage() {
         {
             accessorKey: "start_date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Inicio" />
+                <DataTableColumnHeader column={column} title="Fecha Inicio" className="justify-center" />
             ),
-            cell: ({ row }) => <div>{row.getValue("start_date") || '-'}</div>,
+            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("start_date") || '-'}</div>,
         },
         {
             accessorKey: "description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
+            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("description")}</div>,
         },
         {
             accessorKey: "status",
-            header: "Estado",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
+            ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
@@ -162,7 +165,9 @@ export default function WorkOrdersPage() {
         },
         {
             accessorKey: "current_stage",
-            header: "Etapa",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Etapa" className="justify-center" />
+            ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <Badge variant="outline" className="text-[10px] whitespace-nowrap">
@@ -174,9 +179,9 @@ export default function WorkOrdersPage() {
         {
             accessorKey: "due_date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Entrega" />
+                <DataTableColumnHeader column={column} title="Fecha Entrega" className="justify-center" />
             ),
-            cell: ({ row }) => <div>{row.getValue("due_date") || '-'}</div>,
+            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("due_date") || '-'}</div>,
         },
         {
             id: "actions",
@@ -236,17 +241,19 @@ export default function WorkOrdersPage() {
     ], [])
 
     const renderKanbanView = useCallback((table: any) => (
-        <div className="bg-muted/30 rounded-xl p-4 min-h-[600px] border relative">
+        <div className="relative">
             {loading ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10 rounded-xl">
+                <div className="min-h-[600px] flex items-center justify-center">
                     <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
                 </div>
             ) : (
-                <WorkOrderKanban
-                    orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
-                    onTransition={handleKanbanTransition}
-                    onManage={(id) => setActiveWizardId(id)}
-                />
+                <div className="min-h-[600px]">
+                    <WorkOrderKanban
+                        orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                        onTransition={handleKanbanTransition}
+                        onManage={(id) => setActiveWizardId(id)}
+                    />
+                </div>
             )}
         </div>
     ), [loading, handleKanbanTransition])
@@ -257,10 +264,24 @@ export default function WorkOrdersPage() {
                 title="Ordenes de Trabajo (OT)"
                 description="Seguimiento y control de procesos productivos."
                 titleActions={
-                    <WorkOrderForm
-                        onSuccess={fetchOrders}
-                        triggerVariant="circular"
-                    />
+                    <div className="flex items-center gap-4">
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
+                            <TabsList className="bg-muted/50 border-0 h-9 p-1">
+                                <TabsTrigger value="kanban" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <LayoutGrid className="h-3.5 w-3.5" />
+                                    <span>Tablero</span>
+                                </TabsTrigger>
+                                <TabsTrigger value="list" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <List className="h-3.5 w-3.5" />
+                                    <span>Lista</span>
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                        <WorkOrderForm
+                            onSuccess={fetchOrders}
+                            triggerVariant="circular"
+                        />
+                    </div>
                 }
             />
 
@@ -294,7 +315,9 @@ export default function WorkOrdersPage() {
             <div className="mt-2">
                 <DataTable
                     columns={columns}
-                    data={filteredOrders}
+                    data={orders}
+                    cardMode={viewMode === "list"}
+                    filterColumn="description"
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
                     searchPlaceholder="Buscar por folio, descripción o cliente..."
@@ -310,20 +333,6 @@ export default function WorkOrdersPage() {
                         <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
                     }
                     onReset={() => setDateRange(undefined)}
-                    rightAction={
-                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
-                            <TabsList>
-                                <TabsTrigger value="kanban" className="flex items-center gap-2">
-                                    <LayoutGrid className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Tablero</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="list" className="flex items-center gap-2">
-                                    <List className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Lista</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    }
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
                 />
             </div>

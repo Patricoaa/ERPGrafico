@@ -80,35 +80,39 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         {
             id: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" />
+                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.DocumentId type="MOV" number={row.original.id} />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.DocumentId type="MOV" number={row.original.id} />
+                </div>
+            ),
         },
         {
             accessorKey: "date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-sm whitespace-nowrap">{formatPlainDate(row.getValue("date"))}</div>,
+            cell: ({ row }) => <div className="text-sm whitespace-nowrap text-center">{formatPlainDate(row.getValue("date"))}</div>,
         },
         {
             accessorKey: "product_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" />
+                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const move = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <span className="font-medium text-xs leading-tight">{move.product_name}</span>
-                        <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight text-center">{move.product_name}</span>
+                        <div className="flex flex-wrap justify-center gap-1">
                             {move.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {move.product_internal_code}
                                 </Badge>
                             )}
                             {move.product_code && move.product_code !== move.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {move.product_code}
                                 </Badge>
                             )}
@@ -120,19 +124,19 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         {
             accessorKey: "warehouse_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Almacén" />
+                <DataTableColumnHeader column={column} title="Almacén" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-sm">{row.getValue("warehouse_name")}</div>,
+            cell: ({ row }) => <div className="text-sm text-center">{row.getValue("warehouse_name")}</div>,
         },
         {
             accessorKey: "quantity",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cant." className="justify-end" />
+                <DataTableColumnHeader column={column} title="Cant." className="justify-center" />
             ),
             cell: ({ row }) => {
                 const qty = parseFloat(row.getValue("quantity"))
                 return (
-                    <div className={`text-right font-bold tabular-nums ${qty > 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    <div className={`text-center font-bold tabular-nums ${qty > 0 ? "text-emerald-600" : "text-rose-600"}`}>
                         {Math.abs(qty)}
                     </div>
                 )
@@ -141,25 +145,27 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         {
             accessorKey: "uom_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Unidad" />
+                <DataTableColumnHeader column={column} title="Unidad" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-[10px] text-muted-foreground font-medium uppercase">{row.getValue("uom_name")}</div>,
+            cell: ({ row }) => <div className="text-[10px] text-muted-foreground font-medium uppercase text-center">{row.getValue("uom_name")}</div>,
         },
         {
             accessorKey: "move_type",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" />
+                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const type = row.getValue("move_type")
                 return (
-                    <Badge
-                        variant={type === 'IN' ? 'default' : type === 'OUT' ? 'destructive' : 'secondary'}
-                        className={`text-[10px] gap-1 ${type === 'ADJ' ? 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200' : ''}`}
-                    >
-                        {type === 'ADJ' && <span className="text-[8px]">🔄</span>}
-                        {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
-                    </Badge>
+                    <div className="flex justify-center">
+                        <Badge
+                            variant={type === 'IN' ? 'default' : type === 'OUT' ? 'destructive' : 'secondary'}
+                            className={`text-[10px] gap-1 ${type === 'ADJ' ? 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200' : ''}`}
+                        >
+                            {type === 'ADJ' && <span className="text-[8px]">🔄</span>}
+                            {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
+                        </Badge>
+                    </div>
                 )
             },
         },
@@ -189,6 +195,8 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 <DataTable
                     columns={columns}
                     data={moves}
+                    cardMode
+                    isLoading={loading}
                     filterColumn="product_name"
                     searchPlaceholder="Buscar por producto..."
                     facetedFilters={[

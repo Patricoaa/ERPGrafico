@@ -416,26 +416,28 @@ export default function PurchaseInvoicesPage() {
                 </div>
             ) : (
                 <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={documents}
-                        filterColumn="partner_name"
-                        searchPlaceholder="Buscar por proveedor..."
-                        facetedFilters={[
-                            {
-                                column: "status",
-                                title: "Estado",
-                                options: [
-                                    { label: "Folio Pendiente", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
-                            },
-                        ]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={20}
-                    />
+                <DataTable
+                    columns={columns}
+                    data={documents}
+                    cardMode
+                    isLoading={loading}
+                    filterColumn="partner_name"
+                    searchPlaceholder="Buscar por proveedor..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Folio Pendiente", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                />
                 </div>
             )}
 

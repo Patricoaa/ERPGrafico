@@ -215,22 +215,22 @@ export default function SubscriptionsPage() {
         {
             id: "product",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" />
+                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
             ),
             accessorFn: (row) => row.product_name,
             cell: ({ row }) => {
                 const sub = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <span className="font-medium text-xs leading-tight">{sub.product_name}</span>
-                        <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight text-center">{sub.product_name}</span>
+                        <div className="flex flex-wrap justify-center gap-1">
                             {sub.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {sub.product_internal_code}
                                 </Badge>
                             )}
                             {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {sub.product_code}
                                 </Badge>
                             )}
@@ -242,62 +242,67 @@ export default function SubscriptionsPage() {
         {
             accessorKey: "category_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Categoría" />
+                <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text className="text-xs">{row.getValue("category_name")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text className="text-xs text-center">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "supplier_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Proveedor" />
+                <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text>,
+            cell: ({ row }) => <div className="text-center"><DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text></div>,
         },
         {
             accessorKey: "amount",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" />
+                <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
+            cell: ({ row }) => <div className="flex justify-center"><DataCell.Currency value={row.getValue("amount")} /></div>,
         },
         {
-            id: "frequency",
-            header: "Frecuencia",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
+            ),
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-foreground">{getPaymentScheduleText(row.original)}</DataCell.Secondary>
+                <div className="text-center">
+                    <DataCell.Secondary className="text-foreground">{getPaymentScheduleText(row.original)}</DataCell.Secondary>
+                </div>
             ),
         },
         {
             accessorKey: "next_payment_date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Próximo Pago" />
+                <DataTableColumnHeader column={column} title="Próximo Pago" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Date value={row.getValue("next_payment_date")} />,
+            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("next_payment_date")} /></div>,
         },
         {
             accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Status
-                    status={row.getValue("status")}
-                    map={{
-                        ACTIVE: "success",
-                        PAUSED: "warning",
-                        CANCELLED: "destructive",
-                        PENDING: "secondary"
-                    }}
-                />
+                <div className="flex justify-center">
+                    <DataCell.Status
+                        status={row.getValue("status")}
+                        map={{
+                            ACTIVE: "success",
+                            PAUSED: "warning",
+                            CANCELLED: "destructive",
+                            PENDING: "secondary"
+                        }}
+                    />
+                </div>
             ),
         },
         {
             id: "actions",
-            header: "Acciones",
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => {
                 const sub = row.original
                 return (
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-2 justify-center">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -405,6 +410,7 @@ export default function SubscriptionsPage() {
                         <DataTable
                             columns={columns}
                             data={subscriptions}
+                            cardMode
                             filterColumn="product"
                             searchPlaceholder="Buscar por producto..."
                             facetedFilters={[

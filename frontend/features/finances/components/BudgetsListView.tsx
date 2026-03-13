@@ -165,7 +165,8 @@ export function BudgetsListView() {
                 <DataTable
                     columns={columns}
                     data={budgets}
-                    filterColumn="name"
+                    cardMode
+                    globalFilterFields={["name"]}
                     searchPlaceholder="Buscar presupuestos..."
                     useAdvancedFilter={true}
                 />

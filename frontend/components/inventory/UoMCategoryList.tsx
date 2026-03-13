@@ -120,8 +120,9 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             <DataTable
                 columns={columns}
                 data={categories}
+                cardMode
                 filterColumn="name"
-                searchPlaceholder="Buscar categoría..."
+                searchPlaceholder="Buscar por nombre..."
                 useAdvancedFilter={true}
             />
 

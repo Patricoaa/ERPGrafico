@@ -41,16 +41,16 @@ export function StockReport() {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <DataCell.Text>{item.name}</DataCell.Text>
-                        <div className="flex gap-1">
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <DataCell.Text className="text-center">{item.name}</DataCell.Text>
+                        <div className="flex justify-center gap-1">
                             {item.internal_code && <DataCell.Code>{item.internal_code}</DataCell.Code>}
                             {item.code && item.code !== item.internal_code && (
-                                <DataCell.Badge variant="secondary" className="text-[10px] h-4">{item.code}</DataCell.Badge>
+                                <DataCell.Badge variant="secondary" className="text-[10px] h-4 text-center">{item.code}</DataCell.Badge>
                             )}
                         </div>
                     </div>
@@ -58,56 +58,65 @@ export function StockReport() {
             },
         },
         {
-            accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
-            cell: ({ row }) => <DataCell.Text className="text-xs">{row.getValue("category_name")}</DataCell.Text>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Text className="text-xs text-center">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "stock_qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Físico" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Físico" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Number
-                    value={row.getValue("stock_qty")}
-                    decimals={2}
-                    suffix={row.original.uom_name}
-                />
+                <div className="flex justify-center">
+                    <DataCell.Number
+                        value={row.getValue("stock_qty")}
+                        decimals={2}
+                        suffix={row.original.uom_name}
+                    />
+                </div>
             ),
         },
         {
             accessorKey: "qty_reserved",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Number
-                    value={row.getValue("qty_reserved")}
-                    decimals={2}
-                    suffix={row.original.uom_name}
-                />
+                <div className="flex justify-center">
+                    <DataCell.Number
+                        value={row.getValue("qty_reserved")}
+                        decimals={2}
+                        suffix={row.original.uom_name}
+                    />
+                </div>
             ),
         },
         {
             accessorKey: "qty_available",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Number
-                    value={row.getValue("qty_available")}
-                    decimals={2}
-                    suffix={row.original.uom_name}
-                />
+                <div className="flex justify-center">
+                    <DataCell.Number
+                        value={row.getValue("qty_available")}
+                        decimals={2}
+                        suffix={row.original.uom_name}
+                    />
+                </div>
             ),
         },
         {
-            accessorKey: "unit_cost",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Costo Unit." className="justify-end" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("unit_cost")} className="text-sm font-normal text-muted-foreground" />,
-        },
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Costo Unit." className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.Currency value={row.getValue("unit_cost")} className="text-sm font-normal text-muted-foreground" />
+                </div>
+            ),
         {
-            accessorKey: "total_value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-end" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_value")} className="font-black text-primary" />,
-        },
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.Currency value={row.getValue("total_value")} className="font-black text-primary" />
+                </div>
+            ),
         {
             accessorKey: "moves_in",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ent." className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Ent." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-end">
                     <Badge variant="success" className="text-[10px] h-5 px-2">
@@ -118,7 +127,7 @@ export function StockReport() {
         },
         {
             accessorKey: "moves_out",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Sal." className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Sal." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-end">
                     <Badge variant="warning" className="text-[10px] h-5 px-2">
@@ -161,6 +170,7 @@ export function StockReport() {
             <DataTable
                 columns={columns}
                 data={report}
+                cardMode
                 searchPlaceholder="Buscar producto..."
                 globalFilterFields={["name", "code", "internal_code"]}
                 useAdvancedFilter={true}
