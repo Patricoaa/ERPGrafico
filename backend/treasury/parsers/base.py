@@ -93,7 +93,7 @@ class BaseParser(ABC):
         
         value_str = str(value).strip()
         
-        # Formatos comunes en Chile
+        # Formatos comunes en Chile, incluyendo sin año
         formats = [
             date_format,
             '%d-%m-%Y',
@@ -102,11 +102,20 @@ class BaseParser(ABC):
             '%d.%m.%Y',
             '%d-%m-%y',
             '%d/%m/%y',
+            '%d/%m',
+            '%d-%m',
+            '%d.%m',
+            '%m/%d',
+            '%m-%d',
         ]
         
         for fmt in formats:
             try:
-                return datetime.strptime(value_str, fmt).date()
+                dt = datetime.strptime(value_str, fmt)
+                # Si el año es 1900, significa que se usó un formato sin año
+                if dt.year == 1900:
+                    dt = dt.replace(year=datetime.now().year)
+                return dt.date()
             except (ValueError, TypeError):
                 continue
         

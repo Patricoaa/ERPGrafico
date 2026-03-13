@@ -155,18 +155,18 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
     }
 
     return (
-        <Card className={cn("border-border shadow-sm", variantMode && "border-none shadow-none bg-transparent")}>
+        <div className={cn("w-full", variantMode && "bg-transparent")}>
             {!variantMode && (
-                <CardHeader className="pb-3">
+                <div className="pb-3 px-4 pt-4 border-b">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-base font-bold flex items-center gap-2">
+                            <h3 className="text-base font-bold flex items-center gap-2">
                                 <Workflow className="h-5 w-5 text-primary" />
                                 Listas de Materiales (BOM)
-                            </CardTitle>
-                            <CardDescription className="text-xs mt-1">
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
                                 Defina los componentes necesarios para fabricar este producto.
-                            </CardDescription>
+                            </p>
                         </div>
                     </div>
 
@@ -237,7 +237,7 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                             </Button>
                         </div>
                     )}
-                </CardHeader>
+                </div>
             )}
 
             {variantMode && (
@@ -261,7 +261,7 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                     </Button>
                 </div>
             )}
-            <CardContent>
+            <div className="p-4">
                 <div className="rounded-md border overflow-hidden">
                     <Table>
                         <TableHeader>
@@ -396,7 +396,7 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                         </TableBody>
                     </Table>
                 </div>
-            </CardContent>
+            </div>
 
             <BOMFormDialog
                 open={dialogOpen}
@@ -424,6 +424,6 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
                     </p>
                 }
             />
-        </Card>
+        </div>
     )
 }

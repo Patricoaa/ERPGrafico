@@ -16,7 +16,8 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     HandCoins,
-    History
+    History,
+    ArrowRight
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { useServerDate } from "@/hooks/useServerDate"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { FORM_STYLES } from "@/lib/styles"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -197,15 +199,20 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             size="xl"
             variant="wizard"
             title={
-                <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Calculator className="h-5 w-5" />
+                <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
+                        <Calculator className="h-6 w-6" />
                     </div>
-                    <div>
-                        <div className="text-xl font-bold">Asistente de Declaración F29</div>
-                        <div className="text-muted-foreground text-xs font-normal">
-                            Paso {step} de 4 {period.month && period.year && (
-                                <span className="ml-2">• Período: {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
+                    <div className="space-y-1">
+                        <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Asistente F29</div>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-primary/20 text-primary/80">
+                                Paso {step} de 4
+                            </Badge>
+                            {period.month && period.year && (
+                                <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-widest opacity-70">
+                                    • {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -215,39 +222,36 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 <div className="flex justify-between items-center w-full">
                     <Button
                         variant="ghost"
-                        onClick={prevStep}
-                        disabled={step === 1 || isLoading}
-                        className="rounded-xl"
+                        onClick={step === 1 ? () => onOpenChange(false) : prevStep}
+                        disabled={isLoading}
+                        className="rounded-xl px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
                     >
-                        <ChevronLeft className="h-4 w-4 mr-2" />
-                        Anterior
+                        {step === 1 ? "Cancelar" : (
+                            <>
+                                <ChevronLeft className="h-3.5 w-3.5 mr-2" />
+                                Anterior
+                            </>
+                        )}
                     </Button>
 
-                    <div className="flex gap-2">
-                        <Button
-                            variant="secondary"
-                            onClick={() => onOpenChange(false)}
-                            className="rounded-xl px-6"
-                        >
-                            Cancelar
-                        </Button>
+                    <div className="flex items-center gap-3">
                         {step < 4 ? (
-                            <Button
-                                onClick={nextStep}
-                                disabled={isLoading}
-                                className="rounded-xl px-8 shadow-lg shadow-primary/20"
+                            <Button 
+                                onClick={nextStep} 
+                                disabled={isLoading || !period.year || !period.month}
+                                className="rounded-xl px-8 h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
                                 Siguiente
-                                <ChevronRight className="h-4 w-4 ml-2" />
+                                <ChevronRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         ) : (
-                            <Button
-                                onClick={handleSave}
+                            <Button 
+                                onClick={handleSave} 
                                 disabled={isLoading}
-                                className="rounded-xl px-10 bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20"
+                                className="rounded-xl px-10 h-11 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Registrar Declaración
+                                {isLoading ? "Procesando..." : "Finalizar Declaración"}
+                                {!isLoading && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
                             </Button>
                         )}
                     </div>
@@ -257,64 +261,82 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             <div className="py-4">
 
                 {step === 1 && (
-                    <div className="space-y-6 max-w-md mx-auto py-8">
-                        <div className="text-center space-y-2 mb-8">
-                            <h3 className="text-xl font-semibold">Selecciona el Período a Declarar</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Elige el mes y año para calcular el IVA y generar el formulario F29.
+                    <div className="space-y-12 max-w-4xl mx-auto py-10 min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="text-center space-y-3">
+                            <h3 className="text-2xl font-black tracking-tight uppercase text-foreground/80">Selección de Período</h3>
+                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                Seleccione el mes y año tributario para el cual desea generar la declaración de impuestos F29.
                             </p>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Año Tributario</Label>
-                                <div className="grid grid-cols-4 gap-2">
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Año Tributario</Label>
+                                <div className="grid grid-cols-4 gap-3">
                                     {(() => {
                                         const baseYear = year || new Date().getFullYear();
                                         return [baseYear - 2, baseYear - 1, baseYear, baseYear + 1].map(y => (
                                             <div
                                                 key={y}
                                                 className={cn(
-                                                    "cursor-pointer rounded-xl border-2 px-2 py-3 text-center transition-all hover:border-primary/50",
-                                                    period.year === y ? "border-primary bg-primary/5 font-bold text-primary" : "border-muted bg-background"
+                                                    "cursor-pointer rounded-2xl border border-transparent px-4 py-5 text-center transition-all duration-200",
+                                                    period.year === y 
+                                                        ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" 
+                                                        : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
                                                 )}
                                                 onClick={() => setPeriod(p => ({ ...p, year: y }))}
                                             >
-                                                {y}
+                                                <div className={cn(
+                                                    "text-sm font-bold tracking-wider",
+                                                    period.year === y ? "text-primary" : ""
+                                                )}>{y}</div>
                                             </div>
                                         ));
                                     })()}
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Mes</Label>
-                                <div className="grid grid-cols-4 gap-2">
+                            <div className="space-y-4">
+                                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Mes de Declaración</Label>
+                                <div className="grid grid-cols-4 gap-3">
                                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                                         const disabled = isPeriodDisabled(period.year, m)
+                                        const isSelected = !disabled && period.month === m
                                         return (
                                             <div
                                                 key={m}
                                                 className={cn(
-                                                    "rounded-lg border px-2 py-2 text-center text-sm transition-all",
+                                                    "rounded-xl border border-transparent px-2 py-4 text-center transition-all duration-200",
                                                     disabled
-                                                        ? "opacity-30 cursor-not-allowed bg-muted border-transparent"
-                                                        : "cursor-pointer hover:border-primary/50",
-                                                    !disabled && period.month === m ? "border-primary bg-primary/5 font-bold text-primary" : (!disabled ? "border-muted bg-background" : "")
+                                                        ? "opacity-20 cursor-not-allowed grayscale"
+                                                        : "cursor-pointer",
+                                                    isSelected
+                                                        ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-md shadow-primary/5 z-10"
+                                                        : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
                                                 )}
                                                 onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
                                             >
-                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}
+                                                <div className={cn(
+                                                    "text-[11px] font-black tracking-widest uppercase",
+                                                    isSelected ? "text-primary" : "text-muted-foreground/70"
+                                                )}>
+                                                    {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' })}
+                                                </div>
                                             </div>
                                         )
                                     })}
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex justify-center">
-                                <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs">
-                                    <Info className="h-4 w-4" />
-                                    Al continuar, se buscarán todos los documentos del período seleccionado.
+                            <div className="pt-6">
+                                <div className="flex items-start gap-4 p-5 bg-primary/5 border border-primary/10 rounded-2xl text-primary/70">
+                                    <Info className="h-5 w-5 mt-0.5 flex-shrink-0 opacity-80" />
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold uppercase tracking-wider">Flujo de Trabajo</p>
+                                        <p className="text-xs leading-relaxed opacity-80">
+                                            Al continuar, el sistema consolidará automáticamente todas las facturas, boletas y retenciones registradas para el período seleccionado.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -322,217 +344,304 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 )}
 
                 {step === 2 && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-8">
-                            <section className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-primary">
-                                    <ArrowUpRight className="h-5 w-5" />
-                                    Débito Fiscal (Ventas)
-                                </h3>
-                                <div className="space-y-3 bg-muted/30 p-4 rounded-2xl border border-border/50">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Ventas Afectas</span>
-                                        <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-medium" />
+                    <div className="space-y-10 max-w-4xl mx-auto min-h-[600px] animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="grid grid-cols-2 gap-12">
+                            {/* Débito Fiscal */}
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 h-px bg-border/60" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 flex items-center gap-2 px-3">
+                                        <ArrowUpRight className="h-3.5 w-3.5" />
+                                        Débito Fiscal
+                                    </span>
+                                    <div className="flex-1 h-px bg-border/60" />
+                                </div>
+
+                                <div className="space-y-4 bg-muted/5 p-6 rounded-3xl border border-transparent hover:border-primary/10 transition-all">
+                                    <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-muted-foreground/70 px-1">
+                                        <span>Conceptos de Venta</span>
+                                        <span>Monto Neto</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Ventas Exentas</span>
-                                        <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-medium" />
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-1 border-b border-border/30 border-dashed">
+                                            <span className="text-sm font-medium">Ventas Afectas</span>
+                                            <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold text-sm" />
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-border/30 border-dashed">
+                                            <span className="text-sm font-medium">Ventas Exentas</span>
+                                            <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold text-sm" />
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-border/30 border-dashed">
+                                            <span className="text-sm font-medium text-rose-500/80">Notas de Crédito (-)</span>
+                                            <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-bold text-sm text-rose-600" />
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-emerald-600">Notas de Crédito (-)</span>
-                                        <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-medium" />
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between font-bold text-base pt-1">
-                                        <span>Total Neto Ventas</span>
-                                        <MoneyDisplay amount={calcData?.net_taxed_sales} showColor={false} />
-                                    </div>
-                                    <div className="flex justify-between font-bold text-primary text-lg">
-                                        <span>IVA Débito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_debit} />
+                                    
+                                    <div className="pt-4 space-y-2">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total Neto Ventas</span>
+                                            <MoneyDisplay amount={calcData?.net_taxed_sales} showColor={false} className="text-lg font-black tracking-tight" />
+                                        </div>
+                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                                            <span className="text-xs font-black uppercase tracking-[0.1em] text-primary/80">IVA Débito ({manualFields.tax_rate}%)</span>
+                                            <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-primary drop-shadow-sm" />
+                                        </div>
                                     </div>
                                 </div>
                             </section>
 
-                            <section className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-indigo-600">
-                                    <ArrowDownLeft className="h-5 w-5" />
-                                    Crédito Fiscal (Compras)
-                                </h3>
-                                <div className="space-y-3 bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100/50">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Compras Afectas</span>
-                                        <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-medium" />
+                            {/* Crédito Fiscal */}
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 h-px bg-border/60" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2 px-3">
+                                        <ArrowDownLeft className="h-3.5 w-3.5" />
+                                        Crédito Fiscal
+                                    </span>
+                                    <div className="flex-1 h-px bg-border/60" />
+                                </div>
+
+                                <div className="space-y-4 bg-indigo-50/10 p-6 rounded-3xl border border-transparent hover:border-indigo-500/10 transition-all">
+                                    <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-indigo-600/50 px-1">
+                                        <span>Conceptos de Compra</span>
+                                        <span>Monto Neto</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Compras Exentas</span>
-                                        <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-medium" />
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-1 border-b border-indigo-100/30 border-dashed">
+                                            <span className="text-sm font-medium">Compras Afectas</span>
+                                            <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold text-sm" />
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-indigo-100/30 border-dashed">
+                                            <span className="text-sm font-medium">Compras Exentas</span>
+                                            <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold text-sm" />
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-indigo-100/30 border-dashed">
+                                            <span className="text-sm font-medium text-amber-600">Notas de Crédito (-)</span>
+                                            <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-bold text-sm text-amber-600" />
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between text-sm text-amber-600">
-                                        <span>Notas de Crédito (-)</span>
-                                        <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-medium" />
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between font-bold text-base pt-1">
-                                        <span>Total Neto Compras</span>
-                                        <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} />
-                                    </div>
-                                    <div className="flex justify-between font-bold text-indigo-600 text-lg">
-                                        <span>IVA Crédito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_credit} />
+                                    
+                                    <div className="pt-4 space-y-2">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600/50">Total Neto Compras</span>
+                                            <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} className="text-lg font-black tracking-tight text-indigo-600/80" />
+                                        </div>
+                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-indigo-600">
+                                            <span className="text-xs font-black uppercase tracking-[0.1em] opacity-80">IVA Crédito ({manualFields.tax_rate}%)</span>
+                                            <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black drop-shadow-sm" />
+                                        </div>
                                     </div>
                                 </div>
                             </section>
                         </div>
 
-                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 flex gap-4 items-start text-sm text-primary/80">
-                            <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                            <p>
-                                Estos valores son calculados automáticamente de las facturas y boletas publicadas en el sistema. Asegúrese de haber conciliado todos los documentos antes de proceder.
-                            </p>
+                        <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 flex gap-4 items-center text-[11px] text-primary/70 font-medium uppercase tracking-wider justify-center">
+                            <Info className="h-4 w-4 flex-shrink-0 opacity-80" />
+                            <span>Valores calculados automáticamente. Verifique la conciliación de documentos antes de proceder.</span>
                         </div>
                     </div>
                 )}
 
                 {step === 3 && (
-                    <div className="space-y-6">
-                        <h3 className="font-bold text-lg flex items-center gap-2">
-                            <HandCoins className="h-5 w-5 text-amber-500" />
-                            Otros Impuestos y Retenciones
-                        </h3>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="ppm">PPM (Pagos Provisionales Mensuales)</Label>
-                                <Input
-                                    id="ppm"
-                                    type="number"
-                                    value={manualFields.ppm_amount}
-                                    onChange={(e) => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
+                    <div className="space-y-10 max-w-4xl mx-auto min-h-[600px] animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="space-y-12">
+                            {/* Grupo 1: Retenciones Mensuales */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                                <div className="space-y-10 col-span-full">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1 h-px bg-border/60" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2 px-3">
+                                            <HandCoins className="h-3.5 w-3.5" />
+                                            Retenciones e Impuesto Único
+                                        </span>
+                                        <div className="flex-1 h-px bg-border/60" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="ppm">PPM (Pagos Provisionales)</Label>
+                                    <Input
+                                        id="ppm"
+                                        type="number"
+                                        value={manualFields.ppm_amount}
+                                        onChange={(e) => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="withholding">Retención Honorarios (13.75%)</Label>
+                                    <Input
+                                        id="withholding"
+                                        type="number"
+                                        value={manualFields.withholding_tax}
+                                        onChange={(e) => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="impuesto2da">Impuesto Único 2da Categoría</Label>
+                                    <Input
+                                        id="impuesto2da"
+                                        type="number"
+                                        value={manualFields.second_category_tax}
+                                        onChange={(e) => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="loan">Préstamo Solidario (3%)</Label>
+                                    <Input
+                                        id="loan"
+                                        type="number"
+                                        value={manualFields.loan_retention}
+                                        onChange={(e) => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="withholding">Retención Honorarios (2da Categoría)</Label>
-                                <Input
-                                    id="withholding"
-                                    type="number"
-                                    value={manualFields.withholding_tax}
-                                    onChange={(e) => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
+
+                            {/* Grupo 2: Ajustes de IVA y Remanentes */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                                <div className="space-y-10 col-span-full">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1 h-px bg-border/60" />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2 px-3">
+                                            <History className="h-3.5 w-3.5" />
+                                            Ajustes de IVA y Remanentes
+                                        </span>
+                                        <div className="flex-1 h-px bg-border/60" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="remanente">Remanente Mes Anterior</Label>
+                                    <Input
+                                        id="remanente"
+                                        type="number"
+                                        readOnly
+                                        value={manualFields.vat_credit_carryforward}
+                                        className={cn(FORM_STYLES.input, "bg-muted/50 cursor-not-allowed border-dashed grayscale opacity-70")}
+                                        title="Valor automático desde contabilidad"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="reajuste">Reajuste Art. 31 (Actualización)</Label>
+                                    <Input
+                                        id="reajuste"
+                                        type="number"
+                                        value={manualFields.vat_correction_amount}
+                                        onChange={(e) => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="Variación IPC"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="iva_ret">Retenciones IVA Sufridas</Label>
+                                    <Input
+                                        id="iva_ret"
+                                        type="number"
+                                        value={manualFields.vat_withholding}
+                                        onChange={(e) => setManualFields({ ...manualFields, vat_withholding: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className={FORM_STYLES.label} htmlFor="ila">Otros Impuestos (ILA/Adic.)</Label>
+                                    <Input
+                                        id="ila"
+                                        type="number"
+                                        value={manualFields.ila_tax}
+                                        onChange={(e) => setManualFields({ ...manualFields, ila_tax: Number(e.target.value) })}
+                                        className={FORM_STYLES.input}
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="remanente">Remanente de Mes Anterior</Label>
-                                <Input
-                                    id="remanente"
-                                    type="number"
-                                    readOnly
-                                    value={manualFields.vat_credit_carryforward}
-                                    className="rounded-xl bg-muted/50 cursor-not-allowed"
-                                    title="Este valor se extrae automáticamente de la contabilidad"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="reajuste">Reajuste Remanente (Art. 31)</Label>
-                                <Input
-                                    id="reajuste"
-                                    type="number"
-                                    value={manualFields.vat_correction_amount}
-                                    onChange={(e) => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                    placeholder="Actualización monetaria"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="impuesto2da">Impuesto Único 2da Categoría</Label>
-                                <Input
-                                    id="impuesto2da"
-                                    type="number"
-                                    value={manualFields.second_category_tax}
-                                    onChange={(e) => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="loan">Retención Préstamo Solidario (3%)</Label>
-                                <Input
-                                    id="loan"
-                                    type="number"
-                                    value={manualFields.loan_retention}
-                                    onChange={(e) => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="ila">Impuesto Adicional (ILA)</Label>
-                                <Input
-                                    id="ila"
-                                    type="number"
-                                    value={manualFields.ila_tax}
-                                    onChange={(e) => setManualFields({ ...manualFields, ila_tax: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="iva_ret">Retención IVA (Cambio Sujeto)</Label>
-                                <Input
-                                    id="iva_ret"
-                                    type="number"
-                                    value={manualFields.vat_withholding}
-                                    onChange={(e) => setManualFields({ ...manualFields, vat_withholding: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
+                        </div>
+
+                        <div className="bg-amber-500/5 p-5 rounded-2xl border border-amber-500/10 flex gap-4 items-center text-[11px] text-amber-700/70 font-medium uppercase tracking-wider justify-center mx-auto max-w-2xl">
+                            <Info className="h-4 w-4 flex-shrink-0 opacity-80" />
+                            <span>Complete los campos manuales según la información adicional del período.</span>
                         </div>
                     </div>
                 )}
 
                 {step === 4 && (
-                    <div className="flex flex-col items-center justify-center py-8 text-center space-y-6">
-                        <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-2">
-                            <CheckCircle2 className="h-10 w-10 animate-pulse" />
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold">Resumen de Declaración</h3>
-                            <p className="text-muted-foreground">Período: {period.month}/{period.year}</p>
+                    <div className="space-y-10 max-w-4xl mx-auto min-h-[600px] animate-in fade-in zoom-in-95 duration-500">
+                        <div className="text-center space-y-3">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 mb-2 border border-emerald-500/20 shadow-sm shadow-emerald-500/10">
+                                <CheckCircle2 className="h-8 w-8" />
+                            </div>
+                            <h3 className="text-2xl font-black tracking-tight uppercase text-foreground/80">Resumen de Declaración</h3>
+                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">F29 • {new Date(period.year, period.month - 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</p>
                         </div>
 
-                        <div className="w-full max-w-md bg-muted/40 p-6 rounded-3xl border border-border/50 divide-y divide-border/30">
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Débitos F. (Ventas)</span>
-                                <MoneyDisplay amount={vatDebit} className="font-medium text-indigo-600" />
-                            </div>
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Créditos F. y Reajuste</span>
-                                <MoneyDisplay amount={-totalVATCredits} className="font-medium" />
-                            </div>
-                            <div className="flex justify-between py-2 border-dashed">
-                                <span className="font-medium">Total IVA a Pagar</span>
-                                <MoneyDisplay amount={vatToPay} className="text-base" />
-                            </div>
-                            {vatRemanent > 0 && (
-                                <div className="flex justify-between py-2 bg-emerald-500/5 px-2 -mx-2 rounded-lg">
-                                    <span className="text-emerald-700 font-medium">Nuevo Remanente a Favor</span>
-                                    <MoneyDisplay amount={vatRemanent} className="text-emerald-600" />
+                        <div className="relative">
+                            {/* Decorative Receipt Edge */}
+                            <div className="absolute -top-3 left-0 right-0 h-3 bg-[radial-gradient(circle,transparent_0,transparent_4px,white_4px,white_100%)] bg-[length:12px_12px] opacity-10" />
+                            
+                            <div className="bg-card border-x border-b border-border/50 rounded-b-3xl shadow-xl shadow-primary/5 p-8 space-y-8 overflow-hidden">
+                                <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+                                        <ArrowRight className="h-3 w-3" />
+                                        Detalle de Impuestos
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">IVA Determinado (Ventas - Compras)</span>
+                                            <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Pago Provisional PPM</span>
+                                            <MoneyDisplay amount={manualFields.ppm_amount} showColor={false} className="font-bold" />
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-muted-foreground">Retenciones Honorarios e I. Único</span>
+                                            <MoneyDisplay amount={manualFields.withholding_tax + manualFields.second_category_tax} showColor={false} className="font-bold" />
+                                        </div>
+                                        {vatRemanent > 0 && (
+                                            <div className="flex justify-between items-center text-sm bg-emerald-500/5 px-2 -mx-2 rounded-lg py-1">
+                                                <span className="text-emerald-700 font-bold">Nuevo Remanente a Favor</span>
+                                                <MoneyDisplay amount={vatRemanent} className="font-black text-emerald-600" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+
+                                <section className="space-y-8 pt-2">
+                                    <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-primary/5 border border-primary/10 relative overflow-hidden group">
+                                        {/* Background Decoration */}
+                                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                                            <Calculator className="w-32 h-32 text-primary" />
+                                        </div>
+                                        
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-2">Total a Pagar SII</span>
+                                        <MoneyDisplay 
+                                            amount={finalToPay} 
+                                            className="text-5xl font-black tracking-tighter text-primary drop-shadow-sm transition-transform hover:scale-105" 
+                                        />
+                                        <div className="mt-4 flex items-center gap-2">
+                                            <Badge variant="outline" className="h-5 px-3 text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 border-emerald-500/20 text-emerald-600">
+                                                Listo para Enviar
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <div className="text-center pt-2">
+                                    <p className="text-[10px] text-muted-foreground/60 italic leading-relaxed">
+                                        Al hacer clic en "Finalizar Declaración", se creará el registro contable y se marcará el período como cerrado. Esta acción generará una obligación de pago en la tesorería.
+                                    </p>
                                 </div>
-                            )}
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Retenciones e Impuesto</span>
-                                <MoneyDisplay amount={manualFields.withholding_tax + manualFields.second_category_tax} className="font-medium text-amber-600" />
-                            </div>
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Pago Provisional PPM</span>
-                                <MoneyDisplay amount={manualFields.ppm_amount} className="font-medium text-amber-600" />
-                            </div>
-                            <div className="flex justify-between py-4 text-xl font-black border-t-2 border-border mt-2">
-                                <span>TOTAL A PAGAR AL SII</span>
-                                <MoneyDisplay amount={finalToPay} />
                             </div>
                         </div>
-
-                        <p className="text-xs text-muted-foreground max-w-sm">
-                            Al confirmar, se generará un asiento contable registrando la obligación tributaria y se habilitará el registro de pago.
-                        </p>
                     </div>
                 )}
             </div>

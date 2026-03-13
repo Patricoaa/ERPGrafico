@@ -223,19 +223,19 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
                         className="w-full"
                     >
-                        <TabsList className="grid w-full grid-cols-2 h-12">
+                        <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border max-w-md mx-auto">
                             <TabsTrigger
                                 value="IN"
-                                className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white h-10 text-emerald-700 font-bold"
+                                className="rounded-full transition-all text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm h-full"
                             >
-                                <ArrowDownCircle className="mr-2 h-5 w-5" />
+                                <ArrowDownCircle className="mr-2 h-4 w-4" />
                                 Entrada de Stock
                             </TabsTrigger>
                             <TabsTrigger
                                 value="OUT"
-                                className="data-[state=active]:bg-rose-600 data-[state=active]:text-white h-10 text-rose-700 font-bold"
+                                className="rounded-full transition-all text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border data-[state=active]:border-rose-200 data-[state=active]:shadow-sm h-full"
                             >
-                                <ArrowUpCircle className="mr-2 h-5 w-5" />
+                                <ArrowUpCircle className="mr-2 h-4 w-4" />
                                 Salida de Stock
                             </TabsTrigger>
                         </TabsList>
@@ -243,7 +243,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                 </div>
 
                 {/* 2. Context (Product & Warehouse) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/20 p-4 rounded-lg border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/5 p-4 rounded-xl border">
                     <FormField
                         control={form.control}
                         name="warehouse_id"
@@ -298,7 +298,11 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                 {/* 3. Quantity & Values */}
                 <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Detalles del Movimiento</h4>
+                    <div className="flex items-center gap-2 pt-2 pb-2">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Detalles del Movimiento</span>
+                        <div className="flex-1 h-px bg-border" />
+                    </div>
 
                     <div className="grid grid-cols-12 gap-4">
                         {/* Quantity & UoM - 7 cols */}
@@ -387,9 +391,13 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     )}
                 </div>
 
-                <Separator />
-
                 {/* 4. Reason & Metadata */}
+                <div className="flex items-center gap-2 pt-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Clasificación</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -431,14 +439,14 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-6 pb-2">
                     {onCancel && (
-                        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
+                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-xl text-xs font-bold">Cancelar</Button>
                     )}
                     <Button
                         type="submit"
                         disabled={isLoading}
-                        className={moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}
+                        className={cn("rounded-xl text-xs font-bold", moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700')}
                     >
                         {isLoading ? "Procesando..." : (
                             <>

@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // Import modular components
 import { ProductTypeSelector } from "./product/ProductTypeSelector"
 import { ProductImageUpload } from "./product/ProductImageUpload"
-import { ProductBasicInfo, ProductIdentitySection, ProductCategorizationSection, ProductStatusSection } from "./product/ProductBasicInfo"
+import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductInventoryTab } from "./product/ProductInventoryTab"
 import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
@@ -669,12 +669,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
                             <TabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                    <div className="md:col-span-3 space-y-4">
-                                        <div className="p-4 rounded-2xl border bg-card/50 space-y-4 shadow-sm">
-                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
-                                                <div className="w-1.5 h-3 bg-primary rounded-full" />
-                                                Imagen del Producto
-                                            </h3>
+                                    <div className="md:col-span-3 space-y-8">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 pt-2 pb-2">
+                                                <div className="flex-1 h-px bg-border" />
+                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Imagen</span>
+                                                <div className="flex-1 h-px bg-border" />
+                                            </div>
                                             <ProductImageUpload
                                                 form={form as any}
                                                 imagePreview={imagePreview}
@@ -682,27 +683,24 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                             />
                                         </div>
 
-                                        <div className="p-4 rounded-2xl border bg-card/50 space-y-4 shadow-sm">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 pt-2 pb-2">
+                                                <div className="flex-1 h-px bg-border" />
+                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Tipo de producto</span>
+                                                <div className="flex-1 h-px bg-border" />
+                                            </div>
                                             <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
                                         </div>
                                     </div>
 
                                     <div className="md:col-span-9 space-y-4">
-                                        {/* Row 1: Identity */}
-                                        <ProductIdentitySection form={form as any} isEditing={!!initialData} />
-
-                                        {/* Row 2: Categorization */}
-                                        <ProductCategorizationSection
+                                        <ProductBasicInfo
                                             form={form as any}
                                             categories={categories}
                                             isEditing={!!initialData}
                                             onAddCategory={() => setIsCategoryFormOpen(true)}
                                         />
 
-                                        {/* Row 3: Status & Visibility (Now full width or adjusted) */}
-                                        <ProductStatusSection form={form as any} />
-
-                                        {/* Row 4: Pricing */}
                                         <ProductPricingSection
                                             form={form as any}
                                             initialData={initialData}
@@ -736,9 +734,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                             />
 
                             <TabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
-                                <div className="p-6 rounded-[1.5rem] border bg-card/50 shadow-inner">
-                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                </div>
+                                <ProductSubscriptionTab form={form} isEditing={!!initialData} />
                             </TabsContent>
 
                             <ProductPricingTab

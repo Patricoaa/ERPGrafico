@@ -20,12 +20,14 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
 
     return (
         <TabsContent value="custom" className="mt-0 space-y-8">
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <h3 className="text-lg font-bold flex items-center gap-2">
-                        <Settings2 className="h-5 w-5 text-primary" />
-                        Campos Personalizados
-                    </h3>
+            <div className="flex items-end justify-between mb-4">
+                <div className="flex-1 space-y-1 mr-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                            <Settings2 className="h-3 w-3" /> Campos Personalizados
+                        </span>
+                        <div className="flex-1 h-px bg-border" />
+                    </div>
                     <p className="text-xs text-muted-foreground">Define atributos adicionales para este producto usando plantillas.</p>
                 </div>
                 <div className="flex gap-2">

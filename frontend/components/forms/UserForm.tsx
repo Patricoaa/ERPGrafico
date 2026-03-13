@@ -155,10 +155,10 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                 onOpenChange={setOpen}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
+                        <div className="p-2 bg-primary/10 rounded-xl">
                             <User className="h-5 w-5 text-primary" />
                         </div>
-                        <span>Ficha de Usuario</span>
+                        <span className="font-bold tracking-tight">Ficha de Usuario</span>
                     </div>
                 }
                 description={
@@ -175,10 +175,10 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                 contentClassName="p-0"
                 footer={
                     <div className="flex justify-end gap-3 w-full">
-                        <Button variant="outline" onClick={() => setOpen(false)}>
+                        <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
                             Cancelar
                         </Button>
-                        <Button onClick={form.handleSubmit(onSubmit)} disabled={loading}>
+                        <Button onClick={form.handleSubmit(onSubmit)} disabled={loading} className="rounded-xl text-xs font-bold">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {initialData ? "Guardar Cambios" : "Crear Usuario"}
                         </Button>
@@ -246,10 +246,10 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                     control={form.control}
                                                     name="is_active"
                                                     render={({ field }) => (
-                                                        <FormItem className={cn("flex flex-row items-center justify-between", FORM_STYLES.card)}>
+                                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-xl p-4 bg-muted/5 border-none")}>
                                                             <div className="space-y-0.5">
                                                                 <FormLabel className={cn("flex items-center gap-2", FORM_STYLES.label)}>
-                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-emerald-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
                                                                     Estado del Acceso
                                                                 </FormLabel>
                                                                 <FormDescription className="text-[10px]">
@@ -260,6 +260,7 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                                 <Switch
                                                                     checked={field.value}
                                                                     onCheckedChange={field.onChange}
+                                                                    className="data-[state=checked]:bg-emerald-500"
                                                                 />
                                                             </FormControl>
                                                         </FormItem>
@@ -285,85 +286,93 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
 
                                         <TabsContent value="permissions" className="mt-0 space-y-6 outline-none">
                                             <div className="space-y-6">
-                                                <div>
-                                                    <h3 className="text-sm font-semibold mb-3">Permisos de Sistema (Rol)</h3>
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="primary_role"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <Popover>
-                                                                    <PopoverTrigger asChild>
-                                                                        <FormControl>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                role="combobox"
-                                                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                                            >
-                                                                                {field.value
-                                                                                    ? availableRoles.find(([val]) => val === field.value)?.[1]
-                                                                                    : "Seleccione un rol de sistema"}
-                                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                            </Button>
-                                                                        </FormControl>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                                        <div className="p-2">
-                                                                            <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                                <input
-                                                                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                                    placeholder="Buscar rol..."
-                                                                                    onChange={(e) => {
-                                                                                        const val = e.target.value.toLowerCase()
-                                                                                        const inputs = document.querySelectorAll('.role-item')
-                                                                                        inputs.forEach((el) => {
-                                                                                            if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                                (el as HTMLElement).style.display = 'flex'
-                                                                                            } else {
-                                                                                                (el as HTMLElement).style.display = 'none'
-                                                                                            }
-                                                                                        })
-                                                                                    }}
-                                                                                />
-                                                                            </div>
-                                                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                                {availableRoles.map(([val, label]) => (
-                                                                                    <div
-                                                                                        key={val}
-                                                                                        className={cn(
-                                                                                            "role-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                            field.value === val && "bg-accent"
-                                                                                        )}
-                                                                                        onClick={() => {
-                                                                                            field.onChange(val)
-                                                                                            // Find popover close trigger to dismiss, usually popover closes on click outside but let's emulate
-                                                                                            document.body.click()
-                                                                                        }}
-                                                                                    >
-                                                                                        <span>{label}</span>
-                                                                                        {field.value === val && (
-                                                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                                        )}
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                                <FormDescription className="text-xs">
-                                                                    Define los permisos técnicos de seguridad (Qué módulos puede ver).
-                                                                </FormDescription>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                {/* Permisos de Sistema */}
+                                                <div className="flex items-center gap-2 pt-2 pb-2">
+                                                    <div className="flex-1 h-px bg-border" />
+                                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Permisos de Sistema (Rol)</span>
+                                                    <div className="flex-1 h-px bg-border" />
                                                 </div>
 
-                                                <div className="border-t pt-6">
-                                                    <h3 className="text-sm font-semibold mb-3">Equipos Funcionales</h3>
-                                                    <p className="text-xs text-muted-foreground mb-4">
-                                                        Asigne los equipos donde colabora este usuario. Esto define qué tareas recibirá.
+                                                <FormField
+                                                    control={form.control}
+                                                    name="primary_role"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <FormControl>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            role="combobox"
+                                                                            className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                                        >
+                                                                            {field.value
+                                                                                ? availableRoles.find(([val]) => val === field.value)?.[1]
+                                                                                : "Seleccione un rol de sistema"}
+                                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                        </Button>
+                                                                    </FormControl>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                                    <div className="p-2">
+                                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                            <input
+                                                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                                placeholder="Buscar rol..."
+                                                                                onChange={(e) => {
+                                                                                    const val = e.target.value.toLowerCase()
+                                                                                    const inputs = document.querySelectorAll('.role-item')
+                                                                                    inputs.forEach((el) => {
+                                                                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                            (el as HTMLElement).style.display = 'flex'
+                                                                                        } else {
+                                                                                            (el as HTMLElement).style.display = 'none'
+                                                                                        }
+                                                                                    })
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                            {availableRoles.map(([val, label]) => (
+                                                                                <div
+                                                                                    key={val}
+                                                                                    className={cn(
+                                                                                        "role-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                        field.value === val && "bg-accent"
+                                                                                    )}
+                                                                                    onClick={() => {
+                                                                                        field.onChange(val)
+                                                                                        document.body.click()
+                                                                                    }}
+                                                                                >
+                                                                                    <span>{label}</span>
+                                                                                    {field.value === val && (
+                                                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                            <FormDescription className="text-xs">
+                                                                Define los permisos técnicos de seguridad.
+                                                            </FormDescription>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                {/* Equipos Funcionales */}
+                                                <div className="pt-4">
+                                                    <div className="flex items-center gap-2 pt-2 pb-2 mb-3">
+                                                        <div className="flex-1 h-px bg-border" />
+                                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Equipos Funcionales</span>
+                                                        <div className="flex-1 h-px bg-border" />
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground mb-4 italic text-center">
+                                                        Asigne los equipos donde colabora este usuario.
                                                     </p>
                                                     <FormField
                                                         control={form.control}
@@ -376,40 +385,25 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                                                                             key={group.id}
                                                                             control={form.control}
                                                                             name="functional_groups"
-                                                                            render={({ field }) => {
-                                                                                return (
-                                                                                    <FormItem
-                                                                                        key={group.id}
-                                                                                        className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-md"
-                                                                                    >
-                                                                                        <FormControl>
-                                                                                            <Checkbox
-                                                                                                checked={field.value?.includes(group.name)}
-                                                                                                onCheckedChange={(checked) => {
-                                                                                                    return checked
-                                                                                                        ? field.onChange([...field.value, group.name])
-                                                                                                        : field.onChange(
-                                                                                                            field.value?.filter(
-                                                                                                                (value) => value !== group.name
-                                                                                                            )
-                                                                                                        )
-                                                                                                }}
-                                                                                            />
-                                                                                        </FormControl>
-                                                                                        <FormLabel className="text-sm font-normal cursor-pointer w-full">
-                                                                                            {group.name}
-                                                                                        </FormLabel>
-                                                                                    </FormItem>
-                                                                                )
-                                                                            }}
+                                                                            render={({ field }) => (
+                                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-dashed hover:border-primary/30 transition-colors">
+                                                                                    <FormControl>
+                                                                                        <Checkbox
+                                                                                            checked={field.value?.includes(group.name)}
+                                                                                            onCheckedChange={(checked) => {
+                                                                                                return checked
+                                                                                                    ? field.onChange([...field.value, group.name])
+                                                                                                    : field.onChange(field.value?.filter((v) => v !== group.name))
+                                                                                            }}
+                                                                                        />
+                                                                                    </FormControl>
+                                                                                    <FormLabel className="text-sm font-normal cursor-pointer w-full">
+                                                                                        {group.name}
+                                                                                    </FormLabel>
+                                                                                </FormItem>
+                                                                            )}
                                                                         />
                                                                     ))}
-
-                                                                    {availableGroups.length === 0 && (
-                                                                        <div className="col-span-2 text-center py-4 text-xs text-muted-foreground">
-                                                                            No hay grupos funcionales creados. Vaya a "Grupos y Equipos" para crear uno.
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                                 <FormMessage />
                                                             </FormItem>

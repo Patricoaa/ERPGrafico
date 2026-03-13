@@ -1,6 +1,6 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, Settings2, Plus, Warehouse } from "lucide-react"
+import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
@@ -11,6 +11,7 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -31,11 +32,14 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                     {/* Units of Measure Section */}
-                    <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
-                        <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
-                            <Settings2 className="h-4 w-4" />
-                            Unidades de Medida
-                        </h3>
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                                <Settings2 className="h-3 w-3" /> Unidades de Medida
+                            </span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
 
                         <div className="grid grid-cols-1 gap-4">
                             <FormField<ProductFormValues>
@@ -47,17 +51,64 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                             <Package className="h-3.5 w-3.5 text-muted-foreground" />
                                             <FormLabel className={FORM_STYLES.label}>Unidad de Stock (Base)</FormLabel>
                                         </div>
-                                        <FormControl>
-                                            <select
-                                                className={cn(FORM_STYLES.input, "flex w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
-                                                {...field}
-                                            >
-                                                <option value="">Seleccionar unidad...</option>
-                                                {uoms.map((u) => (
-                                                    <option key={u.id} value={u.id.toString()}>{u.name}</option>
-                                                ))}
-                                            </select>
-                                        </FormControl>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                    >
+                                                        {field.value
+                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
+                                                            : "Seleccionar unidad..."}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                <div className="p-2">
+                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        <input
+                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            placeholder="Buscar UdM..."
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.toLowerCase()
+                                                                const inputs = document.querySelectorAll('.uom-base-item')
+                                                                inputs.forEach((el) => {
+                                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                                        (el as HTMLElement).style.display = 'flex'
+                                                                    } else {
+                                                                        (el as HTMLElement).style.display = 'none'
+                                                                    }
+                                                                })
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                        {uoms.map((u) => (
+                                                            <div
+                                                                key={u.id}
+                                                                className={cn(
+                                                                    "uom-base-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    field.value === u.id.toString() && "bg-accent"
+                                                                )}
+                                                                onClick={() => {
+                                                                    field.onChange(u.id.toString())
+                                                                    document.body.click()
+                                                                }}
+                                                            >
+                                                                <span>{u.name}</span>
+                                                                {field.value === u.id.toString() && (
+                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -69,17 +120,79 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className={FORM_STYLES.label}>Unidad de Compra</FormLabel>
-                                        <FormControl>
-                                            <select
-                                                className={cn(FORM_STYLES.input, "flex w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
-                                                {...field}
-                                            >
-                                                <option value="">Igual a Stock</option>
-                                                {uoms.map((u) => (
-                                                    <option key={u.id} value={u.id.toString()}>{u.name}</option>
-                                                ))}
-                                            </select>
-                                        </FormControl>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                    >
+                                                        {field.value
+                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
+                                                            : "Igual a Stock"}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                <div className="p-2">
+                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        <input
+                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            placeholder="Buscar UdM..."
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.toLowerCase()
+                                                                const inputs = document.querySelectorAll('.uom-purchase-item')
+                                                                inputs.forEach((el) => {
+                                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                                        (el as HTMLElement).style.display = 'flex'
+                                                                    } else {
+                                                                        (el as HTMLElement).style.display = 'none'
+                                                                    }
+                                                                })
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                        <div
+                                                            className={cn(
+                                                                "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                !field.value && "bg-accent"
+                                                            )}
+                                                            onClick={() => {
+                                                                field.onChange("")
+                                                                document.body.click()
+                                                            }}
+                                                        >
+                                                            <span className="italic text-muted-foreground">Igual a Stock</span>
+                                                            {!field.value && (
+                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                            )}
+                                                        </div>
+                                                        {uoms.map((u) => (
+                                                            <div
+                                                                key={u.id}
+                                                                className={cn(
+                                                                    "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    field.value === u.id.toString() && "bg-accent"
+                                                                )}
+                                                                onClick={() => {
+                                                                    field.onChange(u.id.toString())
+                                                                    document.body.click()
+                                                                }}
+                                                            >
+                                                                <span>{u.name}</span>
+                                                                {field.value === u.id.toString() && (
+                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -164,11 +277,14 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                         </div>
                     </div>
 
-                    <div className="p-6 rounded-2xl border bg-card/50">
-                        <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
-                            <Warehouse className="h-4 w-4" />
-                            Control de Inventario
-                        </h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                                <Warehouse className="h-3 w-3" /> Control de Inventario
+                            </span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
 
                         <FormField<ProductFormValues>
                             control={form.control}
@@ -225,17 +341,64 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             <Warehouse className="h-3.5 w-3.5 text-primary" />
                                                             <FormLabel className={FORM_STYLES.label}>Bodega de Recepción por Defecto</FormLabel>
                                                         </div>
-                                                        <FormControl>
-                                                            <select
-                                                                className={cn(FORM_STYLES.input, "flex h-9 w-full px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring")}
-                                                                {...whField}
-                                                            >
-                                                                <option value="">Seleccionar bodega...</option>
-                                                                {warehouses.map((wh) => (
-                                                                    <option key={wh.id} value={wh.id.toString()}>{wh.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </FormControl>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !whField.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                                    >
+                                                                        {whField.value
+                                                                            ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
+                                                                            : "Seleccionar bodega..."}
+                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                                <div className="p-2">
+                                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                        <input
+                                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                            placeholder="Buscar bodega..."
+                                                                            onChange={(e) => {
+                                                                                const val = e.target.value.toLowerCase()
+                                                                                const inputs = document.querySelectorAll('.wh-item')
+                                                                                inputs.forEach((el) => {
+                                                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                        (el as HTMLElement).style.display = 'flex'
+                                                                                    } else {
+                                                                                        (el as HTMLElement).style.display = 'none'
+                                                                                    }
+                                                                                })
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                        {warehouses.map((wh) => (
+                                                                            <div
+                                                                                key={wh.id}
+                                                                                className={cn(
+                                                                                    "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                    whField.value === wh.id.toString() && "bg-accent"
+                                                                                )}
+                                                                                onClick={() => {
+                                                                                    whField.onChange(wh.id.toString())
+                                                                                    document.body.click()
+                                                                                }}
+                                                                            >
+                                                                                <span>{wh.name}</span>
+                                                                                {whField.value === wh.id.toString() && (
+                                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}

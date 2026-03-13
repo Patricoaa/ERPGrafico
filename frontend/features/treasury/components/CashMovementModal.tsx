@@ -189,15 +189,30 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title="Nuevo Movimiento de Tesorería"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10">
+                        <ArrowLeftRight className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>Nuevo Movimiento de Tesorería</span>
+                </div>
+            }
             description="Registre traspasos, depósitos o retiros manuales."
             size="lg"
             footer={
                 <div className="flex w-full gap-2 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting} className="border-primary/20 hover:bg-primary/5 rounded-xl text-xs font-bold">
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={submitting || insufficientFunds}>
+                    <Button 
+                        onClick={handleSubmit} 
+                        disabled={submitting || insufficientFunds}
+                        className={cn(
+                            "rounded-xl text-xs font-bold",
+                            tab === 'DEPOSIT' ? 'bg-emerald-600 hover:bg-emerald-700' : 
+                            tab === 'WITHDRAWAL' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-primary'
+                        )}
+                    >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Registrar Movimiento
                     </Button>
@@ -219,14 +234,23 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                         setMotive("")
                     }
                 }} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
-                        <TabsTrigger value="TRANSFER" className="gap-2">
+                    <TabsList className="grid w-full grid-cols-3 bg-muted/50 rounded-full h-12 p-1 border">
+                        <TabsTrigger 
+                            value="TRANSFER" 
+                            className="rounded-full transition-all text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+                        >
                             <ArrowLeftRight className="h-4 w-4" /> Traspaso
                         </TabsTrigger>
-                        <TabsTrigger value="DEPOSIT" className="gap-2">
+                        <TabsTrigger 
+                            value="DEPOSIT" 
+                            className="rounded-full transition-all text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm gap-2"
+                        >
                             <ArrowDownLeft className="h-4 w-4" /> Depósito
                         </TabsTrigger>
-                        <TabsTrigger value="WITHDRAWAL" className="gap-2">
+                        <TabsTrigger 
+                            value="WITHDRAWAL" 
+                            className="rounded-full transition-all text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border-rose-200 data-[state=active]:shadow-sm gap-2"
+                        >
                             <ArrowUpRight className="h-4 w-4" /> Retiro
                         </TabsTrigger>
                     </TabsList>
@@ -248,7 +272,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 pt-2">
+                        <div className="grid grid-cols-1 gap-4 pt-2 bg-muted/5 p-4 rounded-xl border border-dashed">
                             {/* Origin */}
                             <div className={cn("space-y-2", tab === 'DEPOSIT' && "opacity-40 pointer-events-none hidden")}>
                                 <Label className={FORM_STYLES.label}>
@@ -265,19 +289,8 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                                         onChange={(val) => {
                                             setFromId(val.treasuryAccountId || "")
                                             setPaymentMethodNew(val.paymentMethodId || "")
-                                            // availableMethods state is currently derived from account. 
-                                            // When using PaymentSelector, we are going reverse: Method -> Account.
-                                            // So we should probably update availableMethods so the type inference works? 
-                                            // Actually, the selector fetches its own methods.
-                                            // We need to sync the Modal's 'paymentMethodNew' and 'fromId' with the selector.
-
-                                            // Issue: The modal's `useEffect` at line 91 watches `fromId` and fetches methods to set `availableMethods`.
-                                            // If we set `fromId` here, that effect will run and might overwrite `paymentMethodNew` (line 100 sets default).
-                                            // We need to prevent that effect from overwriting if we just set it via selector.
-
-                                            // We'll handle this by adding a flag or modifying the effect.
                                         }}
-                                        operation="purchases" // Withdrawals behave like purchases (money out)
+                                        operation="purchases"
                                         className="mb-2"
                                     />
                                 ) : (
@@ -304,10 +317,16 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                             </div>
                         </div>
 
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                            <div className="flex-1 h-px bg-border" />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Clasificación y Comentarios</span>
+                            <div className="flex-1 h-px bg-border" />
+                        </div>
+
                         {/* Motive Selector (Only for Deposit/Withdrawal) */}
                         {tab !== 'TRANSFER' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                                <Label className={FORM_STYLES.label}>Motivo</Label>
+                                <Label className={FORM_STYLES.label}>Motivo</Label>...
                                 <Select value={motive} onValueChange={setMotive}>
                                     <SelectTrigger className={FORM_STYLES.input}>
                                         <SelectValue placeholder="Seleccione motivo principal..." />

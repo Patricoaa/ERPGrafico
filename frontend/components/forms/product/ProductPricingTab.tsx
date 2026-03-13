@@ -21,14 +21,14 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
-                <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-muted/30", FORM_STYLES.card)}>
+                <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
                     <div className="flex gap-4 items-center">
                         <div className="p-2 rounded-lg bg-primary/10">
                             <Info className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <h3 className="font-semibold">Políticas de Precios Dinámicas</h3>
-                            <p className="text-xs text-muted-foreground">Las reglas se aplican automáticamente según la cantidad y vigencia.</p>
+                            <h3 className="font-semibold text-sm">Políticas de Precios Dinámicas</h3>
+                            <p className="text-[10px] text-muted-foreground">Las reglas se aplican automáticamente según la cantidad y vigencia.</p>
                         </div>
                     </div>
                     <Button
@@ -36,6 +36,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                         variant="default"
                         size="sm"
                         onClick={() => onOpenRuleDialog()}
+                        className="rounded-xl text-xs font-bold"
                     >
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Regla
@@ -101,7 +102,12 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                         : `-${Number(rule.discount_percentage)}%`}
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <div className={`inline-flex px-2 py-1 rounded-full text-[9px] font-black uppercase ${rule.active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                                                    <div className={cn(
+                                                        "inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase border transition-colors",
+                                                        rule.active 
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                                            : 'bg-muted/50 text-muted-foreground border-transparent'
+                                                    )}>
                                                         {rule.active ? "Activa" : "Inactiva"}
                                                     </div>
                                                 </TableCell>

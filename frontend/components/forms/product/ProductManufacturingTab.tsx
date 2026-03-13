@@ -41,11 +41,14 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                 {/* Left Column: Settings & Workflow - Hidden in variant mode for "direct" BOM access */}
                 {!variantMode && (
                     <div className="md:col-span-4 space-y-6">
-                        <div className="p-6 rounded-2xl border bg-card/50 space-y-6">
-                            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-primary">
-                                <Settings2 className="h-4 w-4" />
-                                Ajustes de Producción
-                            </h3>
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pt-2 pb-2">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                                    <Settings2 className="h-3 w-3" /> Ajustes de Producción
+                                </span>
+                                <div className="flex-1 h-px bg-border" />
+                            </div>
 
                             <FormField<ProductFormValues>
                                 control={form.control}
@@ -299,29 +302,20 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                 <div className={cn(variantMode ? "md:col-span-12" : "md:col-span-8", "space-y-6")}>
                     {(hasBom || variantMode) && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <h3 className="text-sm font-bold flex items-center gap-2 mb-0 text-primary">
-                                        <Layers className="h-4 w-4" />
-                                        Gestión de Recetas (BOM)
-                                    </h3>
+                            <div className="flex items-end justify-between mb-4">
+                                <div className="flex-1 space-y-1 mr-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                                            <Layers className="h-3 w-3" /> Gestión de Recetas (BOM)
+                                        </span>
+                                        <div className="flex-1 h-px bg-border" />
+                                    </div>
                                     <p className="text-xs text-muted-foreground">Define los componentes y procesos necesarios para fabricar este producto.</p>
                                 </div>
-                                {!isEditing && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(FORM_STYLES.input, "font-bold gap-2")}
-                                        onClick={() => appendBom({ name: `Receta ${bomFields.length + 1}`, active: bomFields.length === 0, lines: [] })}
-                                    >
-                                        <Plus className="h-4 w-4" /> Nueva lista de materiales
-                                    </Button>
-                                )}
                             </div>
 
                             {isEditing ? (
-                                <div className={cn("p-4 rounded-2xl border bg-muted/5", variantMode && "p-0 border-none bg-transparent")}>
+                                <div className={cn("rounded-2xl border", variantMode && "p-0 border-none bg-transparent")}>
                                     <BOMManager product={initialData} variantMode={variantMode} />
                                 </div>
                             ) : (

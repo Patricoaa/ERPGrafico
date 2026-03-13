@@ -22,9 +22,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Save, Loader2, Info, Workflow } from "lucide-react"
+import { Plus, Trash2, Save, Loader2, Info, Workflow, Box, Layers, CheckCircle2 } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
@@ -254,37 +255,64 @@ export function BOMFormDialog({
             open={open}
             onOpenChange={onOpenChange}
             size="full"
+            variant="wizard"
             className="max-w-[1200px]"
             title={
-                <div className="flex items-center gap-2">
-                    <Workflow className="h-5 w-5 text-primary" />
-                    {bomToEdit ? `Editar BOM: ${bomToEdit.name}` : "Nueva Lista de Materiales"}
+                <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
+                        <Workflow className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                             <span className="font-bold tracking-tight">Lista de Materiales (BOM)</span>
+                            <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">
+                                {bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
+                            </div>
+                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-primary/5 border-primary/20 text-primary/80">
+                                BOM
+                            </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            {selectedVariant ? (
+                                <>
+                                    <Layers className="h-3 w-3" />
+                                    <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
+                                        Variante: {selectedVariant.variant_display_name || selectedVariant.name}
+                                    </span>
+                                </>
+                            ) : selectedProduct ? (
+                                <>
+                                    <Box className="h-3 w-3" />
+                                    <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
+                                        Producto: {selectedProduct.name}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-[11px] font-medium uppercase tracking-widest opacity-80">
+                                    Definición de Receta de Fabricación
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
             }
-            description={
-                selectedVariant
-                    ? `Definiendo componentes para variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
-                    : selectedProduct
-                        ? `Definiendo componentes para: ${selectedProduct.name} (${selectedProduct.internal_code || selectedProduct.code})`
-                        : 'Seleccione el producto para el cual desea crear la lista de materiales.'
-            }
             footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        disabled={loading}
-                    >
+                <div className="flex justify-between items-center w-full">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
                         Cancelar
                     </Button>
                     <Button
                         form="bom-form"
                         type="submit"
-                        disabled={loading}
+                        disabled={form.formState.isSubmitting}
+                        className={cn(
+                            "rounded-xl px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
+                            "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
+                        )}
                     >
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" />
-                        Guardar BOM
+                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {!form.formState.isSubmitting && <Save className="mr-2 h-4 w-4" />}
+                        {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
                     </Button>
                 </div>
             }
@@ -308,8 +336,14 @@ export function BOMFormDialog({
                 <Form {...form}>
                     <form id="bom-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
 
-                        {/* Header Fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        {/* Standardized Separator: Información General */}
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                             <div className="flex-1 h-px bg-border" />
+                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Información de la Receta</span>
+                             <div className="flex-1 h-px bg-border" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
                             <div className={cn(selectedProduct?.has_variants ? "md:col-span-4" : "md:col-span-8")}>
                                 <FormField
                                     control={form.control}
@@ -359,14 +393,28 @@ export function BOMFormDialog({
                                     control={form.control}
                                     name="active"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-col gap-1">
-                                            <div className={cn("flex items-center justify-between mt-6", FORM_STYLES.card)}>
-                                                <FormLabel className={FORM_STYLES.label}>Activa</FormLabel>
+                                        <FormItem>
+                                            <div className={cn(
+                                                "flex items-center justify-between p-4 border rounded-xl transition-all",
+                                                field.value ? "bg-emerald-500/5 border-emerald-500/20" : "bg-muted/5 border-border"
+                                            )}>
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
+                                                        <CheckCircle2 className={cn("h-3.5 w-3.5", field.value ? "text-emerald-600" : "text-muted-foreground")} />
+                                                        Estado Actual
+                                                    </FormLabel>
+                                                    <div className={cn(
+                                                        "text-[10px] font-bold uppercase tracking-wider",
+                                                        field.value ? "text-emerald-600" : "text-muted-foreground"
+                                                    )}>
+                                                        {field.value ? "Lista Activa" : "Lista Inactiva"}
+                                                    </div>
+                                                </div>
                                                 <FormControl>
                                                     <Switch
                                                         checked={field.value}
                                                         onCheckedChange={field.onChange}
-                                                        className="scale-75"
+                                                        className={cn(field.value && "data-[state=checked]:bg-emerald-600")}
                                                     />
                                                 </FormControl>
                                             </div>
@@ -376,8 +424,14 @@ export function BOMFormDialog({
                             </div>
                         </div>
 
-                        {/* Yield Fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        {/* Standardized Separator: Rendimiento */}
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                             <div className="flex-1 h-px bg-border" />
+                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Rendimiento y Salida</span>
+                             <div className="flex-1 h-px bg-border" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
                             <div className="md:col-span-4">
                                 <FormField
                                     control={form.control}
@@ -415,7 +469,7 @@ export function BOMFormDialog({
                                                     uoms={uoms}
                                                 />
                                             </FormControl>
-                                            <FormDescription className="text-[10px] mt-1">
+                                            <FormDescription className="text-[10px] mt-1 italic">
                                                 Si se omite, se usa la unidad base del producto.
                                             </FormDescription>
                                             <FormMessage />
@@ -423,49 +477,70 @@ export function BOMFormDialog({
                                     )}
                                 />
                             </div>
+                            <div className="md:col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="notes"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className={FORM_STYLES.label}>Notas e Instrucciones</FormLabel>
+                                            <FormControl>
+                                                <Textarea 
+                                                    placeholder="Instrucciones especiales para la fabricación..." 
+                                                    {...field} 
+                                                    className={cn(FORM_STYLES.input, "min-h-[42px] py-2 resize-none")}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Notas</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Instrucciones especiales..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Standardized Separator: Componentes */}
+                        <div className="flex items-center gap-2 pt-2 pb-2">
+                             <div className="flex-1 h-px bg-border" />
+                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Lista de Componentes</span>
+                             <div className="flex-1 h-px bg-border" />
+                        </div>
 
-                        {/* Components Table */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-bold flex items-center gap-2">
-                                    <Info className="h-4 w-4" />
-                                    Componentes y Materias Primas
-                                </h3>
+                        {/* Components Table Container */}
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                        <Layers className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-foreground/80">
+                                            Materias Primas y Componentes
+                                        </h3>
+                                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight opacity-70">
+                                            {fields.length} ítems definidos en la receta
+                                        </p>
+                                    </div>
+                                </div>
                                 <Button
                                     type="button"
                                     size="sm"
                                     onClick={() => append({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
-                                    className="gap-2"
+                                    className="gap-2 rounded-xl h-9 px-4 font-bold bg-emerald-600 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/10"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Agregar Componente
+                                    Agregar Línea
                                 </Button>
                             </div>
 
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="border rounded-2xl overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm border-border/60">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[30%]">Componente</TableHead>
-                                            <TableHead className="w-[15%]">Cantidad</TableHead>
-                                            <TableHead className="w-[12%]">Unidad</TableHead>
-                                            <TableHead className="w-[13%] text-right">Costo Unit.</TableHead>
-                                            <TableHead>Notas</TableHead>
+                                        <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
+                                            <TableHead className="w-[30%] text-[10px] font-black uppercase tracking-widest py-4">Componente</TableHead>
+                                            <TableHead className="w-[15%] text-[10px] font-black uppercase tracking-widest py-4">Cantidad</TableHead>
+                                            <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest py-4">Unidad</TableHead>
+                                            <TableHead className="w-[13%] text-right text-[10px] font-black uppercase tracking-widest py-4 text-emerald-700">Costo Est.</TableHead>
+                                            <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Notas</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -625,6 +700,15 @@ export function BOMFormDialog({
                                         )}
                                     </TableBody>
                                 </Table>
+                            </div>
+
+                            <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10 border-dashed">
+                                <div className="p-2 bg-primary/10 rounded-xl">
+                                    <Info className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest leading-relaxed">
+                                    El costo estimado se calcula automáticamente en base al último costo de reposición del componente y la unidad seleccionada.
+                                </div>
                             </div>
 
                             {form.formState.errors.lines && (

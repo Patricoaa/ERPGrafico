@@ -79,11 +79,12 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     }
 
     return (
-        <div className="p-4 rounded-2xl bg-secondary/30 border border-secondary/50 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-                <div className="w-1.5 h-4 bg-primary rounded-full" />
-                Configuración Comercial y Precios
-            </h3>
+        <div className="space-y-4">
+            <div className="flex items-center gap-2 pt-6 pb-2">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Precios y Costos Base</span>
+                <div className="flex-1 h-px bg-border" />
+            </div>
 
             {/* Only for Manufacturable (Simple or Advanced) */}
             {(productType === 'MANUFACTURABLE' || form.watch("requires_advanced_manufacturing")) && (
@@ -119,20 +120,20 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <FormField<ProductFormValues>
                     control={form.control}
                     name="sale_price"
                     render={({ field }) => (
-                        <FormItem className={cn("space-y-0.5 p-3 rounded-xl border bg-background", isDynamicPricing && "opacity-50 pointer-events-none")}>
+                        <FormItem className={cn(isDynamicPricing && "opacity-50 pointer-events-none")}>
                             <FormLabel className={FORM_STYLES.label}>Precio Neto</FormLabel>
                             <FormControl>
                                 <div className="relative group">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-lg">$</span>
+                                    <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">$</span>
                                     <Input
                                         type="number"
                                         step="1"
-                                        className={cn(FORM_STYLES.input, "pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl transition-all focus-visible:ring-primary")}
+                                        className={cn(FORM_STYLES.input, "pl-7 font-semibold h-10")}
                                         {...field}
                                         onChange={handleNetChange}
                                         disabled={isDynamicPricing}
@@ -144,24 +145,25 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                     )}
                 />
 
-                <div className={cn("space-y-0.5 p-3 rounded-xl border bg-background", isDynamicPricing && "opacity-50")}>
-                    <div className="h-10 flex items-center px-3 rounded-xl bg-background/50 border font-mono text-lg font-bold text-muted-foreground">
-                        {formatCurrency(salePriceGross - salePrice)}
+                <div className={cn("space-y-2", isDynamicPricing && "opacity-50")}>
+                    <Label className={FORM_STYLES.label}>Impuestos (IVA)</Label>
+                    <div className="h-10 flex items-center px-4 rounded-xl bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
+                        + {formatCurrency(salePriceGross - salePrice)}
                     </div>
                 </div>
                 <FormField<ProductFormValues>
                     control={form.control}
                     name="sale_price_gross"
                     render={({ field }) => (
-                        <FormItem className={cn("space-y-0.5 p-3 rounded-xl border bg-primary/10", isDynamicPricing && "opacity-50 pointer-events-none")}>
+                        <FormItem className={cn(isDynamicPricing && "opacity-50 pointer-events-none")}>
                             <FormLabel className={cn(FORM_STYLES.label, "text-primary")}>Total Bruto</FormLabel>
                             <FormControl>
                                 <div className="relative group">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/50 font-bold text-lg">$</span>
+                                    <span className="absolute left-3 top-2.5 text-primary/50 font-medium text-sm">$</span>
                                     <Input
                                         type="number"
                                         step="1"
-                                        className={cn(FORM_STYLES.input, "pl-8 h-10 bg-transparent border-none shadow-none rounded-xl font-black text-xl text-primary transition-all focus-visible:ring-primary")}
+                                        className={cn(FORM_STYLES.input, "pl-7 font-bold text-primary border-primary/30 h-10")}
                                         {...field}
                                         onChange={handleGrossChange}
                                         disabled={isDynamicPricing}
@@ -183,7 +185,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                         const isDisabled = allowedIds.length === 0;
 
                         return (
-                            <FormItem className="space-y-0.5 p-3 rounded-xl border bg-background">
+                            <FormItem>
                                 <FormLabel className={FORM_STYLES.label}>Unidad de Venta</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -256,7 +258,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                 />
 
                 {(initialData || Number(salePrice) > 0) && (
-                    <div className="md:col-span-2 flex flex-col justify-end">
+                    <div className="md:col-span-4 flex flex-col pt-4">
                         <div className={cn(
                             "h-full flex flex-col justify-center p-4 rounded-xl border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
                             marginPercentage > 30

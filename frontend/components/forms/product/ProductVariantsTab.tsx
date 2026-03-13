@@ -212,8 +212,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             {/* Header / Actions */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold flex items-center gap-2">
-                        <Layers className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                        <Layers className="h-5 w-5" />
                         Variantes Configuradas ({variants.length})
                     </h3>
                     {selectedVariantIds.length > 0 && (
@@ -228,7 +228,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         variant="outline" 
                         size="sm" 
                         onClick={fetchVariants}
-                        className="text-xs"
+                        className="text-xs rounded-xl border-primary/20 hover:bg-primary/5 font-bold"
                     >
                         <RefreshCw className="h-3.5 w-3.5 mr-2" /> Actualizar
                     </Button>
@@ -237,7 +237,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <SheetTrigger asChild>
                             <Button 
                                 size="sm" 
-                                className="text-xs font-bold"
+                                className="text-xs font-bold rounded-xl"
                                 disabled={!initialData || (form.watch("has_variants") && !initialData.has_variants)}
                             >
                                 <Wand2 className="h-4 w-4 mr-2" />
@@ -368,7 +368,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
-                                                    <Badge variant={v.current_stock > 0 ? "success" : "secondary"} className="font-bold px-1.5 py-0 text-[10px]">
+                                                    <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-muted/50 text-muted-foreground")}>
                                                         {v.current_stock}
                                                     </Badge>
                                                 ) : (
@@ -377,7 +377,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                             Disp
                                                         </Badge>
                                                     ) : (
-                                                        <Badge variant={v.current_stock > 0 ? "success" : "destructive"} className="font-bold px-1.5 py-0 text-[10px]">
+                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200")}>
                                                             {v.current_stock}
                                                         </Badge>
                                                     )
@@ -385,10 +385,10 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                  {v.has_active_bom ? (
-                                                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✓ BOM</span>
+                                                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✓ BOM</span>
                                                  ) : (
                                                       v.mfg_auto_finalize ? (
-                                                          <span className="text-[10px] text-destructive font-bold bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/20">FALTA</span>
+                                                          <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">FALTA</span>
                                                       ) : (
                                                           <span className="text-[10px] text-muted-foreground">-</span>
                                                       )

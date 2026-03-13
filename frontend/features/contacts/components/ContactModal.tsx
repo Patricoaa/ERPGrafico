@@ -252,10 +252,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 onOpenChange={onOpenChange}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
+                        <div className="p-2 bg-primary/10 rounded-xl">
                             <User className="h-5 w-5 text-primary" />
                         </div>
-                        <span>Ficha de Contacto</span>
+                        <span className="font-bold tracking-tight">Ficha de Contacto</span>
                     </div>
                 }
                 description={
@@ -279,10 +279,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 hideScrollArea={true}
                 footer={
                     <div className="flex justify-end gap-3 w-full px-6 py-3 border-t border-border/40">
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
                             Cancelar
                         </Button>
-                        <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+                        <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-xl text-xs font-bold">
                             {contact ? "Guardar Cambios" : "Crear Contacto"}
                         </Button>
                     </div>
@@ -356,7 +356,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         <div className="p-8 pb-32">
                                             <div className="space-y-6">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="md:col-span-2 flex items-center gap-8 p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/10">
+                                                    <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/5 rounded-xl border-none">
                                                         <FormField
                                                             control={form.control}
                                                             name="is_default_customer"
@@ -369,7 +369,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                                         />
                                                                     </FormControl>
                                                                     <div className="space-y-0.5">
-                                                                        <FormLabel className="text-sm font-semibold text-primary/80">
+                                                                        <FormLabel className="text-sm font-semibold text-primary/80 cursor-pointer">
                                                                             Cliente por defecto
                                                                         </FormLabel>
                                                                     </div>
@@ -389,7 +389,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                                         />
                                                                     </FormControl>
                                                                     <div className="space-y-0.5">
-                                                                        <FormLabel className="text-sm font-semibold text-primary/80">
+                                                                        <FormLabel className="text-sm font-semibold text-primary/80 cursor-pointer">
                                                                             Proveedor por defecto
                                                                         </FormLabel>
                                                                     </div>
@@ -498,7 +498,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             <div className="space-y-8">
                                                 {/* Status Banner */}
                                                 {form.watch("credit_blocked") && (
-                                                    <div className="bg-red-600 p-6 rounded-2xl flex items-center gap-4 animate-in zoom-in-95 duration-300">
+                                                    <div className="bg-red-600 p-6 rounded-xl flex items-center gap-4 animate-in zoom-in-95 duration-300">
                                                         <div className="p-3 bg-white/20 rounded-xl">
                                                             <Banknote className="h-8 w-8 text-white" />
                                                         </div>
@@ -511,9 +511,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
                                                 <div className="grid grid-cols-1 gap-4">
                                                     {/* Blocker Switch */}
-                                                    <div className="p-4 bg-red-500/5 rounded-2xl border border-dashed border-red-500/10 flex items-center justify-between">
+                                                    <div className="p-4 bg-muted/5 rounded-xl border-none flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-red-100 rounded-lg">
+                                                            <div className="p-2 bg-red-100 rounded-xl">
                                                                 <Scale className="h-4 w-4 text-red-600" />
                                                             </div>
                                                             <div>
@@ -649,7 +649,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         <InsightsTable
                                             data={insightsData?.work_orders?.orders || []}
                                             type="work_order"
-                                            title="Historial de OTs"
+                                            title="Historial de Órdenes de Trabajo"
                                             icon={Wand2}
                                         />
                                     </TabsContent>
@@ -810,7 +810,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
+                    className="h-8 px-3 text-[10px] font-bold rounded-xl text-primary hover:text-primary hover:bg-primary/10 border border-primary/10"
                     onClick={() => {
                         if (type === 'work_order') {
                             openWorkOrder(row.original.id)
@@ -819,8 +819,8 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                         }
                     }}
                 >
-                    <LayoutDashboard className="h-4 w-4 mr-1" />
-                    Gestionar
+                    <LayoutDashboard className="h-3 w-3 mr-1.5" />
+                    GESTIONAR
                 </Button>
             )
         }
@@ -832,7 +832,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {/* 1. Total Card (Available for all types) */}
                 <Card
-                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
+                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-xl ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
                     onClick={() => setActiveFilter('all')}
                 >
                     <CardContent className="p-4 flex items-center justify-between">
@@ -851,7 +851,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                     <>
                         {/* 2. Financial Card (Accounts Receivable/Payable) */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
                             onClick={() => setActiveFilter('financial')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -874,7 +874,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
 
                         {/* 3. Logistics Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-amber-50/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('logistics')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -894,7 +894,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
 
                         {/* 4. Billing Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-blue-50/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('billing')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -929,7 +929,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                                     {metrics.pendingWOCount}
                                 </p>
                             </div>
-                            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <div className="h-8 w-8 rounded-xl bg-purple-100 flex items-center justify-center">
                                 <ClipboardList className="h-4 w-4 text-purple-600" />
                             </div>
                         </CardContent>
@@ -937,16 +937,18 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                 )}
             </div>
 
-            <div className="pb-4 flex items-center justify-between">
-                <h4 className="text-sm font-bold flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-primary" />
+            <div className="pb-4 flex items-center gap-2 pt-2 mb-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <Icon className="h-3 w-3" />
                     {title}
                     {activeFilter !== 'all' && (
-                        <Badge variant="secondary" className="ml-2 text-[10px]">
-                            Filtrado
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1">
+                            FILTRADO
                         </Badge>
                     )}
-                </h4>
+                </span>
+                <div className="flex-1 h-px bg-border" />
             </div>
             <div className="flex-1 overflow-hidden p-0">
                 <DataTable
@@ -1029,10 +1031,7 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
 
     return (
         <div className="space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Scale className="h-4 w-4" />
-                Detalle de Deuda (Facturas/Ventas a Crédito)
-            </h4>
+
 
             <div className="flex-1 overflow-hidden p-0">
                 <DataTable

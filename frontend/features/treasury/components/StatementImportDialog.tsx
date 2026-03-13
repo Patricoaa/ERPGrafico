@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Upload, FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowRight } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 
 interface TreasuryAccount {
@@ -99,7 +100,9 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
     const fetchTreasuryAccounts = async () => {
         try {
             const response = await api.get('/treasury/accounts/')
-            setTreasuryAccounts(response.data)
+            // Filter to only show checking accounts as requested
+            const checkingAccounts = response.data.filter((acc: TreasuryAccount) => acc.account_type === 'CHECKING')
+            setTreasuryAccounts(checkingAccounts)
         } catch (error) {
             console.error('Error fetching treasury accounts:', error)
         }
@@ -253,170 +256,259 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
         <BaseModal
             open={open}
             onOpenChange={handleClose}
+            variant="wizard"
+            size={step === 'MAPPING' ? "full" : "lg"}
             title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Upload className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-orange-500/10 text-orange-600 shadow-sm border border-orange-500/5">
+                        <Upload className="h-6 w-6" />
                     </div>
-                    <span>{step === 'MAPPING' ? 'Configurar Columnas' : 'Importar Cartola Bancaria'}</span>
+                    <div className="space-y-1">
+                        <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Importar Cartola</div>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-orange-500/20 text-orange-600/80">
+                                {step === 'UPLOAD' ? 'Paso 1: Carga' : 'Paso 2: Mapeo'}
+                            </Badge>
+                            <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-widest opacity-70">
+                                • Conciliación Bancaria
+                            </span>
+                        </div>
+                    </div>
                 </div>
             }
-            description={step === 'MAPPING'
-                ? 'Asigna cada columna de tu archivo a los campos del sistema'
-                : 'Sube tu cartola bancaria para conciliar movimientos'}
-            className={cn("transition-all duration-300", step === 'MAPPING' ? "sm:max-w-7xl max-w-[95vw] w-full" : "sm:max-w-[500px]")}
-            footer={(
-                <div className="flex justify-end gap-2 w-full">
-                    {step === 'MAPPING' && (
-                        <Button variant="outline" onClick={() => setStep('UPLOAD')} disabled={loading}>
-                            Atrás
-                        </Button>
-                    )}
-                    <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
-                    <Button onClick={handleNext} disabled={loading || success}>
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                        {step === 'UPLOAD' && isGenericFormat() ? 'Siguiente' : 'Importar'}
+            footer={
+                <div className="flex justify-between items-center w-full">
+                    <Button
+                        variant="ghost"
+                        onClick={step === 'MAPPING' ? () => setStep('UPLOAD') : handleClose}
+                        disabled={loading}
+                        className="rounded-xl px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
+                    >
+                        {step === 'MAPPING' ? "Atrás" : "Cancelar"}
                     </Button>
-                </div>
-            )}
-        >
-            <div className="space-y-4 py-2 px-1">
-                {step === 'UPLOAD' && (
-                    <>
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta de Tesorería *</Label>
-                            <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Selecciona cuenta..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {treasuryAccounts.map((account) => (
-                                        <SelectItem key={account.id} value={account.id.toString()}>
-                                            {account.name} ({account.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Formato *</Label>
-                            <Select value={bankFormat} onValueChange={setBankFormat}>
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Object.entries(bankFormats).map(([key, label]) => (
-                                        <SelectItem key={key} value={key}>
-                                            {label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {isGenericFormat() && (
-                                <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
-                                    <RefreshCw className="w-3 h-3" />
-                                    Modo flexible: podrás configurar las columnas manualmente.
-                                </p>
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            onClick={handleNext} 
+                            disabled={loading || success || (step === 'UPLOAD' && !file)}
+                            className={cn(
+                                "rounded-xl px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
+                                step === 'UPLOAD' && isGenericFormat() 
+                                    ? "bg-primary hover:bg-primary/90 shadow-primary/20" 
+                                    : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
                             )}
+                        >
+                            {loading ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                            ) : null}
+                            {step === 'UPLOAD' && isGenericFormat() ? (
+                                <>
+                                    Siguiente
+                                    <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            ) : (
+                                <>
+                                    {success ? "Completado" : "Importar Cartola"}
+                                    {!loading && !success && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </div>
+            }
+        >
+            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                {step === 'UPLOAD' && (
+                    <div className="space-y-10 py-4 max-w-xl mx-auto">
+                        <div className="p-8 rounded-3xl bg-muted/5 border border-border/50 space-y-8">
+                            <div className="space-y-2">
+                                <Label className={FORM_STYLES.label}>Cuenta Corriente de Tesorería *</Label>
+                                <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
+                                    <SelectTrigger className={FORM_STYLES.input}>
+                                        <SelectValue placeholder="Selecciona cuenta corriente..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {treasuryAccounts.map((account) => (
+                                            <SelectItem key={account.id} value={account.id.toString()}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold">{account.code}</span>
+                                                    <span className="text-muted-foreground opacity-60">•</span>
+                                                    <span>{account.name}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className={FORM_STYLES.label}>Formato de Importación *</Label>
+                                <Select value={bankFormat} onValueChange={setBankFormat}>
+                                    <SelectTrigger className={FORM_STYLES.input}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(bankFormats).map(([key, label]) => (
+                                            <SelectItem key={key} value={key}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {isGenericFormat() && (
+                                    <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold uppercase tracking-wider mt-2 opacity-80">
+                                        <RefreshCw className="w-3 h-3" />
+                                        Modo flexible: Se requerirá mapeo manual
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Archivo *</Label>
-                            <Input type="file" onChange={handleFileChange} accept=".csv,.xls,.xlsx" className={cn(FORM_STYLES.input, "cursor-pointer pt-1.5")} />
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px bg-border/60" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 flex items-center gap-2 px-3">
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Carga de Archivo
+                                </span>
+                                <div className="flex-1 h-px bg-border/60" />
+                            </div>
+
+                            <div className="relative group/file">
+                                <Input 
+                                    type="file" 
+                                    onChange={handleFileChange} 
+                                    accept=".csv,.xls,.xlsx" 
+                                    className={cn(
+                                        FORM_STYLES.input, 
+                                        "cursor-pointer h-24 border-dashed border-2 hover:border-primary/40 hover:bg-primary/5 transition-all text-center pt-8 file:hidden"
+                                    )} 
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-muted-foreground group-hover/file:text-primary transition-colors">
+                                    <Upload className="h-6 w-6 mb-2 opacity-50" />
+                                    <span className="text-xs font-bold uppercase tracking-widest">
+                                        {file ? file.name : "Seleccionar CSV o Excel"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {step === 'MAPPING' && previewData && (
-                    <div className="space-y-4">
-                        <div className="rounded-md border max-h-[500px] overflow-x-auto overflow-y-auto w-full relative">
-                            <Table className="w-max min-w-full border-separate border-spacing-0">
-                                <TableHeader className="sticky top-0 z-10 bg-background">
-                                    <TableRow>
-                                        {previewData.columns.map((col, idx) => (
-                                            <TableHead key={idx} className="w-[250px] bg-muted/50 border-x p-0">
-                                                <div className="flex flex-col gap-2 p-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                            {idx}
+                    <div className="space-y-8 max-w-[95vw] mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="rounded-3xl border border-border/50 shadow-xl shadow-primary/5 p-1 bg-card overflow-hidden">
+                            <div className="max-h-[60vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
+                                <Table className="w-max min-w-full border-separate border-spacing-0">
+                                    <TableHeader className="sticky top-0 z-20">
+                                        <TableRow className="bg-muted/80 backdrop-blur-md hover:bg-muted/80 border-none">
+                                            {previewData.columns.map((col, idx) => (
+                                                <TableHead key={idx} className="w-[280px] p-0 border-b border-border/50">
+                                                    <div className="flex flex-col gap-3 p-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-black text-muted-foreground/60 bg-muted px-2 py-0.5 rounded-full border border-border/50">
+                                                                COL {idx + 1}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[11px] font-black text-foreground/70 uppercase tracking-widest break-all line-clamp-1 min-h-4" title={String(col)}>
+                                                            {String(col)}
                                                         </span>
+                                                        <Select
+                                                            value={Object.entries(mapping).find(([_, v]) => v === col)?.[0] || "ignore"}
+                                                            onValueChange={(val) => {
+                                                                const newMapping = { ...mapping }
+                                                                if (val !== 'ignore') {
+                                                                    newMapping[val] = col
+                                                                } else {
+                                                                    const key = Object.entries(mapping).find(([_, v]) => v === col)?.[0]
+                                                                    if (key) newMapping[key] = null
+                                                                }
+                                                                setMapping(newMapping)
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className={cn(FORM_STYLES.input, "h-9 text-[10px] font-bold uppercase tracking-wider bg-background")}>
+                                                                <SelectValue placeholder="Ignorar Columna" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="ignore" className="text-[10px] font-bold uppercase tracking-wider">Ignorar Columna</SelectItem>
+                                                                <SelectItem value="date" className="text-[10px] font-bold uppercase tracking-wider">Fecha Movimiento</SelectItem>
+                                                                <SelectItem value="description" className="text-[10px] font-bold uppercase tracking-wider">Descripción / Glosa</SelectItem>
+                                                                <SelectItem value="debit" className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Cargos (Egresos)</SelectItem>
+                                                                <SelectItem value="credit" className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Abonos (Ingresos)</SelectItem>
+                                                                <SelectItem value="balance" className="text-[10px] font-bold uppercase tracking-wider">Saldo</SelectItem>
+                                                                <SelectItem value="reference" className="text-[10px] font-bold uppercase tracking-wider font-mono">Referencia / Doc</SelectItem>
+                                                                <SelectItem value="transaction_id" className="text-[10px] font-bold uppercase tracking-wider font-mono">ID Ext. Transacción</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
-                                                    <span className="text-xs font-mono text-muted-foreground break-all line-clamp-1 h-4" title={String(col)}>
-                                                        {String(col)}
-                                                    </span>
-                                                    <Select
-                                                        value={Object.entries(mapping).find(([_, v]) => v === col)?.[0] || "ignore"}
-                                                        onValueChange={(val) => {
-                                                            const newMapping = { ...mapping }
-                                                            // Clear previous assignment of this field
-                                                            if (val !== 'ignore') {
-                                                                // Remove if assigned elsewhere? Allow duplicates? Usually 1-to-1.
-                                                                // Let's just set it.
-                                                                newMapping[val] = col
-                                                            } else {
-                                                                // Find key that has this col and remove it
-                                                                const key = Object.entries(mapping).find(([_, v]) => v === col)?.[0]
-                                                                if (key) newMapping[key] = null
-                                                            }
-                                                            setMapping(newMapping)
-                                                        }}
-                                                    >
-                                                        <SelectTrigger className={cn(FORM_STYLES.input, "h-7 text-xs")}>
-                                                            <SelectValue placeholder="Ignorar" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="ignore">Ignorar</SelectItem>
-                                                            <SelectItem value="date">Fecha</SelectItem>
-                                                            <SelectItem value="description">Descripción</SelectItem>
-                                                            <SelectItem value="debit">Cargos</SelectItem>
-                                                            <SelectItem value="credit">Abonos</SelectItem>
-                                                            <SelectItem value="balance">Saldo</SelectItem>
-                                                            <SelectItem value="reference">Referencia</SelectItem>
-                                                            <SelectItem value="transaction_id">ID Transacción</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {previewData.rows.slice(0, 5).map((row, rIdx) => (
-                                        <TableRow key={rIdx}>
-                                            {row.map((cell, cIdx) => (
-                                                <TableCell key={cIdx} className="text-xs whitespace-nowrap">
-                                                    {String(cell)}
-                                                </TableCell>
+                                                </TableHead>
                                             ))}
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {previewData.rows.slice(0, 8).map((row, rIdx) => (
+                                            <TableRow key={rIdx} className="hover:bg-muted/30 transition-colors">
+                                                {row.map((cell, cIdx) => (
+                                                    <TableCell key={cIdx} className="text-xs py-3 px-4 border-r border-border/30 last:border-r-0 font-medium">
+                                                        {String(cell)}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
-                        <div className="flex gap-2 text-xs text-muted-foreground">
-                            <span>Campos:</span>
-                            {REQUIRED_FIELDS.map(f => (
-                                <span key={f} className={cn(mapping[f] !== null ? "text-green-600 font-medium" : "text-red-500")}>
-                                    {f} {mapping[f] !== null ? '✓' : '✗'}
-                                </span>
-                            ))}
+
+                        <div className="flex flex-wrap gap-3 items-center justify-center p-4 rounded-2xl bg-muted/5 border border-dashed border-border/60">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mr-2">Estado de Mapeo:</span>
+                            {REQUIRED_FIELDS.map(f => {
+                                const labels: Record<string, string> = {
+                                    date: 'Fecha',
+                                    description: 'Descripción',
+                                    debit: 'Cargos',
+                                    credit: 'Abonos',
+                                    balance: 'Saldo'
+                                }
+                                return (
+                                    <Badge 
+                                        key={f} 
+                                        variant="outline"
+                                        className={cn(
+                                            "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
+                                            mapping[f] !== null 
+                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 shadow-sm shadow-emerald-500/5" 
+                                                : "bg-muted/50 border-border text-muted-foreground/40 line-through"
+                                        )}
+                                    >
+                                        {labels[f]} {mapping[f] !== null && '✓'}
+                                    </Badge>
+                                )
+                            })}
                         </div>
                     </div>
                 )}
 
                 {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
+                    <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
+                        <Alert variant="destructive" className="rounded-2xl border-rose-500/20 bg-rose-500/5">
+                            <AlertCircle className="h-4 w-4 text-rose-500" />
+                            <AlertDescription className="text-xs font-bold uppercase tracking-wider text-rose-600/80 leading-relaxed">
+                                {error}
+                            </AlertDescription>
+                        </Alert>
+                    </div>
                 )}
 
                 {success && (
-                    <Alert className="bg-green-50 text-green-900 border-green-200">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <AlertDescription>Importación exitosa</AlertDescription>
-                    </Alert>
+                    <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
+                        <Alert className="rounded-2xl border-emerald-500/20 bg-emerald-500/5">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <AlertDescription className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
+                                Importación Finalizada con Éxito
+                            </AlertDescription>
+                        </Alert>
+                    </div>
                 )}
             </div>
         </BaseModal>
