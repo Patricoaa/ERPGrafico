@@ -159,29 +159,233 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['get'])
     def credit_ledger(self, request, pk=None):
         """
-        Returns a list of unpaid credit orders for the contact.
+        Returns a list of unpaid credit orders for the contact,
+        enriched with due_date and aging_bucket.
         """
         from decimal import Decimal
+        from datetime import timedelta
+        from django.utils import timezone
         contact = self.get_object()
-        
-        # Get all non-draft, non-cancelled CREDIT orders
+
+        today = timezone.now().date()
+        payment_term = contact.credit_days or 30
+
+        # Get all non-draft, non-cancelled orders
         orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
-        
+
         from sales.serializers import SaleOrderSerializer
         ledger_data = []
         for order in orders:
-            # Calculate payments
             payments = order.payments.filter(is_pending_registration=False)
             paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
             paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
             payments_net = paid_in - paid_out
-            
             balance = order.effective_total - payments_net
-            
+
             if balance > 0:
+                order_date = order.date
+                if hasattr(order_date, 'date'):
+                    order_date = order_date.date()
+                due_date = order_date + timedelta(days=payment_term)
+                days_overdue = (today - due_date).days
+
+                if days_overdue <= 0:
+                    aging_bucket = 'current'
+                elif days_overdue <= 30:
+                    aging_bucket = 'overdue_30'
+                elif days_overdue <= 60:
+                    aging_bucket = 'overdue_60'
+                elif days_overdue <= 90:
+                    aging_bucket = 'overdue_90'
+                else:
+                    aging_bucket = 'overdue_90plus'
+
                 order_data = SaleOrderSerializer(order).data
                 order_data['paid_amount'] = str(payments_net)
                 order_data['balance'] = str(balance)
+                order_data['due_date'] = str(due_date)
+                order_data['days_overdue'] = days_overdue
+                order_data['aging_bucket'] = aging_bucket
                 ledger_data.append(order_data)
-                
+
         return Response(ledger_data)
+
+    @action(detail=False, methods=['get'])
+    def credit_portfolio(self, request):
+        """
+        Returns a cartera view: all contacts with active credit or outstanding balance.
+        Includes per-contact aging breakdown and aggregate summary KPIs.
+        """
+        from decimal import Decimal
+
+        # Fetch contacts that have credit enabled OR have any credit balance used (sale orders)
+        contacts = Contact.objects.filter(
+            models.Q(credit_enabled=True) | 
+            models.Q(credit_limit__isnull=False) |
+            models.Q(sale_orders__isnull=False)
+        ).distinct()
+
+        from .serializers import ContactSerializer
+        contact_list = []
+        
+        summary = {
+            'total_debt': Decimal('0'),
+            'total_exposure': Decimal('0'),
+            'potential_loss': Decimal('0'),
+            'current': Decimal('0'),
+            'overdue_30': Decimal('0'),
+            'overdue_60': Decimal('0'),
+            'overdue_90': Decimal('0'),
+            'overdue_90plus': Decimal('0'),
+            'count_with_credit': 0,
+            'count_debtors': 0,
+            'count_overdue': 0,
+            'risk_distribution': {
+                'LOW': 0,
+                'MEDIUM': 0,
+                'HIGH': 0,
+                'CRITICAL': 0,
+            }
+        }
+
+        for contact in contacts:
+            balance_used = contact.credit_balance_used
+            aging = contact.credit_aging
+            
+            # Include contacts that have credit configured OR have an actual balance
+            if balance_used > 0 or contact.credit_enabled or contact.credit_limit:
+                summary['count_with_credit'] += 1
+                
+                # Analytics
+                if contact.credit_limit:
+                    summary['total_exposure'] += contact.credit_limit
+                
+                # Risk level tracking
+                risk_level = contact.credit_risk_level
+                summary['risk_distribution'][risk_level] += 1
+                
+                if risk_level == 'CRITICAL':
+                    summary['potential_loss'] += balance_used
+
+                if balance_used > 0:
+                    summary['count_debtors'] += 1
+                    summary['total_debt'] += balance_used
+                    summary['current'] += aging['current']
+                    summary['overdue_30'] += aging['overdue_30']
+                    summary['overdue_60'] += aging['overdue_60']
+                    summary['overdue_90'] += aging['overdue_90']
+                    summary['overdue_90plus'] += aging['overdue_90plus']
+
+                    overdue = aging['overdue_30'] + aging['overdue_60'] + aging['overdue_90'] + aging['overdue_90plus']
+                    if overdue > 0:
+                        summary['count_overdue'] += 1
+
+                data = ContactSerializer(contact).data
+                contact_list.append(data)
+
+        # Utilization Rate
+        summary['utilization_rate'] = '0.00'
+        if summary['total_exposure'] > 0:
+            rate = (summary['total_debt'] / summary['total_exposure']) * 100
+            summary['utilization_rate'] = f"{rate:.2f}"
+
+        # Convert Decimals to strings for JSON serialization
+        for key in ['total_debt', 'total_exposure', 'potential_loss', 'current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus']:
+            summary[key] = str(summary[key])
+
+        return Response({
+            'contacts': contact_list,
+            'summary': summary,
+        })
+    @action(detail=True, methods=['post'])
+    def write_off_debt(self, request, pk=None):
+        """
+        Record the contact's current debt as an uncollectible loss.
+        Creates a Journal Entry and technical movements to clear the balance.
+        """
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from treasury.models import TreasuryMovement
+        from decimal import Decimal
+        from django.db import transaction
+        
+        contact = self.get_object()
+        orders_with_balance = []
+        total_balance = Decimal('0')
+        
+        # We must carefully re-calculate using the logic from Contact.credit_aging/used
+        orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED'])
+        for order in orders:
+            payments = order.payments.filter(is_pending_registration=False)
+            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
+            payments_net = paid_in - paid_out
+            order_balance = order.effective_total - payments_net
+            if order_balance > 0:
+                orders_with_balance.append((order, order_balance))
+                total_balance += order_balance
+        
+        if total_balance <= 0:
+            return Response({"error": "El contacto no tiene deuda activa para castigar."}, status=400)
+            
+        settings = AccountingSettings.objects.first()
+        if not settings or not settings.default_uncollectible_expense_account:
+            return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada en Contabilidad."}, status=400)
+            
+        receivable_account = contact.account_receivable or settings.default_receivable_account
+        if not receivable_account:
+             return Response({"error": "No se encontró una cuenta por cobrar configurada para este contacto o sistema."}, status=400)
+
+        try:
+            with transaction.atomic():
+                # 1. Create Journal Entry
+                entry = JournalEntry.objects.create(
+                    description=f"Castigo de deuda incobrable: {contact.name}",
+                    reference=f"CASTIGO-{contact.code}",
+                    state='POSTED'
+                )
+                
+                # Debit: Expense (Loss)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=settings.default_uncollectible_expense_account,
+                    label=f"Pérdida por incobrabilidad RUT {contact.tax_id}",
+                    debit=total_balance,
+                    credit=0
+                )
+                
+                # Credit: Asset (Receivable)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=receivable_account,
+                    partner=contact.name,
+                    label=f"Cierre de deuda incobrable RUT {contact.tax_id}",
+                    debit=0,
+                    credit=total_balance
+                )
+                
+                # 2. Create technical movements to clear the sale orders balance
+                for order, amount in orders_with_balance:
+                    TreasuryMovement.objects.create(
+                        movement_type='INBOUND',
+                        amount=amount,
+                        contact=contact,
+                        sale_order=order,
+                        journal_entry=entry,
+                        reference="AJUSTE CASTIGO",
+                        notes=f"Ajuste técnico por castigo de deuda (Asiento {entry.display_id})",
+                        is_pending_registration=False,
+                    )
+                
+                # 3. Permanently block and mark as critical
+                contact.credit_blocked = True
+                contact.credit_auto_blocked = False
+                contact.credit_risk_level = 'CRITICAL'
+                contact.save()
+                
+            return Response({
+                "message": f"Castigo procesado. Se han regularizado {total_balance} a pérdidas.",
+                "journal_entry": entry.display_id,
+                "amount": str(total_balance)
+            })
+        except Exception as e:
+            return Response({"error": f"Error interno al procesar castigo: {str(e)}"}, status=500)

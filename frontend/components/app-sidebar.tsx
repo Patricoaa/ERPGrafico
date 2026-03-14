@@ -27,18 +27,19 @@ const categoryItems: Record<string, any> = {
         { title: "Plan de Cuentas", url: "/accounting/accounts" },
         { title: "Asientos Contables", url: "/accounting/entries" },
         { title: "Periodos Contables", url: "/accounting/periods" },
+        { title: "Declaraciones F29", url: "/tax/declarations" },
     ],
     "billing": [
         { title: "Configuración Facturación", url: "/settings/billing" },
         { title: "Documentos Emitidos", url: "/billing/sales" },
         { title: "Documentos Recibidos", url: "/billing/purchases" },
-        { title: "Declaraciones F29", url: "/tax/declarations" },
     ],
     "sales": [
         { title: "Configuración Ventas", url: "/settings/sales" },
         { title: "Notas de Venta", url: "/sales/orders" },
         { title: "POS", url: "/sales/pos" },
         { title: "Terminales", url: "/sales/terminals" },
+        { title: "Cartera de Créditos", url: "/sales/credits" },
     ],
 
     "inventory": [

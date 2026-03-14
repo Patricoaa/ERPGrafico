@@ -12,6 +12,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import {
     Save,
     TrendingUp,
@@ -25,6 +26,7 @@ import {
     User as UserIcon,
     Users as UsersIcon,
     Settings,
+    Wallet,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
@@ -61,6 +63,9 @@ const salesSchema = z.object({
     pos_global_discount_group: z.string().default(""),
     terminal_commission_bridge_account: accountFieldSchema,
     terminal_iva_bridge_account: accountFieldSchema,
+    credit_auto_block_days: z.coerce.number().nullable().default(60),
+    credit_risk_classification_enabled: z.boolean().default(true),
+    default_uncollectible_expense_account: accountFieldSchema,
 })
 
 const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<any>, name: string, label: string, accountType: string | string[] }) => (
@@ -180,7 +185,10 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             pos_global_discount_group: "",
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
-        }
+            credit_auto_block_days: 60,
+            credit_risk_classification_enabled: true,
+            default_uncollectible_expense_account: null,
+        } as any
     })
 
     useEffect(() => {
@@ -209,6 +217,9 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 pos_global_discount_group: settings.pos_global_discount_group ?? "",
                 terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
                 terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
+                credit_auto_block_days: settings.credit_auto_block_days ?? null,
+                credit_risk_classification_enabled: !!settings.credit_risk_classification_enabled,
+                default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
             })
         }
     }, [settings, form])
@@ -261,12 +272,13 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             <ServerPageTabs
                 tabs={[
                     { value: "config_pos", label: "Configuración POS", iconName: "settings", href: "/settings/sales?tab=config_pos" },
+                    { value: "credit", label: "Crédito y Cartera", iconName: "wallet", href: "/settings/sales?tab=credit" },
                     { value: "income", label: "Cuentas Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
                     { value: "pos", label: "Cuentas POS", iconName: "layout-grid", href: "/settings/sales?tab=pos" },
                     { value: "terminals", label: "Cuentas Terminal", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
                 ]}
                 activeValue={activeTab}
-                maxWidth="max-w-xl"
+                maxWidth="max-w-4xl"
             />
 
             <div className="mt-6">
@@ -284,6 +296,122 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                         <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
                                         <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
                                         <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="credit" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
+                                    <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* POS Fallback Credit */}
+                                            <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
+                                                <div className="p-4 space-y-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="pos_default_credit_percentage"
+                                                        render={({ field }) => (
+                                                            <div className="space-y-2">
+                                                                <FormLabel className="text-xs font-bold">Crédito Preaprobado POS (%)</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                                                    % asignado por defecto si el cliente no tiene línea de crédito.
+                                                                </p>
+                                                                <FormControl>
+                                                                    <div className="relative max-w-[120px]">
+                                                                        <Input
+                                                                            type="number"
+                                                                            {...field}
+                                                                            className="pr-8 h-9 font-bold text-center"
+                                                                            min={0}
+                                                                            max={100}
+                                                                        />
+                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
+                                                                    </div>
+                                                                </FormControl>
+                                                            </div>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </Card>
+
+                                            {/* Auto-Blocking Selection */}
+                                            <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
+                                                <div className="p-4 space-y-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="credit_auto_block_days"
+                                                        render={({ field }) => (
+                                                            <div className="space-y-2">
+                                                                <FormLabel className="text-xs font-bold">Días de Mora para Auto-Bloqueo</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                                                    Días máximos permitidos antes de restringir el crédito automáticamente.
+                                                                </p>
+                                                                <FormControl>
+                                                                    <div className="relative max-w-[120px]">
+                                                                        <Input
+                                                                            type="number"
+                                                                            {...field}
+                                                                            value={field.value ?? ""}
+                                                                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                                            className="pr-8 h-9 font-bold text-center"
+                                                                            placeholder="Desact."
+                                                                        />
+                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
+                                                                    </div>
+                                                                </FormControl>
+                                                            </div>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </Card>
+                                        </div>
+
+                                        {/* Risk Classification Toggle */}
+                                        <Card className="bg-muted/10 border shadow-none overflow-hidden">
+                                            <div className="p-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="credit_risk_classification_enabled"
+                                                    render={({ field }) => (
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-xs font-bold flex items-center gap-2">
+                                                                    Clasificación de Riesgo Automática
+                                                                    <Badge variant="outline" className="text-[8px] font-black uppercase tracking-tighter h-4 bg-primary/5 border-primary/20">Celery Daily</Badge>
+                                                                </FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground">
+                                                                    Permite que el sistema evalúe y asigne niveles de riesgo diariamente basado en el comportamiento de pago.
+                                                                </p>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                        </div>
+                                                    )}
+                                                />
+                                            </div>
+                                        </Card>
+ 
+                                        {/* Uncollectible Expense Account */}
+                                        <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
+                                            <div className="p-4 space-y-4">
+                                                <AccountField 
+                                                    form={form} 
+                                                    name="default_uncollectible_expense_account" 
+                                                    label="Cuenta Gasto Incobrables" 
+                                                    accountType="EXPENSE" 
+                                                />
+                                                <p className="text-[10px] text-muted-foreground leading-tight px-1">
+                                                    Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
+                                                </p>
+                                            </div>
+                                        </Card>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -392,42 +520,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                 </div>
                                             </Card>
                                         </div>
-                                    </div>
-
-                                    <Separator className="opacity-50" />
-
-                                    {/* Credit Section */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-sm font-bold text-primary px-1">
-                                            <Scale className="h-4 w-4" />
-                                            Línea de Crédito Preaprobada
-                                        </div>
-
-                                        <FormField
-                                            control={form.control}
-                                            name="pos_default_credit_percentage"
-                                            render={({ field }) => (
-                                                <FormItem className="space-y-1 bg-muted/20 p-4 rounded-lg border border-dashed">
-                                                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Crédito Preaprobado (%)</FormLabel>
-                                                    <p className="text-[10px] text-muted-foreground mb-3">
-                                                        Porcentaje del total de la venta que se puede asignar como crédito a clientes sin línea de crédito definida.
-                                                    </p>
-                                                    <FormControl>
-                                                        <div className="relative max-w-[150px]">
-                                                            <Input
-                                                                type="number"
-                                                                {...field}
-                                                                className="pr-8 h-9 font-bold text-center"
-                                                                min={0}
-                                                                max={100}
-                                                            />
-                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
                                     </div>
                                 </CardContent>
                             </Card>

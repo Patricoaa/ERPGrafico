@@ -25,7 +25,9 @@ export function ServerPageTabs({ tabs, activeValue, maxWidth = "max-w-xl", class
         2: "grid-cols-2",
         3: "grid-cols-3",
         4: "grid-cols-4",
-    }[tabs.length] || "grid-cols-3"
+        5: "grid-cols-5",
+        6: "grid-cols-6",
+    }[tabs.length] || "grid-cols-4"
 
     return (
         <div className={cn("flex justify-center", className)}>

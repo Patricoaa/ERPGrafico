@@ -4,7 +4,14 @@ from accounting.models import Account, AccountType
 from simple_history.models import HistoricalRecords
 from decimal import Decimal
 from django.db.models import Sum
+from django.utils import timezone
 
+
+class RiskLevel(models.TextChoices):
+    LOW = 'LOW', _('Bajo Riesgo')
+    MEDIUM = 'MEDIUM', _('Riesgo Medio')
+    HIGH = 'HIGH', _('Alto Riesgo')
+    CRITICAL = 'CRITICAL', _('Riesgo Crítico / Incobrable')
 
 class Contact(models.Model):
     """
@@ -50,6 +57,11 @@ class Contact(models.Model):
     credit_limit = models.DecimalField(_("Límite de Crédito"), max_digits=14, decimal_places=0, null=True, blank=True)
     credit_days = models.IntegerField(_("Días Plazo"), default=30, null=True, blank=True)
     credit_blocked = models.BooleanField(_("Crédito Bloqueado"), default=False, help_text=_("Si se marca, el contacto no podrá usar crédito bajo ninguna circunstancia."))
+    
+    # Credit Automation Fields
+    credit_auto_blocked = models.BooleanField(_("Auto-Bloqueado por Mora"), default=False, help_text=_("El sistema bloquea temporalmente al cliente si excede los días de mora configurados."))
+    credit_risk_level = models.CharField(_("Nivel de Riesgo"), max_length=20, choices=RiskLevel.choices, default=RiskLevel.LOW)
+    credit_last_evaluated = models.DateTimeField(_("Última Evaluación Automática"), null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -153,4 +165,53 @@ class Contact(models.Model):
         balance = self.credit_balance_used
         available = self.credit_limit - balance
         return available if available > 0 else Decimal('0')
+
+    @property
+    def credit_aging(self) -> dict:
+        """
+        Classifies the contact's unpaid credit balance into aging buckets.
+        Uses credit_days as the payment term (default 30 if not set).
+        Returns amounts per bucket: current, overdue_30, overdue_60, overdue_90, overdue_90plus.
+        """
+        today = timezone.now().date()
+        payment_term = self.credit_days or 30
+
+        buckets = {
+            'current': Decimal('0'),
+            'overdue_30': Decimal('0'),
+            'overdue_60': Decimal('0'),
+            'overdue_90': Decimal('0'),
+            'overdue_90plus': Decimal('0'),
+        }
+
+        orders = self.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED'])
+        for order in orders:
+            payments = order.payments.filter(is_pending_registration=False)
+            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
+            balance = order.effective_total - (paid_in - paid_out)
+
+            if balance <= Decimal('0'):
+                continue
+
+            # Calculate due date based on order date + credit_days
+            order_date = order.date if hasattr(order.date, 'date') else order.date
+            if hasattr(order_date, 'date'):
+                order_date = order_date.date()
+            from datetime import timedelta
+            due_date = order_date + timedelta(days=payment_term)
+            days_overdue = (today - due_date).days
+
+            if days_overdue <= 0:
+                buckets['current'] += balance
+            elif days_overdue <= 30:
+                buckets['overdue_30'] += balance
+            elif days_overdue <= 60:
+                buckets['overdue_60'] += balance
+            elif days_overdue <= 90:
+                buckets['overdue_90'] += balance
+            else:
+                buckets['overdue_90plus'] += balance
+
+        return buckets
 

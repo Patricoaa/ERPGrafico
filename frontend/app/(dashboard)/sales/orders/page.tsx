@@ -19,7 +19,7 @@ interface PageProps {
 
 export default async function SalesOrdersPage({ searchParams }: PageProps) {
     const { view } = await searchParams
-    const viewMode = (view as 'orders' | 'notes') || 'orders'
+    const viewMode = (view as 'orders' | 'notes') || 'notes'
 
     const tabs = [
         { value: "orders", label: "Notas de Venta", iconName: "shopping-cart", href: "/sales/orders?view=orders" },

@@ -47,6 +47,9 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         'pos_default_credit_percentage',
         'terminal_commission_bridge_account',
         'terminal_iva_bridge_account',
+        'credit_auto_block_days',
+        'credit_risk_classification_enabled',
+        'default_uncollectible_expense_account',
     ]
 
     def _get_accounting_settings_data(self):

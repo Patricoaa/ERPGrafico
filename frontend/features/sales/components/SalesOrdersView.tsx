@@ -53,6 +53,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     })
 
     const filteredNotes = (notes || []).filter(note => {
+        if (!note.sale_order) return false
         if (!dateRange || !dateRange.from) return true
         const noteDate = parseISO(note.date)
         const start = startOfDay(dateRange.from)

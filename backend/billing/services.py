@@ -561,7 +561,10 @@ class BillingService:
                 raise ValidationError("Se requiere un cliente asociado para asignar crédito.")
                     
             if contact.credit_blocked:
-                raise ValidationError("El crédito está bloqueado para este cliente.")
+                raise ValidationError("El crédito está bloqueado contractualmente para este cliente.")
+                
+            if getattr(contact, 'credit_auto_blocked', False):
+                raise ValidationError("El cliente se encuentra Auto-Bloqueado por tener deudas con una mora superior al límite permitido.")
 
             # Fallback Logic: check if we can bypass credit_enabled check
             from accounting.models import AccountingSettings

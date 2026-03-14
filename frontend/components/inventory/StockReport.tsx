@@ -58,6 +58,7 @@ export function StockReport() {
             },
         },
         {
+            accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text className="text-xs text-center">{row.getValue("category_name")}</DataCell.Text>,
         },
@@ -101,19 +102,23 @@ export function StockReport() {
             ),
         },
         {
+            accessorKey: "unit_cost",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Costo Unit." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <DataCell.Currency value={row.getValue("unit_cost")} className="text-sm font-normal text-muted-foreground" />
                 </div>
             ),
+        },
         {
+            accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <DataCell.Currency value={row.getValue("total_value")} className="font-black text-primary" />
                 </div>
             ),
+        },
         {
             accessorKey: "moves_in",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ent." className="justify-center" />,

@@ -19,6 +19,8 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const logo = settings?.logo || null
 
     useEffect(() => {
+        if (typeof window === 'undefined') return
+        
         const root = document.documentElement
         
         // Helper to convert hex to OKLCH or just use hex if the system supports it

@@ -385,6 +385,14 @@ class AccountingSettings(models.Model):
     default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
+    default_uncollectible_expense_account = models.ForeignKey(
+        Account, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='settings_uncollectible',
+        verbose_name=_("Cuenta de Gasto por Incobrabilidad"),
+        help_text=_("Cuenta de gasto para castigar deudas incobrables.")
+    )
     default_inventory_account = models.ForeignKey(
         Account, 
         on_delete=models.SET_NULL, 
@@ -653,9 +661,20 @@ class AccountingSettings(models.Model):
         default=0,
         help_text=_("Porcentaje de la venta que se puede asignar como crédito por defecto si el cliente no tiene línea de crédito.")
     )
+
+    # Credit Automation Settings
+    credit_auto_block_days = models.IntegerField(
+        _("Días de Mora para Auto-Bloqueo"),
+        null=True, blank=True,
+        default=60,
+        help_text=_("Días máximos de mora antes de bloquear automáticamente la capacidad de crédito. Dejar en blanco para desactivar el auto-bloqueo.")
+    )
+    credit_risk_classification_enabled = models.BooleanField(
+        _("Habilitar Clasificación de Riesgo"),
+        default=True,
+        help_text=_("Si se activa, el sistema evaluará periódicamente el nivel de riesgo crediticio de los clientes.")
+    )
     
-
-
     # Advanced Accounting
     default_prepayment_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True, 

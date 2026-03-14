@@ -26,22 +26,29 @@ api.interceptors.response.use(
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
-            const refreshToken = localStorage.getItem('refresh_token');
+            
+            const isBrowser = typeof window !== 'undefined';
+            const refreshToken = isBrowser ? localStorage.getItem('refresh_token') : null;
+            
             if (refreshToken) {
                 try {
                     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`, {
                         refresh: refreshToken
                     });
                     if (response.status === 200) {
-                        localStorage.setItem('access_token', response.data.access);
+                        if (isBrowser) {
+                            localStorage.setItem('access_token', response.data.access);
+                        }
                         api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
                         return api(originalRequest);
                     }
                 } catch (refreshError) {
                     // Handle refresh token failure (e.g., logout)
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    window.location.href = '/login';
+                    if (isBrowser) {
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                        window.location.href = '/login';
+                    }
                 }
             }
         }

@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, FileText, CreditCard, Calendar } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { DateRangeFilter, type DateRange } from "@/components/shared/DateRangeFilter"
 
 // Lazy load feature components
 const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -36,6 +37,10 @@ export function TerminalBatchesManagement({
     const { batches, refetch } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 30),
+        to: new Date()
+    })
 
     useEffect(() => {
         if (externalOpenBatch) {
@@ -66,7 +71,6 @@ export function TerminalBatchesManagement({
             accessorKey: "payment_method_name",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Terminal" className="justify-center" />,
             cell: ({ row }: any) => (
-            cell: ({ row }: any) => (
                 <div className="flex flex-col items-center">
                     <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
                         <CreditCard className="h-3.5 w-3.5 text-primary" />
@@ -76,7 +80,6 @@ export function TerminalBatchesManagement({
                         {row.original.supplier_name}
                     </span>
                 </div>
-            )
             )
         },
         {
@@ -134,6 +137,9 @@ export function TerminalBatchesManagement({
                         <Badge variant={variants[status] || "outline"} className={className}>{labels[status] || status}</Badge>
                     </div>
                 )
+            },
+            meta: {
+                title: "Estado"
             }
         },
         {
@@ -179,8 +185,23 @@ export function TerminalBatchesManagement({
                 columns={columns}
                 data={batches}
                 cardMode
-                searchPlaceholder="Buscar por terminal o referencia..."
-                filterColumn="payment_method_name"
+                useAdvancedFilter={true}
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Pendiente", value: "PENDING" },
+                            { label: "Liquidado", value: "SETTLED" },
+                            { label: "Conciliado", value: "RECONCILED" },
+                            { label: "Facturado", value: "INVOICED" }
+                        ]
+                    }
+                ]}
+                toolbarAction={
+                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Ventas" />
+                }
+                onReset={() => setDateRange(undefined)}
             />
 
             <Suspense fallback={null}>
