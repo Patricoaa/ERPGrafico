@@ -53,7 +53,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     })
 
     const filteredNotes = (notes || []).filter(note => {
+        // Only show Credit and Debit notes
+        if (!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)) return false
+        // Only show documents linked to a Sale Order (Emitted)
         if (!note.sale_order) return false
+        
         if (!dateRange || !dateRange.from) return true
         const noteDate = parseISO(note.date)
         const start = startOfDay(dateRange.from)

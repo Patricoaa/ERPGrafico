@@ -117,6 +117,7 @@ export function translatePaymentMethod(method: string | null | undefined): strin
     'CARD': 'Tarjeta',
     'TRANSFER': 'Transferencia',
     'CREDIT': 'Crédito',
+    'WRITE_OFF': 'Castigo',
   }
   return map[method.toUpperCase()] || method
 }
@@ -209,6 +210,8 @@ export function formatDocumentId(type: string | null | undefined, number: string
     'ADJ': 'ADJ-',
     'PRODUCTION_ORDER': 'OT-',
     'OT': 'OT-',
+    'WRITE_OFF': 'CAS-',
+    'CAS': 'CAS-',
   }
 
   const prefix = prefixes[type?.toUpperCase() || ''] || ''

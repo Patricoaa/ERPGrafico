@@ -1,7 +1,7 @@
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { Banknote, Hash, Trash2, AlertCircle } from "lucide-react"
+import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
 import { formatDocumentId } from "@/lib/order-status-utils"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
@@ -123,30 +123,34 @@ export function TreasuryPhase({
                         ((parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions) ? 'success' :
                             (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))
                 }
-                documents={payments.map((p: any) => ({
-                    type: p.payment_method_display || 'Pago',
-                    number: formatDocumentId(p.payment_type === 'INBOUND' ? 'ING' : 'EGR', p.id, p.display_id),
-                    icon: Banknote,
-                    id: p.id,
-                    docType: 'payment',
-                    status: p.status || 'Pagado',
-                    amount: p.amount,
-                    documentReference: p.reference,
-                    actions: [
-                        ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
-                            icon: Hash,
-                            title: 'Ingresar N° Transacción',
-                            color: 'text-orange-500 hover:bg-orange-500/10',
-                            onClick: () => p.id && setTrForm({ open: true, id: p.id, initialValue: "" })
-                        }] : []),
-                        ...((p.status !== 'CANCELLED') ? [{
-                            icon: Trash2,
-                            title: 'Eliminar/Anular Pago',
-                            color: 'text-red-500 hover:bg-red-500/10',
-                            onClick: () => p.id && handleDeletePayment(p.id)
-                        }] : [])
-                    ]
-                }))}
+                documents={payments.map((p: any) => {
+                    const isWriteOff = p.payment_method === 'WRITE_OFF'
+                    return {
+                        type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
+                        number: formatDocumentId(isWriteOff ? 'CAS' : (p.payment_type === 'INBOUND' ? 'ING' : 'EGR'), p.id, p.display_id),
+                        icon: isWriteOff ? Gavel : Banknote,
+                        isWarning: isWriteOff,
+                        id: p.id,
+                        docType: 'payment',
+                        status: p.status || 'Pagado',
+                        amount: p.amount,
+                        documentReference: p.reference,
+                        actions: [
+                            ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
+                                icon: Hash,
+                                title: 'Ingresar N° Transacción',
+                                color: 'text-orange-500 hover:bg-orange-500/10',
+                                onClick: () => p.id && setTrForm({ open: true, id: p.id, initialValue: "" })
+                            }] : []),
+                            ...((p.status !== 'CANCELLED') ? [{
+                                icon: Trash2,
+                                title: 'Eliminar/Anular Pago',
+                                color: 'text-red-500 hover:bg-red-500/10',
+                                onClick: () => p.id && handleDeletePayment(p.id)
+                            }] : [])
+                        ]
+                    }
+                })}
                 onViewDetail={openDetails}
                 actions={(isNoteMode ? (registry.notes_payments?.actions || []) : (registry.payments?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
                 emptyMessage="Sin pagos registrados"

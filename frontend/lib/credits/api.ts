@@ -65,6 +65,35 @@ export interface CreditLedgerEntry {
     days_overdue: number
     aging_bucket: 'current' | 'overdue_30' | 'overdue_60' | 'overdue_90' | 'overdue_90plus'
     status: string
+    credit_assignment_origin?: string
+    credit_assignment_origin_display?: string
+    credit_approval_task_details?: {
+        id: number
+        status: string
+        status_display: string
+        completed_at: string | null
+        completed_by_name: string | null
+    } | null
+}
+
+export interface CreditHistoryEntry {
+    id: number
+    number: string
+    display_id: string
+    customer_name: string
+    date: string
+    total: string
+    effective_total: string
+    credit_assignment_origin: string
+    credit_assignment_origin_display: string
+    credit_approval_task_details: {
+        id: number
+        status: string
+        status_display: string
+        completed_at: string | null
+        completed_by_name: string | null
+    } | null
+    created_at: string
 }
 
 export async function getCreditPortfolio(): Promise<CreditPortfolioResponse> {
@@ -74,6 +103,16 @@ export async function getCreditPortfolio(): Promise<CreditPortfolioResponse> {
 
 export async function getContactCreditLedger(contactId: number): Promise<CreditLedgerEntry[]> {
     const res = await api.get(`/contacts/${contactId}/credit_ledger/`)
+    return res.data
+}
+
+export async function getContactCreditHistory(contactId: number): Promise<CreditHistoryEntry[]> {
+    const res = await api.get(`/contacts/${contactId}/credit_history/`)
+    return res.data
+}
+
+export async function getGlobalCreditHistory(): Promise<CreditHistoryEntry[]> {
+    const res = await api.get("/sales/credit_history/")
     return res.data
 }
 

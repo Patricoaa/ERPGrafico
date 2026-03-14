@@ -78,6 +78,26 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Credit Tracking
+    class CreditOrigin(models.TextChoices):
+        MANUAL = 'MANUAL', _('Manual (Aprobación)')
+        FALLBACK = 'FALLBACK', _('Fallback (% Venta)')
+        CONTACT_FILE = 'CONTACT_FILE', _('Ficha de Contacto')
+
+    credit_assignment_origin = models.CharField(
+        _("Origen de Asignación de Crédito"),
+        max_length=20,
+        choices=CreditOrigin.choices,
+        null=True, blank=True
+    )
+    credit_approval_task = models.ForeignKey(
+        'workflow.Task',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='credit_sale_orders',
+        verbose_name=_("Tarea de Aprobación de Crédito")
+    )
+
     class Meta:
         verbose_name = _("Nota de Venta")
         verbose_name_plural = _("Notas de Venta")

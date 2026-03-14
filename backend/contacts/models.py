@@ -148,7 +148,7 @@ class Contact(models.Model):
         for order in orders:
             # Calculate net payments manually to avoid complex annotations here
             payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
             paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
             payments_net = paid_in - paid_out
             
@@ -187,7 +187,7 @@ class Contact(models.Model):
         orders = self.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED'])
         for order in orders:
             payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
             paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
             balance = order.effective_total - (paid_in - paid_out)
 

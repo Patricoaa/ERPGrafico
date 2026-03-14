@@ -140,6 +140,20 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     def get_pos_session_display(self, obj):
         return str(obj.pos_session) if obj.pos_session else None
 
+    credit_assignment_origin_display = serializers.CharField(source='get_credit_assignment_origin_display', read_only=True)
+    credit_approval_task_details = serializers.SerializerMethodField()
+
+    def get_credit_approval_task_details(self, obj):
+        if obj.credit_approval_task:
+            return {
+                'id': obj.credit_approval_task.id,
+                'status': obj.credit_approval_task.status,
+                'status_display': obj.credit_approval_task.get_status_display(),
+                'completed_at': obj.credit_approval_task.completed_at,
+                'completed_by_name': obj.credit_approval_task.completed_by.name if obj.credit_approval_task.completed_by else None
+            }
+        return None
+
     display_id = serializers.CharField(read_only=True)
 
     class Meta:
@@ -150,6 +164,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             'total_net', 'total_tax', 'total_discount_amount', 'total', 'effective_total', 'total_paid', 'pending_amount',
             'lines', 'serialized_payments', 'related_documents', 'work_orders', 
             'production_progress', 'has_pending_work_orders', 'pos_session', 'pos_session_display',
+            'credit_assignment_origin', 'credit_assignment_origin_display', 'credit_approval_task_details',
             'created_at', 'updated_at'
         ]
 

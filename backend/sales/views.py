@@ -377,6 +377,23 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=['get'])
+    def credit_history(self, request):
+        """
+        Global history of credit assignments across all customers.
+        """
+        history = SaleOrder.objects.filter(
+            credit_assignment_origin__isnull=False
+        ).order_by('-date', '-created_at')
+        
+        page = self.paginate_queryset(history)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(history[:100], many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         order = self.get_object()

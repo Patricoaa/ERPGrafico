@@ -316,7 +316,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED'])
         for order in orders:
             payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
             paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
             payments_net = paid_in - paid_out
             order_balance = order.effective_total - payments_net
@@ -366,13 +366,14 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 # 2. Create technical movements to clear the sale orders balance
                 for order, amount in orders_with_balance:
                     TreasuryMovement.objects.create(
-                        movement_type='INBOUND',
+                        movement_type='ADJUSTMENT',
+                        payment_method='WRITE_OFF',
                         amount=amount,
                         contact=contact,
                         sale_order=order,
                         journal_entry=entry,
-                        reference="AJUSTE CASTIGO",
-                        notes=f"Ajuste técnico por castigo de deuda (Asiento {entry.display_id})",
+                        reference="CASTIGO",
+                        notes=f"Ajuste por castigo de deuda (Asiento {entry.display_id})",
                         is_pending_registration=False,
                     )
                 
@@ -389,3 +390,23 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             })
         except Exception as e:
             return Response({"error": f"Error interno al procesar castigo: {str(e)}"}, status=500)
+
+    @action(detail=True, methods=['get'])
+    def credit_history(self, request, pk=None):
+        """
+        Returns the history of credit assignments for this contact.
+        Includes manual approvals, fallback assignments, and contact file limit uses.
+        """
+        contact = self.get_object()
+        from sales.models import SaleOrder
+        from sales.serializers import SaleOrderSerializer
+        
+        # Get orders with credit assignment origin tracked
+        history = SaleOrder.objects.filter(
+            customer=contact,
+            credit_assignment_origin__isnull=False
+        ).order_by('-date', '-created_at')
+        
+        # Reuse SaleOrderSerializer which now includes the new credit fields
+        serializer = SaleOrderSerializer(history, many=True)
+        return Response(serializer.data)

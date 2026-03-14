@@ -547,8 +547,9 @@ class BillingService:
                             f"El crédito requerido (${required_credit:,.0f}) excede el monto "
                             f"que fue aprobado previamente (${approved_credit:,.0f})."
                         )
-
                     bypass_credit_validation = True
+                    order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
+                    order.credit_approval_task = task
                 else:
                     raise ValidationError(f"La tarea de aprobación de crédito {task.id} aún no está completada.")
             except Task.DoesNotExist:
@@ -581,7 +582,7 @@ class BillingService:
                 # Fallback requires: NO debt AND within fallback threshold
                 if not has_debt and is_within_fallback:
                     # Fallback granted
-                    pass
+                    order.credit_assignment_origin = SaleOrder.CreditOrigin.FALLBACK
                 else:
                     if contact.credit_limit and contact.credit_limit > 0:
                         raise ValidationError(
@@ -594,6 +595,14 @@ class BillingService:
                             f"El cliente no tiene crédito asignado y el monto "
                             f"(${required_credit:,.0f}) excede el límite de fallback permitido."
                         )
+            else:
+                # Within contact file limit
+                order.credit_assignment_origin = SaleOrder.CreditOrigin.CONTACT_FILE
+
+        # Save changes to credit tracking before confirmation
+        if required_credit > 0:
+            order.save(update_fields=['credit_assignment_origin', 'credit_approval_task'])
+
         # -------------------------
         
         # 2. Confirm Order

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getCreditPortfolio, getContactCreditLedger, writeOffDebt, CreditContact, CreditPortfolioResponse, CreditLedgerEntry } from "@/lib/credits/api"
+import { getCreditPortfolio, getContactCreditLedger, getGlobalCreditHistory, writeOffDebt, CreditContact, CreditPortfolioResponse, CreditLedgerEntry, CreditHistoryEntry } from "@/lib/credits/api"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -64,6 +64,12 @@ const riskBg: Record<string, string> = {
     MEDIUM: "bg-amber-50/50 text-amber-700 border-amber-100",
     HIGH: "bg-orange-50/50 text-orange-700 border-orange-100",
     CRITICAL: "bg-rose-50/50 text-rose-700 border-rose-100",
+}
+
+const originBg: Record<string, string> = {
+    MANUAL: "bg-blue-500/10 text-blue-700 border-blue-200",
+    FALLBACK: "bg-amber-500/10 text-amber-700 border-amber-200",
+    CONTACT_FILE: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -331,22 +337,23 @@ function ContactRow({ contact, onRefresh }: { contact: CreditContact, onRefresh:
                                             {[1, 2].map(i => <Skeleton key={i} className="h-8 w-full" />)}
                                         </div>
                                     ) : ledger && ledger.length > 0 ? (
-                                        <table className="w-full text-[12px]">
+                                        <table className="w-full text-left">
                                             <thead>
-                                                <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/30">
-                                                    <th className="text-left pb-2 pr-4">Documento</th>
-                                                    <th className="text-left pb-2 pr-4">Fecha</th>
-                                                    <th className="text-left pb-2 pr-4">Vencimiento</th>
-                                                    <th className="text-right pb-2 pr-4">Total</th>
-                                                    <th className="text-right pb-2 pr-4">Pagado</th>
-                                                    <th className="text-right pb-2 pr-4">Saldo</th>
-                                                    <th className="text-left pb-2">Tramo</th>
+                                                <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
+                                                    <th className="pb-2 pr-4">N° Documento</th>
+                                                    <th className="pb-2 pr-4">Fecha</th>
+                                                    <th className="pb-2 pr-4">Vencimiento</th>
+                                                    <th className="pb-2 pr-4 text-right">Total</th>
+                                                    <th className="pb-2 pr-4 text-right">Pagado</th>
+                                                    <th className="pb-2 pr-4 text-right">Saldo</th>
+                                                    <th className="pb-2 pr-4">Origen</th>
+                                                    <th className="pb-2 pr-4">Estado</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                {ledger.map(entry => (
-                                                    <tr key={entry.id} className="border-b border-border/20 last:border-0">
-                                                        <td className="py-2 pr-4 font-mono font-semibold">{entry.number || `NV-${entry.id}`}</td>
+                                            <tbody className="divide-y divide-border/20">
+                                                {ledger.map((entry) => (
+                                                    <tr key={entry.id} className="text-[12px]">
+                                                        <td className="py-2 pr-4 font-bold">{entry.number}</td>
                                                         <td className="py-2 pr-4 text-muted-foreground">{entry.date}</td>
                                                         <td className="py-2 pr-4 text-muted-foreground">
                                                             {entry.due_date}
@@ -357,6 +364,13 @@ function ContactRow({ contact, onRefresh }: { contact: CreditContact, onRefresh:
                                                         <td className="py-2 pr-4 text-right font-mono">{fmt(entry.effective_total)}</td>
                                                         <td className="py-2 pr-4 text-right font-mono text-emerald-600">{fmt(entry.paid_amount)}</td>
                                                         <td className="py-2 pr-4 text-right font-mono font-bold">{fmt(entry.balance)}</td>
+                                                        <td className="py-2 pr-4">
+                                                            {entry.credit_assignment_origin_display ? (
+                                                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
+                                                                    {entry.credit_assignment_origin_display}
+                                                                </span>
+                                                            ) : <span className="text-muted-foreground/30">—</span>}
+                                                        </td>
                                                         <td className="py-2">
                                                             <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded border", agingBg[entry.aging_bucket])}>
                                                                 {agingLabel[entry.aging_bucket]}
@@ -379,12 +393,106 @@ function ContactRow({ contact, onRefresh }: { contact: CreditContact, onRefresh:
     )
 }
 
+// ─── Credit History Table ──────────────────────────────────────────────────
+
+function CreditHistoryTable({ history, loading }: { history: CreditHistoryEntry[] | null, loading: boolean }) {
+    if (loading) return (
+        <div className="rounded-2xl border bg-card/50 p-24 flex flex-col items-center justify-center gap-4 border-dashed">
+            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground font-medium">Cargando historial de asignaciones...</p>
+        </div>
+    )
+    
+    if (!history || history.length === 0) return (
+        <div className="rounded-2xl border bg-card/50 p-24 text-center border-dashed">
+            <p className="text-muted-foreground italic font-medium">No se han registrado asignaciones de crédito aún.</p>
+        </div>
+    )
+
+    return (
+        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-muted/30 border-b border-border/50">
+                        <tr className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                            <th className="px-6 py-4">Fecha/Hora</th>
+                            <th className="px-6 py-4">Cliente</th>
+                            <th className="px-4 py-4">Documento</th>
+                            <th className="px-4 py-4">Monto Original</th>
+                            <th className="px-4 py-4">Origen de Asignación</th>
+                            <th className="px-6 py-4">Aprobación / Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                        {history.map((entry) => (
+                            <tr key={entry.id} className="hover:bg-muted/10 transition-colors">
+                                <td className="px-6 py-4">
+                                    <div className="text-[13px] font-semibold">{new Date(entry.date).toLocaleDateString()}</div>
+                                    <div className="text-[10px] text-muted-foreground font-mono">{new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="font-bold text-[13px] leading-tight text-foreground">{entry.customer_name}</div>
+                                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{entry.display_id}</div>
+                                </td>
+                                <td className="px-4 py-4">
+                                    <Badge variant="outline" className="font-mono text-[11px] bg-background">{entry.number}</Badge>
+                                </td>
+                                <td className="px-4 py-4 font-mono font-bold text-[13px]">
+                                    {fmt(entry.effective_total)}
+                                </td>
+                                <td className="px-4 py-4">
+                                    <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border shadow-sm", originBg[entry.credit_assignment_origin] || "bg-muted text-muted-foreground")}>
+                                        {entry.credit_assignment_origin_display}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    {entry.credit_approval_task_details ? (
+                                        <div className="space-y-1 bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
+                                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                Aprobado por {entry.credit_approval_task_details.completed_by_name}
+                                            </div>
+                                            <div className="text-[10px] text-emerald-600/70 font-medium flex items-center gap-1">
+                                                <Clock className="h-2.5 w-2.5" />
+                                                {entry.credit_approval_task_details.completed_at && new Date(entry.credit_approval_task_details.completed_at).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground italic font-medium">
+                                            <Activity className="h-3.5 w-3.5 opacity-50" />
+                                            Asignación Automática
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+
 // ─── Main View ───────────────────────────────────────────────────────────────
 
 export function CreditPortfolioView() {
     const [data, setData] = useState<CreditPortfolioResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    const [activeTab, setActiveTab] = useState<'portfolio' | 'history'>('portfolio')
+    const [history, setHistory] = useState<CreditHistoryEntry[] | null>(null)
+    const [loadingHistory, setLoadingHistory] = useState(false)
+
+    useEffect(() => {
+        if (activeTab === 'history' && !history) {
+            setLoadingHistory(true)
+            getGlobalCreditHistory()
+                .then(setHistory)
+                .catch(e => toast.error("Error cargando historial"))
+                .finally(() => setLoadingHistory(false))
+        }
+    }, [activeTab, history])
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -430,6 +538,40 @@ export function CreditPortfolioView() {
 
     return (
         <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-xl w-fit border border-border/50">
+                    <Button
+                        variant={activeTab === 'portfolio' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className={cn(
+                            "h-9 px-4 rounded-lg text-[13px] font-bold transition-all",
+                            activeTab === 'portfolio' && "shadow-sm bg-background border border-border/50"
+                        )}
+                        onClick={() => setActiveTab('portfolio')}
+                    >
+                        <PieChart className="h-4 w-4 mr-2 opacity-70" />
+                        Cartera de Crédito
+                    </Button>
+                    <Button
+                        variant={activeTab === 'history' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className={cn(
+                            "h-9 px-4 rounded-lg text-[13px] font-bold transition-all",
+                            activeTab === 'history' && "shadow-sm bg-background border border-border/50"
+                        )}
+                        onClick={() => setActiveTab('history')}
+                    >
+                        <Clock className="h-4 w-4 mr-2 opacity-70" />
+                        Historial de Asignaciones
+                    </Button>
+                </div>
+
+                <div className="text-[11px] text-muted-foreground italic flex items-center gap-2">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    Valores actualizados en tiempo real
+                </div>
+            </div>
+
             {/* Dashboard Analytics */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KpiCard

@@ -12,7 +12,13 @@ from core.mixins import AuditHistoryMixin
 class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
-    filterset_fields = ['dte_type', 'sale_order', 'purchase_order', 'status', 'contact']
+    filterset_fields = {
+        'dte_type': ['exact', 'in'],
+        'sale_order': ['exact', 'isnull'],
+        'purchase_order': ['exact', 'isnull'],
+        'status': ['exact', 'in'],
+        'contact': ['exact'],
+    }
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

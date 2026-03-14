@@ -74,6 +74,7 @@ class TreasuryMovement(models.Model):
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
+        WRITE_OFF = 'WRITE_OFF', _('Castigo de Deuda')
         OTHER = 'OTHER', _('Otro')
 
     class JustifyReason(models.TextChoices):
@@ -256,10 +257,14 @@ class TreasuryMovement(models.Model):
 
     @property
     def display_id(self):
+        if self.payment_method == self.Method.WRITE_OFF:
+            return f"CAS-{str(self.id).zfill(6)}"
+            
         prefix = 'MOV'
         if self.movement_type == self.Type.INBOUND: prefix = 'DEP'
         elif self.movement_type == self.Type.OUTBOUND: prefix = 'RET'
         elif self.movement_type == self.Type.TRANSFER: prefix = 'TRAS'
+        elif self.movement_type == self.Type.ADJUSTMENT: prefix = 'ADJ'
         return f"{prefix}-{str(self.id).zfill(6)}"
 
     @property

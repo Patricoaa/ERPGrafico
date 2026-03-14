@@ -6,7 +6,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Plus, ArrowRight, Eye } from "lucide-react"
-import { formatCurrency, formatPlainDate } from "@/lib/utils"
+import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -84,7 +84,7 @@ export function TreasuryMovementsClientView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
             cell: ({ row }) => {
                 const m = row.original
-                return <DataCell.DocumentId type={m.movement_type} number={m.id} />
+                return <DataCell.DocumentId type={m.payment_method === 'WRITE_OFF' ? 'WRITE_OFF' : m.movement_type} number={m.id} />
             },
         },
         {
@@ -100,20 +100,25 @@ export function TreasuryMovementsClientView() {
             accessorKey: "movement_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
             cell: ({ row }) => {
-                const type = row.getValue("movement_type") as string
-                let label = row.original.movement_type_display
-                if (type === 'INBOUND') label = "Depósito"
-                if (type === 'OUTBOUND') label = "Retiro"
-                if (type === 'TRANSFER') label = "Traspaso"
-                if (type === 'ADJUSTMENT') label = "Ajuste"
+                const m = row.original
+                const type = m.movement_type
+                const isWriteOff = m.payment_method === 'WRITE_OFF'
+
+                let label = m.movement_type_display
+                if (isWriteOff) label = "Castigo"
+                else if (type === 'INBOUND') label = "Depósito"
+                else if (type === 'OUTBOUND') label = "Retiro"
+                else if (type === 'TRANSFER') label = "Traspaso"
+                else if (type === 'ADJUSTMENT') label = "Ajuste"
 
                 let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
-                if (type === 'INBOUND') variant = "default"
-                if (type === 'OUTBOUND') variant = "destructive"
-                if (type === 'TRANSFER' || type === 'ADJUSTMENT') variant = "secondary"
+                if (isWriteOff) variant = "destructive"
+                else if (type === 'INBOUND') variant = "default"
+                else if (type === 'OUTBOUND') variant = "destructive"
+                else if (type === 'TRANSFER' || type === 'ADJUSTMENT') variant = "secondary"
 
                 return (
-                    <Badge variant={variant} className="text-[10px] uppercase font-bold tracking-tight px-2 py-0">
+                    <Badge variant={variant} className={cn("text-[10px] uppercase font-bold tracking-tight px-2 py-0", isWriteOff && "bg-rose-600 hover:bg-rose-700")}>
                         {label}
                     </Badge>
                 )

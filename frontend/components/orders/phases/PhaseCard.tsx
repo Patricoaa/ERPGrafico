@@ -167,7 +167,8 @@ export function PhaseCard({
                         documents.map((doc: any, i: number) => (
                             <div key={i} className={cn(
                                 "flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12",
-                                doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed"
+                                doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed",
+                                doc.isWarning && "bg-orange-500/5 border-orange-500/10 hover:bg-orange-500/15"
                             )}>
                                 <div className="flex items-center gap-2.5 overflow-hidden">
                                     <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">

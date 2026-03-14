@@ -139,11 +139,12 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_permissions(self):
         """
-        Allow any authenticated user to GET current company settings (needed for dashboard).
+        Allow any user to GET current company settings (needed for initial dashboard render/SSR).
         Maintain model permissions for other actions and methods.
         """
         if self.action == 'current' and self.request.method == 'GET':
-            return [IsAuthenticated()]
+            from rest_framework.permissions import AllowAny
+            return [AllowAny()]
         return super().get_permissions()
 
 class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):

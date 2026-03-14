@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar, Printer, Minus, MonitorSmartphone, CalendarClock, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Wallet, Activity, ExternalLink } from "lucide-react"
+import { Loader2, FileText, ShoppingBag, Receipt, Banknote, Hash, Package, Eye, ArrowLeft, Building2, User, Paperclip, History, Plus, Save, Edit, X, Trash2, ClipboardList, Calendar, Printer, Minus, MonitorSmartphone, CalendarClock, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Wallet, Activity, ExternalLink, Gavel } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { translateStatus, translatePaymentMethod, translateReceivingStatus, formatCurrency, formatPlainDate, cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -178,7 +178,7 @@ const SidebarContent = ({ data, currentType, closeModal }: { data: any, currentT
                     <>
                         {renderContactSection(payTitle, payName, payContactId)}
                         <SidebarSection title="Información de Pago">
-                            <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} icon={Wallet} />
+                            <MetadataItem label="Método" value={translatePaymentMethod(data.payment_method)} icon={data.payment_method === 'WRITE_OFF' ? Gavel : Wallet} />
                             <MetadataItem label="Referencia" value={data.reference || data.transaction_number || data.payment_reference} icon={FileText} />
                         </SidebarSection>
                         <SidebarSection title="Fechas">
