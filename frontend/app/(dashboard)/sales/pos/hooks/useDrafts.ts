@@ -157,8 +157,12 @@ export function useDrafts() {
             setCurrentDraftId(draft.id)
             setWizardState(draft.wizard_state)
 
-            // Set or clear customer
-            setSelectedCustomerId(draft.customer_id)
+            // Set or clear customer - Robustly handle ID or Object
+            const rawCustomer = draft.customer
+            const targetCustomerId = (typeof rawCustomer === 'object' && rawCustomer !== null) 
+                ? (rawCustomer as any).id 
+                : rawCustomer
+            setSelectedCustomerId(targetCustomerId)
 
             toast.success(`Borrador cargado: ${draft.name}`)
         } catch (error: any) {

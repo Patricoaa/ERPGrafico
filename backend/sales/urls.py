@@ -14,5 +14,6 @@ router.register(r'pos-drafts', DraftCartViewSet, basename='pos-draft')
 router.register(r'pricing', PricingViewSet, basename='pricing')
 
 urlpatterns = [
+    path('credit_history/', SaleOrderViewSet.as_view({'get': 'credit_history'}), name='credit-history'),
     path('', include(router.urls)),
 ]

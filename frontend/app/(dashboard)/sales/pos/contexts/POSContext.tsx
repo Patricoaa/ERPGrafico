@@ -102,7 +102,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
                 const defaultCustomer = results.find((c: { id: number; is_default_customer: boolean }) => c.is_default_customer)
                 if (defaultCustomer) {
                     setDefaultCustomerId(defaultCustomer.id)
-                    setSelectedCustomerId(defaultCustomer.id)
+                    // Only set as selected if none is already selected (prevents overwriting draft loads)
+                    setSelectedCustomerId(prev => prev ? prev : defaultCustomer.id)
                 }
             } catch (error) {
                 console.error("Error fetching default customer:", error)

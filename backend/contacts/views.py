@@ -165,6 +165,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from decimal import Decimal
         from datetime import timedelta
         from django.utils import timezone
+        from sales.serializers import SaleOrderSerializer
+        
         contact = self.get_object()
 
         today = timezone.now().date()
@@ -173,23 +175,28 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # Get all non-draft, non-cancelled orders
         orders = contact.sale_orders.exclude(status__in=['DRAFT', 'CANCELLED']).order_by('-date')
 
-        from sales.serializers import SaleOrderSerializer
         ledger_data = []
         for order in orders:
             payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum((p.amount for p in payments if p.movement_type == 'INBOUND'), Decimal('0'))
+            paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
             paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
             payments_net = paid_in - paid_out
             balance = order.effective_total - payments_net
 
-            if balance > 0:
+            # Include if balance > 0 OR if specifically written off (Blacklist case)
+            is_written_off = payments.filter(payment_method='WRITE_OFF').exists()
+            include_all = request.query_params.get('include_all', 'false') == 'true'
+
+            if balance > 0 or (is_written_off and include_all):
                 order_date = order.date
                 if hasattr(order_date, 'date'):
                     order_date = order_date.date()
                 due_date = order_date + timedelta(days=payment_term)
                 days_overdue = (today - due_date).days
 
-                if days_overdue <= 0:
+                if balance <= 0 and is_written_off:
+                    aging_bucket = 'written_off' # Special bucket for blacklist view
+                elif days_overdue <= 0:
                     aging_bucket = 'current'
                 elif days_overdue <= 30:
                     aging_bucket = 'overdue_30'
@@ -200,15 +207,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 else:
                     aging_bucket = 'overdue_90plus'
 
-                order_data = SaleOrderSerializer(order).data
-                order_data['paid_amount'] = str(payments_net)
-                order_data['balance'] = str(balance)
-                order_data['due_date'] = str(due_date)
-                order_data['days_overdue'] = days_overdue
-                order_data['aging_bucket'] = aging_bucket
-                ledger_data.append(order_data)
+                ledger_data.append({
+                    **SaleOrderSerializer(order).data,
+                    'due_date': due_date,
+                    'days_overdue': max(0, days_overdue),
+                    'aging_bucket': aging_bucket,
+                    'balance': str(balance),
+                    'paid_amount': str(payments_net),
+                })
 
         return Response(ledger_data)
+
 
     @action(detail=False, methods=['get'])
     def credit_portfolio(self, request):
@@ -218,12 +227,18 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         from decimal import Decimal
 
-        # Fetch contacts that have credit enabled OR have any credit balance used (sale orders)
-        contacts = Contact.objects.filter(
-            models.Q(credit_enabled=True) | 
-            models.Q(credit_limit__isnull=False) |
-            models.Q(sale_orders__isnull=False)
-        ).distinct()
+        # Fetch contacts based on blacklist filter
+        is_blacklist = request.query_params.get('blacklist', 'false') == 'true'
+        
+        if is_blacklist:
+            contacts = Contact.objects.filter(credit_blocked=True).distinct()
+        else:
+            # Fetch contacts that have credit enabled OR have any credit balance used (sale orders)
+            contacts = Contact.objects.filter(
+                models.Q(credit_enabled=True) | 
+                models.Q(credit_limit__isnull=False) |
+                models.Q(sale_orders__isnull=False)
+            ).filter(credit_blocked=False).distinct()
 
         from .serializers import ContactSerializer
         contact_list = []
@@ -252,8 +267,22 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             balance_used = contact.credit_balance_used
             aging = contact.credit_aging
             
-            # Include contacts that have credit configured OR have an actual balance
-            if balance_used > 0 or contact.credit_enabled or contact.credit_limit:
+            if is_blacklist:
+                # For blacklisted clients, the active balance is 0 because the debt was castigada,
+                # but we still want to show the castigado amount as the risk amount minus any recoveries.
+                from django.db.models import Sum
+                write_offs = contact.treasury_movements.filter(
+                    payment_method='WRITE_OFF', 
+                    is_pending_registration=False
+                ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+                recoveries = contact.treasury_movements.filter(
+                    reference='RECUPERACION',
+                    is_pending_registration=False
+                ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+                balance_used = write_offs - recoveries
+            
+            # Include contacts that have credit configured OR have an actual balance OR are blacklisted
+            if balance_used > 0 or contact.credit_enabled or contact.credit_limit or is_blacklist:
                 summary['count_with_credit'] += 1
                 
                 # Analytics
@@ -277,10 +306,13 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     summary['overdue_90plus'] += aging['overdue_90plus']
 
                     overdue = aging['overdue_30'] + aging['overdue_60'] + aging['overdue_90'] + aging['overdue_90plus']
+                    # In blacklist, `overdue` will be 0 because it's paid, but that's fine.
                     if overdue > 0:
                         summary['count_overdue'] += 1
 
                 data = ContactSerializer(contact).data
+                if is_blacklist:
+                    data['credit_balance_used'] = str(balance_used)
                 contact_list.append(data)
 
         # Utilization Rate
@@ -381,6 +413,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 contact.credit_blocked = True
                 contact.credit_auto_blocked = False
                 contact.credit_risk_level = 'CRITICAL'
+                from django.utils import timezone
+                contact.credit_last_evaluated = timezone.now()
                 contact.save()
                 
             return Response({
@@ -410,3 +444,102 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # Reuse SaleOrderSerializer which now includes the new credit fields
         serializer = SaleOrderSerializer(history, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def unblock_credit(self, request, pk=None):
+        """Re-enables credit for a manually blocked contact"""
+        contact = self.get_object()
+        contact.credit_blocked = False
+        contact.credit_auto_blocked = False
+        contact.credit_risk_level = 'LOW' # Reset to LOW as a gesture of fresh start
+        contact.save()
+        
+        from workflow.services import WorkflowService
+        WorkflowService.send_notification(
+            notification_type='CREDIT_UNBLOCK',
+            title=f"Crédito Rehabilitado: {contact.name}",
+            message=f"El cliente ha sido desbloqueado manualmente por {request.user.get_full_name() or request.user.username}.",
+            link=f"/credits/portfolio?search={contact.tax_id}",
+            content_object=contact,
+            level='SUCCESS'
+        )
+        
+        return Response({"message": "Crédito rehabilitado correctamente."})
+
+    @action(detail=True, methods=['post'])
+    def recover_written_off_debt(self, request, pk=None):
+        """
+        Records a recovery payment for debt that was previously written off.
+        This doesn't re-open the debt, but records the income as 'Other Income / Recovery'.
+        """
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from treasury.models import TreasuryMovement
+        from decimal import Decimal
+        from django.db import transaction
+        
+        contact = self.get_object()
+        amount_str = request.data.get('amount')
+        if not amount_str:
+            return Response({"error": "Debe especificar el monto recuperado."}, status=400)
+            
+        amount = Decimal(amount_str)
+        settings = AccountingSettings.objects.first()
+        
+        # We need a recovery account. If not set, use uncollectible expense as negative (reversal)
+        # or a generic other income account.
+        recovery_account = getattr(settings, 'default_recovery_income_account', None) or settings.default_uncollectible_expense_account
+        
+        if not recovery_account:
+            return Response({"error": "No hay una cuenta de recuperación configurada."}, status=400)
+
+        # We assume the money goes to the default bank/cash account
+        from treasury.models import TreasuryAccount
+        target_account = TreasuryAccount.objects.filter(is_active=True).first() if hasattr(TreasuryAccount, 'is_active') else TreasuryAccount.objects.first()
+        if not target_account:
+            return Response({"error": "No hay una cuenta de tesorería activa para recibir el pago."}, status=400)
+
+        try:
+            with transaction.atomic():
+                entry = JournalEntry.objects.create(
+                    description=f"Recuperación de deuda castigada: {contact.name}",
+                    reference=f"RECUP-{contact.code}",
+                    state='POSTED'
+                )
+                
+                # Debit: Cash/Bank
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=target_account.account,
+                    label=f"Ingreso por recuperación de deuda RUT {contact.tax_id}",
+                    debit=amount,
+                    credit=0
+                )
+                
+                # Credit: Recovery Income / Expense Reversal
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=recovery_account,
+                    label=f"Recuperación de incobrable RUT {contact.tax_id}",
+                    debit=0,
+                    credit=amount
+                )
+                
+                # Record the movement
+                TreasuryMovement.objects.create(
+                    movement_type='INBOUND',
+                    payment_method='OTHER',  # Using OTHER with RECUPERACION reference
+                    amount=amount,
+                    contact=contact,
+                    journal_entry=entry,
+                    reference="RECUPERACION",
+                    notes=f"Recuperación de deuda castigada (Asiento {entry.display_id})",
+                    is_pending_registration=False,
+                    to_account=target_account
+                )
+                
+            return Response({
+                "message": f"Recuperación procesada por {amount}.",
+                "journal_entry": entry.display_id
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

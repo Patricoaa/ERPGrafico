@@ -406,6 +406,74 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['post'])
+    def write_off(self, request, pk=None):
+        """Castigate the debt of this specific Sale Order."""
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from treasury.models import TreasuryMovement
+        from django.db import transaction
+        
+        order = self.get_object()
+        
+        # Calculate current balance
+        payments = order.payments.filter(is_pending_registration=False)
+        paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
+        paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
+        balance = order.effective_total - (paid_in - paid_out)
+
+        if balance <= 0:
+            return Response({"error": "Esta orden no tiene saldo pendiente para castigar."}, status=400)
+
+        settings = AccountingSettings.objects.first()
+        if not settings or not settings.default_uncollectible_expense_account:
+            return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada."}, status=400)
+
+        contact = order.customer
+        receivable_account = contact.account_receivable or settings.default_receivable_account
+        if not receivable_account:
+             return Response({"error": "No se encontró una cuenta por cobrar configurada."}, status=400)
+
+        try:
+            with transaction.atomic():
+                entry = JournalEntry.objects.create(
+                    description=f"Castigo de documento {order.number}: {contact.name}",
+                    reference=f"CASTIGO-{order.number}",
+                    state='POSTED'
+                )
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=settings.default_uncollectible_expense_account,
+                    label=f"Pérdida por incobrabilidad {order.number}",
+                    debit=balance,
+                    credit=0
+                )
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=receivable_account,
+                    partner=contact.name,
+                    label=f"Cierre de deuda {order.number}",
+                    debit=0,
+                    credit=balance
+                )
+                TreasuryMovement.objects.create(
+                    movement_type='ADJUSTMENT',
+                    payment_method='WRITE_OFF',
+                    amount=balance,
+                    contact=contact,
+                    sale_order=order,
+                    journal_entry=entry,
+                    reference="CASTIGO-DOC",
+                    notes=f"Castigo individual de documento (Asiento {entry.display_id})",
+                    is_pending_registration=False,
+                )
+            return Response({
+                "message": f"Documento {order.number} castigado.",
+                "journal_entry": entry.display_id,
+                "amount": str(balance)
+            })
+        except Exception as e:
+            return Response({"error": f"Error interno: {str(e)}"}, status=500)
+
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer

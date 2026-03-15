@@ -101,8 +101,13 @@ export async function getCreditPortfolio(): Promise<CreditPortfolioResponse> {
     return res.data
 }
 
-export async function getContactCreditLedger(contactId: number): Promise<CreditLedgerEntry[]> {
-    const res = await api.get(`/contacts/${contactId}/credit_ledger/`)
+export async function getBlacklistedPortfolio(): Promise<CreditPortfolioResponse> {
+    const res = await api.get("/contacts/credit_portfolio/?blacklist=true")
+    return res.data
+}
+
+export async function getContactCreditLedger(contactId: number, includeAll = false): Promise<CreditLedgerEntry[]> {
+    const res = await api.get(`/contacts/${contactId}/credit_ledger/${includeAll ? '?include_all=true' : ''}`)
     return res.data
 }
 
@@ -118,5 +123,20 @@ export async function getGlobalCreditHistory(): Promise<CreditHistoryEntry[]> {
 
 export async function writeOffDebt(contactId: number): Promise<{ message: string, journal_entry: string, amount: string }> {
     const res = await api.post(`/contacts/${contactId}/write_off_debt/`)
+    return res.data
+}
+
+export async function writeOffSaleOrder(orderId: number): Promise<{ message: string, journal_entry: string, amount: string }> {
+    const res = await api.post(`/sales/orders/${orderId}/write_off/`)
+    return res.data
+}
+
+export async function unblockContact(contactId: number): Promise<{ message: string }> {
+    const res = await api.post(`/contacts/${contactId}/unblock_credit/`)
+    return res.data
+}
+
+export async function recoverDebt(contactId: number, amount: string): Promise<{ message: string, journal_entry: string }> {
+    const res = await api.post(`/contacts/${contactId}/recover_written_off_debt/`, { amount })
     return res.data
 }

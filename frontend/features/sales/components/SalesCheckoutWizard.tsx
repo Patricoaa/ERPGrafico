@@ -148,7 +148,7 @@ export function SalesCheckoutWizard({
             
             // Payment Data is always hydrated from props or default
             setPaymentData(initialPaymentData ?? {
-                method: '',
+                method: 'CASH',
                 amount: 0,
                 transactionNumber: '',
                 treasuryAccountId: null,
@@ -217,7 +217,7 @@ export function SalesCheckoutWizard({
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
 
     const [paymentData, setPaymentData] = useState(initialPaymentData || {
-        method: '',
+        method: 'CASH',
         amount: 0,
         transactionNumber: '',
         treasuryAccountId: null,
@@ -332,6 +332,13 @@ export function SalesCheckoutWizard({
         }
     }, [selectedCustomerId, open])
 
+    // Sync internal customer state with prop changes (e.g. from draft load in parent)
+    useEffect(() => {
+        if (open && initialCustomerId && initialCustomerId !== selectedCustomerId) {
+            setSelectedCustomerId(initialCustomerId)
+        }
+    }, [open, initialCustomerId])
+
     // Notify parent of state changes
     useEffect(() => {
         if (onStateChange) {
@@ -343,10 +350,11 @@ export function SalesCheckoutWizard({
                 approvalTaskId,
                 isWaitingApproval,
                 isApproved,
-                isLoading: loading
+                isLoading: loading,
+                selectedCustomerId // Notify parent of customer changes inside wizard
             })
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, onStateChange])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, onStateChange, selectedCustomerId])
 
     // Calculate step information
     // Calculate step information

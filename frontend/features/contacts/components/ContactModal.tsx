@@ -23,7 +23,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Package, Wand2, User, CreditCard, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
 import { OrderCard } from "@/components/orders/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -49,11 +49,6 @@ const contactSchema = z.object({
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
     payment_terms: z.string().optional(),
-
-    credit_enabled: z.boolean().optional(),
-    credit_limit: z.coerce.number().nullable().optional(),
-    credit_days: z.coerce.number().nullable().optional(),
-    credit_blocked: z.boolean().default(false),
 })
 
 interface ContactModalProps {
@@ -89,10 +84,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             payment_terms: contact.payment_terms || "CONTADO",
             is_default_customer: !!contact.is_default_customer,
             is_default_vendor: !!contact.is_default_vendor,
-            credit_enabled: !!contact.credit_enabled,
-            credit_limit: contact.credit_limit || null,
-            credit_days: contact.credit_days || 30,
-            credit_blocked: !!contact.credit_blocked,
         } : {
             name: "",
             tax_id: "",
@@ -102,10 +93,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             city: "",
             is_default_customer: false,
             is_default_vendor: false,
-            credit_enabled: false,
-            credit_limit: null,
-            credit_days: 30,
-            credit_blocked: false,
         },
     })
 
@@ -144,10 +131,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         payment_terms: res.data.payment_terms || "CONTADO",
                         is_default_customer: !!res.data.is_default_customer,
                         is_default_vendor: !!res.data.is_default_vendor,
-                        credit_enabled: !!res.data.credit_enabled,
-                        credit_limit: res.data.credit_limit || null,
-                        credit_days: res.data.credit_days || 30,
-                        credit_blocked: !!res.data.credit_blocked,
                     })
                 })
                 .catch(err => {
@@ -189,10 +172,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 payment_terms: contact.payment_terms || "CONTADO",
                 is_default_customer: !!contact.is_default_customer,
                 is_default_vendor: !!contact.is_default_vendor,
-                credit_enabled: !!contact.credit_enabled,
-                credit_limit: contact.credit_limit || null,
-                credit_days: contact.credit_days || 30,
-                credit_blocked: !!contact.credit_blocked,
             })
         } else if (!contact?.id) {
             form.reset({
@@ -205,10 +184,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 payment_terms: "CONTADO",
                 is_default_customer: false,
                 is_default_vendor: false,
-                credit_enabled: false,
-                credit_limit: null,
-                credit_days: 30,
-                credit_blocked: false,
             })
         }
     }, [contact, open, form.reset])
@@ -338,14 +313,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 {insightsData?.work_orders?.count || 0}
                                             </Badge>
                                         </div>
-                                    </TabsTrigger>
-
-                                    <TabsTrigger
-                                        value="credit"
-                                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
-                                    >
-                                        <CreditCard className="h-4 w-4" />
-                                        Línea de Crédito
                                     </TabsTrigger>
                                 </TabsList>
                             </div>
@@ -493,140 +460,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="credit" className="h-full m-0 p-0 border-0 outline-none">
-                                        <div className="p-8 pb-32">
-                                            <div className="space-y-8">
-                                                {/* Status Banner */}
-                                                {form.watch("credit_blocked") && (
-                                                    <div className="bg-red-600 p-6 rounded-xl flex items-center gap-4 animate-in zoom-in-95 duration-300">
-                                                        <div className="p-3 bg-white/20 rounded-xl">
-                                                            <Banknote className="h-8 w-8 text-white" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-white font-black text-lg uppercase tracking-tight">Crédito Restringido</h3>
-                                                            <p className="text-white/80 text-sm font-medium">Este contacto tiene prohibido el uso de crédito. **Requiere pago inmediato en caja.**</p>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    {/* Blocker Switch */}
-                                                    <div className="p-4 bg-muted/5 rounded-xl border-none flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 bg-red-100 rounded-xl">
-                                                                <Scale className="h-4 w-4 text-red-600" />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-semibold text-red-900 text-sm">Bloquear Crédito</h4>
-                                                                <p className="text-[10px] text-red-700/70">Prohibe cualquier tipo de crédito (aprobado o fallback).</p>
-                                                            </div>
-                                                        </div>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="credit_blocked"
-                                                            render={({ field }) => (
-                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                                    <FormControl>
-                                                                        <div className="flex items-center space-x-2">
-                                                                            <Checkbox
-                                                                                id="credit_blocked"
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                className="h-5 w-5 border-red-200 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
-                                                                            />
-                                                                            <label htmlFor="credit_blocked" className="text-xs font-bold leading-none cursor-pointer text-red-700">
-                                                                                {field.value ? "BLOQUEADO" : "LIBRE"}
-                                                                            </label>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Conditional Fields */}
-                                                {!form.watch("credit_blocked") && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-1">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="credit_limit"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Límite de Crédito ($)</FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">$</span>
-                                                                            <Input
-                                                                                type="number"
-                                                                                placeholder="Ej: 500000"
-                                                                                className={`pl-8 ${FORM_STYLES.input}`}
-                                                                                {...field}
-                                                                                value={field.value || ""}
-                                                                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                                                            />
-                                                                        </div>
-                                                                    </FormControl>
-                                                                    <p className="text-[11px] text-muted-foreground mt-1">Monto máximo que el cliente puede adeudar.</p>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="credit_days"
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Días de Plazo</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            type="number"
-                                                                            placeholder="Ej: 30"
-                                                                            className={FORM_STYLES.input}
-                                                                            {...field}
-                                                                            value={field.value || ""}
-                                                                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <p className="text-[11px] text-muted-foreground mt-1">Plazo estándar de pago (Ej: 30 días, 45 días).</p>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-
-                                                        {contact && (
-                                                            <div className="md:col-span-2 mt-4">
-                                                                <h4 className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wider">Estado Actual</h4>
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl flex flex-col items-center justify-center">
-                                                                        <span className="text-xs font-semibold text-emerald-600/70 uppercase mb-1">Disponible</span>
-                                                                        <span className="text-xl font-bold text-emerald-700">
-                                                                            ${Number(contact.credit_available || 0).toLocaleString()}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="bg-red-50/50 border border-red-100 p-4 rounded-xl flex flex-col items-center justify-center">
-                                                                        <span className="text-xs font-semibold text-red-600/70 uppercase mb-1">Deuda Pendiente (Usado)</span>
-                                                                        <span className="text-xl font-bold text-red-700">
-                                                                            ${Number(contact.credit_balance_used || 0).toLocaleString()}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="mt-8">
-                                                                    <CreditLedgerTable
-                                                                        data={ledgerData}
-                                                                        loading={loadingLedger}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </TabsContent>
-
                                     <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                         <InsightsTable
                                             data={insightsData?.sales?.orders || []}
@@ -654,6 +487,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         />
                                     </TabsContent>
                                 </div>
+
 
                                 {contact?.id && (
                                     <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden hidden lg:flex">

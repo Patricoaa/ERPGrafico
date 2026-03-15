@@ -208,6 +208,17 @@ function POSPageContent() {
         return () => clearTimeout(timer)
     }, [items, selectedCustomerId, wizardState, currentSession, loading])
 
+    // Sync customer from Wizard back to POS Context
+    useEffect(() => {
+        const wizardCustomerId = wizardState?.selectedCustomerId
+        if (wizardCustomerId && wizardCustomerId !== selectedCustomerId?.toString()) {
+            const parsedId = parseInt(wizardCustomerId)
+            if (!isNaN(parsedId)) {
+                setSelectedCustomerId(parsedId)
+            }
+        }
+    }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
+
     // Product click handler
     const handleProductClick = (product: any) => {
         if (product.has_variants && product.variants_count > 0) {

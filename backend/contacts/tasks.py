@@ -31,7 +31,14 @@ def evaluate_credit_portfolio():
     # We evaluate contacts that either have credit enabled or have outstanding balance
     # (Checking debt is slightly heavier but we can't easily filter by property. We iterate all that MIGHT have debt).
     # To optimize, we query contacts that have sales orders not DRAFT/CANCELLED.
-    contacts = Contact.objects.filter(sale_orders__status__in=['CONFIRMED', 'INVOICED', 'PARTIAL']).distinct()
+    from django.db import models
+    # We evaluate contacts that have active debt OR non-default risk levels 
+    # OR are currently auto-blocked (to allow unblocking if they paid).
+    contacts = Contact.objects.filter(
+        models.Q(sale_orders__status__in=['CONFIRMED', 'INVOICED', 'PARTIAL']) |
+        ~models.Q(credit_risk_level=RiskLevel.LOW) |
+        models.Q(credit_auto_blocked=True)
+    ).distinct()
     
     evaluated_count = 0
     blocked_count = 0
@@ -41,6 +48,7 @@ def evaluate_credit_portfolio():
     for contact in contacts:
         # Re-fetch or calculate aging
         aging = contact.credit_aging
+        old_risk = contact.credit_risk_level
         
         # 1. Determine Risk Level
         new_risk = RiskLevel.LOW
@@ -55,11 +63,9 @@ def evaluate_credit_portfolio():
         elif aging.get('overdue_30', 0) > 0:
             new_risk = RiskLevel.LOW  # Up to 30 days is common, keep low
         
-        contact.credit_risk_level = new_risk
-
         # 2. Notification logic for risk escalation
         significant_risk = new_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]
-        risk_changed = new_risk != contact.credit_risk_level
+        risk_changed = new_risk != old_risk
         
         if significant_risk and risk_changed:
             from workflow.services import WorkflowService
