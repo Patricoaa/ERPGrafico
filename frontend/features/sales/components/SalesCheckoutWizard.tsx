@@ -11,6 +11,7 @@ import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./checkout/Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
+import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -253,6 +254,25 @@ export function SalesCheckoutWizard({
     );
 
     const [salesSettings, setSalesSettings] = useState<any>(null)
+    const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
+    const [selectedDocForHub, setSelectedDocForHub] = useState<number | null>(null)
+    const [loadingDebts, setLoadingDebts] = useState(false)
+
+    // Fetch pending debts if customer has active debt
+    useEffect(() => {
+        if (open && selectedCustomer && (Number(selectedCustomer.credit_balance_used || 0) > 0)) {
+            setLoadingDebts(true)
+            api.get(`/contacts/${selectedCustomer.id}/credit_ledger/`)
+                .then(res => {
+                    const pending = res.data.filter((d: any) => Number(d.balance) > 0)
+                    setPendingDebts(pending)
+                })
+                .catch(err => console.error("Error fetching credit ledger:", err))
+                .finally(() => setLoadingDebts(false))
+        } else {
+            setPendingDebts(null)
+        }
+    }, [open, selectedCustomer])
 
     // Fetch sales settings for credit fallback
     useEffect(() => {
@@ -881,12 +901,51 @@ export function SalesCheckoutWizard({
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
                         {selectedCustomer && (selectedCustomer.credit_blocked || selectedCustomer.credit_auto_blocked) && (
-                            <Alert variant="destructive" className="mb-4 bg-rose-50 border-rose-200 text-rose-900">
+                            <Alert variant="destructive" className="mb-4 bg-rose-50 border-rose-200 text-rose-900 group">
                                 <ShieldAlert className="h-4 w-4 text-rose-600" />
-                                <AlertTitle className="text-rose-800 font-bold uppercase tracking-tight">Crédito Bloqueado</AlertTitle>
-                                <AlertDescription className="text-rose-700">
-                                    Este cliente tiene el crédito restringido por <strong>{selectedCustomer.credit_auto_blocked ? 'mora excesiva' : 'política contractual'}</strong>. 
-                                    Se requiere el pago total de la venta para procesar.
+                                <AlertTitle className="text-rose-800 font-bold uppercase tracking-tight flex items-center justify-between">
+                                    Crédito Bloqueado
+                                    {selectedCustomer.credit_auto_blocked && (
+                                        <span className="text-[10px] bg-rose-100 px-2 py-0.5 rounded text-rose-600 font-black">
+                                            TEMPORAL
+                                        </span>
+                                    )}
+                                </AlertTitle>
+                                <AlertDescription className="text-rose-700 mt-1">
+                                    <div className="flex flex-col gap-2">
+                                        <p>
+                                            Este cliente tiene el crédito restringido por <strong>{selectedCustomer.credit_auto_blocked ? 'mora excesiva' : 'política contractual'}</strong>. 
+                                            Se requiere el pago total de la venta para procesar.
+                                        </p>
+                                        {(selectedCustomer.credit_balance_used > 0) && (
+                                            <div className="flex items-center justify-between bg-white/50 p-2 rounded-lg border border-rose-100 mt-1">
+                                                <div>
+                                                    <span className="block text-[10px] font-bold text-rose-500 uppercase">Deuda Pendiente</span>
+                                                    <span className="font-mono font-bold text-rose-800">${Number(selectedCustomer.credit_balance_used).toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-wrap justify-end">
+                                                    {loadingDebts ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                                                    ) : pendingDebts && pendingDebts.length > 0 ? (
+                                                        pendingDebts.slice(0, 3).map((debt: any) => (
+                                                            <Button 
+                                                                key={debt.id}
+                                                                size="sm" 
+                                                                variant="outline" 
+                                                                className="h-7 text-xs border-rose-200 text-rose-700 hover:bg-rose-100 font-bold"
+                                                                onClick={() => setSelectedDocForHub(debt.id)}
+                                                            >
+                                                                Pagar NV-{debt.number}
+                                                            </Button>
+                                                        ))
+                                                    ) : null}
+                                                    {pendingDebts && pendingDebts.length > 3 && (
+                                                        <span className="text-xs text-rose-600 font-bold">+{pendingDebts.length - 3}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -895,8 +954,31 @@ export function SalesCheckoutWizard({
                             <Alert variant="destructive" className="mb-4 bg-amber-50 border-amber-200 text-amber-900">
                                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                                 <AlertTitle className="text-amber-800 font-bold uppercase tracking-tight">Deuda Activa Detectada</AlertTitle>
-                                <AlertDescription className="text-amber-700">
-                                    El cliente tiene un saldo pendiente de <strong>${Number(selectedCustomer.credit_balance_used).toLocaleString()}</strong>. El crédito pre-aprobado (fallback) no estará disponible.
+                                <AlertDescription className="text-amber-700 mt-1">
+                                    <div className="flex flex-col gap-2">
+                                        <p>
+                                            El cliente tiene un saldo pendiente de <strong>${Number(selectedCustomer.credit_balance_used).toLocaleString()}</strong>. El crédito pre-aprobado (fallback) no estará disponible.
+                                        </p>
+                                        <div className="flex justify-end mt-1 gap-2 flex-wrap">
+                                            {loadingDebts ? (
+                                                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                                            ) : pendingDebts && pendingDebts.length > 0 ? (
+                                                pendingDebts.slice(0, 3).map((debt: any) => (
+                                                    <Button 
+                                                        key={debt.id}
+                                                        size="sm" 
+                                                        className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                                                        onClick={() => setSelectedDocForHub(debt.id)}
+                                                    >
+                                                        Pagar NV-{debt.number}
+                                                    </Button>
+                                                ))
+                                            ) : null}
+                                            {pendingDebts && pendingDebts.length > 3 && (
+                                                <span className="text-xs text-amber-700 font-bold self-center">+{pendingDebts.length - 3}</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -1028,6 +1110,23 @@ export function SalesCheckoutWizard({
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <OrderCommandCenter
+            open={!!selectedDocForHub}
+            onOpenChange={(o) => !o && setSelectedDocForHub(null)}
+            orderId={selectedDocForHub}
+            type="sale"
+            onActionSuccess={() => {
+                // Refresh customer data to update debt
+                if (selectedCustomerId) {
+                    api.get(`/contacts/${selectedCustomerId}/`)
+                        .then(res => {
+                            setSelectedCustomer(res.data)
+                        })
+                        .catch(err => console.error("Error refreshing customer:", err))
+                }
+            }}
+        />
         </>
     )
 }

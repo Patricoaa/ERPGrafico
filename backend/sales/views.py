@@ -465,6 +465,13 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     notes=f"Castigo individual de documento (Asiento {entry.display_id})",
                     is_pending_registration=False,
                 )
+                
+                # Block the customer's credit if not default
+                if not contact.is_default_customer:
+                    contact.credit_blocked = True
+                    contact.credit_auto_blocked = False
+                    contact.credit_risk_level = 'CRITICAL'
+                    contact.save()
             return Response({
                 "message": f"Documento {order.number} castigado.",
                 "journal_entry": entry.display_id,

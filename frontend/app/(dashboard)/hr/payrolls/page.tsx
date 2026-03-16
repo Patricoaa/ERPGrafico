@@ -174,6 +174,21 @@ export default function PayrollsPage() {
             ),
         },
         {
+            accessorKey: "status",
+            header: "Estado",
+            cell: ({ row }) => {
+                const s = row.getValue("status") as string;
+                return (
+                    <Badge variant="outline" className={cn(
+                        "text-[9px] uppercase font-bold",
+                        s === 'POSTED' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : "text-amber-600 border-amber-500/30 bg-amber-50"
+                    )}>
+                        {s === 'POSTED' ? 'Contabilizado' : 'Borrador'}
+                    </Badge>
+                )
+            }
+        },
+        {
             accessorKey: "remuneration_paid_status",
             header: "Remuneración",
             cell: ({ row }) => {
@@ -340,7 +355,7 @@ export default function PayrollsPage() {
                     columns={columns}
                     data={payrolls}
                     cardMode
-                    filterColumn="employee_name"
+                    filterColumn="employee"
                     globalFilterFields={["display_id", "employee"]}
                     searchPlaceholder="Buscar liquidación o empleado..."
                     facetedFilters={[

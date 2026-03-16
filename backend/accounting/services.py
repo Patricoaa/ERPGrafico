@@ -208,6 +208,7 @@ class AccountingService:
             ('5.2.23', 'Seguridad y Vigilancia', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.24', 'Suscripciones y Membresías Software', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.25', 'Gastos de Correspondencia', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.26', 'Deudores Incobrables', AccountType.EXPENSE, '5.2', None, None, None),
             
             # Missing Inventory Adjustments
             ('4.2.02', 'Ganancia por Ajuste de Inventario', AccountType.INCOME, '4.2', None, None, None),
@@ -262,6 +263,7 @@ class AccountingService:
             'default_expense_account': '5.2.06',
             'default_tax_receivable_account': '1.1.04.01',
             'default_tax_payable_account': '2.1.02.01',
+            'default_uncollectible_expense_account': '5.2.26',
             
             # Cuentas de inventario
             'default_inventory_account': '1.1.03.01',  # Mantener para compatibilidad

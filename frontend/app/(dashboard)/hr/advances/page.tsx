@@ -188,7 +188,7 @@ export default function AdvancesPage() {
                 columns={columns}
                 data={advances}
                 cardMode
-                filterColumn="employee"
+                filterColumn="employee_name"
                 defaultPageSize={20}
                 useAdvancedFilter={true}
             />

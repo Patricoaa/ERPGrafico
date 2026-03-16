@@ -24,10 +24,10 @@ from treasury.models import (
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
-from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount, Payroll, PayrollItem
+from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount, Payroll, PayrollItem, Absence, SalaryAdvance, PayrollPayment
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
-from core.models import User, CompanySettings
-from workflow.models import Task, Notification, TaskAssignmentRule
+from core.models import User, CompanySettings, Attachment
+from workflow.models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
 
 class Command(BaseCommand):
     help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
@@ -117,6 +117,8 @@ class Command(BaseCommand):
             self.stdout.write('Seeding Chilean HR Data...')
             self._create_hr_demo_data(accounts)
 
+            self.stdout.write('Initializing Workflow Settings...')
+            self._initialize_workflow_settings()
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
@@ -183,6 +185,7 @@ class Command(BaseCommand):
 
     def _purge_data(self):
         from django.db import connection
+        from core.models import ActionLog
         
         def _safe_delete(model_class, name):
             self.stdout.write(f"  Deleting {name}...")
@@ -198,8 +201,8 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
 
         # 0. System & Logs
-        from core.models import ActionLog
         _safe_delete(ActionLog, "ActionLog")
+        _safe_delete(Attachment, "Attachment")
 
         # 1. Workflows & Transients
         _safe_delete(NoteWorkflow, "NoteWorkflow")
@@ -208,6 +211,7 @@ class Command(BaseCommand):
         _safe_delete(Task, "Task")
         _safe_delete(Notification, "Notification")
         _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
+        _safe_delete(NotificationRule, "NotificationRule")
 
         # 2. Production
         _safe_delete(ProductionConsumption, "ProductionConsumption")
@@ -261,23 +265,16 @@ class Command(BaseCommand):
         _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
-        
-        # Reset AccountingSettings if possible (SET_NULL fields)
-        try:
-            settings = AccountingSettings.objects.first()
-            if settings:
-                # We don't delete settings, just clear protected-like refs if any
-                # But mostly we delete Account in the next step which has SET_NULL in settings
-                pass
-        except:
-            pass
 
         _safe_delete(ProductCustomField, "ProductCustomField")
         _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
 
-        # 9.5 HR Module
+        # 9.5 HR Module — MUST be before Contact (Employee.contact is PROTECT)
         _safe_delete(PayrollItem, "PayrollItem")
+        _safe_delete(PayrollPayment, "PayrollPayment")
         _safe_delete(Payroll, "Payroll")
+        _safe_delete(Absence, "Absence")
+        _safe_delete(SalaryAdvance, "SalaryAdvance")
         _safe_delete(EmployeeConceptAmount, "EmployeeConceptAmount")
         _safe_delete(Employee, "Employee")
         _safe_delete(PayrollConcept, "PayrollConcept")
@@ -291,6 +288,7 @@ class Command(BaseCommand):
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
+        # Contact must come after Employee (Employee.contact is on_delete=PROTECT)
         _safe_delete(Contact, "Contact")
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
@@ -349,6 +347,20 @@ class Command(BaseCommand):
         }
 
     def _create_partners(self, accounts):
+        # Default customer (used in POS for quick sales without selecting a specific customer)
+        c_default, _ = Contact.objects.get_or_create(
+            tax_id="66000000-0",
+            defaults={
+                'name': "Cliente Ocasional",
+                'email': "contacto@clienteocasional.cl",
+                'account_receivable': accounts['receivable'],
+                'is_default_customer': True,
+            }
+        )
+        if not c_default.is_default_customer:
+            c_default.is_default_customer = True
+            c_default.save()
+
         c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
         c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl", 'account_receivable': accounts['receivable']})
         
@@ -357,6 +369,7 @@ class Command(BaseCommand):
         s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl", 'account_payable': accounts['payable']})
 
         return {
+            'default_customer': c_default,
             'customers': [c1, c2],
             'suppliers': [s1, s2, s3]
         }
@@ -1386,4 +1399,74 @@ class Command(BaseCommand):
                 EmployeeConceptAmount.objects.create(employee=emp, concept=movilidad, amount=Decimal('40000'))
             self.stdout.write(f"    ✓ Demo Employee '{admin_contact.name}' created.")
 
+    def _initialize_workflow_settings(self):
+        """Seeds the WorkflowSettings singleton and standard NotificationRules."""
+        from workflow.models import WorkflowSettings, NotificationRule
 
+        # 1. WorkflowSettings singleton
+        ws, _ = WorkflowSettings.objects.update_or_create(
+            pk=1,
+            defaults={
+                'f29_creation_day': 12,
+                'f29_payment_day': 20,
+                'period_close_day': 5,
+                'low_margin_threshold_percent': Decimal('10.00'),
+            }
+        )
+        self.stdout.write("    ✓ WorkflowSettings singleton initialized.")
+
+        # 2. Standard Notification Rules
+        manager_user = User.objects.filter(username='gerente').first()
+        admin_user = User.objects.filter(username='admin').first()
+
+        notification_rules = [
+            {
+                'notification_type': 'POS_CREDIT_APPROVAL',
+                'description': 'Aprobación de crédito en POS',
+                'notify_creator': True,
+                'assigned_user': manager_user,
+            },
+            {
+                'notification_type': 'SUBSCRIPTION_OC_CREATED',
+                'description': 'Orden de compra automática por suscripción',
+                'notify_creator': False,
+                'assigned_user': manager_user,
+            },
+            {
+                'notification_type': 'LOW_STOCK_ALERT',
+                'description': 'Alerta de stock bajo',
+                'notify_creator': False,
+                'assigned_user': manager_user,
+            },
+            {
+                'notification_type': 'WORK_ORDER_APPROVAL',
+                'description': 'Aprobación de orden de trabajo',
+                'notify_creator': True,
+                'assigned_user': admin_user,
+            },
+            {
+                'notification_type': 'F29_CREATION_REMINDER',
+                'description': 'Recordatorio de creación de F29',
+                'notify_creator': False,
+                'assigned_user': admin_user,
+            },
+            {
+                'notification_type': 'PERIOD_CLOSE_REMINDER',
+                'description': 'Recordatorio de cierre de período contable',
+                'notify_creator': False,
+                'assigned_user': admin_user,
+            },
+        ]
+
+        created_count = 0
+        for rule_data in notification_rules:
+            notification_type = rule_data.pop('notification_type')
+            _, created = NotificationRule.objects.update_or_create(
+                notification_type=notification_type,
+                defaults=rule_data
+            )
+            if created:
+                created_count += 1
+            rule_data['notification_type'] = notification_type  # restore for logging
+
+        self.stdout.write(f"    ✓ {len(notification_rules)} NotificationRules configured ({created_count} new).")

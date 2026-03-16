@@ -21,6 +21,16 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     ordering_fields = ['name', 'created_at']
     ordering = ['name']
     
+    def destroy(self, request, *args, **kwargs):
+        contact = self.get_object()
+        if contact.is_default_customer or contact.is_default_vendor:
+            from rest_framework import status
+            return Response(
+                {"error": "No se puede eliminar un cliente o proveedor por defecto del sistema."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+    
     def get_serializer_class(self):
         """Use lightweight serializer for list action"""
         if self.action == 'list':
@@ -410,9 +420,10 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     )
                 
                 # 3. Permanently block and mark as critical
-                contact.credit_blocked = True
-                contact.credit_auto_blocked = False
-                contact.credit_risk_level = 'CRITICAL'
+                if not contact.is_default_customer:
+                    contact.credit_blocked = True
+                    contact.credit_auto_blocked = False
+                    contact.credit_risk_level = 'CRITICAL'
                 from django.utils import timezone
                 contact.credit_last_evaluated = timezone.now()
                 contact.save()

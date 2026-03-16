@@ -160,14 +160,16 @@ export function ContactsClientView() {
                         >
                             <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(contact)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {!contact.is_default_customer && !contact.is_default_vendor && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDelete(contact)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
                     </div>
                 )
             },

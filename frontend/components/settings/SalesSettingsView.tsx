@@ -285,7 +285,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                         <TabsContent value="income" className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-emerald-600">Cuentas de Ingresos Naturales</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
                                     <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
@@ -368,15 +368,15 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                 </div>
                                             </Card>
                                         </div>
- 
+
                                         {/* Uncollectible Expense Account */}
                                         <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
                                             <div className="p-4 space-y-4">
-                                                <AccountField 
-                                                    form={form} 
-                                                    name="default_uncollectible_expense_account" 
-                                                    label="Cuenta Gasto Incobrables" 
-                                                    accountType="EXPENSE" 
+                                                <AccountField
+                                                    form={form}
+                                                    name="default_uncollectible_expense_account"
+                                                    label="Cuenta Gasto Incobrables"
+                                                    accountType="EXPENSE"
                                                 />
                                                 <p className="text-[10px] text-muted-foreground leading-tight px-1">
                                                     Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
@@ -391,7 +391,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                         <TabsContent value="pos" className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-blue-600">Cuentas Contables POS</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas Contables POS</CardTitle>
                                     <CardDescription>Configure las cuentas para el registro automático de transacciones de punto de venta</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
@@ -499,7 +499,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                         <TabsContent value="terminals" className="space-y-6">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg text-blue-600">Cuentas Puente de Terminales</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
                                     <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
