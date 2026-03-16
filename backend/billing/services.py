@@ -260,7 +260,7 @@ class BillingService:
                 'date': invoice.date,
                 'description': description,
                 'reference': reference,
-                'state': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT
             },
             items
         )
@@ -280,7 +280,7 @@ class BillingService:
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - Pedido {order.number} -> Factura {invoice.id}",
                 reference=f"RECO-{invoice.id}", 
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             )
             
             receivable_account = order.customer.account_receivable or settings.default_receivable_account
@@ -365,7 +365,7 @@ class BillingService:
                 'date': invoice.date,
                 'description': description,
                 'reference': reference,
-                'state': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT
             },
             items
         )
@@ -402,7 +402,7 @@ class BillingService:
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - OC {order.number} -> Factura {supplier_invoice_number}",
                 reference=f"RECO-{invoice.id}", # Reconciliation
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             )
             
             payable_account = order.supplier.account_payable or settings.default_payable_account
@@ -596,8 +596,8 @@ class BillingService:
                             f"(${required_credit:,.0f}) excede el límite de fallback permitido."
                         )
             else:
-                # Within contact file limit
-                order.credit_assignment_origin = SaleOrder.CreditOrigin.CONTACT_FILE
+                # Within credit portfolio limit
+                order.credit_assignment_origin = SaleOrder.CreditOrigin.CREDIT_PORTFOLIO
 
         # Save changes to credit tracking before confirmation
         if required_credit > 0:
@@ -833,7 +833,7 @@ class BillingService:
             entry.save()
 
             # Post entry if it's still in DRAFT (which it is for Draft/Paid-Draft invoices)
-            if entry.state == JournalEntry.State.DRAFT:
+            if entry.status == JournalEntry.State.DRAFT:
                 JournalEntryService.post_entry(entry)
 
         from workflow.services import WorkflowService
@@ -920,7 +920,8 @@ class BillingService:
                 )
         
         # VALIDATION 4: Pagos registrados
-        posted_payments = invoice.payments.filter(journal_entry__state='POSTED')
+        posted_payments = invoice.payments.filter(journal_entry__status='POSTED')
+
         if posted_payments.exists():
              if not force:
                  raise ValidationError(

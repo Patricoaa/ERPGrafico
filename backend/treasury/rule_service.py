@@ -365,7 +365,7 @@ class RuleService:
         
         # Buscar líneas no reconciliadas recientes
         lines_query = BankStatementLine.objects.filter(
-            reconciliation_state='UNRECONCILED'
+            reconciliation_status='UNRECONCILED'
         ).select_related('statement', 'statement__treasury_account').order_by('-transaction_date')
         
         if treasury_account_id:

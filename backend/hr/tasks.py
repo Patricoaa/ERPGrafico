@@ -8,7 +8,12 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(
+    bind=True, 
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True
+)
 def create_monthly_draft_payrolls(self):
     """
     Runs on the 1st of each month.
@@ -26,7 +31,7 @@ def create_monthly_draft_payrolls(self):
     month = today.month
 
     try:
-        active_employees = Employee.objects.filter(is_active=True)
+        active_employees = Employee.objects.filter(status=Employee.Status.ACTIVE)
         created_count = 0
         skipped_count = 0
 
@@ -64,4 +69,4 @@ def create_monthly_draft_payrolls(self):
 
     except Exception as exc:
         logger.error(f"[HR] Error in create_monthly_draft_payrolls: {exc}", exc_info=True)
-        raise self.retry(exc=exc, countdown=60 * 10)  # retry after 10 min
+        raise exc

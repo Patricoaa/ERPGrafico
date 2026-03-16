@@ -373,7 +373,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Castigo de deuda incobrable: {contact.name}",
                     reference=f"CASTIGO-{contact.code}",
-                    state='POSTED'
+                    status='POSTED'
                 )
                 
                 # Debit: Expense (Loss)
@@ -503,7 +503,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Recuperación de deuda castigada: {contact.name}",
                     reference=f"RECUP-{contact.code}",
-                    state='POSTED'
+                    status='POSTED'
                 )
                 
                 # Debit: Cash/Bank

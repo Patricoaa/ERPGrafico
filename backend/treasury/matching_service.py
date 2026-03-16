@@ -219,7 +219,7 @@ class MatchingService:
             
         filters = Q(
             statement__treasury_account=account,
-            reconciliation_state='UNRECONCILED'
+            reconciliation_status='UNRECONCILED'
         )
         filters &= sense_filter
         
@@ -397,9 +397,9 @@ class MatchingService:
             raise ValueError("Los Cargos bancarios solo pueden conciliarse con Egresos del sistema.")
 
         for l in lines:
-            if l.reconciliation_state == 'RECONCILED':
+            if l.reconciliation_status == 'RECONCILED':
                 raise ValueError(f"Línea {l.line_number} ya reconciliada")
-            if l.statement.state == 'CONFIRMED':
+            if l.statement.status == 'CONFIRMED':
                 raise ValueError(f"Cartola {l.statement.display_id} está confirmada")
         
         for p in payments:
@@ -428,7 +428,7 @@ class MatchingService:
         for l in lines:
             l.reconciliation_match = group
             l.matched_payment = None  # Clear legacy
-            l.reconciliation_state = 'MATCHED'
+            l.reconciliation_status = 'MATCHED'
             l.save()
             total_lines_amount += abs(l.credit - l.debit)
             
@@ -513,14 +513,14 @@ class MatchingService:
         
         # Update All Lines in Group
         for l in group.lines.all():
-            l.reconciliation_state = 'RECONCILED'
+            l.reconciliation_status = 'RECONCILED'
             l.reconciled_at = timezone.now()
             l.reconciled_by = user
             l.save()
             
             # Update Statement counters logic (Optimization: update once per statement)
             l.statement.reconciled_lines = l.statement.lines.filter(
-                reconciliation_state='RECONCILED'
+                reconciliation_status='RECONCILED'
             ).count()
             l.statement.save()
 
@@ -547,7 +547,7 @@ class MatchingService:
                     date=line.transaction_date,
                     reference=f"Transferencia Conciliación {line.statement.display_id}",
                     description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
-                    state=JournalEntry.State.POSTED
+                    status=JournalEntry.State.POSTED
                 )
                 
                 # Dr Bank (Destination)
@@ -594,7 +594,7 @@ class MatchingService:
         except BankStatementLine.DoesNotExist:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
             
-        if line.statement.state == 'CONFIRMED':
+        if line.statement.status == 'CONFIRMED':
             raise ValueError("No se puede modificar una cartola confirmada")
 
         group = line.reconciliation_match
@@ -609,14 +609,14 @@ class MatchingService:
              payment.save()
              
              line.matched_payment = None
-             line.reconciliation_state = 'UNRECONCILED'
+             line.reconciliation_status = 'UNRECONCILED'
              line.difference_amount = Decimal(0)
              line.save()
              return line
              
         if not group:
-            if line.reconciliation_state == 'EXCLUDED':
-                line.reconciliation_state = 'UNRECONCILED'
+            if line.reconciliation_status == 'EXCLUDED':
+                line.reconciliation_status = 'UNRECONCILED'
                 line.save()
             return line
 
@@ -633,14 +633,14 @@ class MatchingService:
         for l in group.lines.all():
             l.reconciliation_match = None
             l.matched_payment = None
-            l.reconciliation_state = 'UNRECONCILED'
+            l.reconciliation_status = 'UNRECONCILED'
             l.reconciled_at = None
             l.difference_amount = Decimal(0)
             l.save()
             
             # Update statement
             l.statement.reconciled_lines = l.statement.lines.filter(
-                 reconciliation_state='RECONCILED'
+                 reconciliation_status='RECONCILED'
             ).count()
             l.statement.save()
             
@@ -683,12 +683,12 @@ class MatchingService:
         except BankStatement.DoesNotExist:
             raise ValueError(f"Cartola {statement_id} no encontrada")
         
-        if statement.state == 'CONFIRMED':
+        if statement.status == 'CONFIRMED':
             raise ValueError("Cartola ya confirmada")
         
         # Obtener líneas no reconciliadas
         unreconciled_qs = statement.lines.filter(
-            reconciliation_state='UNRECONCILED'
+            reconciliation_status='UNRECONCILED'
         )
         total_unreconciled = unreconciled_qs.count()
         unreconciled_lines = unreconciled_qs.iterator()

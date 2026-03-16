@@ -52,27 +52,27 @@ class ReportsService:
         
         # Métricas de cartolas
         total_statements = statements.count()
-        confirmed_statements = statements.filter(state='CONFIRMED').count()
-        draft_statements = statements.filter(state='DRAFT').count()
+        confirmed_statements = statements.filter(status='CONFIRMED').count()
+        draft_statements = statements.filter(status='DRAFT').count()
         
         # Métricas de líneas
         all_lines = BankStatementLine.objects.filter(statement__in=statements)
         total_lines = all_lines.count()
         
         reconciled_lines = all_lines.filter(
-            reconciliation_state='RECONCILED'
+            reconciliation_status='RECONCILED'
         ).count()
         
         matched_lines = all_lines.filter(
-            reconciliation_state='MATCHED'
+            reconciliation_status='MATCHED'
         ).count()
         
         pending_lines = all_lines.filter(
-            reconciliation_state='UNRECONCILED'
+            reconciliation_status='UNRECONCILED'
         ).count()
         
         excluded_lines = all_lines.filter(
-            reconciliation_state='EXCLUDED'
+            reconciliation_status='EXCLUDED'
         ).count()
         
         # Tasa de reconciliación global
@@ -83,7 +83,7 @@ class ReportsService:
         
         # Diferencias
         lines_with_diff = all_lines.filter(
-            reconciliation_state='RECONCILED'
+            reconciliation_status='RECONCILED'
         ).exclude(difference_amount=0)
         
         diff_aggregates = lines_with_diff.aggregate(
@@ -154,7 +154,7 @@ class ReportsService:
         Returns:
             Lista de líneas pendientes con detalles
         """
-        filters = Q(reconciliation_state='UNRECONCILED')
+        filters = Q(reconciliation_status='UNRECONCILED')
         
         if treasury_account_id:
             filters &= Q(statement__treasury_account_id=treasury_account_id)
@@ -308,7 +308,7 @@ class ReportsService:
         
         # Eventos: Reconciliaciones de líneas
         reconciled_lines = statement.lines.filter(
-            reconciliation_state='RECONCILED'
+            reconciliation_status='RECONCILED'
         ).select_related('reconciled_by').order_by('reconciled_at')
         
         for line in reconciled_lines:
@@ -322,7 +322,7 @@ class ReportsService:
                 })
         
         # Evento: Confirmación de la cartola (si está confirmada)
-        if statement.state == 'CONFIRMED':
+        if statement.status == 'CONFIRMED':
             events.append({
                 'timestamp': statement.updated_at.isoformat(),
                 'type': 'CONFIRM',
@@ -373,10 +373,10 @@ class ReportsService:
                 'Referencia': line.reference,
                 'Cargo': line.debit if line.debit > 0 else 0,
                 'Abono': line.credit if line.credit > 0 else 0,
-                'Estado': line.get_reconciliation_state_display(),
+                'Estado': line.get_reconciliation_status_display(),
             }
             
-            if line.reconciliation_state == 'RECONCILED':
+            if line.reconciliation_status == 'RECONCILED':
                 row.update({
                     'Diferencia': line.difference_amount,
                     'Motivo Diferencia': line.difference_reason,

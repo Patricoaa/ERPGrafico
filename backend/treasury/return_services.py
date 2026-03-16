@@ -124,7 +124,7 @@ class TreasuryReturnService:
                 date=return_movement.date,
                 description=f"Devolución Pago Cliente - {payment.contact.name if payment.contact else 'Cliente'}",
                 reference=f"DEV-MOV-{payment.id}",
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             )
             
             # Debit: Receivable (Customer owes us again)
@@ -155,7 +155,7 @@ class TreasuryReturnService:
                 date=return_movement.date,
                 description=f"Devolución Pago Proveedor - {payment.contact.name if payment.contact else 'Proveedor'}",
                 reference=f"DEV-MOV-{payment.id}",
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             )
             
             # Debit: Cash/Bank (Money comes back)

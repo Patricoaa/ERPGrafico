@@ -44,7 +44,6 @@ export interface SalesSettings {
     pos_global_discount_group: string
     // Credit Automation Settings
     credit_auto_block_days: number | null
-    credit_risk_classification_enabled: boolean
     default_uncollectible_expense_account: string | null
 }
 

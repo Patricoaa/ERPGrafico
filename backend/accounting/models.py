@@ -92,11 +92,11 @@ class Account(models.Model):
 
     @property
     def debit_total(self):
-        return sum(item.debit for item in self.journal_items.filter(entry__state='POSTED'))
+        return sum(item.debit for item in self.journal_items.filter(entry__status='POSTED'))
 
     @property
     def credit_total(self):
-        return sum(item.credit for item in self.journal_items.filter(entry__state='POSTED'))
+        return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
 
     @property
     def balance(self):
@@ -163,16 +163,22 @@ class Account(models.Model):
                 child.save()
 
 class JournalEntry(models.Model):
-    class State(models.TextChoices):
+    # NOTE: This class uses "Status" and field name "status" to match the convention of all
+    # other transactional models (SaleOrder, Invoice, PurchaseOrder, etc.).
+    # The inner class is named both Status AND State (alias) for backwards compatibility.
+    class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         POSTED = 'POSTED', _('Publicado')
         CANCELLED = 'CANCELLED', _('Anulado')
+
+    # Alias for backwards compatibility with existing code that references JournalEntry.State
+    State = Status
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False, null=True, blank=True)
     date = models.DateField(_("Fecha"), default=get_current_date)
     description = models.CharField(_("Descripción"), max_length=255)
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
-    state = models.CharField(_("Estado"), max_length=20, choices=State.choices, default=State.DRAFT)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     
     # Accounting Period Control
     accounting_period = models.ForeignKey(
@@ -669,11 +675,7 @@ class AccountingSettings(models.Model):
         default=60,
         help_text=_("Días máximos de mora antes de bloquear automáticamente la capacidad de crédito. Dejar en blanco para desactivar el auto-bloqueo.")
     )
-    credit_risk_classification_enabled = models.BooleanField(
-        _("Habilitar Clasificación de Riesgo"),
-        default=True,
-        help_text=_("Si se activa, el sistema evaluará periódicamente el nivel de riesgo crediticio de los clientes.")
-    )
+
     
     # Advanced Accounting
     default_prepayment_account = models.ForeignKey(

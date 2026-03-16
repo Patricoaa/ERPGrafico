@@ -588,10 +588,12 @@ class POSTerminal(models.Model):
 class BankStatement(models.Model):
     """Cartola bancaria importada"""
     
-    class State(models.TextChoices):
+    class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Cancelado')
+    
+    State = Status # Alias for backward compatibility
     
     treasury_account = models.ForeignKey(
         'TreasuryAccount',
@@ -623,12 +625,16 @@ class BankStatement(models.Model):
         related_name='imported_statements',
         verbose_name=_("Importado Por")
     )
-    state = models.CharField(
+    status = models.CharField(
         _("Estado"), 
         max_length=20, 
-        choices=State.choices, 
-        default=State.DRAFT
+        choices=Status.choices, 
+        default=Status.DRAFT
     )
+    
+    @property
+    def state(self):
+        return self.status
     
     # Metadatos
     bank_format = models.CharField(
@@ -670,12 +676,14 @@ class BankStatement(models.Model):
 class BankStatementLine(models.Model):
     """Línea individual de la cartola bancaria"""
     
-    class ReconciliationState(models.TextChoices):
+    class ReconciliationStatus(models.TextChoices):
         UNRECONCILED = 'UNRECONCILED', _('No Reconciliado')
         MATCHED = 'MATCHED', _('Matched (Pendiente Confirmar)')
         RECONCILED = 'RECONCILED', _('Reconciliado')
         DISPUTED = 'DISPUTED', _('En Disputa')
         EXCLUDED = 'EXCLUDED', _('Excluido')
+    
+    ReconciliationState = ReconciliationStatus # Alias
     
     statement = models.ForeignKey(
         'BankStatement',
@@ -717,12 +725,16 @@ class BankStatementLine(models.Model):
     )
     
     # Conciliación
-    reconciliation_state = models.CharField(
+    reconciliation_status = models.CharField(
         _("Estado de Reconciliación"),
         max_length=20,
-        choices=ReconciliationState.choices,
-        default=ReconciliationState.UNRECONCILED
+        choices=ReconciliationStatus.choices,
+        default=ReconciliationStatus.UNRECONCILED
     )
+    
+    @property
+    def reconciliation_state(self):
+        return self.reconciliation_status
     matched_payment = models.ForeignKey(
         'TreasuryMovement',
         on_delete=models.SET_NULL,
@@ -779,9 +791,9 @@ class BankStatementLine(models.Model):
         ordering = ['statement', 'line_number']
         unique_together = [['statement', 'line_number']]
         indexes = [
-            models.Index(fields=['reconciliation_state']),
+            models.Index(fields=['reconciliation_status']),
             models.Index(fields=['transaction_date']),
-            models.Index(fields=['statement', 'reconciliation_state']),
+            models.Index(fields=['statement', 'reconciliation_status']),
             models.Index(fields=['transaction_id']),
         ]
     
@@ -1269,7 +1281,6 @@ class POSSession(models.Model):
     """
     class Status(models.TextChoices):
         OPEN = 'OPEN', _('Abierta')
-        CLOSING = 'CLOSING', _('En Cierre')
         CLOSED = 'CLOSED', _('Cerrada')
     
     # New: Terminal reference (replaces direct treasury_account)

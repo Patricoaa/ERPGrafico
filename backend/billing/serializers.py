@@ -246,7 +246,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'quantity': m.quantity,
             'warehouse': m.warehouse.name,
             'move_type_display': m.get_move_type_display(),
-            'state': 'DONE'
+            'status': 'DONE'
         } for m in unique_moves]
 
     def get_related_returns(self, obj):

@@ -63,8 +63,7 @@ const salesSchema = z.object({
     pos_global_discount_group: z.string().default(""),
     terminal_commission_bridge_account: accountFieldSchema,
     terminal_iva_bridge_account: accountFieldSchema,
-    credit_auto_block_days: z.coerce.number().nullable().default(60),
-    credit_risk_classification_enabled: z.boolean().default(true),
+    credit_auto_block_days: z.number().nullable().default(60),
     default_uncollectible_expense_account: accountFieldSchema,
 })
 
@@ -186,7 +185,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             terminal_commission_bridge_account: null,
             terminal_iva_bridge_account: null,
             credit_auto_block_days: 60,
-            credit_risk_classification_enabled: true,
             default_uncollectible_expense_account: null,
         } as any
     })
@@ -218,7 +216,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
                 terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
                 credit_auto_block_days: settings.credit_auto_block_days ?? null,
-                credit_risk_classification_enabled: !!settings.credit_risk_classification_enabled,
                 default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
             })
         }
@@ -371,32 +368,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                 </div>
                                             </Card>
                                         </div>
-
-                                        {/* Risk Classification Toggle */}
-                                        <Card className="bg-muted/10 border shadow-none overflow-hidden">
-                                            <div className="p-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="credit_risk_classification_enabled"
-                                                    render={({ field }) => (
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-xs font-bold flex items-center gap-2">
-                                                                    Clasificación de Riesgo Automática
-                                                                    <Badge variant="outline" className="text-[8px] font-black uppercase tracking-tighter h-4 bg-primary/5 border-primary/20">Celery Daily</Badge>
-                                                                </FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground">
-                                                                    Permite que el sistema evalúe y asigne niveles de riesgo diariamente basado en el comportamiento de pago.
-                                                                </p>
-                                                            </div>
-                                                            <FormControl>
-                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                            </FormControl>
-                                                        </div>
-                                                    )}
-                                                />
-                                            </div>
-                                        </Card>
  
                                         {/* Uncollectible Expense Account */}
                                         <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">

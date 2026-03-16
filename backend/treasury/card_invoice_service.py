@@ -72,7 +72,7 @@ class CardInvoiceService:
                 date=timezone.now().date(),
                 description=f"Provisión Comisiones {provider.name} - {month}/{year}",
                 reference=f"COMM-{month}{year}-{provider.code}",
-                state='DRAFT'
+                status='DRAFT'
             )
             
             # Dr Expense

@@ -207,7 +207,7 @@ def posted_sale_invoice(comprehensive_setup):
     entry = JournalEntry.objects.create(
         date=timezone.now().date(),
         description=f"Factura {invoice.number}",
-        state=JournalEntry.State.POSTED
+        status=JournalEntry.State.POSTED
     )
     
     invoice.journal_entry = entry
@@ -576,7 +576,7 @@ def test_register_document_creates_accounting_entry(posted_sale_invoice):
     
     # Validate journal entry
     entry = workflow.invoice.journal_entry
-    assert entry.state == JournalEntry.State.POSTED
+    assert entry.status == JournalEntry.State.POSTED
     
     items = entry.items.all()
     assert items.count() == 3  # Receivable, Revenue, Tax
@@ -700,7 +700,7 @@ def test_complete_workflow_end_to_end(posted_sale_invoice):
     # Verify everything is consistent
     workflow.refresh_from_db()
     assert workflow.invoice.status == Invoice.Status.POSTED
-    assert workflow.invoice.journal_entry.state == JournalEntry.State.POSTED
+    assert workflow.invoice.journal_entry.status == JournalEntry.State.POSTED
     assert StockMove.objects.filter(product=setup['products']['stockable']).exists()
 
 

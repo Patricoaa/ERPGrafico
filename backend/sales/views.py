@@ -48,7 +48,6 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         'terminal_commission_bridge_account',
         'terminal_iva_bridge_account',
         'credit_auto_block_days',
-        'credit_risk_classification_enabled',
         'default_uncollectible_expense_account',
     ]
 
@@ -438,7 +437,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Castigo de documento {order.number}: {contact.name}",
                     reference=f"CASTIGO-{order.number}",
-                    state='POSTED'
+                    status='POSTED'
                 )
                 JournalItem.objects.create(
                     entry=entry,

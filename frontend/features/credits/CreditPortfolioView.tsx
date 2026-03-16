@@ -82,7 +82,7 @@ const riskBg: Record<string, string> = {
 const originBg: Record<string, string> = {
     MANUAL: "bg-blue-500/10 text-blue-700 border-blue-200",
     FALLBACK: "bg-amber-500/10 text-amber-700 border-amber-200",
-    CONTACT_FILE: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    CREDIT_PORTFOLIO: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                     <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
                                                                         {entry.credit_assignment_origin_display}
                                                                     </span>
-                                                                ) : <span className="text-muted-foreground/30">—</span>}</div></TooltipTrigger><TooltipContent className="p-2 text-[10px]">{entry.credit_assignment_origin === 'MANUAL' && "Asignado manualmente por un supervisor."}{entry.credit_assignment_origin === 'FALLBACK' && "Asignación temporal automática (Fallback)."}{entry.credit_assignment_origin === 'CONTACT_FILE' && "Cupo oficial definido en ficha de contacto."}{!entry.credit_assignment_origin && "Origen no especificado."}</TooltipContent></Tooltip></TooltipProvider>
+                                                                ) : <span className="text-muted-foreground/30">—</span>}</div></TooltipTrigger><TooltipContent className="p-2 text-[10px]">{entry.credit_assignment_origin === 'MANUAL' && "Asignado manualmente por un supervisor."}{entry.credit_assignment_origin === 'FALLBACK' && "Asignación temporal automática (Fallback)."}{entry.credit_assignment_origin === 'CREDIT_PORTFOLIO' && "Cupo oficial definido en la cartera de crédito."}{!entry.credit_assignment_origin && "Origen no especificado."}</TooltipContent></Tooltip></TooltipProvider>
                                                             </td>
                                                             <td className="py-2 pr-4 text-center">
                                                                 <TooltipProvider><Tooltip><TooltipTrigger asChild><div className="flex justify-center"><span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex cursor-help", agingBg[entry.aging_bucket])}>
@@ -720,7 +720,7 @@ function CreditHistoryTable({ history, loading }: { history: CreditHistoryEntry[
                     options: [
                         { label: "Manual", value: "MANUAL" },
                         { label: "Fallback Automático", value: "FALLBACK" },
-                        { label: "Ficha de Cliente", value: "CONTACT_FILE" },
+                        { label: "Cartera de Crédito", value: "CREDIT_PORTFOLIO" },
                     ]
                 }
             ]}

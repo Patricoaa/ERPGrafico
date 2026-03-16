@@ -81,8 +81,8 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     # Credit Tracking
     class CreditOrigin(models.TextChoices):
         MANUAL = 'MANUAL', _('Manual (Aprobación)')
-        FALLBACK = 'FALLBACK', _('Fallback (% Venta)')
-        CONTACT_FILE = 'CONTACT_FILE', _('Ficha de Contacto')
+        FALLBACK = 'FALLBACK', _('Pre-Aprobado (% Venta)')
+        CREDIT_PORTFOLIO = 'CREDIT_PORTFOLIO', _('Cartera de Crédito')
 
     credit_assignment_origin = models.CharField(
         _("Origen de Asignación de Crédito"),
@@ -111,9 +111,14 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         """
         Calculates the real total of the order considering associated documents.
         This is used for financial status (PAID check) and dashboards.
+
+        Convention: both POSTED (published) and PAID (settled) invoices count as
+        active documents. DRAFT and CANCELLED invoices are excluded.
         """
         from billing.models import Invoice
-        invoices = self.invoices.all()
+        # Include both confirmed (POSTED) and settled (PAID) invoices — exclude drafts and cancelled
+        ACTIVE_STATUSES = [Invoice.Status.POSTED, Invoice.Status.PAID]
+        invoices = self.invoices.filter(status__in=ACTIVE_STATUSES)
         if not invoices.exists():
             return self.total
             

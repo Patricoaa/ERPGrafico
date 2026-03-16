@@ -232,6 +232,7 @@ export function SalesCheckoutWizard({
     const [securityErrorMessage, setSecurityErrorMessage] = useState<string | null>(null)
     const [hasHydrated, setHasHydrated] = useState(false)
     const [isApproved, setIsApproved] = useState(initialIsApproved || false)
+    const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     // Sync payment amount when total changes
@@ -436,6 +437,16 @@ export function SalesCheckoutWizard({
                 toast.error("Debe seleccionar un cliente para continuar.")
                 return { isValid: false }
             }
+
+            // [NEW] Validation: Advanced manufacturing requires a real customer (not default)
+            // hasManufacturing covers (requires_advanced_manufacturing OR !has_bom)
+            if (hasManufacturing && selectedCustomer?.is_default_customer) {
+                toast.error("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.", {
+                    description: "Por favor seleccione o cree un cliente específico para esta orden."
+                })
+                return { isValid: false }
+            }
+
             return { isValid: true }
         }
         currentStepNum++;
@@ -544,10 +555,10 @@ export function SalesCheckoutWizard({
                         return { isValid: false };
                     }
 
-                    // 1. Check if credit is blocked for this contact
-                    if (selectedCustomer.credit_blocked) {
+                    if (selectedCustomer.credit_blocked || selectedCustomer.credit_auto_blocked) {
+                        const reason = selectedCustomer.credit_auto_blocked ? "mora excesiva" : "restricción contractual";
                         toast.error("El crédito está bloqueado para este cliente.", {
-                            description: "Se requiere pago inmediato de la totalidad."
+                            description: `Motivo: ${reason}. Se requiere pago inmediato de la totalidad.`
                         });
                         return { isValid: false };
                     }
@@ -567,8 +578,13 @@ export function SalesCheckoutWizard({
                             return { isValid: true };
                         }
 
-                        // Instead of a hard error, we allow an approval flow
-                        setCreditApprovalRequired(true)
+                        // Set descriptive states for the banner
+                        setCreditApprovalReason(
+                            hasDebt ? "Deuda activa bloquea el crédito pre-aprobado (fallback)." :
+                            requiredCredit > allowedFallback ? `Excede el límite pre-aprobado ($${allowedFallback.toLocaleString()}).` :
+                            `Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`
+                        );
+                        setCreditApprovalRequired(true);
                         return { isValid: false, requireApproval: true };
                     }
                 }
@@ -864,12 +880,23 @@ export function SalesCheckoutWizard({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
-                        {selectedCustomer && !selectedCustomer.is_default_customer && Number(selectedCustomer.credit_balance_used || 0) > 0 && (
+                        {selectedCustomer && (selectedCustomer.credit_blocked || selectedCustomer.credit_auto_blocked) && (
+                            <Alert variant="destructive" className="mb-4 bg-rose-50 border-rose-200 text-rose-900">
+                                <ShieldAlert className="h-4 w-4 text-rose-600" />
+                                <AlertTitle className="text-rose-800 font-bold uppercase tracking-tight">Crédito Bloqueado</AlertTitle>
+                                <AlertDescription className="text-rose-700">
+                                    Este cliente tiene el crédito restringido por <strong>{selectedCustomer.credit_auto_blocked ? 'mora excesiva' : 'política contractual'}</strong>. 
+                                    Se requiere el pago total de la venta para procesar.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+                        {selectedCustomer && !selectedCustomer.is_default_customer && !selectedCustomer.credit_blocked && !selectedCustomer.credit_auto_blocked && Number(selectedCustomer.credit_balance_used || 0) > 0 && (
                             <Alert variant="destructive" className="mb-4 bg-amber-50 border-amber-200 text-amber-900">
                                 <AlertTriangle className="h-4 w-4 text-amber-600" />
-                                <AlertTitle className="text-amber-800 font-bold">Deuda Activa Detectada</AlertTitle>
+                                <AlertTitle className="text-amber-800 font-bold uppercase tracking-tight">Deuda Activa Detectada</AlertTitle>
                                 <AlertDescription className="text-amber-700">
-                                    El cliente <strong>{selectedCustomer.name}</strong> tiene un saldo pendiente de <strong>${Number(selectedCustomer.credit_balance_used).toLocaleString()}</strong>.
+                                    El cliente tiene un saldo pendiente de <strong>${Number(selectedCustomer.credit_balance_used).toLocaleString()}</strong>. El crédito pre-aprobado (fallback) no estará disponible.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -881,9 +908,9 @@ export function SalesCheckoutWizard({
                                         <AlertCircle className="w-5 h-5" />
                                     </div>
                                     <div className="text-left">
-                                        <h3 className="text-sm font-bold text-warning">Crédito insuficiente</h3>
+                                        <h3 className="text-sm font-bold text-warning uppercase tracking-tight">Autorización Requerida</h3>
                                         <p className="text-xs text-muted-foreground">
-                                            Requiere autorización de un supervisor para continuar.
+                                            {creditApprovalReason || "El monto excede el crédito disponible o permitido."}
                                         </p>
                                     </div>
                                 </div>

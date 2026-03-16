@@ -115,7 +115,7 @@ class F29CalculationService:
             # Balance up to (but not including) start_date
             carryforward_items = JournalItem.objects.filter(
                 account=settings.vat_carryforward_account,
-                entry__state=JournalEntry.State.POSTED,
+                entry__status=JournalEntry.State.POSTED,
                 entry__date__lt=start_date
             )
             total_debit = carryforward_items.aggregate(Sum('debit'))['debit__sum'] or Decimal('0')
@@ -427,10 +427,9 @@ class F29CalculationService:
             )
         
         # Post the entry
-        journal_entry.state = JournalEntry.State.POSTED
+        journal_entry.status = JournalEntry.State.POSTED
         journal_entry.save()
-        
-        # Update declaration
+
         declaration.declaration_date = declaration_date
         declaration.folio_number = folio_number
         declaration.journal_entry = journal_entry
@@ -648,10 +647,9 @@ class F29PaymentService:
         )
         
         # Post the entry
-        journal_entry.state = JournalEntry.State.POSTED
+        journal_entry.status = JournalEntry.State.POSTED
         journal_entry.save()
-        
-        # Link journal entry to payment
+
         payment.journal_entry = journal_entry
         payment.save()
         
@@ -704,7 +702,7 @@ class AccountingPeriodService:
         
         # Validate no draft entries in this period
         draft_count = period.journal_entries.filter(
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         ).count()
         
         if draft_count > 0:
@@ -798,7 +796,7 @@ class AccountingPeriodService:
         
         if period:
             draft_entries = period.journal_entries.filter(
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             ).count()
             total_entries = period.journal_entries.count()
             

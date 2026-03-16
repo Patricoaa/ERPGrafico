@@ -191,17 +191,59 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 # Celery Beat
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# Using the default PersistentScheduler since all schedules are defined in
+# CELERY_BEAT_SCHEDULE below (code-first, version-controlled approach).
+# If you ever need UI-editable schedules, switch to:
+#   CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULER = 'celery.beat.PersistentScheduler'
 
 from celery.schedules import crontab
+
+# ── Celery Beat Schedule ─────────────────────────────────────────────────────
+# This is the SINGLE SOURCE OF TRUTH for all periodic tasks.
+# All schedules are defined here in code (version-controlled) rather than in
+# the django-celery-beat database tables, to avoid split configurations.
+# After modifying this file, restart the celery-beat container.
+# ─────────────────────────────────────────────────────────────────────────────
 CELERY_BEAT_SCHEDULE = {
+    # ── Purchasing ──────────────────────────────────────────────────────────
+    # Generates draft/confirmed purchase orders for active subscriptions due
+    # within the next 7 days. Auto-confirms fixed-amount subs.
     'generate_subscription_orders_daily': {
         'task': 'purchasing.tasks.generate_subscription_orders',
-        'schedule': crontab(hour=7, minute=0), # Run daily at 7:00 AM
+        'schedule': crontab(hour=7, minute=0),   # Daily at 07:00 AM
     },
+
+    # ── HR ──────────────────────────────────────────────────────────────────
+    # Creates an empty DRAFT payroll for every active employee on the 1st of
+    # each month, so salary advances can always be linked to a document.
     'create_monthly_draft_payrolls': {
         'task': 'hr.tasks.create_monthly_draft_payrolls',
-        'schedule': crontab(hour=7, minute=30, day_of_month=1),  # 1st of each month, 7:30 AM
+        'schedule': crontab(hour=7, minute=30, day_of_month=1),  # 1st of month, 07:30 AM
+    },
+
+    # ── Workflow ─────────────────────────────────────────────────────────────
+    # Checks WorkflowSettings each day and creates the F29 creation, F29
+    # payment, and period-close tasks when the configured day-of-month matches.
+    'daily_workflow_checks': {
+        'task': 'workflow.tasks.daily_workflow_checks',
+        'schedule': crontab(hour=6, minute=0),   # Daily at 06:00 AM
+    },
+
+    # ── Contacts / Credit ────────────────────────────────────────────────────
+    # Evaluates overdue credit risk for all contacts, updates their risk level,
+    # and applies/removes automatic credit blocks based on AccountingSettings.
+    'evaluate_credit_portfolio_daily': {
+        'task': 'contacts.tasks.evaluate_credit_portfolio',
+        'schedule': crontab(hour=4, minute=0),   # Daily at 04:00 AM
+    },
+
+    # ── Sales / POS ──────────────────────────────────────────────────────────
+    # Purges POS draft carts that have not been updated in more than 1 day.
+    # Runs in the early morning to clean up overnight abandoned drafts.
+    'cleanup_old_draft_carts_daily': {
+        'task': 'sales.tasks.cleanup_old_draft_carts',
+        'schedule': crontab(hour=3, minute=0),   # Daily at 03:00 AM
     },
 }
 

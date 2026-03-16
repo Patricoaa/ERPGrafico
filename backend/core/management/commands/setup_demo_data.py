@@ -622,7 +622,7 @@ class Command(BaseCommand):
             date=timezone.now().date(),
             description="Asiento de Apertura 2026",
             reference="OPEN-2026",
-            state=JournalEntry.State.POSTED,
+            status=JournalEntry.State.POSTED,
         )
         
         # Initial Bank Capital
@@ -751,7 +751,7 @@ class Command(BaseCommand):
             date=timezone.now().date(),
             description="Carga Inicial de Inventario (Demo Data)",
             reference="INIT-STOCK",
-            state=JournalEntry.State.POSTED,
+            status=JournalEntry.State.POSTED,
         )
 
         # Filter products that should receive initial stock

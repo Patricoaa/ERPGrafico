@@ -273,7 +273,7 @@ class PurchasingService:
             date=receipt.receipt_date,
             description=f"Devolución OCS-{receipt.purchase_order.number} (Ret-{receipt.number})",
             reference=f"Ret-{receipt.number}",
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         total_amount = Decimal('0.00')
@@ -499,7 +499,7 @@ class PurchasingService:
                 'date': receipt.receipt_date,
                 'description': description,
                 'reference': reference,
-                'state': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT
             },
             items
         )
@@ -960,7 +960,7 @@ class PurchasingService:
         
         # 3. Annul stand-alone Payments
         for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.state == 'POSTED':
+            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
                  TreasuryService.annul_movement(movement)
 
         order.status = PurchaseOrder.Status.CANCELLED

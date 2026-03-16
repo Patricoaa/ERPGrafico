@@ -86,7 +86,7 @@ class ReconciliationService:
             imported_by=user,
             bank_format=bank_format,
             total_lines=len(parsed_data['lines']),
-            state='DRAFT'
+            status='DRAFT'
         )
         
         # Crear líneas
@@ -276,11 +276,11 @@ class ReconciliationService:
         total_credits = sum(line.credit for line in lines)
         
         reconciled_count = lines.filter(
-            reconciliation_state='RECONCILED'
+            reconciliation_status='RECONCILED'
         ).count()
         
         matched_count = lines.filter(
-            reconciliation_state='MATCHED'
+            reconciliation_status='MATCHED'
         ).count()
         
         return {

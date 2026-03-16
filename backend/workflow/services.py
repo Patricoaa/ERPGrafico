@@ -109,11 +109,14 @@ class WorkflowService:
             return False
             
         if stage_key == 'billing':
-            # Check for any POSTED invoice with a number
+            # Check for any POSTED or PAID invoice with a number.
+            # PAID is the final state (after POSTED) so it must also be considered complete.
+            # Convention: POSTED = published/confirmed, PAID = settled. Both mean billing is done.
+            BILLED_STATUSES = ['POSTED', 'PAID']
             if hasattr(order, 'invoices'):
-                return order.invoices.filter(status='POSTED').exclude(number='').exists()
+                return order.invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
             if hasattr(order, 'purchase_invoices'):
-                return order.purchase_invoices.filter(status='POSTED').exclude(number='').exists()
+                return order.purchase_invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
             return False
             
         if stage_key == 'treasury':

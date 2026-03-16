@@ -95,12 +95,17 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
     
     @property
     def effective_total(self):
-        """Returns the net value of the order considering all posted notes (ND increase, NC decrease)"""
-        invoices = self.invoices.filter(status='POSTED')
+        """Returns the net value of the order considering all posted notes (ND increase, NC decrease).
+        
+        Convention: both POSTED (published) and PAID (settled) invoices count as active documents.
+        DRAFT and CANCELLED invoices are excluded from this calculation.
+        """
+        from billing.models import Invoice
+        ACTIVE_STATUSES = [Invoice.Status.POSTED, Invoice.Status.PAID]
+        invoices = self.invoices.filter(status__in=ACTIVE_STATUSES)
         if not invoices.exists():
             return self.total
-            
-        from billing.models import Invoice
+
         net = Decimal('0')
         # If we have a finalized invoice flow, use the sum of documents.
         # Otherwise, use original total as base if no primary invoice exists.

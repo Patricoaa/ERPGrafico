@@ -244,7 +244,7 @@ def test_complete_workflow():
         if workflow.invoice.journal_entry:
             entry = workflow.invoice.journal_entry
             print(f"\n   Accounting Entry:")
-            print(f"      State: {entry.get_state_display()}")
+            print(f"      Status: {entry.get_status_display()}")
             print(f"      Items: {entry.items.count()}")
             for item in entry.items.all():
                 print(f"         {item.account.name}: D${item.debit} C${item.credit}")

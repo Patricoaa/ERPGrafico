@@ -81,7 +81,7 @@ class BaseNoteService:
             date=timezone.now().date(),
             description=description,
             reference=f"NOTE-{invoice.id}",
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         return invoice, entry

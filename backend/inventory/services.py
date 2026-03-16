@@ -138,7 +138,7 @@ class StockService:
             date=timezone.now().date(),
             description=f"Ajuste Stock {product.internal_code}: {description} ({adjustment_reason or 'Manual'})",
             reference=f"STK-{move.id}",
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
 
         if quantity > 0:

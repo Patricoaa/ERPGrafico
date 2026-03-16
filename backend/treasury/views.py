@@ -212,7 +212,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.journal_entry and instance.journal_entry.state == 'POSTED':
+        if instance.journal_entry and instance.journal_entry.status == 'POSTED':
              # We might allow annulment here via delete if that's the intention,
              # but strictly delete is for drafts. Annul is for posted.
              # If user clicks delete, we try delete_movement which checks status.
@@ -536,12 +536,12 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         try:
             statement = BankStatement.objects.get(id=pk)
             
-            if statement.state == 'CONFIRMED':
+            if statement.status == 'CONFIRMED':
                 return Response({'error': 'Cartola ya confirmada'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Validate all lines are reconciled or excluded
             unreconciled = statement.lines.filter(
-                reconciliation_state='UNRECONCILED'
+                reconciliation_status='UNRECONCILED'
             ).count()
             
             if unreconciled > 0:
@@ -549,7 +549,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
                     'error': f'{unreconciled} líneas sin reconciliar. Debes reconciliar o excluir todas las líneas.'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            statement.state = 'CONFIRMED'
+            statement.status = 'CONFIRMED'
             statement.save()
             
             return Response(BankStatementSerializer(statement).data)
@@ -573,10 +573,10 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         if statement_id:
             queryset = queryset.filter(statement_id=statement_id)
         
-        # Filter by reconciliation state
-        reconciliation_state = self.request.query_params.get('reconciliation_state')
-        if reconciliation_state:
-            queryset = queryset.filter(reconciliation_state=reconciliation_state)
+        # Filter by reconciliation status
+        reconciliation_status = self.request.query_params.get('reconciliation_status') or self.request.query_params.get('reconciliation_state')
+        if reconciliation_status:
+            queryset = queryset.filter(reconciliation_status=reconciliation_status)
         
         return queryset
     
@@ -609,12 +609,12 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             
             # Check if statement is confirmed
             lines = BankStatementLine.objects.filter(id__in=line_ids).select_related('statement')
-            if any(l.statement.state == 'CONFIRMED' for l in lines):
+            if any(l.statement.status == 'CONFIRMED' for l in lines):
                 return Response({'error': 'No se pueden excluir movimientos de una cartola confirmada'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Update state
             BankStatementLine.objects.filter(id__in=line_ids).update(
-                reconciliation_state='EXCLUDED'
+                reconciliation_status='EXCLUDED'
             )
             
             return Response({'message': f'{len(line_ids)} movimientos excluidos'})
@@ -1440,7 +1440,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         query = TreasuryMovement.objects.select_related(
             'treasury_account', 'from_account', 'to_account', 
             'contact', 'invoice__contact'
-        ).exclude(state='CANCELLED')
+        ).exclude(journal_entry__status='CANCELLED')
         
         if date_from:
             query = query.filter(date__gte=date_from)

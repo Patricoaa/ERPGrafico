@@ -42,7 +42,7 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = JournalEntry
-        fields = ['id', 'number', 'display_id', 'date', 'description', 'reference', 'state', 'items', 'source_documents', 'created_at']
+        fields = ['id', 'number', 'display_id', 'date', 'description', 'reference', 'status', 'items', 'source_documents', 'created_at']
 
 # --- Budgeting Serializers ---
 

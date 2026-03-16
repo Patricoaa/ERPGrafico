@@ -439,7 +439,7 @@ class BankStatementListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'display_id', 'treasury_account', 'treasury_account_name',
             'statement_date', 'opening_balance', 'closing_balance',
-            'state', 'total_lines', 'reconciled_lines', 
+            'status', 'total_lines', 'reconciled_lines', 
             'reconciliation_progress', 'imported_at', 'imported_by_name'
         ]
 

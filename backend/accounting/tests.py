@@ -17,7 +17,7 @@ class AccountingServiceTest(TestCase):
         JournalItem.objects.create(entry=entry, account=self.income_account, debit=Decimal('0.00'), credit=Decimal('100.00'))
         
         posted_entry = JournalEntryService.post_entry(entry)
-        self.assertEqual(posted_entry.state, JournalEntry.State.POSTED)
+        self.assertEqual(posted_entry.status, JournalEntry.State.POSTED)
 
     def test_prevent_unbalanced_entry(self):
         """Test that an unbalanced entry raises ValidationError."""

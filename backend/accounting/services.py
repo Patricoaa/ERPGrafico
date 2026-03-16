@@ -9,7 +9,7 @@ class JournalEntryService:
         """
         Validates and posts a Journal Entry.
         """
-        if entry.state != JournalEntry.State.DRAFT:
+        if entry.status != JournalEntry.State.DRAFT:
             raise ValidationError("Solo se pueden publicar asientos en borrador.")
 
         # Validate lines
@@ -20,7 +20,7 @@ class JournalEntryService:
         entry.check_balance()
 
         # Update state
-        entry.state = JournalEntry.State.POSTED
+        entry.status = JournalEntry.State.POSTED
         entry.save()
 
         # Here we could update denormalized balances if we had them.
@@ -34,7 +34,7 @@ class JournalEntryService:
         Debit becomes Credit, Credit becomes Debit.
         Returns the new reversal entry.
         """
-        if entry.state != JournalEntry.State.POSTED:
+        if entry.status != JournalEntry.State.POSTED:
             raise ValidationError("Solo se pueden reversar asientos que han sido publicados.")
 
         from django.utils import timezone
@@ -44,7 +44,7 @@ class JournalEntryService:
             date=timezone.now().date(),
             description=description or f"REVERSO: {entry.description}",
             reference=f"REV-{entry.number or entry.id}",
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         # 2. Mirror items
@@ -62,7 +62,7 @@ class JournalEntryService:
         JournalEntryService.post_entry(reversal)
         
         # 4. Mark original as CANCELLED to indicate it shouldn't be touched/reversed again
-        entry.state = JournalEntry.State.CANCELLED
+        entry.status = JournalEntry.State.CANCELLED
         entry.save()
         
         return reversal
@@ -704,7 +704,7 @@ class BudgetService:
             budgeted_amount = float(b_item['total_budgeted'])
             
             # Filter actual items for the entire budget period
-            filters = Q(entry__state='POSTED', 
+            filters = Q(entry__status='POSTED', 
                         entry__date__gte=budget.start_date, 
                         entry__date__lte=budget.end_date,
                         account=account)
@@ -785,7 +785,7 @@ class BudgetService:
         
         # Get all posted items for that year
         items_qs = JournalItem.objects.filter(
-            entry__state='POSTED',
+            entry__status='POSTED',
             entry__date__gte=start_prev,
             entry__date__lte=end_prev
         ).annotate(month=ExtractMonth('entry__date'))

@@ -827,7 +827,7 @@ class WorkOrderService:
                     'date': timezone.now().date(),
                     'description': f"Consumo Producción OT-{work_order.number}",
                     'reference': f"OT-{work_order.number}",
-                    'state': JournalEntry.State.DRAFT
+                    'status': JournalEntry.State.DRAFT
                 }
                 
                 items = []

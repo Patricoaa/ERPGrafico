@@ -642,7 +642,7 @@ class NoteCheckoutService:
             date=invoice.date,
             description=f"{invoice.get_dte_type_display()} {invoice.number}",
             reference=f"WORKFLOW-{workflow.id}",
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         invoice.journal_entry = entry

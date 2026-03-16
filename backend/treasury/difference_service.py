@@ -102,7 +102,7 @@ class DifferenceService:
             date=line.transaction_date,
             reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         abs_diff = abs(difference)
@@ -122,7 +122,7 @@ class DifferenceService:
                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
                 JournalItem.objects.create(entry=entry, account=difference_account, debit=0, credit=abs_diff)
         
-        entry.state = 'POSTED'
+        entry.status = 'POSTED'
         entry.save()
         
         line.difference_journal_entry = entry
@@ -154,7 +154,7 @@ class DifferenceService:
     def get_difference_summary(statement_id: int) -> Dict:
         from .models import BankStatement
         statement = BankStatement.objects.get(id=statement_id)
-        lines_with_diff = statement.lines.filter(reconciliation_state='RECONCILED').exclude(difference_amount=0)
+        lines_with_diff = statement.lines.filter(reconciliation_status='RECONCILED').exclude(difference_amount=0)
         total_positive = sum(line.difference_amount for line in lines_with_diff if line.difference_amount > 0)
         total_negative = sum(abs(line.difference_amount) for line in lines_with_diff if line.difference_amount < 0)
         by_type = {}

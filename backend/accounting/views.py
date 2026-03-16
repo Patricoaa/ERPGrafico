@@ -62,7 +62,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         account = self.get_object()
         # Check if account has journal items
-        if account.journal_items.filter(entry__state='POSTED').exists():
+        if account.journal_items.filter(entry__status='POSTED').exists():
             return Response(
                 {"error": "No se puede eliminar una cuenta con movimientos contables asociados."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -80,7 +80,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         end_date = request.query_params.get('end_date')
 
         # Base queryset for posted items
-        base_items = account.journal_items.filter(entry__state='POSTED').select_related('entry')
+        base_items = account.journal_items.filter(entry__status='POSTED').select_related('entry')
 
         # Calculate opening balance (all history before start_date)
         opening_balance = 0

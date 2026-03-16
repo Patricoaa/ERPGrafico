@@ -192,7 +192,7 @@ class PurchaseReturnService:
                         'date': return_doc.date,
                         'description': f"Devolución Física OCS-{return_doc.purchase_order.number} ({return_doc.display_id})",
                         'reference': return_doc.display_id,
-                        'state': JournalEntry.State.DRAFT
+                        'status': JournalEntry.State.DRAFT
                     },
                     [] # Items added below
                 )

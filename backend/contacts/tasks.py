@@ -5,8 +5,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@shared_task
-def evaluate_credit_portfolio():
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={'max_retries': 3},
+    retry_backoff=True
+)
+def evaluate_credit_portfolio(self):
     """
     Evaluates the credit risk of all contacts that have credit enabled or active debt.
     Runs daily via Celery Beat.
@@ -22,11 +27,7 @@ def evaluate_credit_portfolio():
     from accounting.models import AccountingSettings
     
     settings = AccountingSettings.objects.first()
-    if not settings or not settings.credit_risk_classification_enabled:
-        logger.info("Credit risk classification is disabled in AccountingSettings. Skipping evaluation.")
-        return
-        
-    auto_block_days_threshold = settings.credit_auto_block_days
+    auto_block_days_threshold = settings.credit_auto_block_days if settings else 60
 
     # We evaluate contacts that either have credit enabled or have outstanding balance
     # (Checking debt is slightly heavier but we can't easily filter by property. We iterate all that MIGHT have debt).

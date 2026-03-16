@@ -13,7 +13,7 @@ class FinanceService:
         For Balance Sheet accounts (ASSET, LIABILITY, EQUITY), we usually want the accumulated balance up to end_date.
         For P&L accounts (INCOME, EXPENSE), we want the movement between start_date and end_date.
         """
-        filters = Q(entry__state='POSTED')
+        filters = Q(entry__status='POSTED')
         
         if end_date:
             filters &= Q(entry__date__lte=end_date)

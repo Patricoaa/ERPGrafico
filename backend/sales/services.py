@@ -548,7 +548,7 @@ class SalesService:
                         'date': delivery.delivery_date,
                         'description': description,
                         'reference': reference,
-                        'state': JournalEntry.State.DRAFT
+                        'status': JournalEntry.State.DRAFT
                     },
                     items
                 )
@@ -618,7 +618,7 @@ class SalesService:
         
         # VALIDATION 2: Pagos registrados
         posted_payments = order.payments.filter(
-            journal_entry__state='POSTED'
+            journal_entry__status='POSTED'
         ).exists()
         
         if posted_payments:
@@ -735,7 +735,7 @@ class SalesService:
         
         # 3. Annul stand-alone Payments (if any)
         for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.state == 'POSTED':
+            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
                  TreasuryService.annul_movement(movement)
         
         order.status = SaleOrder.Status.CANCELLED

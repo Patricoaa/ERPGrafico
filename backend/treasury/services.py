@@ -238,7 +238,7 @@ class TreasuryService:
              date=date,
              description=description,
              reference=f"MOV-{movement.id}",
-             state=JournalEntry.State.DRAFT
+             status=JournalEntry.State.DRAFT
         )
 
         from_acc = movement.from_account.account if movement.from_account else None
@@ -351,7 +351,7 @@ class TreasuryService:
         
         # Reverse/Delete Journal Entry
         if movement.journal_entry:
-             if movement.journal_entry.state == JournalEntry.State.POSTED:
+             if movement.journal_entry.status == JournalEntry.State.POSTED:
                   # If posted, we should ideally annul, not delete. 
                   # But matching 'delete_payment' behavior which allowed deletion of DRAFT/PENDING things.
                   # If strict, raise error. Assuming this is for Draft/Cancelled flows.
@@ -372,7 +372,7 @@ class TreasuryService:
         if movement.is_reconciled:
              raise ValidationError("No se puede anular un movimiento conciliado.")
 
-        if movement.journal_entry and movement.journal_entry.state == JournalEntry.State.POSTED:
+        if movement.journal_entry and movement.journal_entry.status == JournalEntry.State.POSTED:
              JournalEntryService.reverse_entry(movement.journal_entry, description=f"Anulación Movimiento {movement.id}")
         
         # Update movement status? We don't have a status field in TreasuryMovement (only validation flags).
@@ -456,7 +456,7 @@ class TerminalBatchService:
             date=batch.settlement_date,
             description=description,
             reference=batch.display_id,
-            state=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT
         )
         
         # Get Bridge Accounts

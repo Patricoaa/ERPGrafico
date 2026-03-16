@@ -375,7 +375,7 @@ def post_payroll(payroll):
         )
         
         entry.check_balance()
-        entry.state = JournalEntry.State.POSTED
+        entry.status = JournalEntry.State.POSTED
         entry.save()
         
         payroll.journal_entry = entry

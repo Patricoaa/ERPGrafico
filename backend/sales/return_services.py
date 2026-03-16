@@ -231,7 +231,7 @@ class ReturnService:
                 date=return_doc.date,
                 description=f"Reverso COGS - {return_doc.display_id}",
                 reference=return_doc.display_id,
-                state=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT
             )
             
             inv_acc = settings.default_inventory_account
