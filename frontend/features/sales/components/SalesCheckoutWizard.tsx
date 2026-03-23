@@ -575,7 +575,7 @@ export function SalesCheckoutWizard({
                         return { isValid: false };
                     }
 
-                    if (selectedCustomer.credit_blocked || selectedCustomer.credit_auto_blocked) {
+                    if (selectedCustomer.credit_blocked || (selectedCustomer.credit_auto_blocked && !selectedCustomer.is_default_customer)) {
                         const reason = selectedCustomer.credit_auto_blocked ? "mora excesiva" : "restricción contractual";
                         toast.error("El crédito está bloqueado para este cliente.", {
                             description: `Motivo: ${reason}. Se requiere pago inmediato de la totalidad.`
@@ -593,14 +593,14 @@ export function SalesCheckoutWizard({
                         const fallbackPercentage = (Number(salesSettings?.pos_default_credit_percentage) || 0) / 100;
                         const allowedFallback = currentTotal * fallbackPercentage;
 
-                        if (!hasDebt && requiredCredit <= allowedFallback) {
+                        if ((!hasDebt || selectedCustomer.is_default_customer) && requiredCredit <= allowedFallback) {
                             // Fallback applies!
                             return { isValid: true };
                         }
 
                         // Set descriptive states for the banner
                         setCreditApprovalReason(
-                            hasDebt ? "Deuda activa bloquea el crédito pre-aprobado (fallback)." :
+                            (hasDebt && !selectedCustomer.is_default_customer) ? "Deuda activa bloquea el crédito pre-aprobado (fallback)." :
                             requiredCredit > allowedFallback ? `Excede el límite pre-aprobado ($${allowedFallback.toLocaleString()}).` :
                             `Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`
                         );
@@ -900,7 +900,7 @@ export function SalesCheckoutWizard({
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Scrollable Content */}
                     <div className="flex-1 p-6 overflow-y-auto">
-                        {selectedCustomer && (selectedCustomer.credit_blocked || selectedCustomer.credit_auto_blocked) && (
+                        {selectedCustomer && (selectedCustomer.credit_blocked || (selectedCustomer.credit_auto_blocked && !selectedCustomer.is_default_customer)) && (
                             <Alert variant="destructive" className="mb-4 bg-rose-50 border-rose-200 text-rose-900 group">
                                 <ShieldAlert className="h-4 w-4 text-rose-600" />
                                 <AlertTitle className="text-rose-800 font-bold uppercase tracking-tight flex items-center justify-between">

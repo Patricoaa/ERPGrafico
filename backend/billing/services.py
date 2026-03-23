@@ -564,7 +564,7 @@ class BillingService:
             if contact.credit_blocked:
                 raise ValidationError("El crédito está bloqueado contractualmente para este cliente.")
                 
-            if getattr(contact, 'credit_auto_blocked', False):
+            if getattr(contact, 'credit_auto_blocked', False) and not contact.is_default_customer:
                 raise ValidationError("El cliente se encuentra Auto-Bloqueado por tener deudas con una mora superior al límite permitido.")
 
             # Fallback Logic: check if we can bypass credit_enabled check
@@ -579,8 +579,8 @@ class BillingService:
             # Implicit Credit: Check if we are within allowed bounds (Limit or Fallback)
             if required_credit > contact.credit_available:
                 # If exceeding limit (or no limit assigned), check if fallback applies
-                # Fallback requires: NO debt AND within fallback threshold
-                if not has_debt and is_within_fallback:
+                # Fallback requires: NO debt OR being the default customer, AND within fallback threshold
+                if (not has_debt or contact.is_default_customer) and is_within_fallback:
                     # Fallback granted
                     order.credit_assignment_origin = SaleOrder.CreditOrigin.FALLBACK
                 else:

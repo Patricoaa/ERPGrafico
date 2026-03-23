@@ -160,6 +160,9 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
 
     const totalDebt = Number(contact.credit_balance_used)
     const aging = contact.credit_aging
+    const isDefault = contact.is_default_customer
+    const [writingOffDocId, setWritingOffDocId] = useState<number | null>(null)
+    const [showWriteOffDocDialog, setShowWriteOffDocDialog] = useState<{ id: number, number: string, balance: number } | null>(null)
 
     const handleExpand = useCallback(async () => {
         const next = !expanded
@@ -193,6 +196,21 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
         }
     }
 
+    const handleWriteOffDoc = async (saleOrderId: number) => {
+        setWritingOffDocId(saleOrderId)
+        try {
+            const res = await writeOffSaleOrder(saleOrderId)
+            toast.success(`Documento castigado: ${res.journal_entry} por ${fmt(res.amount)}`)
+            setLedger(null)
+            onRefresh()
+        } catch (e: any) {
+            const errorMsg = e.response?.data?.error || e.message || "Error al castigar documento"
+            toast.error(errorMsg)
+        } finally {
+            setWritingOffDocId(null)
+            setShowWriteOffDocDialog(null)
+        }
+    }
 
     const agingBuckets = ['current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus'] as const;
 
@@ -240,7 +258,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                     </span>
                                                 )
                                             ))}
-                                            {totalDebt > 0 && (
+                                            {totalDebt > 0 && !isDefault && (
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"
@@ -337,6 +355,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                 </TooltipProvider>
                                                             </div>
                                                         </th>
+                                                        {isDefault && <th className="pb-2 pr-2 text-center">Castigo</th>}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-border/20">
@@ -383,6 +402,27 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                 </Tooltip>
                                                                 </TooltipProvider>
                                                             </td>
+                                                            {isDefault && (
+                                                                <td className="py-2 pr-2 text-center">
+                                                                    {Number(entry.balance) > 0 && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="h-6 px-2 text-[10px] text-rose-600 hover:bg-rose-50 gap-1"
+                                                                            disabled={writingOffDocId === entry.id}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                setShowWriteOffDocDialog({ id: entry.id, number: entry.number, balance: Number(entry.balance) })
+                                                                            }}
+                                                                        >
+                                                                            {writingOffDocId === entry.id
+                                                                                ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                                                                : <Gavel className="h-3 w-3" />}
+                                                                            Castigar
+                                                                        </Button>
+                                                                    )}
+                                                                </td>
+                                                            )}
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -403,6 +443,37 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                             onRefresh()
                                         }}
                                     />
+
+                                    {/* Per-document write-off confirmation dialog (default customer only) */}
+                                    <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
+                                        <AlertDialogContent className="max-w-md">
+                                            <AlertDialogHeader>
+                                                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
+                                                    <ShieldAlert className="h-6 w-6" />
+                                                </div>
+                                                <AlertDialogTitle className="text-xl font-black">¿Castigar Documento NV-{showWriteOffDocDialog?.number}?</AlertDialogTitle>
+                                                <div className="space-y-3 pt-2">
+                                                    <AlertDialogDescription>
+                                                        Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.
+                                                    </AlertDialogDescription>
+                                                    <ul className="list-disc list-inside space-y-1 text-sm font-medium text-muted-foreground">
+                                                        <li>Se generará un asiento contable de pérdida.</li>
+                                                        <li>El documento quedará saldado contablemente.</li>
+                                                        <li>Esta acción es <strong>irreversible</strong>.</li>
+                                                    </ul>
+                                                </div>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter className="gap-2 mt-4">
+                                                <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                                                    onClick={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
+                                                >
+                                                    Confirmar Castigo
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
                             </motion.div>
                         </TableCell>
@@ -494,7 +565,7 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
                         <TooltipContent className="max-w-[200px] p-3">
                             <div className="space-y-2">
                                 <p className="text-[10px] leading-relaxed"><span className="font-bold">Límite Asignado:</span> Cupo máximo definido en la ficha comercial del cliente.</p>
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-amber-600">Fallback Efec.:</span> Límite temporal autogenerado cuando existe deuda pero no hay cupo oficial asignado.</p>
+                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-amber-600">Pre-aprobado (% venta):</span> Límite temporal autogenerado cuando existe deuda pero no hay cupo oficial asignado.</p>
                             </div>
                         </TooltipContent>
                     </Tooltip>
@@ -508,12 +579,12 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
 
             // Fallback logic: if no limit but has debt (likely fallback authorized)
             const isFallback = limit === 0 && balance > 0
-            
+
             // Extract the setter from table meta (we'll add this later)
             const onEdit = (table.options.meta as any)?.onEditLimit
 
             return (
-                <div 
+                <div
                     className={cn(
                         "text-center flex flex-col items-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors",
                         onEdit ? "cursor-pointer" : "cursor-default"
@@ -521,13 +592,13 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
                     onClick={() => onEdit?.(contact)}
                 >
                     <span className={cn(
-                        "text-[12px] font-mono group-hover:underline", 
+                        "text-[12px] font-mono group-hover:underline",
                         isFallback ? "text-amber-600 font-bold" : "text-muted-foreground",
                         !isFallback && limit > 0 && "text-primary font-bold"
                     )}>
                         {isFallback ? fmt(balance) : (limit > 0 ? fmt(limit) : <span className="text-muted-foreground/40">—</span>)}
                     </span>
-                    {isFallback && <span className="text-[8px] font-black uppercase tracking-tighter text-amber-500 opacity-60">Fallback Efec.</span>}
+                    {isFallback && <span className="text-[8px] font-black uppercase tracking-tighter text-amber-500 opacity-60">Pre-aprobado (% venta)</span>}
                 </div>
             )
         },
@@ -825,7 +896,7 @@ export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: '
 
     return (
         <div className="space-y-6">
-            <PageHeader 
+            <PageHeader
                 title={headerConfig.title}
                 description={headerConfig.description}
                 iconName={headerConfig.iconName}
@@ -834,8 +905,8 @@ export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: '
                 )}
             />
 
-            <CreditAssignmentModal 
-                open={assignmentModalOpen} 
+            <CreditAssignmentModal
+                open={assignmentModalOpen}
                 onOpenChange={setAssignmentModalOpen}
                 contact={editingContact}
                 onSuccess={load}

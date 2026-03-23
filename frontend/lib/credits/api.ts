@@ -26,6 +26,7 @@ export interface CreditContact {
     credit_auto_blocked: boolean
     credit_risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
     credit_last_evaluated: string | null
+    is_default_customer: boolean
 }
 
 export interface CreditSummary {
