@@ -18,7 +18,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock } from 'lucide-react'
+import { LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -157,7 +157,7 @@ function POSPageContent() {
     // Query client for cache invalidation
     const queryClient = useQueryClient()
     const searchParams = useSearchParams()
-    
+
     // Local UI state
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [draftsListOpen, setDraftsListOpen] = useState(false)
@@ -171,7 +171,15 @@ function POSPageContent() {
     } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
+    const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
+
+    // Track shared session state
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setIsSharedSession(!!localStorage.getItem('shared_pos_session_id'))
+        }
+    }, [currentSession])
 
     // Load Draft from URL if present
     useEffect(() => {
@@ -409,12 +417,12 @@ function POSPageContent() {
                 notes: ''
             }
         }
-        
+
         setWizardState({
             ...quickSaleState,
             isQuickSale: true
         } as any)
-        
+
         // Use a small timeout to ensure wizardState is committed to React's state 
         // before the modal opens, guaranteeing the hydration effect reads the fresh props
         setTimeout(() => setCheckoutOpen(true), 0)
@@ -449,6 +457,27 @@ function POSPageContent() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* Quick Drafts - Horizontal access */}
+                    {drafts.length > 0 && (
+                        <div className="hidden lg:flex items-center gap-1.5 mr-2 animate-in fade-in slide-in-from-right-2">
+                            {drafts.slice(0, 5).map((draft) => (
+                                <Button
+                                    key={draft.id}
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "h-7 px-2 text-[10px] font-medium border-dashed hover:border-primary hover:text-primary transition-all",
+                                        currentDraftId === draft.id ? "bg-primary/5 border-primary text-primary" : "bg-background/50"
+                                    )}
+                                    onClick={() => handleLoadDraft(draft)}
+                                    title={`Cargar ${draft.name}`}
+                                >
+                                    <span className="truncate max-w-[70px]">{draft.name.split(' ').pop()}</span>
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Actions Menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -459,20 +488,51 @@ function POSPageContent() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Acciones de Caja</DropdownMenuLabel>
+                            <DropdownMenuLabel>Menú de Operaciones</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}>
                                 <Save className="mr-2 h-4 w-4" />
                                 <span>Ver Borradores</span>
                             </DropdownMenuItem>
+
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}>
                                 <BarChart3 className="mr-2 h-4 w-4" />
-                                <span>Reporte X (Parcial)</span>
+                                <span>Reporte Parcial</span>
                             </DropdownMenuItem>
+
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 <span>Notas de Venta</span>
                             </DropdownMenuItem>
+
+                            {currentSession?.status === 'OPEN' && (
+                                <>
+
+                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}>
+                                        <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                        <span>Movimiento de Caja</span>
+                                    </DropdownMenuItem>
+
+                                    {isSharedSession ? (
+                                        <DropdownMenuItem
+                                            onClick={() => sessionControlRef.current?.disconnectSharedSession()}
+                                            className="text-red-600 focus:text-red-700 focus:bg-red-50 font-medium"
+                                        >
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>Desconectar de Caja</span>
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem
+                                            onClick={() => sessionControlRef.current?.requestCloseSession()}
+                                            className="text-red-600 focus:text-red-700 focus:bg-red-50 font-medium"
+                                        >
+                                            <Lock className="mr-2 h-4 w-4" />
+                                            <span>Cerrar Caja</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
 

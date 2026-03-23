@@ -55,6 +55,9 @@ interface SessionControlProps {
 export interface SessionControlHandle {
     showXReport: () => void
     refreshSession: () => Promise<void>
+    showMoveDialog: () => void
+    requestCloseSession: () => void
+    disconnectSharedSession: () => void
 }
 
 export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false, session }, ref) => {
@@ -151,6 +154,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingBalance, terminals])
 
+    const handleRequestClose = () => {
+        const confirmed = window.confirm(
+            "⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE.\n\n" +
+            "Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción.\n\n" +
+            "¿Está seguro de que desea cerrar la caja?"
+        );
+
+        if (confirmed) {
+            setCloseDialogOpen(true)
+        }
+    }
+
     useImperativeHandle(ref, () => ({
         showXReport: () => {
             if (currentSession) {
@@ -166,7 +181,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             } else {
                 await fetchCurrentSession()
             }
-        }
+        },
+        showMoveDialog: () => setMoveDialogOpen(true),
+        requestCloseSession: handleRequestClose,
+        disconnectSharedSession: handleDisconnect
     }))
     // Fetch current session on mount (or shared session)
     useEffect(() => {
@@ -1101,50 +1119,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )}
 
 
-                <Button
-                    variant={hideSessionInfo ? "outline" : "ghost"}
-                    size={hideSessionInfo ? "sm" : "icon"}
-                    onClick={() => setMoveDialogOpen(true)}
-                    title="Movimiento de Caja"
-                    className={hideSessionInfo ? "px-3 gap-2" : "text-muted-foreground hover:text-primary"}
-                >
-                    <ArrowRightLeft className="h-4 w-4" />
-                    {hideSessionInfo && "Movimiento"}
-                </Button>
-
-                {isSharedSession ? (
-                    <Button
-                        variant={hideSessionInfo ? "outline" : "ghost"}
-                        size="icon"
-                        onClick={handleDisconnect}
-                        title="Desconectar de Caja"
-                        className={hideSessionInfo ? "" : "text-muted-foreground hover:text-destructive"}
-                    >
-                        <LogOut className="h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button
-                        variant={hideSessionInfo ? "destructive" : "ghost"}
-                        size={hideSessionInfo ? "sm" : "icon"}
-                        onClick={() => {
-                            // Show confirmation before allowing close (Z Report is irreversible)
-                            const confirmed = window.confirm(
-                                "⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE.\n\n" +
-                                "Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción.\n\n" +
-                                "¿Está seguro de que desea cerrar la caja?"
-                            );
-
-                            if (confirmed) {
-                                setCloseDialogOpen(true)
-                            }
-                        }}
-                        title="Cerrar Caja"
-                        className={hideSessionInfo ? "px-3 gap-2" : "text-muted-foreground hover:text-destructive"}
-                    >
-                        <Lock className="h-4 w-4" />
-                        {hideSessionInfo && "Cerrar Caja"}
-                    </Button>
-                )}
             </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
