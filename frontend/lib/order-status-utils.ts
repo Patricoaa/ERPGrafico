@@ -108,6 +108,7 @@ export const getNoteHubStatuses = (note: any) => {
     let logStatus = 'neutral'
     if (logisticsProgress === 100) logStatus = 'success'
     else if (logisticsProgress > 0) logStatus = 'active'
+    else if (note.po_receiving_status === 'RECEIVED') logStatus = 'success'
 
     // 3. Billing
     const hasFolio = note.status !== 'DRAFT' && note.number && note.number !== 'Draft'
@@ -138,6 +139,73 @@ export const getNoteHubStatuses = (note: any) => {
         isComplete: logStatus === 'success' && billingStatus === 'success' && treasuryStatus === 'success'
     }
 }
+
+export const getInvoiceHubStatuses = (invoice: any) => {
+    const isSale = !!invoice.sale_order
+
+    // 1. Origin
+    let originStatus = 'neutral'
+    if (invoice.status === 'CANCELLED') originStatus = 'destructive'
+    else if (invoice.status === 'DRAFT') originStatus = 'active'
+    else originStatus = 'success'
+
+    // 2. Logistics
+    let logStatus = 'neutral'
+    let logisticsProgress = 0
+    if (invoice.order_delivery_status === 'DELIVERED' || invoice.po_receiving_status === 'RECEIVED') {
+        logStatus = 'success'
+        logisticsProgress = 100
+    } else {
+        const lines = invoice.lines || invoice.items || []
+        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+
+        if (totalOrdered > 0) {
+            const totalProcessed = lines.reduce((acc: number, line: any) => {
+                const processedField = isSale
+                    ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
+                    : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
+                const processed = line[processedField] || 0
+                return acc + (parseFloat(processed) || 0)
+            }, 0)
+            logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
+        } else if (invoice.related_stock_moves?.length > 0) {
+             const anyCompleted = invoice.related_stock_moves.some((m: any) => m.state === 'done')
+             if (anyCompleted) logisticsProgress = 100
+        }
+
+        if (logisticsProgress === 100) logStatus = 'success'
+        else if (logisticsProgress > 0) logStatus = 'active'
+    }
+
+    // 3. Billing
+    const hasFolio = invoice.status !== 'DRAFT' && invoice.number && invoice.number !== 'Draft'
+    const billingStatus = hasFolio ? 'success' : 'neutral'
+
+    // 4. Treasury
+    const payments = invoice.serialized_payments || invoice.payments_detail || invoice.related_documents?.payments || []
+    const hasPendingTransactions = payments.some((pay: any) => {
+        const requiresTR = (
+            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
+            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
+        )
+        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
+    })
+
+    const isPaid = (invoice.status === 'PAID' || (parseFloat(invoice.pending_amount) <= 0)) && !hasPendingTransactions
+    let treasuryStatus = 'neutral'
+    if (isPaid) treasuryStatus = 'success'
+    else if (parseFloat(invoice.pending_amount) < parseFloat(invoice.total) || hasPendingTransactions) treasuryStatus = 'active'
+
+    return {
+        origin: originStatus,
+        logistics: logStatus,
+        billing: billingStatus,
+        treasury: treasuryStatus,
+        logisticsProgress,
+        hasPendingTransactions
+    }
+}
+
 
 // Helper to prevent duplicate prefixes (e.g. OC-OC-123)
 export const formatDocumentId = (prefix: string, number: string | number, displayId?: string) => {
