@@ -138,8 +138,9 @@ export function Cart({
                     <div className="flex justify-between items-center px-1 min-h-[16px]">
                         <div>
                             {currentDraftId && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-background font-normal text-muted-foreground uppercase tracking-widest border-muted-foreground/20">
-                                    Modo Borrador
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-background font-normal text-muted-foreground uppercase tracking-widest border-muted-foreground/20 gap-1 font-mono">
+                                    Borrador
+                                    <span className="font-bold text-primary/70">#{currentDraftId}</span>
                                 </Badge>
                             )}
                         </div>

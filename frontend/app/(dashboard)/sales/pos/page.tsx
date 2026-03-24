@@ -435,7 +435,9 @@ function POSPageContent() {
     const handleLoadDraft = async (draft: any) => {
         await loadDraft(draft.id)
         setDraftsListOpen(false)
-        if (draft.wizard_state) {
+        // Only reopen the wizard if the draft was saved mid-checkout;
+        // pure cart drafts (no wizard_state) just restore the items.
+        if (draft.wizard_state && draft.wizard_state.step) {
             setCheckoutOpen(true)
         }
     }
@@ -456,10 +458,10 @@ function POSPageContent() {
                             <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary gap-1 px-2 py-0.5 text-[10px] items-center h-5 font-bold">
                                 Sesión #{currentSession.id}
                             </Badge>
-                            <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                                <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                                Vendedor: <span className="text-foreground">{user?.first_name} {user?.last_name}</span>
-                            </span>
+                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 gap-1.5 px-2 py-0.5 text-[10px] items-center h-5 font-medium">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Cajero: {user?.first_name} {user?.last_name}
+                            </Badge>
                         </div>
                     )}
                 </div>
@@ -467,20 +469,20 @@ function POSPageContent() {
                 <div className="flex items-center gap-2">
                     {/* Quick Drafts - Horizontal access */}
                     {drafts.length > 0 && (
-                        <div className="hidden lg:flex items-center gap-1.5 mr-2 animate-in fade-in slide-in-from-right-2">
+                        <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in slide-in-from-right-2">
                             {drafts.slice(0, 5).map((draft) => (
                                 <Button
                                     key={draft.id}
                                     variant="outline"
                                     size="sm"
                                     className={cn(
-                                        "h-7 px-2 text-[10px] font-medium border-dashed hover:border-primary hover:text-primary transition-all",
-                                        currentDraftId === draft.id ? "bg-primary/5 border-primary text-primary" : "bg-background/50"
+                                        "h-8 w-8 p-0 text-[10px] font-mono font-bold border-dashed hover:border-primary hover:text-primary transition-all",
+                                        currentDraftId === draft.id ? "bg-primary/5 border-primary text-primary" : "bg-background/50 text-muted-foreground"
                                     )}
                                     onClick={() => handleLoadDraft(draft)}
-                                    title={`Cargar ${draft.name}`}
+                                    title={`${draft.name} · ${draft.item_count} ítem(s)`}
                                 >
-                                    <span className="truncate max-w-[70px]">{draft.name.split(' ').pop()}</span>
+                                    {draft.id}
                                 </Button>
                             ))}
                         </div>
