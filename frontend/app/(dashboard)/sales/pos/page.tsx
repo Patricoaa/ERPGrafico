@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils"
 
 // Context and Hooks
 import { POSProvider, usePOS } from './contexts/POSContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useProducts } from './hooks/useProducts'
 import { useCart } from './hooks/useCart'
 import { useStockValidation } from './hooks/useStockValidation'
@@ -101,6 +102,8 @@ function POSPageContent() {
         totalDiscountAmount,
         setTotalDiscountAmount,
     } = usePOS()
+
+    const { user } = useAuth()
 
     // Cart management
     const {
@@ -440,7 +443,7 @@ function POSPageContent() {
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
 
     return (
-        <div className={cn(LAYOUT_TOKENS.view, "h-[calc(100vh-4rem)] flex flex-col")}>
+        <div className={cn("flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500")}>
             {/* Header */}
             <div className="flex items-center justify-between py-1 px-1 mb-1">
                 <div className="flex items-center gap-4">
@@ -449,10 +452,15 @@ function POSPageContent() {
                     </h2>
 
                     {currentSession && currentSession.status === 'OPEN' && (
-                        <Badge variant="outline" className="border-emerald-500 text-emerald-600 gap-1 px-2 py-0.5 text-[10px] items-center h-5">
-                            <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                            Caja Abierta
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary gap-1 px-2 py-0.5 text-[10px] items-center h-5 font-bold">
+                                Sesión #{currentSession.id}
+                            </Badge>
+                            <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                                <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                                Vendedor: <span className="text-foreground">{user?.first_name} {user?.last_name}</span>
+                            </span>
+                        </div>
                     )}
                 </div>
 
