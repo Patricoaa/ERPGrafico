@@ -53,19 +53,26 @@ export type SalesSettingsUpdatePayload = Partial<SalesSettings>
 export interface BillingSettings {
     // Tax fields
     default_vat_rate: number
-    vat_payable_account: string | null
-    vat_carryforward_account: string | null
-    withholding_tax_account: string | null
-    ppm_account: string | null
-    second_category_tax_account: string | null
-    correction_income_account: string | null
-    default_tax_receivable_account: string | null
-    default_tax_payable_account: string | null
+    vat_payable_account: string | number | null
+    vat_carryforward_account: string | number | null
+    withholding_tax_account: string | number | null
+    ppm_account: string | number | null
+    second_category_tax_account: string | number | null
+    correction_income_account: string | number | null
+    default_tax_receivable_account: string | number | null
+    default_tax_payable_account: string | number | null
     // Billing fields
-    default_receivable_account: string | null
-    default_payable_account: string | null
-    default_advance_payment_account: string | null
-    default_prepayment_account: string | null
+    default_receivable_account: string | number | null
+    default_payable_account: string | number | null
+    default_advance_payment_account: string | number | null
+    default_prepayment_account: string | number | null
+    // Additional Tax Fields
+    loan_retention_account: string | number | null
+    ila_tax_account: string | number | null
+    vat_withholding_account: string | number | null
+    // DTE Configuration
+    allowed_dte_types_emit: string[]
+    allowed_dte_types_receive: string[]
 }
 
 export type BillingSettingsUpdatePayload = Partial<BillingSettings>
