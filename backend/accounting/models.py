@@ -697,6 +697,20 @@ class AccountingSettings(models.Model):
         default=InventoryValuationMethod.AVERAGE
     )
 
+    # DTE Configuration
+    allowed_dte_types_emit = models.JSONField(
+        _("DTEs Permitidos a Emitir (Ventas/POS)"), 
+        default=list, 
+        blank=True,
+        help_text=_("Tipos de documentos electrónicos seleccionables en el flujo de venta y POS.")
+    )
+    allowed_dte_types_receive = models.JSONField(
+        _("DTEs Permitidos a Recibir (Compras)"), 
+        default=list, 
+        blank=True,
+        help_text=_("Tipos de documentos electrónicos seleccionables en el flujo de compras.")
+    )
+
     # Code Format & Hierarchy
     # Example: "X.X.XX.XXX"
     code_format = models.CharField(_("Formato de Código"), max_length=50, default="X.X.XX.XXX")

@@ -78,6 +78,11 @@ export const settingsApi = {
             'default_payable_account',
             'default_advance_payment_account',
             'default_prepayment_account',
+            'loan_retention_account',
+            'ila_tax_account',
+            'vat_withholding_account',
+            'allowed_dte_types_emit',
+            'allowed_dte_types_receive',
         ]
         const billingSettings: Partial<BillingSettings> = {}
         billingFields.forEach(field => {
