@@ -5,6 +5,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle } from "lucide-react"
+import { useQuery } from '@tanstack/react-query'
+import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useMemo, useEffect } from "react"
+import { cn } from "@/lib/utils"
 
 interface Step2_PurchaseDTEProps {
     dteData: any
@@ -12,6 +16,37 @@ interface Step2_PurchaseDTEProps {
 }
 
 export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProps) {
+    // Fetch billing settings to get allowed DTE types
+    const { data: settings } = useQuery({
+        queryKey: ['settings-billing'],
+        queryFn: settingsApi.getBillingSettings,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    })
+
+    const allowedDteTypes = useMemo(() => {
+        if (!settings) return ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
+        const allowed = settings.allowed_dte_types_receive || [];
+        return allowed.length > 0 ? allowed : ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
+    }, [settings])
+
+    // Enforce allowed DTE types
+    useEffect(() => {
+        if (!allowedDteTypes.includes(dteData.type)) {
+            // If current type is not allowed, switch to first allowed
+            setDteData({ ...dteData, type: allowedDteTypes[0] })
+        }
+    }, [dteData.type, setDteData, allowedDteTypes])
+
+    const dteOptions = [
+        { id: 'BOLETA', label: 'Boleta', code: '39', icon: Receipt },
+        { id: 'FACTURA', label: 'Factura', code: '33', icon: FileText },
+        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-amber-600' },
+        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-amber-600' },
+    ]
+
+    const filteredOptions = useMemo(() => {
+        return dteOptions.filter(opt => allowedDteTypes.includes(opt.id));
+    }, [allowedDteTypes])
     return (
         <div className="space-y-8">
             <div className="flex flex-col gap-1">
@@ -27,44 +62,23 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="grid grid-cols-4 gap-4"
+                    className="flex flex-wrap gap-4 w-full"
                 >
-                    <Label
-                        htmlFor="type-boleta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="BOLETA" id="type-boleta" className="sr-only" />
-                        <Receipt className="mb-3 h-6 w-6" />
-                        <span className="text-sm font-medium">Boleta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 39</span>
-                    </Label>
-                    <Label
-                        htmlFor="type-factura"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
-                        <FileText className="mb-3 h-6 w-6" />
-                        <span className="text-sm font-medium">Factura</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 33</span>
-                    </Label>
-                    <Label
-                        htmlFor="type-boleta-exenta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA_EXENTA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="BOLETA_EXENTA" id="type-boleta-exenta" className="sr-only" />
-                        <Receipt className="mb-3 h-6 w-6 text-amber-600" />
-                        <span className="text-sm font-medium">Boleta Exenta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 41</span>
-                    </Label>
-                    <Label
-                        htmlFor="type-factura-exenta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [\&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA_EXENTA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="FACTURA_EXENTA" id="type-factura-exenta" className="sr-only" />
-                        <FileText className="mb-3 h-6 w-6 text-amber-600" />
-                        <span className="text-sm font-medium">Factura Exenta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 34</span>
-                    </Label>
+                    {filteredOptions.map((opt) => (
+                        <Label
+                            key={opt.id}
+                            htmlFor={`type-${opt.id.toLowerCase().replace('_', '-')}`}
+                            className={cn(
+                                "flex flex-1 flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer min-w-[120px]",
+                                dteData.type === opt.id ? 'border-primary' : ''
+                            )}
+                        >
+                            <RadioGroupItem value={opt.id} id={`type-${opt.id.toLowerCase().replace('_', '-')}`} className="sr-only" />
+                            <opt.icon className={`mb-3 h-6 w-6 ${opt.color || ''}`} />
+                            <span className="text-sm font-medium">{opt.label}</span>
+                            <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
+                        </Label>
+                    ))}
                 </RadioGroup>
             </div>
 

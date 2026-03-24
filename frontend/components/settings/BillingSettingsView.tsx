@@ -25,25 +25,30 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 
+const accountIdSchema = z.union([z.string(), z.number()]).nullable()
+
 const billingSchema = z.object({
     // Tax fields
     default_vat_rate: z.number().min(0).max(100),
-    vat_payable_account: z.string().nullable(),
-    vat_carryforward_account: z.string().nullable(),
-    withholding_tax_account: z.string().nullable(),
-    ppm_account: z.string().nullable(),
-    second_category_tax_account: z.string().nullable(),
-    correction_income_account: z.string().nullable(),
-    default_tax_receivable_account: z.string().nullable(),
-    default_tax_payable_account: z.string().nullable(),
-    loan_retention_account: z.string().nullable(),
-    ila_tax_account: z.string().nullable(),
-    vat_withholding_account: z.string().nullable(),
+    vat_payable_account: accountIdSchema,
+    vat_carryforward_account: accountIdSchema,
+    withholding_tax_account: accountIdSchema,
+    ppm_account: accountIdSchema,
+    second_category_tax_account: accountIdSchema,
+    correction_income_account: accountIdSchema,
+    default_tax_receivable_account: accountIdSchema,
+    default_tax_payable_account: accountIdSchema,
+    loan_retention_account: accountIdSchema,
+    ila_tax_account: accountIdSchema,
+    vat_withholding_account: accountIdSchema,
     // Billing fields
-    default_receivable_account: z.string().nullable(),
-    default_payable_account: z.string().nullable(),
-    default_advance_payment_account: z.string().nullable(),
-    default_prepayment_account: z.string().nullable(),
+    default_receivable_account: accountIdSchema,
+    default_payable_account: accountIdSchema,
+    default_advance_payment_account: accountIdSchema,
+    default_prepayment_account: accountIdSchema,
+    // DTE Configuration
+    allowed_dte_types_emit: z.array(z.string()),
+    allowed_dte_types_receive: z.array(z.string()),
 })
 
 type BillingFormValues = z.infer<typeof billingSchema>
@@ -74,8 +79,22 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             default_payable_account: null,
             default_advance_payment_account: null,
             default_prepayment_account: null,
+            allowed_dte_types_emit: [],
+            allowed_dte_types_receive: [],
         }
     })
+
+    const watchedValues = form.watch()
+    const { isDirty, errors } = form.formState
+
+    const onSubmit = useCallback(async (data: BillingFormValues) => {
+        try {
+            await updateSettings(data as any)
+            form.reset(data)
+        } catch {
+            // Error already handled by hook
+        }
+    }, [updateSettings, form])
 
     // Update form when settings are loaded
     useEffect(() => {
@@ -86,11 +105,17 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             keys.forEach((key) => {
                 const val = settings[key as keyof typeof settings]
                 if (val === null || val === undefined) {
-                    formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null) as never
+                    if (key === 'default_vat_rate') {
+                        formattedSettings[key] = 19.00 as never;
+                    } else if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
+                        formattedSettings[key] = [] as never;
+                    } else {
+                        formattedSettings[key] = null as never;
+                    }
                 } else if (key === 'default_vat_rate') {
                     formattedSettings[key] = parseFloat(val.toString()) as never
                 } else {
-                    formattedSettings[key] = val.toString() as never
+                    formattedSettings[key] = val as never
                 }
             })
 
@@ -98,17 +123,6 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
         }
     }, [settings, form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
-
-    const onSubmit = useCallback(async (data: BillingFormValues) => {
-        try {
-            await updateSettings(data)
-            form.reset(data)
-        } catch {
-            // Error already handled by hook
-        }
-    }, [updateSettings, form])
 
     useEffect(() => {
         if (isDirty) {
@@ -124,6 +138,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
     const tabs = [
         { value: "accounts", label: "Cuentas por Cobrar/Pagar", iconName: "users", href: "/settings/billing?tab=accounts" },
         { value: "tax", label: "Impuestos", iconName: "receipt", href: "/settings/billing?tab=tax" },
+        { value: "dtes", label: "Documentos Electrónicos", iconName: "file-text", href: "/settings/billing?tab=dtes" },
     ]
 
     return (
@@ -284,6 +299,23 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                 </div>
                             </div>
                         </TabsContent>
+
+                        <TabsContent value="dtes" className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <DTEConfigCard 
+                                    form={form} 
+                                    name="allowed_dte_types_emit" 
+                                    title="Documentos a Emitir (Ventas/POS)" 
+                                    description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
+                                />
+                                <DTEConfigCard 
+                                    form={form} 
+                                    name="allowed_dte_types_receive" 
+                                    title="Documentos a Recibir (Compras)" 
+                                    description="Seleccione qué tipos de documentos están habilitados para ser registrados."
+                                />
+                            </div>
+                        </TabsContent>
                     </form>
                 </Form>
             </Tabs>
@@ -319,5 +351,59 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
                 </FormItem>
             )}
         />
+    )
+}
+
+interface DTEConfigCardProps {
+    form: UseFormReturn<BillingFormValues>
+    name: "allowed_dte_types_emit" | "allowed_dte_types_receive"
+    title: string
+    description: string
+}
+
+function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
+    const dteTypes = [
+        { id: 'FACTURA', label: 'Factura Electrónica', code: '33' },
+        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34' },
+        { id: 'BOLETA', label: 'Boleta Electrónica', code: '39' },
+        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41' },
+    ]
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name={name}
+                    render={({ field }) => (
+                        <FormItem>
+                            <div className="grid grid-cols-1 gap-4">
+                                {dteTypes.map((type) => (
+                                    <div key={type.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
+                                        const current = (field.value as string[]) || [];
+                                        const next = current.includes(type.id)
+                                            ? current.filter((v) => v !== type.id)
+                                            : [...current, type.id];
+                                        field.onChange(next);
+                                    }}>
+                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${((field.value as string[]) || []).includes(type.id) ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                            {((field.value as string[]) || []).includes(type.id) && <Check className="h-3.5 w-3.5 text-primary-foreground stroke-[4]" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="text-sm font-bold leading-none">{type.label}</div>
+                                            <div className="text-[10px] text-muted-foreground mt-1">Código SII: {type.code}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </FormItem>
+                    )}
+                />
+            </CardContent>
+        </Card>
     )
 }
