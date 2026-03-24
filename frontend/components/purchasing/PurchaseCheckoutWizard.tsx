@@ -346,7 +346,6 @@ export function PurchaseCheckoutWizard({
             open={open}
             onOpenChange={onOpenChange}
             size="full"
-            variant="wizard"
             hideScrollArea
             className="h-[90vh]"
             contentClassName="p-0"

@@ -497,9 +497,19 @@ export function SalesCheckoutWizard({
 
         // DTE validation
         if (step === currentStepNum) {
-            if (dteData.type === 'FACTURA' && !dteData.isPending && !dteData.number) {
-                toast.error("Debe ingresar el número de folio para la factura.")
-                return { isValid: false }
+            if (dteData.type !== 'BOLETA' && !dteData.isPending) {
+                if (!dteData.number) {
+                    toast.error("Debe ingresar el número de folio para este tipo de documento.")
+                    return { isValid: false }
+                }
+                if (!dteData.date) {
+                    toast.error("Debe ingresar la fecha de emisión para este tipo de documento.")
+                    return { isValid: false }
+                }
+                if (!dteData.attachment) {
+                    toast.error("El archivo adjunto es obligatorio para este tipo de documento.")
+                    return { isValid: false }
+                }
             }
 
             // Validate folio uniqueness

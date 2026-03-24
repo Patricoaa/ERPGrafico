@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Calendar, Hash, Upload, X, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean
@@ -101,42 +101,13 @@ export function Step3_Registration({
                             </div>
 
                             {/* Attachment Section inside the card */}
-                            <div className="col-span-2 space-y-2 pt-2 border-t mt-2">
-                                <Label className="text-xs font-bold uppercase flex items-center gap-2">
-                                    <Upload className="h-3 w-3" />
-                                    Archivo Adjunto
-                                    <span className="text-rose-500 font-black ml-1 text-[10px]">OBLIGATORIO</span>
-                                </Label>
-
-                                {!formData.attachment ? (
-                                    <div className="relative group min-h-[80px]">
-                                        <Input
-                                            type="file"
-                                            accept=".pdf,.xml"
-                                            className="h-full w-full cursor-pointer opacity-0 absolute inset-0 z-10"
-                                            onChange={(e) => setData({ ...formData, attachment: e.target.files?.[0] || null })}
-                                        />
-                                        <div className="h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
-                                            <Upload className="h-4 w-4 text-muted-foreground mb-1 group-hover:text-primary" />
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Seleccionar respaldo</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center justify-between p-3 bg-emerald-500/5 border rounded-lg animate-in zoom-in duration-300">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-1.5 bg-emerald-500/10 rounded text-emerald-600">
-                                                <FileText className="h-4 w-4" />
-                                            </div>
-                                            <div className="flex flex-col min-w-0">
-                                                <span className="text-xs font-bold truncate max-w-[250px]">{formData.attachment.name}</span>
-                                                <span className="text-[10px] uppercase font-black text-emerald-600/50">{(formData.attachment.size / 1024).toFixed(1)} KB</span>
-                                            </div>
-                                        </div>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => setData({ ...formData, attachment: null })}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
+                            <div className="col-span-2 pt-2 border-t mt-2">
+                                <DocumentAttachmentDropzone
+                                    file={formData.attachment}
+                                    onFileChange={(file) => setData({ ...formData, attachment: file })}
+                                    dteType={isCreditNote ? "NOTA_CREDITO" : "NOTA_DEBITO"}
+                                    isPending={formData.is_pending}
+                                />
                             </div>
                         </div>
 

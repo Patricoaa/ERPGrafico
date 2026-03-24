@@ -13,6 +13,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { FORM_STYLES } from "@/lib/styles"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface MonthlyInvoiceDialogProps {
     open: boolean
@@ -202,24 +203,11 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
                     </div>
 
                     <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Adjuntar Factura (PDF) <span className="text-destructive">*</span></Label>
-                        <div className="relative group/file">
-                            <Input
-                                type="file"
-                                accept="application/pdf,image/*"
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAttachment(e.target.files?.[0] || null)}
-                                className={cn(
-                                    FORM_STYLES.input, 
-                                    "cursor-pointer h-20 border-dashed border-2 hover:border-purple-500/40 hover:bg-purple-500/5 transition-all text-center pt-8 file:hidden"
-                                )}
-                            />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-muted-foreground group-hover/file:text-purple-600 transition-colors">
-                                <FileText className="h-5 w-5 mb-1 opacity-50" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">
-                                    {attachment ? attachment.name : "Seleccionar Archivo PDF"}
-                                </span>
-                            </div>
-                        </div>
+                        <DocumentAttachmentDropzone
+                            file={attachment}
+                            onFileChange={setAttachment}
+                            dteType="FACTURA"
+                        />
                     </div>
                 </div>
             </div>

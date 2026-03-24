@@ -19,6 +19,7 @@ import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface SaleNoteModalProps {
     open: boolean
@@ -100,6 +101,10 @@ export function SaleNoteModal({
             toast.error("El número de documento es obligatorio")
             return
         }
+        if (!attachment) {
+            toast.error("El archivo adjunto es obligatorio para este tipo de nota")
+            return
+        }
         if (amountNet <= 0) {
             toast.error("El monto total de la nota debe ser mayor a 0")
             return
@@ -125,10 +130,6 @@ export function SaleNoteModal({
 
             if (invoiceId) {
                 formData.append('original_invoice_id', invoiceId.toString())
-            }
-
-            if (attachment) {
-                formData.append('document_attachment', attachment)
             }
 
             if (attachment) {
@@ -274,18 +275,12 @@ export function SaleNoteModal({
                 </div>
 
                 <div className="flex justify-between items-start gap-8">
-                    <div className="flex-1 space-y-2">
-                        <Label className={FORM_STYLES.label}>Adjuntar Documento (Opcional)</Label>
-                        <Input
-                            type="file"
-                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                            className={cn(FORM_STYLES.input, "cursor-pointer h-10")}
+                    <div className="flex-1">
+                        <DocumentAttachmentDropzone
+                            file={attachment}
+                            onFileChange={setAttachment}
+                            dteType={noteType}
                         />
-                        {attachment && (
-                            <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3" /> {attachment.name}
-                            </div>
-                        )}
                     </div>
 
                     <div className={FORM_STYLES.card + " w-64 space-y-2"}>

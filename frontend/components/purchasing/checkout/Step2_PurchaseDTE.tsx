@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import { settingsApi } from "@/features/settings/api/settingsApi"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface Step2_PurchaseDTEProps {
     dteData: any
@@ -117,22 +118,13 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                                 onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
                             />
                         </div>
-                        <div className="col-span-2 space-y-2">
-                            <Label htmlFor="attachment" className="text-xs font-bold uppercase">
-                                Archivo Adjunto {dteData.type === 'FACTURA' && <span className="text-destructive">*</span>}
-                            </Label>
-                            <Input
-                                id="attachment"
-                                type="file"
-                                onChange={(e) => setDteData({ ...dteData, attachment: e.target.files?.[0] || null })}
-                                className="text-xs"
-                                required={dteData.type === 'FACTURA'}
+                        <div className="col-span-2">
+                            <DocumentAttachmentDropzone
+                                file={dteData.attachment}
+                                onFileChange={(file) => setDteData({ ...dteData, attachment: file })}
+                                dteType={dteData.type}
+                                isPending={dteData.isPending}
                             />
-                            {dteData.attachment && (
-                                <p className="text-xs text-muted-foreground">
-                                    Archivo: {dteData.attachment.name}
-                                </p>
-                            )}
                         </div>
                     </div>
                 )}
@@ -145,10 +137,10 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                 </div>
             )}
 
-            {dteData.type === 'FACTURA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
+            {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El folio y el adjunto de la factura son requeridos para registrar el documento.</p>
+                    <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>
             )}
         </div>
