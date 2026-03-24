@@ -7,7 +7,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical } from "lucide-react"
+import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical, Package } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
@@ -20,6 +20,7 @@ import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { InvoiceCard } from "@/components/billing/InvoiceCard"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
@@ -240,7 +241,43 @@ export function SalesInvoicesClientView() {
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={20}
+                renderCustomView={(table) => {
+                    const rows = table.getRowModel().rows
+                    if (rows.length === 0) {
+                        return (
+                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
+                                <Receipt className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                <p className="text-muted-foreground font-medium">No se encontraron documentos</p>
+                            </div>
+                        )
+                    }
+                    return (
+                        <div className="grid gap-3 pt-2">
+                            {rows.map((row: any) => {
+                                const inv = row.original as Invoice
+                                return (
+                                    <InvoiceCard
+                                        key={inv.id}
+                                        item={inv}
+                                        type="sale_invoice"
+                                        onClick={() => {
+                                            if (inv.sale_order) {
+                                                setSelectedHub({
+                                                    orderId: inv.sale_order,
+                                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null
+                                                })
+                                            } else {
+                                                setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })
+                                            }
+                                        }}
+                                    />
+                                )
+                            })}
+                        </div>
+                    )
+                }}
             />
+
 
 
             {viewingTransaction && (
