@@ -426,7 +426,13 @@ export function SalesCheckoutWizard({
 
         // Step: DTE
         if (step === currentStepNum) {
-            return <Step1_DTE dteData={dteData} setDteData={setDteData} />
+            return (
+                <Step1_DTE
+                    dteData={dteData}
+                    setDteData={setDteData}
+                    isDefaultCustomer={!!selectedCustomer?.is_default_customer}
+                />
+            )
         }
         currentStepNum++;
 

@@ -14,9 +14,10 @@ interface Step1_DTEProps {
     dteData: any
     setDteData: (data: any) => void
     isPurchase?: boolean
+    isDefaultCustomer?: boolean
 }
 
-export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTEProps) {
+export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCustomer = false }: Step1_DTEProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
 
     // Validate folio when number changes
@@ -27,6 +28,13 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTE
             clearValidation()
         }
     }, [dteData.number, dteData.type, dteData.isPending, validateFolio, clearValidation])
+
+    // Enforce BOLETA for default customers
+    useEffect(() => {
+        if (isDefaultCustomer && dteData.type !== 'BOLETA') {
+            setDteData({ ...dteData, type: 'BOLETA' })
+        }
+    }, [isDefaultCustomer, dteData.type, setDteData])
 
     return (
         <div className="space-y-6">
@@ -39,11 +47,24 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTE
                     Ingrese la información relacionada al DTE y adjunte el respaldo legal.
                 </p>
             </div>
+
+            {isDefaultCustomer && (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-3">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-xs font-medium">
+                        El cliente por defecto solo permite emisión de <strong>Boleta Electrónica</strong>.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <div className="space-y-4">
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="grid grid-cols-2 gap-4"
+                    className={cn(
+                        "grid gap-4",
+                        isDefaultCustomer ? "grid-cols-1" : "grid-cols-2"
+                    )}
                 >
                     <Label
                         htmlFor="type-boleta"
@@ -54,33 +75,38 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false }: Step1_DTE
                         <span className="text-sm font-medium">Boleta Electrónica</span>
                         <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 39</span>
                     </Label>
-                    <Label
-                        htmlFor="type-factura"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
-                        <FileText className="mb-3 h-6 w-6" />
-                        <span className="text-sm font-medium">Factura Electrónica</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 33</span>
-                    </Label>
-                    <Label
-                        htmlFor="type-boleta-exenta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA_EXENTA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="BOLETA_EXENTA" id="type-boleta-exenta" className="sr-only" />
-                        <Receipt className="mb-3 h-6 w-6 text-amber-600" />
-                        <span className="text-sm font-medium">Boleta Exenta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 41</span>
-                    </Label>
-                    <Label
-                        htmlFor="type-factura-exenta"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA_EXENTA' ? 'border-primary' : ''}`}
-                    >
-                        <RadioGroupItem value="FACTURA_EXENTA" id="type-factura-exenta" className="sr-only" />
-                        <FileText className="mb-3 h-6 w-6 text-amber-600" />
-                        <span className="text-sm font-medium">Factura Exenta</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 34</span>
-                    </Label>
+
+                    {!isDefaultCustomer && (
+                        <>
+                            <Label
+                                htmlFor="type-factura"
+                                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA' ? 'border-primary' : ''}`}
+                            >
+                                <RadioGroupItem value="FACTURA" id="type-factura" className="sr-only" />
+                                <FileText className="mb-3 h-6 w-6" />
+                                <span className="text-sm font-medium">Factura Electrónica</span>
+                                <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 33</span>
+                            </Label>
+                            <Label
+                                htmlFor="type-boleta-exenta"
+                                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'BOLETA_EXENTA' ? 'border-primary' : ''}`}
+                            >
+                                <RadioGroupItem value="BOLETA_EXENTA" id="type-boleta-exenta" className="sr-only" />
+                                <Receipt className="mb-3 h-6 w-6 text-amber-600" />
+                                <span className="text-sm font-medium">Boleta Exenta</span>
+                                <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 41</span>
+                            </Label>
+                            <Label
+                                htmlFor="type-factura-exenta"
+                                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer ${dteData.type === 'FACTURA_EXENTA' ? 'border-primary' : ''}`}
+                            >
+                                <RadioGroupItem value="FACTURA_EXENTA" id="type-factura-exenta" className="sr-only" />
+                                <FileText className="mb-3 h-6 w-6 text-amber-600" />
+                                <span className="text-sm font-medium">Factura Exenta</span>
+                                <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: 34</span>
+                            </Label>
+                        </>
+                    )}
                 </RadioGroup>
             </div>
 
