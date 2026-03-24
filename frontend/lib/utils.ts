@@ -76,7 +76,10 @@ export function translateReceivingStatus(status: string): string {
 }
 
 export function translateFieldName(field: string): string {
-  const map: Record<string, string> = {
+  if (!field) return '';
+  const lowerField = field.toLowerCase();
+  
+  const exactMap: Record<string, string> = {
     'customer_name': 'Nombre Cliente',
     'supplier_name': 'Nombre Proveedor',
     'status': 'Estado',
@@ -95,8 +98,74 @@ export function translateFieldName(field: string): string {
     'subtotal': 'Subtotal',
     'tax_amount': 'IVA',
     'total_amount': 'Monto Total',
-  }
-  return map[field.toLowerCase()] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    'is_active': 'Activo',
+    'internal_reference': 'Ref. Interna',
+    'barcode': 'Código de Barras',
+    'category': 'Categoría',
+    'cost': 'Costo',
+    'weight': 'Peso',
+    'volume': 'Volumen',
+    'email': 'Email',
+    'phone': 'Teléfono',
+    'address': 'Dirección',
+    'city': 'Ciudad',
+    'country': 'País',
+    'tax_id': 'RUT',
+    'rut': 'RUT',
+    'user': 'Usuario',
+    'role': 'Rol',
+    'company': 'Empresa',
+    'permissions': 'Permisos',
+    'type': 'Tipo',
+    'code': 'Código',
+    'amount': 'Monto',
+    'currency': 'Moneda',
+    'is_default_customer': 'Es Cliente por Defecto',
+    'contact_name': 'Nombre Contacto',
+    'document_type': 'Tipo Documento',
+    'document_number': 'Nº Documento',
+    'issue_date': 'Fecha Emisión',
+    'due_date': 'Fecha Vencimiento',
+    'payment_term': 'Plazo de Pago',
+    'sales_channel': 'Canal de Venta',
+    'stage': 'Etapa',
+    'priority': 'Prioridad',
+    'discount': 'Descuento',
+    'net_amount': 'Monto Neto',
+    'base_amount': 'Monto Base',
+    'balance': 'Saldo',
+    'account': 'Cuenta',
+    'bank': 'Banco',
+    'journal': 'Diario',
+    'invoice_status': 'Estado Factura',
+    'delivery_status': 'Estado Entrega',
+    'receipt_status': 'Estado Recepción',
+    'location': 'Ubicación',
+    'source_document': 'Documento Origen',
+    'credit_last_valuated': 'Ult. Evaluación de Crédito',
+  };
+
+  if (exactMap[lowerField]) return exactMap[lowerField];
+
+  const partialMap: Record<string, string> = {
+    'date': 'fecha', 'amount': 'monto', 'price': 'precio', 'cost': 'costo',
+    'name': 'nombre', 'status': 'estado', 'type': 'tipo', 'channel': 'canal',
+    'stage': 'etapa', 'reference': 'referencia', 'user': 'usuario',
+    'customer': 'cliente', 'supplier': 'proveedor', 'product': 'producto',
+    'company': 'empresa', 'address': 'dirección', 'phone': 'teléfono',
+    'email': 'correo', 'city': 'ciudad', 'country': 'país', 'tax': 'impuesto',
+    'discount': 'descuento', 'total': 'total', 'qty': 'cantidad',
+    'quantity': 'cantidad', 'number': 'número', 'code': 'código',
+    'category': 'categoría', 'warehouse': 'bodega', 'location': 'ubicación',
+    'payment': 'pago', 'invoice': 'factura', 'order': 'pedido', 'sale': 'venta',
+    'purchase': 'compra', 'delivery': 'entrega', 'receipt': 'recepción',
+    'subtotal': 'subtotal', 'is': 'es', 'has': 'tiene', 'can': 'puede'
+  };
+
+  const humanized = lowerField.replace(/_/g, ' ');
+  const words = humanized.split(' ').map(w => partialMap[w] || w);
+  
+  return words.join(' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 export function translateProductType(type: string): string {
