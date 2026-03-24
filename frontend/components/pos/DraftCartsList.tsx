@@ -2,23 +2,23 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import {
     Archive,
-    Calendar,
-    User,
-    ShoppingCart,
     Trash2,
     Loader2,
     RefreshCw,
     ClipboardCheck,
+    ShoppingCart,
+    User,
+    ChevronRight,
 } from "lucide-react"
 import {
     AlertDialog,
@@ -90,7 +90,6 @@ export function DraftCartsList({
             toast.error("No hay sesión activa")
             return
         }
-
         setLoading(true)
         try {
             const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
@@ -121,7 +120,6 @@ export function DraftCartsList({
 
     const handleDeleteDraft = async (draftId: number, draftName: string) => {
         if (!posSessionId) return
-
         setDeletingId(draftId)
         try {
             await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${posSessionId}`)
@@ -142,19 +140,16 @@ export function DraftCartsList({
         }
     }
 
-    const formatDate = (dateString: string) => {
+    const formatRelative = (dateString: string) => {
         try {
-            const date = new Date(dateString)
-            return new Intl.DateTimeFormat('es-CL', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(date)
-        } catch (e) {
-            return dateString
-        }
+            const diff = Date.now() - new Date(dateString).getTime()
+            const mins = Math.floor(diff / 60000)
+            if (mins < 1) return "Ahora"
+            if (mins < 60) return `Hace ${mins}m`
+            const hrs = Math.floor(mins / 60)
+            if (hrs < 24) return `Hace ${hrs}h`
+            return new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: '2-digit' }).format(new Date(dateString))
+        } catch { return dateString }
     }
 
     return (
@@ -164,9 +159,7 @@ export function DraftCartsList({
                     <Archive className="h-4 w-4 mr-2" />
                     Ver Borradores
                     {drafts.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                            {drafts.length}
-                        </Badge>
+                        <Badge variant="secondary" className="ml-2">{drafts.length}</Badge>
                     )}
                 </Button>
             )}
@@ -177,132 +170,150 @@ export function DraftCartsList({
                 size="lg"
                 title={
                     <div className="flex items-center justify-between w-full pr-8">
-                        <span>Borradores de Carrito</span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={fetchDrafts}
-                            disabled={loading}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        <div className="flex items-center gap-2">
+                            <Archive className="h-4 w-4 text-muted-foreground" />
+                            <span>Borradores</span>
+                            {drafts.length > 0 && (
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                    {drafts.length}
+                                </Badge>
+                            )}
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={fetchDrafts} disabled={loading}>
+                            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
                         </Button>
                     </div>
                 }
             >
-                <div className="py-2">
-                    <ScrollArea className="h-[60vh] pr-4">
-                        {loading ? (
-                            <div className="flex items-center justify-center h-full min-h-[200px]">
-                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="py-1">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-12 text-muted-foreground">
+                            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                            <span className="text-sm">Cargando...</span>
+                        </div>
+                    ) : drafts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                            <Archive className="h-10 w-10 mb-3 opacity-30" />
+                            <p className="text-sm">No hay borradores en esta sesión</p>
+                        </div>
+                    ) : (
+                        <ScrollArea className="max-h-[65vh]">
+                            {/* Column headers */}
+                            <div className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b">
+                                <span className="text-center">#</span>
+                                <span>Nombre / Cliente</span>
+                                <span className="text-center">Ítems</span>
+                                <span className="text-right">Total</span>
+                                <span />
                             </div>
-                        ) : drafts.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-muted-foreground">
-                                <Archive className="h-12 w-12 mb-4 opacity-50" />
-                                <p>No hay borradores guardados en esta sesión</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
+
+                            <div className="divide-y divide-border/60">
                                 {drafts.map((draft) => (
-                                    <Card key={draft.id} className="hover:border-primary/50 transition-colors">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <CardTitle className="text-base font-semibold mb-1">
-                                                        {draft.name || `Borrador #${draft.id}`}
-                                                    </CardTitle>
-                                                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                                                        <div className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            {formatDate(draft.updated_at)}
-                                                        </div>
-                                                        {draft.last_modified_by_full_name && (
-                                                            <div className="flex items-center gap-1">
-                                                                <User className="h-3 w-3" />
-                                                                {draft.last_modified_by_full_name}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex items-center gap-1">
-                                                            <ShoppingCart className="h-3 w-3" />
-                                                            {draft.item_count} item{draft.item_count !== 1 ? 's' : ''}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <Badge variant="secondary" className="ml-2">
-                                                    {formatCurrency(draft.total_gross)}
-                                                </Badge>
-                                            </div>
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {draft.wizard_state && (
-                                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 gap-1 text-[10px] items-center h-5">
-                                                        <ClipboardCheck className="h-3 w-3" />
-                                                        Venta en curso (Paso {draft.wizard_state.step})
+                                    <div
+                                        key={draft.id}
+                                        className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 hover:bg-muted/40 transition-colors group"
+                                    >
+                                        {/* ID */}
+                                        <span className="text-center text-[11px] font-mono font-bold text-primary/70">
+                                            {draft.id}
+                                        </span>
+
+                                        {/* Name + meta */}
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-sm font-medium truncate leading-tight">
+                                                    {draft.name || `Borrador #${draft.id}`}
+                                                </span>
+                                                {draft.wizard_state?.step && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-amber-50 text-amber-600 border-amber-200 gap-0.5 shrink-0"
+                                                    >
+                                                        <ClipboardCheck className="h-2.5 w-2.5" />
+                                                        P{draft.wizard_state.step}
                                                     </Badge>
                                                 )}
                                                 {draft.wizard_state?.isWaitingApproval && (
-                                                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 gap-1 text-[10px] items-center h-5">
-                                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                                        Esperando Autorización
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-blue-50 text-blue-600 border-blue-200 gap-0.5 shrink-0"
+                                                    >
+                                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                                        Auth
                                                     </Badge>
                                                 )}
                                                 {draft.wizard_state?.isApproved && (
-                                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 gap-1 text-[10px] items-center h-5">
-                                                        <ClipboardCheck className="h-3 w-3" />
-                                                        Crédito Aprobado
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-emerald-50 text-emerald-600 border-emerald-200 gap-0.5 shrink-0"
+                                                    >
+                                                        <ClipboardCheck className="h-2.5 w-2.5" />
+                                                        OK
                                                     </Badge>
                                                 )}
                                             </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-0">
-                                            {draft.customer_name && (
-                                                <p className="text-sm text-muted-foreground mb-2">
-                                                    Cliente: <span className="font-medium text-foreground">{draft.customer_name}</span>
-                                                </p>
-                                            )}
-                                            {draft.notes && (
-                                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                                    {draft.notes}
-                                                </p>
-                                            )}
-                                            <Separator className="my-3" />
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    onClick={() => handleLoadDraft(draft)}
-                                                    size="sm"
-                                                    className="flex-1"
-                                                >
-                                                    Cargar
-                                                </Button>
-                                                <Button
-                                                    onClick={() => {
-                                                        setConfirmDeleteId(draft.id)
-                                                        setConfirmDeleteName(draft.name)
-                                                    }}
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    disabled={deletingId === draft.id}
-                                                >
-                                                    {deletingId === draft.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="h-4 w-4" />
-                                                    )}
-                                                </Button>
+                                            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                                                {draft.customer_name && (
+                                                    <span className="flex items-center gap-0.5 truncate max-w-[140px]">
+                                                        <User className="h-2.5 w-2.5 shrink-0" />
+                                                        {draft.customer_name}
+                                                    </span>
+                                                )}
+                                                <span className="shrink-0">{formatRelative(draft.updated_at)}</span>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+
+                                        {/* Item count */}
+                                        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground justify-center">
+                                            <ShoppingCart className="h-3 w-3" />
+                                            {draft.item_count}
+                                        </span>
+
+                                        {/* Total */}
+                                        <span className="text-sm font-semibold text-right tabular-nums">
+                                            {formatCurrency(draft.total_gross)}
+                                        </span>
+
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-1 justify-end">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                disabled={deletingId === draft.id}
+                                                onClick={() => {
+                                                    setConfirmDeleteId(draft.id)
+                                                    setConfirmDeleteName(draft.name)
+                                                }}
+                                            >
+                                                {deletingId === draft.id
+                                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                    : <Trash2 className="h-3.5 w-3.5" />}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 px-2 text-[11px] font-medium gap-0.5 hover:bg-primary/10 hover:text-primary"
+                                                onClick={() => handleLoadDraft(draft)}
+                                            >
+                                                Cargar
+                                                <ChevronRight className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
-                        )}
-                    </ScrollArea>
+                        </ScrollArea>
+                    )}
                 </div>
             </BaseModal>
 
             <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Está seguro de eliminar el borrador?</AlertDialogTitle>
+                        <AlertDialogTitle>¿Eliminar borrador?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción eliminará permanentemente el borrador "{confirmDeleteName}" y no se podrá deshacer.
+                            Se eliminará permanentemente <strong>"{confirmDeleteName}"</strong>. Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
