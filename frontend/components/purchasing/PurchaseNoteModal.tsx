@@ -137,6 +137,10 @@ export function PurchaseNoteModal({
                 toast.error("Debe ingresar el número de folio del documento")
                 return false
             }
+            if (!attachment) {
+                toast.error("El documento adjunto es obligatorio para este tipo de nota")
+                return false
+            }
         }
         if (currentStep === 2) {
             const hasItems = lines.some(l => l.note_quantity > 0)

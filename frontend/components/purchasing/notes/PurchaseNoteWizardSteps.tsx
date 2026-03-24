@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 // --- STEP 1: General Information ---
 
@@ -113,43 +114,12 @@ export function Step1_GeneralInfo({
 
                 {/* Attachment */}
                 <div className="space-y-3 pt-4 border-t">
-                    <Label className="text-base font-bold">Documento Adjunto (PDF/XML)</Label>
-                    <div className="bg-muted/30 border-2 border-dashed border-muted-foreground/20 rounded-xl p-8 text-center hover:bg-muted/50 transition-colors">
-                        {attachment ? (
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                                    <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm text-foreground">{attachment.name}</p>
-                                    <p className="text-xs text-muted-foreground">{(attachment.size / 1024).toFixed(1)} KB</p>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setAttachment(null)
-                                    }}
-                                    className="mt-2 text-destructive hover:text-destructive"
-                                >
-                                    Eliminar
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 cursor-pointer relative">
-                                <UploadCloud className="h-10 w-10 text-muted-foreground/50" />
-                                <p className="font-bold text-sm">Haga clic para seleccionar archivo</p>
-                                <p className="text-xs text-muted-foreground">Soporta PDF, XML, JPG, PNG</p>
-                                <Input
-                                    type="file"
-                                    onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    accept=".pdf,.xml,.jpg,.png"
-                                />
-                            </div>
-                        )}
-                    </div>
+                    <DocumentAttachmentDropzone
+                        file={attachment}
+                        onFileChange={setAttachment}
+                        dteType={noteType}
+                        label="Documento Adjunto (PDF/XML)"
+                    />
                 </div>
             </div>
         </div>

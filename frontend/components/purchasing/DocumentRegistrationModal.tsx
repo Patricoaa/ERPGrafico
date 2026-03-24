@@ -16,6 +16,7 @@ import { FileText, Loader2, Upload } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface DocumentRegistrationModalProps {
     open: boolean
@@ -166,22 +167,13 @@ export function DocumentRegistrationModal({
                 </div>
 
                 <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <Label>
-                        Adjuntar Documento {dteType === 'FACTURA' ? <span className="text-destructive">*</span> : "(Opcional)"}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                        <Input
-                            type="file"
-                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                            className="cursor-pointer"
-                            disabled={isPending}
-                        />
-                    </div>
-                    {attachment && (
-                        <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
-                            <CheckCircle2 className="h-3 w-3" /> {attachment.name}
-                        </div>
-                    )}
+                    <DocumentAttachmentDropzone
+                        file={attachment}
+                        onFileChange={setAttachment}
+                        dteType={dteType}
+                        isPending={isPending}
+                        disabled={isPending}
+                    />
                 </div>
             </div>
         </BaseModal>
