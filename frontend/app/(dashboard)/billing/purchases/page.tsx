@@ -22,6 +22,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { InvoiceCard } from "@/components/billing/InvoiceCard"
 
 interface PurchaseDocument {
     id: number
@@ -416,7 +417,7 @@ export default function PurchaseInvoicesPage() {
                 </div>
             ) : (
                 <div className="">
-                <DataTable
+            <DataTable
                     columns={columns}
                     data={documents}
                     cardMode
@@ -437,6 +438,41 @@ export default function PurchaseInvoicesPage() {
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={20}
+                    renderCustomView={(table) => {
+                        const rows = table.getRowModel().rows
+                        if (rows.length === 0) {
+                            return (
+                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
+                                    <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                    <p className="text-muted-foreground font-medium">No se encontraron documentos</p>
+                                </div>
+                            )
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: any) => {
+                                    const doc: PurchaseDocument = row.original
+                                    return (
+                                        <InvoiceCard
+                                            key={doc.id}
+                                            item={doc}
+                                            type="purchase_invoice"
+                                            onClick={() => {
+                                                if (doc.purchase_order) {
+                                                    setSelectedHub({
+                                                        orderId: doc.purchase_order,
+                                                        invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null
+                                                    })
+                                                } else {
+                                                    setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })
+                                                }
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )
+                    }}
                 />
                 </div>
             )}
