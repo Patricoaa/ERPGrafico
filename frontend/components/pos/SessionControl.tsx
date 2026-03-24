@@ -1123,7 +1123,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
             {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
             {reportDialogOpen && (
-                <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
+                <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
                         {reportData && (
                             <POSReport

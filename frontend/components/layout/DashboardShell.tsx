@@ -87,8 +87,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
                 )}
             >
-                <main className="flex-1 overflow-y-auto pb-24">
-                    <div className="p-0 w-full">
+                <main className={cn(
+                    "flex-1 overflow-y-auto pb-24",
+                    pathname.includes('/sales/pos') && "flex flex-col overflow-hidden"
+                )}>
+                    <div className={cn(
+                        "p-0 w-full",
+                        pathname.includes('/sales/pos') && "flex-1 flex flex-col overflow-hidden"
+                    )}>
                         {children}
                     </div>
                 </main>
