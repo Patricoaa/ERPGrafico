@@ -7,7 +7,15 @@ import api from "@/lib/api"
 import { HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { translateFieldName } from "@/lib/utils"
+import { 
+    translateFieldName, 
+    translateStatus, 
+    translateProductionStage, 
+    translateSalesChannel, 
+    translateReceivingStatus, 
+    translateProductType, 
+    translatePaymentMethod 
+} from "@/lib/utils"
 
 interface ActivitySidebarProps {
     entityId: number | string
@@ -82,19 +90,19 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
     const getChangeIcon = (type: string) => {
         switch (type) {
-            case '+': return <Plus className="h-3.5 w-3.5 text-green-600" />
-            case '~': return <Edit className="h-3.5 w-3.5 text-blue-600" />
-            case '-': return <Trash2 className="h-3.5 w-3.5 text-red-600" />
-            default: return <Edit className="h-3.5 w-3.5 text-muted-foreground" />
+            case '+': return <Plus className="h-4 w-4" />
+            case '~': return <Edit className="h-4 w-4" />
+            case '-': return <Trash2 className="h-4 w-4" />
+            default: return <Edit className="h-4 w-4" />
         }
     }
 
-    const getChangeLabel = (type: string) => {
+    const getIconColor = (type: string) => {
         switch (type) {
-            case '+': return 'Creado'
-            case '~': return 'Editado'
-            case '-': return 'Eliminado'
-            default: return 'Modificado'
+            case '+': return 'bg-green-100/80 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+            case '~': return 'bg-blue-100/80 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+            case '-': return 'bg-red-100/80 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+            default: return 'bg-muted text-muted-foreground border-border'
         }
     }
 
@@ -116,15 +124,15 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     }
 
     return (
-        <div className={`flex flex-col h-full p-3 ${className}`}>
-            <div className="border-b pb-2 mb-3 shrink-0">
+        <div className={`flex flex-col h-full p-4 ${className}`}>
+            <div className="border-b pb-3 mb-4 shrink-0">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     {title}
                 </h3>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0">
+            <ScrollArea className="flex-1 min-h-0 pr-3">
                 {loading ? (
                     <div className="flex items-center justify-center h-32">
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -141,33 +149,54 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                         </p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="ml-1 mt-2 pb-4">
                         {history.map((record, index) => {
                             const changedFields = index < history.length - 1
                                 ? getChangedFields(record, history[index + 1])
                                 : []
 
+                            const username = record.history_user_username || 'Sistema';
+                            const isCreate = record.history_type === '+';
+                            const isDelete = record.history_type === '-';
+
                             return (
-                                <div key={record.history_id} className="flex gap-3">
-                                    {/* Avatar */}
-                                    <div className="flex-shrink-0">
-                                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <span className="text-xs font-bold text-primary">
-                                                {record.history_user_username?.substring(0, 2).toUpperCase() || 'SY'}
-                                            </span>
-                                        </div>
+                                <div key={record.history_id} className="relative flex gap-4 pb-8 last:pb-0">
+                                    {/* Timeline Connecting Line */}
+                                    {index !== history.length - 1 && (
+                                        <div className="absolute left-[15px] top-8 -bottom-8 w-[2px] bg-border/60 z-0" />
+                                    )}
+
+                                    {/* Timeline Icon */}
+                                    <div className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm ${getIconColor(record.history_type)}`}>
+                                        {getChangeIcon(record.history_type)}
                                     </div>
 
                                     {/* Content */}
-                                    <div className="flex-1 min-w-0 pb-3 border-b last:border-b-0">
-                                        <div className="flex items-start justify-between gap-1 mb-0.5">
-                                            <div className="flex items-center gap-2">
-                                                {getChangeIcon(record.history_type)}
-                                                <span className="text-xs font-bold">
-                                                    {getChangeLabel(record.history_type)}
+                                    <div className="flex-1 min-w-0 pt-1.5 flex flex-col">
+                                        <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground flex-wrap">
+                                            {/* User Avatar Small */}
+                                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 select-none">
+                                                <span className="text-[9px] font-bold text-primary">
+                                                    {username.substring(0, 2).toUpperCase()}
                                                 </span>
                                             </div>
-                                            <time className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                            
+                                            <span className="font-semibold text-foreground">
+                                                {username}
+                                            </span>
+                                            
+                                            <span>
+                                                {isCreate ? 'creó' : isDelete ? 'eliminó' : 'editó'}
+                                            </span>
+
+                                            <span className="font-medium text-foreground">
+                                                este registro
+                                            </span>
+
+                                            <time 
+                                                className="whitespace-nowrap sm:ml-auto underline decoration-dotted underline-offset-2 text-xs" 
+                                                title={new Date(record.history_date).toLocaleString()}
+                                            >
                                                 {formatDistanceToNow(new Date(record.history_date), {
                                                     addSuffix: true,
                                                     locale: es
@@ -175,38 +204,55 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                             </time>
                                         </div>
 
-                                        <p className="text-xs text-muted-foreground mb-1">
-                                            por <span className="font-semibold">{record.history_user_username || 'Sistema'}</span>
-                                        </p>
-
+                                        {/* Changed details */}
                                         {changedFields.length > 0 && record.history_type === '~' && (
-                                            <div className="mt-1 space-y-1">
-                                                {changedFields.map(field => {
-                                                    const oldValue = history[index + 1][field];
-                                                    const newValue = record[field];
+                                            <div className="mt-3 rounded-md border bg-card text-card-foreground shadow-sm">
+                                                <div className="p-3">
+                                                    <ul className="space-y-2">
+                                                        {changedFields.map(field => {
+                                                            const oldValue = history[index + 1][field];
+                                                            const newValue = record[field];
 
-                                                    const formatValue = (val: unknown) => {
-                                                        if (val === null || val === undefined) return <span className="italic opacity-50">vacio</span>;
-                                                        if (typeof val === 'boolean') return val ? 'Sí' : 'No';
-                                                        if (typeof val === 'string' && val.length > 30) return val.substring(0, 27) + '...';
-                                                        return String(val);
-                                                    };
+                                                            const formatValue = (fieldName: string, val: unknown) => {
+                                                                if (val === null || val === undefined || (typeof val === 'string' && val.trim() === '')) 
+                                                                    return <span className="italic opacity-50">vacío</span>;
+                                                                if (typeof val === 'boolean') return val ? 'Sí' : 'No';
+                                                                
+                                                                let displayVal = String(val);
+                                                                if (typeof val === 'string') {
+                                                                    const f = fieldName.toLowerCase();
+                                                                    if (f.includes('status') || f.includes('state')) displayVal = translateStatus(val);
+                                                                    else if (f.includes('stage')) displayVal = translateProductionStage(val);
+                                                                    else if (f.includes('channel')) displayVal = translateSalesChannel(val);
+                                                                    else if (f.includes('method')) displayVal = translatePaymentMethod(val);
+                                                                    else if (f.includes('receiving')) displayVal = translateReceivingStatus(val);
+                                                                    else if (f.includes('type') && val.match(/^[A-Z_]+$/)) displayVal = translateProductType(val);
+                                                                    
+                                                                    if (displayVal.length > 50) return displayVal.substring(0, 47) + '...';
+                                                                }
+                                                                
+                                                                return displayVal;
+                                                            };
 
-                                                    return (
-                                                        <div key={field} className="text-[10px] leading-tight">
-                                                            <span className="font-semibold text-muted-foreground mr-1">
-                                                                {formatFieldName(field)}:
-                                                            </span>
-                                                            <span className="text-red-600/70 line-through mr-1">
-                                                                {formatValue(oldValue)}
-                                                            </span>
-                                                            <span className="text-muted-foreground mr-1">→</span>
-                                                            <span className="text-green-600 font-medium">
-                                                                {formatValue(newValue)}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
+                                                            return (
+                                                                <li key={field} className="text-[13px] flex flex-col gap-1.5 pt-1.5 pb-2.5 last:pb-0 border-b last:border-0 border-border/40">
+                                                                    <span className="font-semibold text-muted-foreground">
+                                                                        {formatFieldName(field)}
+                                                                    </span>
+                                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                                                                        <span className="rounded bg-red-500/10 px-2 py-0.5 text-red-600 dark:text-red-400 line-through decoration-red-500/50 break-words max-w-full">
+                                                                            {formatValue(field, oldValue)}
+                                                                        </span>
+                                                                        <span className="text-muted-foreground font-bold shrink-0">→</span>
+                                                                        <span className="rounded bg-green-500/10 px-2 py-0.5 text-green-700 dark:text-green-400 font-medium break-words max-w-full">
+                                                                            {formatValue(field, newValue)}
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
