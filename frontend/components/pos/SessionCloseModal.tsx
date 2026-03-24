@@ -37,6 +37,7 @@ interface POSSession {
     total_other_cash_inflow: number
     total_other_cash_outflow: number
     cash_movements?: any[]
+    sales_by_category?: Array<{ name: string, value: number }>
 }
 
 interface POSSessionAudit {
@@ -91,29 +92,31 @@ export function SessionCloseModal({
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
+            setActualCash(session.expected_cash.toString())
             setCloseNotes("")
             setJustifyReason("")
             setJustifyTargetId(null)
             setSelectedAccount(null)
             setInsufficientFunds(false)
             setStep(1) // Reset to step 1
-            // Default destination: same treasury account as session (leave in till/safe)
-            if (session.treasury_account) {
-                setCashDestinationId(session.treasury_account.toString())
-            } else {
-                setCashDestinationId(null)
-            }
+            setCashDestinationId(null) // Force user to pick a valid destination
         }
     }, [open, session])
 
-    // Fetch Accounting Settings
+    // Fetch Accounting Settings and Full Report Data
+    const [fullReportData, setFullReportData] = useState<any>(null)
     useEffect(() => {
-        if (open) {
+        if (open && session) {
             api.get('/accounting/settings/current/')
                 .then(res => setAccountingSettings(res.data))
                 .catch(err => console.error("Failed to load accounting settings", err))
+            
+            // Fetch full summary to display advanced data (like category sales) in the modal preview
+            api.get(`/treasury/pos-sessions/${session.id}/summary/`)
+                .then(res => setFullReportData(res.data))
+                .catch(err => console.error("Failed to load sumary", err))
         }
-    }, [open])
+    }, [open, session])
 
     // Fetch selected account details when justifyTargetId changes
     useEffect(() => {
@@ -190,7 +193,7 @@ export function SessionCloseModal({
     const renderStepContent = () => {
         switch (step) {
             case 1: // Count
-                const reportData = {
+                const reportData = fullReportData || {
                     session_id: session.id,
                     opening_balance: session.opening_balance,
                     total_cash_sales: session.total_cash_sales,
@@ -202,6 +205,7 @@ export function SessionCloseModal({
                     total_manual_inflow: session.total_other_cash_inflow,
                     total_manual_outflow: session.total_other_cash_outflow,
                     manual_movements: session.cash_movements,
+                    sales_by_category: session.sales_by_category,
                     treasury_account_id: session.treasury_account,
                 }
 
@@ -211,7 +215,6 @@ export function SessionCloseModal({
                         <POSReport
                             data={reportData}
                             type="Z"
-                            title="Resumen del Sistema"
                         />
 
                         {/* Right Column: Counter */}
@@ -322,7 +325,7 @@ export function SessionCloseModal({
                                             value={justifyTargetId}
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={session.treasury_account}
+                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
                                             type="CASH"
                                         />
 
@@ -436,11 +439,11 @@ export function SessionCloseModal({
                             <div className="space-y-2">
                                 <Label>Destino</Label>
                                 <TreasuryAccountSelector
-                                    value={cashDestinationId}
-                                    onChange={setCashDestinationId}
+                                    value={cashDestinationId?.toString()}
+                                    onChange={(val) => setCashDestinationId(Number(val))}
                                     placeholder="Seleccione destino..."
                                     paymentMethod="CASH"
-                                    excludeId={session.treasury_account}
+                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
                                 />
                             </div>
                         </div>
