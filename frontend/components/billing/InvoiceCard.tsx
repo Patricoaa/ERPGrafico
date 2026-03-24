@@ -77,11 +77,6 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                         <h4 className="font-bold text-foreground truncate">
                             {partnerName}
                         </h4>
-                        {isNote && (
-                            <Badge variant="outline" className="text-[10px] uppercase shrink-0">
-                                {item.dte_type_display}
-                            </Badge>
-                        )}
                     </div>
                     <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
