@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useQuery } from '@tanstack/react-query'
 import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useServerDate } from "@/hooks/useServerDate"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface Step1_DTEProps {
     dteData: any
@@ -21,6 +23,7 @@ interface Step1_DTEProps {
 
 export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCustomer = false }: Step1_DTEProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
+    const { dateString } = useServerDate()
 
     // Fetch billing settings to get allowed DTE types
     const { data: settings } = useQuery({
@@ -53,6 +56,13 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
             setDteData({ ...dteData, type: allowedDteTypes[0] })
         }
     }, [isDefaultCustomer, dteData.type, setDteData, allowedDteTypes])
+
+    // Set default date if required
+    useEffect(() => {
+        if (dateString && !dteData.date && dteData.type !== 'BOLETA') {
+            setDteData({ ...dteData, date: dateString })
+        }
+    }, [dateString, dteData.date, dteData.type, setDteData, dteData])
 
     const dteOptions = [
         { id: 'BOLETA', label: 'Boleta Electrónica', code: '39', icon: Receipt },
@@ -130,7 +140,7 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                     {!dteData.isPending && (
                         <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
                             <div className="space-y-2">
-                                <Label htmlFor="folio" className="text-xs font-bold uppercase">N° de Folio</Label>
+                                <Label htmlFor="folio" className="text-xs font-bold uppercase">N° de Folio <span className="text-destructive">*</span></Label>
                                 <div className="relative">
                                     <Input
                                         id="folio"
@@ -167,7 +177,7 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión</Label>
+                                <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="date"
                                     type="date"
@@ -175,13 +185,12 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                                     onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
                                 />
                             </div>
-                            <div className="col-span-2 space-y-2">
-                                <Label htmlFor="attachment" className="text-xs font-bold uppercase">Archivo Adjunto (Opcional)</Label>
-                                <Input
-                                    id="attachment"
-                                    type="file"
-                                    onChange={(e) => setDteData({ ...dteData, attachment: e.target.files?.[0] || null })}
-                                    className="text-xs"
+                            <div className="col-span-2">
+                                <DocumentAttachmentDropzone
+                                    file={dteData.attachment}
+                                    onFileChange={(file) => setDteData({ ...dteData, attachment: file })}
+                                    dteType={dteData.type}
+                                    isPending={dteData.isPending}
                                 />
                             </div>
                         </div>
