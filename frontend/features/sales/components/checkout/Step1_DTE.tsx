@@ -198,6 +198,13 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                 </div>
             )}
 
+            {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
+                </div>
+            )}
+
             {dteData.type === 'BOLETA' && !isPurchase && (
                 <div className="flex items-start gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
