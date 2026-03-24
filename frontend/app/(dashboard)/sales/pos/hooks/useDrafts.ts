@@ -46,7 +46,7 @@ export function useDrafts() {
         } finally {
             setIsLoading(false)
         }
-    }, [])
+    }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
 
     // Save current cart as draft
     const saveDraft = useCallback(async (name?: string, silent = false) => {
@@ -201,10 +201,10 @@ export function useDrafts() {
         await saveDraft(`Auto-guardado ${new Date().toLocaleTimeString()}`)
     }, [items, saveDraft])
 
-    // Fetch drafts on mount
+    // Fetch drafts when session becomes available (and on mount)
     useEffect(() => {
         fetchDrafts()
-    }, [fetchDrafts])
+    }, [currentSession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
     return {
         drafts,
