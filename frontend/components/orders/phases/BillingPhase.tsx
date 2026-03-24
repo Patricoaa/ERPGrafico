@@ -101,35 +101,51 @@ export function BillingPhase({
                 title="Facturación"
                 icon={FileText}
                 variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))}
-                documents={invoices.map((inv: any) => ({
-                    type: inv.dte_type_display || 'Documento',
-                    number: inv.display_id || formatDocumentId(
-                        inv.dte_type === 'BOLETA' ? 'BOL' :
-                            inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
-                        inv.number || '---',
-                        inv.display_id
-                    ),
-                    icon: FileText,
-                    color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
-                    id: inv.id,
-                    docType: 'invoice',
-                    status: inv.status,
-                    actions: [
-                        ...((inv.status === 'DRAFT') ? [{
-                            icon: Trash2,
-                            title: 'Eliminar Borrador',
-                            color: 'text-red-500 hover:bg-red-500/10',
-                            onClick: () => handleDeleteDraft(inv.id)
-                        }] : []),
-                        ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
-                            icon: X,
-                            title: 'Anular Documento',
-                            color: 'text-orange-600 hover:bg-orange-600/10',
-                            onClick: () => handleAnnulDocument(inv.id)
-                        }] : [])
-                    ]
-                }))}
+                documents={[
+                    ...(isNoteMode ? [{
+                        type: activeDoc.dte_type_display || 'Nota',
+                        number: activeDoc.display_id || formatDocumentId(
+                            activeDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND',
+                            activeDoc.number || '---',
+                            activeDoc.display_id
+                        ),
+                        icon: FileText,
+                        color: 'text-amber-600',
+                        id: activeDoc.id,
+                        docType: 'invoice',
+                        status: activeDoc.status,
+                        actions: []
+                    }] : []),
+                    ...invoices.map((inv: any) => ({
+                        type: inv.dte_type_display || 'Documento',
+                        number: inv.display_id || formatDocumentId(
+                            inv.dte_type === 'BOLETA' ? 'BOL' :
+                                inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                                    inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
+                            inv.number || '---',
+                            inv.display_id
+                        ),
+                        icon: FileText,
+                        color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
+                        id: inv.id,
+                        docType: 'invoice',
+                        status: inv.status,
+                        actions: [
+                            ...((inv.status === 'DRAFT') ? [{
+                                icon: Trash2,
+                                title: 'Eliminar Borrador',
+                                color: 'text-red-500 hover:bg-red-500/10',
+                                onClick: () => handleDeleteDraft(inv.id)
+                            }] : []),
+                            ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
+                                icon: X,
+                                title: 'Anular Documento',
+                                color: 'text-orange-600 hover:bg-orange-600/10',
+                                onClick: () => handleAnnulDocument(inv.id)
+                            }] : [])
+                        ]
+                    }))
+                ]}
                 onViewDetail={openDetails}
                 actions={[
                     ...(isNoteMode ? [] : registry.documents?.actions || []),

@@ -55,7 +55,15 @@ export function OriginPhase({
             id: activeInvoice?.corrected_invoice?.id,
             docType: 'invoice',
             actions: []
-        }
+        },
+        ...(order ? [{
+            type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
+            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            icon: FileText,
+            id: order?.id,
+            docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
+            actions: []
+        }] : [])
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',

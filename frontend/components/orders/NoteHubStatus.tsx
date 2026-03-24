@@ -45,7 +45,15 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                 <StatusBadge
                     icon={FileText}
                     status={statuses.origin}
-                    tooltip={`Documento: ${translateStatus(note.status)}`}
+                    tooltip={(() => {
+                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)
+                        if (isNoteDocument) {
+                            const source = note.corrected_invoice?.display_id || note.corrected_invoice?.number || "Factura"
+                            const order = note.sale_order_number || note.purchase_order_number || ""
+                            return `Origen: ${source}${order ? ` (${order})` : ''}`
+                        }
+                        return `Documento: ${translateStatus(note.status)}`
+                    })()}
                 />
 
                 {/* Logistics */}
@@ -68,7 +76,15 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                 <StatusBadge
                     icon={Receipt}
                     status={statuses.billing}
-                    tooltip={`Facturación: ${translateStatus(note.status)}`}
+                    tooltip={(() => {
+                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)
+                        if (isNoteDocument && note.number && note.number !== 'Draft') {
+                            const prefix = note.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
+                            const num = note.number.toString().includes(prefix) ? note.number : `${prefix}-${note.number}`
+                            return `Facturación: ${num}`
+                        }
+                        return `Facturación: ${translateStatus(note.status)}`
+                    })()}
                 />
 
                 {/* Treasury */}
