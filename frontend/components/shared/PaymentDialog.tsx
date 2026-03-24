@@ -14,9 +14,9 @@ import { Wallet, AlertCircle, Building2 } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
-import api from "@/lib/api"
 import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
+import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface PaymentDialogProps {
     open: boolean
@@ -159,9 +159,10 @@ export function PaymentDialog({
                         disabled={
                             (paymentData.amount < 0) ||
                             (paymentData.amount > 0 && !paymentData.treasuryAccountId) ||
-                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference)) ||
+                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
-                            ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0)
+                            ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
+                            (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment)
                         }
                     >
                         {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
@@ -247,29 +248,29 @@ export function PaymentDialog({
                                 />
                             </div>
 
-                            <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
-                                <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
-                                    <FileUp className="h-3 w-3" />
-                                    {existingInvoice ? "Documento Adjunto" : "Adjuntar Documento (Opcional)"}
-                                </Label>
+                            <div className={cn("grid gap-2", isDocumentPending && "opacity-50")}>
                                 {!existingInvoice ? (
-                                    <div className="flex gap-2">
-                                        <Input
-                                            type="file"
-                                            onChange={(e) => setDocumentAttachment(e.target.files?.[0] || null)}
-                                            className="text-xs h-9 py-1 cursor-pointer"
-                                            disabled={isDocumentPending}
-                                        />
-                                    </div>
+                                    <DocumentAttachmentDropzone
+                                        file={documentAttachment}
+                                        onFileChange={setDocumentAttachment}
+                                        dteType={dteType}
+                                        isPending={isDocumentPending}
+                                        disabled={isDocumentPending}
+                                    />
                                 ) : (
-                                    <div className="flex items-center gap-2 text-xs text-blue-600 font-medium p-2 bg-blue-50 rounded border border-blue-100">
-                                        <Receipt className="h-4 w-4" />
-                                        <span>Documento cargado</span>
-                                        {existingInvoice.document_attachment && (
-                                            <a href={existingInvoice.document_attachment} target="_blank" rel="noreferrer" className="ml-auto underline">
-                                                Ver
-                                            </a>
-                                        )}
+                                    <div className="flex flex-col gap-2">
+                                        <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
+                                            <FileUp className="h-3 w-3" /> Documento Adjunto
+                                        </Label>
+                                        <div className="flex items-center gap-2 text-xs text-blue-600 font-medium p-2 bg-blue-50 rounded border border-blue-100">
+                                            <Receipt className="h-4 w-4" />
+                                            <span>Documento cargado</span>
+                                            {existingInvoice.document_attachment && (
+                                                <a href={existingInvoice.document_attachment} target="_blank" rel="noreferrer" className="ml-auto underline">
+                                                    Ver
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
