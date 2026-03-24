@@ -43,7 +43,14 @@ export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
                 <StatusBadge
                     icon={FileText}
                     status={statuses.origin}
-                    tooltip={`Documento: ${translateStatus(invoice.status)}`}
+                    tooltip={(() => {
+                        if (['NOTA_CREDITO', 'NOTA_DEBITO'].includes(invoice.dte_type)) {
+                            const source = invoice.corrected_invoice?.display_id || invoice.corrected_invoice?.number || "Factura"
+                            const order = invoice.sale_order_number || invoice.purchase_order_number || ""
+                            return `Origen: ${source}${order ? ` (${order})` : ''}`
+                        }
+                        return `Documento: ${translateStatus(invoice.status)}`
+                    })()}
                 />
 
                 {/* Logistics */}
@@ -57,7 +64,14 @@ export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
                 <StatusBadge
                     icon={Receipt}
                     status={statuses.billing}
-                    tooltip={statuses.billing === 'success' ? "Folio Generado" : "Pendiente de Folio"}
+                    tooltip={(() => {
+                        if (['NOTA_CREDITO', 'NOTA_DEBITO'].includes(invoice.dte_type) && invoice.number && invoice.number !== 'Draft') {
+                            const prefix = invoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
+                            const num = invoice.number.toString().includes(prefix) ? invoice.number : `${prefix}-${invoice.number}`
+                            return `Facturación: ${num}`
+                        }
+                        return statuses.billing === 'success' ? "Folio Generado" : "Pendiente de Folio"
+                    })()}
                 />
 
                 {/* Treasury */}

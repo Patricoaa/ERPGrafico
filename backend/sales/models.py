@@ -486,6 +486,7 @@ class SaleReturnLine(models.Model):
     
     # Value reference
     unit_price = models.DecimalField(_("Precio Unitario"), max_digits=12, decimal_places=0, default=0)
+    unit_price_gross = models.DecimalField(_("Precio Unitario Bruto"), max_digits=12, decimal_places=0, null=True, blank=True, validators=[MinValueValidator(0)])
     subtotal = models.DecimalField(_("Subtotal"), max_digits=12, decimal_places=0, editable=False, default=0)
     
     # Cost reference for COGS reversal
@@ -505,12 +506,12 @@ class SaleReturnLine(models.Model):
         verbose_name_plural = _("Líneas de Devolución")
     
     def calculate_subtotal(self):
-        self.subtotal = self.quantity * self.unit_price
+        if self.unit_price_gross:
+            self.subtotal = self.quantity * self.unit_price_gross
+        else:
+            self.subtotal = self.quantity * self.unit_price
         self.total_cost = self.quantity * self.unit_cost
 
-    def save(self, *args, **kwargs):
-        self.calculate_subtotal()
-        super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
         self.calculate_subtotal()
         super().save(*args, **kwargs)
