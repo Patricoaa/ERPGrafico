@@ -135,17 +135,27 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         has_primary = invoices.filter(dte_type__in=primary_types).exists()
         
         if not has_primary:
-            base = self.total
+            base: Decimal = self.total
         else:
-            base = Decimal('0')
+            base: Decimal = Decimal('0')
             
         for inv in invoices:
             if inv.dte_type in primary_types or inv.dte_type == Invoice.DTEType.NOTA_DEBITO:
-                base += inv.total
+                base += Decimal(str(inv.total))
             elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                base -= inv.total
+                base -= Decimal(str(inv.total))
                 
         return base
+
+    @property
+    def total_paid(self):
+        """Calculates the total amount paid for this order"""
+        return sum(p.amount for p in self.payments.all())
+
+    @property
+    def pending_amount(self):
+        """Calculates the remaining amount to be paid"""
+        return self.effective_total - self.total_paid
 
     @property
     def display_id(self):

@@ -119,16 +119,41 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         has_primary = invoices.filter(dte_type__in=primary_types).exists()
         
         if not has_primary:
-            base = self.total
+            base: Decimal = self.total
         else:
-            base = Decimal('0')
+            base: Decimal = Decimal('0')
             
         for inv in invoices:
             if inv.dte_type in primary_types or inv.dte_type == Invoice.DTEType.NOTA_DEBITO:
-                base += inv.total
+                base += Decimal(str(inv.total))
             elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                base -= inv.total
+                base -= Decimal(str(inv.total))
         return base
+
+    @property
+    def total_paid(self):
+        """Calculates the total amount paid for this order (excluding Note-specific payments)"""
+        # Exclude payments specific to Notes (NC/ND) to keep PO Hub status pure
+        payments = self.payments.all()
+        valid_payments = [
+            p for p in payments 
+            if not (p.invoice and p.invoice.dte_type in ['NOTA_CREDITO', 'NOTA_DEBITO'])
+        ]
+        return sum(p.amount for p in valid_payments)
+
+    @property
+    def pending_amount(self):
+        """Calculates the remaining amount to be paid based on Primary Invoices or Total"""
+        primary_invoices = self.invoices.filter(
+            dte_type__in=['FACTURA', 'BOLETA', 'PURCHASE_INV']
+        ).exclude(status='CANCELLED')
+        
+        if primary_invoices.exists():
+            base_total = sum(inv.total for inv in primary_invoices)
+        else:
+            base_total = self.total
+            
+        return base_total - self.total_paid
 
     def save(self, *args, **kwargs):
         is_new = not self.pk

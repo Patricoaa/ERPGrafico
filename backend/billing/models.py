@@ -143,3 +143,17 @@ class Invoice(models.Model):
         elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BE'
         elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FAC-EX'
         return f"{prefix}-{self.number or 'Draft'}"
+
+    @property
+    def total_paid(self):
+        """Calculates the total amount paid for this invoice"""
+        from treasury.models import TreasuryMovement
+        return sum(
+            p.amount for p in self.payments.all()
+            if p.status != TreasuryMovement.Status.CANCELLED
+        )
+
+    @property
+    def pending_amount(self):
+        """Calculates the remaining amount to be paid for this invoice"""
+        return self.total - self.total_paid

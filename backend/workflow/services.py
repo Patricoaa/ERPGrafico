@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.db import transaction
 
-from .models import Task, Notification, TaskAssignmentRule, NotificationRule
+from workflow.models import Task, Notification, TaskAssignmentRule, NotificationRule
 
 class WorkflowService:
     """
@@ -100,52 +100,66 @@ class WorkflowService:
         is_invoice = isinstance(order, Invoice)
             
         if stage_key == 'origin':
+            if is_invoice:
+                # NC/ND are themselves the source of the hub, origin is always complete
+                return True
             # Origin is complete once confirmed (not DRAFT)
             return getattr(order, 'status', 'DRAFT') != 'DRAFT'
             
         if stage_key == 'logistics':
             if is_invoice:
                 # For invoices, look at cached statuses or stock moves
-                if hasattr(order, 'order_delivery_status') and order.order_delivery_status == 'DELIVERED':
+                if getattr(order, 'order_delivery_status', None) == 'DELIVERED':
                     return True
-                if hasattr(order, 'po_receiving_status') and order.po_receiving_status == 'RECEIVED':
+                if getattr(order, 'po_receiving_status', None) == 'RECEIVED':
                     return True
                 
                 # Check for related returns (Credit Notes usually link here)
-                if hasattr(order, 'sale_returns') and order.sale_returns.filter(status='CONFIRMED').exists():
+                sale_returns = getattr(order, 'sale_returns', None)
+                if sale_returns and sale_returns.filter(status='CONFIRMED').exists():
                     return True
-                if hasattr(order, 'purchase_returns') and order.purchase_returns.filter(status='CONFIRMED').exists():
+                purchase_returns = getattr(order, 'purchase_returns', None)
+                if purchase_returns and purchase_returns.filter(status='CONFIRMED').exists():
                     return True
                     
                 # Check for supplemental logistics (Debit Notes usually link here)
-                if hasattr(order, 'sale_deliveries') and order.sale_deliveries.filter(status='CONFIRMED').exists():
+                sale_deliveries = getattr(order, 'sale_deliveries', None)
+                if sale_deliveries and sale_deliveries.filter(status='CONFIRMED').exists():
                     return True
-                if hasattr(order, 'purchase_receipts') and order.purchase_receipts.filter(status='CONFIRMED').exists():
+                purchase_receipts = getattr(order, 'purchase_receipts', None)
+                if purchase_receipts and purchase_receipts.filter(status='CONFIRMED').exists():
                     return True
                     
                 return False
 
             # SaleOrder delivery
-            if hasattr(order, 'delivery_status'):
-                return order.delivery_status == 'DELIVERED'
+            delivery_status = getattr(order, 'delivery_status', None)
+            if delivery_status is not None:
+                return delivery_status == 'DELIVERED'
+                
             # PurchaseOrder receiving
-            if hasattr(order, 'receiving_status'):
-                return order.receiving_status == 'RECEIVED'
+            receiving_status = getattr(order, 'receiving_status', None)
+            if receiving_status is not None:
+                return receiving_status == 'RECEIVED'
             return False
             
         if stage_key == 'billing':
             if is_invoice:
-                # For a Note (NC/ND), billing is complete when it has a folio
-                return bool(order.number and order.number != 'Draft')
+                # For a Note (NC/ND), billing is complete when it has a real folio
+                # Internal IDs like '#1' are not considered completed folios
+                order_number = getattr(order, 'number', None)
+                return bool(order_number and order_number != 'Draft' and not str(order_number).startswith('#'))
 
             # Check for any POSTED or PAID invoice with a number.
             # PAID is the final state (after POSTED) so it must also be considered complete.
             # Convention: POSTED = published/confirmed, PAID = settled. Both mean billing is done.
             BILLED_STATUSES = ['POSTED', 'PAID']
-            if hasattr(order, 'invoices'):
-                return order.invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
-            if hasattr(order, 'purchase_invoices'):
-                return order.purchase_invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
+            invoices = getattr(order, 'invoices', None)
+            if invoices is not None:
+                return invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
+            purchase_invoices = getattr(order, 'purchase_invoices', None)
+            if purchase_invoices is not None:
+                return purchase_invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
             return False
             
         if stage_key == 'treasury':
@@ -155,16 +169,18 @@ class WorkflowService:
             # Additional check: if zero pending amount
             if not is_paid and hasattr(order, 'pending_amount'):
                 try:
-                    is_paid = float(order.pending_amount) <= 0.01
+                    pending_amount = getattr(order, 'pending_amount', 1)
+                    is_paid = float(pending_amount) <= 0.01
                 except (TypeError, ValueError):
                     pass
 
             if not is_paid:
                 return False
                 
-            if hasattr(order, 'payments'):
+            payments = getattr(order, 'payments', None)
+            if payments is not None:
                 # Exact same logic as frontend: complete only if no payments are pending registration
-                has_pending = order.payments.filter(
+                has_pending = payments.filter(
                     movement_type__in=['INBOUND', 'OUTBOUND', 'TRANSFER'],
                     payment_method__in=['CARD', 'TRANSFER'],
                     transaction_number__isnull=True
@@ -310,6 +326,10 @@ class WorkflowService:
         else:
             prefix = 'NV' if order_type == 'sale' else 'OC'
             order_label = f"{prefix}-{order.number}"
+            # Default labels
+            label_prefix = f"{prefix}-" if prefix else ""
+            order_number = getattr(order, 'number', '???')
+            description = f"Registrar facturación para {label_prefix}{order_number}"
         
         contact_name = ''
         try:
@@ -333,6 +353,10 @@ class WorkflowService:
             task_type = WorkflowService.HUB_STAGE_TASK_TYPES[stage_key]
             
             if task_type in existing:
+                continue
+            
+            # Skip redundant origin stage for invoices (NC/ND)
+            if is_invoice and stage_key == 'origin':
                 continue
             
             # Use is_hub_stage_complete to set initial status
