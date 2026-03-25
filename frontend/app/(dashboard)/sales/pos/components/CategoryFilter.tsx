@@ -51,7 +51,7 @@ export function CategoryFilter({
             <div
                 ref={scrollRef}
                 className={cn(
-                    "flex gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth",
+                    "flex gap-2 overflow-x-auto pb-1 scrollbar-hide scroll-smooth",
                     // Enable native swipe scrolling on touch
                     isTouch && "snap-x snap-mandatory"
                 )}
