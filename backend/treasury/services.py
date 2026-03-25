@@ -95,38 +95,6 @@ class TreasuryService:
         
         return movement
 
-    @staticmethod
-    @transaction.atomic
-    def create_cash_movement(amount, movement_type, from_account=None, to_account=None,
-                             created_by=None, pos_session=None, notes='', justify_reason=None,
-                             journal_entry_desc=None, **kwargs):
-        """
-        Legacy wrapper for Cash movements (Adjustments, Withdrawals, Deposits).
-        Redirects to unified create_movement.
-        """
-        # Map legacy movement types to unified types
-        mapped_type = movement_type
-        if movement_type == 'WITHDRAWAL':
-            mapped_type = TreasuryMovement.Type.OUTBOUND
-        elif movement_type == 'DEPOSIT':
-            mapped_type = TreasuryMovement.Type.INBOUND
-        elif movement_type == 'ADJUSTMENT' and not (from_account or to_account):
-             # Adjustment without accounts? Logic usually needs one. 
-             # But if it's a gap fillers, might be outbound/inbound depending on gap.
-             pass
-        
-        return TreasuryService.create_movement(
-            amount=amount,
-            movement_type=mapped_type,
-            from_account=from_account,
-            to_account=to_account,
-            created_by=created_by,
-            pos_session=pos_session,
-            notes=notes,
-            justify_reason=justify_reason,
-            reference=journal_entry_desc or notes,
-            **kwargs
-        )
 
     @staticmethod
     def update_related_document_status(movement, invoice=None, sale_order=None, purchase_order=None, payroll=None):

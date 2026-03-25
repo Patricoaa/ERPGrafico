@@ -942,8 +942,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         if request.data.get('notes'):
                             notes += f" - {request.data.get('notes')}"
 
-                        TreasuryService.create_cash_movement(
-                            movement_type=movement_type,
+                        TreasuryService.create_movement(
+                            movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.INBOUND if diff > 0 else TreasuryMovement.Type.OUTBOUND),
                             amount=abs(diff),
                             created_by=request.user,
                             from_account=from_account,
@@ -951,7 +951,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             pos_session=session,
                             notes=notes,
                             justify_reason=justify_reason,
-                            journal_entry_desc=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
+                            reference=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
                         )
                                  
                 except ValidationError as e:
@@ -1044,8 +1044,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         from_account = None
                         to_account = pos_treasury_acc
 
-                movement = TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER' if justify_reason == 'TRANSFER' else ('WITHDRAWAL' if difference < 0 else 'DEPOSIT'),
+                movement = TreasuryService.create_movement(
+                    movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.OUTBOUND if difference < 0 else TreasuryMovement.Type.INBOUND),
                     amount=abs(difference),
                     created_by=request.user,
                     from_account=from_account,
@@ -1053,7 +1053,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     pos_session=session,
                     notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
                     justify_reason=justify_reason,
-                    journal_entry_desc=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
+                    reference=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
                 )
                 
                 if movement.journal_entry:
@@ -1074,16 +1074,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
                 
                 # TreasuryService validates sufficient funds automatically
-                TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER',  # Corrected: This is a transfer between accounts, not a deposit
+                TreasuryService.create_movement(
+                    movement_type=TreasuryMovement.Type.TRANSFER,
                     from_account=pos_treasury_obj,
                     to_account=to_account,
                     amount=withdrawal_amount,
-                    justify_reason='RETIREMENT',  # Mark as end-of-session cash retirement
+                    justify_reason='RETIREMENT',
                     pos_session=session,
                     created_by=request.user,
                     notes=f"Retiro de cierre sesión #{session.id}",
-                    journal_entry_desc=f"Retiro de Cierre POS - Sesión #{session.id}"
+                    reference=f"Retiro de Cierre POS - Sesión #{session.id}"
                 )
 
             # Clean up draft carts for this session
@@ -1305,16 +1305,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 else: # Outflow
                     from_account = session_treasury_obj
 
-                movement = TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER' if move_type == 'TRANSFER' else ('DEPOSIT' if is_inflow else 'WITHDRAWAL'),
+                movement = TreasuryService.create_movement(
                     amount=amount,
+                    movement_type=TreasuryMovement.Type.TRANSFER if move_type == 'TRANSFER' else (TreasuryMovement.Type.INBOUND if is_inflow else TreasuryMovement.Type.OUTBOUND),
                     created_by=request.user,
                     from_account=from_account,
                     to_account=to_account,
                     pos_session=session,
                     notes=notes,
                     justify_reason=move_type,
-                    journal_entry_desc=f"Movimiento Manual POS ({move_type}) - {notes}"
+                    reference=f"Movimiento Manual POS ({move_type})"
                 )
                 
                 # Session totals are updated via _update_pos_session in create_movement
