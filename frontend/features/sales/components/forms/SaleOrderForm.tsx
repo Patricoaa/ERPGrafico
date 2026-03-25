@@ -104,36 +104,6 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
     )
 }
 
-const DynamicFieldsRenderer = ({ schema, value, onChange }: { schema: any, value: any, onChange: (val: any) => void }) => {
-    if (!schema) return null
-
-    let fields = {}
-    try {
-        fields = typeof schema === 'string' ? JSON.parse(schema) : schema
-    } catch (e) {
-        console.error("Invalid JSON schema", schema)
-        return null
-    }
-
-    if (typeof fields !== 'object' || fields === null) return null
-
-    return (
-        <div className="grid grid-cols-2 gap-2 p-2 bg-muted/30 rounded-md mt-2">
-            {Object.keys(fields).map((key) => (
-                <div key={key} className="space-y-1">
-                    <label className={FORM_STYLES.label}>{key}</label>
-                    <Input
-                        className={cn(FORM_STYLES.input, "h-8 text-xs font-medium")}
-                        value={value?.[key] || ""}
-                        onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                        placeholder={`Ingrese ${key}...`}
-                    />
-                </div>
-            ))}
-        </div>
-    )
-}
-
 export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: SaleOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
@@ -475,20 +445,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 )}
                                                                             </div>
 
-                                                                            {prod.product_type === 'MANUFACTURABLE_CUSTOM' && prod.custom_fields_schema && (
-                                                                                <FormField<SaleOrderFormValues>
-                                                                                    control={form.control}
-                                                                                    name={`lines.${index}.custom_specs`}
-                                                                                    render={({ field: specField }) => (
-                                                                                        <DynamicFieldsRenderer
-                                                                                            schema={prod.custom_fields_schema}
-                                                                                            value={specField.value}
-                                                                                            onChange={specField.onChange}
-                                                                                        />
-                                                                                    )}
-                                                                                />
-                                                                            )}
-                                                                        </div>
+                                                                            </div>
                                                                     )
                                                                 })()}
                                                             </div>

@@ -74,7 +74,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             allowed_sale_uoms: [],
             receiving_warehouse: "",
             track_inventory: true,
-            custom_fields_schema: "",
             image: undefined,
             has_bom: false,
             requires_advanced_manufacturing: false,
@@ -165,6 +164,13 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
         const isManufacturable = productType === 'MANUFACTURABLE' || form.getValues("requires_advanced_manufacturing");
         if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
             form.setValue("is_dynamic_pricing", false);
+        }
+
+        // Manufacturable products cannot be purchased (business rule)
+        if (productType === "MANUFACTURABLE") {
+            if (form.getValues("can_be_purchased")) {
+                form.setValue("can_be_purchased", false);
+            }
         }
     }, [productType, form])
 
@@ -275,9 +281,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
-                    custom_fields_schema: typeof initialData.custom_fields_schema === 'object'
-                        ? JSON.stringify(initialData.custom_fields_schema, null, 2)
-                        : initialData.custom_fields_schema || "",
                     has_bom: initialData.has_bom ?? false,
                     requires_advanced_manufacturing: initialData.requires_advanced_manufacturing ?? false,
                     mfg_enable_prepress: initialData.mfg_enable_prepress ?? false,
@@ -347,7 +350,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     track_inventory: true,
                     can_be_sold: true,
                     can_be_purchased: true,
-                    custom_fields_schema: "",
                     image: undefined,
                     has_bom: false,
                     requires_advanced_manufacturing: false,
@@ -512,9 +514,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
 
 
-            if (data.custom_fields_schema) {
-                formData.append('custom_fields_schema', data.custom_fields_schema)
-            }
 
             if (data.image instanceof File) {
                 formData.append('image', data.image)
