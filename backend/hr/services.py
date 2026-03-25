@@ -150,6 +150,19 @@ class PayrollService:
         payroll.worked_days = dias_trabajados
         payroll.save(update_fields=['agreed_days', 'absent_days', 'worked_days'])
 
+        # Calculate contract years precisely
+        if employee.start_date:
+            from datetime import date
+            # Reference date is the first day of the payroll period
+            ref_date = date(year, month, 1)
+            years = ref_date.year - employee.start_date.year
+            # Adjust if the anniversary hasn't happened yet in the current year
+            if (ref_date.month, ref_date.day) < (employee.start_date.month, employee.start_date.day):
+                years -= 1
+            contract_years = Decimal(str(max(0, years)))
+        else:
+            contract_years = Decimal('0')
+
         # Contexto base para fórmulas
         context = {
             'BASE': sueldo_base_prorrateado,
@@ -162,6 +175,7 @@ class PayrollService:
             'AFP_PERCENT': (employee.afp.percentage / Decimal('100')) if employee.afp else Decimal('0'),
             'ISAPRE_UF': employee.isapre_amount_uf,
             'CONTRATO_INDEFINIDO': 1 if employee.contract_type == Employee.ContractType.INDEFINIDO else 0,
+            'CONTRACT_YEARS': contract_years,
             'IMPONIBLE': Decimal('0'), # Se actualizará después de la primera pasada
         }
 

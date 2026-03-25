@@ -23,6 +23,7 @@ from .serializers import (
     PayrollPaymentSerializer,
 )
 from . import services
+from core.mixins import AuditHistoryMixin as AuditHistory
 
 
 # --- Global Settings (singleton) ---
@@ -93,7 +94,7 @@ class EmployeeFilter(django_filters.FilterSet):
         fields = ['status', 'contact']
 
 
-class EmployeeViewSet(viewsets.ModelViewSet):
+class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
     queryset = Employee.objects.select_related('contact', 'afp').all()
     serializer_class = EmployeeSerializer
     filter_backends = [DjangoFilterBackend]
