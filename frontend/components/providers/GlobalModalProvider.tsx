@@ -20,7 +20,7 @@ const ContactModal = dynamic(() => import("@/features/contacts/components/Contac
 
 interface GlobalModalContextType {
     openWorkOrder: (id: number) => void
-    openCommandCenter: (id: number, type: 'purchase' | 'sale' | 'obligation') => void
+    openCommandCenter: (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null) => void
     openContact: (id: number, contact?: any) => void
 }
 
@@ -29,26 +29,30 @@ const GlobalModalContext = createContext<GlobalModalContextType | undefined>(und
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [woId, setWoId] = useState<number | null>(null)
     const [occId, setOccId] = useState<number | null>(null)
+    const [occInvoiceId, setOccInvoiceId] = useState<number | null>(null)
     const [occType, setOccType] = useState<'purchase' | 'sale' | 'obligation'>('sale')
     const [contactId, setContactId] = useState<number | null>(null)
     const [tempContact, setTempContact] = useState<any>(null)
 
     const openWorkOrder = (id: number) => {
         setOccId(null)
+        setOccInvoiceId(null)
         setContactId(null)
         setWoId(id)
     }
 
-    const openCommandCenter = (id: number, type: 'purchase' | 'sale' | 'obligation') => {
+    const openCommandCenter = (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null) => {
         setWoId(null)
         setContactId(null)
         setOccId(id)
+        setOccInvoiceId(invoiceId || null)
         setOccType(type)
     }
 
     const openContact = (id: number, contact?: any) => {
         setWoId(null)
         setOccId(null)
+        setOccInvoiceId(null)
         setContactId(id)
         setTempContact(contact || null)
     }
@@ -68,12 +72,13 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     onOpenChange={(open) => !open && setWoId(null)}
                 />
             )}
-            {occId !== null && (
+            {(occId !== null || occInvoiceId !== null) && (
                 <OrderCommandCenter
                     orderId={occId}
+                    invoiceId={occInvoiceId}
                     type={occType}
-                    open={occId !== null}
-                    onOpenChange={(open) => !open && setOccId(null)}
+                    open={occId !== null || occInvoiceId !== null}
+                    onOpenChange={(open) => { if (!open) { setOccId(null); setOccInvoiceId(null); } }}
                 />
             )}
             {contactId !== null && (
