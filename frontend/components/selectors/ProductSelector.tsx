@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Check, ChevronsUpDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, translateProductType } from "@/lib/utils"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
 import {
@@ -228,7 +228,7 @@ export function ProductSelector({
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
-                        className="flex-1 justify-between h-auto py-2 px-3 min-w-0"
+                        className="w-full justify-between h-auto py-2 px-3 min-w-0"
                     >
                         {selectedProduct ? (
                             <div className="flex items-center gap-2 truncate text-left">
@@ -238,7 +238,7 @@ export function ProductSelector({
                                 <div className="flex flex-col items-start truncate leading-tight">
                                     <span className="font-medium text-sm truncate w-full">{selectedProduct.name}</span>
                                     <span className="text-[10px] text-muted-foreground truncate w-full">
-                                        {selectedProduct.internal_code || selectedProduct.code} • {selectedProduct.product_type}
+                                        {selectedProduct.internal_code || selectedProduct.code} • {translateProductType(selectedProduct.product_type)}
                                     </span>
                                 </div>
                             </div>
