@@ -196,22 +196,27 @@ class PayrollListSerializer(serializers.ModelSerializer):
             ]
         ).aggregate(total=Sum('amount'))['total'] or 0
 
-    def _get_payment_status(self, paid, total):
-        if total <= 0: return "PAID"
-        if paid >= total: return "PAID"
-        if paid > 0: return "PARTIAL"
+    def _get_payment_status(self, obj, paid, total):
+        if obj.status == 'DRAFT':
+            return "PENDING"
+        if total <= 0:
+            return "PAID"
+        if paid >= total:
+            return "PAID"
+        if paid > 0:
+            return "PARTIAL"
         return "PENDING"
 
     def get_remuneration_paid_status(self, obj):
         paid = self.get_remuneration_paid_amount(obj)
         advances = self.get_advances_total(obj)
         total = obj.net_salary - advances
-        return self._get_payment_status(paid, total)
+        return self._get_payment_status(obj, paid, total)
 
     def get_previred_paid_status(self, obj):
         paid = self.get_previred_paid_amount(obj)
         total = self.get_total_previred(obj)
-        return self._get_payment_status(paid, total)
+        return self._get_payment_status(obj, paid, total)
 
     class Meta:
         model = Payroll

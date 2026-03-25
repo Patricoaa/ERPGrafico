@@ -721,14 +721,8 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
                     </div>
 
                     {employee?.id && (
-                        <div className="w-[380px] flex flex-col bg-muted/5 border-l overflow-hidden hidden xl:flex">
-                            <div className="px-6 py-5 border-b flex items-center gap-2">
-                                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Historial y Auditoría</span>
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <ActivitySidebar entityId={employee.id} entityType="employee" />
-                            </div>
+                        <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden hidden xl:flex">
+                            <ActivitySidebar entityId={employee.id} entityType="employee" />
                         </div>
                     )}
                 </div>
