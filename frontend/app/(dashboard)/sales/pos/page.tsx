@@ -143,7 +143,8 @@ function POSPageContent() {
         setSelectedCategoryId,
         limits: productLimits,
         setLimits: setProductLimits,
-        refreshProducts
+        refreshProducts,
+        toggleFavorite
     } = useProducts()
 
     // Refresh products when a draft is saved to update stock indicators (silent)
@@ -601,12 +602,13 @@ function POSPageContent() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-auto p-6 pt-4">
-                            <ProductGrid
-                                products={filteredProducts}
-                                categories={categories}
-                                limits={stockLimits}
-                                onProductClick={handleProductClick}
-                            />
+                                <ProductGrid
+                                    products={filteredProducts}
+                                    categories={categories}
+                                    limits={stockLimits}
+                                    onProductClick={handleProductClick}
+                                    onToggleFavorite={toggleFavorite}
+                                />
                         </CardContent>
                     </Card>
                 </div>

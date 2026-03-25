@@ -11,7 +11,7 @@ import { formatCurrency } from '@/lib/currency'
 import { PricingUtils } from '@/lib/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { Product, Category, StockLimits } from '@/types/pos'
-import { Plus } from 'lucide-react'
+import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 
 interface ProductGridProps {
@@ -19,13 +19,15 @@ interface ProductGridProps {
     categories: Category[]
     limits: StockLimits
     onProductClick: (product: Product) => void
+    onToggleFavorite?: (productId: number) => void
 }
 
 function ProductGridComponent({
     products,
     categories,
     limits,
-    onProductClick
+    onProductClick,
+    onToggleFavorite
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
 
@@ -66,12 +68,11 @@ function ProductGridComponent({
                     <Card
                         key={product.id}
                         className={cn(
-                            "cursor-pointer hover:border-primary transition-all active:scale-95 relative flex flex-col overflow-hidden group",
-                            // Touch-optimized tappable area
-                            isTouchPOS && "min-h-[140px]",
-                            isDisabled && "opacity-50 pointer-events-none grayscale-[0.5]"
+                            "group cursor-pointer hover:shadow-md transition-all border-2 overflow-hidden flex flex-col h-full",
+                            isTouchPOS && "active:scale-95", // Feedback for touch
+                            isDisabled && "opacity-50 grayscale cursor-not-allowed" // Removed pointer-events-none to allow favorite toggle
                         )}
-                        onClick={() => onProductClick(product)}
+                        onClick={() => !isDisabled && onProductClick(product)}
                     >
                         <div className={cn(
                             "aspect-square bg-muted/50 flex items-center justify-center relative",
@@ -86,6 +87,26 @@ function ProductGridComponent({
                                     className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform"
                                 />
                             )}
+                            
+                            {/* Favorite Toggle */}
+                            <button
+                                className={cn(
+                                    "absolute top-2 left-2 z-20 p-1.5 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm hover:scale-110 active:scale-95 transition-all",
+                                    product.is_favorite ? "text-red-500 border-red-100 bg-red-50/50" : "text-muted-foreground"
+                                )}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onToggleFavorite?.(product.id)
+                                }}
+                                title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                            >
+                                <Heart 
+                                    className={cn(
+                                        "h-4 w-4 transition-colors", 
+                                        product.is_favorite ? "fill-current" : ""
+                                    )} 
+                                />
+                            </button>
 
                             {/* Hover Badge */}
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -181,6 +202,7 @@ export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => 
     return (
         prevProps.products === nextProps.products &&
         prevProps.limits === nextProps.limits &&
-        prevProps.onProductClick === nextProps.onProductClick
+        prevProps.onProductClick === nextProps.onProductClick &&
+        prevProps.onToggleFavorite === nextProps.onToggleFavorite
     )
 })

@@ -40,7 +40,7 @@ export function useProducts() {
                 const sessionParams = `&pos_session_id=${currentSession.id}`
                 const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
                 const [productsRes, categoriesRes, uomsRes] = await Promise.all([
-                    api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true${sessionParams}${draftParams}`),
+                    api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&sort=popular${sessionParams}${draftParams}`),
                     api.get('/inventory/categories/?page_size=9999'),
                     api.get('/inventory/uoms/?page_size=9999')
                 ])
@@ -74,9 +74,16 @@ export function useProducts() {
 
     // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
-        let filtered = products
+        let filtered = [...products]
 
-        // Filter by category
+        // 1. Sort by favorite status first (Frontend fallback for optimistic updates)
+        filtered.sort((a, b) => {
+            if (a.is_favorite && !b.is_favorite) return -1
+            if (!a.is_favorite && b.is_favorite) return 1
+            return 0
+        })
+
+        // 2. Filter by category
         if (selectedCategoryId !== null) {
             filtered = filtered.filter(p => {
                 const catId = typeof p.category === 'object' ? p.category?.id : p.category
@@ -84,7 +91,7 @@ export function useProducts() {
             })
         }
 
-        // Filter by search term
+        // 3. Filter by search term
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase()
             filtered = filtered.filter(p =>
@@ -102,7 +109,7 @@ export function useProducts() {
         if (!silent) setLoading(true)
         try {
             const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
-            const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&pos_session_id=${currentSession.id}${draftParams}`)
+            const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&sort=popular&pos_session_id=${currentSession.id}${draftParams}`)
             setProducts(res.data.results || res.data)
             if (!silent) {
                 toast.success("Productos actualizados")
@@ -116,6 +123,23 @@ export function useProducts() {
         }
     }, [setLoading, setProducts, currentSession?.id, currentDraftId])
 
+    const toggleFavorite = useCallback(async (productId: number) => {
+        try {
+            const res = await api.post(`/inventory/products/${productId}/toggle_favorite/`)
+            const isFavorite = res.data.is_favorite
+
+            // Optimistic update
+            setProducts(current => current.map(p =>
+                p.id === productId ? { ...p, is_favorite: isFavorite } : p
+            ))
+
+            toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
+        } catch (error) {
+            console.error("Error toggling favorite:", error)
+            toast.error("Error al actualizar favorito")
+        }
+    }, [setProducts])
+
     return {
         products,
         filteredProducts,
@@ -127,6 +151,7 @@ export function useProducts() {
         setSelectedCategoryId,
         limits,
         setLimits,
-        refreshProducts
+        refreshProducts,
+        toggleFavorite
     }
 }
