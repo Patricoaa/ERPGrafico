@@ -39,16 +39,15 @@ export function SearchBar({
     return (
         <div className="relative">
             <Search className={cn(
-                "absolute left-2 text-muted-foreground",
-                isTouchPOS ? "top-3.5 h-5 w-5" : "top-2.5 h-4 w-4"
+                "absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground",
+                isTouchPOS ? "h-5 w-5" : "h-5 w-5"
             )} />
             <Input
                 ref={inputRef}
                 placeholder={placeholder}
                 className={cn(
-                    "pl-8",
                     // Touch-optimized sizing and font (min 16px prevents iOS zoom)
-                    isTouchPOS ? "h-14 text-base pl-10" : "h-12 text-lg"
+                    isTouchPOS ? "h-14 text-base pl-10" : "h-12 text-lg pl-10"
                 )}
                 style={isTouch ? { fontSize: `${MIN_MOBILE_FONT_SIZE}px` } : undefined}
                 value={value}
