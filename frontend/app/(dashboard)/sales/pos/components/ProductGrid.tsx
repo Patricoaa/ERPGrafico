@@ -153,9 +153,21 @@ function ProductGridComponent({
                         </div>
 
                         <CardContent className={cn(
-                            "p-2 text-center flex-1 flex flex-col justify-center",
+                            "p-2 text-center flex-1 flex flex-col justify-center gap-1",
                             isTouchPOS && "p-3"  // More padding for touch
                         )}>
+                            <div className="flex flex-wrap justify-center gap-1 mb-1">
+                                {product.internal_code && (
+                                    <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border-muted-foreground/30">
+                                        {product.internal_code}
+                                    </Badge>
+                                )}
+                                {product.code && product.code !== product.internal_code && (
+                                    <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70">
+                                        {product.code}
+                                    </Badge>
+                                )}
+                            </div>
                             <div className={cn(
                                 "font-bold line-clamp-2",
                                 isTouchPOS ? "text-base" : "text-sm"  // Larger font for touch
@@ -175,18 +187,6 @@ function ProductGridComponent({
                                         {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
                                         <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                     </>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap justify-center gap-1 mt-1">
-                                {product.internal_code && (
-                                    <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
-                                        {product.internal_code}
-                                    </Badge>
-                                )}
-                                {product.code && product.code !== product.internal_code && (
-                                    <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-normal opacity-70 uppercase">
-                                        {product.code}
-                                    </Badge>
                                 )}
                             </div>
                         </CardContent>
