@@ -26,8 +26,9 @@ interface Step1_ProductSelectionProps {
     selectedSupplierId?: string | null
 }
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Info, AlertTriangle } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import { Calculator, AlertTriangle } from "lucide-react"
 
 export function Step1_ProductSelection({
     orderLines,
@@ -39,6 +40,9 @@ export function Step1_ProductSelection({
     const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoMs] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [grossInput, setGrossInput] = useState<string>("")
+    const netResult = grossInput ? Math.round(Number(grossInput) / 1.19) : null
+    const ivaAmount = netResult !== null ? Math.round(Number(grossInput)) - netResult : null
 
     useEffect(() => {
         const fetchData = async () => {
@@ -148,26 +152,68 @@ export function Step1_ProductSelection({
                 <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                         <TableRow>
-                            <TableHead className="w-[35%]">Producto</TableHead>
-                            <TableHead className="w-[10%]">Cantidad</TableHead>
-                            <TableHead className="w-[20%]">
+                            <TableHead className="w-[50%]">Producto</TableHead>
+                            <TableHead className="w-[8%] text-center">Cantidad</TableHead>
+                            <TableHead className="w-[16%]">Unidad</TableHead>
+                            <TableHead className="w-[10%]">
                                 <div className="flex items-center gap-1">
-                                    Unidad
-                                    <TooltipProvider delayDuration={0}>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                                            </TooltipTrigger>
-                                            <TooltipContent className="text-[11px] font-medium">
-                                                Las unidades se convierten automáticamente a la unidad base de stock. Pase sobre el icono para ver la equivalencia.
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    Costo Unit.
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="text-muted-foreground/50 hover:text-primary transition-colors"
+                                                title="Calculadora bruto a neto"
+                                            >
+                                                <Calculator className="h-3 w-3" />
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 p-4" align="start">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Calculator className="h-4 w-4 text-primary" />
+                                                    <p className="text-[12px] font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
+                                                </div>
+                                                <p className="text-[11px] text-muted-foreground">Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.</p>
+                                                <div className="space-y-1">
+                                                    <Label className="text-[10px] uppercase font-bold">Monto Bruto (c/IVA)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Ej: 11.900"
+                                                        value={grossInput}
+                                                        onChange={(e) => setGrossInput(e.target.value)}
+                                                        className="h-8 text-sm"
+                                                    />
+                                                </div>
+                                                {netResult !== null && (
+                                                    <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">Neto (sin IVA)</span>
+                                                            <span className="font-bold text-green-600">
+                                                                {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-muted-foreground">IVA (19%)</span>
+                                                            <span className="font-medium">
+                                                                {ivaAmount?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="border-t pt-1.5 flex justify-between">
+                                                            <span className="text-muted-foreground">Bruto</span>
+                                                            <span className="font-medium">
+                                                                {Number(grossInput).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </TableHead>
-                            <TableHead className="w-[15%]">Costo Unit.</TableHead>
-                            <TableHead className="w-[10%]">Subtotal</TableHead>
-                            <TableHead className="w-[10%]"></TableHead>
+                            <TableHead className="w-[10%] text-right">Subtotal</TableHead>
+                            <TableHead className="w-[6%]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -192,10 +238,12 @@ export function Step1_ProductSelection({
                                         return null
                                     })()}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-center">
                                     <Input
                                         type="number"
                                         step="0.01"
+                                        min="0"
+                                        className="w-full text-center"
                                         value={line.quantity || line.qty || 0}
                                         onChange={(e) => updateLine(index, 'quantity', parseFloat(e.target.value) || 0)}
                                     />

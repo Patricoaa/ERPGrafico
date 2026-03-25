@@ -151,12 +151,12 @@ class Product(models.Model):
     attachments = GenericRelation('core.Attachment')
     history = HistoricalRecords()
     
-    # Custom Fields Schema for MANUFACTURABLE_CUSTOM
-    custom_fields_schema = models.JSONField(
-        _("Esquema de Campos Customizados"),
-        null=True, blank=True,
-        help_text=_("Define campos adicionales requeridos al vender (ej: tamaño, copias, folio inicial)")
-    )
+    # Custom Fields Schema for MANUFACTURABLE_CUSTOM (DEPRECATED - Removed from UI/API)
+    # custom_fields_schema = models.JSONField(
+    #     _("Esquema de Campos Customizados"),
+    #     null=True, blank=True,
+    #     help_text=_("Define campos adicionales requeridos al vender (ej: tamaño, copias, folio inicial)")
+    # )
     
     # Manufacturing Configuration (for MANUFACTURABLE_STANDARD)
     has_bom = models.BooleanField(

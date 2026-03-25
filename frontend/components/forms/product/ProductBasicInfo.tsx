@@ -239,6 +239,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                         <Switch
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            disabled={form.watch("product_type") === 'MANUFACTURABLE'}
                                         />
                                     </FormControl>
                                     <div className="space-y-0.5">
