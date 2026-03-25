@@ -128,7 +128,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'internal_code', 'code', 'name', 'category', 'product_type', 'image',
-            'custom_fields_schema', 'has_bom', 'requires_advanced_manufacturing',
+            'has_bom', 'requires_advanced_manufacturing',
             'mfg_auto_finalize', 'mfg_enable_prepress', 'mfg_enable_press',
             'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs',
             'mfg_prepress_folio', 'mfg_press_offset', 'mfg_press_digital',

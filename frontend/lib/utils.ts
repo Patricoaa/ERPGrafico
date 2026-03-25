@@ -78,7 +78,7 @@ export function translateReceivingStatus(status: string): string {
 export function translateFieldName(field: string): string {
   if (!field) return '';
   const lowerField = field.toLowerCase();
-  
+
   const exactMap: Record<string, string> = {
     'customer_name': 'Nombre Cliente',
     'supplier_name': 'Nombre Proveedor',
@@ -143,6 +143,43 @@ export function translateFieldName(field: string): string {
     'location': 'Ubicación',
     'source_document': 'Documento Origen',
     'credit_last_valuated': 'Ult. Evaluación de Crédito',
+    'can_be_sold': 'Habilitado para Venta',
+    'can_be_purchased': 'Habilitado para Compra',
+    'has_bom': 'Tiene Lista de Materiales',
+    'requires_advanced_manufacturing': 'Requiere Fabricación Avanzada',
+    'mfg_auto_finalize': 'Fabricación express',
+    'mfg_enable_prepress': 'Fáb.: Hab. Pre-Impresión',
+    'mfg_enable_press': 'Fáb.: Hab. Impresión',
+    'mfg_enable_postpress': 'Fáb.: Hab. Post-Impresión',
+    'mfg_prepress_design': 'Fáb. Pre: Diseño',
+    'mfg_prepress_specs': 'Fáb. Pre: Especificaciones',
+    'mfg_prepress_folio': 'Fáb. Pre: Folios',
+    'mfg_press_offset': 'Fáb. Imp: Offset',
+    'mfg_press_digital': 'Fáb. Imp: Digital',
+    'mfg_postpress_finishing': 'Fáb. Post: Terminaciones',
+    'mfg_postpress_binding': 'Fáb. Post: Encuadernación',
+    'mfg_default_delivery_days': 'Días de Entrega Estándar',
+    'track_inventory': 'Seguimiento de Stock',
+    'is_dynamic_pricing': 'Precio Dinámico',
+    'sale_uom': 'U. Medida Venta',
+    'purchase_uom': 'U. Medida Compra',
+    'allowed_sale_uoms': 'U. Medidas Permitidas',
+    'receiving_warehouse': 'Bodega Recepción',
+    'product_type': 'Tipo de Producto',
+    'internal_code': 'Código Interno',
+    'has_variants': 'Tiene Variantes',
+    'is_variable_amount': 'Monto Variable',
+    'recurrence_period': 'Período Recurrencia',
+    'renewal_notice_days': 'Días Aviso Renovación',
+    'subscription_supplier': 'Proveedor Suscripción',
+    'subscription_amount': 'Monto Suscripción',
+    'subscription_start_date': 'Inicio Suscripción',
+    'auto_activate_subscription': 'Activar Suscripción Auto.',
+    'is_indefinite': 'Contrato Indefinido',
+    'contract_end_date': 'Fin de Contrato',
+    'income_account': 'Cuenta de Ingresos',
+    'expense_account': 'Cuenta de Gastos',
+    'preferred_supplier': 'Proveedor Preferido',
   };
 
   if (exactMap[lowerField]) return exactMap[lowerField];
@@ -159,12 +196,15 @@ export function translateFieldName(field: string): string {
     'category': 'categoría', 'warehouse': 'bodega', 'location': 'ubicación',
     'payment': 'pago', 'invoice': 'factura', 'order': 'pedido', 'sale': 'venta',
     'purchase': 'compra', 'delivery': 'entrega', 'receipt': 'recepción',
-    'subtotal': 'subtotal', 'is': 'es', 'has': 'tiene', 'can': 'puede'
+    'subtotal': 'subtotal', 'is': 'es', 'has': 'tiene', 'can': 'puede',
+    'be': 'ser', 'purchased': 'comprado', 'sold': 'vendido', 'tracked': 'seguido',
+    'advanced': 'avanzada', 'manufacturing': 'fabricación', 'mfg': 'fáb.',
+    'auto': 'auto', 'finalize': 'finalizar', 'uom': 'u.m.', 'variant': 'variante'
   };
 
   const humanized = lowerField.replace(/_/g, ' ');
   const words = humanized.split(' ').map(w => partialMap[w] || w);
-  
+
   return words.join(' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
@@ -242,7 +282,7 @@ export function formatPlainDate(value: string | Date | null | undefined): string
 
 export function formatDocumentId(type: string | null | undefined, number: string | number | null | undefined): string {
   if (!number) return '---'
-  
+
   const prefixes: Record<string, string> = {
     'FACTURA': 'FAC-',
     'BOLETA': 'BOL-',
@@ -285,6 +325,6 @@ export function formatDocumentId(type: string | null | undefined, number: string
 
   const prefix = prefixes[type?.toUpperCase() || ''] || ''
   const numStr = number.toString().padStart(5, '0')
-  
+
   return `${prefix}${numStr}`
 }
