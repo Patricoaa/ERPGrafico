@@ -10,8 +10,10 @@ from .serializers import (
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField, Subscription,
-    ProductAttribute, ProductAttributeValue
+    ProductAttribute, ProductAttributeValue, ProductFavorite
 )
+from django.db.models import Exists, OuterRef, Value, BooleanField, Subquery, IntegerField
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from .services import StockService, UoMService
 from django_filters.rest_framework import DjangoFilterBackend
@@ -43,6 +45,17 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             annotated_current_stock=Sum('stock_moves__quantity'),
             variants_count=Count('variants')
         )
+
+        # Handle User Favorites (Always annotate to avoid errors in retrieve/serializer)
+        user = self.request.user
+        if user and user.is_authenticated:
+            queryset = queryset.annotate(
+                is_favorite=Exists(
+                    ProductFavorite.objects.filter(user=user, product=OuterRef('id'))
+                )
+            )
+        else:
+            queryset = queryset.annotate(is_favorite=Value(False, output_field=BooleanField()))
         
         # If it's a detail request (requesting a single object by ID), 
         # we MUST return the full queryset to avoid 404s on archived products.
@@ -96,7 +109,44 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             Prefetch('boms', queryset=bom_queryset)
         )
 
+
+        # Handle special sorting for POS (Popularity)
+        sort_param = self.request.query_params.get('sort')
+        if sort_param == 'popular':
+            from django.db.models import Q
+            from sales.models import SaleOrder, SaleLine
+            
+            # Subquery to count sales for each product separately without affecting groupings
+            sales_subquery = SaleLine.objects.filter(
+                product=OuterRef('id'),
+                order__status__in=[
+                    SaleOrder.Status.CONFIRMED,
+                    SaleOrder.Status.INVOICED,
+                    SaleOrder.Status.PAID
+                ]
+            ).values('product').annotate(count=Count('id')).values('count')
+
+            queryset = queryset.annotate(
+                sales_count=Coalesce(Subquery(sales_subquery), Value(0), output_field=IntegerField())
+            ).order_by('-is_favorite', '-sales_count', 'name')
+        else:
+            # Default sort prioritizing favorites
+            queryset = queryset.order_by('-is_favorite', '-id')
+
         return queryset
+
+    @action(detail=True, methods=['post'])
+    def toggle_favorite(self, request, pk=None):
+        product = self.get_object()
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'detail': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        favorite, created = ProductFavorite.objects.get_or_create(user=user, product=product)
+        if not created:
+            favorite.delete()
+            return Response({'is_favorite': False})
+        return Response({'is_favorite': True})
 
     def perform_update(self, serializer):
         serializer.save()
