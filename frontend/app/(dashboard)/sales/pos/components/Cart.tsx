@@ -84,52 +84,59 @@ export function Cart({
                 </div>
 
                 {/* Items List */}
-                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl">
-                    <Table>
-                        <TableHeader className="bg-background/50 sticky top-0 z-10">
-                            <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
-                                <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
-                                <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cant.</TableHead>
-                                <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
-                                <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
-                                {showLineDiscounts && (
-                                    <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80 h-[34px]">Dscto.</TableHead>
-                                )}
-                                <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Total</TableHead>
-                                <TableHead className="w-[5%] py-2 h-[34px]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {items.map((item) => {
-                                const originalProduct = products.find(p => p.id === item.id)
-                                const maxQty = limits[`cart_${item.cartItemId}`]
-
-                                return (
-                                    <CartItem
-                                        key={item.cartItemId}
-                                        item={item}
-                                        originalProduct={originalProduct}
-                                        uoms={uoms}
-                                        maxQty={maxQty}
-                                        onQuantityChange={onItemQuantityChange}
-                                        onUomChange={onItemUomChange}
-                                        onPriceChange={onItemPriceChange}
-                                        onDiscountChange={onItemDiscountChange}
-                                        onRemove={onItemRemove}
-                                        onOpenNumpad={onOpenNumpad}
-                                        showLineDiscount={showLineDiscounts}
-                                    />
-                                )
-                            })}
-                            {items.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-xs italic">
-                                        Carrito vacío
-                                    </TableCell>
+                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl relative">
+                    {items.length === 0 ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
+                            <div className="h-24 w-24 rounded-full bg-muted/30 flex items-center justify-center border-2 border-dashed border-muted-foreground/10 mb-2">
+                                <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="font-bold text-lg text-muted-foreground/80 tracking-tight">El carrito está vacío</p>
+                                <p className="max-w-[280px] text-xs italic opacity-70 mx-auto leading-relaxed">
+                                    Escanea un código de barras o selecciona productos del catálogo para comenzar la venta.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-background/50 sticky top-0 z-10">
+                                <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
+                                    <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
+                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cant.</TableHead>
+                                    <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
+                                    <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
+                                    {showLineDiscounts && (
+                                        <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80 h-[34px]">Dscto.</TableHead>
+                                    )}
+                                    <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Total</TableHead>
+                                    <TableHead className="w-[5%] py-2 h-[34px]"></TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {items.map((item) => {
+                                    const originalProduct = products.find(p => p.id === item.id)
+                                    const maxQty = limits[`cart_${item.cartItemId}`]
+
+                                    return (
+                                        <CartItem
+                                            key={item.cartItemId}
+                                            item={item}
+                                            originalProduct={originalProduct}
+                                            uoms={uoms}
+                                            maxQty={maxQty}
+                                            onQuantityChange={onItemQuantityChange}
+                                            onUomChange={onItemUomChange}
+                                            onPriceChange={onItemPriceChange}
+                                            onDiscountChange={onItemDiscountChange}
+                                            onRemove={onItemRemove}
+                                            onOpenNumpad={onOpenNumpad}
+                                            showLineDiscount={showLineDiscounts}
+                                        />
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    )}
                 </div>
 
                 {/* Footer with Totals and Actions */}
