@@ -188,17 +188,24 @@ class Command(BaseCommand):
         from core.models import ActionLog
         
         def _safe_delete(model_class, name):
-            self.stdout.write(f"  Deleting {name}...")
+            self.stdout.write(f"  Purging {name} (Truncate)...")
             try:
-                with transaction.atomic():
-                    model_class.objects.all().delete()
+                table_name = model_class._meta.db_table
+                with connection.cursor() as cursor:
+                    # RESTART IDENTITY resets the auto-increment sequences (PostgreSQL)
+                    # CASCADE handles foreign key dependencies
+                    cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
             except Exception as e:
-                # If the table doesn't exist, it's effectively "purged"
-                error_str = str(e).lower()
-                if "does not exist" in error_str or "unrecognized configuration parameter" in error_str:
-                    self.stdout.write(f"    - Table for {name} does not exist, skipping.")
-                    return
-                self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e)}"))
+                # Fallback for non-PostgreSQL or if TRUNCATE fails
+                self.stdout.write(f"    - Truncate failed, falling back to delete() for {name}")
+                try:
+                    with transaction.atomic():
+                        model_class.objects.all().delete()
+                except Exception as e2:
+                    error_str = str(e2).lower()
+                    if "does not exist" in error_str:
+                        return
+                    self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e2)}"))
 
         # 0. System & Logs
         _safe_delete(ActionLog, "ActionLog")
@@ -530,6 +537,47 @@ class Command(BaseCommand):
             # Para 1 impresion a color.
             BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('1'), uom=uoms['hoja'])
 
+        # ---------------------------------------------------------
+        # ADDITIONAL PRODUCTS LOOP (Increased Quantity)
+        # ---------------------------------------------------------
+        self.stdout.write('  Creating additional products...')
+        extra_products = [
+            ("Flyer Promocional A5", cat_finished, Product.Type.MANUFACTURABLE, 120, uoms['un']),
+            ("Tríptico Corporativo", cat_finished, Product.Type.MANUFACTURABLE, 350, uoms['un']),
+            ("Afiche Publicitario (Couché 170g)", cat_finished, Product.Type.MANUFACTURABLE, 1500, uoms['un']),
+            ("Etiqueta Adhesiva Premium", cat_finished, Product.Type.MANUFACTURABLE, 80, uoms['un']),
+            ("Carpeta Institucional", cat_finished, Product.Type.MANUFACTURABLE, 850, uoms['un']),
+            ("Libreta de Notas (Bond 80g)", cat_finished, Product.Type.MANUFACTURABLE, 2500, uoms['un']),
+            ("Sobre Americano Impreso", cat_finished, Product.Type.MANUFACTURABLE, 55, uoms['un']),
+            ("Banner Roller Up (80x200cm)", cat_finished, Product.Type.MANUFACTURABLE, 35000, uoms['un']),
+            ("Talonario de Facturas", cat_finished, Product.Type.MANUFACTURABLE, 4500, uoms['un']),
+            ("Calendario de Escritorio", cat_finished, Product.Type.MANUFACTURABLE, 2800, uoms['un']),
+            ("Papel Químico Duplicado", cat_raw, Product.Type.STORABLE, 15000, uoms['resma']),
+            ("Cartulina Sulfatada 300g", cat_raw, Product.Type.STORABLE, 22000, uoms['paquete']),
+            ("Barniz UV Brillo (L)", cat_supplies, Product.Type.STORABLE, 18500, uoms['un']),
+            ("Alambre para Espiral", cat_supplies, Product.Type.STORABLE, 12000, uoms['kg']),
+            ("Pegamento para Encuadernación", cat_supplies, Product.Type.STORABLE, 9500, uoms['un']),
+            ("Plancha Offset GTO", cat_supplies, Product.Type.STORABLE, 4500, uoms['un']),
+            ("Servicio Fotocopiado B/N", cat_services, Product.Type.SERVICE, 40, uoms['hoja']),
+            ("Servicio Encuadernación", cat_services, Product.Type.SERVICE, 1500, uoms['un']),
+            ("Servicio Plastificado A4", cat_services, Product.Type.SERVICE, 800, uoms['un']),
+            ("Corte por Guillotina", cat_services, Product.Type.SERVICE, 500, uoms['un']),
+        ]
+
+        for i, (name, cat, type, price, uom) in enumerate(extra_products):
+            # Mix some storable, manufacturable and services
+            Product.objects.get_or_create(
+                code=f"{cat.prefix}-{100 + i}",
+                defaults={
+                    'name': name,
+                    'category': cat,
+                    'product_type': type,
+                    'uom': uom,
+                    'sale_price': price,
+                    'track_inventory': (type == Product.Type.STORABLE),
+                    'receiving_warehouse': wh if type != Product.Type.SERVICE else None
+                }
+            )
         
         # SERVICES
         Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
@@ -969,24 +1017,13 @@ class Command(BaseCommand):
             }
         )
         
-        
         # Payment Methods for Bank Account (Estado)
-        
         pm_trans_est, _ = PaymentMethod.objects.get_or_create(
             name="Transferencia Estado",
             treasury_account=bco01,
             defaults={
                 'method_type': PaymentMethod.Type.TRANSFER,
                 'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
-        )
-        pm_deb_est, _ = PaymentMethod.objects.get_or_create(
-            name="Tarjeta Débito Estado",
-            treasury_account=bco01,
-            defaults={
-                'method_type': PaymentMethod.Type.DEBIT_CARD,
-                'allow_for_sales': False,
                 'allow_for_purchases': True
             }
         )
@@ -1006,7 +1043,7 @@ class Command(BaseCommand):
         )
         
         # Payment Method for Workshop
-        PaymentMethod.objects.get_or_create(
+        pm_efectivo_taller, _ = PaymentMethod.objects.get_or_create(
             name="Efectivo Taller",
             treasury_account=caja01,
             defaults={
@@ -1031,25 +1068,13 @@ class Command(BaseCommand):
             }
         )
 
-        
-        
         # Payment Methods for Bank Account (Chile)
-        
         PaymentMethod.objects.get_or_create(
             name="Transferencia Bco Chile",
             treasury_account=bank_chile,
             defaults={
                 'method_type': PaymentMethod.Type.TRANSFER,
                 'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
-        )
-        PaymentMethod.objects.get_or_create(
-            name="Cheque Bco Chile",
-            treasury_account=bank_chile,
-            defaults={
-                'method_type': PaymentMethod.Type.CHECK,
-                'allow_for_sales': True, # Allow for sales in POS
                 'allow_for_purchases': True
             }
         )
@@ -1078,7 +1103,7 @@ class Command(BaseCommand):
                 'allow_for_purchases': True
             }
         )
-        PaymentMethod.objects.get_or_create(
+        pm_webpay, _ = PaymentMethod.objects.get_or_create(
             name="Webpay / Transbank",
             treasury_account=bco01,
             defaults={
@@ -1093,29 +1118,46 @@ class Command(BaseCommand):
         )
         
         # 2. POS Terminals
+        
+        # POS-01: Caja Central P1
         t1, _ = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
                 'name': "Caja Central P1",
                 'location': "Planta 1 - Recepción",
-                'default_treasury_account': bco01 # Point to Bank Account as requested
+                'ip_address': '192.168.1.100',
+                'default_treasury_account': bco01 # Suggest bank account
             }
         )
-        # Assign allowed payment methods (Only 1 CASH method as requested + cards/transfers)
         cash_pm_01 = PaymentMethod.objects.get(name="Efectivo POS 01")
-        other_methods = PaymentMethod.objects.filter(allow_for_sales=True).exclude(method_type=PaymentMethod.Type.CASH)
-        t1.allowed_payment_methods.set([cash_pm_01] + list(other_methods))
+        card_pm_01, _ = PaymentMethod.objects.get_or_create(
+            name="Tarjeta Transbank POS 01",
+            treasury_account=till1,
+            defaults={
+                'method_type': PaymentMethod.Type.CARD_TERMINAL,
+                'allow_for_sales': True,
+                'allow_for_purchases': False,
+                'is_terminal': True,
+                'supplier': partners['suppliers'][0],
+                'terminal_receivable_account': accounts['receivable'],
+                'commission_expense_account': accounts['expense_general']
+            }
+        )
+        # Association per screenshot: Efectivo POS 01 + Tarjeta Transbank POS 01
+        t1.allowed_payment_methods.set([cash_pm_01, card_pm_01])
 
+        # POS-02: Caja Taller P2
         t2, _ = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
                 'name': "Caja Taller P2",
                 'location': "Planta 2 - Taller",
-                'default_treasury_account': bco01 # Point to Bank Account as requested
+                'ip_address': '192.168.1.100',
+                'default_treasury_account': bco01
             }
         )
-        cash_pm_taller = PaymentMethod.objects.get(name="Efectivo Taller")
-        t2.allowed_payment_methods.set([cash_pm_taller] + list(other_methods))
+        # Association per screenshot: Efectivo Taller + Webpay / Transbank
+        t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")
