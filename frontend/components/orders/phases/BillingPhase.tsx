@@ -116,40 +116,47 @@ export function BillingPhase({
                         status: activeDoc.status,
                         actions: []
                     }] : []),
-                    ...invoices.map((inv: any) => ({
-                        type: inv.dte_type_display || 'Documento',
-                        number: inv.display_id || formatDocumentId(
-                            inv.dte_type === 'BOLETA' ? 'BOL' :
-                                inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                    inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
-                            inv.number || '---',
-                            inv.display_id
-                        ),
-                        icon: FileText,
-                        color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
-                        id: inv.id,
-                        docType: 'invoice',
-                        status: inv.status,
-                        actions: [
-                            ...((inv.status === 'DRAFT') ? [{
-                                icon: Trash2,
-                                title: 'Eliminar Borrador',
-                                color: 'text-red-500 hover:bg-red-500/10',
-                                onClick: () => handleDeleteDraft(inv.id)
-                            }] : []),
-                            ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
-                                icon: X,
-                                title: 'Anular Documento',
-                                color: 'text-orange-600 hover:bg-orange-600/10',
-                                onClick: () => handleAnnulDocument(inv.id)
-                            }] : [])
-                        ]
-                    }))
-                ]}
+                    ...invoices
+                        .filter((inv: any) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
+                        .map((inv: any) => ({
+                            type: inv.dte_type_display || 'Documento',
+                            number: inv.display_id || formatDocumentId(
+                                inv.dte_type === 'BOLETA' ? 'BOL' :
+                                    inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                                        inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
+                                inv.number || '---',
+                                inv.display_id
+                            ),
+                            icon: FileText,
+                            color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
+                            id: inv.id,
+                            docType: 'invoice',
+                            status: inv.status,
+                            actions: [
+                                ...((inv.status === 'DRAFT') ? [{
+                                    icon: Trash2,
+                                    title: 'Eliminar Borrador',
+                                    color: 'text-red-500 hover:bg-red-500/10',
+                                    onClick: () => handleDeleteDraft(inv.id)
+                                }] : []),
+                                ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
+                                    icon: X,
+                                    title: 'Anular Documento',
+                                    color: 'text-orange-600 hover:bg-orange-600/10',
+                                    onClick: () => handleAnnulDocument(inv.id)
+                                }] : [])
+                            ]
+                        }))
+                ].filter((doc: any) => {
+                    // If in Note mode, we ONLY want to show the note itself in this stage list
+                    // as the "original" invoices are already shown in the Origin stage.
+                    if (isNoteMode) return doc.id === activeDoc.id;
+                    return true;
+                })}
                 onViewDetail={openDetails}
                 actions={[
-                    ...(isNoteMode ? [] : registry.documents?.actions || []),
-                    ...(isNoteMode ? [] : registry.notes?.actions || [])
+                    ...(registry.documents?.actions || []),
+                    ...(isNoteMode ? [] : (registry.notes?.actions || []))
                 ].filter((a: any) => !a.id.includes('view-'))}
                 emptyMessage="Sin documentos emitidos"
                 order={activeDoc}

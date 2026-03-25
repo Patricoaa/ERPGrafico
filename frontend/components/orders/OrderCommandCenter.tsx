@@ -34,7 +34,7 @@ import { TreasuryPhase } from "./phases/TreasuryPhase"
 interface OrderCommandCenterProps {
     orderId?: number | null
     invoiceId?: number | null
-    type: 'purchase' | 'sale' | 'obligation'
+    type?: 'purchase' | 'sale' | 'obligation'
     open: boolean
     onOpenChange: (open: boolean) => void
     onActionSuccess?: () => void
@@ -326,7 +326,7 @@ export function OrderCommandCenter({
                                 noteStatuses={noteStatuses}
                                 order={order}
                                 activeDoc={activeDoc}
-                                type={type}
+                                type={type || 'sale'}
                                 onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                                 openDetails={openDetails}
                                 onEdit={onEdit}

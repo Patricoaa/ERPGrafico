@@ -108,7 +108,11 @@ export function TaskInbox() {
         } else if (task.task_type?.startsWith('HUB_')) {
             // HUB stage tasks → open Command Center
             const orderType = task.data?.order_type || 'sale'
-            openCommandCenter(task.object_id, orderType)
+            if (task.data?.is_invoice || task.task_type?.includes('_NC_') || task.task_type?.includes('_ND_')) {
+                openCommandCenter(null, orderType, task.object_id)
+            } else {
+                openCommandCenter(task.object_id, orderType)
+            }
         } else if (task.task_type === 'CREDIT_POS_REQUEST') {
             // No full document, just a quick approval
             toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
@@ -217,7 +221,7 @@ export function TaskInbox() {
                                 {task.data?.stage === 'billing' && <FileText className="h-4 w-4 text-slate-300" />}
                                 {task.data?.stage === 'treasury' && <Wallet className="h-4 w-4 text-slate-300" />}
                                 <span className="uppercase">{HUB_STAGE_LABELS[task.data?.stage as keyof typeof HUB_STAGE_LABELS] || task.data?.stage}</span>:
-                                {task.data?.order_type === 'purchase' ? `OC-${task.data?.order_number}` : `NV-${task.data?.order_number}`}
+                                {task.data?.prefix || (task.data?.order_type === 'purchase' ? 'OC' : 'NV')}-{task.data?.order_number}
                             </>
                         ) : (
                             task.title
@@ -258,10 +262,10 @@ export function TaskInbox() {
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
                                 <span className="font-bold text-warning/90">Acción Requerida:</span>
                                 <span className="font-medium text-warning text-right">
-                                    {task.data?.stage === 'logistics' && 'Registrar Despacho'}
-                                    {task.data?.stage === 'billing' && 'Registrar Factura'}
-                                    {task.data?.stage === 'treasury' && 'Registrar Pago'}
-                                    {task.data?.stage === 'origin' && 'Confirmar Orden'}
+                                    {task.data?.stage === 'logistics' && (task.data?.is_invoice ? 'Registrar Devolución' : 'Registrar Despacho')}
+                                    {task.data?.stage === 'billing' && (task.data?.action_name ? `Registrar ${task.data.action_name}` : (task.data?.is_invoice ? 'Registrar Nota' : 'Registrar Factura'))}
+                                    {task.data?.stage === 'treasury' && (task.data?.is_invoice && task.data?.prefix === 'NC' ? 'Devolver Pago' : 'Registrar Pago')}
+                                    {task.data?.stage === 'origin' && (task.data?.is_invoice ? 'Confirmar Nota' : 'Confirmar Orden')}
                                 </span>
                             </div>
                         </div>

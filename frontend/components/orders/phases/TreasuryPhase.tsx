@@ -152,7 +152,7 @@ export function TreasuryPhase({
                     }
                 })}
                 onViewDetail={openDetails}
-                actions={(isNoteMode ? (registry.notes_payments?.actions || []) : (registry.payments?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
+                actions={(registry.payments?.actions || []).filter((a: any) => !a.id.includes('view-'))}
                 emptyMessage="Sin pagos registrados"
                 order={activeDoc}
                 userPermissions={userPermissions}
