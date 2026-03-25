@@ -10,78 +10,78 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { 
-    Loader2, 
-    CloudCheck, 
-    CloudUpload, 
-    Plus, 
-    Trash2, 
-    Settings2, 
+import {
+    Loader2,
+    CloudCheck,
+    CloudUpload,
+    Plus,
+    Trash2,
+    Settings2,
     AlertCircle
 } from "lucide-react"
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from "@/components/ui/table"
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle, 
-    DialogTrigger 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
 } from "@/components/ui/dialog"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { 
-    getGlobalHRSettings, 
-    updateGlobalHRSettings, 
-    getAFPs, 
-    createAFP, 
-    updateAFP, 
+import {
+    getGlobalHRSettings,
+    updateGlobalHRSettings,
+    getAFPs,
+    createAFP,
+    updateAFP,
     deleteAFP,
     getPayrollConcepts,
     createPayrollConcept,
     updatePayrollConcept,
     deletePayrollConcept
 } from "@/lib/hr/api"
-import type { 
-    AFP, 
+import type {
+    AFP,
     PayrollConcept
 } from "@/types/hr"
 import { Badge } from "@/components/ui/badge"
 import { FormulaBuilder } from "@/components/hr/FormulaBuilder"
 
 const globalSettingsSchema = z.object({
-     uf_current_value: z.string(),
-     utm_current_value: z.string(),
-     min_wage_value: z.string(),
-     account_remuneraciones_por_pagar: z.string().nullable(),
-     account_previred_por_pagar: z.string().nullable(),
-     account_anticipos: z.string().nullable(),
- })
- 
- const conceptSchema = z.object({
-     name: z.string().min(1, "Nombre requerido"),
-     category: z.enum(['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE', 'DESCUENTO_LEGAL_TRABAJADOR', 'DESCUENTO_LEGAL_EMPLEADOR', 'OTRO_DESCUENTO']),
-     account: z.string().min(1, "Cuenta requerida"),
-     formula_type: z.enum(['FIXED', 'PERCENTAGE', 'EMPLOYEE_SPECIFIC', 'FORMULA', 'CHILEAN_LAW']),
-     formula: z.string().optional(),
-     default_amount: z.string(),
- })
+    uf_current_value: z.string(),
+    utm_current_value: z.string(),
+    min_wage_value: z.string(),
+    account_remuneraciones_por_pagar: z.string().nullable(),
+    account_previred_por_pagar: z.string().nullable(),
+    account_anticipos: z.string().nullable(),
+})
+
+const conceptSchema = z.object({
+    name: z.string().min(1, "Nombre requerido"),
+    category: z.enum(['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE', 'DESCUENTO_LEGAL_TRABAJADOR', 'DESCUENTO_LEGAL_EMPLEADOR', 'OTRO_DESCUENTO']),
+    account: z.string().min(1, "Cuenta requerida"),
+    formula_type: z.enum(['FIXED', 'PERCENTAGE', 'EMPLOYEE_SPECIFIC', 'FORMULA', 'CHILEAN_LAW']),
+    formula: z.string().optional(),
+    default_amount: z.string(),
+})
 
 const afpSchema = z.object({
     name: z.string().min(1, "Nombre requerido"),
@@ -94,7 +94,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
     const [saving, setSaving] = useState(false)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
     const [afps, setAfps] = useState<AFP[]>([])
-    
+
     // Global Settings Form
     const globalForm = useForm<z.infer<typeof globalSettingsSchema>>({
         resolver: zodResolver(globalSettingsSchema),
@@ -115,21 +115,21 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 getPayrollConcepts(),
                 getAFPs()
             ])
-            
-             globalForm.reset({
-                 uf_current_value: settings.uf_current_value,
-                 utm_current_value: settings.utm_current_value,
-                 min_wage_value: settings.min_wage_value || "500000",
-                 account_remuneraciones_por_pagar: settings.account_remuneraciones_por_pagar?.toString() || null,
-                 account_previred_por_pagar: settings.account_previred_por_pagar?.toString() || null,
-                 account_anticipos: settings.account_anticipos?.toString() || null,
-             })
-             setConcepts(conceptsData)
-             setAfps(afpsData)
-         } catch (error) {
-             console.error(error)
-             toast.error("Error al cargar datos de RRHH")
-         } finally {
+
+            globalForm.reset({
+                uf_current_value: settings.uf_current_value,
+                utm_current_value: settings.utm_current_value,
+                min_wage_value: settings.min_wage_value || "500000",
+                account_remuneraciones_por_pagar: settings.account_remuneraciones_por_pagar?.toString() || null,
+                account_previred_por_pagar: settings.account_previred_por_pagar?.toString() || null,
+                account_anticipos: settings.account_anticipos?.toString() || null,
+            })
+            setConcepts(conceptsData)
+            setAfps(afpsData)
+        } catch (error) {
+            console.error(error)
+            toast.error("Error al cargar datos de RRHH")
+        } finally {
             setLoading(false)
         }
     }, [globalForm])
@@ -207,7 +207,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
 
             <div className="mt-6">
                 <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
-                    
+
                     {/* --- Tab: Global --- */}
                     <TabsContent value="global" className="space-y-6">
                         <Form {...globalForm}>
@@ -366,12 +366,12 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                                         <ConceptDialog concept={c} onSaved={fetchData} />
                                                         {!c.is_system && (
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                                                                    onClick={async () => {
-                                                                        if (confirm("¿Eliminar este concepto?")) {
-                                                                            await deletePayrollConcept(c.id)
-                                                                            fetchData()
-                                                                        }
-                                                                    }}>
+                                                                onClick={async () => {
+                                                                    if (confirm("¿Eliminar este concepto?")) {
+                                                                        await deletePayrollConcept(c.id)
+                                                                        fetchData()
+                                                                    }
+                                                                }}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -413,12 +413,12 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                             {afp.account ? "Asignada cuenta contable" : "Sin asignar"}
                                         </div>
                                         <Button variant="ghost" size="sm" className="mt-4 w-full text-destructive hover:bg-destructive/10"
-                                                onClick={async () => {
-                                                    if (confirm("¿Eliminar AFP?")) {
-                                                        await deleteAFP(afp.id)
-                                                        fetchData()
-                                                    }
-                                                }}>
+                                            onClick={async () => {
+                                                if (confirm("¿Eliminar AFP?")) {
+                                                    await deleteAFP(afp.id)
+                                                    fetchData()
+                                                }
+                                            }}>
                                             Eliminar Institución
                                         </Button>
                                     </CardContent>
@@ -440,21 +440,21 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
 
     const form = useForm<z.infer<typeof conceptSchema>>({
         resolver: zodResolver(conceptSchema),
-         defaultValues: concept ? {
-             name: concept.name,
-             category: concept.category,
-             account: concept.account.toString(),
-             formula_type: concept.formula_type,
-             formula: concept.formula || "",
-             default_amount: concept.default_amount,
-         } : {
-             name: "",
-             category: "HABER_IMPONIBLE",
-             account: "",
-             formula_type: "FIXED",
-             formula: "",
-             default_amount: "0",
-         }
+        defaultValues: concept ? {
+            name: concept.name,
+            category: concept.category,
+            account: concept.account.toString(),
+            formula_type: concept.formula_type,
+            formula: concept.formula || "",
+            default_amount: concept.default_amount,
+        } : {
+            name: "",
+            category: "HABER_IMPONIBLE",
+            account: "",
+            formula_type: "FIXED",
+            formula: "",
+            default_amount: "0",
+        }
     })
 
     const onSubmit = async (data: z.infer<typeof conceptSchema>) => {
@@ -538,7 +538,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                             render={({ field }) => {
                                 const category = form.watch("category")
                                 let accountType: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE" | undefined = undefined
-                                
+
                                 if (category === 'HABER_IMPONIBLE' || category === 'HABER_NO_IMPONIBLE' || category === 'DESCUENTO_LEGAL_EMPLEADOR') {
                                     accountType = 'EXPENSE'
                                 } else if (category === 'DESCUENTO_LEGAL_TRABAJADOR') {
@@ -559,76 +559,71 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                 )
                             }}
                         />
-                         <FormField
-                             control={form.control}
-                             name="formula_type"
-                             render={({ field }) => (
-                                 <FormItem>
-                                     <FormLabel>Lógica de Cálculo</FormLabel>
-                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                         <FormControl>
-                                             <SelectTrigger>
-                                                 <SelectValue placeholder="Seleccione lógica" />
-                                             </SelectTrigger>
-                                         </FormControl>
-                                         <SelectContent>
-                                             <SelectItem value="FIXED">Monto Fijo (Manual)</SelectItem>
-                                             <SelectItem value="PERCENTAGE">Porcentaje % (del Imponible)</SelectItem>
-                                             <SelectItem value="EMPLOYEE_SPECIFIC">Ficha Empleado (Individual)</SelectItem>
-                                             <SelectItem value="FORMULA">Fórmula Matemática</SelectItem>
-                                             <SelectItem value="CHILEAN_LAW">Legal Chile (Automático)</SelectItem>
-                                         </SelectContent>
-                                     </Select>
-                                 </FormItem>
-                             )}
-                         />
- 
-                         {form.watch("formula_type") === 'FORMULA' && (
-                             <FormField
-                                 control={form.control}
-                                 name="formula"
-                                 render={({ field }) => (
-                                     <FormItem className="bg-muted/50 p-3 rounded-md border border-dashed">
-                                         <FormLabel className="flex items-center gap-2">
-                                             Constructor de Fórmula
-                                             <Badge variant="outline" className="text-[9px]">Avanzado</Badge>
-                                         </FormLabel>
-                                         <FormControl>
-                                              <div className="space-y-3">
-                                                  <Input {...field} placeholder="BASE * 0.25" className="font-mono bg-background" />
-                                                  <FormulaBuilder 
-                                                      value={field.value || ""} 
-                                                      onChange={field.onChange} 
-                                                  />
-                                              </div>
-                                          </FormControl>
-                                         <div className="text-[10px] text-muted-foreground mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
-                                             <span>Variables:</span>
-                                             <span className="col-start-2"><b>BASE</b>, <b>IMPONIBLE</b></span>
-                                             <span className="col-start-2"><b>UF</b>, <b>UTM</b></span>
-                                             <span className="col-start-2"><b>AFP_PERCENT</b>, <b>ISAPRE_UF</b></span>
-                                         </div>
-                                         <FormMessage />
-                                     </FormItem>
-                                 )}
-                             />
-                         )}
- 
-                         {(form.watch("formula_type") === 'FIXED' || form.watch("formula_type") === 'PERCENTAGE') && (
-                             <FormField
-                                 control={form.control}
-                                 name="default_amount"
-                                 render={({ field }) => (
-                                     <FormItem>
-                                         <FormLabel>
-                                             {form.watch("formula_type") === 'PERCENTAGE' ? "Porcentaje %" : "Monto por Defecto"}
-                                         </FormLabel>
-                                         <FormControl><Input {...field} type="number" step="0.0001" /></FormControl>
-                                         <FormMessage />
-                                     </FormItem>
-                                 )}
-                             />
-                         )}
+                        <FormField
+                            control={form.control}
+                            name="formula_type"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Lógica de Cálculo</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccione lógica" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="FIXED">Monto Fijo (Manual)</SelectItem>
+                                            <SelectItem value="PERCENTAGE">Porcentaje % (del Imponible)</SelectItem>
+                                            <SelectItem value="EMPLOYEE_SPECIFIC">Ficha Empleado (Individual)</SelectItem>
+                                            <SelectItem value="FORMULA">Fórmula Matemática</SelectItem>
+                                            <SelectItem value="CHILEAN_LAW">Legal Chile (Automático)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+
+                        {form.watch("formula_type") === 'FORMULA' && (
+                            <FormField
+                                control={form.control}
+                                name="formula"
+                                render={({ field }) => (
+                                    <FormItem className="bg-muted/50 p-3 rounded-md border border-dashed">
+                                        <FormLabel className="flex items-center gap-2">
+                                            Constructor de Fórmula
+                                            <Badge variant="outline" className="text-[9px]">Avanzado</Badge>
+                                        </FormLabel>
+                                        <FormControl>
+                                            <div className="space-y-3">
+                                                <Input {...field} placeholder="BASE * 0.25" className="font-mono bg-background" />
+                                                <FormulaBuilder
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
+                                                />
+                                            </div>
+                                        </FormControl>
+
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
+                        {(form.watch("formula_type") === 'FIXED' || form.watch("formula_type") === 'PERCENTAGE') && (
+                            <FormField
+                                control={form.control}
+                                name="default_amount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            {form.watch("formula_type") === 'PERCENTAGE' ? "Porcentaje %" : "Monto por Defecto"}
+                                        </FormLabel>
+                                        <FormControl><Input {...field} type="number" step="0.0001" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <DialogFooter>
                             <Button type="submit" disabled={saving}>
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -713,7 +708,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Comisión Total (%)</FormLabel>
-                                     <FormControl><Input {...field} type="number" step="0.0001" /></FormControl>
+                                    <FormControl><Input {...field} type="number" step="0.0001" /></FormControl>
                                     <p className="text-[10px] text-muted-foreground italic">Incluya el 10% obligatorio + la comisión.</p>
                                 </FormItem>
                             )}

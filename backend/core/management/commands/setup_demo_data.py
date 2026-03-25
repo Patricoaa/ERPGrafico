@@ -1342,7 +1342,7 @@ class Command(BaseCommand):
                 'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
                 'account': accounts['previred_payable'],
                 'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "IMPONIBLE * 0.006 if CONTRATO_INDEFINIDO else 0",
+                'formula': "IMPONIBLE * 0.006 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS <= 11) else 0",
                 'is_system': True
             },
             # Descuentos Legales (Empleador)
@@ -1399,7 +1399,7 @@ class Command(BaseCommand):
                 'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
                 'account': accounts['expense_prevision'],
                 'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "IMPONIBLE * 0.024 if CONTRATO_INDEFINIDO else IMPONIBLE * 0.03",
+                'formula': "IMPONIBLE * 0.008 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS > 11) else (IMPONIBLE * 0.024 if CONTRATO_INDEFINIDO else IMPONIBLE * 0.03)",
                 'is_system': True
             },
             # Otros
