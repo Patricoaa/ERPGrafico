@@ -32,6 +32,7 @@ import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
 import type { POSSession } from "@/types/pos"
 
 interface POSTerminal {
@@ -89,14 +90,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     // Close session state - simplified (modal handles its own state)
     // No longer needed, SessionCloseModal manages its own form state
-
-    // Manual movement state
-    const [moveWizardStep, setMoveWizardStep] = useState<number>(1)
-    const [moveImpact, setMoveImpact] = useState<"IN" | "OUT">("OUT")
-    const [moveType, setMoveType] = useState<string>("PARTNER_WITHDRAWAL")
-    const [moveAmount, setMoveAmount] = useState<string>("0")
-    const [moveNotes, setMoveNotes] = useState<string>("")
-    const [transferTargetId, setTransferTargetId] = useState<string | null>(null)
 
     const [submitting, setSubmitting] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
@@ -302,23 +295,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-    // Load available sessions and terminals when dialog opens
     useEffect(() => {
         if (openDialogOpen) {
             fetchAvailableSessions()
             fetchTerminals()
         }
     }, [openDialogOpen])
-
-    // Reset move wizard on open
-    useEffect(() => {
-        if (moveDialogOpen) {
-            setMoveWizardStep(1)
-            setMoveAmount("0")
-            setMoveNotes("")
-            setTransferTargetId(null)
-        }
-    }, [moveDialogOpen])
 
     // Autofill Fund Source from Terminal Default (Keep balance at 0 as requested)
     useEffect(() => {
@@ -435,42 +417,22 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-    const handleRegisterManualMovement = async () => {
+    const handleRegisterManualMovement = async (data: MovementData) => {
         if (!currentSession) return
-        const amount = parseFloat(moveAmount)
-        if (amount <= 0) {
-            toast.error("El monto debe ser mayor a cero")
-            return
-        }
-
-        // Restriction: Cannot withdraw more than available
-        const isOutflow = ["PARTNER_WITHDRAWAL", "THEFT", "OTHER_OUT"].includes(moveType)
-        if (isOutflow && amount > currentSession.expected_cash) {
-            toast.error(`Monto insuficiente en caja. Máximo disponible: ${formatCurrency(currentSession.expected_cash)}`)
-            return
-        }
-
-        if (moveType === 'TRANSFER' && !transferTargetId) {
-            toast.error("Debe seleccionar una cuenta de destino")
-            return
-        }
 
         setSubmitting(true)
         try {
             const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/register_manual_movement/`, {
-                type: moveType,
-                amount: parseFloat(moveAmount),
-                notes: moveNotes,
-                target_account_id: transferTargetId ? parseInt(transferTargetId) : null,
-                is_inflow: moveImpact === "IN"
+                type: data.moveType,
+                amount: data.amount,
+                notes: data.notes,
+                target_account_id: data.targetAccountId || null,
+                is_inflow: data.impact === 'TRANSFER' ? data.isInflowForce : (data.impact === 'IN')
             })
 
             setCurrentSession(response.data.session)
             onSessionChange?.(response.data.session)
             setMoveDialogOpen(false)
-            setMoveAmount("0")
-            setMoveNotes("")
-            setTransferTargetId(null)
             toast.success(response.data.message)
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al registrar movimiento")
@@ -857,215 +819,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-    const MOVEMENT_TYPES = {
-        IN: [
-            { value: "TRANSFER", label: "Traspaso (Efectivo Entra)" },
-            { value: "TIP", label: "Propina" },
-            { value: "OTHER_IN", label: "Otro Depósito (Varios)" },
-            { value: "COUNTING_ERROR", label: "Error de Conteo (Sobrante)" },
-            { value: "SYSTEM_ERROR", label: "Error de Sistema (Ajuste)" },
-        ],
-        OUT: [
-            { value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" },
-            { value: "TRANSFER", label: "Traspaso a otra caja" },
-            { value: "THEFT", label: "Robo / Pérdida" },
-            { value: "ROUNDING", label: "Redondeo" },
-            { value: "CASHBACK", label: "Vuelto Incorrecto" },
-            { value: "COUNTING_ERROR", label: "Error de Conteo (Faltante)" },
-            { value: "SYSTEM_ERROR", label: "Error de Sistema (Ajuste)" },
-            { value: "OTHER_OUT", label: "Otro Egreso (Gastos Varios)" },
-        ]
-    }
 
-    const renderMoveWizardStep = () => {
-        switch (moveWizardStep) {
-            case 1: // Impact Selection
-                return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center mb-6">
-                            <h3 className="text-lg font-bold">Tipo de Movimiento</h3>
-                            <p className="text-sm text-muted-foreground">¿Es un depósito o un retiro de dinero?</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                    moveImpact === "IN" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20" : "hover:border-emerald-500/50"
-                                )}
-                                onClick={() => {
-                                    setMoveImpact("IN")
-                                    setMoveType("TIP")
-                                    setMoveWizardStep(2)
-                                }}
-                            >
-                                <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
-                                    <Banknote className="h-6 w-6" />
-                                </div>
-                                <span className="font-bold">Depósito</span>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                    moveImpact === "OUT" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "hover:border-amber-500/50"
-                                )}
-                                onClick={() => {
-                                    setMoveImpact("OUT")
-                                    setMoveType("PARTNER_WITHDRAWAL")
-                                    setMoveWizardStep(2)
-                                }}
-                            >
-                                <div className="p-3 rounded-full bg-amber-100 text-amber-600">
-                                    <LogOut className="h-6 w-6" />
-                                </div>
-                                <span className="font-bold">Retiro</span>
-                            </Button>
-                        </div>
-                    </div>
-                )
-
-            case 2: // Subtype Selection
-                return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center mb-4">
-                            <h3 className="font-bold">Motivo del {moveImpact === "IN" ? "Depósito" : "Retiro"}</h3>
-                        </div>
-                        <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
-                            {MOVEMENT_TYPES[moveImpact].map((t) => (
-                                <Button
-                                    key={t.value}
-                                    variant={moveType === t.value ? "default" : "outline"}
-                                    className="justify-start h-auto py-3 px-4"
-                                    onClick={() => {
-                                        setMoveType(t.value)
-                                        setMoveWizardStep(3)
-                                    }}
-                                >
-                                    {t.label}
-                                </Button>
-                            ))}
-                        </div>
-                        <Button variant="ghost" onClick={() => setMoveWizardStep(1)} className="w-full">Volver</Button>
-                    </div>
-                )
-
-            case 3: // Details (Amount/Notes)
-                return (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center space-y-1">
-                            <h3 className="font-bold text-lg">Detalles del Movimiento</h3>
-                            <Badge variant="outline" className={cn(
-                                "capitalize",
-                                moveImpact === "IN" ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
-                            )}>
-                                {MOVEMENT_TYPES[moveImpact].find(t => t.value === moveType)?.label}
-                            </Badge>
-                        </div>
-
-                        <div className="space-y-3">
-                            {moveType === 'TRANSFER' && (
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
-                                        {moveImpact === 'IN' ? 'Origen (¿De dónde viene?)' : 'Destino (¿A dónde va?)'}
-                                    </Label>
-                                    <TreasuryAccountSelector
-                                        value={transferTargetId}
-                                        onChange={setTransferTargetId}
-                                        placeholder={moveImpact === 'IN' ? "Seleccione origen" : "Seleccione destino"}
-                                    />
-                                </div>
-                            )}
-
-                            <div className="bg-muted/30 p-3 rounded-xl border border-primary/10 shadow-inner">
-                                <div className="text-right mb-2">
-                                    <div className="text-xs font-bold uppercase text-muted-foreground opacity-70">Monto</div>
-                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                        {formatCurrency(parseFloat(moveAmount) || 0)}
-                                    </div>
-                                </div>
-                                <Numpad
-                                    value={moveAmount}
-                                    onChange={setMoveAmount}
-                                    hideDisplay={true}
-                                    allowDecimal={true}
-                                    className="w-full max-w-full shadow-none border-0 p-0"
-                                    onConfirm={() => setMoveWizardStep(4)}
-                                    confirmLabel="Continuar"
-                                />
-                            </div>
-
-                            <div className="space-y-1">
-                                <Textarea
-                                    value={moveNotes}
-                                    onChange={(e) => setMoveNotes(e.target.value)}
-                                    placeholder="Especifique el motivo..."
-                                    className="min-h-[40px] h-[40px] resize-none py-2 text-sm"
-                                    rows={1}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => setMoveWizardStep(2)} className="w-full">Atrás</Button>
-                        </div>
-                    </div>
-                )
-
-            case 4: // Summary
-                return (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="text-center">
-                            <div className={cn(
-                                "mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4",
-                                moveImpact === "IN" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
-                            )}>
-                                <ArrowRightLeft className="h-6 w-6" />
-                            </div>
-                            <h3 className="font-bold text-xl">Confirmar Movimiento</h3>
-                            <p className="text-muted-foreground">Verifique los datos ingresados</p>
-                        </div>
-
-                        <div className="bg-card border rounded-xl divide-y shadow-sm">
-                            <div className="p-3 flex justify-between text-sm">
-                                <span className="text-muted-foreground">Sentido:</span>
-                                <Badge variant="outline" className={moveImpact === "IN" ? "text-emerald-600" : "text-amber-600"}>
-                                    {moveImpact === "IN" ? "Ingreso" : "Salida"}
-                                </Badge>
-                            </div>
-                            <div className="p-3 flex justify-between text-sm">
-                                <span className="text-muted-foreground">Motivo:</span>
-                                <span className="font-medium">{MOVEMENT_TYPES[moveImpact].find(t => t.value === moveType)?.label}</span>
-                            </div>
-                            {moveType === 'TRANSFER' && (
-                                <div className="p-3 flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Destino:</span>
-                                    <span className="font-medium">Cuenta seleccionada</span>
-                                </div>
-                            )}
-                            <div className="p-3 flex justify-between items-center text-lg font-bold">
-                                <span>Monto:</span>
-                                <span className="text-primary">{formatCurrency(parseFloat(moveAmount))}</span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setMoveWizardStep(3)} className="flex-1">Corregir</Button>
-                            <Button
-                                onClick={handleRegisterManualMovement}
-                                className="flex-[2]"
-                                disabled={submitting}
-                            >
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Registrar Movimiento
-                            </Button>
-                        </div>
-                    </div>
-                )
-
-            default: return null
-        }
-    }
 
     if (!currentSession) {
         return (
@@ -1155,7 +909,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 title="Movimiento de Caja Manual"
             >
                 <div className="py-2">
-                    {renderMoveWizardStep()}
+                    {moveDialogOpen && currentSession && (
+                        <MovementWizard
+                            context="pos"
+                            fixedAccountId={currentSession.treasury_account_id || undefined}
+                            fixedAccountName={currentSession.treasury_account_name}
+                            maxOutboundAmount={currentSession.expected_cash}
+                            onComplete={handleRegisterManualMovement}
+                            onCancel={() => setMoveDialogOpen(false)}
+                        />
+                    )}
                 </div>
             </BaseModal>
         </>
