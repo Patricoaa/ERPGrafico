@@ -192,6 +192,10 @@ class NoteCheckoutService:
             created_by=created_by
         )
         
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(invoice)
+        
         return workflow
     
     @staticmethod
@@ -309,6 +313,10 @@ class NoteCheckoutService:
         workflow.invoice.total_tax = total_tax
         workflow.invoice.total = total_net + total_tax
         workflow.invoice.save()
+        
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(workflow.invoice)
         
         return workflow
     
@@ -457,6 +465,11 @@ class NoteCheckoutService:
              workflow.notes = f"{workflow.notes or ''}\nGenerado Documento {doc_type_label}: {logistics_doc.display_id}"
              
         workflow.save()
+        
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(workflow.invoice)
+        
         return workflow
     
     @staticmethod
@@ -485,6 +498,10 @@ class NoteCheckoutService:
         
         workflow.current_stage = NoteWorkflow.Stage.LOGISTICS_COMPLETED
         workflow.save()
+        
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(workflow.invoice)
         
         return workflow
     
@@ -565,6 +582,10 @@ class NoteCheckoutService:
         
         # Trigger production for Debit Notes
         NoteCheckoutService._trigger_production_for_debit_note(workflow)
+        
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(workflow.invoice)
         
         return workflow
 
@@ -817,6 +838,11 @@ class NoteCheckoutService:
         workflow.payment_data = payment_data
         workflow.current_stage = NoteWorkflow.Stage.COMPLETED
         workflow.save()
+
+        # Sync Hub tasks
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(workflow.invoice)
+
         return workflow
 
     @staticmethod
