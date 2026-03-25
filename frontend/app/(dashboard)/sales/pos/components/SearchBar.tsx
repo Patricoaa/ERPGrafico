@@ -21,7 +21,7 @@ export function SearchBar({
     value,
     onChange,
     onEnter,
-    placeholder = "Buscar por nombre o código...",
+    placeholder = "Buscar por nombre, código o código de barras...",
     autoFocus = true
 }: SearchBarProps) {
     const inputRef = useRef<HTMLInputElement>(null)

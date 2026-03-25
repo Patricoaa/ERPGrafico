@@ -8,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, Loader2, Calculator, Info } from "lucide-react"
+import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { SearchBar } from "@/app/(dashboard)/sales/pos/components/SearchBar"
+import { CategoryFilter } from "@/app/(dashboard)/sales/pos/components/CategoryFilter"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
@@ -29,6 +32,13 @@ interface Product {
     available_uoms?: Array<{ id: number; name: string; ratio: number }>
     has_bom?: boolean
     requires_advanced_manufacturing?: boolean
+    category?: number | { id: number; name: string; icon?: string | null }
+}
+
+interface Category {
+    id: number
+    name: string
+    icon?: string | null
 }
 
 interface SelectedItem {
@@ -48,30 +58,35 @@ interface CostCalculatorModalProps {
 
 export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalProps) {
     const [products, setProducts] = useState<Product[]>([])
+    const [categories, setCategories] = useState<Category[]>([])
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
     useEffect(() => {
         if (open) {
-            fetchProducts()
+            fetchInitialData()
         }
     }, [open])
 
-    const fetchProducts = async () => {
+    const fetchInitialData = async () => {
         setLoading(true)
         try {
-            const res = await api.get('/inventory/products/', {
-                params: {
-                    active: true,
-                    exclude_variant_templates: true,
-                    show_technical_variants: true // Show variants since they are what actually has stock
-                }
-            })
-            const data = res.data.results || res.data
-            setProducts(data)
+            const [productsRes, categoriesRes] = await Promise.all([
+                api.get('/inventory/products/', {
+                    params: {
+                        active: true,
+                        exclude_variant_templates: true,
+                        show_technical_variants: true
+                    }
+                }),
+                api.get('/inventory/categories/?page_size=9999')
+            ])
+            setProducts(productsRes.data.results || productsRes.data)
+            setCategories(categoriesRes.data.results || categoriesRes.data)
         } catch (error) {
-            toast.error("Error al cargar productos")
+            toast.error("Error al cargar datos")
         } finally {
             setLoading(false)
         }
@@ -148,17 +163,19 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             p.internal_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
 
+        const categoryId = typeof p.category === 'object' ? p.category?.id : p.category
+        const matchesCategory = selectedCategoryId === null || categoryId === selectedCategoryId
+
         const isStorable = p.product_type === 'STORABLE'
         const isSimple = !p.requires_advanced_manufacturing
 
-        // Final criteria based on user request: 
-        // "solo deberia mostrar productos fabricable de tipo simple (osea que son almacenables ) y productos almacenables"
-        return matchesSearch && isStorable && isSimple
+        return matchesSearch && matchesCategory && isStorable && isSimple
     })
 
     const handleClose = () => {
         setSelectedItems([])
         setSearchTerm("")
+        setSelectedCategoryId(null)
         onOpenChange(false)
     }
 
@@ -184,14 +201,20 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
         >
             <div className="flex-1 overflow-hidden flex divide-x h-[calc(100vh-220px)] max-h-[750px]">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[45%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
+                <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                        <div className="p-4 border-b bg-background/50">
-                            <Input
-                                placeholder="Buscar por nombre, código o código de barras..."
+                        <div className="p-4 border-b bg-background/50 space-y-3">
+                            <SearchBar 
                                 value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="h-11 shadow-sm bg-background border-muted-foreground/20 focus-visible:ring-blue-500"
+                                onChange={setSearchTerm}
+                                placeholder="Buscar por nombre, código o código de barras..."
+                                autoFocus={false}
+                            />
+
+                            <CategoryFilter 
+                                categories={categories}
+                                selectedCategoryId={selectedCategoryId}
+                                onSelectCategory={setSelectedCategoryId}
                             />
                         </div>
 
@@ -203,7 +226,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                         <p>Cargando productos...</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                         {filteredProducts.map(product => (
                                             <Card
                                                 key={product.id}
@@ -218,7 +241,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                                         />
                                                     ) : (
-                                                        <Plus className="h-12 w-12 text-muted-foreground/20" />
+                                                        <DynamicIcon 
+                                                            name={(typeof product.category === 'object' ? product.category?.icon : categories.find(c => c.id === product.category)?.icon) || "Package"} 
+                                                            className="h-12 w-12 text-muted-foreground/20 group-hover:scale-110 transition-transform" 
+                                                        />
                                                     )}
                                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                                         <Badge className="bg-blue-600 text-white shadow-lg border-none">
@@ -226,14 +252,23 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                         </Badge>
                                                     </div>
                                                 </div>
-                                                <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1">
-                                                    <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-tighter opacity-70">
-                                                        {product.internal_code}
-                                                    </p>
+                                                <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1.5">
+                                                    <div className="flex justify-center gap-1">
+                                                        {product.internal_code && (
+                                                            <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border-muted-foreground/30">
+                                                                {product.internal_code}
+                                                            </Badge>
+                                                        )}
+                                                        {product.code && product.code !== product.internal_code && (
+                                                            <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70">
+                                                                {product.code}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <p className="text-sm font-bold leading-tight line-clamp-2">
                                                         {product.name}
                                                     </p>
-                                                    <div className="mt-1">
+                                                    <div className="mt-0.5">
                                                         <span className="text-base font-black text-blue-600">
                                                             {formatCurrency(product.cost_price || 0)}
                                                         </span>
@@ -257,7 +292,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[55%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
+                <div className="w-[40%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
                     <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
                         {/* List Header */}
                         <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
@@ -289,7 +324,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                     {item.product.image ? (
                                                         <img src={item.product.image} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <Plus className="h-4 w-4 text-muted-foreground/20" />
+                                                        <DynamicIcon 
+                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find(c => c.id === item.product.category)?.icon) || "Package"} 
+                                                            className="h-4 w-4 text-muted-foreground/20" 
+                                                        />
                                                     )}
                                                 </div>
                                                 <div className="min-w-0">
