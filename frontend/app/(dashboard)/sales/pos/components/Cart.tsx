@@ -73,30 +73,30 @@ export function Cart({
     const showTotalDiscounts = canApplyGlobalDiscount
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border">
+        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="p-4 px-6 border-b font-medium bg-muted/50 flex justify-between items-center">
-                    <span>Resumen de Venta</span>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                <div className="px-6 pt-[24px] pb-4 border-b bg-background/50 flex justify-between items-start rounded-t-xl h-[88px] shrink-0">
+                    <span className="font-semibold text-xl leading-none mt-1">Resumen de Venta</span>
+                    <span className="text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full -mt-1">
                         {items.length} items
                     </span>
                 </div>
 
                 {/* Items List */}
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl">
                     <Table>
-                        <TableHeader className="bg-muted/30 sticky top-0 z-10">
-                            <TableRow className="hover:bg-transparent border-b">
-                                <TableHead className={cn("text-xs py-2", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
-                                <TableHead className="w-[12%] text-xs py-2 text-center">Cant.</TableHead>
-                                <TableHead className="w-[13%] text-xs py-2 text-center">Unidad</TableHead>
-                                <TableHead className="w-[15%] text-xs py-2 text-right">Precio Unit.</TableHead>
+                        <TableHeader className="bg-background/50 sticky top-0 z-10">
+                            <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
+                                <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
+                                <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cant.</TableHead>
+                                <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
+                                <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
                                 {showLineDiscounts && (
-                                    <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80">Dscto.</TableHead>
+                                    <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80 h-[34px]">Dscto.</TableHead>
                                 )}
-                                <TableHead className="w-[15%] text-xs py-2 text-right">Total</TableHead>
-                                <TableHead className="w-[5%] py-2"></TableHead>
+                                <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Total</TableHead>
+                                <TableHead className="w-[5%] py-2 h-[34px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

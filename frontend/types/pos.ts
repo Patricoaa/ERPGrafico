@@ -19,6 +19,7 @@ export interface Product {
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
     is_dynamic_pricing?: boolean
+    is_favorite?: boolean
     has_bom?: boolean
     category?: {
         id: number

@@ -795,10 +795,8 @@ class Product(models.Model):
                  continue
 
             # Calculate how many units we can make with this component
-            available_units = component_stock / required_qty_in_base
-            
-            # Track the minimum (bottleneck component)
-            min_manufacturable = min(min_manufacturable, available_units)
+            can_make_with_this = component_stock / required_qty_in_base
+            min_manufacturable = min(min_manufacturable, can_make_with_this)
         
         # If no valid components found, return 0
         if min_manufacturable == float('inf'):
@@ -806,7 +804,7 @@ class Product(models.Model):
         
         # Return floor value (can't manufacture partial units)
         import math
-        return math.floor(min_manufacturable)
+        return float(math.floor(min_manufacturable))
 
     @property
     def qty_on_hand(self):
@@ -1118,3 +1116,17 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.supplier.name}"
+
+
+class ProductFavorite(models.Model):
+    user = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='product_favorites')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Favorito de Producto")
+        verbose_name_plural = _("Favoritos de Producto")
+        unique_together = ('user', 'product')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
