@@ -29,6 +29,9 @@ interface TreasuryAccountSelectorProps {
 
     // Exclude specific account
     excludeId?: number
+
+    // Optional: Return full account object on select
+    onSelect?: (account: any) => void
 }
 
 export function TreasuryAccountSelector({
@@ -40,7 +43,8 @@ export function TreasuryAccountSelector({
     terminalId,
     paymentMethod,
     type,
-    excludeId
+    excludeId,
+    onSelect
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState("")
@@ -76,6 +80,7 @@ export function TreasuryAccountSelector({
 
     const handleSelect = (account: any) => {
         onChange(account ? account.id.toString() : null)
+        if (account && onSelect) onSelect(account)
         setOpen(false)
     }
 

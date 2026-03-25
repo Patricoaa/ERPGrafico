@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
-import { useForm, UseFormReturn } from "react-hook-form"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge"
 import {
     Save,
     TrendingUp,
-    LayoutGrid,
     CreditCard,
     Loader2,
     Check,
@@ -34,40 +33,33 @@ import { GroupSelector } from "@/components/selectors/GroupSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Button } from "@/components/ui/button"
-import { SalesSettings } from "@/features/settings/types"
+import { SalesSettings, SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 
 const accountFieldSchema = z.string().nullable()
 
 const salesSchema = z.object({
-    default_revenue_account: accountFieldSchema,
-    default_service_revenue_account: accountFieldSchema,
-    default_subscription_revenue_account: accountFieldSchema,
-    pos_cash_difference_gain_account: accountFieldSchema,
-    pos_cash_difference_loss_account: accountFieldSchema,
-    pos_counting_error_account: accountFieldSchema,
-    pos_theft_account: accountFieldSchema,
-    pos_rounding_adjustment_account: accountFieldSchema,
-    pos_tip_account: accountFieldSchema,
-    pos_cashback_error_account: accountFieldSchema,
-    pos_system_error_account: accountFieldSchema,
-    pos_partner_withdrawal_account: accountFieldSchema,
-    pos_other_inflow_account: accountFieldSchema,
-    pos_other_outflow_account: accountFieldSchema,
-    pos_default_credit_percentage: z.coerce.number().min(0).max(100).default(0),
-    pos_enable_line_discounts: z.boolean().default(false),
-    pos_enable_total_discounts: z.boolean().default(false),
-    pos_line_discount_user: z.number().nullable().default(null),
-    pos_line_discount_group: z.string().default(""),
-    pos_global_discount_user: z.number().nullable().default(null),
-    pos_global_discount_group: z.string().default(""),
-    terminal_commission_bridge_account: accountFieldSchema,
-    terminal_iva_bridge_account: accountFieldSchema,
-    credit_auto_block_days: z.number().nullable().default(60),
-    default_uncollectible_expense_account: accountFieldSchema,
+    default_revenue_account: z.string().nullable(),
+    default_service_revenue_account: z.string().nullable(),
+    default_subscription_revenue_account: z.string().nullable(),
+    pos_default_credit_percentage: z.number(),
+    pos_enable_line_discounts: z.boolean(),
+    pos_enable_total_discounts: z.boolean(),
+    pos_line_discount_user: z.number().nullable(),
+    pos_line_discount_group: z.string(),
+    pos_global_discount_user: z.number().nullable(),
+    pos_global_discount_group: z.string(),
+    terminal_commission_bridge_account: z.string().nullable(),
+    terminal_iva_bridge_account: z.string().nullable(),
+    credit_auto_block_days: z.number().nullable(),
+    default_uncollectible_expense_account: z.string().nullable(),
 })
 
-const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<any>, name: string, label: string, accountType: string | string[] }) => (
+
+type SalesFormValues = z.infer<typeof salesSchema>
+
+const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<SalesFormValues>, name: Path<SalesFormValues>, label: string, accountType: string | string[] }) => (
+
     <FormField
         control={form.control}
         name={name}
@@ -76,19 +68,21 @@ const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<
                 <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
                 <FormControl>
                     <AccountSelector
-                        value={field.value}
+                        value={field.value as any}
                         onChange={field.onChange}
                         accountType={accountType}
                     />
                 </FormControl>
+
                 <FormMessage />
             </FormItem>
         )}
     />
 )
 
-const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<any>, userField: string, groupField: string }) => {
-    const groupVal = form.watch(groupField)
+const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<SalesFormValues>, userField: Path<SalesFormValues>, groupField: Path<SalesFormValues> }) => {
+    const groupVal = form.watch(groupField as any)
+
     const [mode, setMode] = useState<'user' | 'group'>(groupVal ? 'group' : 'user')
 
     return (
@@ -131,7 +125,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={userField}
                         render={({ field }) => (
                             <UserSelector
-                                value={field.value}
+                                value={field.value as any}
                                 onChange={field.onChange}
                                 placeholder="Sel. usuario con permiso..."
                             />
@@ -143,13 +137,14 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={groupField}
                         render={({ field }) => (
                             <GroupSelector
-                                value={field.value}
+                                value={field.value as any}
                                 onChange={field.onChange}
                                 placeholder="Sel. grupo con permiso..."
                             />
                         )}
                     />
                 )}
+
             </div>
         </div>
     )
@@ -158,23 +153,12 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 export function SalesSettingsView({ activeTab }: { activeTab: string }) {
     const { settings, saving, updateSettings } = useSalesSettings()
 
-    const form = useForm<z.infer<typeof salesSchema>>({
+    const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
         defaultValues: {
             default_revenue_account: null,
             default_service_revenue_account: null,
             default_subscription_revenue_account: null,
-            pos_cash_difference_gain_account: null,
-            pos_cash_difference_loss_account: null,
-            pos_counting_error_account: null,
-            pos_theft_account: null,
-            pos_rounding_adjustment_account: null,
-            pos_tip_account: null,
-            pos_cashback_error_account: null,
-            pos_system_error_account: null,
-            pos_partner_withdrawal_account: null,
-            pos_other_inflow_account: null,
-            pos_other_outflow_account: null,
             pos_default_credit_percentage: 0,
             pos_enable_line_discounts: false,
             pos_enable_total_discounts: false,
@@ -186,8 +170,9 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             terminal_iva_bridge_account: null,
             credit_auto_block_days: 60,
             default_uncollectible_expense_account: null,
-        } as any
+        }
     })
+
 
     useEffect(() => {
         if (settings) {
@@ -195,17 +180,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 default_revenue_account: settings.default_revenue_account?.toString() ?? null,
                 default_service_revenue_account: settings.default_service_revenue_account?.toString() ?? null,
                 default_subscription_revenue_account: settings.default_subscription_revenue_account?.toString() ?? null,
-                pos_cash_difference_gain_account: settings.pos_cash_difference_gain_account?.toString() ?? null,
-                pos_cash_difference_loss_account: settings.pos_cash_difference_loss_account?.toString() ?? null,
-                pos_counting_error_account: settings.pos_counting_error_account?.toString() ?? null,
-                pos_theft_account: settings.pos_theft_account?.toString() ?? null,
-                pos_rounding_adjustment_account: settings.pos_rounding_adjustment_account?.toString() ?? null,
-                pos_tip_account: settings.pos_tip_account?.toString() ?? null,
-                pos_cashback_error_account: settings.pos_cashback_error_account?.toString() ?? null,
-                pos_system_error_account: settings.pos_system_error_account?.toString() ?? null,
-                pos_partner_withdrawal_account: settings.pos_partner_withdrawal_account?.toString() ?? null,
-                pos_other_inflow_account: settings.pos_other_inflow_account?.toString() ?? null,
-                pos_other_outflow_account: settings.pos_other_outflow_account?.toString() ?? null,
                 pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
                 pos_enable_line_discounts: !!settings.pos_enable_line_discounts,
                 pos_enable_total_discounts: !!settings.pos_enable_total_discounts,
@@ -224,14 +198,15 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
     const watchedValues = form.watch()
     const { isDirty } = form.formState
 
-    const onSubmit = useCallback(async (data: any) => {
+    const onSubmit = useCallback(async (data: SalesFormValues) => {
         try {
-            await updateSettings(data as SalesSettings)
+            await updateSettings(data as SalesSettingsUpdatePayload)
             form.reset(data)
         } catch (error) {
             // Error handled by hook
         }
     }, [updateSettings, form])
+
 
     useEffect(() => {
         if (isDirty) {
@@ -271,7 +246,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                     { value: "config_pos", label: "Configuración POS", iconName: "settings", href: "/settings/sales?tab=config_pos" },
                     { value: "credit", label: "Crédito y Cartera", iconName: "wallet", href: "/settings/sales?tab=credit" },
                     { value: "income", label: "Cuentas Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
-                    { value: "pos", label: "Cuentas POS", iconName: "layout-grid", href: "/settings/sales?tab=pos" },
                     { value: "terminals", label: "Cuentas Terminal", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
                 ]}
                 activeValue={activeTab}
@@ -279,8 +253,9 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
             />
 
             <div className="mt-6">
-                <Form {...form}>
+                <Form {...(form as any)}>
                     <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
+
 
                         <TabsContent value="income" className="space-y-6">
                             <Card>
@@ -383,30 +358,6 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                 </p>
                                             </div>
                                         </Card>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="pos" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas Contables POS</CardTitle>
-                                    <CardDescription>Configure las cuentas para el registro automático de transacciones de punto de venta</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante General" accountType="INCOME" />
-                                        <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante General" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_counting_error_account" label="Error de Conteo" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_theft_account" label="Robo / Faltante" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo POS" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_tip_account" label="Propinas" accountType="INCOME" />
-                                        <AccountField form={form} name="pos_cashback_error_account" label="Vuelto Incorrecto" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_system_error_account" label="Error de Sistema" accountType="EXPENSE" />
-                                        <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro Socio" accountType="EQUITY" />
-                                        <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos" accountType="INCOME" />
-                                        <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos" accountType="EXPENSE" />
                                     </div>
                                 </CardContent>
                             </Card>

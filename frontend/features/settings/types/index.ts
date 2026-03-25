@@ -6,7 +6,7 @@ export interface SalesSettings {
     default_revenue_account: string | null
     default_service_revenue_account: string | null
     default_subscription_revenue_account: string | null
-    // POS accounts
+    // POS accounts (Basic mapping)
     pos_default_customer: number | null
     pos_default_warehouse: number | null
     pos_default_journal: number | null
@@ -19,17 +19,6 @@ export interface SalesSettings {
     pos_rounding_account: number | null
     pos_cost_of_goods_sold_account: number | null
     pos_inventory_account: number | null
-    pos_cash_difference_gain_account: string | null
-    pos_cash_difference_loss_account: string | null
-    pos_tip_account: string | null
-    pos_cashback_error_account: string | null
-    pos_counting_error_account: string | null
-    pos_system_error_account: string | null
-    pos_rounding_adjustment_account: string | null
-    pos_partner_withdrawal_account: string | null
-    pos_theft_account: string | null
-    pos_other_inflow_account: string | null
-    pos_other_outflow_account: string | null
     // Terminal accounts
     terminal_commission_bridge_account: string | null
     terminal_iva_bridge_account: string | null
@@ -48,6 +37,33 @@ export interface SalesSettings {
 }
 
 export type SalesSettingsUpdatePayload = Partial<SalesSettings>
+
+// Treasury Settings
+export interface TreasurySettings {
+    // Reconciliation accounts
+    bank_commission_account: string | null
+    interest_income_account: string | null
+    exchange_difference_account: string | null
+    rounding_adjustment_account: string | null
+    error_adjustment_account: string | null
+    miscellaneous_adjustment_account: string | null
+    // POS Session Difference accounts
+    pos_cash_difference_gain_account: string | null
+    pos_cash_difference_loss_account: string | null
+    // POS Manual Movement (adjustment) accounts
+    pos_tip_account: string | null
+    pos_other_inflow_account: string | null
+    pos_counting_error_account: string | null
+    pos_system_error_account: string | null
+    pos_partner_withdrawal_account: string | null
+    pos_theft_account: string | null
+    pos_rounding_adjustment_account: string | null
+    pos_cashback_error_account: string | null
+    pos_other_outflow_account: string | null
+}
+
+export type TreasurySettingsUpdatePayload = Partial<TreasurySettings>
+
 
 // Billing Settings
 export interface BillingSettings {
@@ -101,7 +117,7 @@ export interface InventorySettings {
 export type InventorySettingsUpdatePayload = Partial<InventorySettings>
 
 // Combined settings type
-export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings
+export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings
 
 // Company Settings
 export interface CompanySettings {

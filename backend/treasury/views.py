@@ -942,8 +942,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         if request.data.get('notes'):
                             notes += f" - {request.data.get('notes')}"
 
-                        TreasuryService.create_cash_movement(
-                            movement_type=movement_type,
+                        TreasuryService.create_movement(
+                            movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.INBOUND if diff > 0 else TreasuryMovement.Type.OUTBOUND),
                             amount=abs(diff),
                             created_by=request.user,
                             from_account=from_account,
@@ -951,7 +951,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                             pos_session=session,
                             notes=notes,
                             justify_reason=justify_reason,
-                            journal_entry_desc=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
+                            reference=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
                         )
                                  
                 except ValidationError as e:
@@ -1044,8 +1044,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                         from_account = None
                         to_account = pos_treasury_acc
 
-                movement = TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER' if justify_reason == 'TRANSFER' else ('WITHDRAWAL' if difference < 0 else 'DEPOSIT'),
+                movement = TreasuryService.create_movement(
+                    movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.OUTBOUND if difference < 0 else TreasuryMovement.Type.INBOUND),
                     amount=abs(difference),
                     created_by=request.user,
                     from_account=from_account,
@@ -1053,7 +1053,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     pos_session=session,
                     notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
                     justify_reason=justify_reason,
-                    journal_entry_desc=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
+                    reference=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
                 )
                 
                 if movement.journal_entry:
@@ -1074,16 +1074,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
                 
                 # TreasuryService validates sufficient funds automatically
-                TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER',  # Corrected: This is a transfer between accounts, not a deposit
+                TreasuryService.create_movement(
+                    movement_type=TreasuryMovement.Type.TRANSFER,
                     from_account=pos_treasury_obj,
                     to_account=to_account,
                     amount=withdrawal_amount,
-                    justify_reason='RETIREMENT',  # Mark as end-of-session cash retirement
+                    justify_reason='RETIREMENT',
                     pos_session=session,
                     created_by=request.user,
                     notes=f"Retiro de cierre sesión #{session.id}",
-                    journal_entry_desc=f"Retiro de Cierre POS - Sesión #{session.id}"
+                    reference=f"Retiro de Cierre POS - Sesión #{session.id}"
                 )
 
             # Clean up draft carts for this session
@@ -1235,6 +1235,14 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Configuración contable no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Added TRANSFER support
+            is_inflow = request.data.get('is_inflow', False)
+            if isinstance(is_inflow, str):
+                is_inflow = is_inflow.lower() == 'true'
+            else:
+                is_inflow = bool(is_inflow)
+            
+            direction = 'IN' if is_inflow else 'OUT'
+
             if move_type == 'TRANSFER':
                 target_account_id = request.data.get('target_account_id')
                 if not target_account_id:
@@ -1245,16 +1253,6 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 except TreasuryAccount.DoesNotExist:
                      return Response({'error': 'Cuenta no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                is_inflow_forced = request.data.get('is_inflow', False)
-                if isinstance(is_inflow_forced, str):
-                    is_inflow_forced = is_inflow_forced.lower() == 'true'
-
-                config = {
-                     'account': target_obj.account, # Use the accounting account of the target
-                     'is_inflow': is_inflow_forced,
-                     'label': f'Traspaso {"desde" if is_inflow_forced else "a"} {target_obj.name}'
-                }
-                
                 # Verify self transfer
                 treasury_account_obj = session.treasury_account or (
                     session.terminal.default_treasury_account if session.terminal else None
@@ -1264,73 +1262,23 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                      return Response({'error': 'No puede transferir a la misma cuenta de origen'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
-                # Expanded labels and accounts for all reason types
-                mapping = {
-                    'PARTNER_WITHDRAWAL': {
-                        'account': settings.pos_partner_withdrawal_account,
-                        'is_inflow': False,
-                        'label': 'Retiro Socio'
-                    },
-                    'THEFT': {
-                        'account': settings.pos_theft_account,
-                        'is_inflow': False,
-                        'label': 'Robo / Pérdida'
-                    },
-                    'TIP': {
-                        'account': settings.pos_tip_account,
-                        'is_inflow': True,
-                        'label': 'Propina'
-                    },
-                    'ROUNDING': {
-                        'account': settings.pos_rounding_adjustment_account or settings.rounding_adjustment_account,
-                        'is_inflow': False,
-                        'label': 'Redondeo'
-                    },
-                    'OTHER_IN': {
-                        'account': settings.pos_other_inflow_account,
-                        'is_inflow': True,
-                        'label': 'Otro Ingreso'
-                    },
-                    'OTHER_OUT': {
-                        'account': settings.pos_other_outflow_account,
-                        'is_inflow': False,
-                        'label': 'Otro Egreso'
-                    },
-                    'COUNTING_ERROR': {
-                        'account': settings.pos_counting_error_account,
-                        'is_inflow': False, # Default to outflow for manual register if not specified
-                        'label': 'Error de Conteo'
-                    },
-                    'SYSTEM_ERROR': {
-                        'account': settings.pos_system_error_account,
-                        'is_inflow': False,
-                        'label': 'Error de Sistema'
-                    },
-                    'CASHBACK': {
-                        'account': settings.pos_cashback_error_account,
-                        'is_inflow': False,
-                        'label': 'Vuelto Incorrecto'
+                # Use unified TreasuryService matching logic
+                target_account = TreasuryService._get_reason_account(settings, move_type, direction)
+                if not target_account:
+                    # Provide a generic label or try to get a mapping label mapping if needed for the error message
+                    labels = {
+                        'PARTNER_WITHDRAWAL': 'Retiro Socio', 'THEFT': 'Robo / Pérdida', 'TIP': 'Propina', 
+                        'ROUNDING': 'Redondeo', 'OTHER_IN': 'Otro Ingreso', 'OTHER_OUT': 'Otro Egreso',
+                        'COUNTING_ERROR': 'Error de Conteo', 'SYSTEM_ERROR': 'Error de Sistema', 'CASHBACK': 'Vuelto Incorrecto'
                     }
-                }
-                
-                config = mapping.get(move_type)
-                if not config:
-                    return Response({'error': 'Tipo de movimiento inválido'}, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Allow frontend to override inflow/outflow for generic types like COUNTING_ERROR
-                is_inflow_forced = request.data.get('is_inflow')
-                if is_inflow_forced is not None:
-                    config['is_inflow'] = str(is_inflow_forced).lower() == 'true'
+                    lbl = labels.get(move_type, move_type)
+                    return Response({'error': f'Cuenta contable no configurada para {lbl}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Restriction: Cannot withdraw more than what is available in cash
-            if not config['is_inflow'] and amount > session.expected_cash:
+            if not is_inflow and amount > session.expected_cash:
                 return Response({
                     'error': f'Saldo insuficiente en efectivo. Máximo disponible para retiro: ${session.expected_cash:,.0f}'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-            target_account = config['account']
-            if not target_account:
-                return Response({'error': f'Cuenta contable no configurada para {config["label"]}'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Treasury account for the session
             treasury_account = session.treasury_account.account if session.treasury_account else (
@@ -1344,41 +1292,38 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                 session_treasury_obj = session.treasury_account or session.terminal.default_treasury_account
                 from_account = None
                 to_account = None
-                is_inflow = config['is_inflow']
                 
                 if move_type == 'TRANSFER':
                     if is_inflow:
                         from_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
                         to_account = session_treasury_obj
-                        session.total_other_cash_inflow += amount
                     else:
                         from_account = session_treasury_obj
                         to_account = TreasuryAccount.objects.get(id=request.data.get('target_account_id'))
-                        session.total_other_cash_outflow += amount
                 elif is_inflow:
                     to_account = session_treasury_obj
-                    session.total_other_cash_inflow += amount
                 else: # Outflow
                     from_account = session_treasury_obj
-                    session.total_other_cash_outflow += amount
 
-                movement = TreasuryService.create_cash_movement(
-                    movement_type='TRANSFER' if move_type == 'TRANSFER' else ('DEPOSIT' if is_inflow else 'WITHDRAWAL'),
+                movement = TreasuryService.create_movement(
                     amount=amount,
+                    movement_type=TreasuryMovement.Type.TRANSFER if move_type == 'TRANSFER' else (TreasuryMovement.Type.INBOUND if is_inflow else TreasuryMovement.Type.OUTBOUND),
                     created_by=request.user,
                     from_account=from_account,
                     to_account=to_account,
                     pos_session=session,
                     notes=notes,
                     justify_reason=move_type,
-                    journal_entry_desc=f"Movimiento Manual POS ({move_type}) - {notes}"
+                    reference=f"Movimiento Manual POS ({move_type})"
                 )
-                session.save()
+                
+                # Session totals are updated via _update_pos_session in create_movement
+                session.refresh_from_db()
             
             from .serializers import POSSessionSerializer
             return Response({
                 'session': POSSessionSerializer(session).data,
-                'message': f'Movimiento de {config["label"]} registrado correctamente'
+                'message': 'Movimiento registrado correctamente'
             })
             
         except Exception as e:

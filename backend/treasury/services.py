@@ -95,38 +95,6 @@ class TreasuryService:
         
         return movement
 
-    @staticmethod
-    @transaction.atomic
-    def create_cash_movement(amount, movement_type, from_account=None, to_account=None,
-                             created_by=None, pos_session=None, notes='', justify_reason=None,
-                             journal_entry_desc=None, **kwargs):
-        """
-        Legacy wrapper for Cash movements (Adjustments, Withdrawals, Deposits).
-        Redirects to unified create_movement.
-        """
-        # Map legacy movement types to unified types
-        mapped_type = movement_type
-        if movement_type == 'WITHDRAWAL':
-            mapped_type = TreasuryMovement.Type.OUTBOUND
-        elif movement_type == 'DEPOSIT':
-            mapped_type = TreasuryMovement.Type.INBOUND
-        elif movement_type == 'ADJUSTMENT' and not (from_account or to_account):
-             # Adjustment without accounts? Logic usually needs one. 
-             # But if it's a gap fillers, might be outbound/inbound depending on gap.
-             pass
-        
-        return TreasuryService.create_movement(
-            amount=amount,
-            movement_type=mapped_type,
-            from_account=from_account,
-            to_account=to_account,
-            created_by=created_by,
-            pos_session=pos_session,
-            notes=notes,
-            justify_reason=justify_reason,
-            reference=journal_entry_desc or notes,
-            **kwargs
-        )
 
     @staticmethod
     def update_related_document_status(movement, invoice=None, sale_order=None, purchase_order=None, payroll=None):
@@ -212,19 +180,33 @@ class TreasuryService:
         if pos_session.status != 'OPEN': return
         
         amount = movement.amount
+        is_sale = bool(movement.invoice or movement.sale_order)
+
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
-             if movement.payment_method == TreasuryMovement.Method.CASH:
-                 pos_session.total_cash_sales += amount
-             elif movement.payment_method == TreasuryMovement.Method.CARD:
-                 pos_session.total_card_sales += amount
-             elif movement.payment_method == TreasuryMovement.Method.TRANSFER:
-                 pos_session.total_transfer_sales += amount
-             elif movement.payment_method == TreasuryMovement.Method.CREDIT:
-                 pos_session.total_credit_sales += amount
+             if is_sale:
+                 if movement.payment_method == TreasuryMovement.Method.CASH:
+                     pos_session.total_cash_sales += amount
+                 elif movement.payment_method == TreasuryMovement.Method.CARD:
+                     pos_session.total_card_sales += amount
+                 elif movement.payment_method == TreasuryMovement.Method.TRANSFER:
+                     pos_session.total_transfer_sales += amount
+                 elif movement.payment_method == TreasuryMovement.Method.CREDIT:
+                     pos_session.total_credit_sales += amount
+             else:
+                 pos_session.total_other_cash_inflow += amount
+
         elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
-             # Maybe reduce sales? Or just track expenses?
-             pass
+             if not is_sale:
+                 pos_session.total_other_cash_outflow += amount
         
+        elif movement.movement_type == TreasuryMovement.Type.TRANSFER:
+             session_treasury_id = pos_session.treasury_account_id or (pos_session.terminal.default_treasury_account_id if pos_session.terminal else None)
+             if session_treasury_id:
+                 if movement.to_account_id == session_treasury_id:
+                     pos_session.total_other_cash_inflow += amount
+                 elif movement.from_account_id == session_treasury_id:
+                     pos_session.total_other_cash_outflow += amount
+
         pos_session.save()
 
     @staticmethod
@@ -322,21 +304,24 @@ class TreasuryService:
 
     @staticmethod
     def _get_reason_account(settings, reason, direction):
-        if direction == 'IN':
-             return (
-                 (settings.pos_tip_account if reason == 'TIP' else None) or
-                 (settings.pos_rounding_adjustment_account if reason == 'ROUNDING' else None) or
-                 (settings.pos_counting_error_account if reason == 'COUNTING_ERROR' else None) or
-                 (settings.pos_other_inflow_account if reason == 'OTHER_IN' else None)
-             )
-        else:
-             return (
-                 (settings.pos_theft_account if reason == 'THEFT' else None) or
-                 (settings.pos_partner_withdrawal_account if reason == 'PARTNER_WITHDRAWAL' else None) or
-                 (settings.pos_rounding_adjustment_account if reason == 'ROUNDING' else None) or
-                 (settings.pos_counting_error_account if reason == 'COUNTING_ERROR' else None) or
-                 (settings.pos_other_outflow_account if reason == 'OTHER_OUT' else None)
-             )
+        if reason == 'TIP' and direction == 'IN':
+             return settings.pos_tip_account
+        elif reason == 'ROUNDING':
+             return settings.pos_rounding_adjustment_account or settings.rounding_adjustment_account
+        elif reason == 'COUNTING_ERROR':
+             return settings.pos_counting_error_account
+        elif reason == 'SYSTEM_ERROR':
+             return settings.pos_system_error_account
+        elif reason == 'OTHER_IN' and direction == 'IN':
+             return settings.pos_other_inflow_account
+        elif reason == 'OTHER_OUT' and direction == 'OUT':
+             return settings.pos_other_outflow_account
+        elif reason == 'THEFT' and direction == 'OUT':
+             return settings.pos_theft_account
+        elif reason == 'PARTNER_WITHDRAWAL' and direction == 'OUT':
+             return settings.pos_partner_withdrawal_account
+        elif reason == 'CASHBACK' and direction == 'OUT':
+             return settings.pos_cashback_error_account
         return None
 
     @staticmethod

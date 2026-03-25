@@ -1,0 +1,537 @@
+import React, { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Banknote, LogOut, ArrowRightLeft, Loader2 } from "lucide-react"
+import { cn, formatCurrency } from "@/lib/utils"
+import { Numpad } from "@/components/ui/numpad"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+
+export interface MovementData {
+    impact: 'IN' | 'OUT' | 'TRANSFER';
+    moveType: string; // "TIP", "THEFT", "TRANSFER", etc.
+    amount: number;
+    notes: string;
+    targetAccountId?: number; // Only for POS transfer (the other account)
+    fromAccountId?: number; // For generic treasury
+    toAccountId?: number; // For generic treasury
+    isInflowForce?: boolean; // For POS to know transfer direction
+}
+
+interface MovementWizardProps {
+    context?: 'pos' | 'treasury';
+    maxOutboundAmount?: number;
+    fixedAccountId?: number; // For POS, the current session account
+    fixedAccountName?: string; // For display
+    onComplete: (data: MovementData) => Promise<void>;
+    onCancel: () => void;
+}
+
+const MOVEMENT_TYPES = {
+    IN: [
+        { value: "TIP", label: "Propina" },
+        { value: "OTHER_IN", label: "Otro Depósito (Varios)" },
+        { value: "COUNTING_ERROR", label: "Error de Conteo (Sobrante)" },
+        { value: "SYSTEM_ERROR", label: "Error de Sistema (Ajuste)" },
+    ],
+    OUT: [
+        { value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" },
+        { value: "THEFT", label: "Robo / Pérdida" },
+        { value: "ROUNDING", label: "Redondeo" },
+        { value: "CASHBACK", label: "Vuelto Incorrecto" },
+        { value: "COUNTING_ERROR", label: "Error de Conteo (Faltante)" },
+        { value: "SYSTEM_ERROR", label: "Error de Sistema (Ajuste)" },
+        { value: "OTHER_OUT", label: "Otro Egreso (Gastos Varios)" },
+    ]
+}
+
+export function MovementWizard({
+    context = 'pos',
+    maxOutboundAmount,
+    fixedAccountId,
+    fixedAccountName,
+    onComplete,
+    onCancel
+}: MovementWizardProps) {
+    const [step, setStep] = useState(1)
+    const [impact, setImpact] = useState<'IN' | 'OUT' | 'TRANSFER'>('IN')
+    const [moveType, setMoveType] = useState('TIP')
+    
+    // For Transfers
+    const [transferDirection, setTransferDirection] = useState<'IN' | 'OUT'>('OUT') // IN = receive from, OUT = send to
+    const [transferTargetId, setTransferTargetId] = useState<string>("") // POS transfer target
+    const [fromAccountId, setFromAccountId] = useState<string>("") // Treasury from
+    const [toAccountId, setToAccountId] = useState<string>("") // Treasury to
+    const [fromAccountName, setFromAccountName] = useState("") // Display name
+    const [toAccountName, setToAccountName] = useState("") // Display name
+    
+    const [amount, setAmount] = useState('0')
+    const [notes, setNotes] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+
+    const handleComplete = async () => {
+        setSubmitting(true)
+        try {
+            const numAmount = parseFloat(amount) || 0
+            
+            const data: MovementData = {
+                impact,
+                moveType: impact === 'TRANSFER' ? 'TRANSFER' : moveType,
+                amount: numAmount,
+                notes,
+            }
+
+            if (impact === 'TRANSFER') {
+                if (context === 'pos') {
+                    data.targetAccountId = parseInt(transferTargetId)
+                    data.isInflowForce = transferDirection === 'IN'
+                } else {
+                    if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
+                    if (toAccountId) data.toAccountId = parseInt(toAccountId)
+                }
+            } else {
+                // Normal IN/OUT
+                if (context === 'pos') {
+                    if (impact === 'IN') data.toAccountId = fixedAccountId
+                    else data.fromAccountId = fixedAccountId
+                } else {
+                    if (impact === 'IN') {
+                        if (toAccountId) data.toAccountId = parseInt(toAccountId)
+                    } else {
+                        if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
+                    }
+                }
+            }
+
+            await onComplete(data)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const renderStep = () => {
+        return (
+            <div className="min-h-[460px] flex flex-col justify-between">
+                <div className="flex-1 flex flex-col justify-center">
+                    {(() => {
+                        switch (step) {
+                            case 1: // Impact Selection
+                                return (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <div className="text-center mb-6">
+                                            <h3 className="text-lg font-bold">Tipo de Movimiento</h3>
+                                            <p className="text-sm text-muted-foreground">Seleccione la operación a realizar</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
+                                                    impact === "IN" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20" : "hover:border-emerald-500/50"
+                                                )}
+                                                onClick={() => {
+                                                    setImpact("IN")
+                                                    setMoveType(MOVEMENT_TYPES.IN[0].value)
+                                                    setStep(2)
+                                                }}
+                                            >
+                                                <div className={cn("p-3 rounded-xl bg-emerald-500/10 text-emerald-600", impact === "IN" && "bg-emerald-500 text-white")}>
+                                                    <Banknote className="h-6 w-6" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Depósito</span>
+                                                    <span className="text-xs text-muted-foreground">Carga de efectivo</span>
+                                                </div>
+                                            </Button>
+
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
+                                                    impact === "OUT" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "hover:border-amber-500/50"
+                                                )}
+                                                onClick={() => {
+                                                    setImpact("OUT")
+                                                    setMoveType(MOVEMENT_TYPES.OUT[0].value)
+                                                    setStep(2)
+                                                }}
+                                            >
+                                                <div className={cn("p-3 rounded-xl bg-amber-500/10 text-amber-600", impact === "OUT" && "bg-amber-500 text-white")}>
+                                                    <LogOut className="h-6 w-6" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Retiro</span>
+                                                    <span className="text-xs text-muted-foreground">Salida de efectivo</span>
+                                                </div>
+                                            </Button>
+
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
+                                                    impact === "TRANSFER" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-500/50"
+                                                )}
+                                                onClick={() => {
+                                                    setImpact("TRANSFER")
+                                                    setMoveType("TRANSFER")
+                                                    setStep(2)
+                                                }}
+                                            >
+                                                <div className={cn("p-3 rounded-xl bg-blue-500/10 text-blue-600", impact === "TRANSFER" && "bg-blue-500 text-white")}>
+                                                    <ArrowRightLeft className="h-6 w-6" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">Traspaso</span>
+                                                    <span className="text-xs text-muted-foreground">Mover a otra caja</span>
+                                                </div>
+                                            </Button>
+                                        </div>
+                                        <Button variant="ghost" onClick={onCancel} className="w-full mt-4">Cancelar</Button>
+                                    </div>
+                                )
+
+                            case 2: // Details Selection
+                                if (context === 'pos') {
+                                    if (impact === 'TRANSFER') {
+                                        return (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="font-bold">Detalles del Traspaso</h3>
+                                                    <p className="text-sm text-muted-foreground">{fixedAccountName}</p>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        className={cn("h-20 flex-col", transferDirection === 'OUT' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20")}
+                                                        onClick={() => setTransferDirection('OUT')}
+                                                    >
+                                                        <LogOut className="h-4 w-4 mb-1 text-blue-500" />
+                                                        <span className="text-xs font-bold">Enviar/Retirar</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={cn("h-20 flex-col", transferDirection === 'IN' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20")}
+                                                        onClick={() => setTransferDirection('IN')}
+                                                    >
+                                                        <Banknote className="h-4 w-4 mb-1 text-blue-500" />
+                                                        <span className="text-xs font-bold">Recibir/Ingresar</span>
+                                                    </Button>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                        {transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
+                                                    </Label>
+                                                    <TreasuryAccountSelector
+                                                        value={transferTargetId}
+                                                        onChange={(val) => setTransferTargetId(val || "")}
+                                                        excludeId={fixedAccountId}
+                                                        onSelect={(acc) => {
+                                                            if (transferDirection === 'IN') setFromAccountName(acc.name)
+                                                            else setToAccountName(acc.name)
+                                                        }}
+                                                    />
+                                                </div>
+                                                
+                                                <div className="flex gap-2 pt-4">
+                                                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
+                                                    <Button 
+                                                        onClick={() => setStep(4)} 
+                                                        className="flex-1"
+                                                        disabled={!transferTargetId}
+                                                    >
+                                                        Continuar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    } else {
+                                        return (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="font-bold">Motivo del {impact === "IN" ? "Depósito" : "Retiro"}</h3>
+                                                </div>
+                                                <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
+                                                    {MOVEMENT_TYPES[impact as 'IN'|'OUT'].map((t) => (
+                                                        <Button
+                                                            key={t.value}
+                                                            variant={moveType === t.value ? "default" : "outline"}
+                                                            className="justify-start h-auto py-3 px-4"
+                                                            onClick={() => {
+                                                                setMoveType(t.value)
+                                                                setStep(4)
+                                                            }}
+                                                        >
+                                                            {t.label}
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                                <div className="flex gap-2 pt-4">
+                                                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
+                                                    <Button 
+                                                        onClick={() => setStep(4)} 
+                                                        className="flex-1"
+                                                        disabled={!moveType}
+                                                    >
+                                                        Siguiente
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                } else {
+                                    // Treasury Context
+                                    if (impact === 'TRANSFER') {
+                                        return (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="font-bold">Detalles del Traspaso</h3>
+                                                    <p className="text-sm text-muted-foreground">Seleccione cuentas de origen y destino</p>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Origen (Retira)</Label>
+                                                        <TreasuryAccountSelector
+                                                            value={fromAccountId}
+                                                            onChange={(val) => setFromAccountId(val || "")}
+                                                            onSelect={(acc) => setFromAccountName(acc.name)}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-center -my-2 relative z-10">
+                                                        <div className="bg-background border rounded-full p-1.5 shadow-sm text-muted-foreground">
+                                                            <ArrowRightLeft className="w-4 h-4 rotate-90" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Destino (Deposita)</Label>
+                                                        <TreasuryAccountSelector
+                                                            value={toAccountId}
+                                                            onChange={(val) => setToAccountId(val || "")}
+                                                            onSelect={(acc) => setToAccountName(acc.name)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 pt-4">
+                                                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
+                                                    <Button 
+                                                        onClick={() => setStep(4)} 
+                                                        className="flex-1"
+                                                        disabled={!fromAccountId || !toAccountId}
+                                                    >
+                                                        Continuar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    } else {
+                                        const isReady = impact === 'IN' ? !!toAccountId : !!fromAccountId
+                                        return (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                                <div className="text-center mb-4">
+                                                    <h3 className="font-bold">Seleccionar Cuenta</h3>
+                                                    <p className="text-sm text-muted-foreground">¿En qué cuenta se registra el {impact === 'IN' ? 'ingreso' : 'gasto'}?</p>
+                                                </div>
+                                                <div className="space-y-2 p-4 bg-muted/20 border rounded-xl">
+                                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                        {impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
+                                                    </Label>
+                                                    <TreasuryAccountSelector
+                                                        value={impact === 'IN' ? toAccountId : fromAccountId}
+                                                        onChange={(val) => impact === 'IN' ? setToAccountId(val || "") : setFromAccountId(val || "")}
+                                                        onSelect={(acc) => impact === 'IN' ? setToAccountName(acc.name) : setFromAccountName(acc.name)}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-2 pt-4">
+                                                    <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
+                                                    <Button 
+                                                        onClick={() => setStep(3)} 
+                                                        className="flex-1"
+                                                        disabled={!isReady}
+                                                    >
+                                                        Siguiente
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                }
+
+                            case 3: // Reason Selection (Treasury IN/OUT only)
+                                return (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <div className="text-center mb-4">
+                                            <h3 className="font-bold text-lg">Motivo del Movimiento</h3>
+                                            <p className="text-sm text-muted-foreground">Indique la razón del {impact === "IN" ? "depósito" : "retiro"}</p>
+                                        </div>
+                                        <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
+                                            {MOVEMENT_TYPES[impact as 'IN'|'OUT'].map((t) => (
+                                                <Button
+                                                    key={t.value}
+                                                    variant={moveType === t.value ? "default" : "outline"}
+                                                    className="justify-start h-auto py-4 px-6 text-base"
+                                                    onClick={() => {
+                                                        setMoveType(t.value)
+                                                        setStep(4)
+                                                    }}
+                                                >
+                                                    {t.label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-2 pt-4">
+                                            <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Atrás</Button>
+                                            <Button 
+                                                onClick={() => setStep(4)} 
+                                                className="flex-1"
+                                                disabled={!moveType}
+                                            >
+                                                Siguiente
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )
+
+                            case 4: // Amount
+                                return (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <div className="text-center space-y-1">
+                                            <h3 className="font-bold text-lg uppercase tracking-tight">Monto y Notas</h3>
+                                            <Badge variant="outline" className={cn(
+                                                "capitalize font-bold border-2",
+                                                impact === "IN" ? "border-emerald-500 text-emerald-600 bg-emerald-50" : 
+                                                impact === "OUT" ? "border-amber-500 text-amber-600 bg-amber-50" :
+                                                "border-blue-500 text-blue-600 bg-blue-50"
+                                            )}>
+                                                {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN'|'OUT'].find(t => t.value === moveType)?.label}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="bg-muted/30 p-3 rounded-xl border-2 border-primary/10">
+                                            <div className="text-right mb-2">
+                                                <div className="text-4xl font-black text-primary font-mono tracking-tighter">
+                                                    {formatCurrency(parseFloat(amount) || 0)}
+                                                </div>
+                                            </div>
+                                            <Numpad
+                                                value={amount}
+                                                onChange={setAmount}
+                                                hideDisplay={true}
+                                                allowDecimal={true}
+                                                className="w-full max-w-full shadow-none border-0 p-0"
+                                            />
+                                        </div>
+
+                                        <Textarea
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            placeholder="Notas opcionales..."
+                                            className="min-h-[60px] resize-none text-sm"
+                                        />
+
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" onClick={() => setStep(impact === 'TRANSFER' ? 2 : (context === 'pos' ? 2 : 3))} className="flex-1">Atrás</Button>
+                                            <Button 
+                                                onClick={() => setStep(5)} 
+                                                className="flex-1"
+                                                disabled={parseFloat(amount) <= 0}
+                                            >
+                                                Siguiente
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )
+
+                            case 5: // Summary
+                                const amountNum = parseFloat(amount) || 0
+                                const isOutbound = impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')
+                                const hasInsufficientFunds = isOutbound && maxOutboundAmount !== undefined && amountNum > maxOutboundAmount
+
+                                return (
+                                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <div className="text-center">
+                                            <h3 className="font-bold text-xl uppercase tracking-tighter">Confirmar Movimiento</h3>
+                                            <p className="text-sm text-muted-foreground">Revise los detalles antes de registrar</p>
+                                        </div>
+
+                                        <div className="bg-card border-2 rounded-xl divide-y-2 overflow-hidden">
+                                            <div className="p-4 flex justify-between items-center text-sm">
+                                                <span className="text-muted-foreground font-medium">Operación:</span>
+                                                <Badge className={cn(
+                                                    "font-black uppercase tracking-widest px-3",
+                                                    impact === "IN" ? "bg-emerald-500" : impact === "OUT" ? "bg-amber-500" : "bg-blue-500"
+                                                )}>
+                                                    {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
+                                                </Badge>
+                                            </div>
+                                            {impact !== 'TRANSFER' && (
+                                                <div className="p-4 flex justify-between items-center text-sm">
+                                                    <span className="text-muted-foreground font-medium">Motivo:</span>
+                                                    <span className="font-bold">{MOVEMENT_TYPES[impact as 'IN'|'OUT'].find(t => t.value === moveType)?.label}</span>
+                                                </div>
+                                            )}
+                                            {(impact === 'OUT' || impact === 'TRANSFER') && (
+                                                <div className="p-4 flex justify-between items-start text-sm">
+                                                    <span className="text-muted-foreground font-medium">Origen:</span>
+                                                    <span className="font-bold text-right max-w-[180px]">
+                                                        {context === 'pos' 
+                                                            ? (impact === 'TRANSFER' && transferDirection === 'IN' ? fromAccountName : fixedAccountName)
+                                                            : fromAccountName
+                                                        }
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {(impact === 'IN' || impact === 'TRANSFER') && (
+                                                <div className="p-4 flex justify-between items-start text-sm">
+                                                    <span className="text-muted-foreground font-medium">Destino:</span>
+                                                    <span className="font-bold text-right max-w-[180px]">
+                                                        {context === 'pos'
+                                                            ? (impact === 'TRANSFER' && transferDirection === 'OUT' ? toAccountName : fixedAccountName)
+                                                            : toAccountName
+                                                        }
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="p-4 flex justify-between items-center py-4 bg-muted/20">
+                                                <span className="text-muted-foreground font-bold">MONTO TOTAL:</span>
+                                                <span className="text-2xl font-black text-primary">{formatCurrency(amountNum)}</span>
+                                            </div>
+                                        </div>
+
+                                        {hasInsufficientFunds && (
+                                            <div className="p-3 bg-red-50 border-2 border-red-200 text-red-700 rounded-xl text-center text-sm font-bold">
+                                                FONDOS INSUFICIENTES (Máx: {formatCurrency(maxOutboundAmount)})
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-2">
+                                            <Button variant="ghost" onClick={() => setStep(4)} className="flex-1 border-2">Corregir</Button>
+                                            <Button
+                                                onClick={handleComplete}
+                                                className="flex-1 font-bold text-base h-12"
+                                                disabled={submitting || hasInsufficientFunds}
+                                            >
+                                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                CONFIRMAR Y REGISTRAR
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )
+
+                            default: return null
+                        }
+                    })()}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="py-2">
+            {renderStep()}
+        </div>
+    )
+}
