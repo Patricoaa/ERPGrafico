@@ -364,6 +364,8 @@ export const ActionCategory = forwardRef(({
                     isPurchase={isPurchase}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
+                    customerCreditBalance={order?.customer?.credit_balance || order?.customer_name?.credit_balance || 0}
+                    allowCreditBalanceAccumulation={order?.dte_type === 'NOTA_CREDITO'}
                 />
             )}
 

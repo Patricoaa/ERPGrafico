@@ -150,7 +150,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 'status': obj.credit_approval_task.status,
                 'status_display': obj.credit_approval_task.get_status_display(),
                 'completed_at': obj.credit_approval_task.completed_at,
-                'completed_by_name': obj.credit_approval_task.completed_by.name if obj.credit_approval_task.completed_by else None
+                'completed_by_name': obj.credit_approval_task.completed_by.get_full_name() or obj.credit_approval_task.completed_by.username if obj.credit_approval_task.completed_by else None
             }
         return None
 
