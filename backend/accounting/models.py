@@ -98,15 +98,38 @@ class Account(models.Model):
     def credit_total(self):
         return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
 
-    @property
-    def balance(self):
-        # Assets and Expenses increase with Debit
-        if self.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
-            return self.debit_total - self.credit_total
-        # Liabilities, Equity and Income increase with Credit
-        return self.credit_total - self.debit_total
+    def get_depth(self):
+        """Returns the depth of the account in the hierarchy (1-based)."""
+        if self.parent:
+            return 1 + self.parent.get_depth()
+        return 1
+
+    def clean(self):
+        """
+        Validate business rules before saving.
+        """
+        if self.parent:
+            # Type must match parent
+            if self.account_type != self.parent.account_type:
+                raise ValidationError({
+                    'account_type': _("El tipo de cuenta debe coincidir con el de la cuenta padre (%s).") % self.parent.get_account_type_display()
+                })
+        # Max hierarchy depth validation
+        from .models import AccountingSettings
+        settings = AccountingSettings.objects.first()
+        if settings:
+            depth = self.get_depth()
+            if depth > settings.hierarchy_levels:
+                raise ValidationError({
+                    'parent': _("No se puede crear la cuenta. Se ha alcanzado el límite de %d niveles de jerarquía.") % settings.hierarchy_levels
+                })
 
     def save(self, *args, **kwargs):
+        # Inherit type from parent before validation if not set or if forced by hierarchy
+        if self.parent:
+            self.account_type = self.parent.account_type
+
+        self.full_clean() # Trigger clean() validation
         is_new = self.pk is None
         code_changed = False
         old_parent_id = None
@@ -123,12 +146,15 @@ class Account(models.Model):
                 code_changed = True
 
         if not self.code:
-            from .models import AccountingSettings
-            settings = AccountingSettings.objects.first()
-            if settings:
+                from .models import AccountingSettings
+                settings = AccountingSettings.get_solo()
+                sep = settings.code_separator
+                
                 prefix = ""
+                depth = self.get_depth()
+
                 if self.parent:
-                    prefix = self.parent.code + "."
+                    prefix = self.parent.code + sep
                     # Ensure type matches parent
                     self.account_type = self.parent.account_type
                 else:
@@ -137,22 +163,40 @@ class Account(models.Model):
                     elif self.account_type == AccountType.EQUITY: prefix = settings.equity_prefix
                     elif self.account_type == AccountType.INCOME: prefix = settings.income_prefix
                     elif self.account_type == AccountType.EXPENSE: prefix = settings.expense_prefix
-                    prefix += "." if prefix else ""
+                    prefix += sep if prefix else ""
 
                 # Find next sequence
-                last_account = Account.objects.filter(code__startswith=prefix, parent=self.parent).order_by('-code').first()
-                if last_account:
-                    try:
-                        last_part = last_account.code.split('.')[-1]
-                        next_seq = int(last_part) + 1
-                        self.code = prefix + str(next_seq).zfill(len(last_part))
-                    except (ValueError, IndexError):
-                        self.code = prefix + "1"
+                # We filter brothers and sort by code
+                siblings = Account.objects.filter(code__startswith=prefix, parent=self.parent).order_by('-code')
+                # Padding logic: L1/L2=1, L3/L4=2, L5+=3 (Standard X.X.XX.XX.XXX)
+                if depth == 1:
+                    padding = 1
+                elif depth <= 3:
+                    padding = 2
                 else:
-                    self.code = prefix + "1"
+                    padding = 3
+                
+                last_seq = 0
+                for sibling in siblings:
+                    try:
+                        # Use dynamic separator
+                        last_part = sibling.code.split(sep)[-1]
+                        last_seq = int(last_part)
+                        # We adopt the sibling's padding only if it's larger than the structured default
+                        padding = max(padding, len(last_part))
+                        break 
+                    except (ValueError, IndexError):
+                        continue 
+                
+                next_seq = last_seq + 1
+                self.code = prefix + str(next_seq).zfill(padding)
                 
                 code_changed = True
         
+        # Final safety check for generated code length
+        if self.code and len(self.code) > 20:
+            raise ValidationError({'code': _("El código generado excede el límite de 20 caracteres.")})
+
         super().save(*args, **kwargs)
 
         # If code changed for an existing account, cascade to children
@@ -712,8 +756,8 @@ class AccountingSettings(models.Model):
     )
 
     # Code Format & Hierarchy
-    # Example: "X.X.XX.XXX"
-    code_format = models.CharField(_("Formato de Código"), max_length=50, default="X.X.XX.XXX")
+    hierarchy_levels = models.PositiveSmallIntegerField(_("Niveles de Jerarquía"), default=4, help_text=_("Cantidad total de niveles (2-5)."))
+    code_separator = models.CharField(_("Separador"), max_length=1, default=".", help_text=_("Símbolo usado para separar niveles."))
     
     # Starting digits for each type
     asset_prefix = models.CharField(_("Prefijo Activos"), max_length=5, default="1")
@@ -721,6 +765,57 @@ class AccountingSettings(models.Model):
     equity_prefix = models.CharField(_("Prefijo Patrimonio"), max_length=5, default="3")
     income_prefix = models.CharField(_("Prefijo Ingresos"), max_length=5, default="4")
     expense_prefix = models.CharField(_("Prefijo Gastos"), max_length=5, default="5")
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_prefixes = {}
+        old_sep = "."
+
+        if not is_new:
+            old_obj = AccountingSettings.objects.get(pk=self.pk)
+            old_prefixes = {
+                'ASSET': old_obj.asset_prefix,
+                'LIABILITY': old_obj.liability_prefix,
+                'EQUITY': old_obj.equity_prefix,
+                'INCOME': old_obj.income_prefix,
+                'EXPENSE': old_obj.expense_prefix,
+            }
+            old_sep = old_obj.code_separator
+
+        super().save(*args, **kwargs)
+
+        # Trigger mass update if prefixes or separator changed
+        new_prefixes = {
+            'ASSET': self.asset_prefix,
+            'LIABILITY': self.liability_prefix,
+            'EQUITY': self.equity_prefix,
+            'INCOME': self.income_prefix,
+            'EXPENSE': self.expense_prefix,
+        }
+
+        prefix_changed = any(old_prefixes.get(t) != new_prefixes.get(t) for t in new_prefixes)
+        sep_changed = old_sep != self.code_separator
+
+        if not is_new and (prefix_changed or sep_changed):
+            from .models import Account
+            # This can be slow, but for a standard COA it's manageable. 
+            # We trigger mass update by saving root accounts. Their Account.save() 
+            # handles the recursive update to children.
+            roots = Account.objects.filter(parent__isnull=True)
+            for root in roots:
+                root.code = ""
+                root.save()
+
+    @classmethod
+    def get_solo(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create()
+        return obj
+
+    class Meta:
+        verbose_name = _("Configuración Contable")
+        verbose_name_plural = _("Configuración Contable")
 
     # Tax Accounts (F29 Module)
     vat_payable_account = models.ForeignKey(
