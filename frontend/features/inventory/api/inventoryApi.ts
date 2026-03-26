@@ -8,10 +8,13 @@ export const inventoryApi = {
     /**
      * Fetch products with optional filtering
      */
-    getProducts: async (filters?: ProductFilters): Promise<Product[]> => {
+    getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
         const params = new URLSearchParams()
-        if (filters?.active) params.append('active', filters.active)
+        if (filters?.active !== undefined) params.append('is_active', String(filters.active))
+        if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.fields) params.append('fields', filters.fields)
 
         const { data } = await api.get<{ results: Product[] }>('/inventory/products/', { params })
         return data.results || data
