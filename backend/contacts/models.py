@@ -167,6 +167,35 @@ class Contact(models.Model):
         return available if available > 0 else Decimal('0')
 
     @property
+    def credit_balance(self) -> Decimal:
+        """
+        Saldo a favor del cliente.
+        Calculado como el Fondo Virtual Neto: 
+        (Suma de registros OUTBOUND de NC) - (Suma de consumos INBOUND en ventas)
+        usando el método de pago CREDIT_BALANCE.
+        """
+        from treasury.models import TreasuryMovement
+        from django.db.models import Sum
+        
+        # Todas las adiciones al saldo virtual (NCs registradas como Saldo a Favor)
+        additions = TreasuryMovement.objects.filter(
+            contact=self,
+            payment_method='CREDIT_BALANCE',
+            movement_type='OUTBOUND',
+            is_pending_registration=False
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Todas las sustracciones del saldo virtual (Consumos en ventas posteriores)
+        consumptions = TreasuryMovement.objects.filter(
+            contact=self,
+            payment_method='CREDIT_BALANCE',
+            movement_type='INBOUND',
+            is_pending_registration=False
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return additions - consumptions
+
+    @property
     def credit_aging(self) -> dict:
         """
         Classifies the contact's unpaid credit balance into aging buckets.

@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Invoice
@@ -716,7 +716,7 @@ class BillingService:
             invoice.save()
         
         # 4. Create Payment (if not credit)
-        if payment_method != 'CREDIT':
+        if payment_method not in ('CREDIT', 'CREDIT_BALANCE'):
             # Ensure amount is Decimal (from request it might be string)
             # Cap the payment amount at the order total to avoid overvaluing treasury when change is given
             received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
@@ -758,7 +758,32 @@ class BillingService:
                 payment_method_new=payment_method_inst,
                 created_by=user
             )
+        elif payment_method == 'CREDIT_BALANCE':
+            contact = order.customer
+            received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
+            payment_amount = min(received_amount, order.total)
             
+            if contact.credit_balance < payment_amount:
+                raise ValidationError(f"Saldo a favor insuficiente. Disponible: ${contact.credit_balance:,.0f}, Requerido: ${payment_amount:,.0f}")
+                
+            # Create INBOUND on the sale invoice to balance the Sale order
+            # This counts as a "Consumption" of the virtual balance.
+            TreasuryService.create_movement(
+                amount=payment_amount,
+                movement_type='INBOUND',
+                payment_method='CREDIT_BALANCE',
+                reference=f"Consumo Saldo NV-{order.number}",
+                partner=contact,
+                invoice=invoice,
+                date=invoice.date,
+                sale_order=order,
+                from_account=None,
+                to_account=None,
+                transaction_number=transaction_number,
+                is_pending_registration=payment_is_pending,
+                pos_session_id=pos_session_id,
+                created_by=user
+            )
         # 5. Atomic Draft Removal (NEW)
         if draft_id:
             from sales.models import DraftCart

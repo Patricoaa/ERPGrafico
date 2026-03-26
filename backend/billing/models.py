@@ -31,6 +31,7 @@ class Invoice(models.Model):
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
+        CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
 
     dte_type = models.CharField(_("Tipo DTE"), max_length=25, choices=DTEType.choices)
     sii_document_code = models.IntegerField(

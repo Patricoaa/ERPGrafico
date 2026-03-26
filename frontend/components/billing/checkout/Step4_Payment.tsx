@@ -95,6 +95,7 @@ export function Step4_Payment({
                 paymentData={paymentData}
                 onPaymentDataChange={handlePaymentDataChange}
                 compactMode={false}
+                allowCreditBalanceAccumulation={isCreditNote}
                 labels={{
                     totalLabel: "Total Documento",
                     amountLabel: isCreditNote ? "Monto a Devolver" : "Monto a Cobrar",
