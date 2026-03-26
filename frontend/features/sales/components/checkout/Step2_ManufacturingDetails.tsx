@@ -22,8 +22,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
     const manufacturableItems = orderLines
         .map((line, index) => ({ ...line, originalIndex: index }))
         .filter(line =>
-            (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
-            (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
+            line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
         )
 
     const handleEditClick = (index: number) => {
