@@ -2,13 +2,14 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2, Truck } from "lucide-react"
+import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2, Truck, GitBranch } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { OrderHubStatus } from "./OrderHubStatus"
 import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 interface OrderCardProps {
     item: any
@@ -20,6 +21,7 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, className }: OrderCardProps) {
+    const { openCommandCenter } = useGlobalModals()
     const isSale = type === 'sale'
     const isPurchase = type === 'purchase'
     const isWorkOrder = type === 'work_order'
@@ -116,18 +118,60 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
 
             <div className="flex items-center gap-6">
                 {!hideStatus && (
-                    <div className="hidden sm:flex flex-col items-end">
-                        {isSale || isLedger ? (
-                            <OrderHubStatus order={item} />
-                        ) : isPurchase ? (
-                            <PurchaseOrderHubStatus order={item} />
-                        ) : isNote ? (
-                            <NoteHubStatus note={item} />
-                        ) : isWorkOrder ? (
-                            <Badge variant={item.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
-                                {item.status}
+                    <div className="hidden sm:flex items-center gap-3">
+                        {/* Parent Invoice Link (only for Notes) */}
+                        {isNote && (item.corrected_invoice || item.sale_order || item.purchase_order) && (
+                            <Badge 
+                                variant="outline" 
+                                className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (item.corrected_invoice) {
+                                        openCommandCenter(null, 'sale', item.corrected_invoice.id)
+                                    } else {
+                                        // Fallback to order if no specific invoice linked
+                                        openCommandCenter(item.sale_order || item.purchase_order, item.sale_order ? 'sale' : 'purchase', null)
+                                    }
+                                }}
+                            >
+                                <GitBranch className="size-3" />
+                                {item.corrected_invoice?.display_id || item.sale_order_number || item.purchase_order_number || 'Ver Origen'}
                             </Badge>
-                        ) : null}
+                        )}
+
+                        {/* Associated Notes Links (for Orders/other docs) */}
+                        {!isNote && item.related_documents?.notes?.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                {item.related_documents.notes.map((note: any) => (
+                                    <Badge 
+                                        key={note.id}
+                                        variant="outline" 
+                                        className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            openCommandCenter(null, isPurchase ? 'purchase' : 'sale', note.id)
+                                        }}
+                                    >
+                                        <GitBranch className="size-3" />
+                                        {note.display_id || note.number}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex flex-col items-end">
+                            {isSale || isLedger ? (
+                                <OrderHubStatus order={item} />
+                            ) : isPurchase ? (
+                                <PurchaseOrderHubStatus order={item} />
+                            ) : isNote ? (
+                                <NoteHubStatus note={item} />
+                            ) : isWorkOrder ? (
+                                <Badge variant={item.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
+                                    {item.status}
+                                </Badge>
+                            ) : null}
+                        </div>
                     </div>
                 )}
 

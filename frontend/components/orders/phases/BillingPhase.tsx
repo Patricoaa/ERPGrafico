@@ -114,7 +114,8 @@ export function BillingPhase({
                         id: activeDoc.id,
                         docType: 'invoice',
                         status: activeDoc.status,
-                        actions: []
+                        isWarning: true, // Highlights the row
+                        actions: [] // Removed redundant GitBranch icon
                     }] : []),
                     ...invoices
                         .filter((inv: any) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
@@ -146,7 +147,19 @@ export function BillingPhase({
                                     onClick: () => handleAnnulDocument(inv.id)
                                 }] : [])
                             ]
-                        }))
+                        })),
+                    // NEW: Add related notes (NC/ND) as separate items if in Order mode
+                    ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: any) => ({
+                        type: note.type_display || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
+                        number: note.display_id || note.number,
+                        icon: FileText,
+                        color: 'text-purple-600',
+                        id: note.id,
+                        docType: 'invoice',
+                        status: note.status,
+                        isWarning: true, // Highlights as requested
+                        actions: [] // Removed redundant GitBranch icon
+                    })) : [])
                 ].filter((doc: any) => {
                     // If in Note mode, we ONLY want to show the note itself in this stage list
                     // as the "original" invoices are already shown in the Origin stage.
