@@ -115,6 +115,7 @@ export function AccountForm({
                     parent: initialData.parent || undefined,
                     is_category: (initialData as any).is_category || "",
                     cf_category: (initialData as any).cf_category || "",
+                    bs_category: (initialData as any).bs_category || "",
                     is_reconcilable: initialData.is_reconcilable || false,
                 })
             } else {
@@ -131,6 +132,29 @@ export function AccountForm({
             }
         }
     }, [open, initialData, form])
+
+    // Effect to handle parent changes: Update account_type and suggest categories
+    const parentId = form.watch("parent")
+    useEffect(() => {
+        if (!parentId || parentId === "__none__" || parentId === "none") return;
+        
+        const parent = accounts.find(a => a.id.toString() === parentId.toString());
+        if (parent) {
+            // Force account_type to match parent
+            form.setValue("account_type", parent.account_type);
+            
+            // Suggest categories based on parent
+            if (parent.is_category && !form.getValues("is_category")) {
+                form.setValue("is_category", parent.is_category);
+            }
+            if (parent.cf_category && !form.getValues("cf_category")) {
+                form.setValue("cf_category", parent.cf_category);
+            }
+            if (parent.bs_category && !form.getValues("bs_category")) {
+                form.setValue("bs_category", parent.bs_category);
+            }
+        }
+    }, [parentId, accounts, form])
 
 
     async function onSubmit(data: AccountFormValues) {
@@ -233,12 +257,16 @@ export function AccountForm({
                                         <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder={initialData ? "" : "Automático"}
+                                                placeholder="Automático"
                                                 {...field}
-                                                readOnly={!!initialData}
-                                                className={cn(FORM_STYLES.input, initialData && "bg-muted")}
+                                                readOnly={true}
+                                                disabled={true}
+                                                className={cn(FORM_STYLES.input, "bg-muted cursor-not-allowed opacity-70")}
                                             />
                                         </FormControl>
+                                        <div className="text-[10px] text-muted-foreground italic px-1 pt-1">
+                                            El código se genera automáticamente al guardar según la ubicación jerárquica.
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -264,20 +292,27 @@ export function AccountForm({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className={FORM_STYLES.label}>Tipo</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccione tipo" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="ASSET">Activo</SelectItem>
-                                            <SelectItem value="LIABILITY">Pasivo</SelectItem>
-                                            <SelectItem value="EQUITY">Patrimonio</SelectItem>
-                                            <SelectItem value="INCOME">Ingreso</SelectItem>
-                                            <SelectItem value="EXPENSE">Gasto</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <Select 
+                                            onValueChange={field.onChange} 
+                                            value={field.value}
+                                            disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger className={cn(FORM_STYLES.input, !!parentId && "bg-muted/50 opacity-80")}>
+                                                    <SelectValue placeholder="Seleccione tipo" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="ASSET">Activo</SelectItem>
+                                                <SelectItem value="LIABILITY">Pasivo</SelectItem>
+                                                <SelectItem value="EQUITY">Patrimonio</SelectItem>
+                                                <SelectItem value="INCOME">Ingreso</SelectItem>
+                                                <SelectItem value="EXPENSE">Gasto</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {!!parentId && parentId !== "__none__" && parentId !== "none" && (
+                                            <p className="text-[10px] text-amber-600 font-medium mt-1">Heredado de la jerarquía del padre.</p>
+                                        )}
                                     <FormMessage />
                                 </FormItem>
                             )}
