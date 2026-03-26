@@ -32,6 +32,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
+        CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
 
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     customer = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='sale_orders')

@@ -9,9 +9,10 @@ interface Step2_PaymentProps {
     setPaymentData: (data: any) => void
     total: number
     terminalId?: number
+    customerCreditBalance?: number
 }
 
-export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }: Step2_PaymentProps) {
+export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, customerCreditBalance }: Step2_PaymentProps) {
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-1">
@@ -30,6 +31,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId }
                 total={total}
                 paymentData={paymentData as PaymentData}
                 onPaymentDataChange={setPaymentData}
+                customerCreditBalance={customerCreditBalance}
                 labels={{
                     totalLabel: 'Total a Cobrar',
                     amountLabel: 'Monto Recibido',
