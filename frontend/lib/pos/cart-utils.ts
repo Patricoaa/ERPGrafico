@@ -96,19 +96,35 @@ export function canAddToCart(product: Product): { canAdd: boolean, reason?: stri
         return { canAdd: false, reason: 'Sin stock disponible' }
     }
 
-    // Check if MANUFACTURABLE
+    // Check if MANUFACTURABLE — differentiate by sub-type
     if (product.product_type === 'MANUFACTURABLE' || product.has_bom) {
-        // EXCEPTION: Simple manufacturable products with sufficient stock can be sold (they are stockable)
-        const isSimple = !product.requires_advanced_manufacturing;
-        const hasStock = (product.qty_available || 0) > 0;
+        const isAdvanced = !!product.requires_advanced_manufacturing
+        const isExpress = !!product.mfg_auto_finalize && !isAdvanced
+        const isSimple = !isAdvanced && !isExpress
 
-        if (isSimple && hasStock) return { canAdd: true };
+        if (isSimple) {
+            // Simple: behaves like STORABLE — validate against qty_available
+            if ((product.qty_available || 0) <= 0) {
+                return { canAdd: false, reason: 'Sin stock disponible' }
+            }
+            return { canAdd: true }
+        }
 
-        // Otherwise, it MUST be possible to manufacture it
-        const canManufacture = (product.manufacturable_quantity || 0) > 0;
+        if (isExpress) {
+            // Express: must have BOM assigned
+            if (!product.has_bom) {
+                return { canAdd: false, reason: 'Este producto requiere una Lista de Materiales (BOM) asignada para poder venderse' }
+            }
+            // With BOM: check if can manufacture
+            if ((product.manufacturable_quantity || 0) <= 0) {
+                return { canAdd: false, reason: 'No hay componentes disponibles para fabricar' }
+            }
+            return { canAdd: true }
+        }
 
-        if (product.has_bom && !canManufacture) {
-            return { canAdd: false, reason: 'No hay componentes disponibles para fabricar ni stock disponible' }
+        if (isAdvanced) {
+            // Advanced: ALWAYS allow adding (never block)
+            return { canAdd: true }
         }
     }
 
