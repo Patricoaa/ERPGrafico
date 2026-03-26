@@ -4,8 +4,10 @@ import { Task } from "@/lib/workflow/api"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { CheckCircle2, Clock, User, Paperclip, MessageSquare, Download, AlertCircle } from "lucide-react"
+import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 interface TaskActionCardProps {
     task: Task
@@ -23,58 +25,65 @@ export function TaskActionCard({
     notesValue = ""
 }: TaskActionCardProps) {
     const isPending = task.status === 'PENDING' || task.status === 'IN_PROGRESS'
+    const [isExpanded, setIsExpanded] = useState(false)
 
     return (
         <div className={cn(
-            "p-4 border rounded-xl flex flex-col transition-all gap-4",
-            isPending ? "bg-amber-50/50 border-amber-200" : "bg-green-50/50 border-green-200"
+            "p-3 border rounded-lg flex flex-col transition-all gap-2",
+            isPending ? "bg-amber-50/30 border-amber-200" : "bg-green-50/30 border-green-200 opacity-80"
         )}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className={cn(
-                        "p-2 rounded-full",
-                        isPending ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
+                        "flex items-center justify-center rounded-full shrink-0",
+                        isPending ? "text-amber-500" : "text-green-600 bg-green-100 p-0.5"
                     )}>
-                        {isPending ? <Clock className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                        {isPending ? <Circle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                     </div>
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">{task.title}</h4>
+                    <div className="space-y-0.5">
+                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                            {task.title}
+                            {!isPending && (
+                                <span className="text-[10px] font-normal text-muted-foreground bg-white px-1.5 py-0.5 rounded border">
+                                    ✓ {task.completed_by_data?.username || 'Sistema'}
+                                </span>
+                            )}
+                        </h4>
                         <p className="text-xs text-muted-foreground">{task.description}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                                <User className="h-3 w-3 text-primary/70" />
-                                {task.assigned_to_data ? (
-                                    <span>Asignado a: <span className="text-foreground">{task.assigned_to_data.username}</span></span>
-                                ) : task.assigned_group_name ? (
-                                    <span>Grupo: <span className="text-foreground">{task.assigned_group_name}</span></span>
-                                ) : task.data?.candidate_group ? (
-                                    <span>Grupo: <span className="text-foreground">{task.data.candidate_group}</span></span>
-                                ) : (
-                                    <span>Sin asignar</span>
-                                )}
-                            </div>
-                            <Badge variant={isPending ? "outline" : "default"} className={cn(
-                                "text-[10px] h-4",
-                                isPending ? "border-amber-500 text-amber-700 bg-amber-50" : "bg-green-500"
-                            )}>
-                                {isPending ? 'Pendiente' : 'Completada'}
-                            </Badge>
-                        </div>
                     </div>
                 </div>
 
-                {/* Completion details for history */}
-                {!isPending && (
-                    <div className="text-[10px] text-right text-muted-foreground">
-                        <p>Aprobado por: <span className="font-bold">{task.completed_by_data?.username || 'Sistema'}</span></p>
-                        <p>{task.completed_at ? new Date(task.completed_at).toLocaleString() : ''}</p>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                        <User className="h-3 w-3 text-primary/60" />
+                        {task.assigned_to_data ? (
+                            <span><span className="text-foreground">{task.assigned_to_data.username}</span></span>
+                        ) : task.assigned_group_name ? (
+                            <span><span className="text-foreground">{task.assigned_group_name}</span></span>
+                        ) : task.data?.candidate_group ? (
+                            <span><span className="text-foreground">{task.data.candidate_group}</span></span>
+                        ) : (
+                            <span>Sin asignar</span>
+                        )}
                     </div>
-                )}
+                    
+                    {isPending && canComplete && (
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-[10px] px-2 text-muted-foreground hover:text-primary"
+                            onClick={() => setIsExpanded(!isExpanded)}
+                        >
+                            {isExpanded ? "Ocultar detalles" : "Añadir Evidencia"}
+                            {isExpanded ? <ChevronUp className="h-3 w-3 ml-1" /> : <ChevronDown className="h-3 w-3 ml-1" />}
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Note & File display when completed */}
             {!isPending && (task.notes || (task.attachments_data && task.attachments_data.length > 0)) && (
-                <div className="bg-white/40 p-3 rounded-lg border-t border-green-100 space-y-2">
+                <div className="bg-white/60 p-2.5 rounded border border-green-100/50 mt-1 ml-7 space-y-2">
                     {task.notes && (
                         <div className="flex gap-2">
                             <MessageSquare className="h-3 w-3 text-green-600 shrink-0 mt-0.5" />
@@ -101,43 +110,52 @@ export function TaskActionCard({
                 </div>
             )}
 
-            {/* Action Area for Pending Tasks - Now just Inputs, no button */}
-            {isPending && (
-                <div className="space-y-3 pt-2">
+            {/* Action Area for Pending Tasks */}
+            {isPending && isExpanded && (
+                <div className="mt-2 ml-7">
                     {canComplete ? (
-                        <div className="bg-white p-3 rounded-lg border border-amber-100 space-y-3 animate-in fade-in slide-in-from-top-1">
+                        <div className="bg-white p-3 rounded border border-amber-100 space-y-3 animate-in fade-in slide-in-from-top-1">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-muted-foreground">Comentarios (Opcional)</label>
                                     <Textarea
-                                        placeholder="Agregar notas sobre esta aprobación..."
-                                        className="h-20 text-xs resize-none bg-background"
+                                        placeholder="Agregar notas u observaciones técnicas..."
+                                        className="h-16 text-xs resize-none bg-background focus-visible:ring-1"
                                         value={notesValue}
                                         onChange={(e) => onNotesChange?.(e.target.value)}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground">Adjuntar Archivo (Opcional)</label>
-                                    <Input
-                                        type="file"
-                                        className="text-xs h-8"
-                                        onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
-                                    />
-                                    <p className="text-[10px] text-muted-foreground italic">
-                                        * Al avanzar a la siguiente etapa, esta tarea se marcará como aprobada automáticamente.
+                                <div className="space-y-1.5 flex flex-col justify-between">
+                                    <div>
+                                        <label className="text-xs font-semibold text-muted-foreground">Adjuntar Evidencia (Opcional)</label>
+                                        <Input
+                                            type="file"
+                                            className="text-xs h-8 mt-1.5"
+                                            onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-amber-600/80 italic leading-tight">
+                                        * Al avanzar a la siguiente etapa, esta validación se marcará como completada automáticamente.
                                     </p>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] bg-red-100/50 px-3 py-2 rounded text-red-800 border-t border-red-100">
+                        <div className="flex items-center gap-1.5 text-[10px] bg-red-100/50 px-3 py-2 rounded text-red-800 border bg-red-50/50 border-red-100">
                             <AlertCircle className="h-3 w-3 shrink-0" />
-                            No tienes permisos para aprobar esta tarea. Asignado a: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group || 'Otro usuario'}
+                            Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
                         </div>
                     )}
                 </div>
             )}
+            
+            {/* Show permission warning even if not expanded if user can't complete */}
+            {isPending && !canComplete && !isExpanded && (
+               <div className="ml-7 flex items-center gap-1.5 text-[10px] bg-red-100/50 px-2.5 py-1.5 rounded text-red-800 border bg-red-50/50 border-red-100 w-fit mt-1">
+                   <AlertCircle className="h-3 w-3 shrink-0" />
+                   Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
+               </div> 
+            )}
         </div>
     )
 }
-

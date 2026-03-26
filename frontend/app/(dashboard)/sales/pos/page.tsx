@@ -400,8 +400,7 @@ function POSPageContent() {
         // Determine last step (Payment) based on items
         const currentIsOnlyService = items.every(line => line.product_type === 'SERVICE');
         const currentHasManufacturing = items.some(line =>
-            (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) ||
-            (line.product_type === 'MANUFACTURABLE' && !line.has_bom)
+            line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
         );
         const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
 

@@ -316,7 +316,24 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
 
                             {isEditing ? (
                                 <div className={cn("rounded-2xl border", variantMode && "p-0 border-none bg-transparent")}>
-                                    <BOMManager product={initialData} variantMode={variantMode} />
+                                    <BOMManager 
+                                        product={initialData} 
+                                        variantMode={variantMode} 
+                                        onBomsChange={(loadedBoms) => {
+                                            if (!loadedBoms) return;
+                                            const mapped = loadedBoms.map(b => ({
+                                                id: b.id,
+                                                name: b.name || "BOM",
+                                                active: b.active || false,
+                                                lines: b.lines?.length > 0 ? b.lines.map((l: any) => ({
+                                                    id: l.id,
+                                                    component: l.product_id?.toString() || l.component?.toString() || "1",
+                                                    quantity: parseFloat(l.quantity) || 1
+                                                })) : [{ component: "dummy", quantity: 1 }]
+                                            }));
+                                            form.setValue("boms", mapped, { shouldValidate: true });
+                                        }}
+                                    />
                                 </div>
                             ) : (
                                 <div className="space-y-4">

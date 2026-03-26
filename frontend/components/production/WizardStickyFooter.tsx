@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2, Check, ArrowRight, Eye } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -58,6 +59,9 @@ export function WizardStickyFooter({
         onConfirm: () => void
     } | null>(null)
 
+    // Determine if we are implicitly approving tasks by advancing
+    const isImplicitlyApproving = pendingTasks.length > 0 && canApproveAll;
+
     const isNextDisabled = transitioning ||
         isMaterialApprovalIncomplete ||
         (pendingTasks.length > 0 && !canApproveAll)
@@ -81,15 +85,20 @@ export function WizardStickyFooter({
                 ? "⚠️ No has asignado materiales a esta Orden de Trabajo.\n\n"
                 : ""
 
-            setAlertConfig({
-                title: `Avanzar a "${nextStage.label}"`,
-                description: `${warningMsg}Una vez que avances a la siguiente etapa, no podrás volver atrás para modificar la etapa actual. Asegúrate de haber completado todos los pasos necesarios.`,
-                onConfirm: () => {
-                    onTransition(nextStage.id)
-                    setShowAlert(false)
-                }
-            })
-            setShowAlert(true)
+            // For intermediate stages, skip alert if it's an implicit approval
+            if (!warningMsg && isImplicitlyApproving) {
+                 onTransition(nextStage.id)
+            } else {
+                setAlertConfig({
+                    title: `Avanzar a "${nextStage.label}"`,
+                    description: `${warningMsg}Una vez que avances a la siguiente etapa, no podrás volver atrás para modificar la etapa actual. Asegúrate de haber completado todos los pasos necesarios.`,
+                    onConfirm: () => {
+                        onTransition(nextStage.id)
+                        setShowAlert(false)
+                    }
+                })
+                setShowAlert(true)
+            }
         }
     }
 
@@ -162,7 +171,7 @@ export function WizardStickyFooter({
                                     <Button
                                         disabled={isNextDisabled}
                                         onClick={handleNextClick}
-                                        className="gap-2"
+                                        className={cn("gap-2", isImplicitlyApproving && "bg-blue-600 hover:bg-blue-700")}
                                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
                                     >
                                         {transitioning ? (
@@ -174,6 +183,11 @@ export function WizardStickyFooter({
                                             <>
                                                 Finalizar Producción
                                                 <Check className="ml-2 h-4 w-4" aria-hidden="true" />
+                                            </>
+                                        ) : isImplicitlyApproving ? (
+                                            <>
+                                                Aprobar y Siguiente
+                                                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                                             </>
                                         ) : (
                                             <>

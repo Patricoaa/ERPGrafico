@@ -30,9 +30,10 @@ import { cn } from "@/lib/utils"
 interface BOMManagerProps {
     product: any
     variantMode?: boolean
+    onBomsChange?: (boms: any[]) => void
 }
 
-export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
+export function BOMManager({ product, variantMode = false, onBomsChange }: BOMManagerProps) {
     const [boms, setBoms] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -58,6 +59,7 @@ export function BOMManager({ product, variantMode = false }: BOMManagerProps) {
             
             const res = await api.get(`/production/boms/`, { params })
             setBoms(res.data)
+            onBomsChange?.(res.data)
         } catch (error) {
             console.error("Error fetching BOMs:", error)
             toast.error("Error al cargar listas de materiales")
