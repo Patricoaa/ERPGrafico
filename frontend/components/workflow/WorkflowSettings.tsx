@@ -33,6 +33,7 @@ const HUB_TASK_TYPES = [
     { id: 'HUB_LOGISTICS', name: 'Logística', description: 'Despachar o recepcionar productos.' },
     { id: 'HUB_BILLING', name: 'Facturación', description: 'Emitir o registrar factura.' },
     { id: 'HUB_TREASURY', name: 'Tesorería', description: 'Registrar pagos y conciliar.' },
+    { id: 'OT_CREATION', name: 'Creación de OT', description: 'Tarea para generar la Orden de Trabajo desde una Nota de Venta o manual.' },
 ]
 
 const RECURRENT_TASK_TYPES = [
