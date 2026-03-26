@@ -2,11 +2,12 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, Receipt, FileBadge, Package } from "lucide-react"
+import { Calendar, ArrowRight, Receipt, FileBadge, Package, GitBranch } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { InvoiceHubStatus } from "@/components/billing/InvoiceHubStatus"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 type InvoiceType = 'sale_invoice' | 'purchase_invoice'
 
@@ -28,6 +29,7 @@ const dteTypeLabel: Record<string, string> = {
 }
 
 export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps) {
+    const { openCommandCenter } = useGlobalModals()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
     const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type)
@@ -90,7 +92,45 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
             {/* Right: status + total + arrow */}
             <div className="flex items-center gap-4 shrink-0 ml-4">
                 {/* Status badge */}
-                <div className="hidden sm:flex flex-col items-end">
+                <div className="hidden sm:flex items-center gap-3">
+                    {/* Parent/Corrected Invoice Link (only for Notes) */}
+                    {isNote && (item.corrected_invoice || item.sale_order || item.purchase_order) && (
+                        <Badge 
+                            variant="outline" 
+                            className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (item.corrected_invoice) {
+                                    openCommandCenter(null, 'sale', item.corrected_invoice.id)
+                                } else if (item.sale_order || item.purchase_order) {
+                                    openCommandCenter(item.sale_order || item.purchase_order, item.sale_order ? 'sale' : 'purchase', null)
+                                }
+                            }}
+                        >
+                            <GitBranch className="size-3" />
+                            {item.corrected_invoice?.display_id || item.sale_order_number || item.purchase_order_number || 'Ver Origen'}
+                        </Badge>
+                    )}
+
+                    {/* Associated Adjustments Links (for regular invoices) */}
+                    {!isNote && item.adjustments?.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                            {item.adjustments.map((adj: any) => (
+                                <Badge 
+                                    key={adj.id}
+                                    variant="outline" 
+                                    className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        openCommandCenter(null, isSale ? 'sale' : 'purchase', adj.id)
+                                    }}
+                                >
+                                    <GitBranch className="size-3" />
+                                    {adj.display_id || adj.number}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
                     <InvoiceHubStatus invoice={item} />
                 </div>
 

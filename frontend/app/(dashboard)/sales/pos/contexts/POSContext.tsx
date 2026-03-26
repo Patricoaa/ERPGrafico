@@ -3,7 +3,7 @@
 // POS Context
 // Centralized state management for the POS system
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM } from '@/types/pos'
 import * as CartUtils from '@/lib/pos/cart-utils'
 import api from '@/lib/api'
@@ -168,7 +168,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Computed values
     const totals = CartUtils.calculateCartTotals(items, totalDiscountAmount)
 
-    const value: POSContextValue = {
+    const value = useMemo<POSContextValue>(() => ({
         // Session
         currentSession,
         setCurrentSession,
@@ -214,7 +214,12 @@ export function POSProvider({ children }: { children: ReactNode }) {
         loading,
         setLoading,
         defaultCustomerId
-    }
+    }), [
+        currentSession, products, categories, uoms, items, selectedCustomerId, 
+        totalDiscountAmount, currentDraftId, wizardState, bomCache, 
+        componentCache, updateBomCache, updateComponentCache, addItem, 
+        updateItem, removeItem, clearCart, totals, loading, defaultCustomerId
+    ])
 
     return <POSContext.Provider value={value}>{children}</POSContext.Provider>
 }
