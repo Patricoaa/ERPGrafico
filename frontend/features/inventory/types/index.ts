@@ -36,9 +36,12 @@ export interface Product {
 }
 
 export interface ProductFilters {
-    active?: string
+    active?: string | boolean
+    can_be_sold?: boolean
+    can_be_purchased?: boolean
     parent_template__isnull?: boolean
     search?: string
+    category?: number
 }
 
 export interface ProductUpdatePayload {

@@ -113,11 +113,11 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
                     initial={{ x: -100, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: -100, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 35, mass: 0.8 }}
                     onMouseEnter={onMouseEnter}
                     onMouseLeave={onMouseLeave}
                     className={cn(
-                        "w-72 bg-sidebar backdrop-blur-xl border-r border-sidebar-border h-screen absolute top-0 left-[65px] flex flex-col pt-12 z-40 shadow-[10px_0_50px_rgba(0,0,0,0.4)] overflow-hidden"
+                        "w-72 bg-sidebar backdrop-blur-md border-r border-sidebar-border h-screen absolute top-0 left-[65px] flex flex-col pt-12 z-40 shadow-[10px_0_50px_rgba(0,0,0,0.4)] overflow-hidden will-change-transform"
                     )}
                 >
                     <div className="px-8 mb-10">
@@ -143,7 +143,8 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
                                 key={item.url}
                                 initial={{ x: -10, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: 0.15 + (idx * 0.03) }}
+                                transition={{ delay: 0.1 + (idx * 0.02) }}
+                                className="will-change-transform"
                             >
                                 <Link
                                     href={item.url}

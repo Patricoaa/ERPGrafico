@@ -8,19 +8,19 @@ import type { Product, StockLimits } from '@/types/pos'
 import { toast } from 'sonner'
 import * as BOMResolver from '@/lib/pos/bom-resolver'
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { inventoryApi } from '@/features/inventory/api/inventoryApi'
+
+const EMPTY_ARRAY: any[] = []
+
 export function useProducts() {
+    const queryClient = useQueryClient()
     const {
-        products,
-        setProducts,
-        categories,
-        setCategories,
-        uoms,
-        setUoms,
-        items,
+        setProducts: setGlobalProducts,
+        setCategories: setGlobalCategories,
+        setUoms: setGlobalUoms,
         currentSession,
         currentDraftId,
-        bomCache,
-        componentCache,
         updateBomCache,
         updateComponentCache,
         setLoading
@@ -30,47 +30,59 @@ export function useProducts() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [limits, setLimits] = useState<StockLimits>({})
 
-    // Fetch initial data
+    // 1. Fetch Products with React Query (Shared Cache)
+    const { data: products = EMPTY_ARRAY } = useQuery({
+        queryKey: ['products', { active: true, can_be_sold: true }],
+        queryFn: () => inventoryApi.getProducts({ 
+            active: true, 
+            can_be_sold: true,
+            // Optimized fields for POS
+            fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite'
+        }),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    })
+
+    // Sync global state if needed (though we should ideally use React Query data directly)
     useEffect(() => {
-        const fetchData = async () => {
-            if (!currentSession?.id) return
+        setGlobalProducts(products)
+    }, [products, setGlobalProducts])
 
-            setLoading(true)
-            try {
-                const sessionParams = `&pos_session_id=${currentSession.id}`
-                const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
-                const [productsRes, categoriesRes, uomsRes] = await Promise.all([
-                    api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&sort=popular${sessionParams}${draftParams}`),
-                    api.get('/inventory/categories/?page_size=9999'),
-                    api.get('/inventory/uoms/?page_size=9999')
-                ])
+    // 2. Fetch Categories
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: async () => {
+            const res = await api.get('/inventory/categories/?page_size=9999')
+            return res.data.results || res.data
+        },
+        staleTime: 1000 * 60 * 60,
+    })
 
-                setProducts(productsRes.data.results || productsRes.data)
-                setCategories(categoriesRes.data.results || categoriesRes.data)
-                setUoms(uomsRes.data.results || uomsRes.data)
+    // 3. Fetch UoMs
+    const { data: uoms = [] } = useQuery({
+        queryKey: ['uoms'],
+        queryFn: async () => {
+            const res = await api.get('/inventory/uoms/?page_size=9999')
+            return res.data.results || res.data
+        },
+        staleTime: 1000 * 60 * 60,
+    })
 
-                // Initialize caches from products
-                const { bomCache: newBomCache, componentCache: newComponentCache } =
-                    BOMResolver.initializeCachesFromProducts(productsRes.data.results || productsRes.data)
+    // Setup caches when products load (only for products that already have BOM data if any)
+    useEffect(() => {
+        if (products.length > 0) {
+            const { bomCache: newBomCache, componentCache: newComponentCache } =
+                BOMResolver.initializeCachesFromProducts(products)
 
-                Object.entries(newBomCache).forEach(([productId, bom]) => {
-                    updateBomCache(parseInt(productId), bom)
-                })
+            Object.entries(newBomCache).forEach(([productId, bom]) => {
+                updateBomCache(parseInt(productId), bom)
+            })
 
-                Object.entries(newComponentCache).forEach(([componentId, data]) => {
-                    updateComponentCache(parseInt(componentId), data)
-                })
-
-            } catch (error) {
-                console.error("Error fetching POS data:", error)
-                toast.error("Error al cargar datos del POS")
-            } finally {
-                setLoading(false)
-            }
+            Object.entries(newComponentCache).forEach(([componentId, data]) => {
+                updateComponentCache(parseInt(componentId), data)
+            })
         }
+    }, [products, updateBomCache, updateComponentCache])
 
-        fetchData()
-    }, [currentSession?.id, currentDraftId])
 
     // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
@@ -105,12 +117,9 @@ export function useProducts() {
     }, [products, searchTerm, selectedCategoryId])
 
     const refreshProducts = useCallback(async (silent = false) => {
-        if (!currentSession?.id) return
         if (!silent) setLoading(true)
         try {
-            const draftParams = currentDraftId ? `&exclude_draft_id=${currentDraftId}` : ''
-            const res = await api.get(`/inventory/products/?is_active=true&can_be_sold=true&include_boms=true&sort=popular&pos_session_id=${currentSession.id}${draftParams}`)
-            setProducts(res.data.results || res.data)
+            await queryClient.invalidateQueries({ queryKey: ['products'] })
             if (!silent) {
                 toast.success("Productos actualizados")
             }
@@ -121,24 +130,25 @@ export function useProducts() {
         } finally {
             if (!silent) setLoading(false)
         }
-    }, [setLoading, setProducts, currentSession?.id, currentDraftId])
+    }, [queryClient, setLoading])
 
     const toggleFavorite = useCallback(async (productId: number) => {
         try {
             const res = await api.post(`/inventory/products/${productId}/toggle_favorite/`)
             const isFavorite = res.data.is_favorite
 
-            // Optimistic update
-            setProducts(current => current.map(p =>
-                p.id === productId ? { ...p, is_favorite: isFavorite } : p
-            ))
+            // Update cache directly for immediate UI response
+            queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: any) => {
+                if (!old) return old
+                return old.map((p: any) => p.id === productId ? { ...p, is_favorite: isFavorite } : p)
+            })
 
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
         } catch (error) {
             console.error("Error toggling favorite:", error)
             toast.error("Error al actualizar favorito")
         }
-    }, [setProducts])
+    }, [queryClient])
 
     return {
         products,
