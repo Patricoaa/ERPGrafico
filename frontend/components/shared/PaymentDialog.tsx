@@ -48,6 +48,8 @@ interface PaymentDialogProps {
     } | null
     title?: string
     posSessionId?: number | null
+    customerCreditBalance?: number
+    allowCreditBalanceAccumulation?: boolean
 }
 
 export function PaymentDialog({
@@ -62,7 +64,9 @@ export function PaymentDialog({
     isRefund = false,
     existingInvoice = null,
     title,
-    posSessionId = null
+    posSessionId = null,
+    customerCreditBalance = 0,
+    allowCreditBalanceAccumulation = false
 }: PaymentDialogProps) {
     const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("NONE")
@@ -288,6 +292,8 @@ export function PaymentDialog({
                             paymentData={paymentData}
                             onPaymentDataChange={setPaymentData}
                             compactMode={true}
+                            customerCreditBalance={customerCreditBalance}
+                            allowCreditBalanceAccumulation={allowCreditBalanceAccumulation}
                             labels={{
                                 totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
                                 amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),

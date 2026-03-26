@@ -75,6 +75,7 @@ class TreasuryMovement(models.Model):
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
         WRITE_OFF = 'WRITE_OFF', _('Castigo de Deuda')
+        CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
         OTHER = 'OTHER', _('Otro')
 
     class JustifyReason(models.TextChoices):

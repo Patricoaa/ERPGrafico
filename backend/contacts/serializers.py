@@ -9,6 +9,7 @@ class ContactSerializer(serializers.ModelSerializer):
     contact_type = serializers.CharField(read_only=True)
     credit_balance_used = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     credit_available = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    credit_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     credit_aging = serializers.DictField(read_only=True)
     
     class Meta:
@@ -18,7 +19,7 @@ class ContactSerializer(serializers.ModelSerializer):
             'account_receivable', 'account_payable',
             'is_customer', 'is_supplier', 'contact_type',
             'is_default_customer', 'is_default_vendor',
-            'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_days', 'credit_balance_used', 'credit_available', 'credit_aging',
+            'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_days', 'credit_balance_used', 'credit_available', 'credit_aging', 'credit_balance',
             'credit_auto_blocked', 'credit_risk_level', 'credit_last_evaluated',
             'created_at', 'updated_at'
         ]
@@ -29,7 +30,8 @@ class ContactListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
     contact_type = serializers.CharField(read_only=True)
     credit_balance_used = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    credit_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
-        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level']
+        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level']

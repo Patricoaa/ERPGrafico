@@ -444,7 +444,7 @@ export function SalesCheckoutWizard({
 
         // Step: Payment (LAST STEP)
         if (step === currentStepNum) {
-            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} />
+            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number(selectedCustomer?.credit_balance || 0)} />
         }
 
         return null;
@@ -555,6 +555,8 @@ export function SalesCheckoutWizard({
                 if (loadingMethods) return true
                 if (!allowedMethods.length) return false
 
+                if (methodId === 'CREDIT_BALANCE') return (selectedCustomer?.credit_balance || 0) > 0
+                
                 if (methodId === 'CASH') return allowedMethods.some(m => m.method_type === 'CASH')
                 if (methodId === 'CARD') return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type))
                 if (methodId === 'TRANSFER') return allowedMethods.some(m => m.method_type === 'TRANSFER')
@@ -562,7 +564,7 @@ export function SalesCheckoutWizard({
                 return false
             }
 
-            if (paymentData.method !== 'CREDIT' && paymentData.amount > 0) {
+            if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
                 if (!isMethodAllowed(paymentData.method)) {
                     toast.error(`El método ${paymentData.method} no está permitido o no tiene configuración válida.`)
                     return { isValid: false }

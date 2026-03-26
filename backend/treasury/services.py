@@ -36,8 +36,8 @@ class TreasuryService:
             date = timezone.now().date()
 
         # 1. Account Logic Resolution
-        # Ensure we have valid accounts for the movement type
-        if not from_account and not to_account:
+        # Ensure we have valid accounts for the movement type (except for CREDIT_BALANCE)
+        if not from_account and not to_account and payment_method != TreasuryMovement.Method.CREDIT_BALANCE:
              raise ValidationError("Debe especificar al menos una cuenta de tesorería (Origen o Destino).")
 
         # Validation: Insufficient Funds for Outbound from Cash
@@ -226,6 +226,15 @@ class TreasuryService:
         from_acc = movement.from_account.account if movement.from_account else None
         to_acc = movement.to_account.account if movement.to_account else None
         
+        # Override for Credit Balance (Virtual Pool Account)
+        if movement.payment_method == TreasuryMovement.Method.CREDIT_BALANCE:
+            pool_acc = settings.default_advance_payment_account
+            if pool_acc:
+                if movement.movement_type == TreasuryMovement.Type.INBOUND:
+                    to_acc = pool_acc
+                elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
+                    from_acc = pool_acc
+
         # 1. TRANSFER (Internal)
         if movement.movement_type == TreasuryMovement.Type.TRANSFER:
              if from_acc and to_acc:
@@ -271,9 +280,13 @@ class TreasuryService:
              
              # Debit Target (Expense / Creditor)
              target_acc = None
-             if movement.invoice or movement.purchase_order:
-                  # Supplier Account
-                  target_acc = (movement.contact.account_payable if movement.contact else None) or settings.default_payable_account
+             if movement.invoice or movement.purchase_order or movement.sale_order:
+                  is_sale = bool(movement.sale_order or (movement.invoice and movement.invoice.sale_order))
+                  if is_sale:
+                      target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+                  else:
+                      # Supplier Account
+                      target_acc = (movement.contact.account_payable if movement.contact else None) or settings.default_payable_account
              elif movement.justify_reason:
                   target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
              

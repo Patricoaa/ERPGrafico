@@ -3,7 +3,7 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
-import { Banknote, CreditCard, Building2, ClipboardList, AlertCircle } from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, AlertCircle, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
@@ -13,7 +13,7 @@ import { Numpad } from "@/components/ui/numpad"
 import { BaseModal } from "@/components/shared/BaseModal"
 
 export interface PaymentData {
-    method: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
+    method: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
@@ -36,6 +36,8 @@ interface PaymentMethodCardSelectorProps {
         amountModalDescription?: string
     }
     compactMode?: boolean
+    customerCreditBalance?: number
+    allowCreditBalanceAccumulation?: boolean
 }
 
 export function PaymentMethodCardSelector({
@@ -45,7 +47,9 @@ export function PaymentMethodCardSelector({
     paymentData,
     onPaymentDataChange,
     labels = {},
-    compactMode = false
+    compactMode = false,
+    customerCreditBalance = 0,
+    allowCreditBalanceAccumulation = false
 }: PaymentMethodCardSelectorProps) {
     const {
         totalLabel = 'Total',
@@ -75,6 +79,9 @@ export function PaymentMethodCardSelector({
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             case 'CHECK':
                 return allowedMethods.some(m => m.method_type === 'CHECK')
+            case 'CREDIT_BALANCE':
+                if (operation === 'sales') return customerCreditBalance > 0
+                return allowCreditBalanceAccumulation
             default:
                 return false
         }
@@ -103,6 +110,12 @@ export function PaymentMethodCardSelector({
             finalAmount = total
         }
 
+        // Limit sales CREDIT_BALANCE to available customer balance
+        if (operation === 'sales' && paymentData.method === 'CREDIT_BALANCE' && finalAmount > customerCreditBalance) {
+            finalAmount = customerCreditBalance
+            // Optionally, we could show a toast here to notify the user
+        }
+
         onPaymentDataChange({
             ...paymentData,
             amount: finalAmount
@@ -121,6 +134,7 @@ export function PaymentMethodCardSelector({
             if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type)
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
+            if (paymentData.method === 'CREDIT_BALANCE') return false // Doesn't need a treasury account
             return false
         })
     }, [allowedMethods, paymentData.method])
@@ -177,6 +191,13 @@ export function PaymentMethodCardSelector({
                 icon: ClipboardList,
                 color: 'text-amber-600',
                 isAllowed: isMethodAllowed('CHECK')
+            },
+            {
+                id: 'CREDIT_BALANCE',
+                label: 'Saldo a Favor',
+                icon: Wallet,
+                color: 'text-indigo-600',
+                isAllowed: isMethodAllowed('CREDIT_BALANCE')
             }
         ]
 
@@ -232,7 +253,9 @@ export function PaymentMethodCardSelector({
                 )}
             </div>
 
-            {/* Payment Method Cards */}
+
+
+            {/* Account Details Form */}
             <div className="space-y-4">
                 <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
                 <RadioGroup
@@ -258,7 +281,7 @@ export function PaymentMethodCardSelector({
                                         e.preventDefault()
                                         return
                                     }
-                                    if (paymentData.method === m.id && m.id !== 'TRANSFER') {
+                                    if (paymentData.method === m.id && m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
                                         openAmountModal()
                                     }
                                 }}
@@ -266,10 +289,15 @@ export function PaymentMethodCardSelector({
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
                                 <div className="flex flex-col items-center justify-center gap-4 h-full">
                                     <div className={cn(
-                                        "rounded-2xl bg-background border-2 shadow-sm flex items-center justify-center",
+                                        "rounded-2xl bg-background border-2 shadow-sm flex items-center justify-center relative",
                                         m.color,
                                         compactMode ? "p-3" : "p-6"
                                     )}>
+                                        {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-white animate-in zoom-in duration-300 z-10 whitespace-nowrap">
+                                                {customerCreditBalance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                                            </div>
+                                        )}
                                         <m.icon className={cn(
                                             compactMode ? "h-6 w-6" : "h-10 w-10"
                                         )} />
