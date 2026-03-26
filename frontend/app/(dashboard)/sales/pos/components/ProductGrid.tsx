@@ -57,12 +57,31 @@ function ProductGridComponent({
                     ? product.category?.icon
                     : catData?.icon) || null
 
-                // Determine if product is disabled
+                // Determine manufacturing sub-type for MANUFACTURABLE products
+                const isManufacturable = product.product_type === 'MANUFACTURABLE'
+                const mfgSubType = isManufacturable
+                    ? (product.requires_advanced_manufacturing ? 'ADVANCED'
+                        : product.mfg_auto_finalize ? 'EXPRESS' : 'SIMPLE')
+                    : null
+
+                // Determine if product is disabled based on sub-type
                 const isStorableNoStock = product.product_type === 'STORABLE' && (product.qty_available || 0) <= 0
-                const isManufacturableZero = product.product_type === 'MANUFACTURABLE'
-                    && product.manufacturable_quantity === 0
-                    && product.has_bom
-                const isDisabled = isStorableNoStock || isManufacturableZero
+                let isMfgDisabled = false
+                if (isManufacturable) {
+                    if (mfgSubType === 'SIMPLE') {
+                        // Simple: behaves like STORABLE — disabled when no stock
+                        isMfgDisabled = (product.qty_available || 0) <= 0
+                    } else if (mfgSubType === 'EXPRESS') {
+                        // Express: without active BOM → always disabled; with BOM → disabled when 0 fabricable
+                        if (!product.has_bom) {
+                            isMfgDisabled = true
+                        } else {
+                            isMfgDisabled = product.manufacturable_quantity === 0
+                        }
+                    }
+                    // Advanced: NEVER disabled
+                }
+                const isDisabled = isStorableNoStock || isMfgDisabled
 
                 return (
                     <Card
@@ -126,19 +145,49 @@ function ProductGridComponent({
                                 </div>
                             )}
 
-                            {product.product_type === 'MANUFACTURABLE' && (
+                            {/* MANUFACTURABLE badges differentiated by sub-type */}
+                            {isManufacturable && mfgSubType === 'SIMPLE' && (
+                                // Simple: same badge as STORABLE (stock-based)
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
-                                    <div className={`h-2 w-2 rounded-full ${(() => {
-                                        const limit = limits[`prod_${product.id}`]
-                                        const max = limit !== undefined ? limit : (product.manufacturable_quantity ?? Infinity)
-                                        return max > 0 ? 'bg-blue-500' : 'bg-red-500'
-                                    })()}`} />
-                                    {(() => {
-                                        const limit = limits[`prod_${product.id}`]
-                                        const max = limit !== undefined ? limit : product.manufacturable_quantity
-                                        if (max === null || max === undefined || max > 999999) return 'Disponible'
-                                        return `${max} fab.`
-                                    })()}
+                                    <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0
+                                        ? 'bg-green-500'
+                                        : 'bg-red-500'
+                                        }`} />
+                                    {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
+                                </div>
+                            )}
+
+                            {isManufacturable && mfgSubType === 'EXPRESS' && (
+                                // Express: without BOM → "Sin BOM" grey; with BOM → fabricable qty
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                    {!product.has_bom ? (
+                                        <>
+                                            <div className="h-2 w-2 rounded-full bg-gray-400" />
+                                            Sin BOM
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
+                                            {`${product.manufacturable_quantity ?? 0} fab.`}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {isManufacturable && mfgSubType === 'ADVANCED' && (
+                                // Advanced: with BOM → show fabricable qty; without BOM → "Disponible"
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
+                                    {product.has_bom ? (
+                                        <>
+                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                            {`${product.manufacturable_quantity ?? 0} fab.`}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                            Disponible
+                                        </>
+                                    )}
                                 </div>
                             )}
 

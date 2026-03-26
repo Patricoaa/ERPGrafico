@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CommentSystem } from "@/components/shared/CommentSystem"
-import { formatPlainDate } from "@/lib/utils"
+import { formatPlainDate, cn } from "@/lib/utils"
 
 interface Comment {
     user: string
@@ -55,9 +55,56 @@ export function WizardRightSidebar({
     return (
         <div className="w-80 border-l bg-muted/5 flex flex-col h-full min-h-0 overflow-hidden hidden lg:flex shrink-0">
             <ScrollArea className="flex-1 w-full min-h-0">
-                <Accordion type="multiple" defaultValue={["info", "specs", "comments"]} className="w-full p-4 space-y-4">
-                    {/* General Info */}
-                    <AccordionItem value="info" className="border-none">
+                <Accordion type="multiple" defaultValue={["specs", "info", "comments"]} className="w-full p-4 space-y-4">
+                    {/* Technical Specs - Moved to top for operators */}
+                    <AccordionItem value="specs" className="border-none">
+                        <AccordionTrigger className="text-xs font-bold uppercase text-muted-foreground hover:no-underline py-2">
+                            Especificaciones Técnicas
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2">
+                            <div className="space-y-3">
+                                {order?.prepress_archive && (
+                                    <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-3 space-y-2">
+                                        <p className="font-bold text-[10px] uppercase text-blue-700 flex items-center gap-1.5">
+                                            <FileText className="h-3 w-3" />
+                                            Archivo de Diseño
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full bg-white text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                                            onClick={() => window.open(order.prepress_archive, '_blank')}
+                                        >
+                                            Ver Archivo
+                                        </Button>
+                                    </div>
+                                )}
+                                {techSpecs.length > 0 ? techSpecs.map((spec, i) => (
+                                    <div key={i} className={cn(
+                                        "rounded-lg border p-3 space-y-1",
+                                        spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "bg-blue-50/50 border-blue-200" : "bg-background"
+                                    )}>
+                                        <p className={cn(
+                                            "font-bold text-[10px] uppercase flex items-center gap-1.5",
+                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "text-blue-700" : "text-muted-foreground"
+                                        )}>
+                                            <FileText className="h-3 w-3" />
+                                            {spec.label}
+                                        </p>
+                                        <p className={cn(
+                                            "text-xs whitespace-pre-wrap",
+                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" && "font-medium text-blue-900"
+                                        )}>{spec.value}</p>
+                                    </div>
+                                )) : (
+                                    <p className="text-xs text-muted-foreground italic text-center py-4">Sin especificaciones técnicas</p>
+                                )}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    {/* General Info - Moved below specs */}
+                    <AccordionItem value="info" className="border-none mt-4">
                         <AccordionTrigger className="text-xs font-bold uppercase text-muted-foreground hover:no-underline py-2">
                             Información General
                         </AccordionTrigger>
@@ -118,30 +165,8 @@ export function WizardRightSidebar({
                         </AccordionContent>
                     </AccordionItem>
 
-                    {/* Technical Specs */}
-                    <AccordionItem value="specs" className="border-none">
-                        <AccordionTrigger className="text-xs font-bold uppercase text-muted-foreground hover:no-underline py-2">
-                            Especificaciones Técnicas
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-2">
-                            <div className="space-y-3">
-                                {techSpecs.length > 0 ? techSpecs.map((spec, i) => (
-                                    <div key={i} className="bg-background rounded-lg border p-3 space-y-1">
-                                        <p className="font-bold text-[10px] uppercase text-muted-foreground flex items-center gap-1.5">
-                                            <FileText className="h-3 w-3" />
-                                            {spec.label}
-                                        </p>
-                                        <p className="text-xs whitespace-pre-wrap">{spec.value}</p>
-                                    </div>
-                                )) : (
-                                    <p className="text-xs text-muted-foreground italic text-center py-4">Sin especificaciones técnicas</p>
-                                )}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-
                     {/* Internal Observations / Comments */}
-                    <AccordionItem value="comments" className="border-none">
+                    <AccordionItem value="comments" className="border-none mt-4">
                         <AccordionTrigger className="text-xs font-bold uppercase text-muted-foreground hover:no-underline py-2">
                             Observaciones Internas
                         </AccordionTrigger>
