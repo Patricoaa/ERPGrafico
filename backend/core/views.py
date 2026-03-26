@@ -74,6 +74,126 @@ class CurrentUserView(APIView):
         return Response(serializer.data)
 
 
+class MyProfileView(APIView):
+    """Returns the authenticated user's full profile: user data, linked employee, payrolls, advances, and payments."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from hr.models import Employee, Payroll, SalaryAdvance, PayrollPayment
+        from hr.serializers import EmployeeSerializer, PayrollListSerializer, SalaryAdvanceSerializer, PayrollPaymentSerializer
+
+        user = request.user
+        user_data = UserSerializer(user).data
+
+        employee_data = None
+        payrolls_data = []
+        advances_data = []
+        payments_data = []
+
+        # Resolve User → Contact → Employee
+        if user.contact_id:
+            employee = Employee.objects.filter(contact_id=user.contact_id).select_related('contact', 'afp').first()
+            if employee:
+                employee_data = EmployeeSerializer(employee).data
+
+                # Payrolls (only POSTED, ordered by period)
+                payrolls = Payroll.objects.filter(
+                    employee=employee, status=Payroll.Status.POSTED
+                ).select_related(
+                    'employee', 'employee__contact', 'journal_entry', 'previred_journal_entry'
+                ).prefetch_related('items', 'items__concept', 'advances', 'payments').order_by('-period_year', '-period_month')
+                payrolls_data = PayrollListSerializer(payrolls, many=True).data
+
+                # Advances
+                advances = SalaryAdvance.objects.filter(
+                    employee=employee
+                ).select_related('employee', 'employee__contact', 'payroll').order_by('-date')
+                advances_data = SalaryAdvanceSerializer(advances, many=True).data
+
+                # Payroll Payments
+                payments = PayrollPayment.objects.filter(
+                    payroll__employee=employee
+                ).select_related('payroll', 'payroll__employee', 'payroll__employee__contact').order_by('-date')
+                payments_data = PayrollPaymentSerializer(payments, many=True).data
+
+        return Response({
+            'user': user_data,
+            'employee': employee_data,
+            'payrolls': payrolls_data,
+            'advances': advances_data,
+            'payments': payments_data,
+        })
+
+
+class MyProfilePayrollPreviewView(APIView):
+    """Allows an authenticated employee to view their own payroll details (excluding employer costs)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, payroll_id):
+        from hr.models import Payroll
+        from hr.serializers import EmployeePayrollPreviewSerializer
+        from rest_framework.exceptions import PermissionDenied, NotFound
+
+        user = request.user
+        if not user.contact_id:
+            raise PermissionDenied("User is not linked to an employee contact")
+
+        try:
+            payroll = Payroll.objects.select_related(
+                'employee', 'employee__contact'
+            ).prefetch_related(
+                'items', 'items__concept'
+            ).get(
+                id=payroll_id,
+                employee__contact_id=user.contact_id,
+                status=Payroll.Status.POSTED
+            )
+        except Payroll.DoesNotExist:
+            raise NotFound("Payroll not found or not accessible")
+
+        return Response(EmployeePayrollPreviewSerializer(payroll).data)
+
+
+class ChangePasswordView(APIView):
+    """Allows the authenticated user to change their own password."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get('current_password', '')
+        new_password = request.data.get('new_password', '')
+
+        if not current_password or not new_password:
+            return Response(
+                {'detail': 'Debe proporcionar la contraseña actual y la nueva contraseña.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {'detail': 'La contraseña actual es incorrecta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 6:
+            return Response(
+                {'detail': 'La nueva contraseña debe tener al menos 6 caracteres.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        ActionLoggingService.log_action(
+            user=user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {user.username} cambió su contraseña.",
+            request=request
+        )
+
+        return Response({'detail': 'Contraseña actualizada exitosamente.'})
+
+
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer

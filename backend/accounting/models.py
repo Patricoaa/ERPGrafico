@@ -98,6 +98,19 @@ class Account(models.Model):
     def credit_total(self):
         return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
 
+    @property
+    def balance(self):
+        """
+        Calculates the balance based on account type.
+        Asset/Expense: Debit - Credit
+        Liability/Equity/Income: Credit - Debit
+        """
+        debit = self.debit_total
+        credit = self.credit_total
+        if self.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+            return debit - credit
+        return credit - debit
+
     def get_depth(self):
         """Returns the depth of the account in the hierarchy (1-based)."""
         if self.parent:

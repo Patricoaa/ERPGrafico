@@ -31,6 +31,7 @@ interface DataTableFiltersProps<TData> {
     searchPlaceholder?: string
     toolbarAction?: React.ReactNode
     onReset?: () => void
+    className?: string
 }
 
 export function DataTableFilters<TData>({
@@ -41,6 +42,7 @@ export function DataTableFilters<TData>({
     searchPlaceholder = "Filtrar...",
     toolbarAction,
     onReset,
+    className,
 }: DataTableFiltersProps<TData>) {
     const [open, setOpen] = React.useState(false)
 
@@ -55,10 +57,10 @@ export function DataTableFilters<TData>({
     const isFiltered = totalActiveFilters > 0
 
     return (
-        <div className="flex items-center space-x-2">
+        <div className={cn("flex items-center space-x-2", className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="h-8 flex items-center gap-2 pl-4">
                         <div className="relative">
                             <ListFilter className="h-4 w-4" />
                             {isFiltered && (

@@ -14,6 +14,9 @@ import {
     getFacetedUniqueValues,
     getFacetedRowModel,
     useReactTable,
+    ExpandedState,
+    getExpandedRowModel,
+    Row,
 } from "@tanstack/react-table"
 
 import {
@@ -62,6 +65,10 @@ interface DataTableProps<TData, TValue> {
     cardMode?: boolean
     isLoading?: boolean
     skeletonRows?: number
+    renderSubComponent?: (row: Row<TData>) => React.ReactNode
+    hidePagination?: boolean
+    toolbarClassName?: string
+    noBorder?: boolean
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -109,8 +116,13 @@ export function DataTable<TData, TValue>({
     cardMode = false,
     isLoading = false,
     skeletonRows = 5,
+    renderSubComponent,
+    hidePagination = false,
+    toolbarClassName,
+    noBorder = false,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
+    const [expanded, setExpanded] = React.useState<ExpandedState>({})
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
 
@@ -148,17 +160,20 @@ export function DataTable<TData, TValue>({
         getFilteredRowModel: getFilteredRowModel(),
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
+        getExpandedRowModel: getExpandedRowModel(),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setGlobalFilter,
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
+        onExpandedChange: setExpanded,
         state: {
             sorting,
             columnFilters,
             globalFilter,
             columnVisibility,
             rowSelection,
+            expanded,
         },
         initialState: {
             pagination: {
@@ -177,21 +192,29 @@ export function DataTable<TData, TValue>({
         ) : renderCustomView ? null : (
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                    <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
-                        className={cn(
-                            "hover:bg-muted/20 transition-colors",
-                            onRowClick && "cursor-pointer"
+                    <React.Fragment key={row.id}>
+                        <TableRow
+                            data-state={row.getIsSelected() && "selected"}
+                            className={cn(
+                                "hover:bg-muted/20 transition-colors",
+                                onRowClick && "cursor-pointer"
+                            )}
+                            onClick={() => onRowClick?.(row.original)}
+                        >
+                            {row.getVisibleCells().map((cell) => (
+                                <TableCell key={cell.id} className="py-3">
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                        {row.getIsExpanded() && renderSubComponent && (
+                            <TableRow>
+                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                    {renderSubComponent(row)}
+                                </TableCell>
+                            </TableRow>
                         )}
-                        onClick={() => onRowClick?.(row.original)}
-                    >
-                        {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id} className="py-3">
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                        ))}
-                    </TableRow>
+                    </React.Fragment>
                 ))
             ) : (
                 <TableRow>
@@ -209,7 +232,7 @@ export function DataTable<TData, TValue>({
             <Card>
                 {/* Flat toolbar — no divider line, padding only */}
                 {showToolbar && (
-                    <div className="flex items-center px-4 pt-3 pb-1">
+                    <div className={toolbarClassName}>
                         <DataTableToolbar
                             table={table}
                             filterColumn={filterColumn}
@@ -260,9 +283,11 @@ export function DataTable<TData, TValue>({
                 </CardContent>
 
                 {/* Flat pagination — subtle top border, no card divider */}
-                <div className="px-4 py-2 mt-1 border-t border-border/30">
-                    <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
-                </div>
+                {!hidePagination && (
+                    <div className="px-4 py-2 mt-1 border-t border-border/30">
+                        <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
+                    </div>
+                )}
             </Card>
         )
     }
@@ -271,23 +296,25 @@ export function DataTable<TData, TValue>({
     return (
         <div className="space-y-4">
             {showToolbar && (
-                <DataTableToolbar
-                    table={table}
-                    filterColumn={filterColumn}
-                    globalFilterFields={globalFilterFields}
-                    searchPlaceholder={searchPlaceholder}
-                    facetedFilters={facetedFilters}
-                    toolbarAction={toolbarAction}
-                    useAdvancedFilter={useAdvancedFilter}
-                    onReset={onReset}
-                    rightAction={rightAction}
-                    showToolbarSort={showToolbarSort}
-                />
+                <div className={toolbarClassName}>
+                    <DataTableToolbar
+                        table={table}
+                        filterColumn={filterColumn}
+                        globalFilterFields={globalFilterFields}
+                        searchPlaceholder={searchPlaceholder}
+                        facetedFilters={facetedFilters}
+                        toolbarAction={toolbarAction}
+                        useAdvancedFilter={useAdvancedFilter}
+                        onReset={onReset}
+                        rightAction={rightAction}
+                        showToolbarSort={showToolbarSort}
+                    />
+                </div>
             )}
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className="rounded-md border">
+                <div className={cn(!noBorder && "rounded-md border")}>
                     <Table>
                         <TableHeader className="bg-muted/30">
                             {table.getHeaderGroups().map((headerGroup) => (
@@ -312,24 +339,32 @@ export function DataTable<TData, TValue>({
                                 <TableSkeleton rows={skeletonRows} columns={columns.length} />
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
-                                        className={cn(
-                                            "group hover:bg-muted/20 transition-colors",
-                                            onRowClick && "cursor-pointer"
+                                    <React.Fragment key={row.id}>
+                                        <TableRow
+                                            data-state={row.getIsSelected() && "selected"}
+                                            className={cn(
+                                                "group hover:bg-muted/20 transition-colors",
+                                                onRowClick && "cursor-pointer"
+                                            )}
+                                            onClick={() => onRowClick?.(row.original)}
+                                        >
+                                            {row.getVisibleCells().map((cell) => (
+                                                <TableCell key={cell.id}>
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext()
+                                                    )}
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                        {row.getIsExpanded() && renderSubComponent && (
+                                            <TableRow>
+                                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                    {renderSubComponent(row)}
+                                                </TableCell>
+                                            </TableRow>
                                         )}
-                                        onClick={() => onRowClick?.(row.original)}
-                                    >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext()
-                                                )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
+                                    </React.Fragment>
                                 ))
                             ) : (
                                 <TableRow>
@@ -345,7 +380,7 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
             )}
-            <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
+            {!hidePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
         </div>
     )
 }

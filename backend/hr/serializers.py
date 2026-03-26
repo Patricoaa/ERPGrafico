@@ -310,3 +310,58 @@ class PayrollPaymentSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
+    """
+    Serializer strictly for the employee viewing their own payroll.
+    Excludes employer contributions from the item list.
+    """
+    employee_name = serializers.CharField(source='employee.contact.name', read_only=True)
+    employee_display_id = serializers.CharField(source='employee.display_id', read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    period_label = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    # We will filter the items directly in the SerializerMethodField
+    items = PayrollItemSerializer(many=True, read_only=True)
+    advances = SalaryAdvanceSerializer(many=True, read_only=True)
+    payments = PayrollPaymentSerializer(many=True, read_only=True)
+    is_salary_paid = serializers.SerializerMethodField()
+    is_previred_paid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payroll
+        fields = [
+            'id', 'number', 'display_id',
+            'employee', 'employee_name', 'employee_display_id',
+            'period_year', 'period_month', 'period_label',
+            'status', 'status_display',
+            'base_salary', 'agreed_days', 'absent_days', 'worked_days',
+            'total_haberes', 'total_descuentos', 'net_salary',
+            'is_salary_paid', 'is_previred_paid',
+            'items', 'advances', 'payments', 'notes',
+            'created_at', 'updated_at',
+        ]
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Filter items to exclude employer contributions from the employee's view
+        if 'items' in ret:
+            ret['items'] = [
+                item for item in ret['items'] 
+                if item['concept_detail']['category'] != PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR.value
+            ]
+        return ret
+
+    def get_is_salary_paid(self, obj):
+        try:
+            return obj.payments.filter(payment_type=PayrollPayment.PaymentType.SALARIO.value).exists()
+        except:
+            return False
+
+    def get_is_previred_paid(self, obj):
+        try:
+            return obj.payments.filter(payment_type=PayrollPayment.PaymentType.PREVIRED.value).exists()
+        except:
+            return False
