@@ -129,6 +129,22 @@ class WorkOrderService:
             notes="OT generada automáticamente desde venta."
         )
 
+        # Create OT_CREATION task if not auto-finalized
+        if not product.mfg_auto_finalize:
+            WorkflowService.create_task(
+                task_type='OT_CREATION',
+                title=f"Asignación materiales: {work_order.display_id}",
+                description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
+                content_object=work_order,
+                category=Task.Category.TASK,
+                data={
+                    'sale_order_id': work_order.sale_order_id,
+                    'order_type': 'sale',
+                    'order_number': work_order.sale_order.number if work_order.sale_order else '',
+                    'prefix': 'NV'
+                }
+            )
+
         # Express Flow: Auto-finalize if product is configured for it
         if product.mfg_auto_finalize:
             try:
@@ -227,6 +243,25 @@ class WorkOrderService:
                     source='BOM'
                 )
 
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=work_order.current_stage,
+            status=work_order.status,
+            notes="OT creada manualmente."
+        )
+
+        # Create OT_CREATION task
+        WorkflowService.create_task(
+            task_type='OT_CREATION',
+            title=f"Asignación materiales: {work_order.display_id}",
+            description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
+            content_object=work_order,
+            category=Task.Category.TASK,
+            data={
+                'order_type': 'manual'
+            }
+        )
+
         return work_order
 
     @staticmethod
@@ -322,6 +357,22 @@ class WorkOrderService:
             status=work_order.status,
             notes="OT generada desde despacho (Producto Express)"
         )
+
+        # Create OT_CREATION task if not auto-finalized
+        if not product.mfg_auto_finalize:
+            WorkflowService.create_task(
+                task_type='OT_CREATION',
+                title=f"Asignación materiales: {work_order.display_id}",
+                description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
+                content_object=work_order,
+                category=Task.Category.TASK,
+                data={
+                    'sale_order_id': work_order.sale_order_id,
+                    'order_type': 'sale',
+                    'order_number': work_order.sale_order.number if work_order.sale_order else '',
+                    'prefix': 'NV'
+                }
+            )
 
         # Express Flow: Auto-finalize
         if product.mfg_auto_finalize:
@@ -451,6 +502,18 @@ class WorkOrderService:
         work_order.current_stage = WorkOrder.Stage.CANCELLED
         work_order.save()
 
+        # Complete any pending OT_CREATION tasks
+        Task.objects.filter(
+            content_type=ContentType.objects.get_for_model(work_order),
+            object_id=work_order.id,
+            task_type='OT_CREATION',
+            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+        ).update(
+            status=Task.Status.COMPLETED,
+            completed_at=timezone.now(),
+            completed_by=user
+        )
+
         WorkOrderHistory.objects.create(
             work_order=work_order,
             stage=WorkOrder.Stage.CANCELLED,
@@ -497,7 +560,7 @@ class WorkOrderService:
                     user=user
                 )
 
-                # Fix: Update stage_data if it's the approval file (or design)
+                 # Fix: Update stage_data if it's the approval file (or design)
                 # We assume 'approval_attachment' key from frontend form data maps here
                 # But files dict keys are field names.
                 # If we received 'approval_attachment', we should update stage_data['approval_attachment']
@@ -505,6 +568,23 @@ class WorkOrderService:
                     if not work_order.stage_data: work_order.stage_data = {}
                     work_order.stage_data['approval_attachment'] = file_obj.name
 
+
+        # --- OT_CREATION TASK COMPLETION ---
+        # Complete OT_CREATION task when moving past assignment stages
+        # The user defined "Creación" as MATERIAL_ASSIGNMENT and OUTSOURCING_ASSIGNMENT
+        if old_stage in [WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.OUTSOURCING_ASSIGNMENT] and \
+           next_stage not in [WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.OUTSOURCING_ASSIGNMENT]:
+            
+            Task.objects.filter(
+                content_type=ContentType.objects.get_for_model(work_order),
+                object_id=work_order.id,
+                task_type='OT_CREATION',
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+            ).update(
+                status=Task.Status.COMPLETED,
+                completed_at=timezone.now(),
+                completed_by=user
+            )
 
         # Specific logic per stage transition
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
