@@ -91,8 +91,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         task = self.get_object()
         
-        # TASK category tasks (HUB stages) can only be auto-completed by the system
-        if task.category == Task.Category.TASK:
+        # HUB stage tasks can only be auto-completed by the system
+        if task.category == Task.Category.TASK and task.task_type.startswith('HUB_'):
             return Response(
                 {'error': 'Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.'},
                 status=status.HTTP_400_BAD_REQUEST

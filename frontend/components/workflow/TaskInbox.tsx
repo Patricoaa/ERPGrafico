@@ -92,7 +92,14 @@ export function TaskInbox() {
             return
         }
 
-        if (task.task_type?.includes('OT_')) {
+        if (task.task_type === 'OT_CREATION') {
+            const saleOrderId = task.data?.sale_order_id || (task.data?.order_type === 'sale' ? task.object_id : null)
+            if (saleOrderId) {
+                openCommandCenter(saleOrderId, 'sale')
+            } else {
+                openWorkOrder(task.object_id)
+            }
+        } else if (task.task_type?.includes('OT_')) {
             // Work Order approval tasks
             openWorkOrder(task.object_id)
         } else if (task.task_type?.includes('OC_')) {

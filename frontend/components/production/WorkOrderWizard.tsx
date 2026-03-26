@@ -201,7 +201,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             // RECTIFICATION: show if OT has at least 1 material OR it's already in this stage
             if (stage.id === 'RECTIFICATION') {
                 return orderData.current_stage === 'RECTIFICATION' ||
-                    (!orderData.no_materials_required && (orderData.materials || []).length > 0)
+                    ((orderData.materials || []).length > 0)
             }
             return false
         })
@@ -331,11 +331,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     }, [open, viewingStepIndex, isViewingCurrentStage, order, actualStepIndex, transitioning, pendingTasks, canApproveAll])
 
     const handleTransition = async (nextStageId: string, data: any = {}) => {
-        // Validation: Materials
-        if (order.current_stage === 'MATERIAL_ASSIGNMENT' && !order.no_materials_required && (!order.materials || order.materials.length === 0)) {
-            toast.error("Debe asignar al menos un componente o marcar la opción 'Sin materiales' antes de continuar.")
-            return
-        }
+        // Validation: Materials - Removed strict requirement as per user request
+        // The wizard footer already warns if no materials are assigned.
 
         // Transition Analysis
         const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
