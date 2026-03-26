@@ -62,41 +62,38 @@ interface CostCalculatorModalProps {
     onOpenChange: (open: boolean) => void
 }
 
+import { useQuery } from "@tanstack/react-query"
+import { inventoryApi } from "@/features/inventory/api/inventoryApi"
+
 export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalProps) {
-    const [products, setProducts] = useState<Product[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
-    useEffect(() => {
-        if (open) {
-            fetchInitialData()
-        }
-    }, [open])
+    // Use React Query for shared caching and better performance
+    const { data: products = [], isLoading: loadingProducts } = useQuery({
+        queryKey: ['products', { active: true, can_be_sold: true }],
+        queryFn: () => inventoryApi.getProducts({ 
+            active: true, 
+            can_be_sold: true,
+            fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
+        }),
+        enabled: open,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
+    })
 
-    const fetchInitialData = async () => {
-        setLoading(true)
-        try {
-            const [productsRes, categoriesRes] = await Promise.all([
-                api.get('/inventory/products/', {
-                    params: {
-                        active: true,
-                        exclude_variant_templates: true,
-                        show_technical_variants: true
-                    }
-                }),
-                api.get('/inventory/categories/?page_size=9999')
-            ])
-            setProducts(productsRes.data.results || productsRes.data)
-            setCategories(categoriesRes.data.results || categoriesRes.data)
-        } catch (error) {
-            toast.error("Error al cargar datos")
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { data: categories = [], isLoading: loadingCategories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: async () => {
+            const res = await api.get('/inventory/categories/?page_size=9999')
+            return res.data.results || res.data
+        },
+        enabled: open,
+        staleTime: 1000 * 60 * 60, // 1 hour cache
+    })
+
+    const loading = loadingProducts || loadingCategories
+
 
     const addItem = (product: Product) => {
         const existingItem = selectedItems.find(item => item.product.id === product.id)
