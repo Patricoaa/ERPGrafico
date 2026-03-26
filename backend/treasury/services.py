@@ -43,7 +43,7 @@ class TreasuryService:
         # Validation: Insufficient Funds for Outbound from Cash
         if from_account and from_account.account_type == TreasuryAccount.Type.CASH:
              # Refresh balance check
-             if amount > from_account.account.balance:
+             if amount > from_account.current_balance:
                  # We allow it but with a warning? strict? 
                  # Current logic was strict for transfers.
                  if movement_type in [TreasuryMovement.Type.TRANSFER, TreasuryMovement.Type.OUTBOUND]:

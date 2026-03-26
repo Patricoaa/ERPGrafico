@@ -32,6 +32,7 @@ import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from 
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { FORM_STYLES } from "@/lib/styles"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -452,77 +453,96 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <FileText className="h-5 w-5 text-primary" />
+            <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+                <DialogHeader className="px-6 pt-6 pb-2">
+                    <DialogTitle className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                            <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-col text-left">
+                            <span className="text-base font-bold tracking-tight">Nueva Liquidación</span>
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
+                                RRHH <span className="opacity-30">|</span> Emisión Mensual
                             </div>
-                            <span>Nueva Liquidación de Sueldo</span>
                         </div>
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField control={form.control} name="employee" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Empleado</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccionar empleado..." />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {employees.map(e => (
-                                            <SelectItem key={e.id} value={String(e.id)}>
-                                                {e.contact_detail?.name} — {e.contact_detail?.tax_id}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="period_year" render={({ field }) => (
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 text-left">
+                        <div className="p-6 space-y-5">
+                            <FormField control={form.control} name="employee" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Año</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
                                     <Select value={field.value} onValueChange={field.onChange}>
                                         <FormControl>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="rounded-xl h-11">
+                                                <SelectValue placeholder="Seleccionar empleado..." />
+                                            </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent>
-                                            {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                        <SelectContent className="rounded-xl">
+                                            {employees.map(e => (
+                                                <SelectItem key={e.id} value={String(e.id)} className="rounded-lg">
+                                                    {e.contact_detail?.name} — {e.contact_detail?.tax_id}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="period_month" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Mes</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {MONTHS.map(m => (
-                                                <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={form.control} name="period_year" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Año</FormLabel>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <FormControl>
+                                                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="rounded-xl">
+                                                {[currentYear - 1, currentYear, currentYear + 1].map(y => (
+                                                    <SelectItem key={y} value={String(y)} className="rounded-lg">{y}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="period_month" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={FORM_STYLES.label}>Mes</FormLabel>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <FormControl>
+                                                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="rounded-xl">
+                                                {MONTHS.map(m => (
+                                                    <SelectItem key={m.value} value={String(m.value)} className="rounded-lg">{m.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
                         </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                            <Button type="submit" disabled={saving}>
+
+                        <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-muted/10">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={saving}
+                                className="rounded-xl text-xs font-bold"
+                            >
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <FileText className="mr-2 h-3.5 w-3.5" />
                                 Crear Liquidación
                             </Button>
                         </div>
