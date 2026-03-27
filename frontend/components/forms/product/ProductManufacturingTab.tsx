@@ -446,7 +446,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                             variant="secondary"
                             size="sm"
                             className="h-7 text-[10px] gap-1 px-2"
-                            onClick={() => append({ component: "", quantity: 1, uom: undefined, notes: "" })}
+                            onClick={() => append({ component: "", quantity: 1, uom: undefined })}
                         >
                             <Plus className="h-3 w-3" /> Añadir
                         </Button>

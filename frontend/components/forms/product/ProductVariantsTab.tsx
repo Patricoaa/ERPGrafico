@@ -155,8 +155,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         }
     }
 
-    const toggleVariantSelect = (id: number, e: React.MouseEvent | React.ChangeEvent) => {
-        e.stopPropagation()
+    const toggleVariantSelect = (id: number) => {
         setSelectedVariantIds(prev => {
             if (prev.includes(id)) {
                 return prev.filter(vid => vid !== id)
@@ -343,7 +342,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
                                                 <Checkbox 
                                                     checked={isSelected}
-                                                    onCheckedChange={(checked) => toggleVariantSelect(v.id, checked as unknown as React.ChangeEvent)}
+                                                    onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </TableCell>

@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Save, Loader2, Info, Workflow, Box, Layers, CheckCircle2, Truck, Package } from "lucide-react"
+import { Plus, Trash2, Save, Loader2, Info, Workflow, Box, Layers, CheckCircle2, Truck, Package, AlertCircle } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -55,8 +55,7 @@ const serviceLineSchema = z.object({
     supplier: z.string().min(1, "Proveedor requerido"),
     supplier_name: z.string().optional(),
     gross_price: z.coerce.number().min(1, "Monto bruto requerido"),
-    document_type: z.string().default("FACTURA"),
-    notes: z.string().optional()
+    document_type: z.string().default("FACTURA")
 })
 
 const bomSchema = z.object({
@@ -64,7 +63,6 @@ const bomSchema = z.object({
     active: z.boolean().default(true),
     yield_quantity: z.coerce.number().min(0.0001, "El rendimiento debe ser mayor a 0").default(1),
     yield_uom: z.string().optional(),
-    notes: z.string().optional(),
     lines: z.array(materialLineSchema).min(0),
     service_lines: z.array(serviceLineSchema).min(0)
 }).refine(data => data.lines.length > 0 || data.service_lines.length > 0, {
@@ -77,7 +75,6 @@ type BOMFormValues = {
     active: boolean
     yield_quantity: number
     yield_uom?: string
-    notes?: string
     lines: {
         component: string
         component_code?: string
@@ -98,7 +95,6 @@ type BOMFormValues = {
         supplier_name?: string
         gross_price: number
         document_type: string
-        notes?: string
     }[]
 }
 
@@ -121,8 +117,19 @@ export function BOMFormDialog({
     const [selectedProduct, setSelectedProduct] = useState<any>(initialProduct)
     const [selectedVariant, setSelectedVariant] = useState<any>(null)
     const [variants, setVariants] = useState<any[]>([])
+    const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, any[]>>({})
+
+    const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
+        if (!productId) return
+        try {
+            const res = await api.get(`/inventory/products/?parent_template=${productId}&show_technical_variants=true`)
+            const vars = res.data.results || res.data
+            setLineVariantsCache(prev => ({ ...prev, [productId]: vars }))
+        } catch (error) {
+            console.error("Error fetching line variants:", error)
+        }
+    }
     const [loadingVariants, setLoadingVariants] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
 
     useEffect(() => {
@@ -134,11 +141,7 @@ export function BOMFormDialog({
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [pRes, uRes] = await Promise.all([
-                    api.get('/inventory/products/'),
-                    api.get('/inventory/uoms/')
-                ])
-                setProducts(pRes.data.results || pRes.data)
+                const uRes = await api.get('/inventory/uoms/')
                 setUoms(uRes.data.results || uRes.data)
             } catch (error) {
                 console.error("Error fetching dependencies for BOMForm:", error)
@@ -149,34 +152,40 @@ export function BOMFormDialog({
 
     // Fetch variants when product has_variants is true
     useEffect(() => {
+        let isMounted = true
         const fetchVariants = async () => {
             if (!selectedProduct?.id || !selectedProduct?.has_variants) {
-                setVariants([])
-                setSelectedVariant(null)
+                if (isMounted) {
+                    setVariants([])
+                    if (!bomToEdit) setSelectedVariant(null)
+                }
                 return
             }
 
-            setLoadingVariants(true)
+            if (isMounted) setLoadingVariants(true)
             try {
-                const res = await api.get(`/inventory/products/?parent_template=${selectedProduct.id}`)
+                const res = await api.get(`/inventory/products/?parent_template=${selectedProduct.id}&show_technical_variants=true`)
                 const loadedVariants = res.data.results || res.data
-                setVariants(loadedVariants)
+                if (isMounted) {
+                    setVariants(loadedVariants)
 
-                if (bomToEdit && bomToEdit.product) {
-                    const activeVariant = loadedVariants.find((v: any) => v.id === bomToEdit.product)
-                    if (activeVariant) {
-                        setSelectedVariant(activeVariant)
+                    if (bomToEdit && bomToEdit.product) {
+                        const activeVariant = loadedVariants.find((v: any) => v.id.toString() === bomToEdit.product.toString())
+                        if (activeVariant) {
+                            setSelectedVariant(activeVariant)
+                        }
                     }
                 }
             } catch (error) {
                 console.error("Error fetching variants:", error)
-                toast.error("Error al cargar variantes")
+                if (isMounted) toast.error("Error al cargar variantes")
             } finally {
-                setLoadingVariants(false)
+                if (isMounted) setLoadingVariants(false)
             }
         }
         fetchVariants()
-    }, [selectedProduct, bomToEdit])
+        return () => { isMounted = false }
+    }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
         resolver: zodResolver(bomSchema) as any,
@@ -185,7 +194,6 @@ export function BOMFormDialog({
             active: true,
             yield_quantity: 1,
             yield_uom: "",
-            notes: "",
             lines: [],
             service_lines: []
         }
@@ -214,7 +222,6 @@ export function BOMFormDialog({
                     active: bomToEdit.active,
                     yield_quantity: bomToEdit.yield_quantity || 1,
                     yield_uom: bomToEdit.yield_uom?.toString() || "",
-                    notes: bomToEdit.notes || "",
                     lines: stockLines.map((l: any) => ({
                         component: l.component.toString(),
                         component_code: l.component_code,
@@ -234,8 +241,7 @@ export function BOMFormDialog({
                         supplier: l.supplier?.toString() || "",
                         supplier_name: l.supplier_name || "",
                         gross_price: l.unit_price ? parseFloat(l.unit_price) * 1.19 : 0,
-                        document_type: l.document_type || "FACTURA",
-                        notes: l.notes || ""
+                        document_type: l.document_type || "FACTURA"
                     }))
                 })
             } else {
@@ -244,7 +250,6 @@ export function BOMFormDialog({
                     active: true,
                     yield_quantity: 1,
                     yield_uom: "",
-                    notes: "",
                     lines: [],
                     service_lines: []
                 })
@@ -272,7 +277,6 @@ export function BOMFormDialog({
                 component: parseInt(l.component),
                 quantity: l.quantity,
                 uom: l.uom ? parseInt(l.uom) : null,
-                notes: l.notes,
                 is_outsourced: false
             }))
 
@@ -280,7 +284,6 @@ export function BOMFormDialog({
                 component: parseInt(l.component),
                 quantity: l.quantity,
                 uom: l.uom ? parseInt(l.uom) : null,
-                notes: l.notes,
                 is_outsourced: true,
                 supplier: parseInt(l.supplier),
                 unit_price: Math.round(l.gross_price / 1.19),
@@ -293,7 +296,6 @@ export function BOMFormDialog({
                 active: data.active,
                 yield_quantity: data.yield_quantity,
                 yield_uom: data.yield_uom ? parseInt(data.yield_uom) : null,
-                notes: data.notes,
                 lines: [...materialPayloadLines, ...servicePayloadLines]
             }
 
@@ -367,88 +369,131 @@ export function BOMFormDialog({
                 </div>
             }
         >
-            {!initialProduct && (
-                <div className="mb-4 pb-2 border-b">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">Producto a fabricar</Label>
-                    <ProductSelector
-                        value={selectedProduct?.id || selectedProduct}
-                        onChange={(val) => {
-                            const p = products.find(prod => prod.id.toString() === val?.toString())
-                            setSelectedProduct(p)
-                        }}
-                        placeholder="Seleccionar producto..."
-                        allowedTypes={['MANUFACTURABLE']}
-                    />
+            {!initialProduct ? (
+                <div className="mb-4 pb-4 border-b">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                        <div className={cn(selectedProduct?.has_variants ? "md:col-span-7" : "md:col-span-12")}>
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">
+                                Producto a fabricar
+                            </Label>
+                            <ProductSelector
+                                value={selectedProduct?.id || selectedProduct}
+                                onSelect={(p) => setSelectedProduct(p)}
+                                onChange={(val) => {
+                                    if (!val) setSelectedProduct(null)
+                                }}
+                                placeholder="Seleccionar producto..."
+                                allowedTypes={['MANUFACTURABLE']}
+                                shouldResolveVariants={false}
+                            />
+                        </div>
+                        
+                        {selectedProduct?.has_variants && (
+                            <div className="md:col-span-5 animate-in fade-in slide-in-from-left-2 duration-300">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">
+                                    Variante del producto
+                                </Label>
+                                <Select
+                                    value={selectedVariant?.id?.toString() || ""}
+                                    onValueChange={(val) => {
+                                        const v = variants.find(varnt => varnt.id.toString() === val)
+                                        setSelectedVariant(v)
+                                    }}
+                                    disabled={!!bomToEdit}
+                                >
+                                    <SelectTrigger className="h-10 w-full rounded-xl bg-background border-border shadow-sm transition-all focus:ring-primary/20">
+                                        <SelectValue placeholder="Seleccione variante..." />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-xl overflow-hidden min-w-[320px]">
+                                        {loadingVariants ? (
+                                            <div className="p-3 text-[10px] text-center text-muted-foreground flex flex-col items-center gap-2">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span>Cargando variantes...</span>
+                                            </div>
+                                        ) : variants.length > 0 ? (
+                                            <div className="max-h-[300px] overflow-y-auto p-1">
+                                                {variants.map(v => (
+                                                    <SelectItem key={v.id} value={v.id.toString()} className="text-xs rounded-lg py-2 cursor-pointer hover:bg-primary/5">
+                                                        <div className="flex flex-col gap-1 w-full">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="font-bold">{v.variant_display_name || v.name}</span>
+                                                                <span className="text-[9px] text-muted-foreground uppercase font-mono bg-muted px-1 rounded">{v.internal_code || v.code}</span>
+                                                            </div>
+                                                            
+                                                            {v.attribute_values_data && v.attribute_values_data.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                    {v.attribute_values_data.map((attr: any) => (
+                                                                        <Badge 
+                                                                            key={attr.id} 
+                                                                            variant="secondary" 
+                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none"
+                                                                        >
+                                                                            {attr.value}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 text-center space-y-2">
+                                                <AlertCircle className="h-5 w-5 text-amber-500 mx-auto" />
+                                                <p className="text-[10px] text-muted-foreground italic">No se encontraron variantes disponibles para este producto.</p>
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-xl">
+                   <div className="flex items-center gap-3">
+                       <Box className="h-5 w-5 text-muted-foreground" />
+                       <div className="flex flex-col">
+                           <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Producto Base (Modo Lectura)</Label>
+                           <span className="text-sm font-bold text-foreground">
+                               {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
+                           </span>
+                       </div>
+                   </div>
+                   <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">Edición</Badge>
                 </div>
             )}
 
             <div className="flex-1 overflow-y-auto px-1">
                 <Form {...form}>
                     <form id="bom-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-
-                        {/* Standardized Separator: Información General */}
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Información de la Receta</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
-                            <div className={cn(selectedProduct?.has_variants ? "md:col-span-4" : "md:col-span-8")}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                            {/* COLUMNA IZQUIERDA: IDENTIFICACIÓN */}
+                            <div className="space-y-3">
                                 <FormField
                                     control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Nombre de la Lista</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Nombre de la Receta</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Ej: Versión Estándar 2024" {...field} className={FORM_STYLES.input} />
+                                                <Input placeholder="Ej: Versión Estándar 2024" {...field} className={cn(FORM_STYLES.input, "h-9")} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                            </div>
 
-                            {selectedProduct?.has_variants && (
-                                <div className="md:col-span-4">
-                                    <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>Variante Asociada</Label>
-                                        <Select
-                                            value={selectedVariant?.id?.toString() || ""}
-                                            onValueChange={(val) => {
-                                                const v = variants.find(varnt => varnt.id.toString() === val)
-                                                setSelectedVariant(v)
-                                            }}
-                                            disabled={!!bomToEdit}
-                                        >
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar variante..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {variants.map(v => (
-                                                    <SelectItem key={v.id} value={v.id.toString()}>
-                                                        {v.variant_display_name || v.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-[10px] text-muted-foreground italic">La receta se asignará a esta variante específica.</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="md:col-span-4">
                                 <FormField
                                     control={form.control}
                                     name="active"
                                     render={({ field }) => (
                                         <FormItem>
                                             <div className={cn(
-                                                "flex items-center gap-3 p-3 rounded-xl border border-border/50 transition-colors shadow-sm",
+                                                "flex items-center gap-3 p-2 rounded-xl border border-border/50 transition-colors shadow-sm",
                                                 field.value ? "bg-primary/5 border-primary/20" : "bg-muted/5 border-border"
                                             )}>
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-background shadow-sm border">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border">
                                                     {field.value ? (
                                                         <CheckCircle2 className={cn("h-3.5 w-3.5", field.value ? "text-primary" : "text-muted-foreground")} />
                                                     ) : (
@@ -456,21 +501,21 @@ export function BOMFormDialog({
                                                     )}
                                                 </div>
                                                 <div className="flex-1 space-y-0.5">
-                                                    <FormLabel className={cn("text-xs font-bold uppercase tracking-widest cursor-pointer",
+                                                    <FormLabel className={cn("text-[10px] font-bold uppercase tracking-widest cursor-pointer",
                                                         field.value ? "text-primary" : "text-muted-foreground"
                                                     )}>RECETA ACTIVA</FormLabel>
                                                     <div className={cn(
-                                                        "text-[10px] font-bold uppercase tracking-wider",
-                                                        field.value ? "text-primary" : "text-muted-foreground"
+                                                        "text-[9px] font-semibold uppercase tracking-wider",
+                                                        field.value ? "text-primary/70" : "text-muted-foreground/70"
                                                     )}>
-                                                        {field.value ? "Lista Activa" : "Lista Inactiva"}
+                                                        {field.value ? "Lista Principal" : "Lista de Respaldo"}
                                                     </div>
                                                 </div>
                                                 <FormControl>
                                                     <Switch
                                                         checked={field.value}
                                                         onCheckedChange={field.onChange}
-                                                        className={cn(field.value && "data-[state=checked]:bg-primary")}
+                                                        className={cn(field.value && "data-[state=checked]:bg-primary scale-75")}
                                                     />
                                                 </FormControl>
                                             </div>
@@ -478,23 +523,15 @@ export function BOMFormDialog({
                                     )}
                                 />
                             </div>
-                        </div>
 
-                        {/* Standardized Separator: Rendimiento */}
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Rendimiento y Salida</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
-                            <div className="md:col-span-4">
+                            {/* COLUMNA DERECHA: RENDIMIENTO */}
+                            <div className="space-y-3">
                                 <FormField
                                     control={form.control}
                                     name="yield_quantity"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Esta receta rinde / produce:</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Rendimiento / Producción</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     type="number"
@@ -502,49 +539,26 @@ export function BOMFormDialog({
                                                     step="any"
                                                     placeholder="1"
                                                     {...field}
-                                                    className={FORM_STYLES.input}
+                                                    className={cn(FORM_STYLES.input, "h-9")}
                                                 />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                            </div>
-                            <div className="md:col-span-4">
+
                                 <FormField
                                     control={form.control}
                                     name="yield_uom"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Unidad de Rendimiento (Opcional)</FormLabel>
+                                            <FormLabel className={FORM_STYLES.label}>Unidad de Salida</FormLabel>
                                             <FormControl>
                                                 <UoMSelector
                                                     value={field.value || ""}
                                                     onChange={field.onChange}
                                                     categoryId={selectedProduct?.uom_category}
                                                     uoms={uoms}
-                                                />
-                                            </FormControl>
-                                            <FormDescription className="text-[10px] mt-1 italic">
-                                                Si se omite, se usa la unidad base del producto.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="md:col-span-4">
-                                <FormField
-                                    control={form.control}
-                                    name="notes"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Notas e Instrucciones</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                    placeholder="Instrucciones especiales para la fabricación..."
-                                                    {...field}
-                                                    className={cn(FORM_STYLES.input, "min-h-[42px] py-2 resize-none")}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -605,33 +619,81 @@ export function BOMFormDialog({
                                             {materialFields.map((field, index) => (
                                                 <TableRow key={field.id}>
                                                     <TableCell>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`lines.${index}.component`}
-                                                            render={({ field: propField }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <ProductSelector
-                                                                            value={propField.value}
-                                                                            onChange={(val: string | null) => {
-                                                                                propField.onChange(val)
-                                                                                const p = products.find((prod: any) => prod.id.toString() === val?.toString());
-                                                                                if (p && p.uom) {
-                                                                                    form.setValue(`lines.${index}.uom`, p.uom.toString(), { shouldValidate: true });
-                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name);
-                                                                                    const baseCost = Number(p.cost_price || 0);
-                                                                                    form.setValue(`lines.${index}.component_cost`, baseCost);
-                                                                                }
-                                                                            }}
-                                                                            placeholder="Buscar componente..."
-                                                                            allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            excludeIds={selectedProduct ? [selectedProduct.id] : []}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
+                                                        <div className="space-y-1">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name={`lines.${index}.component`}
+                                                                render={({ field: propField }) => (
+                                                                    <FormItem>
+                                                                        <FormControl>
+                                                                            <ProductSelector
+                                                                                value={propField.value}
+                                                                                onSelect={(p) => {
+                                                                                    propField.onChange(p.id.toString())
+                                                                                    form.setValue(`lines.${index}.component_name`, p.name)
+                                                                                    form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
+                                                                                    form.setValue(`lines.${index}.component_cost`, Number(p.cost_price || 0))
+                                                                                    
+                                                                                    if (p.uom) {
+                                                                                        const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
+                                                                                        form.setValue(`lines.${index}.uom`, uomId)
+                                                                                        form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                                    }
+
+                                                                                    if (p.has_variants) {
+                                                                                        fetchLineVariants(p.id, index)
+                                                                                    }
+                                                                                }}
+                                                                                onChange={(val) => propField.onChange(val)}
+                                                                                placeholder="Buscar componente..."
+                                                                                allowedTypes={['STORABLE', 'MANUFACTURABLE']}
+                                                                                excludeIds={selectedProduct ? [selectedProduct.id] : []}
+                                                                                shouldResolveVariants={false}
+                                                                                className="h-8 text-xs"
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            
+                                                            {(() => {
+                                                                const compId = form.watch(`lines.${index}.component`)
+                                                                const lineVars = lineVariantsCache[compId] || []
+                                                                
+                                                                if (lineVars.length > 0) {
+                                                                    return (
+                                                                        <div className="animate-in fade-in slide-in-from-top-1">
+                                                                            <Select
+                                                                                value={form.watch(`lines.${index}.component`)}
+                                                                                onValueChange={(val) => {
+                                                                                    form.setValue(`lines.${index}.component`, val)
+                                                                                    const v = lineVars.find((vr: any) => vr.id.toString() === val)
+                                                                                    if (v) {
+                                                                                        form.setValue(`lines.${index}.component_name`, v.variant_display_name || v.name)
+                                                                                        form.setValue(`lines.${index}.component_code`, v.internal_code || v.code)
+                                                                                        form.setValue(`lines.${index}.component_cost`, Number(v.cost_price || 0))
+                                                                                        if (v.uom) form.setValue(`lines.${index}.uom`, v.uom.toString())
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
+                                                                                    <SelectValue placeholder="Seleccione variante..." />
+                                                                                </SelectTrigger>
+                                                                                <SelectContent position="popper" className="z-[110]">
+                                                                                    {lineVars.map(v => (
+                                                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
+                                                                                            {v.variant_display_name || v.name}
+                                                                                        </SelectItem>
+                                                                                    ))}
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                        </div>
+                                                                    )
+                                                                }
+                                                                return null
+                                                            })()}
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
@@ -652,35 +714,23 @@ export function BOMFormDialog({
                                                             control={form.control}
                                                             name={`lines.${index}.uom`}
                                                             render={({ field }) => {
-                                                                const componentId = form.watch(`lines.${index}.component`) || "";
-                                                                const component = products.find((p: any) => p.id.toString() === componentId);
                                                                 const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1;
 
                                                                 return (
                                                                     <FormItem>
                                                                         <FormControl>
                                                                             <UoMSelector
-                                                                                product={component || null}
                                                                                 context="bom"
                                                                                 value={field.value || ""}
                                                                                 onChange={(val) => {
                                                                                     field.onChange(val);
                                                                                     const selectedUom = uoms.find((u: any) => u.id.toString() === val);
 
-                                                                                    if (selectedUom && component) {
+                                                                                    if (selectedUom) {
                                                                                         form.setValue(`lines.${index}.uom_name`, selectedUom.name);
-                                                                                        const baseCost = Number(component.cost_price || 0);
-                                                                                        const baseUomId = component.uom;
-                                                                                        const baseUom = uoms.find(u => u.id === baseUomId);
-
-                                                                                        if (baseUom) {
-                                                                                            const baseRatio = Number(baseUom.ratio);
-                                                                                            const newRatio = Number(selectedUom.ratio);
-                                                                                            if (baseRatio > 0) {
-                                                                                                const newCost = baseCost * (newRatio / baseRatio);
-                                                                                                form.setValue(`lines.${index}.component_cost`, newCost);
-                                                                                            }
-                                                                                        }
+                                                                                        // Note: Cost calculation removed here as it requires base cost/ratio 
+                                                                                        // logic from the original product which we might not have in full.
+                                                                                        // The component_cost is pre-filled from onSelect and can be updated by quantity changes.
                                                                                     }
                                                                                 }}
                                                                                 uoms={uoms}
@@ -800,21 +850,57 @@ export function BOMFormDialog({
                                                             render={({ field: propField }) => (
                                                                 <FormItem>
                                                                     <FormControl>
-                                                                        <ProductSelector
-                                                                            value={propField.value}
-                                                                            onChange={(val: string | null) => {
-                                                                                propField.onChange(val)
-                                                                                const p = products.find((prod: any) => prod.id.toString() === val?.toString());
-                                                                                if (p) {
-                                                                                    form.setValue(`service_lines.${index}.component_name`, p.name);
+                                                                             <ProductSelector
+                                                                                value={propField.value}
+                                                                                onSelect={(p) => {
+                                                                                    propField.onChange(p.id.toString())
+                                                                                    form.setValue(`service_lines.${index}.component_name`, p.name)
                                                                                     if (p.uom) {
-                                                                                        form.setValue(`service_lines.${index}.uom`, typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString());
+                                                                                        const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
+                                                                                        form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                     }
+                                                                                    if (p.has_variants) {
+                                                                                        fetchLineVariants(p.id, index, true)
+                                                                                    }
+                                                                                }}
+                                                                                onChange={(val) => propField.onChange(val)}
+                                                                                placeholder="Buscar servicio..."
+                                                                                shouldResolveVariants={false}
+                                                                                customFilter={(p: any) => p.product_type === 'SERVICE' && p.can_be_purchased}
+                                                                            />
+                                                                            {(() => {
+                                                                                const compId = form.watch(`service_lines.${index}.component`)
+                                                                                const lineVars = lineVariantsCache[compId] || []
+                                                                                
+                                                                                if (lineVars.length > 0) {
+                                                                                    return (
+                                                                                        <div className="mt-1 animate-in fade-in slide-in-from-top-1">
+                                                                                            <Select
+                                                                                                value={form.watch(`service_lines.${index}.component`)}
+                                                                                                onValueChange={(val) => {
+                                                                                                    form.setValue(`service_lines.${index}.component`, val)
+                                                                                                    const v = lineVars.find((vr: any) => vr.id.toString() === val)
+                                                                                                    if (v && v.uom) {
+                                                                                                        form.setValue(`service_lines.${index}.uom`, v.uom.toString())
+                                                                                                    }
+                                                                                                }}
+                                                                                            >
+                                                                                                <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
+                                                                                                    <SelectValue placeholder="Variante requerida..." />
+                                                                                                </SelectTrigger>
+                                                                                                <SelectContent position="popper" className="z-[110]">
+                                                                                                    {lineVars.map(v => (
+                                                                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
+                                                                                                            {v.variant_display_name || v.name}
+                                                                                                        </SelectItem>
+                                                                                                    ))}
+                                                                                                </SelectContent>
+                                                                                            </Select>
+                                                                                        </div>
+                                                                                    )
                                                                                 }
-                                                                            }}
-                                                                            placeholder="Buscar servicio..."
-                                                                            customFilter={(p: any) => p.product_type === 'SERVICE' && p.can_be_purchased}
-                                                                        />
+                                                                                return null
+                                                                            })()}
                                                                     </FormControl>
                                                                     <FormMessage />
                                                                 </FormItem>
@@ -859,30 +945,27 @@ export function BOMFormDialog({
                                                         />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`service_lines.${index}.uom`}
-                                                            render={({ field }) => {
-                                                                const componentId = form.watch(`service_lines.${index}.component`) || "";
-                                                                const component = products.find((p: any) => p.id.toString() === componentId);
-                                                                return (
-                                                                    <FormItem>
-                                                                        <FormControl>
-                                                                            <UoMSelector
-                                                                                product={component || null}
-                                                                                context="bom"
-                                                                                value={field.value || ""}
-                                                                                onChange={field.onChange}
-                                                                                uoms={uoms}
-                                                                                showConversionHint={false}
-                                                                                label=""
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )
-                                                            }}
-                                                        />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name={`service_lines.${index}.uom`}
+                                                                render={({ field }) => {
+                                                                    return (
+                                                                        <FormItem>
+                                                                            <FormControl>
+                                                                                <UoMSelector
+                                                                                    context="bom"
+                                                                                    value={field.value || ""}
+                                                                                    onChange={field.onChange}
+                                                                                    uoms={uoms}
+                                                                                    showConversionHint={false}
+                                                                                    label=""
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )
+                                                                }}
+                                                            />
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField

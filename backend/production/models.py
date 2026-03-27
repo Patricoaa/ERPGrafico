@@ -364,7 +364,6 @@ class BillOfMaterials(models.Model):
     )
     name = models.CharField(_("Nombre"), max_length=255, help_text="Ej: BOM Camiseta Roja v1")
     active = models.BooleanField(_("Activo"), default=True, help_text="Solo puede haber un BOM activo por producto")
-    notes = models.TextField(_("Notas"), blank=True)
     
     yield_quantity = models.DecimalField(
         _("Rendimiento"), 
@@ -439,7 +438,6 @@ class BillOfMaterialsLine(models.Model):
         verbose_name=_("Unidad de Medida"),
         null=True, blank=True
     )
-    notes = models.TextField(_("Notas"), blank=True)
     
     # Outsourcing fields (for outsourced service lines)
     is_outsourced = models.BooleanField(_("Es Tercerizado"), default=False)

@@ -284,7 +284,7 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
         model = BillOfMaterialsLine
         fields = [
             'id', 'component', 'component_code', 'component_name', 'component_cost',
-            'component_stock', 'quantity', 'uom', 'uom_name', 'notes',
+            'component_stock', 'quantity', 'uom', 'uom_name',
             'is_outsourced', 'supplier', 'supplier_name', 'unit_price', 'document_type'
         ]
 
