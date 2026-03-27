@@ -163,7 +163,7 @@ function ProductGridComponent({
                                     {!product.has_bom ? (
                                         <>
                                             <div className="h-2 w-2 rounded-full bg-gray-400" />
-                                            Sin BOM
+                                            Sin LdM
                                         </>
                                     ) : (
                                         <>

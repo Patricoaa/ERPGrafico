@@ -156,7 +156,7 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel className="text-xs font-bold text-blue-900">Actualizar requisito de BOM masivamente</FormLabel>
+                      <FormLabel className="text-xs font-bold text-blue-900">Actualizar requisito de LdM masivamente</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -174,9 +174,9 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="text-xs">Todas las seleccionadas requieren BOM</FormLabel>
+                            <FormLabel className="text-xs">Todas las seleccionadas requieren Lista de Materiales</FormLabel>
                             <FormDescription className="text-[10px]">
-                              Forzará a las {selectedVariants.length} variantes a ser Fabricables y requerir BOM.
+                              Forzará a las {selectedVariants.length} variantes a ser Fabricables y requerir LdM.
                             </FormDescription>
                           </div>
                         </FormItem>

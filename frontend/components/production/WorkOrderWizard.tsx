@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import {
-    Package,
+    Package, Truck,
     Plus,
     Check,
     Ban,
@@ -109,7 +109,7 @@ interface WorkOrderWizardProps {
 const BASE_STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: false },
-    { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Plus, alwaysShow: true },
+    { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Truck, alwaysShow: true },
     { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText, alwaysShow: false },
     { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
     { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers, alwaysShow: false },
@@ -151,7 +151,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
     const [pendingPrevStage, setPendingPrevStage] = useState<string | null>(null)
     // Rectification state
-    const [rectificationAdjustments, setRectificationAdjustments] = useState<{material_id: number, actual_quantity: number}[]>([])
+    const [rectificationAdjustments, setRectificationAdjustments] = useState<{ material_id: number, actual_quantity: number }[]>([])
     const [rectificationProducedQty, setRectificationProducedQty] = useState<number | null>(null)
     const [isRectifying, setIsRectifying] = useState(false)
     const { user } = useAuth()
@@ -818,14 +818,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                                         <div className="flex items-center gap-3">
                                                                             <div className="bg-primary/10 p-2 rounded-full">
-                                                                                <Package className="h-4 w-4 text-primary" />
+                                                                                <Truck className="h-4 w-4 text-primary" />
                                                                             </div>
                                                                             <div className="space-y-0.5">
                                                                                 <p className="text-sm font-bold">{m.component_name}</p>
                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                                                                                     <span>{m.supplier_name}</span>
                                                                                     <span>•</span>
-                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) / {m.uom_name}</span>
+                                                                                    <span>Cant: {m.quantity_planned} {m.uom_name}</span>
+                                                                                    <span>•</span>
+                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1033,14 +1035,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-primary/10 p-2 rounded-full">
-                                                                    <Package className="h-4 w-4 text-primary" />
+                                                                    <Truck className="h-4 w-4 text-primary" />
                                                                 </div>
                                                                 <div className="space-y-0.5">
                                                                     <p className="text-sm font-bold">{m.component_name}</p>
                                                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                                                                         <span>{m.supplier_name}</span>
                                                                         <span>•</span>
-                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) / {m.uom_name}</span>
+                                                                        <span>Cant: {m.quantity_planned} {m.uom_name}</span>
+                                                                        <span>•</span>
+                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1211,6 +1215,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <span className={cn(isReceived ? "text-green-600" : "text-amber-600")}>{statusLabel}</span>
                                                                         <span>•</span>
                                                                         <span>{m.supplier_name}</span>
+                                                                        <span>•</span>
+                                                                        <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                         <span>•</span>
                                                                         <span>OC: {m.purchase_order_number || '---'}</span>
                                                                     </div>

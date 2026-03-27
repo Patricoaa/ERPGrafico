@@ -125,12 +125,12 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
         try {
             await api.delete(`/production/boms/${bom.id}/`)
-            toast.success("BOM eliminada")
+            toast.success("Lista de Materiales eliminada")
             setIsDeleteModalOpen(false)
             fetchBoms()
         } catch (error) {
             console.error("Error deleting BOM:", error)
-            toast.error("Error al eliminar BOM")
+            toast.error("Error al eliminar Lista de Materiales")
         }
     }
 
@@ -139,7 +139,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
         try {
             await api.patch(`/production/boms/${bom.id}/`, { active: true })
-            toast.success("BOM establecida como activa")
+            toast.success("Lista de Materiales establecida como activa")
             fetchBoms()
         } catch (error) {
             console.error("Error updating BOM:", error)
@@ -164,7 +164,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         <div>
                             <h3 className="text-base font-bold flex items-center gap-2">
                                 <Workflow className="h-5 w-5 text-primary" />
-                                Listas de Materiales (BOM)
+                                Listas de Materiales
                             </h3>
                             <p className="text-xs text-muted-foreground mt-1">
                                 Defina los componentes necesarios para fabricar este producto.
@@ -418,7 +418,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 title="Eliminar Lista de Materiales"
                 variant="destructive"
                 onConfirm={() => { if (bomToDelete) return handleDelete(bomToDelete, true) }}
-                confirmText="Eliminar BOM"
+                confirmText="Eliminar Lista de Materiales"
                 description={
                     <p>
                         ¿Está seguro de que desea eliminar la lista de materiales <strong>{bomToDelete?.name}</strong>?

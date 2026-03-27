@@ -130,10 +130,10 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     return (
                                         <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
-                                                <FormLabel className={FORM_STYLES.label}>Posee Receta (BOM)</FormLabel>
+                                                <FormLabel className={FORM_STYLES.label}>Posee Lista de Materiales</FormLabel>
                                                 <FormDescription className="text-[10px]">
                                                     {shouldDisable
-                                                        ? "Los productos Express requieren BOM obligatorio."
+                                                        ? "Los productos Express requieren Lista de Materiales obligatoria."
                                                         : "Detección automática por modo seleccionado."}
                                                 </FormDescription>
                                             </div>
@@ -306,7 +306,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 <div className="flex-1 space-y-1 mr-4">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                                            <Layers className="h-3 w-3" /> Gestión de Recetas (BOM)
+                                            <Layers className="h-3 w-3" /> Gestión de Listas de Materiales
                                         </span>
                                         <div className="flex-1 h-px bg-border" />
                                     </div>
@@ -323,7 +323,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                             if (!loadedBoms) return;
                                             const mapped = loadedBoms.map(b => ({
                                                 id: b.id,
-                                                name: b.name || "BOM",
+                                                name: b.name || "Lista de Materiales",
                                                 active: b.active || false,
                                                 lines: b.lines?.length > 0 ? b.lines.map((l: any) => ({
                                                     id: l.id,
