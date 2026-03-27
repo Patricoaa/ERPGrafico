@@ -399,7 +399,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 JournalItem.objects.create(
                     entry=entry,
                     account=receivable_account,
-                    partner=contact.name,
+                    partner=contact,
+                    partner_name=contact.name,
                     label=f"Cierre de deuda incobrable RUT {contact.tax_id}",
                     debit=0,
                     credit=total_balance

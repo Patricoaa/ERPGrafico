@@ -292,7 +292,8 @@ class BillingService:
                 account=advance_account,
                 debit=total_advanced,
                 credit=0,
-                partner=order.customer.name
+                partner=order.customer,
+                partner_name=order.customer.name
             )
             
             # Credit: Receivable Account (Reduce what they owe us)
@@ -301,7 +302,8 @@ class BillingService:
                 account=receivable_account,
                 debit=0,
                 credit=total_advanced,
-                partner=order.customer.name
+                partner=order.customer,
+                partner_name=order.customer.name
             )
             
             JournalEntryService.post_entry(recon_entry)
@@ -414,7 +416,8 @@ class BillingService:
                 account=payable_account,
                 debit=total_prepaid,
                 credit=0,
-                partner=order.supplier.name
+                partner=order.supplier,
+                partner_name=order.supplier.name
             )
             
             # Credit: Prepayment Account (Clear the advance)
@@ -423,7 +426,8 @@ class BillingService:
                 account=prepayment_account,
                 debit=0,
                 credit=total_prepaid,
-                partner=order.supplier.name
+                partner=order.supplier,
+                partner_name=order.supplier.name
             )
             
             JournalEntryService.post_entry(recon_entry)

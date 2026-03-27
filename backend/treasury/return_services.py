@@ -133,7 +133,8 @@ class TreasuryReturnService:
                 account=partner_account,
                 debit=amount,
                 credit=0,
-                partner=payment.contact.name if payment.contact else None,
+                partner=payment.contact,
+                partner_name=payment.contact.name if payment.contact else None,
                 label=f"Devolución pago - {reason}"
             )
             
@@ -173,7 +174,8 @@ class TreasuryReturnService:
                 account=partner_account,
                 debit=0,
                 credit=amount,
-                partner=payment.contact.name if payment.contact else None,
+                partner=payment.contact,
+                partner_name=payment.contact.name if payment.contact else None,
                 label=f"Devolución pago - {reason}"
             )
         

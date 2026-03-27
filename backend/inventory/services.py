@@ -12,7 +12,7 @@ from typing import Tuple, Optional
 class StockService:
     @staticmethod
     @transaction.atomic
-    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str, adjustment_reason: str = None, uom: UoM = None):
+    def adjust_stock(product: Product, warehouse: Warehouse, quantity: Decimal, unit_cost: Decimal, description: str, adjustment_reason: str = None, uom: UoM = None, partner_contact=None):
         """
         Creates a Stock Move (Adjustment) and the corresponding Journal Entry.
         Handles cost ponderation for entries and uses specific accounts from AccountingSettings.
@@ -119,7 +119,18 @@ class StockService:
         # Determine Counterpart Account based on reason
         contra_account = None
         
-        if adjustment_reason == StockMove.AdjustmentReason.INITIAL:
+        if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION:
+            # Use partner's individual account or the generic capital contributions account
+            if partner_contact and partner_contact.partner_account:
+                contra_account = partner_contact.partner_account
+            else:
+                contra_account = settings.partner_capital_contribution_account or settings.initial_inventory_account
+        elif adjustment_reason == StockMove.AdjustmentReason.PARTNER_WITHDRAWAL:
+            if partner_contact and partner_contact.partner_account:
+                contra_account = partner_contact.partner_account
+            else:
+                contra_account = settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
+        elif adjustment_reason == StockMove.AdjustmentReason.INITIAL:
             contra_account = settings.initial_inventory_account
         elif adjustment_reason == StockMove.AdjustmentReason.REVALUATION:
             contra_account = settings.revaluation_account
@@ -144,17 +155,38 @@ class StockService:
 
         if quantity > 0:
             # Entry: Debit Asset, Credit Counterpart
-            JournalItem.objects.create(entry=entry, account=asset_account, debit=total_value, credit=0, label=description)
-            JournalItem.objects.create(entry=entry, account=contra_account, debit=0, credit=total_value, label=description)
+            JournalItem.objects.create(entry=entry, account=asset_account, debit=total_value, credit=0, label=description, partner=partner_contact)
+            JournalItem.objects.create(entry=entry, account=contra_account, debit=0, credit=total_value, label=description, partner=partner_contact)
         else:
             # Exit: Debit Counterpart, Credit Asset
-            JournalItem.objects.create(entry=entry, account=contra_account, debit=total_value, credit=0, label=description)
-            JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=total_value, label=description)
+            JournalItem.objects.create(entry=entry, account=contra_account, debit=total_value, credit=0, label=description, partner=partner_contact)
+            JournalItem.objects.create(entry=entry, account=asset_account, debit=0, credit=total_value, label=description, partner=partner_contact)
             
         JournalEntryService.post_entry(entry)
         
         move.journal_entry = entry
         move.save()
+
+        # Create PartnerTransaction if this is a partner-related adjustment
+        if partner_contact and adjustment_reason in [
+            StockMove.AdjustmentReason.PARTNER_CONTRIBUTION,
+            StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
+        ]:
+            from contacts.partner_models import PartnerTransaction
+            tx_type = (
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
+                if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION
+                else PartnerTransaction.Type.WITHDRAWAL
+            )
+            PartnerTransaction.objects.create(
+                partner=partner_contact,
+                transaction_type=tx_type,
+                amount=total_value,
+                date=timezone.now().date(),
+                description=f"{description} - {product.internal_code}",
+                journal_entry=entry,
+                stock_move=move,
+            )
         
         return move
 

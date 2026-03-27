@@ -667,7 +667,8 @@ class PurchasingService:
                 account=payable_account, 
                 debit=total_amount, 
                 credit=0, 
-                partner=order.supplier.name
+                partner=order.supplier,
+                partner_name=order.supplier.name
             )
         else:
             # Debit Note: Increases debt -> Credit AP (we owe more)
@@ -676,7 +677,8 @@ class PurchasingService:
                 account=payable_account, 
                 debit=0, 
                 credit=total_amount, 
-                partner=order.supplier.name
+                partner=order.supplier,
+                partner_name=order.supplier.name
             )
 
         # 4. Reverse Stock Input Account (clearing account)

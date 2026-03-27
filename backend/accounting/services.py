@@ -159,10 +159,12 @@ class AccountingService:
             # 3.1 Paid-in Capital
             ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
             ('3.1.01', 'Capital Social', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.02', 'Aportes de Capital', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.04', 'Cuenta Particular de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, None, None, None, None),
             ('3.2.01', 'Resultados de Ejercicios Anteriores', AccountType.EQUITY, '3.2', None, None, None),
             ('3.2.02', 'Resultado del Ejercicio', AccountType.EQUITY, '3.2', None, None, None),
-            ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
