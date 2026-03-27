@@ -174,7 +174,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                       <Factory className="h-3.5 w-3.5" /> Recetas de Producción
                   </h4>
                   <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">
-                    BOM REQUERIDO
+                    LdM REQUERIDA
                   </Badge>
                 </div>
                 
@@ -203,7 +203,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                             className="w-full text-xs h-9 rounded-xl gap-2 font-bold"
                             onClick={() => onTabChange?.("manufacturing")}
                          >
-                            <Settings2 className="h-3.5 w-3.5" /> Gestionar Recetas (BOM)
+                            <Settings2 className="h-3.5 w-3.5" /> Gestionar Listas de Materiales
                         </Button>
                     )}
                 </div>

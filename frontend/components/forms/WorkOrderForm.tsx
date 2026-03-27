@@ -277,7 +277,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     async function onSubmit(data: WorkOrderFormValues) {
         if (selectedManualProduct?.requires_bom_validation) {
-            toast.error(`El producto "${selectedManualProduct.name}" requiere una Lista de Materiales (BOM) asignada antes de fabricar.`)
+            toast.error(`El producto "${selectedManualProduct.name}" requiere una Lista de Materiales asignada antes de fabricar.`)
             return
         }
 
