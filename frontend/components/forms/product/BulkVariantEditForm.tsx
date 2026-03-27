@@ -16,12 +16,14 @@ const bulkEditSchema = z.object({
   // For BOM assignment
   has_bom: z.boolean().default(false),
   apply_has_bom: z.boolean().default(false),
+  copy_bom_from: z.string().optional(),
 })
 
 type BulkEditValues = z.infer<typeof bulkEditSchema>
 
 interface BulkVariantEditFormProps {
   selectedVariants: any[]
+  availableVariants?: any[] // All variants of the product to use as BOM sources
   onSaved: (updatedVariants: any[]) => void
   onCancel: () => void
 }
@@ -29,7 +31,7 @@ interface BulkVariantEditFormProps {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect } from "react"
 
-export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: BulkVariantEditFormProps) {
+export function BulkVariantEditForm({ selectedVariants, availableVariants = [], onSaved, onCancel }: BulkVariantEditFormProps) {
   const [loading, setLoading] = useState(false)
   const [uoms, setUoms] = useState<any[]>([])
 
@@ -53,6 +55,7 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
       sale_uom: "",
       has_bom: false,
       apply_has_bom: false,
+      copy_bom_from: "",
     }
   })
 
@@ -63,6 +66,11 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
     if (data.apply_has_bom) {
         payload.has_bom = data.has_bom
         if (data.has_bom) payload.product_type = "MANUFACTURABLE"
+    }
+    if (data.copy_bom_from && data.copy_bom_from !== "" && data.copy_bom_from !== "none") {
+        payload.copy_bom_from = Number(data.copy_bom_from)
+        payload.has_bom = true
+        payload.product_type = "MANUFACTURABLE"
     }
 
     if (Object.keys(payload).length === 0) {
@@ -76,8 +84,9 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
             ...v,
             sale_price: payload.sale_price !== undefined ? payload.sale_price : v.sale_price,
             sale_uom: payload.sale_uom !== undefined ? payload.sale_uom : v.sale_uom,
-            has_active_bom: payload.has_bom !== undefined ? payload.has_bom : v.has_active_bom,
-            product_type: payload.product_type !== undefined ? payload.product_type : v.product_type
+            has_active_bom: payload.copy_bom_from !== undefined ? true : (payload.has_bom !== undefined ? payload.has_bom : v.has_active_bom),
+            product_type: payload.product_type !== undefined ? payload.product_type : v.product_type,
+            copy_bom_from: payload.copy_bom_from
         }
     })
 
@@ -183,6 +192,37 @@ export function BulkVariantEditForm({ selectedVariants, onSaved, onCancel }: Bul
                       )}
                     />
                 )}
+
+                <FormField
+                  control={form.control}
+                  name="copy_bom_from"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 pt-2 border-t border-dashed border-blue-200">
+                      <FormLabel className="text-xs font-bold text-blue-900">Copiar Receta (BOM) desde:</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger className="h-9 text-sm bg-white/70 border-blue-200">
+                            <SelectValue placeholder="Ninguna / Sin cambios" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-[300px]">
+                           <SelectItem value="none" className="italic text-muted-foreground">No copiar receta</SelectItem>
+                           {availableVariants
+                             .filter(v => v.has_active_bom)
+                             .map((v) => (
+                               <SelectItem key={v.id} value={v.id.toString()}>
+                                 {v.variant_display_name || v.name} ({v.internal_code || v.code})
+                               </SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-[10px]">
+                        Elegir variante que ya tenga una LdM configurada para replicarla.
+                      </FormDescription>
+                      <FormMessage className="text-[10px]" />
+                    </FormItem>
+                  )}
+                />
              </div>
 
           </div>

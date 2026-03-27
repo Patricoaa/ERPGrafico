@@ -42,6 +42,7 @@ const materialLineSchema = z.object({
     quantity: z.coerce.number().min(1, "Cantidad debe ser mayor a 0"),
     uom: z.string().min(1, "Unidad requerida"),
     uom_name: z.string().optional(),
+    component_uom_category: z.number().optional(),
     notes: z.string().optional()
 })
 
@@ -83,6 +84,7 @@ type BOMFormValues = {
         quantity: number
         uom?: string
         uom_name?: string
+        component_uom_category?: number
         notes?: string
     }[]
     service_lines: {
@@ -230,6 +232,7 @@ export function BOMFormDialog({
                         quantity: l.quantity,
                         uom: l.uom?.toString() || "",
                         uom_name: l.uom_name || "",
+                        component_uom_category: l.uom_category, // Assuming backend provides this
                         notes: l.notes || ""
                     })),
                     service_lines: outsourcedLines.map((l: any) => ({
@@ -639,6 +642,9 @@ export function BOMFormDialog({
                                                                                         form.setValue(`lines.${index}.uom`, uomId)
                                                                                         form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
                                                                                     }
+                                                                                    if (p.uom_category) {
+                                                                                        form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
+                                                                                    }
 
                                                                                     if (p.has_variants) {
                                                                                         fetchLineVariants(p.id, index)
@@ -647,6 +653,10 @@ export function BOMFormDialog({
                                                                                 onChange={(val) => propField.onChange(val)}
                                                                                 placeholder="Buscar componente..."
                                                                                 allowedTypes={['STORABLE', 'MANUFACTURABLE']}
+                                                                                customFilter={(p: any) => 
+                                                                                    p.product_type === 'STORABLE' || 
+                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing)
+                                                                                }
                                                                                 excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                                 shouldResolveVariants={false}
                                                                                 className="h-8 text-xs"
@@ -673,6 +683,7 @@ export function BOMFormDialog({
                                                                                         form.setValue(`lines.${index}.component_name`, v.variant_display_name || v.name)
                                                                                         form.setValue(`lines.${index}.component_code`, v.internal_code || v.code)
                                                                                         form.setValue(`lines.${index}.component_cost`, Number(v.cost_price || 0))
+                                                                                        if (v.uom_category) form.setValue(`lines.${index}.component_uom_category`, v.uom_category)
                                                                                         if (v.uom) form.setValue(`lines.${index}.uom`, v.uom.toString())
                                                                                     }
                                                                                 }}
@@ -721,6 +732,7 @@ export function BOMFormDialog({
                                                                         <FormControl>
                                                                             <UoMSelector
                                                                                 context="bom"
+                                                                                categoryId={Number(form.watch(`lines.${index}.component_uom_category`)) || undefined}
                                                                                 value={field.value || ""}
                                                                                 onChange={(val) => {
                                                                                     field.onChange(val);
