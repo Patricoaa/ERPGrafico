@@ -128,6 +128,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [newMaterialQty, setNewMaterialQty] = useState("1")
     const [newMaterialUoM, setNewMaterialUoM] = useState<string>("")
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const [newMaterialVariants, setNewMaterialVariants] = useState<any[]>([])
+    const [loadingVariants, setLoadingVariants] = useState(false)
     const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([]) // Store all UoMs
     const [addingMaterial, setAddingMaterial] = useState(false)
@@ -447,15 +449,33 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
 
     useEffect(() => {
-        // Fetch UoMs
-        api.get('/inventory/uoms/').then(res => {
-            setUoMs(res.data.results || res.data)
-        })
-    }, [])
+        if (selectedProductObj?.has_variants) {
+            const fetchVariants = async () => {
+                try {
+                    setLoadingVariants(true)
+                    const res = await api.get(`/inventory/products/?parent_template=${selectedProductObj.id}`)
+                    setNewMaterialVariants(res.data.results || res.data)
+                } catch (error) {
+                    console.error("Error fetching material variants:", error)
+                    setNewMaterialVariants([])
+                } finally {
+                    setLoadingVariants(false)
+                }
+            }
+            fetchVariants()
+        } else {
+            setNewMaterialVariants([])
+        }
+    }, [selectedProductObj])
 
     const handleAddMaterial = async () => {
         if (!newMaterialProduct) {
             toast.error("Seleccione un producto")
+            return
+        }
+
+        if (selectedProductObj?.has_variants && newMaterialProduct.toString() === selectedProductObj.id.toString()) {
+            toast.error("Debe seleccionar una variante específica")
             return
         }
         if (parseFloat(newMaterialQty) <= 0) {
@@ -765,6 +785,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                             if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
                                                                                         }}
                                                                                         disabled={!!editingMaterialId}
+                                                                                        shouldResolveVariants={false}
                                                                                         customFilter={(p) => {
                                                                                             if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
                                                                                             if (p.product_type === 'CONSUMABLE') return false;
@@ -773,6 +794,35 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                             return p.product_type !== 'SERVICE'
                                                                                         }}
                                                                                     />
+                                                                                    {selectedProductObj?.has_variants && (
+                                                                                        <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                                                                                            <Select
+                                                                                                value={newMaterialProduct?.toString() || ""}
+                                                                                                onValueChange={(val) => {
+                                                                                                    setNewMaterialProduct(val)
+                                                                                                    const v = newMaterialVariants.find(vr => vr.id.toString() === val)
+                                                                                                    if (v?.uom) setNewMaterialUoM(v.uom.toString())
+                                                                                                }}
+                                                                                            >
+                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-xl">
+                                                                                                    <SelectValue placeholder="Seleccione variante requerida..." />
+                                                                                                </SelectTrigger>
+                                                                                                <SelectContent>
+                                                                                                    {newMaterialVariants.length > 0 ? (
+                                                                                                        newMaterialVariants.map(v => (
+                                                                                                            <SelectItem key={v.id} value={v.id.toString()}>
+                                                                                                                {v.variant_display_name || v.name}
+                                                                                                            </SelectItem>
+                                                                                                        ))
+                                                                                                    ) : (
+                                                                                                        <div className="p-2 text-xs text-center italic">
+                                                                                                            {loadingVariants ? "Cargando variantes..." : "Sin variantes disponibles"}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </SelectContent>
+                                                                                            </Select>
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                                 <div className="w-full md:w-32 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Cantidad</label>

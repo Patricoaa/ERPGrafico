@@ -74,7 +74,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             if (product?.has_variants) {
                 setVariantsLoading(true)
                 try {
-                    const res = await api.get(`/inventory/products/?parent_template=${product.id}`)
+                    const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true`)
                     setVariants(res.data.results || res.data)
                 } catch (e) {
                     console.error("Error loading variants", e)

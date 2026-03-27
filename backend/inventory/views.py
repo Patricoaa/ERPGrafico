@@ -74,10 +74,9 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             queryset = queryset.filter(active=True)
 
         # Variant filtering logic
-        # 1. If parent_template__isnull is explicitly provided in query_params, 
-        #    we let DjangoFilterBackend handle it (it will be applied after get_queryset).
-        # 2. If NOT provided, we apply the default behavior of hiding technical variants.
-        if 'parent_template__isnull' not in self.request.query_params:
+        # 1. If we are explicitly filtering by parent_template or parent_template__isnull, 
+        #    we do not apply the default hide_technical_variants filter.
+        if 'parent_template__isnull' not in self.request.query_params and 'parent_template' not in self.request.query_params:
             show_technical_variants = self.request.query_params.get('show_technical_variants', 'false') == 'true'
             if not show_technical_variants:
                 queryset = queryset.filter(parent_template__isnull=True)

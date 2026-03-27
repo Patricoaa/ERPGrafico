@@ -37,6 +37,7 @@ interface ProductSelectorProps {
     customFilter?: (product: any) => boolean
     customDisabled?: (product: any) => boolean
     className?: string
+    shouldResolveVariants?: boolean
 }
 
 const EMPTY_ARRAY: any[] = []
@@ -55,7 +56,8 @@ export function ProductSelector({
     onSelect,
     customFilter,
     customDisabled,
-    className
+    className,
+    shouldResolveVariants = true
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -178,7 +180,7 @@ export function ProductSelector({
             return;
         }
 
-        if (product.has_variants && product.variants && product.variants.length > 0) {
+        if (shouldResolveVariants && product.has_variants && product.variants && product.variants.length > 0) {
             setTemplateToResolve(product)
             setIsVariantDialogOpen(true)
             setOpen(false)
