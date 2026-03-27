@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, User, Building2 } from "lucide-react"
+import { Check, ChevronsUpDown, Search, Loader2, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,10 +9,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { formatRUT } from "@/lib/utils/format"
+import ContactModal from "@/features/contacts/components/ContactModal"
 
 interface Contact {
     id: number
@@ -42,6 +44,7 @@ export function AdvancedContactSelector({
     disabled
 }: AdvancedContactSelectorProps) {
     const [open, setOpen] = useState(false)
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
     const [contacts, setContacts] = useState<Contact[]>([])
     const [loading, setLoading] = useState(false)
@@ -103,8 +106,24 @@ export function AdvancedContactSelector({
         setSearchTerm("")
     }
 
+    const handleCreateSuccess = (contact?: Contact) => {
+        if (contact) {
+            handleSelect(contact)
+            // Agregamos una búsqueda extra en el background para tenerlo en la lista la próxima vez
+            setSearchTerm(contact.name)
+        }
+        setIsCreateModalOpen(false)
+    }
+
+    const initialContactTemplate = contactType === 'CUSTOMER' 
+        ? { is_default_customer: true, is_default_vendor: false } 
+        : contactType === 'SUPPLIER' 
+            ? { is_default_customer: false, is_default_vendor: true } 
+            : null;
+
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <>
+            <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
@@ -133,22 +152,49 @@ export function AdvancedContactSelector({
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Buscar por nombre, rut, código..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            autoFocus
-                        />
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
+                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                            <input
+                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Buscar por nombre, rut, código..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                        onClick={() => {
+                                            setOpen(false)
+                                            setIsCreateModalOpen(true)
+                                        }}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Crear nuevo contacto</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
                         {loading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : contacts.length === 0 ? (
-                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                {searchTerm ? "No se encontraron contactos." : "Escriba para buscar..."}
+                            <div className="p-4 text-sm text-center text-muted-foreground flex flex-col items-center gap-2">
+                                <span>{searchTerm ? "No se encontraron contactos." : "Escriba para buscar..."}</span>
+                                {searchTerm && (
+                                    <span className="text-xs opacity-70 flex items-center justify-center gap-1 mt-1">
+                                        Presione el botón <Plus className="h-3 w-3 inline" /> para crear un nuevo contacto.
+                                    </span>
+                                )}
                             </div>
                         ) : (
                             contacts.map((contact) => (
@@ -186,5 +232,15 @@ export function AdvancedContactSelector({
                 </div>
             </PopoverContent>
         </Popover>
+
+            {isCreateModalOpen && (
+                <ContactModal
+                    open={isCreateModalOpen}
+                    onOpenChange={setIsCreateModalOpen}
+                    onSuccess={handleCreateSuccess}
+                    contact={initialContactTemplate}
+                />
+            )}
+        </>
     )
 }
