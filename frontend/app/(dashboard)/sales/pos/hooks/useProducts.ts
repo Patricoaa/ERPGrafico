@@ -107,9 +107,9 @@ export function useProducts() {
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase()
             filtered = filtered.filter(p =>
-                p.name.toLowerCase().includes(term) ||
-                p.code.toLowerCase().includes(term) ||
-                p.internal_code?.toLowerCase().includes(term)
+                (p.name && p.name.toLowerCase().includes(term)) ||
+                (p.code && p.code.toLowerCase().includes(term)) ||
+                (p.internal_code && p.internal_code.toLowerCase().includes(term))
             )
         }
 

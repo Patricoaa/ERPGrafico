@@ -278,10 +278,15 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_cost = serializers.DecimalField(source='component.cost_price', max_digits=12, decimal_places=0, read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     component_stock = serializers.SerializerMethodField()
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     
     class Meta:
         model = BillOfMaterialsLine
-        fields = ['id', 'component', 'component_code', 'component_name', 'component_cost', 'component_stock', 'quantity', 'uom', 'uom_name', 'notes']
+        fields = [
+            'id', 'component', 'component_code', 'component_name', 'component_cost',
+            'component_stock', 'quantity', 'uom', 'uom_name',
+            'is_outsourced', 'supplier', 'supplier_name', 'unit_price', 'document_type'
+        ]
 
     def get_component_stock(self, obj):
         # Use annotated stock if available on the component (from prefetched queryset)
@@ -292,15 +297,34 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     def validate(self, data):
         component = data.get('component')
         uom = data.get('uom')
+        is_outsourced = data.get('is_outsourced', False)
         
         # Validate component has base UoM
         if component and not component.uom:
             raise serializers.ValidationError(
                 f"El componente '{component.name}' debe tener una UoM base asignada."
             )
+        
+        # Outsourced service validation
+        if is_outsourced:
+            if component and component.product_type != 'SERVICE':
+                raise serializers.ValidationError({
+                    'component': f"Las líneas tercerizadas solo pueden usar productos de tipo Servicio. "
+                                 f"'{component.name}' es de tipo '{component.get_product_type_display()}'."
+                })
+            supplier = data.get('supplier')
+            if not supplier:
+                raise serializers.ValidationError({
+                    'supplier': "Debe seleccionar un proveedor para el servicio tercerizado."
+                })
+            unit_price = data.get('unit_price', 0)
+            if not unit_price or float(unit_price) <= 0:
+                raise serializers.ValidationError({
+                    'unit_price': "El precio unitario debe ser mayor a 0 para servicios tercerizados."
+                })
             
         # Validate compatibility if both present - BOM allows full category flexibility
-        if component and uom:
+        if component and uom and not is_outsourced:
             from inventory.services import UoMService
             
             if not UoMService.validate_uom_compatibility(component.uom, uom):
@@ -337,14 +361,18 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         total = Decimal('0.00')
         for line in obj.lines.all():
             qty = line.quantity
-            # Convert quantity from BOM Line UoM to Component Base UoM if they differ
-            if line.uom and line.component.uom and line.uom != line.component.uom:
-                try:
-                    qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
-                except Exception:
-                    # In case of error (e.g. incompatible categories), use original quantity
-                    pass
-            total += qty * line.component.cost_price
+            
+            if line.is_outsourced:
+                # Outsourced services: use the configured unit_price (net)
+                total += qty * line.unit_price
+            else:
+                # Stock components: convert UoM and use component cost_price
+                if line.uom and line.component.uom and line.uom != line.component.uom:
+                    try:
+                        qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
+                    except Exception:
+                        pass
+                total += qty * line.component.cost_price
             
         # Divide by yield quantity to get cost per produced unit
         if obj.yield_quantity and obj.yield_quantity > 0:

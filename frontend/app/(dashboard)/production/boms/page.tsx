@@ -52,10 +52,10 @@ export default function BOMsPage() {
         if (!confirm("¿Está seguro de eliminar esta Lista de Materiales?")) return
         try {
             await api.delete(`/production/boms/${id}/`)
-            toast.success("BOM eliminado correctamente")
+            toast.success("Lista de Materiales eliminada correctamente")
             fetchBoms()
         } catch (error) {
-            toast.error("Error al eliminar BOM")
+            toast.error("Error al eliminar Lista de Materiales")
         }
     }
 
@@ -65,7 +65,7 @@ export default function BOMsPage() {
             setEditingBom(response.data)
             setIsFormOpen(true)
         } catch (error) {
-            toast.error("Error al cargar detalles del BOM")
+            toast.error("Error al cargar detalles de la Lista de Materiales")
         }
     }
 
@@ -187,7 +187,7 @@ export default function BOMsPage() {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Listas de Materiales (BOM)"
+                title="Listas de Materiales"
                 description="Gestión de estructuras de productos y costos de fabricación."
                 titleActions={
                     <Button

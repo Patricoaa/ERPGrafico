@@ -364,7 +364,6 @@ class BillOfMaterials(models.Model):
     )
     name = models.CharField(_("Nombre"), max_length=255, help_text="Ej: BOM Camiseta Roja v1")
     active = models.BooleanField(_("Activo"), default=True, help_text="Solo puede haber un BOM activo por producto")
-    notes = models.TextField(_("Notas"), blank=True)
     
     yield_quantity = models.DecimalField(
         _("Rendimiento"), 
@@ -439,7 +438,30 @@ class BillOfMaterialsLine(models.Model):
         verbose_name=_("Unidad de Medida"),
         null=True, blank=True
     )
-    notes = models.TextField(_("Notas"), blank=True)
+    
+    # Outsourcing fields (for outsourced service lines)
+    is_outsourced = models.BooleanField(_("Es Tercerizado"), default=False)
+    supplier = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='bom_lines',
+        verbose_name=_("Proveedor")
+    )
+    unit_price = models.DecimalField(
+        _("Precio Unitario Neto"),
+        max_digits=12,
+        decimal_places=0,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Precio neto por unidad (sin IVA)"
+    )
+    document_type = models.CharField(
+        _("Tipo de Documento"),
+        max_length=20,
+        choices=[('FACTURA', 'Factura'), ('BOLETA', 'Boleta')],
+        default='FACTURA'
+    )
     
     sequence = models.IntegerField(_("Secuencia"), default=10, help_text="Orden de visualización")
 

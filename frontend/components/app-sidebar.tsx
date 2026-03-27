@@ -53,7 +53,7 @@ const categoryItems: Record<string, any> = {
     "production": [
         { title: "Configuración Producción", url: "/settings/production" },
         { title: "Ordenes de Trabajo", url: "/production/orders" },
-        { title: "Materiales (BOM)", url: "/production/boms" },
+        { title: "Lista de Materiales", url: "/production/boms" },
     ],
     "treasury": [
         { title: "Configuración Tesorería", url: "/settings/treasury" },

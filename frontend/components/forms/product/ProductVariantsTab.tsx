@@ -42,6 +42,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     const [isGenerating, setIsGenerating] = useState(false)
     const [variants, setVariants] = useState<any[]>([])
     const [isSheetOpen, setIsSheetOpen] = useState(false)
+    const [isPendingGeneration, setIsPendingGeneration] = useState(false)
 
     // Master-Detail State
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([])
@@ -112,24 +113,31 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     }
 
     const handleGenerateVariants = async () => {
-        if (!initialData?.id) {
-            toast.error("Guarde el producto base antes de generar variantes")
-            return
-        }
+        const selection = Object.entries(selectedValues).map(([id, vals]) => ({
+            attribute: Number(id),
+            values: vals
+        })).filter(item => item.values.length > 0)
 
-        const attrIds = Object.keys(selectedValues).filter(id => selectedValues[Number(id)].length > 0)
-        if (attrIds.length === 0) {
+        if (selection.length === 0) {
             toast.error("Seleccione al menos un valor de atributo")
             return
         }
 
+        if (!initialData?.id) {
+            // Case: New Product Workflow
+            form.setValue("variant_generation_selection", selection, { shouldDirty: true })
+            setIsPendingGeneration(true)
+            toast.success("Configuración de variantes guardada. Se generarán automáticamente al guardar el producto.")
+            setSelectedValues({})
+            setIsSheetOpen(false)
+            return
+        }
+
+        // Case: Existing Product Workflow
         setIsGenerating(true)
         try {
             await api.post(`/inventory/products/${initialData.id}/generate_variants/`, {
-                selection: Object.entries(selectedValues).map(([id, vals]) => ({
-                    attribute: Number(id),
-                    values: vals
-                }))
+                selection
             })
 
             toast.success("Variantes generadas con éxito")
@@ -155,8 +163,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         }
     }
 
-    const toggleVariantSelect = (id: number, e: React.MouseEvent | React.ChangeEvent) => {
-        e.stopPropagation()
+    const toggleVariantSelect = (id: number) => {
         setSelectedVariantIds(prev => {
             if (prev.includes(id)) {
                 return prev.filter(vid => vid !== id)
@@ -238,10 +245,10 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <Button 
                                 size="sm" 
                                 className="text-xs font-bold rounded-xl"
-                                disabled={!initialData || (form.watch("has_variants") && !initialData.has_variants)}
+                                disabled={availableAttributes.length === 0}
                             >
                                 <Wand2 className="h-4 w-4 mr-2" />
-                                Generador
+                                {isPendingGeneration ? "Modificar Gen." : "Generador"}
                             </Button>
                         </SheetTrigger>
                         <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl flex flex-col p-6 sm:p-8">
@@ -284,12 +291,12 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
-                                        {isGenerating ? "Generando Combinaciones..." : "Crear Variantes"}
+                                        {isGenerating ? "Generando Combinaciones..." : !initialData?.id ? "Confirmar Configuración" : "Crear Variantes"}
                                     </Button>
 
-                                    {!initialData && (
-                                        <p className="text-[11px] text-destructive text-center font-medium italic mt-3">
-                                            * Debe guardar el producto base antes de crear variantes
+                                    {!initialData?.id && (
+                                        <p className="text-[11px] text-primary text-center font-medium italic mt-3">
+                                            Las variantes se crearán automáticamente al guardar el producto base.
                                         </p>
                                     )}
                                 </div>
@@ -343,7 +350,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
                                                 <Checkbox 
                                                     checked={isSelected}
-                                                    onCheckedChange={(checked) => toggleVariantSelect(v.id, checked as unknown as React.ChangeEvent)}
+                                                    onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </TableCell>
@@ -423,9 +430,18 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                 {variants.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={7} className="h-32 text-center text-muted-foreground italic text-sm">
-                                            No se han generado variantes para este producto.
-                                            <br />
-                                            <span className="text-xs mt-1 block">Utilice el botón "Generador" arriba a la derecha.</span>
+                                            {isPendingGeneration ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <span className="text-primary font-bold">Variantes configuradas</span>
+                                                    <span className="text-xs">Se generarán automáticamente una vez que guarde este producto.</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    No se han generado variantes para este producto.
+                                                    <br />
+                                                    <span className="text-xs mt-1 block">Utilice el botón "Generador" arriba a la derecha.</span>
+                                                </>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -440,6 +456,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         {selectedVariantIds.length > 0 ? (
                             <BulkVariantEditForm 
                                 selectedVariants={selectedVariantsList}
+                                availableVariants={variants}
                                 onSaved={(updatedVariants: any[]) => {
                                     // Update local variants UI
                                     setVariants(prev => prev.map(v => {
