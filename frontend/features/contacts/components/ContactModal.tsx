@@ -55,7 +55,7 @@ interface ContactModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     contact?: any
-    onSuccess: () => void
+    onSuccess: (contact?: any) => void
 }
 
 export default function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
@@ -190,12 +190,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
+            let savedContact;
             if (contact) {
-                await updateContact({ id: contact.id, payload: values })
+                savedContact = await updateContact({ id: contact.id, payload: values })
             } else {
-                await createContact(values as any)
+                savedContact = await createContact(values as any)
             }
-            onSuccess()
+            onSuccess(savedContact)
             onOpenChange(false)
         } catch (error) {
             // Error handled by hook
