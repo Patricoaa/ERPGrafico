@@ -327,6 +327,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
     items = PayrollItemSerializer(many=True, read_only=True)
     advances = SalaryAdvanceSerializer(many=True, read_only=True)
     payments = PayrollPaymentSerializer(many=True, read_only=True)
+    employee_detail = EmployeeSerializer(source='employee', read_only=True)
     is_salary_paid = serializers.SerializerMethodField()
     is_previred_paid = serializers.SerializerMethodField()
 
@@ -334,7 +335,7 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
         model = Payroll
         fields = [
             'id', 'number', 'display_id',
-            'employee', 'employee_name', 'employee_display_id',
+            'employee', 'employee_name', 'employee_display_id', 'employee_detail',
             'period_year', 'period_month', 'period_label',
             'status', 'status_display',
             'base_salary', 'agreed_days', 'absent_days', 'worked_days',
