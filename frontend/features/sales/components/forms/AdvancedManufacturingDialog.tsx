@@ -126,7 +126,7 @@ export function AdvancedManufacturingDialog({
     const handleConfirm = () => {
         // Validation: Product description is required if shown
         if (showProductDescription && !productDescription?.trim()) {
-            toast.error("La descripción del producto es obligatoria para productos sin lista de materiales (BOM).")
+            toast.error("La descripción del producto es obligatoria para productos sin lista de materiales.")
             return
         }
 

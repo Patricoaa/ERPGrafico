@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import {
-    Package,
+    Package, Truck,
     Plus,
     Check,
     Ban,
@@ -109,7 +109,7 @@ interface WorkOrderWizardProps {
 const BASE_STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: false },
-    { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Plus, alwaysShow: true },
+    { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Truck, alwaysShow: true },
     { id: 'PREPRESS', label: 'Pre-Impresión', icon: FileText, alwaysShow: false },
     { id: 'PRESS', label: 'Impresión', icon: Printer, alwaysShow: false },
     { id: 'POSTPRESS', label: 'Post-Impresión', icon: Layers, alwaysShow: false },
@@ -128,6 +128,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [newMaterialQty, setNewMaterialQty] = useState("1")
     const [newMaterialUoM, setNewMaterialUoM] = useState<string>("")
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const [newMaterialVariants, setNewMaterialVariants] = useState<any[]>([])
+    const [loadingVariants, setLoadingVariants] = useState(false)
     const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
     const [uoms, setUoMs] = useState<any[]>([]) // Store all UoMs
     const [addingMaterial, setAddingMaterial] = useState(false)
@@ -151,7 +153,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
     const [pendingPrevStage, setPendingPrevStage] = useState<string | null>(null)
     // Rectification state
-    const [rectificationAdjustments, setRectificationAdjustments] = useState<{material_id: number, actual_quantity: number}[]>([])
+    const [rectificationAdjustments, setRectificationAdjustments] = useState<{ material_id: number, actual_quantity: number }[]>([])
     const [rectificationProducedQty, setRectificationProducedQty] = useState<number | null>(null)
     const [isRectifying, setIsRectifying] = useState(false)
     const { user } = useAuth()
@@ -447,15 +449,33 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
 
     useEffect(() => {
-        // Fetch UoMs
-        api.get('/inventory/uoms/').then(res => {
-            setUoMs(res.data.results || res.data)
-        })
-    }, [])
+        if (selectedProductObj?.has_variants) {
+            const fetchVariants = async () => {
+                try {
+                    setLoadingVariants(true)
+                    const res = await api.get(`/inventory/products/?parent_template=${selectedProductObj.id}`)
+                    setNewMaterialVariants(res.data.results || res.data)
+                } catch (error) {
+                    console.error("Error fetching material variants:", error)
+                    setNewMaterialVariants([])
+                } finally {
+                    setLoadingVariants(false)
+                }
+            }
+            fetchVariants()
+        } else {
+            setNewMaterialVariants([])
+        }
+    }, [selectedProductObj])
 
     const handleAddMaterial = async () => {
         if (!newMaterialProduct) {
             toast.error("Seleccione un producto")
+            return
+        }
+
+        if (selectedProductObj?.has_variants && newMaterialProduct.toString() === selectedProductObj.id.toString()) {
+            toast.error("Debe seleccionar una variante específica")
             return
         }
         if (parseFloat(newMaterialQty) <= 0) {
@@ -765,6 +785,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                             if (p?.uom) setNewMaterialUoM(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
                                                                                         }}
                                                                                         disabled={!!editingMaterialId}
+                                                                                        shouldResolveVariants={false}
                                                                                         customFilter={(p) => {
                                                                                             if (order?.main_product_id && p.id.toString() === order.main_product_id.toString()) return false;
                                                                                             if (p.product_type === 'CONSUMABLE') return false;
@@ -773,6 +794,35 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                             return p.product_type !== 'SERVICE'
                                                                                         }}
                                                                                     />
+                                                                                    {selectedProductObj?.has_variants && (
+                                                                                        <div className="mt-2 animate-in fade-in slide-in-from-top-1">
+                                                                                            <Select
+                                                                                                value={newMaterialProduct?.toString() || ""}
+                                                                                                onValueChange={(val) => {
+                                                                                                    setNewMaterialProduct(val)
+                                                                                                    const v = newMaterialVariants.find(vr => vr.id.toString() === val)
+                                                                                                    if (v?.uom) setNewMaterialUoM(v.uom.toString())
+                                                                                                }}
+                                                                                            >
+                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-xl">
+                                                                                                    <SelectValue placeholder="Seleccione variante requerida..." />
+                                                                                                </SelectTrigger>
+                                                                                                <SelectContent>
+                                                                                                    {newMaterialVariants.length > 0 ? (
+                                                                                                        newMaterialVariants.map(v => (
+                                                                                                            <SelectItem key={v.id} value={v.id.toString()}>
+                                                                                                                {v.variant_display_name || v.name}
+                                                                                                            </SelectItem>
+                                                                                                        ))
+                                                                                                    ) : (
+                                                                                                        <div className="p-2 text-xs text-center italic">
+                                                                                                            {loadingVariants ? "Cargando variantes..." : "Sin variantes disponibles"}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </SelectContent>
+                                                                                            </Select>
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                                 <div className="w-full md:w-32 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Cantidad</label>
@@ -818,14 +868,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                                         <div className="flex items-center gap-3">
                                                                             <div className="bg-primary/10 p-2 rounded-full">
-                                                                                <Package className="h-4 w-4 text-primary" />
+                                                                                <Truck className="h-4 w-4 text-primary" />
                                                                             </div>
                                                                             <div className="space-y-0.5">
                                                                                 <p className="text-sm font-bold">{m.component_name}</p>
                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                                                                                     <span>{m.supplier_name}</span>
                                                                                     <span>•</span>
-                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) / {m.uom_name}</span>
+                                                                                    <span>Cant: {m.quantity_planned} {m.uom_name}</span>
+                                                                                    <span>•</span>
+                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1033,14 +1085,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-primary/10 p-2 rounded-full">
-                                                                    <Package className="h-4 w-4 text-primary" />
+                                                                    <Truck className="h-4 w-4 text-primary" />
                                                                 </div>
                                                                 <div className="space-y-0.5">
                                                                     <p className="text-sm font-bold">{m.component_name}</p>
                                                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                                                                         <span>{m.supplier_name}</span>
                                                                         <span>•</span>
-                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) / {m.uom_name}</span>
+                                                                        <span>Cant: {m.quantity_planned} {m.uom_name}</span>
+                                                                        <span>•</span>
+                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1211,6 +1265,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <span className={cn(isReceived ? "text-green-600" : "text-amber-600")}>{statusLabel}</span>
                                                                         <span>•</span>
                                                                         <span>{m.supplier_name}</span>
+                                                                        <span>•</span>
+                                                                        <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                         <span>•</span>
                                                                         <span>OC: {m.purchase_order_number || '---'}</span>
                                                                     </div>

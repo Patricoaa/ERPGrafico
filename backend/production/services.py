@@ -119,7 +119,11 @@ class WorkOrderService:
                     component=line.component,
                     quantity_planned=line.quantity * factor,
                     uom=line.uom or line.component.uom,
-                    source='BOM'
+                    source='BOM',
+                    is_outsourced=line.is_outsourced,
+                    supplier=line.supplier,
+                    unit_price=line.unit_price,
+                    document_type=line.document_type,
                 )
 
         WorkOrderHistory.objects.create(
@@ -240,7 +244,11 @@ class WorkOrderService:
                     component=line.component,
                     quantity_planned=line.quantity * factor,
                     uom=line.uom or line.component.uom,
-                    source='BOM'
+                    source='BOM',
+                    is_outsourced=line.is_outsourced,
+                    supplier=line.supplier,
+                    unit_price=line.unit_price,
+                    document_type=line.document_type,
                 )
 
         WorkOrderHistory.objects.create(
@@ -348,7 +356,11 @@ class WorkOrderService:
                     component=bom_line.component,
                     quantity_planned=bom_line.quantity * factor,
                     uom=bom_line.uom or bom_line.component.uom,
-                    source='BOM'
+                    source='BOM',
+                    is_outsourced=bom_line.is_outsourced,
+                    supplier=bom_line.supplier,
+                    unit_price=bom_line.unit_price,
+                    document_type=bom_line.document_type,
                 )
 
         WorkOrderHistory.objects.create(
