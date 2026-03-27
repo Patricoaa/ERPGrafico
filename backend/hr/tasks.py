@@ -48,13 +48,21 @@ def create_monthly_draft_payrolls(self):
                     skipped_count += 1
                     continue
 
-                Payroll.objects.create(
+                from .services import PayrollService
+                payroll = Payroll.objects.create(
                     employee=employee,
                     period_year=year,
                     period_month=month,
                     status=Payroll.Status.DRAFT,
                     agreed_days=employee.dias_pactados or 30,
                 )
+                
+                # Auto-generate proforma initially
+                try:
+                    PayrollService.generate_proforma_payroll(payroll=payroll)
+                except Exception as e:
+                    logger.error(f"[HR] Error auto-generating proforma for payroll {payroll.id}: {e}")
+
                 created_count += 1
 
         logger.info(
