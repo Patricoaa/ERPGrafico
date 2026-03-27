@@ -2,7 +2,8 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q, QuerySet
-from .models import Product, Warehouse, StockMove, PricingRule, UoM
+from .models import Product, Warehouse, StockMove, PricingRule, UoM, ProductAttributeValue
+import itertools
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -616,3 +617,81 @@ class ProductService:
             })
             
         return restrictions
+    @staticmethod
+    def generate_variants(template: Product, selection: list) -> dict:
+        """
+        Generates product variants for a given template and attribute selection.
+        selection: List of {attribute: id, values: [ids]}
+        """
+        if not template.has_variants:
+            return {"error": "El producto no tiene activada la opción de variantes.", "success": False}
+            
+        # Prepare lists of values for each attribute
+        attr_values_lists = []
+        for item in selection:
+            attr_id = item.get('attribute')
+            val_ids = item.get('values', [])
+            if val_ids:
+                attr_values_lists.append(list(ProductAttributeValue.objects.filter(id__in=val_ids, attribute_id=attr_id)))
+        
+        if not attr_values_lists:
+            return {"error": "Debe seleccionar valores de atributos.", "success": False}
+            
+        # Cartesian product of attribute values
+        combinations = list(itertools.product(*attr_values_lists))
+        
+        created_count = 0
+        skipped_count = 0
+        
+        with transaction.atomic():
+            for combo in combinations:
+                # Check if variant already exists
+                existing_variants = Product.objects.filter(parent_template=template)
+                for val in combo:
+                    existing_variants = existing_variants.filter(attribute_values=val)
+                
+                # Ensure it has exactly the same number of attributes to avoid partial matches
+                existing_variants = [v for v in existing_variants if v.attribute_values.count() == len(combo)]
+                
+                if existing_variants:
+                    skipped_count += 1
+                    continue
+                
+                # Create the variant
+                variant = Product.objects.create(
+                    name=template.name,
+                    category=template.category,
+                    product_type=template.product_type,
+                    uom=template.uom,
+                    sale_uom=template.sale_uom,
+                    purchase_uom=template.purchase_uom,
+                    receiving_warehouse=template.receiving_warehouse,
+                    track_inventory=template.track_inventory,
+                    can_be_sold=template.can_be_sold,
+                    can_be_purchased=template.can_be_purchased,
+                    parent_template=template,
+                    sale_price=template.sale_price,
+                    cost_price=template.cost_price,
+                    requires_advanced_manufacturing=template.requires_advanced_manufacturing,
+                    mfg_auto_finalize=template.mfg_auto_finalize,
+                    mfg_enable_prepress=template.mfg_enable_prepress,
+                    mfg_enable_press=template.mfg_enable_press,
+                    mfg_enable_postpress=template.mfg_enable_postpress,
+                    mfg_prepress_design=template.mfg_prepress_design,
+                    mfg_prepress_specs=template.mfg_prepress_specs,
+                    mfg_prepress_folio=template.mfg_prepress_folio,
+                    mfg_press_offset=template.mfg_press_offset,
+                    mfg_press_digital=template.mfg_press_digital,
+                    mfg_postpress_finishing=template.mfg_postpress_finishing,
+                    mfg_postpress_binding=template.mfg_postpress_binding,
+                    mfg_default_delivery_days=template.mfg_default_delivery_days,
+                )
+                variant.attribute_values.set(combo)
+                variant.save()  # Triggers display name generation
+                created_count += 1
+                
+        return {
+            "success": True,
+            "created": created_count,
+            "skipped": skipped_count
+        }

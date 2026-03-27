@@ -208,9 +208,9 @@ export function ProductSelector({
 
         setFilteredProducts(
             products.filter(p =>
-                p.code.toLowerCase().includes(lowerVal) ||
+                (p.code && p.code.toLowerCase().includes(lowerVal)) ||
                 (p.internal_code && p.internal_code.toLowerCase().includes(lowerVal)) ||
-                p.name.toLowerCase().includes(lowerVal)
+                (p.name && p.name.toLowerCase().includes(lowerVal))
             )
         )
         // Reset display limit when searching

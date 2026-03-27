@@ -5,8 +5,9 @@ from .models import (
     Subscription, ProductAttribute, ProductAttributeValue
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
-from production.serializers import BillOfMaterialsSerializer
+# BillOfMaterialsSerializer will be imported locally to avoid circular dependencies
 from core.serializers import AttachmentSerializer
+from .services import ProductService
 
 class ProductAttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,11 +87,20 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
     def get_is_favorite(self, obj):
         return getattr(obj, 'is_favorite', False)
 
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    uom_category = serializers.SerializerMethodField()
+    
+    def get_uom_category(self, obj):
+        if not obj.uom:
+            return None
+        return obj.uom.category_id
+
     class Meta:
         model = Product
         fields = [
             'id', 'internal_code', 'name', 'variant_display_name', 
-            'sale_price', 'cost_price', 'is_favorite', 'attribute_values', 'attribute_values_data'
+            'sale_price', 'cost_price', 'is_favorite', 'attribute_values', 'attribute_values_data',
+            'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category'
         ]
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -106,6 +116,11 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_is_favorite(self, obj):
         return getattr(obj, 'is_favorite', False)
+
+    def get_uom_category(self, obj):
+        if not obj.uom:
+            return None
+        return obj.uom.category_id
     # Variants fields
     variants = serializers.SerializerMethodField()
     variants_count = serializers.IntegerField(read_only=True)
@@ -126,11 +141,16 @@ class ProductSerializer(serializers.ModelSerializer):
     qty_available = serializers.SerializerMethodField()
     
     # Manufacturing fields: Support multiple BOMs
-    boms = BillOfMaterialsSerializer(many=True, required=False)
+    boms = serializers.SerializerMethodField()
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, read_only=True)
     available_uoms = serializers.SerializerMethodField()
+    variant_generation_selection = serializers.JSONField(write_only=True, required=False)
     
+    def get_boms(self, obj):
+        from production.serializers import BillOfMaterialsSerializer
+        return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
+
     class Meta:
         model = Product
         fields = [
@@ -156,7 +176,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'attachments', 'available_uoms',
             # Variant Fields
             'has_variants', 'variants_count', 'parent_template', 'attribute_values', 'attribute_values_data',
-            'variant_display_name', 'variants',
+            'variant_display_name', 'variants', 'variant_generation_selection',
             # BOM validation fields
             'has_active_bom', 'active_bom_id', 'requires_bom_validation'
         ]
@@ -179,14 +199,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates']:
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
         
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection']:
             if field in ret:
                 raw_value = ret[field]
                 
@@ -315,6 +335,7 @@ class ProductSerializer(serializers.ModelSerializer):
         pcf_data = validated_data.pop('product_custom_fields', [])
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         attribute_values = validated_data.pop('attribute_values', [])
+        variant_generation_selection = validated_data.pop('variant_generation_selection', None)
         
         product = Product.objects.create(**validated_data)
         
@@ -334,6 +355,9 @@ class ProductSerializer(serializers.ModelSerializer):
         for pcf in pcf_data:
             ProductCustomField.objects.create(product=product, **pcf)
         
+        # Handle initial variant generation
+        if variant_generation_selection and product.has_variants:
+            ProductService.generate_variants(product, variant_generation_selection)
             
         return product
 
@@ -424,6 +448,47 @@ class ProductSerializer(serializers.ModelSerializer):
                             variant_product.sale_uom_id = uom_id
                         else:
                             variant_product.sale_uom = None
+
+                    # Handle BOM cloning
+                    copy_bom_from_id = update_data.get('copy_bom_from')
+                    if copy_bom_from_id:
+                        from production.models import BillOfMaterials, BillOfMaterialsLine
+                        try:
+                            # source_product could be the template or another variant
+                            source_product = Product.objects.get(id=copy_bom_from_id)
+                            source_bom = source_product.boms.filter(active=True).first()
+                            
+                            if source_bom:
+                                # Overwrite existing BOMs for this variant
+                                variant_product.boms.all().delete()
+                                
+                                # Clone BOM
+                                new_bom = BillOfMaterials.objects.create(
+                                    product=variant_product,
+                                    name=source_bom.name,
+                                    active=True,
+                                    yield_quantity=source_bom.yield_quantity,
+                                    yield_uom=source_bom.yield_uom
+                                )
+                                # Clone Lines
+                                for line in source_bom.lines.all():
+                                    BillOfMaterialsLine.objects.create(
+                                        bom=new_bom,
+                                        component=line.component,
+                                        quantity=line.quantity,
+                                        uom=line.uom,
+                                        is_outsourced=line.is_outsourced,
+                                        supplier=line.supplier,
+                                        unit_price=line.unit_price,
+                                        document_type=line.document_type
+                                    )
+                                variant_product.has_bom = True
+                                # If variant wasn't manufacturable, make it so
+                                if variant_product.product_type != Product.Type.MANUFACTURABLE:
+                                    variant_product.product_type = Product.Type.MANUFACTURABLE
+
+                        except Product.DoesNotExist:
+                            pass
 
                     variant_product.save()
                 except Product.DoesNotExist:
