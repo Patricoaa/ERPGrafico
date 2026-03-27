@@ -33,6 +33,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { FORM_STYLES } from "@/lib/styles"
+import { PayrollDetailSheet } from "@/components/hr/payrolls/PayrollDetailSheet"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -60,6 +61,15 @@ export default function PayrollsPage() {
     // State for payment dialogs
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
     const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
+
+    // State for Detail Sheet
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
+
+    const openDetail = (id: number) => {
+        setActivePayrollId(id)
+        setDetailSheetOpen(true)
+    }
 
     const fetchPayrolls = useCallback(async () => {
         try {
@@ -227,7 +237,7 @@ export default function PayrollsPage() {
                 const p = row.original;
                 return (
                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); router.push(`/hr/payrolls/${p.id}`) }}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
                             <Eye className="h-3.5 w-3.5" />
                         </Button>
 
@@ -332,7 +342,7 @@ export default function PayrollsPage() {
                         <CreatePayrollDialog
                             open={dialogOpen}
                             onOpenChange={setDialogOpen}
-                            onSaved={(id) => { setDialogOpen(false); router.push(`/hr/payrolls/${id}`) }}
+                            onSaved={(id) => { setDialogOpen(false); openDetail(id) }}
                             trigger={
                                 <PageHeaderButton
                                     onClick={() => setDialogOpen(true)}
@@ -371,7 +381,14 @@ export default function PayrollsPage() {
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={20}
-                    onRowClick={(row: Payroll) => router.push(`/hr/payrolls/${row.id}`)}
+                    onRowClick={(row: Payroll) => openDetail(row.id)}
+                />
+
+                <PayrollDetailSheet 
+                    payrollId={activePayrollId}
+                    open={detailSheetOpen}
+                    onOpenChange={setDetailSheetOpen}
+                    onUpdate={fetchPayrolls}
                 />
 
                 <PaymentDialog
