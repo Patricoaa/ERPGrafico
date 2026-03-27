@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
+import { Trash2, Plus, Loader2, Calculator, Info, Package, X } from "lucide-react"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { SearchBar } from "@/app/(dashboard)/sales/pos/components/SearchBar"
 import { CategoryFilter } from "@/app/(dashboard)/sales/pos/components/CategoryFilter"
@@ -73,11 +73,14 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     // Use React Query for shared caching and better performance
     const { data: products = [], isLoading: loadingProducts } = useQuery({
         queryKey: ['products', { active: true, can_be_sold: true }],
-        queryFn: () => inventoryApi.getProducts({ 
-            active: true, 
-            can_be_sold: true,
-            fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
-        }),
+        queryFn: async () => {
+            const data = await inventoryApi.getProducts({ 
+                active: true, 
+                can_be_sold: true,
+                fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
+            })
+            return data as any as Product[]
+        },
         enabled: open,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
     })
@@ -185,26 +188,56 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     return (
         <Sheet open={open} onOpenChange={handleClose}>
             <SheetContent 
-                side="left" 
-                className="max-w-[85vw] w-[85vw] sm:max-w-[85vw] flex flex-col p-0 border-r shadow-2xl z-[100]"
+                side="right" 
+                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
             >
-                <SheetHeader className="p-6 pb-2 border-b">
+                <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
-                        <div className="flex flex-col gap-1">
-                            <SheetTitle className="flex items-center gap-2">
-                                <Calculator className="h-6 w-6 text-blue-600" />
-                                <span>Calculadora de Costos</span>
-                            </SheetTitle>
-                            <SheetDescription className="text-xs">
-                                Simulación rápida de materiales para determinar costos de producción
-                            </SheetDescription>
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 shadow-sm border border-blue-100 hidden sm:block">
+                                <Calculator className="h-6 w-6" />
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-3">
+                                    <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
+                                        Calculadora de Costos
+                                    </SheetTitle>
+                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
+                                        <Info className="h-3 w-3" />
+                                        Modo Simulación
+                                    </Badge>
+                                </div>
+                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
+                                    Simulación rápida de materiales para determinar costos de producción
+                                </SheetDescription>
+                            </div>
                         </div>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 px-3 py-1 animate-pulse shrink-0">
-                            <Info className="h-3 w-3" />
-                            Modo Simulación
-                        </Badge>
                     </div>
                 </SheetHeader>
+
+                {/* Custom Close Button for Sheet (Top Right Corner) */}
+                <div className="absolute top-4 right-4 z-[60]">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        onClick={handleClose}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                {/* Custom Close Button for Sheet (Top Right Corner) */}
+                <div className="absolute top-4 right-4 z-[60]">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        onClick={handleClose}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
 
                 <div className="flex-1 overflow-hidden flex divide-x">
                     {/* Panel Izquierdo: Catálogo */}
