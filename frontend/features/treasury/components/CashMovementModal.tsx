@@ -62,7 +62,10 @@ export function CashMovementModal({
                     <span>Nuevo Movimiento de Tesorería</span>
                 </div>
             }
-            description="Registre traspasos, depósitos o retiros manuales de socios o generales."
+            description={variant === 'partners' 
+                ? "Registre aportes o retiros de capital societario en efectivo."
+                : "Registre traspasos, depósitos o retiros manuales de socios o generales."
+            }
             size="md"
         >
             <div className="pt-2 pb-6">

@@ -165,7 +165,6 @@ class Command(BaseCommand):
             # Inventory Adjustment Verification
             'Inv. Gain': settings.adjustment_income_account,
             'Inv. Loss': settings.adjustment_expense_account,
-            'Initial Inv.': settings.initial_inventory_account,
             'Revaluation': settings.revaluation_account,
             
             # Treasury Reconciliation Verification
@@ -807,7 +806,7 @@ class Command(BaseCommand):
             return
 
         settings = AccountingSettings.objects.first()
-        initial_inv_account = settings.initial_inventory_account if settings else accounts['capital']
+        initial_inv_account = accounts['capital']  # Use capital account directly (initial_inventory_account was removed)
         
         if not initial_inv_account:
             self.stdout.write(self.style.ERROR("  No initial inventory account found."))

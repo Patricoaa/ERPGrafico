@@ -175,7 +175,8 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         
         products = Product.objects.filter(
             Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
-            Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True)
+            Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True) |
+            Q(product_type=Product.Type.MANUFACTURABLE, requires_advanced_manufacturing=False, mfg_auto_finalize=False)
         ).select_related('category')
         report = []
         
@@ -687,7 +688,8 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     @action(detail=False, methods=['post'])
     def adjust(self, request):
         """
-        Custom endpoint to perform manual stock adjustment
+        Custom endpoint to perform manual stock adjustment.
+        Supports partner_contact_id for PARTNER_CONTRIBUTION/PARTNER_WITHDRAWAL reasons.
         """
         try:
             product_id = request.data.get('product_id')
@@ -697,6 +699,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             description = request.data.get('description', 'Manual Adjustment')
             adjustment_reason = request.data.get('adjustment_reason')
             uom_id = request.data.get('uom_id')
+            partner_contact_id = request.data.get('partner_contact_id')
 
             product = Product.objects.get(pk=product_id)
             warehouse = Warehouse.objects.get(pk=warehouse_id)
@@ -708,7 +711,30 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
                 except UoM.DoesNotExist:
                    pass
 
-            move = StockService.adjust_stock(product, warehouse, quantity, unit_cost, description, adjustment_reason, uom=uom)
+            # Resolve partner contact for partner-related adjustments
+            partner_contact = None
+            partner_reasons = [
+                StockMove.AdjustmentReason.PARTNER_CONTRIBUTION,
+                StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
+            ]
+            if adjustment_reason in partner_reasons:
+                if not partner_contact_id:
+                    return Response(
+                        {'error': 'Debe seleccionar un socio para aportes o retiros de capital en inventario.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                from contacts.models import Contact
+                try:
+                    partner_contact = Contact.objects.get(pk=partner_contact_id)
+                except Contact.DoesNotExist:
+                    return Response({'error': 'Socio no encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
+                if not partner_contact.is_partner:
+                    return Response({'error': 'El contacto seleccionado no es un socio.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            move = StockService.adjust_stock(
+                product, warehouse, quantity, unit_cost, description,
+                adjustment_reason, uom=uom, partner_contact=partner_contact
+            )
             return Response(StockMoveSerializer(move).data, status=status.HTTP_201_CREATED)
 
         except Exception as e:

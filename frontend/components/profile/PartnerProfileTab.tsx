@@ -30,7 +30,6 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
 import { Button } from "@/components/ui/button"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
@@ -42,8 +41,6 @@ interface Props {
 export function PartnerProfileTab({ contactId }: Props) {
     const [statement, setStatement] = useState<PartnerStatement | null>(null)
     const [loading, setLoading] = useState(true)
-    const [isCashMovementModalOpen, setIsCashMovementModalOpen] = useState(false)
-    const [fixedMoveType, setFixedMoveType] = useState<string | undefined>()
     
     // Movement Details state
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -85,27 +82,23 @@ export function PartnerProfileTab({ contactId }: Props) {
             accessorKey: "transaction_type",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Operación" />,
             cell: ({ row }) => {
-                const tType = row.getValue("transaction_type") as string;
-                let label = tType;
+                const tx = row.original;
+                const type = tx.transaction_type;
                 let variant: 'success' | 'warning' | 'info' | 'secondary' = 'secondary';
                 
-                if (tType === 'CAPITAL_CASH' || tType === 'CAPITAL_INVENTORY' || tType === 'CAPITAL_CONTRIBUTION') { 
-                    label = 'Aporte de Capital'; 
-                    variant = 'success'; 
-                } else if (tType === 'WITHDRAWAL' || tType === 'PARTNER_WITHDRAWAL') { 
-                    label = 'Retiro de Socio'; 
-                    variant = 'warning'; 
-                } else if (tType === 'LOAN_IN') {
-                    label = 'Préstamo de Socio';
+                if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
+                    variant = 'success';
+                } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
+                    variant = 'warning';
+                } else if (type === 'LOAN_IN') {
                     variant = 'info';
-                } else if (tType === 'LOAN_OUT') {
-                    label = 'Préstamo a Socio';
-                    variant = 'secondary';
                 }
 
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Badge variant={variant as any}>{label}</DataCell.Badge>
+                        <DataCell.Badge variant={variant as any}>
+                            {tx.transaction_type_display || type}
+                        </DataCell.Badge>
                     </div>
                 );
             },
@@ -116,7 +109,7 @@ export function PartnerProfileTab({ contactId }: Props) {
             cell: ({ row }) => {
                 const type = row.original.transaction_type
                 const amount = row.getValue("amount") as string
-                const isNegative = type === 'WITHDRAWAL' || type === 'PARTNER_WITHDRAWAL' || type === 'LOAN_OUT'
+                const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
                 
                 return (
                     <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-rose-600' : 'text-emerald-600')}>
