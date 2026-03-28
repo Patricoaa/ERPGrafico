@@ -29,5 +29,15 @@ export const accountingApi = {
 
     deleteAccount: async (id: number): Promise<void> => {
         await api.delete(`/accounting/accounts/${id}/`)
+    },
+
+    getSettings: async () => {
+        const response = await api.get('/accounting/settings/current/')
+        return response.data
+    },
+
+    updateSettings: async (data: any) => {
+        const response = await api.patch('/accounting/settings/current/', data)
+        return response.data
     }
 }

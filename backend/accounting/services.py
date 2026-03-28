@@ -159,10 +159,12 @@ class AccountingService:
             # 3.1 Paid-in Capital
             ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
             ('3.1.01', 'Capital Social', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.02', 'Aportes de Capital', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.04', 'Cuenta Particular de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, None, None, None, None),
             ('3.2.01', 'Resultados de Ejercicios Anteriores', AccountType.EQUITY, '3.2', None, None, None),
             ('3.2.02', 'Resultado del Ejercicio', AccountType.EQUITY, '3.2', None, None, None),
-            ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
@@ -264,6 +266,8 @@ class AccountingService:
             'default_tax_receivable_account': '1.1.04.01',
             'default_tax_payable_account': '2.1.02.01',
             'default_uncollectible_expense_account': '5.2.26',
+            'partner_current_account': '3.1.04',
+            'partner_capital_social_account': '3.1.01',
             
             # Cuentas de inventario
             'default_inventory_account': '1.1.03.01',  # Mantener para compatibilidad
@@ -313,7 +317,7 @@ class AccountingService:
             # Inventory Adjustments (Missing)
             'adjustment_income_account': '4.2.02',  # Ganancia por Ajuste de Inventario (needs creation)
             'adjustment_expense_account': '5.2.07', # Pérdida por Ajuste de Inventario (needs creation)
-            'initial_inventory_account': '3.1.02',  # Contrapartida Inicial (needs creation)
+            # initial_inventory_account removed — field deprecated
             'revaluation_account': '5.1.03',        # Ajuste por Revalorización (needs creation)
 
             # Treasury Reconciliation (Missing)

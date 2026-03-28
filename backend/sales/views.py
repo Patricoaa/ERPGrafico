@@ -449,7 +449,8 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 JournalItem.objects.create(
                     entry=entry,
                     account=receivable_account,
-                    partner=contact.name,
+                    partner=contact,
+                    partner_name=contact.name,
                     label=f"Cierre de deuda {order.number}",
                     debit=0,
                     credit=balance

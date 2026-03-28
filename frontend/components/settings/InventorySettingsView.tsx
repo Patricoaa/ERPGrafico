@@ -29,7 +29,6 @@ const inventorySchema = z.object({
     // Adjustment accounts
     adjustment_income_account: z.string().nullable(),
     adjustment_expense_account: z.string().nullable(),
-    initial_inventory_account: z.string().nullable(),
     revaluation_account: z.string().nullable(),
     // COGS accounts
     merchandise_cogs_account: z.string().nullable(),
@@ -57,7 +56,6 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             stock_output_account: null,
             adjustment_income_account: null,
             adjustment_expense_account: null,
-            initial_inventory_account: null,
             revaluation_account: null,
             merchandise_cogs_account: null,
             manufactured_cogs_account: null,
@@ -178,7 +176,6 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                         <AccountField form={form} name="adjustment_income_account" label="Sobrantes" accountType="INCOME" />
                                         <AccountField form={form} name="adjustment_expense_account" label="Mermas" accountType="EXPENSE" />
                                     </div>
-                                    <AccountField form={form} name="initial_inventory_account" label="Carga de Stock Inicial (Patrimonio)" accountType="EQUITY" />
                                     <AccountField form={form} name="revaluation_account" label="Revalorización de Stock" accountType="INCOME" />
                                 </CardContent>
                             </Card>

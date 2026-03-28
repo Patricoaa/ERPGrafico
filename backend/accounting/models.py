@@ -421,7 +421,15 @@ class JournalEntry(models.Model):
 class JournalItem(models.Model):
     entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='journal_items')
-    partner = models.CharField(_("Socio/Empresa"), max_length=255, blank=True, help_text="Cliente o Proveedor asociado") # Placeholder for Partner model
+    partner = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='journal_items',
+        verbose_name=_("Socio/Contacto"),
+        help_text=_("Contacto asociado a este apunte contable (socio, cliente o proveedor).")
+    )
+    partner_name = models.CharField(_("Nombre Socio (Legacy)"), max_length=255, blank=True, help_text=_("Campo legacy para preservar datos históricos de texto."))
     label = models.CharField(_("Etiqueta"), max_length=255, blank=True)
     debit = models.DecimalField(_("Debe"), max_digits=20, decimal_places=0, default=Decimal('0'), validators=[MinValueValidator(0)])
     credit = models.DecimalField(_("Haber"), max_digits=20, decimal_places=0, default=Decimal('0'), validators=[MinValueValidator(0)])
@@ -582,12 +590,7 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Gasto por Ajuste (Mermas)"),
         help_text=_("Cuenta de gasto para registrar mermas o pérdidas de inventario.")
     )
-    initial_inventory_account = models.ForeignKey(
-        Account, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='settings_initial_inventory',
-        verbose_name=_("Cuenta de Inventario Inicial (Patrimonio/Contrapartida)"),
-        help_text=_("Cuenta usada como contrapartida al cargar el stock por primera vez.")
-    )
+    # initial_inventory_account REMOVED — Inventario Inicial adjustment type was deprecated
     revaluation_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_revaluation',
@@ -752,6 +755,32 @@ class AccountingSettings(models.Model):
         max_length=20, 
         choices=InventoryValuationMethod.choices, 
         default=InventoryValuationMethod.AVERAGE
+    )
+
+    # Partner / Equity Accounts
+    partner_capital_contribution_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_contribution',
+        verbose_name=_("Cuenta Aportes de Capital"),
+        help_text=_("Cuenta padre de patrimonio para aportes de capital de socios (ej: 3.1.02).")
+    )
+    partner_withdrawal_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_withdrawal',
+        verbose_name=_("Cuenta Retiros de Socios"),
+        help_text=_("Cuenta padre de patrimonio para retiros de socios (ej: 3.1.03).")
+    )
+    partner_current_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_current',
+        verbose_name=_("Cuenta Particular de Socios"),
+        help_text=_("Cuenta padre de patrimonio para cuenta corriente de socios (ej: 3.1.04).")
+    )
+    partner_capital_social_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_capital_social',
+        verbose_name=_("Cuenta de Capital Social"),
+        help_text=_("Cuenta global de patrimonio para el capital social de la empresa (ej: 3.1.01).")
     )
 
     # DTE Configuration

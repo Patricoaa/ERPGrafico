@@ -63,6 +63,7 @@ export interface ContactMini {
   display_id: string
   phone: string
   email: string
+  is_partner?: boolean
 }
 
 export interface Employee {
@@ -85,6 +86,8 @@ export interface Employee {
   salud_type: SaludType
   salud_type_display: string
   isapre_amount_uf: string
+  jornada_type_display?: string
+  asignacion_familiar_display?: string
   concept_amounts?: EmployeeConceptAmount[]
   created_at: string
   updated_at: string

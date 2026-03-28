@@ -64,6 +64,7 @@ const adjustmentSchema = z.object({
     unit_cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Debe ser mayor o igual a 0"),
     adjustment_reason: z.string().min(1, "Seleccione un motivo"),
     description: z.string().optional(),
+    partner_contact_id: z.string().optional(),
 })
 
 interface AdjustmentFormProps {
@@ -79,6 +80,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const [baseUoM, setBaseUoM] = useState<UoM | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [productDetails, setProductDetails] = useState<any>(null)
+    const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
 
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),
@@ -90,26 +92,34 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             adjustment_reason: "CORRECTION",
             product_id: preSelectedProduct || "",
             warehouse_id: preSelectedWarehouse || "",
-            uom_id: ""
+            uom_id: "",
+            partner_contact_id: ""
         }
     })
 
     const selectedProductId = form.watch("product_id")
     const selectedUoMId = form.watch("uom_id")
     const moveType = form.watch("type")
+    const adjustmentReason = form.watch("adjustment_reason")
     const quantity = Number(form.watch("quantity") || 0)
     const unitCost = Number(form.watch("unit_cost") || 0)
+
+    const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
     // 1. Fetch Warehouses
     useEffect(() => {
         const fetchWarehouses = async () => {
             try {
-                const res = await api.get('/inventory/warehouses/')
-                const data = res.data.results || res.data
-                setWarehouses(Array.isArray(data) ? data : [])
+                const [whRes, partnersRes] = await Promise.all([
+                    api.get('/inventory/warehouses/'),
+                    api.get('/contacts/partners/')
+                ])
+                const whData = whRes.data.results || whRes.data
+                setWarehouses(Array.isArray(whData) ? whData : [])
+                setPartners(Array.isArray(partnersRes.data) ? partnersRes.data : [])
             } catch (err) {
-                console.error("Error fetching warehouses", err)
-                toast.error("Error al cargar almacenes")
+                console.error("Error fetching data", err)
+                toast.error("Error al cargar datos")
             }
         }
         fetchWarehouses()
@@ -165,7 +175,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             const qty = Number(values.quantity)
             const finalQty = values.type === 'OUT' ? -qty : qty
 
-            const payload = {
+            const payload: any = {
                 product_id: values.product_id,
                 warehouse_id: values.warehouse_id,
                 quantity: finalQty,
@@ -173,6 +183,11 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                 unit_cost: Number(values.unit_cost),
                 adjustment_reason: values.adjustment_reason,
                 description: values.description || "Ajuste Manual"
+            }
+
+            // Include partner_contact_id for partner-related reasons
+            if (values.partner_contact_id && (values.adjustment_reason === 'PARTNER_CONTRIBUTION' || values.adjustment_reason === 'PARTNER_WITHDRAWAL')) {
+                payload.partner_contact_id = values.partner_contact_id
             }
 
             await api.post('/inventory/moves/adjust/', payload)
@@ -226,14 +241,14 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border max-w-md mx-auto">
                             <TabsTrigger
                                 value="IN"
-                                className="rounded-full transition-all text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowDownCircle className="mr-2 h-4 w-4" />
                                 Entrada de Stock
                             </TabsTrigger>
                             <TabsTrigger
                                 value="OUT"
-                                className="rounded-full transition-all text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border data-[state=active]:border-rose-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border data-[state=active]:border-rose-200 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowUpCircle className="mr-2 h-4 w-4" />
                                 Salida de Stock
@@ -242,8 +257,100 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     </Tabs>
                 </div>
 
-                {/* 2. Context (Product & Warehouse) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/5 p-4 rounded-xl border">
+                {/* 2. Structured Layout as Requested */}
+
+
+                {/* Section: Clasification */}
+                <div className="flex items-center gap-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Clasificación</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Row 1: Motivo | Socio | Notas */}
+                <div className={cn("grid grid-cols-1 gap-6", isPartnerReason ? "md:grid-cols-3" : "md:grid-cols-[1fr_2fr]")}>
+                    <FormField
+                        control={form.control}
+                        name="adjustment_reason"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Motivo de Ajuste</FormLabel>
+                                <Select onValueChange={(val) => {
+                                    field.onChange(val)
+                                    if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
+                                        form.setValue('partner_contact_id', '')
+                                    }
+                                    if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
+                                    if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
+                                }} defaultValue={field.value} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className={FORM_STYLES.input}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="CORRECTION">Corrección de Inventario</SelectItem>
+                                        {moveType === 'OUT' && <SelectItem value="LOSS">Merma / Pérdida</SelectItem>}
+                                        {moveType === 'IN' && <SelectItem value="GAIN">Sobrante / Ganancia</SelectItem>}
+                                        <SelectItem value="REVALUATION">Revalorización</SelectItem>
+                                        {moveType === 'IN' && <SelectItem value="PARTNER_CONTRIBUTION">Aporte de Socio</SelectItem>}
+                                        {moveType === 'OUT' && <SelectItem value="PARTNER_WITHDRAWAL">Retiro de Socio</SelectItem>}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {isPartnerReason && (
+                        <FormField
+                            control={form.control}
+                            name="partner_contact_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Socio *</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger className={cn(FORM_STYLES.input, "border-amber-200 bg-amber-50/30")}>
+                                                <SelectValue placeholder="Seleccione un socio" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {partners.map(p => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Notas / Referencia</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: Ajuste mensual, retiro..." {...field} className={FORM_STYLES.input} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Section: Detalles del Movimiento */}
+                <div className="flex items-center gap-2 pt-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Detalles del Movimiento</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Row 2: Almacén | Producto */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
                         name="warehouse_id"
@@ -288,6 +395,8 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                         placeholder="Buscar producto..."
                                         disabled={!!preSelectedProduct}
                                         className="bg-background"
+                                        allowedTypes={["STORABLE", "MANUFACTURABLE"]}
+                                        simpleOnly={true}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -296,129 +405,23 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     />
                 </div>
 
-                {/* 3. Quantity & Values */}
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 pt-2 pb-2">
-                        <div className="flex-1 h-px bg-border" />
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Detalles del Movimiento</span>
-                        <div className="flex-1 h-px bg-border" />
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-4">
-                        {/* Quantity & UoM - 7 cols */}
-                        <div className="col-span-12 md:col-span-7 flex gap-2 items-end">
-                            <FormField
-                                control={form.control}
-                                name="quantity"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel className={FORM_STYLES.label}>Cantidad</FormLabel>
-                                        <FormControl>
-                                            <div className="relative">
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    className={cn(FORM_STYLES.input, "text-lg font-bold h-10")}
-                                                    placeholder="0.00"
-                                                    {...field}
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="uom_id"
-                                render={({ field }) => (
-                                    <FormItem className="w-[140px]">
-                                        <FormLabel className={FORM_STYLES.label}>Unidad</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                            disabled={productUoMs.length === 0}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue placeholder="UoM" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {productUoMs.map((u) => (
-                                                    <SelectItem key={u.id} value={u.id.toString()}>
-                                                        {u.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        {/* Unit Cost - 5 cols */}
-                        <div className="col-span-12 md:col-span-5">
-                            <FormField
-                                control={form.control}
-                                name="unit_cost"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={cn(FORM_STYLES.label, "flex justify-between")}>
-                                            <span>Costo {selectedUoM ? `por ${selectedUoM.name}` : 'Unitario'}</span>
-                                            <span className="text-xs font-normal text-muted-foreground">Total: ${totalValue.toFixed(2)}</span>
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input icon="$" type="number" step="0.01" className={cn(FORM_STYLES.input, "text-right font-mono")} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Conversion Alert / Info */}
-                    {conversion && baseUoM && (
-                        <Alert variant="default" className="bg-blue-50/50 border-blue-100 text-blue-900 py-2">
-                            <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                            <AlertTitle className="text-xs font-bold text-blue-700 mb-1">Conversión Automática</AlertTitle>
-                            <AlertDescription className="text-xs opacity-90">
-                                Se registrará como <strong>{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</strong> a un costo base de <strong>${conversion.cost.toFixed(2)}</strong>.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </div>
-
-                {/* 4. Reason & Metadata */}
-                <div className="flex items-center gap-2 pt-2 pb-2">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Clasificación</span>
-                    <div className="flex-1 h-px bg-border" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Row 3: Cantidad | Unidad | Costo */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                         control={form.control}
-                        name="adjustment_reason"
+                        name="quantity"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Motivo de Ajuste</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="CORRECTION">Corrección de Inventario</SelectItem>
-                                        <SelectItem value="INITIAL">Inventario Inicial</SelectItem>
-                                        <SelectItem value="LOSS">Merma / Pérdida</SelectItem>
-                                        <SelectItem value="GAIN">Sobrante / Ganancia</SelectItem>
-                                        <SelectItem value="REVALUATION">Revalorización</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <FormLabel className={FORM_STYLES.label}>Cantidad</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        className={cn(FORM_STYLES.input, "text-right font-mono")}
+                                        placeholder="0.00"
+                                        {...field}
+                                    />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -426,18 +429,70 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                     <FormField
                         control={form.control}
-                        name="description"
+                        name="uom_id"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Notas / Referencia</FormLabel>
+                                <FormLabel className={FORM_STYLES.label}>Unidad de Medida</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    disabled={productUoMs.length === 0}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger className={FORM_STYLES.input}>
+                                            <SelectValue placeholder="UoM" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {productUoMs.map((u) => (
+                                            <SelectItem key={u.id} value={u.id.toString()}>
+                                                {u.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="unit_cost"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={cn(FORM_STYLES.label, "flex justify-between")}>
+                                    <span>Costo Unitario</span>
+                                    <span className="text-[10px] font-normal text-muted-foreground mr-1">Total: ${totalValue.toFixed(2)}</span>
+                                </FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ej: Conteo mensual, Dañado en bodega..." {...field} className={FORM_STYLES.input} />
+                                    <Input
+                                        icon="$"
+                                        type={moveType === 'IN' ? "number" : "text"}
+                                        step={moveType === 'IN' ? "0.01" : undefined}
+                                        readOnly={moveType === 'OUT'}
+                                        className={cn(FORM_STYLES.input, "text-right font-mono", moveType === 'OUT' && "opacity-80 bg-muted/50 cursor-default")}
+                                        {...field}
+                                        value={moveType === 'OUT' ? Number(field.value).toFixed(2) : field.value}
+                                        onChange={(e) => moveType === 'IN' && field.onChange(e)}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
                 </div>
+
+                {/* Conversion Alert / Info */}
+                {conversion && baseUoM && (
+                    <Alert variant="default" className="bg-blue-50/50 border-blue-100 text-blue-900 py-2">
+                        <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                        <AlertTitle className="text-xs font-bold text-blue-700 mb-1">Conversión Automática</AlertTitle>
+                        <AlertDescription className="text-xs opacity-90">
+                            Se registrará como <strong>{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</strong> a un costo base de <strong>${conversion.cost.toFixed(2)}</strong>.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
 
                 <div className="flex justify-end gap-3 pt-6 pb-2">
                     {onCancel && (

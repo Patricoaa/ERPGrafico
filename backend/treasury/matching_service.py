@@ -556,7 +556,8 @@ class MatchingService:
                     account=stmt_account,
                     debit=abs(p.amount) if p.movement_type == 'INBOUND' else 0,
                     credit=abs(p.amount) if p.movement_type == 'OUTBOUND' else 0,
-                    partner=p.contact.name if p.contact else ''
+                    partner=p.contact,
+                    partner_name=p.contact.name if p.contact else ''
                 )
                 
                 # Cr Original Account (Source/Bridge)
@@ -565,7 +566,8 @@ class MatchingService:
                     account=p.account,
                     debit=abs(p.amount) if p.movement_type == 'OUTBOUND' else 0,
                     credit=abs(p.amount) if p.movement_type == 'INBOUND' else 0,
-                    partner=p.contact.name if p.contact else ''
+                    partner=p.contact,
+                    partner_name=p.contact.name if p.contact else ''
                 )
                 
                 # Link entry to payment? maybe append to notes or add M2M?

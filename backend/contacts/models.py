@@ -5,6 +5,7 @@ from simple_history.models import HistoricalRecords
 from decimal import Decimal
 from django.db.models import Sum
 from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class RiskLevel(models.TextChoices):
@@ -63,6 +64,26 @@ class Contact(models.Model):
     credit_risk_level = models.CharField(_("Nivel de Riesgo"), max_length=20, choices=RiskLevel.choices, default=RiskLevel.LOW)
     credit_last_evaluated = models.DateTimeField(_("Última Evaluación Automática"), null=True, blank=True)
 
+    # Partner / Shareholder Fields
+    is_partner = models.BooleanField(_("Es Socio"), default=False, help_text=_("Marcar si este contacto es socio/accionista de la empresa."))
+    partner_equity_percentage = models.DecimalField(
+        _("Participación (%)"), 
+        max_digits=5, decimal_places=2, 
+        null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
+        help_text=_("Porcentaje de participación societaria.")
+    )
+    partner_since = models.DateField(_("Socio Desde"), null=True, blank=True)
+    partner_account = models.ForeignKey(
+        Account, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='partner_contacts',
+        limit_choices_to={'account_type': AccountType.EQUITY},
+        verbose_name=_("Cuenta Particular del Socio"),
+        help_text=_("Subcuenta de patrimonio individual para este socio.")
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -81,6 +102,17 @@ class Contact(models.Model):
         
         if self.is_default_vendor:
             Contact.objects.filter(is_default_vendor=True).exclude(pk=self.pk).update(is_default_vendor=False)
+
+        # Partner Account Auto-Creation
+        if self.is_partner and not self.partner_account:
+            from accounting.models import AccountingSettings, Account
+            settings = AccountingSettings.objects.first()
+            if settings and settings.partner_current_account:
+                self.partner_account = Account.objects.create(
+                    name=f"C.P. {self.name}",
+                    parent=settings.partner_current_account,
+                    account_type=settings.partner_current_account.account_type
+                )
 
         self.full_clean()
         super().save(*args, **kwargs)
@@ -243,4 +275,107 @@ class Contact(models.Model):
                 buckets['overdue_90plus'] += balance
 
         return buckets
+
+    @property
+    def partner_balance(self) -> Decimal:
+        """
+        Calculates the net partner account balance.
+        Positive = socio tiene saldo a favor (empresa le debe)
+        Negative = socio debe a la empresa
+        Sum of contributions (positive) minus withdrawals (negative).
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        contributions = self.partner_transactions.filter(
+            transaction_type__in=[
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
+                PartnerTransaction.Type.LOAN_TO_COMPANY,
+            ]
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        withdrawals = self.partner_transactions.filter(
+            transaction_type__in=[
+                PartnerTransaction.Type.WITHDRAWAL,
+                PartnerTransaction.Type.LOAN_FROM_COMPANY,
+                PartnerTransaction.Type.CAPITAL_RETURN,
+                PartnerTransaction.Type.DIVIDEND,
+            ]
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return contributions - withdrawals
+
+    @property
+    def partner_total_contributions(self) -> Decimal:
+        """
+        Calculates the total SUBSCRIBED equity for the partner.
+        Based on SUBSCRIPTION and TRANSFER movements.
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        # Subscriptions (+)
+        subs = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Reductions (-)
+        reds = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Transferred OUT (-)
+        trans_out = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Transferred IN (+)
+        trans_in = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        return subs - reds - trans_out + trans_in
+
+    @property
+    def partner_pending_capital(self) -> Decimal:
+        """
+        Subscribed (-) Paid In.
+        Positive = partner owes capital to the company.
+        """
+        return self.partner_total_contributions - self.partner_total_paid_in
+
+    @property
+    def partner_total_paid_in(self) -> Decimal:
+        """Total accumulated assets/cash actually delivered to company."""
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        return self.partner_transactions.filter(
+            transaction_type__in=[
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
+            ]
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    @property
+    def partner_total_withdrawals(self) -> Decimal:
+        """Total accumulated withdrawals by this partner."""
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        return self.partner_transactions.filter(
+            transaction_type__in=[
+                PartnerTransaction.Type.WITHDRAWAL,
+                PartnerTransaction.Type.CAPITAL_RETURN,
+                PartnerTransaction.Type.DIVIDEND,
+            ]
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 

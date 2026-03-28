@@ -2,7 +2,9 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
+from decimal import Decimal
 from core.mixins import AuditHistoryMixin
 from .models import Contact
 from .serializers import ContactSerializer, ContactListSerializer
@@ -74,6 +76,12 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 models.Q(code__icontains=search_param) |
                 models.Q(normalized_tax_id__icontains=normalized_search)
             )
+        
+        # Partner filtering
+        is_partner_param = self.request.query_params.get('is_partner', None)
+        if is_partner_param:
+            is_partner_val = is_partner_param.lower() == 'true'
+            queryset = queryset.filter(is_partner=is_partner_val)
         
         # Type filtering
         contact_type = self.request.query_params.get('type', None)
@@ -399,7 +407,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 JournalItem.objects.create(
                     entry=entry,
                     account=receivable_account,
-                    partner=contact.name,
+                    partner=contact,
+                    partner_name=contact.name,
                     label=f"Cierre de deuda incobrable RUT {contact.tax_id}",
                     debit=0,
                     credit=total_balance
@@ -554,3 +563,534 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             })
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+    # ==========================================================
+    # PARTNERS (SOCIOS) ENDPOINTS
+    # ==========================================================
+    
+    @action(detail=False, methods=['get'])
+    def partners(self, request):
+        """Get all contacts that are partners"""
+        contacts = Contact.objects.filter(is_partner=True).distinct()
+        serializer = self.get_serializer(contacts, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def partner_statement(self, request, pk=None):
+        """Get statement of account for a specific partner"""
+        contact = self.get_object()
+        if not contact.is_partner:
+            from rest_framework import status
+            return Response({"error": "El contacto no está marcado como socio."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+        
+        transactions = PartnerTransaction.objects.filter(partner=contact).order_by('-date', '-created_at')
+        serializer = PartnerTransactionSerializer(transactions, many=True)
+        
+        return Response({
+            'contact': self.get_serializer(contact).data,
+            'summary': {
+                'equity_percentage': str(contact.partner_equity_percentage or 0),
+                'balance': str(contact.partner_balance)
+            },
+            'transactions': serializer.data
+        })
+
+    @action(detail=False, methods=['get'])
+    def partners_summary(self, request):
+        """
+        Calculates global metrics for the partner dashboard.
+        """
+        from django.db.models import Sum
+        from .partner_models import PartnerTransaction
+        
+        # Subscriptions (+)
+        subs = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Reductions (-)
+        reds = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Net Transfers (In - Out should be zero globally, but we sum explicitly)
+        trans_in = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        trans_out = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        total_capital = subs - reds + trans_in - trans_out
+        partner_count = Contact.objects.filter(is_partner=True).count()
+        
+        return Response({
+            "total_capital": str(total_capital),
+            "partner_count": partner_count,
+            "capital_state": "100", # Fixed for now
+            "last_updated": timezone.now().isoformat()
+        })
+
+    @action(detail=True, methods=['post', 'put', 'patch'])
+    def setup_partner(self, request, pk=None):
+        """Enable or update partner specific settings for a contact"""
+        contact = self.get_object()
+        
+        is_partner = request.data.get('is_partner', True)
+        equity_percentage = request.data.get('partner_equity_percentage')
+        account_id = request.data.get('partner_account_id')
+        
+        contact.is_partner = is_partner
+        
+        if equity_percentage is not None:
+            contact.partner_equity_percentage = equity_percentage
+            
+        if account_id:
+            from accounting.models import Account
+            try:
+                contact.partner_account = Account.objects.get(id=account_id)
+            except Account.DoesNotExist:
+                return Response({"error": "La cuenta contable indicada no existe."}, status=400)
+        elif 'partner_account_id' in request.data and not account_id:
+            # allow clearing the account
+            contact.partner_account = None
+            
+        contact.save()
+        return Response(self.get_serializer(contact).data)
+
+    @action(detail=True, methods=['post'])
+    def partner_transactions(self, request, pk=None):
+        """Register a new partner transaction using TreasuryService"""
+        contact = self.get_object()
+        if not contact.is_partner:
+            from rest_framework import status
+            return Response({"error": "El contacto no está marcado como socio."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        transaction_type = request.data.get('transaction_type')
+        amount_str = request.data.get('amount')
+        date = request.data.get('date')
+        description = request.data.get('description', '')
+        treasury_account_id = request.data.get('treasury_account_id')
+        
+        if not all([transaction_type, amount_str, date]):
+             from rest_framework import status
+             return Response({"error": "Faltan campos obligatorios (transaction_type, amount, date)."}, status=status.HTTP_400_BAD_REQUEST)
+             
+        from decimal import Decimal
+        try:
+            amount = Decimal(amount_str)
+        except:
+            return Response({"error": "Monto inválido."}, status=400)
+        
+        from treasury.services import TreasuryService
+        from treasury.models import TreasuryAccount, TreasuryMovement
+        from .partner_models import PartnerTransaction
+        
+        # Map PartnerTransaction types to Treasury justification reasons
+        is_inbound = transaction_type in ['CAPITAL_CASH', 'LOAN_IN']
+        reason = (TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION 
+                  if transaction_type == 'CAPITAL_CASH' 
+                  else TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL)
+        
+        try:
+            # We use TreasuryService to handle everything (Movement, Accounting, PartnerTransaction sync)
+            movement = TreasuryService.create_movement(
+                amount=amount,
+                movement_type='INBOUND' if is_inbound else 'OUTBOUND',
+                payment_method='TRANSFER', # Default
+                from_account_id=None if is_inbound else treasury_account_id,
+                to_account_id=treasury_account_id if is_inbound else None,
+                contact=contact,
+                date=date,
+                notes=description,
+                justify_reason=reason,
+                created_by=request.user
+            )
+            
+            # The TreasuryService.create_movement now automatically creates the PartnerTransaction record.
+            # We just need to return it.
+            partner_tx = PartnerTransaction.objects.get(treasury_movement=movement)
+            from .serializers import PartnerTransactionSerializer
+            return Response(PartnerTransactionSerializer(partner_tx).data)
+
+        except Exception as e:
+            return Response({"error": f"Error al procesar la transacción: {str(e)}"}, status=500)
+
+    def _recalculate_partner_percentages(self):
+        """
+        Calculates and updates partner_equity_percentage for all partners
+        based on their historical subscription transactions.
+        """
+        from django.db.models import Sum
+        from decimal import Decimal
+        from .partner_models import PartnerTransaction
+
+        # 1. Total Subscribed Capital is the sum of all SUBSCRIPTION - REDUCTION
+        subscriptions = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        reductions = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        transfers_in = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        transfers_out = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        total_subscribed = subscriptions - reductions + transfers_in - transfers_out
+        
+        if total_subscribed <= 0:
+            Contact.objects.filter(is_partner=True).update(partner_equity_percentage=0)
+            return total_subscribed
+
+        # 2. Update each partner
+        partners = Contact.objects.filter(is_partner=True)
+        for p in partners:
+            partner_txs = p.partner_transactions # Cache for efficiency
+            
+            # Subscriptions (+)
+            p_subs = partner_txs.filter(
+                transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+            
+            # Transfers IN (+)
+            p_trans_in = partner_txs.filter(
+                transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+            # Transfers OUT (-)
+            p_trans_out = partner_txs.filter(
+                transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+            # Reductions (-)
+            p_reds = partner_txs.filter(
+                transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+            
+            p_total = p_subs + p_trans_in - p_trans_out - p_reds
+            
+            if total_subscribed > 0:
+                p.partner_equity_percentage = (p_total / total_subscribed * 100).quantize(Decimal('0.01'))
+            else:
+                p.partner_equity_percentage = Decimal('0')
+            p.save(update_fields=['partner_equity_percentage'])
+            
+        return total_subscribed
+
+    @action(detail=False, methods=['post'])
+    @transaction.atomic
+    def equity_subscription(self, request):
+        """
+        Records a formal capital subscription or reduction.
+        """
+        from decimal import Decimal
+        from django.utils import timezone
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from .partner_models import PartnerTransaction
+
+        contact_id = request.data.get('contact_id')
+        amount = Decimal(str(request.data.get('amount', '0')))
+        move_type = request.data.get('type') # 'SUBSCRIPTION' or 'REDUCTION'
+        date = request.data.get('date', timezone.now().date())
+        description = request.data.get('description', '')
+
+        if amount <= 0:
+            return Response({"error": "El monto debe ser mayor a cero."}, status=400)
+
+        # Validate reduction does not exceed subscribed capital
+        if move_type == 'REDUCTION':
+            try:
+                contact = Contact.objects.get(id=contact_id)
+                if amount > contact.partner_total_contributions:
+                    return Response({
+                        "error": f"El monto de reducción (${amount:,.0f}) excede el capital suscrito del socio (${contact.partner_total_contributions:,.0f})."
+                    }, status=400)
+            except Contact.DoesNotExist:
+                return Response({"error": "El contacto no existe."}, status=400)
+
+        try:
+            contact = Contact.objects.get(id=contact_id)
+            settings = AccountingSettings.objects.first()
+            
+            if not settings or not settings.partner_capital_social_account:
+                return Response({"error": "Configuración contable incompleta (Capital Social)."}, status=400)
+
+            # 1. Mark as partner and set partner_since (this creates partner_account if missing)
+            contact.is_partner = True
+            if not contact.partner_since:
+                contact.partner_since = date if isinstance(date, str) == False else timezone.now().date()
+                try:
+                    from datetime import datetime
+                    contact.partner_since = datetime.strptime(str(date), '%Y-%m-%d').date() if isinstance(date, str) else date
+                except (ValueError, TypeError):
+                    contact.partner_since = timezone.now().date()
+            contact.save()
+
+            # 2. Create Journal Entry
+            entry_desc = f"{'Aumento' if move_type == 'SUBSCRIPTION' else 'Reducción'} de Capital: {contact.name}"
+            if description: entry_desc += f" - {description}"
+            
+            entry = JournalEntry.objects.create(
+                description=entry_desc,
+                date=date,
+                status=JournalEntry.Status.POSTED
+            )
+
+            # Dr: Partner Account / Cr: Capital Social (Subscription)
+            # Dr: Capital Social / Cr: Partner Account (Reduction)
+            debit_acc = contact.partner_account if move_type == 'SUBSCRIPTION' else settings.partner_capital_social_account
+            credit_acc = settings.partner_capital_social_account if move_type == 'SUBSCRIPTION' else contact.partner_account
+
+            JournalItem.objects.create(
+                entry=entry, account=debit_acc, partner=contact if move_type == 'SUBSCRIPTION' else None,
+                label=entry_desc, debit=amount, credit=0
+            )
+            JournalItem.objects.create(
+                entry=entry, account=credit_acc, partner=None if move_type == 'SUBSCRIPTION' else contact,
+                label=entry_desc, debit=0, credit=amount
+            )
+
+            # 3. Record Partner Transaction for ledger
+            actual_type = PartnerTransaction.Type.EQUITY_SUBSCRIPTION if move_type == 'SUBSCRIPTION' else PartnerTransaction.Type.EQUITY_REDUCTION
+            PartnerTransaction.objects.create(
+                partner=contact, transaction_type=actual_type, amount=amount,
+                date=date, description=description, journal_entry=entry,
+                created_by=request.user
+            )
+
+            # 4. Recalculate %
+            self._recalculate_partner_percentages()
+
+            return Response({"message": "Movimiento de capital registrado.", "journal_entry": entry.display_id})
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=['post'])
+    @transaction.atomic
+    def equity_transfer(self, request):
+        """
+        Records a transfer of participation between two partners.
+        """
+        from decimal import Decimal
+        from django.utils import timezone
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from .partner_models import PartnerTransaction
+
+        from_id = request.data.get('from_contact_id')
+        to_id = request.data.get('to_contact_id')
+        amount = Decimal(str(request.data.get('amount', '0')))
+        date = request.data.get('date', timezone.now().date())
+        description = request.data.get('description', '')
+
+        if amount <= 0 or from_id == to_id:
+            return Response({"error": "Datos de transferencia inválidos."}, status=400)
+
+        # Pre-validate contacts exist and have required accounts
+        try:
+            seller_check = Contact.objects.get(id=from_id)
+            buyer_check = Contact.objects.get(id=to_id)
+        except Contact.DoesNotExist:
+            return Response({"error": "Uno o ambos contactos no existen."}, status=400)
+
+        if not seller_check.partner_account:
+            return Response({"error": f"El socio {seller_check.name} no tiene una cuenta particular asignada."}, status=400)
+
+        # Validate transfer does not exceed seller's subscribed capital
+        if amount > seller_check.partner_total_contributions:
+            return Response({
+                "error": f"El monto de transferencia (${amount:,.0f}) excede el capital suscrito del socio vendedor (${seller_check.partner_total_contributions:,.0f})."
+            }, status=400)
+
+        try:
+            seller = Contact.objects.get(id=from_id)
+            buyer = Contact.objects.get(id=to_id)
+            
+            settings = AccountingSettings.objects.first()
+            if not settings:
+                return Response({"error": "Configuración contable no encontrada."}, status=400)
+
+            # 1. Ensure buyer is a partner and has account BEFORE creating Journal Items
+            buyer.is_partner = True
+            if not buyer.partner_since:
+                buyer.partner_since = date if isinstance(date, str) == False else timezone.now().date()
+                try:
+                    from datetime import datetime
+                    buyer.partner_since = datetime.strptime(str(date), '%Y-%m-%d').date() if isinstance(date, str) else date
+                except (ValueError, TypeError):
+                    buyer.partner_since = timezone.now().date()
+            buyer.save()
+
+            # 2. Create Journal Entry
+            entry_desc = f"Transferencia de Capital: {seller.name} -> {buyer.name}"
+            if description: entry_desc += f" - {description}"
+            
+            entry = JournalEntry.objects.create(description=entry_desc, date=date, status=JournalEntry.Status.POSTED)
+            
+            # Asiento: Dr Seller / Cr Buyer (El comprador asume la deuda o recibe el derecho)
+            JournalItem.objects.create(entry=entry, account=seller.partner_account, partner=seller, label=entry_desc, debit=amount, credit=0)
+            JournalItem.objects.create(entry=entry, account=buyer.partner_account, partner=buyer, label=entry_desc, debit=0, credit=amount)
+
+            # 2. Record Partner Transactions
+            PartnerTransaction.objects.create(
+                partner=seller, 
+                transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT,
+                amount=amount, 
+                date=date, 
+                description=f"Transferencia a {buyer.name}: {description}",
+                journal_entry=entry, 
+                created_by=request.user
+            )
+            PartnerTransaction.objects.create(
+                partner=buyer, 
+                transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN,
+                amount=amount, 
+                date=date, 
+                description=f"Transferencia recibida de {seller.name}: {description}",
+                journal_entry=entry, 
+                created_by=request.user
+            )
+
+            # 3. Recalculate
+            self._recalculate_partner_percentages()
+            return Response({"message": "Transferencia completada.", "journal_entry": entry.display_id})
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=['get'])
+    def all_partner_transactions(self, request):
+        """
+        Returns all transactions for all partners.
+        """
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+        
+        txs = PartnerTransaction.objects.all().select_related('partner', 'journal_entry')
+        return Response(PartnerTransactionSerializer(txs, many=True).data)
+
+    @action(detail=False, methods=['post'])
+    def initial_setup(self, request):
+        """
+        Bulk setup for partners and initial capital subscription.
+        Expected data: {
+            "partners": [
+                {"contact_id": 1, "amount": 1000000},
+                {"contact_id": 2, "amount": 500000}
+            ]
+        }
+        """
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from .models import Contact
+
+        partners_data = request.data.get('partners', [])
+        if not partners_data or not isinstance(partners_data, list):
+            return Response({"error": "Debe proporcionar una lista de socios con sus montos."}, status=400)
+
+        settings = AccountingSettings.objects.first()
+        if not settings or not settings.partner_capital_social_account:
+            return Response({"error": "No se ha configurado la cuenta de Capital Social en los ajustes."}, status=400)
+
+        try:
+            with transaction.atomic():
+                # 1. Gather contacts and calculate total
+                contacts_with_amounts = []
+                total_capital = Decimal('0')
+
+                for item in partners_data:
+                    contact_id = item.get('contact_id')
+                    amount = Decimal(str(item.get('amount', '0')))
+                    
+                    if amount <= 0:
+                        return Response({"error": f"El monto para el contacto {contact_id} debe ser mayor a cero."}, status=400)
+                    
+                    try:
+                        contact = Contact.objects.get(id=contact_id)
+                    except Contact.DoesNotExist:
+                        return Response({"error": f"El contacto con ID {contact_id} no existe."}, status=400)
+                    
+                    contacts_with_amounts.append((contact, amount))
+                    total_capital += amount
+
+                if total_capital <= 0:
+                    return Response({"error": "El capital total debe ser mayor a cero."}, status=400)
+
+                # 2. Update contacts (is_partner and %)
+                from .partner_models import PartnerTransaction
+                for contact, amount in contacts_with_amounts:
+                    contact.is_partner = True
+                    if not contact.partner_since:
+                        contact.partner_since = timezone.now().date()
+                    contact.save()
+                    
+                    # We will NOT set percentage manually here, 
+                    # we will create the transactions and then recalculate
+                
+                # 3. Create Journal Entry
+                entry = JournalEntry.objects.create(
+                    description="Asiento Inicial - Suscripción de Capital",
+                    status=JournalEntry.Status.POSTED,
+                    date=timezone.now().date()
+                )
+
+                # Create Partner Transactions for ledger and percentages
+                for contact, amount in contacts_with_amounts:
+                    PartnerTransaction.objects.create(
+                        partner=contact,
+                        transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
+                        amount=amount,
+                        date=timezone.now().date(),
+                        description="Suscripción inicial de capital",
+                        journal_entry=entry
+                    )
+
+                # Debits: Individual Partner Accounts (Cuenta Particular)
+                for contact, amount in contacts_with_amounts:
+                    if not contact.partner_account:
+                         raise Exception(f"No se pudo determinar o asignar la cuenta particular para el socio {contact.name}. Verifique la configuración de contabilidad.")
+                    
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=contact.partner_account,
+                        partner=contact,
+                        partner_name=contact.name,
+                        label=f"Suscripción Capital: {contact.name}",
+                        debit=amount,
+                        credit=0
+                    )
+
+                # Credit: Global Capital Social
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=settings.partner_capital_social_account,
+                    label="Suscripción de Capital Social Inicial",
+                    debit=0,
+                    credit=total_capital
+                )
+
+                # Validation of balance
+                entry.check_balance()
+
+                # 4. Final Recalculate percentages based on transactions
+                self._recalculate_partner_percentages()
+
+                return Response({
+                    "message": "Configuración inicial completada con éxito.",
+                    "total_capital": str(total_capital),
+                    "journal_entry": entry.display_id,
+                    "partners_updated": len(contacts_with_amounts)
+                })
+
+        except Exception as e:
+            return Response({"error": f"Error durante la configuración inicial: {str(e)}"}, status=500)
+

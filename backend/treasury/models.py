@@ -87,6 +87,7 @@ class TreasuryMovement(models.Model):
         SYSTEM_ERROR = 'SYSTEM_ERROR', _('Error del Sistema')
         TRANSFER = 'TRANSFER', _('Traspaso de Efectivo')
         PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio')
+        CAPITAL_CONTRIBUTION = 'CAPITAL_CONTRIBUTION', _('Aporte de Capital (Socio)')
         OTHER_IN = 'OTHER_IN', _('Otro Ingreso')
         OTHER_OUT = 'OTHER_OUT', _('Otro Egreso')
         OPENING_ADJUSTMENT = 'OPENING_ADJUSTMENT', _('Ajuste de Apertura')

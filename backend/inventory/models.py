@@ -912,6 +912,8 @@ class StockMove(models.Model):
         GAIN = 'GAIN', _('Sobrante/Ganancia')
         REVALUATION = 'REVALUATION', _('Revalorización')
         CORRECTION = 'CORRECTION', _('Corrección de Inventario')
+        PARTNER_CONTRIBUTION = 'PARTNER_CONTRIBUTION', _('Aporte de Socio (Inventario)')
+        PARTNER_WITHDRAWAL = 'PARTNER_WITHDRAWAL', _('Retiro de Socio (Inventario)')
 
     date = models.DateField(_("Fecha"), default=get_current_date)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='stock_moves')
