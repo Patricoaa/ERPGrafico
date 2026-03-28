@@ -703,7 +703,8 @@ class NoteCheckoutService:
             account=partner_account,
             debit=debit_amount,
             credit=credit_amount,
-            partner=workflow.corrected_invoice.contact.name if workflow.corrected_invoice.contact else "",
+            partner=workflow.corrected_invoice.contact,
+            partner_name=workflow.corrected_invoice.contact.name if workflow.corrected_invoice.contact else "",
             label=f"{invoice.display_id}"
         )
         

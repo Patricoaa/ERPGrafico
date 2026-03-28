@@ -33,6 +33,7 @@ interface AdvancedContactSelectorProps {
     contactType?: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
     onSelectContact?: (contact: Contact) => void
     disabled?: boolean
+    isPartnerOnly?: boolean
 }
 
 export function AdvancedContactSelector({
@@ -41,7 +42,8 @@ export function AdvancedContactSelector({
     placeholder = "Seleccionar contacto...",
     contactType,
     onSelectContact,
-    disabled
+    disabled,
+    isPartnerOnly
 }: AdvancedContactSelectorProps) {
     const [open, setOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -79,6 +81,7 @@ export function AdvancedContactSelector({
                 const params = new URLSearchParams()
                 if (debouncedSearch) params.append('search', debouncedSearch)
                 if (contactType) params.append('type', contactType)
+                if (isPartnerOnly) params.append('is_partner', 'true')
 
                 // If no search, maybe fetch top 10? Or standard list
                 const res = await api.get(`/contacts/?${params.toString()}`)
@@ -134,7 +137,7 @@ export function AdvancedContactSelector({
                 >
                     {selectedContact ? (
                         <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                            <div className={cn("p-1.5 rounded-lg shrink-0", disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
                                 {selectedContact.contact_type === 'COMPANY' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
                             </div>
                             <div className="flex flex-col items-start truncate leading-tight">
@@ -147,7 +150,7 @@ export function AdvancedContactSelector({
                     ) : (
                         <span className="text-muted-foreground">{placeholder}</span>
                     )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    {!disabled && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">

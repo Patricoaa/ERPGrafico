@@ -832,7 +832,8 @@ class SalesService:
             account=receivable_account,
             debit=total_amount if note_type == Invoice.DTEType.NOTA_DEBITO else 0,
             credit=0 if note_type == Invoice.DTEType.NOTA_DEBITO else total_amount,
-            partner=order.customer.name,
+            partner=order.customer,
+            partner_name=order.customer.name,
             label=f"{invoice.get_dte_type_display()} {document_number} - NV {order.number}"
         )
 

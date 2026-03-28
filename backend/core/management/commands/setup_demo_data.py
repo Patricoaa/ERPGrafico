@@ -14,6 +14,7 @@ from inventory.models import (
     CustomFieldTemplate, ProductCustomField
 )
 from contacts.models import Contact
+from contacts.partner_models import PartnerTransaction
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
@@ -164,7 +165,6 @@ class Command(BaseCommand):
             # Inventory Adjustment Verification
             'Inv. Gain': settings.adjustment_income_account,
             'Inv. Loss': settings.adjustment_expense_account,
-            'Initial Inv.': settings.initial_inventory_account,
             'Revaluation': settings.revaluation_account,
             
             # Treasury Reconciliation Verification
@@ -276,7 +276,10 @@ class Command(BaseCommand):
         _safe_delete(ProductCustomField, "ProductCustomField")
         _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
 
-        # 9.5 HR Module — MUST be before Contact (Employee.contact is PROTECT)
+        # 9.5 Partner Transactions
+        _safe_delete(PartnerTransaction, "PartnerTransaction")
+
+        # 9.6 HR Module — MUST be before Contact (Employee.contact is PROTECT)
         _safe_delete(PayrollItem, "PayrollItem")
         _safe_delete(PayrollPayment, "PayrollPayment")
         _safe_delete(Payroll, "Payroll")
@@ -308,7 +311,8 @@ class Command(BaseCommand):
         historical_models = [
             Employee, Payroll,
             Product, StockMove, SaleOrder, PurchaseOrder, Invoice, JournalEntry,
-            Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement
+            Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement,
+            PartnerTransaction
         ]
         for model in historical_models:
             if hasattr(model, 'history'):
@@ -802,7 +806,7 @@ class Command(BaseCommand):
             return
 
         settings = AccountingSettings.objects.first()
-        initial_inv_account = settings.initial_inventory_account if settings else accounts['capital']
+        initial_inv_account = accounts['capital']  # Use capital account directly (initial_inventory_account was removed)
         
         if not initial_inv_account:
             self.stdout.write(self.style.ERROR("  No initial inventory account found."))

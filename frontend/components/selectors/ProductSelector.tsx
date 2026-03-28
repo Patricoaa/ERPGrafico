@@ -38,6 +38,7 @@ interface ProductSelectorProps {
     customDisabled?: (product: any) => boolean
     className?: string
     shouldResolveVariants?: boolean
+    simpleOnly?: boolean
 }
 
 const EMPTY_ARRAY: any[] = []
@@ -57,7 +58,8 @@ export function ProductSelector({
     customFilter,
     customDisabled,
     className,
-    shouldResolveVariants = true
+    shouldResolveVariants = true,
+    simpleOnly = false
 }: ProductSelectorProps) {
     const [open, setOpen] = useState(false)
     const [products, setProducts] = useState<any[]>([])
@@ -117,6 +119,13 @@ export function ProductSelector({
                     allProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
                 }
 
+                if (simpleOnly) {
+                    allProducts = allProducts.filter((p: any) => {
+                        return p.product_type === 'STORABLE' || 
+                               (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing && !p.mfg_auto_finalize);
+                    });
+                }
+
                 if (excludeIds && excludeIds.length > 0) {
                     const excludedStrIds = excludeIds
                         .filter(id => id !== null && id !== undefined)
@@ -143,7 +152,7 @@ export function ProductSelector({
         }, 300)
 
         return () => clearTimeout(timeoutId)
-    }, [open, searchTerm, productType, context, allowedTypes, excludeIds, customFilter])
+    }, [open, searchTerm, productType, context, allowedTypes, excludeIds, customFilter, simpleOnly])
 
     const getStockRestrictionReason = (product: any) => {
         if (!restrictStock) return null
@@ -311,8 +320,8 @@ export function ProductSelector({
                                                 </div>
                                                 <div className="flex justify-between mt-1 items-center">
                                                     <div className="flex gap-1 flex-wrap">
-                                                        {/* Stock Badge */}
-                                                        {product.product_type === 'STORABLE' && (
+                                                        {/* Stock Badge - Show for both Storable and Manufacturable as they both track inventory usually */}
+                                                        {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                             <>
                                                                 <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
                                                                     (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
@@ -327,19 +336,26 @@ export function ProductSelector({
                                                             </>
                                                         )}
 
-                                                        {/* Manufacturable Badge */}
-                                                        {product.product_type === 'MANUFACTURABLE' && product.has_bom && (
+                                                        {/* Manufacturing Badges */}
+                                                        {product.requires_advanced_manufacturing ? (
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-purple-600 bg-purple-50">
+                                                                Fab: Avanzada
+                                                            </Badge>
+                                                        ) : product.mfg_auto_finalize ? (
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-orange-600 bg-orange-50">
+                                                                Fab: Express
+                                                            </Badge>
+                                                        ) : product.has_bom ? (
                                                             <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-blue-600",
                                                                 (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-red-500 bg-red-50"
                                                             )}>
                                                                 Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                             </Badge>
-                                                        )}
-                                                        {product.product_type === 'MANUFACTURABLE' && !product.has_bom && (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-blue-400 text-blue-600">
-                                                                Fab: Avanzada
+                                                        ) : product.product_type === 'MANUFACTURABLE' ? (
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-slate-300 text-slate-500 bg-slate-50">
+                                                                Sin Receta
                                                             </Badge>
-                                                        )}
+                                                        ) : null}
                                                     </div>
 
                                                     <span className="text-[10px] font-bold whitespace-nowrap ml-2">

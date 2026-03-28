@@ -22,6 +22,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
 class AccountingSettingsSerializer(serializers.ModelSerializer):
     default_uncollectible_expense_account_name = serializers.CharField(source='default_uncollectible_expense_account.name', read_only=True)
+    partner_capital_social_account_name = serializers.CharField(source='partner_capital_social_account.name', read_only=True)
 
     class Meta:
         model = AccountingSettings

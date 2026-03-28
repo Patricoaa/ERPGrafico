@@ -100,7 +100,8 @@ class CardInvoiceService:
                 account=payable_account,
                 debit=0,
                 credit=total_amount,
-                partner=provider.supplier.name
+                partner=provider.supplier,
+                partner_name=provider.supplier.name
             )
             
             invoice.journal_entry = entry
