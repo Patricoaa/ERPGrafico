@@ -29,7 +29,9 @@ interface MovementWizardProps {
     initialContactId?: number; // For partner/client specific context
     initialContactName?: string;
     initialAccountName?: string;
+    initialAccountName?: string;
     fixedMoveType?: string;
+    variant?: 'partners' | 'standard';
     onComplete: (data: MovementData) => Promise<void>;
     onCancel: () => void;
 }
@@ -63,7 +65,8 @@ export function MovementWizard({
     onComplete,
     onCancel,
     initialAccountName,
-    fixedMoveType
+    fixedMoveType,
+    variant = 'standard'
 }: MovementWizardProps) {
     const [step, setStep] = useState(1)
     const [impact, setImpact] = useState<'IN' | 'OUT' | 'TRANSFER'>('IN')
@@ -212,26 +215,28 @@ export function MovementWizard({
                                                 </div>
                                             </Button>
 
-                                            <Button
-                                                variant="outline"
-                                                className={cn(
-                                                    "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                                    impact === "TRANSFER" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-500/50"
-                                                )}
-                                                onClick={() => {
-                                                    setImpact("TRANSFER")
-                                                    setMoveType("TRANSFER")
-                                                    setStep(2)
-                                                }}
-                                            >
-                                                <div className={cn("p-3 rounded-xl bg-blue-500/10 text-blue-600", impact === "TRANSFER" && "bg-blue-500 text-white")}>
-                                                    <ArrowRightLeft className="h-6 w-6" />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold">Traspaso</span>
-                                                    <span className="text-xs text-muted-foreground">Mover a otra caja</span>
-                                                </div>
-                                            </Button>
+                                            {variant !== 'partners' && (
+                                                <Button
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
+                                                        impact === "TRANSFER" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-500/50"
+                                                    )}
+                                                    onClick={() => {
+                                                        setImpact("TRANSFER")
+                                                        setMoveType("TRANSFER")
+                                                        setStep(2)
+                                                    }}
+                                                >
+                                                    <div className={cn("p-3 rounded-xl bg-blue-500/10 text-blue-600", impact === "TRANSFER" && "bg-blue-500 text-white")}>
+                                                        <ArrowRightLeft className="h-6 w-6" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">Traspaso</span>
+                                                        <span className="text-xs text-muted-foreground">Mover a otra caja</span>
+                                                    </div>
+                                                </Button>
+                                            )}
                                         </div>
                                         <Button variant="ghost" onClick={onCancel} className="w-full mt-4">Cancelar</Button>
                                     </div>
@@ -392,11 +397,18 @@ export function MovementWizard({
                                                 <div className="flex gap-2 pt-4">
                                                     <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
                                                     <Button
-                                                        onClick={() => setStep(fixedMoveType ? 4 : 3)}
+                                                        onClick={() => {
+                                                            if (variant === 'partners') {
+                                                                setMoveType(impact === 'IN' ? 'CAPITAL_CONTRIBUTION' : 'PARTNER_WITHDRAWAL')
+                                                                setStep(4)
+                                                            } else {
+                                                                setStep(fixedMoveType ? 4 : 3)
+                                                            }
+                                                        }}
                                                         className="flex-1"
                                                         disabled={!isReady}
                                                     >
-                                                        {fixedMoveType ? 'Continuar' : 'Siguiente'}
+                                                        { (fixedMoveType || variant === 'partners') ? 'Continuar' : 'Siguiente'}
                                                     </Button>
                                                 </div>
                                             </div>

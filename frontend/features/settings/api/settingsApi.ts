@@ -8,7 +8,9 @@ import type {
     InventorySettingsUpdatePayload,
     AccountingSettings,
     CompanySettings,
-    CompanySettingsUpdatePayload
+    CompanySettingsUpdatePayload,
+    PartnerSettings,
+    PartnerSettingsUpdatePayload
 } from '../types'
 
 /**
@@ -159,4 +161,24 @@ export const settingsApi = {
         const { data } = await api.patch<CompanySettings>('/core/company/current/', payload, config)
         return data
     },
-}
+ 
+     // ========== Partner Settings ==========
+ 
+     /**
+      * Fetch partner settings
+      */
+     getPartnerSettings: async (): Promise<PartnerSettings> => {
+         const data = await settingsApi.getCurrentSettings()
+         return {
+             partner_capital_social_account: data.partner_capital_social_account,
+             partner_capital_social_account_name: data.partner_capital_social_account_name,
+         }
+     },
+ 
+     /**
+      * Update partner settings
+      */
+     updatePartnerSettings: async (payload: PartnerSettingsUpdatePayload): Promise<AccountingSettings> => {
+         return settingsApi.updateCurrentSettings(payload)
+     },
+ }
