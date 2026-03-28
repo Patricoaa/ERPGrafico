@@ -9,8 +9,6 @@ import {
     Wallet,
     Calendar,
     Search,
-    Download,
-    CreditCard,
     Plus
 } from "lucide-react"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
@@ -33,11 +31,23 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
 
+const TRANSACTION_TYPE_OPTIONS = [
+    { value: "all", label: "Todos los tipos" },
+    { value: "SUBSCRIPTION", label: "Suscripción" },
+    { value: "REDUCTION", label: "Reducción" },
+    { value: "CAPITAL_CASH", label: "Aporte Efectivo" },
+    { value: "CAPITAL_INVENTORY", label: "Aporte en Bienes" },
+    { value: "WITHDRAWAL", label: "Retiro" },
+    { value: "TRANSFER_IN", label: "Transferencia (Ingreso)" },
+    { value: "TRANSFER_OUT", label: "Transferencia (Egreso)" },
+]
+
 export function PartnerLedgerTab() {
     const [loading, setLoading] = useState(true)
     const [transactions, setTransactions] = useState<any[]>([])
     const [partners, setPartners] = useState<any[]>([])
     const [filterPartner, setFilterPartner] = useState<string>("all")
+    const [filterType, setFilterType] = useState<string>("all")
     const [search, setSearch] = useState("")
     const [isMovementOpen, setIsMovementOpen] = useState(false)
 
@@ -67,16 +77,29 @@ export function PartnerLedgerTab() {
     }
 
     const filteredTxs = transactions.filter(tx => {
-        const matchesPartner = filterPartner === "all" || tx.partner?.id?.toString() === filterPartner
+        const matchesPartner = filterPartner === "all" || tx.partner?.toString() === filterPartner
+        const matchesType = filterType === "all" || tx.transaction_type === filterType
         const matchesSearch = !search ||
             tx.description?.toLowerCase().includes(search.toLowerCase()) ||
-            tx.partner?.name?.toLowerCase().includes(search.toLowerCase())
-        return matchesPartner && matchesSearch
+            tx.partner_name?.toLowerCase().includes(search.toLowerCase())
+        return matchesPartner && matchesType && matchesSearch
     })
 
+    // Accumulated totals
+    const totals = filteredTxs.reduce((acc, tx) => {
+        const amount = parseFloat(tx.amount) || 0
+        const type = tx.transaction_type
+        if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
+            acc.inflows += amount
+        } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
+            acc.outflows += amount
+        }
+        return acc
+    }, { inflows: 0, outflows: 0 })
+
     const getTransactionIcon = (type: string) => {
-        if (type.includes('CAPITAL') || type === 'SUBSCRIPTION') return <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-        if (type === 'WITHDRAWAL' || type === 'DIVIDEND' || type === 'REDUCTION') return <ArrowDownLeft className="h-4 w-4 text-rose-500" />
+        if (type.includes('CAPITAL') || type === 'SUBSCRIPTION' || type === 'TRANSFER_IN') return <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+        if (type === 'WITHDRAWAL' || type === 'DIVIDEND' || type === 'REDUCTION' || type === 'TRANSFER_OUT') return <ArrowDownLeft className="h-4 w-4 text-rose-500" />
         return <History className="h-4 w-4 text-muted-foreground" />
     }
 
@@ -85,8 +108,11 @@ export function PartnerLedgerTab() {
         if (type.includes('TRANSFER')) return 'bg-amber-100 text-amber-700 border-amber-200'
         if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY') return 'bg-emerald-100 text-emerald-700 border-emerald-200'
         if (type === 'WITHDRAWAL' || type === 'DIVIDEND') return 'bg-rose-100 text-rose-700 border-rose-200'
+        if (type === 'REDUCTION') return 'bg-orange-100 text-orange-700 border-orange-200'
         return 'bg-muted text-muted-foreground border-transparent'
     }
+
+    const hasActiveFilters = filterPartner !== "all" || filterType !== "all" || search !== ""
 
     return (
         <div className="space-y-6">
@@ -109,6 +135,19 @@ export function PartnerLedgerTab() {
                             </Select>
                         </div>
                         <div className="flex-1 space-y-2">
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Movimiento</label>
+                            <Select value={filterType} onValueChange={setFilterType}>
+                                <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Todos los tipos" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {TRANSACTION_TYPE_OPTIONS.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex-1 space-y-2">
                             <label className="text-[10px] font-bold uppercase text-muted-foreground">Búsqueda</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -121,17 +160,21 @@ export function PartnerLedgerTab() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-10 w-10"
-                                onClick={() => {
-                                    setFilterPartner("all")
-                                    setSearch("")
-                                }}
-                            >
-                                <Filter className="h-4 w-4" />
-                            </Button>
+                            {hasActiveFilters && (
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-10 w-10"
+                                    onClick={() => {
+                                        setFilterPartner("all")
+                                        setFilterType("all")
+                                        setSearch("")
+                                    }}
+                                    title="Limpiar filtros"
+                                >
+                                    <Filter className="h-4 w-4" />
+                                </Button>
+                            )}
                             <Button
                                 className="h-10"
                                 onClick={() => setIsMovementOpen(true)}
@@ -151,12 +194,14 @@ export function PartnerLedgerTab() {
                         <CardTitle className="text-lg flex items-center gap-2">
                             <History className="h-5 w-5 text-primary" />
                             Detalle de Movimientos
+                            {hasActiveFilters && (
+                                <Badge variant="secondary" className="text-[9px] ml-2">
+                                    {filteredTxs.length} de {transactions.length}
+                                </Badge>
+                            )}
                         </CardTitle>
                         <CardDescription>Historial cronológico de capital comprometido vs pagado</CardDescription>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-[10px] font-bold uppercase">
-                        <Download className="h-3 w-3 mr-1" /> Exportar
-                    </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
@@ -192,9 +237,9 @@ export function PartnerLedgerTab() {
                                             {tx.description}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {tx.journal_entry ? (
+                                            {tx.journal_entry_display ? (
                                                 <Badge variant="secondary" className="text-[9px] font-mono hover:bg-muted cursor-default">
-                                                    {tx.journal_entry.display_id || tx.journal_entry.number}
+                                                    {tx.journal_entry_display}
                                                 </Badge>
                                             ) : '-'}
                                         </TableCell>
@@ -214,31 +259,33 @@ export function PartnerLedgerTab() {
                                 </TableRow>
                             )}
                         </TableBody>
+                        {/* Accumulated Totals */}
+                        {filteredTxs.length > 0 && (
+                            <tfoot>
+                                <TableRow className="bg-muted/30 font-bold border-t-2">
+                                    <TableCell colSpan={4} className="pl-6 text-[10px] font-extrabold uppercase text-muted-foreground">
+                                        Totales ({filteredTxs.length} movimientos)
+                                    </TableCell>
+                                    <TableCell className="text-right text-[10px] font-extrabold uppercase">
+                                        <div className="space-y-0.5">
+                                            <div className="text-emerald-600">Ingresos</div>
+                                            <div className="text-rose-600">Egresos</div>
+                                            <div className="text-primary border-t pt-0.5">Neto</div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right pr-6 font-mono">
+                                        <div className="space-y-0.5">
+                                            <div className="text-emerald-600 font-bold">+{formatCurrency(totals.inflows)}</div>
+                                            <div className="text-rose-600 font-bold">-{formatCurrency(totals.outflows)}</div>
+                                            <div className="text-primary font-extrabold border-t pt-0.5">{formatCurrency(totals.inflows - totals.outflows)}</div>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            </tfoot>
+                        )}
                     </Table>
                 </CardContent>
             </IndustrialCard>
-
-            {/* Balances Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {partners.filter(p => filterPartner === "all" || p.id.toString() === filterPartner).map(p => (
-                    <IndustrialCard key={p.id} variant="industrial" className="border-l-4 border-l-blue-500">
-                        <CardHeader className="pb-2 h-auto">
-                            <CardTitle className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-widest">
-                                Saldo: {p.name}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className={`text-xl font-black font-mono ${p.partner_balance > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {formatCurrency(p.partner_balance)}
-                            </div>
-                            <div className="flex items-center justify-between mt-2">
-                                <span className="text-[9px] font-bold uppercase opacity-60">Suscrito: {formatCurrency(p.partner_total_contributions)}</span>
-                                <span className="text-[9px] font-bold uppercase text-rose-500 bg-rose-50 px-1 rounded">Pendiente: {formatCurrency(p.partner_pending_capital)}</span>
-                            </div>
-                        </CardContent>
-                    </IndustrialCard>
-                ))}
-            </div>
 
             {/* Movement Wizard Modal */}
             <CashMovementModal

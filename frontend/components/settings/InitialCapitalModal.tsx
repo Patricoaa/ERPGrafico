@@ -41,7 +41,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         setTotalCapital(total)
     }, [entries])
 
-    const handleAddPartner = (contactId: string | null) => {
+    const handleAddPartner = (contactId: string | null, contact?: any) => {
         if (!contactId) return
         
         const id = parseInt(contactId)
@@ -50,8 +50,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             return
         }
 
-        // We add with 0 amount initially
-        setEntries([...entries, { contact_id: id, name: "Socio Seleccionado", amount: 0 }])
+        setEntries([...entries, { contact_id: id, name: contact?.name || `Contacto #${id}`, amount: 0 }])
     }
 
     const handleUpdateAmount = (index: number, amount: string) => {
@@ -124,7 +123,8 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                 <Label>Agregar Socio</Label>
                                 <AdvancedContactSelector
                                     value={null}
-                                    onChange={handleAddPartner}
+                                    onChange={(val) => {}}
+                                    onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
                                     placeholder="Buscar contacto por nombre o RUT..."
                                 />
                             </div>

@@ -122,12 +122,36 @@ export function EquityCompositionTab() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-amber-600">
-                            100%
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                            Participación totalmente distribuida
-                        </p>
+                        {(() => {
+                            const totalPct = partners.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_equity_percentage) || 0), 0)
+                            const totalSubscribed = parseFloat(summary?.total_capital || '0')
+                            const totalContributed = partners.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_balance) || 0), 0)
+                            const pctPaid = totalSubscribed > 0 ? Math.min(100, Math.round((totalContributed / totalSubscribed) * 100)) : 0
+                            return (
+                                <>
+                                    <div className="text-2xl font-bold text-amber-600">
+                                        {totalPct.toFixed(1)}%
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Participación asignada
+                                    </p>
+                                    {totalSubscribed > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                            <div className="flex items-center justify-between text-[9px]">
+                                                <span className="text-muted-foreground font-bold uppercase">Enterado</span>
+                                                <span className="font-mono font-bold text-emerald-600">{pctPaid}%</span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-emerald-500 rounded-full transition-all" 
+                                                    style={{ width: `${pctPaid}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )
+                        })()}
                     </CardContent>
                 </IndustrialCard>
             </div>
@@ -187,42 +211,70 @@ export function EquityCompositionTab() {
                             <TableRow className="bg-muted/50 hover:bg-muted/50">
                                 <TableHead className="text-[10px] font-bold uppercase pl-6">Socio</TableHead>
                                 <TableHead className="text-[10px] font-bold uppercase">RUT</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-right">Participación (%)</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Acciones / Capital</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right">Participación</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right">Capital Suscrito</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right">Capital Enterado</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Pendiente</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {hasPartners ? (
-                                partners.map((partner) => (
-                                    <TableRow key={partner.id} className="hover:bg-muted/30 transition-colors">
-                                        <TableCell className="font-medium pl-6 py-4">
-                                            <div>
-                                                {partner.name}
-                                                <div className="text-[10px] text-muted-foreground font-normal">
-                                                    Socio desde {partner.partner_since || 'No registrado'}
+                                partners.map((partner) => {
+                                    const suscrito = parseFloat(partner.partner_total_contributions) || 0
+                                    const enterado = parseFloat(partner.partner_balance) || 0
+                                    const pendiente = Math.max(0, suscrito - enterado)
+                                    const pctEnterado = suscrito > 0 ? Math.min(100, Math.round((enterado / suscrito) * 100)) : 0
+                                    return (
+                                        <TableRow key={partner.id} className="hover:bg-muted/30 transition-colors">
+                                            <TableCell className="font-medium pl-6 py-4">
+                                                <div>
+                                                    {partner.name}
+                                                    <div className="text-[10px] text-muted-foreground font-normal">
+                                                        Socio desde {partner.partner_since || 'No registrado'}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs">{partner.tax_id}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <span className="font-bold">{partner.partner_equity_percentage}%</span>
-                                                <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-primary" 
-                                                        style={{ width: `${partner.partner_equity_percentage}%` }}
-                                                    />
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs">{partner.tax_id}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <span className="font-bold">{partner.partner_equity_percentage}%</span>
+                                                    <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-primary" 
+                                                            style={{ width: `${partner.partner_equity_percentage}%` }}
+                                                        />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6 font-mono font-bold">
-                                            {formatCurrency(partner.partner_total_contributions || 0)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono font-bold">
+                                                {formatCurrency(suscrito)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="space-y-1">
+                                                    <div className="font-mono font-bold text-emerald-600">{formatCurrency(enterado)}</div>
+                                                    <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-emerald-500 rounded-full transition-all"
+                                                            style={{ width: `${pctEnterado}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right pr-6">
+                                                {pendiente > 0 ? (
+                                                    <span className="font-mono font-bold text-rose-600">{formatCurrency(pendiente)}</span>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-[9px] text-emerald-600 border-emerald-300 bg-emerald-50">
+                                                        Enterado
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-32 text-center text-muted-foreground uppercase text-[10px] italic">
+                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground uppercase text-[10px] italic">
                                         No se han configurado socios todavía.
                                     </TableCell>
                                 </TableRow>
