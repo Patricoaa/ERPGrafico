@@ -103,6 +103,17 @@ class Contact(models.Model):
         if self.is_default_vendor:
             Contact.objects.filter(is_default_vendor=True).exclude(pk=self.pk).update(is_default_vendor=False)
 
+        # Partner Account Auto-Creation
+        if self.is_partner and not self.partner_account:
+            from accounting.models import AccountingSettings, Account
+            settings = AccountingSettings.objects.first()
+            if settings and settings.partner_current_account:
+                self.partner_account = Account.objects.create(
+                    name=f"C.P. {self.name}",
+                    parent=settings.partner_current_account,
+                    account_type=settings.partner_current_account.account_type
+                )
+
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -277,6 +288,7 @@ class Contact(models.Model):
             return Decimal('0')
         
         from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
         
         contributions = self.partner_transactions.filter(
             transaction_type__in=[
@@ -299,10 +311,53 @@ class Contact(models.Model):
 
     @property
     def partner_total_contributions(self) -> Decimal:
-        """Total accumulated contributions from this partner."""
+        """
+        Calculates the total SUBSCRIBED equity for the partner.
+        Based on SUBSCRIPTION and TRANSFER movements.
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        # Subscriptions (+)
+        subs = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Reductions (-)
+        reds = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Transferred OUT (-)
+        trans_out = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Transferred IN (+)
+        trans_in = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        return subs - reds - trans_out + trans_in
+
+    @property
+    def partner_pending_capital(self) -> Decimal:
+        """
+        Subscribed (-) Paid In.
+        Positive = partner owes capital to the company.
+        """
+        return self.partner_total_contributions - self.partner_total_paid_in
+
+    @property
+    def partner_total_paid_in(self) -> Decimal:
+        """Total accumulated assets/cash actually delivered to company."""
         if not self.is_partner:
             return Decimal('0')
         from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
         return self.partner_transactions.filter(
             transaction_type__in=[
                 PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,

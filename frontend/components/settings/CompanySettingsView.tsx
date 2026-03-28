@@ -37,6 +37,7 @@ import api from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 import { cn } from "@/lib/utils"
+import { PartnerSettingsTab } from "./PartnerSettingsTab"
 
 const companySchema = z.object({
     name: z.string().optional().or(z.literal("")),

@@ -266,6 +266,8 @@ class AccountingService:
             'default_tax_receivable_account': '1.1.04.01',
             'default_tax_payable_account': '2.1.02.01',
             'default_uncollectible_expense_account': '5.2.26',
+            'partner_current_account': '3.1.04',
+            'partner_capital_social_account': '3.1.01',
             
             # Cuentas de inventario
             'default_inventory_account': '1.1.03.01',  # Mantener para compatibilidad

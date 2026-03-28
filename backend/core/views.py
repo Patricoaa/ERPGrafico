@@ -80,19 +80,24 @@ class MyProfileView(APIView):
 
     def get(self, request):
         from hr.models import Employee, Payroll, SalaryAdvance, PayrollPayment
-        from hr.serializers import EmployeeSerializer, PayrollListSerializer, SalaryAdvanceSerializer, PayrollPaymentSerializer
+        from hr.serializers import (
+            EmployeeSerializer, PayrollListSerializer, SalaryAdvanceSerializer, 
+            PayrollPaymentSerializer, ContactMiniSerializer
+        )
 
         user = request.user
         user_data = UserSerializer(user).data
 
         employee_data = None
+        contact_detail = None
         payrolls_data = []
         advances_data = []
         payments_data = []
 
         # Resolve User → Contact → Employee
-        if user.contact_id:
-            employee = Employee.objects.filter(contact_id=user.contact_id).select_related('contact', 'afp').first()
+        if user.contact:
+            contact_detail = ContactMiniSerializer(user.contact).data
+            employee = Employee.objects.filter(contact=user.contact).select_related('contact', 'afp').first()
             if employee:
                 employee_data = EmployeeSerializer(employee).data
 
@@ -118,6 +123,7 @@ class MyProfileView(APIView):
 
         return Response({
             'user': user_data,
+            'contact_detail': contact_detail,
             'employee': employee_data,
             'payrolls': payrolls_data,
             'advances': advances_data,

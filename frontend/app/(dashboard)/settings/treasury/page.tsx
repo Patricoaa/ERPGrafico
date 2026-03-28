@@ -215,8 +215,8 @@ export default function TreasurySettingsPage() {
                             <div>
                                 <p className="text-xs font-semibold uppercase text-muted-foreground mb-4">Egresos / Retiros</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro de Socio" accountType="EQUITY" />
                                     <AccountField form={form} name="pos_theft_account" label="Robo / Pérdida" accountType="EXPENSE" />
+                                    <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo" accountType="EXPENSE" />
                                     <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo" accountType="EXPENSE" />
                                     <AccountField form={form} name="pos_cashback_error_account" label="Vuelto Incorrecto" accountType="EXPENSE" />
                                     <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos (Varios)" accountType="EXPENSE" />

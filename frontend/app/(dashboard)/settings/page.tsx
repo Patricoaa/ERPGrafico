@@ -24,29 +24,18 @@ export default function SettingsPage() {
                     </IndustrialCard>
                 </Link>
 
-                <Link href="/settings/accounting">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-blue-500">
+                <Link href="/settings/partners">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-pink-500">
                         <CardHeader className="flex flex-row items-center gap-4">
-                            <Database className="h-8 w-8 text-primary" />
+                            <Building2 className="h-8 w-8 text-primary" />
                             <div>
-                                <CardTitle>Contabilidad</CardTitle>
-                                <CardDescription>Cuentas predeterminadas y flujos base.</CardDescription>
+                                <CardTitle>Socios y Capital</CardTitle>
+                                <CardDescription>Composición societaria y aportes.</CardDescription>
                             </div>
                         </CardHeader>
                     </IndustrialCard>
                 </Link>
 
-                <Link href="/settings/tax">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-amber-500">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <FileText className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Impuestos</CardTitle>
-                                <CardDescription>Tasas IVA, PPM y cuentas de cumplimiento.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </IndustrialCard>
-                </Link>
 
                 <Link href="/settings/users">
                     <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-emerald-500">
@@ -59,6 +48,7 @@ export default function SettingsPage() {
                         </CardHeader>
                     </IndustrialCard>
                 </Link>
+
 
 
                 <Link href="/settings/audit">

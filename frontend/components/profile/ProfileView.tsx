@@ -33,6 +33,7 @@ import {
     ChevronDown, ChevronRight
 } from "lucide-react"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
+import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from "@/components/ui/data-table-cells"
 
 // --- Schemas ---
@@ -74,6 +75,13 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
         { value: "account", label: "Cuenta", iconName: "user-cog", href: "/profile?tab=account" },
         { value: "personal", label: "Personal", iconName: "badge-check", href: "/profile?tab=personal" },
     ]
+    
+    // Solo mostramos el tab de Socio si el contacto asociado al empleado o usuario es socio.
+    const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
+    const isPartner = contactDetail?.is_partner
+    if (isPartner) {
+        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner" })
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -86,6 +94,11 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
                 return {
                     title: "Mi Ficha Personal",
                     description: "Visualice su información como empleado, historial de liquidaciones y pagos.",
+                }
+            case "partner":
+                return {
+                    title: "Mi Capital",
+                    description: "Centro de control de participación societaria y estado de cuenta patrimonial.",
                 }
             default:
                 return { title: "Mi Perfil", description: "" }
@@ -142,6 +155,12 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
                             downloadingAll={downloadingAll}
                         />
                     </TabsContent>
+                    
+                    {isPartner && contactDetail && (
+                        <TabsContent value="partner" className="mt-0 outline-none space-y-6">
+                            <PartnerProfileTab contactId={contactDetail.id} />
+                        </TabsContent>
+                    )}
                 </div>
             </Tabs>
         </div>

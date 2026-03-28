@@ -20,6 +20,13 @@ class PartnerTransaction(models.Model):
         LOAN_FROM_COMPANY = 'LOAN_OUT', _('Préstamo de la Empresa al Socio')
         CAPITAL_RETURN = 'CAPITAL_RETURN', _('Devolución de Capital')
         DIVIDEND = 'DIVIDEND', _('Distribución de Utilidades')
+        
+        # Equity Composition Movements
+        EQUITY_SUBSCRIPTION = 'SUBSCRIPTION', _('Suscripción de Capital')
+        EQUITY_TRANSFER_IN = 'TRANSFER_IN', _('Transferencia Recibida')
+        EQUITY_TRANSFER_OUT = 'TRANSFER_OUT', _('Transferencia Entregada')
+        EQUITY_REDUCTION = 'REDUCTION', _('Reducción de Capital')
+        
         OTHER = 'OTHER', _('Otro')
 
     partner = models.ForeignKey(
@@ -45,11 +52,11 @@ class PartnerTransaction(models.Model):
     description = models.TextField(_("Descripción"), blank=True)
 
     # Accounting traceability
-    journal_entry = models.OneToOneField(
+    journal_entry = models.ForeignKey(
         'accounting.JournalEntry',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='partner_transaction',
+        related_name='partner_transactions',
         verbose_name=_("Asiento Contable")
     )
 
@@ -110,6 +117,16 @@ class PartnerTransaction(models.Model):
             self.Type.LOAN_FROM_COMPANY,
             self.Type.CAPITAL_RETURN,
             self.Type.DIVIDEND,
+            self.Type.EQUITY_REDUCTION,
+        ]
+
+    @property
+    def is_equity_composition(self):
+        """Returns True if this transaction affects the formal company capital structure."""
+        return self.transaction_type in [
+            self.Type.EQUITY_SUBSCRIPTION,
+            self.Type.EQUITY_TRANSFER,
+            self.Type.EQUITY_REDUCTION,
         ]
 
     @property
