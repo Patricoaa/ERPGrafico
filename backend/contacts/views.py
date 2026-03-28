@@ -623,6 +623,43 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             'transactions': serializer.data
         })
 
+    @action(detail=False, methods=['get'])
+    def partners_summary(self, request):
+        """
+        Calculates global metrics for the partner dashboard.
+        """
+        from django.db.models import Sum
+        from .partner_models import PartnerTransaction
+        
+        # Subscriptions (+)
+        subs = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        # Reductions (-)
+        reds = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Net Transfers (In - Out should be zero globally, but we sum explicitly)
+        trans_in = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        trans_out = PartnerTransaction.objects.filter(
+            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        total_capital = subs - reds + trans_in - trans_out
+        partner_count = Contact.objects.filter(is_partner=True).count()
+        
+        return Response({
+            "total_capital": str(total_capital),
+            "partner_count": partner_count,
+            "capital_state": "100", # Fixed for now
+            "last_updated": timezone.now().isoformat()
+        })
+
     @action(detail=True, methods=['post', 'put', 'patch'])
     def setup_partner(self, request, pk=None):
         """Enable or update partner specific settings for a contact"""

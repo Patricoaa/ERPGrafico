@@ -14,6 +14,7 @@ interface CashMovementModalProps {
     initialContactId?: number
     initialContactName?: string
     fixedMoveType?: string;
+    variant?: 'partners' | 'standard';
 }
 
 export function CashMovementModal({ 
@@ -22,7 +23,8 @@ export function CashMovementModal({
     onSuccess,
     initialContactId,
     initialContactName,
-    fixedMoveType
+    fixedMoveType,
+    variant = 'standard'
 }: CashMovementModalProps) {
     const handleCompleteWizard = async (data: MovementData) => {
         let movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
@@ -70,6 +72,7 @@ export function CashMovementModal({
                         initialContactId={initialContactId}
                         initialContactName={initialContactName}
                         fixedMoveType={fixedMoveType}
+                        variant={variant}
                         onComplete={handleCompleteWizard}
                         onCancel={() => onOpenChange(false)}
                     />

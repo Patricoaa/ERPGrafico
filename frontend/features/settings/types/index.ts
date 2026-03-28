@@ -115,9 +115,17 @@ export interface InventorySettings {
 }
 
 export type InventorySettingsUpdatePayload = Partial<InventorySettings>
-
-// Combined settings type
-export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings
+ 
+ // Partner Equity Settings
+ export interface PartnerSettings {
+     partner_capital_social_account: string | number | null
+     partner_capital_social_account_name?: string
+ }
+ 
+ export type PartnerSettingsUpdatePayload = Partial<PartnerSettings>
+ 
+ // Combined settings type
+ export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings
 
 // Company Settings
 export interface CompanySettings {

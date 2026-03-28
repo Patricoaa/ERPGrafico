@@ -150,7 +150,7 @@ export function PartnerLedgerTab() {
                     <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                             <History className="h-5 w-5 text-primary" />
-                            Detalle de Movimientos (Libro Auxiliar)
+                            Detalle de Movimientos
                         </CardTitle>
                         <CardDescription>Historial cronológico de capital comprometido vs pagado</CardDescription>
                     </div>
@@ -245,6 +245,7 @@ export function PartnerLedgerTab() {
                 open={isMovementOpen}
                 onOpenChange={setIsMovementOpen}
                 onSuccess={fetchData}
+                variant="partners"
             />
         </div>
     )
