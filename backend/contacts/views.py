@@ -575,31 +575,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
-    def partners_summary(self, request):
-        """Get global summary of partners equity"""
-        from django.db.models import Sum
-        from decimal import Decimal
-        from .partner_models import PartnerTransaction
-        
-        contacts = Contact.objects.filter(is_partner=True)
-        
-        # Calculate totals
-        contributions = PartnerTransaction.objects.filter(
-            transaction_type__in=['CAPITAL_CASH', 'CAPITAL_INVENTORY']
-        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-        
-        withdrawals = PartnerTransaction.objects.filter(
-            transaction_type='WITHDRAWAL'
-        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-        
-        return Response({
-            'total_partners': contacts.count(),
-            'total_contributions': str(contributions),
-            'total_withdrawals': str(withdrawals),
-            'net_equity': str(contributions - withdrawals)
-        })
-
     @action(detail=True, methods=['get'])
     def partner_statement(self, request, pk=None):
         """Get statement of account for a specific partner"""
@@ -832,6 +807,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if amount <= 0:
             return Response({"error": "El monto debe ser mayor a cero."}, status=400)
 
+        # Validate reduction does not exceed subscribed capital
+        if move_type == 'REDUCTION':
+            try:
+                contact = Contact.objects.get(id=contact_id)
+                if amount > contact.partner_total_contributions:
+                    return Response({
+                        "error": f"El monto de reducción (${amount:,.0f}) excede el capital suscrito del socio (${contact.partner_total_contributions:,.0f})."
+                    }, status=400)
+            except Contact.DoesNotExist:
+                return Response({"error": "El contacto no existe."}, status=400)
+
         try:
             contact = Contact.objects.get(id=contact_id)
             settings = AccountingSettings.objects.first()
@@ -839,7 +825,18 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             if not settings or not settings.partner_capital_social_account:
                 return Response({"error": "Configuración contable incompleta (Capital Social)."}, status=400)
 
-            # 1. Create Journal Entry
+            # 1. Mark as partner and set partner_since (this creates partner_account if missing)
+            contact.is_partner = True
+            if not contact.partner_since:
+                contact.partner_since = date if isinstance(date, str) == False else timezone.now().date()
+                try:
+                    from datetime import datetime
+                    contact.partner_since = datetime.strptime(str(date), '%Y-%m-%d').date() if isinstance(date, str) else date
+                except (ValueError, TypeError):
+                    contact.partner_since = timezone.now().date()
+            contact.save()
+
+            # 2. Create Journal Entry
             entry_desc = f"{'Aumento' if move_type == 'SUBSCRIPTION' else 'Reducción'} de Capital: {contact.name}"
             if description: entry_desc += f" - {description}"
             
@@ -863,7 +860,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 label=entry_desc, debit=0, credit=amount
             )
 
-            # 2. Record Partner Transaction for ledger
+            # 3. Record Partner Transaction for ledger
             actual_type = PartnerTransaction.Type.EQUITY_SUBSCRIPTION if move_type == 'SUBSCRIPTION' else PartnerTransaction.Type.EQUITY_REDUCTION
             PartnerTransaction.objects.create(
                 partner=contact, transaction_type=actual_type, amount=amount,
@@ -871,9 +868,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 created_by=request.user
             )
 
-            # 3. Mark as partner and Recalculate %
-            contact.is_partner = True
-            contact.save(update_fields=['is_partner'])
+            # 4. Recalculate %
             self._recalculate_partner_percentages()
 
             return Response({"message": "Movimiento de capital registrado.", "journal_entry": entry.display_id})
@@ -901,11 +896,42 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if amount <= 0 or from_id == to_id:
             return Response({"error": "Datos de transferencia inválidos."}, status=400)
 
+        # Pre-validate contacts exist and have required accounts
+        try:
+            seller_check = Contact.objects.get(id=from_id)
+            buyer_check = Contact.objects.get(id=to_id)
+        except Contact.DoesNotExist:
+            return Response({"error": "Uno o ambos contactos no existen."}, status=400)
+
+        if not seller_check.partner_account:
+            return Response({"error": f"El socio {seller_check.name} no tiene una cuenta particular asignada."}, status=400)
+
+        # Validate transfer does not exceed seller's subscribed capital
+        if amount > seller_check.partner_total_contributions:
+            return Response({
+                "error": f"El monto de transferencia (${amount:,.0f}) excede el capital suscrito del socio vendedor (${seller_check.partner_total_contributions:,.0f})."
+            }, status=400)
+
         try:
             seller = Contact.objects.get(id=from_id)
             buyer = Contact.objects.get(id=to_id)
             
-            # 1. Journal Entry (Transfer claim balance between accounts)
+            settings = AccountingSettings.objects.first()
+            if not settings:
+                return Response({"error": "Configuración contable no encontrada."}, status=400)
+
+            # 1. Ensure buyer is a partner and has account BEFORE creating Journal Items
+            buyer.is_partner = True
+            if not buyer.partner_since:
+                buyer.partner_since = date if isinstance(date, str) == False else timezone.now().date()
+                try:
+                    from datetime import datetime
+                    buyer.partner_since = datetime.strptime(str(date), '%Y-%m-%d').date() if isinstance(date, str) else date
+                except (ValueError, TypeError):
+                    buyer.partner_since = timezone.now().date()
+            buyer.save()
+
+            # 2. Create Journal Entry
             entry_desc = f"Transferencia de Capital: {seller.name} -> {buyer.name}"
             if description: entry_desc += f" - {description}"
             
@@ -1003,6 +1029,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 from .partner_models import PartnerTransaction
                 for contact, amount in contacts_with_amounts:
                     contact.is_partner = True
+                    if not contact.partner_since:
+                        contact.partner_since = timezone.now().date()
                     contact.save()
                     
                     # We will NOT set percentage manually here, 

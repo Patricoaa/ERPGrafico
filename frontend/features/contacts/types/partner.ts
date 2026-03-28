@@ -19,6 +19,7 @@ export interface PartnerTransaction {
     partner: number;
     partner_name: string;
     transaction_type: string;
+    transaction_type_display: string;
     amount: string;
     date: string;
     description: string;

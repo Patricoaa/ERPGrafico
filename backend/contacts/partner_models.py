@@ -125,7 +125,8 @@ class PartnerTransaction(models.Model):
         """Returns True if this transaction affects the formal company capital structure."""
         return self.transaction_type in [
             self.Type.EQUITY_SUBSCRIPTION,
-            self.Type.EQUITY_TRANSFER,
+            self.Type.EQUITY_TRANSFER_IN,
+            self.Type.EQUITY_TRANSFER_OUT,
             self.Type.EQUITY_REDUCTION,
         ]
 

@@ -49,6 +49,7 @@ from .partner_models import PartnerTransaction
 
 class PartnerTransactionSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source='partner.name', read_only=True)
+    transaction_type_display = serializers.CharField(source='get_transaction_type_display', read_only=True)
     journal_entry_id = serializers.IntegerField(source='journal_entry.id', read_only=True)
     journal_entry_display = serializers.CharField(source='journal_entry.display_id', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True, default='')
@@ -56,7 +57,7 @@ class PartnerTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerTransaction
         fields = [
-            'id', 'partner', 'partner_name', 'transaction_type', 
+            'id', 'partner', 'partner_name', 'transaction_type', 'transaction_type_display',
             'amount', 'date', 'description', 
             'journal_entry_id', 'journal_entry_display',
             'treasury_movement',
