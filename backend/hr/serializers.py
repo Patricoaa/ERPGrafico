@@ -36,7 +36,7 @@ class PayrollConceptSerializer(serializers.ModelSerializer):
 class ContactMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['id', 'name', 'tax_id', 'display_id', 'phone', 'email']
+        fields = ['id', 'name', 'tax_id', 'display_id', 'phone', 'email', 'is_partner']
 
 
 class EmployeeConceptAmountSerializer(serializers.ModelSerializer):

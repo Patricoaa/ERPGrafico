@@ -11,9 +11,19 @@ interface CashMovementModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
+    initialContactId?: number
+    initialContactName?: string
+    fixedMoveType?: string;
 }
 
-export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovementModalProps) {
+export function CashMovementModal({ 
+    open, 
+    onOpenChange, 
+    onSuccess,
+    initialContactId,
+    initialContactName,
+    fixedMoveType
+}: CashMovementModalProps) {
     const handleCompleteWizard = async (data: MovementData) => {
         let movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
 
@@ -23,6 +33,7 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                 amount: data.amount,
                 from_account: data.fromAccountId || null,
                 to_account: data.toAccountId || null,
+                contact: data.contactId || null,
                 notes: data.notes,
                 justify_reason: data.moveType !== 'TRANSFER' ? data.moveType : null,
                 payment_method: 'CASH', // Legacy
@@ -49,13 +60,16 @@ export function CashMovementModal({ open, onOpenChange, onSuccess }: CashMovemen
                     <span>Nuevo Movimiento de Tesorería</span>
                 </div>
             }
-            description="Registre traspasos, depósitos o retiros manuales."
+            description="Registre traspasos, depósitos o retiros manuales de socios o generales."
             size="md"
         >
             <div className="pt-2 pb-6">
                 {open && (
                     <MovementWizard
                         context="treasury"
+                        initialContactId={initialContactId}
+                        initialContactName={initialContactName}
+                        fixedMoveType={fixedMoveType}
                         onComplete={handleCompleteWizard}
                         onCancel={() => onOpenChange(false)}
                     />

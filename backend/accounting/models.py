@@ -781,6 +781,12 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta Particular de Socios"),
         help_text=_("Cuenta padre de patrimonio para cuenta corriente de socios (ej: 3.1.04).")
     )
+    partner_capital_social_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_capital_social',
+        verbose_name=_("Cuenta de Capital Social"),
+        help_text=_("Cuenta global de patrimonio para el capital social de la empresa (ej: 3.1.01).")
+    )
 
     # DTE Configuration
     allowed_dte_types_emit = models.JSONField(

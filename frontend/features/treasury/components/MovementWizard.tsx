@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -7,6 +7,7 @@ import { Banknote, LogOut, ArrowRightLeft, Loader2 } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';
@@ -17,6 +18,7 @@ export interface MovementData {
     fromAccountId?: number; // For generic treasury
     toAccountId?: number; // For generic treasury
     isInflowForce?: boolean; // For POS to know transfer direction
+    contactId?: number; // For partner/client movements
 }
 
 interface MovementWizardProps {
@@ -24,12 +26,17 @@ interface MovementWizardProps {
     maxOutboundAmount?: number;
     fixedAccountId?: number; // For POS, the current session account
     fixedAccountName?: string; // For display
+    initialContactId?: number; // For partner/client specific context
+    initialContactName?: string;
+    initialAccountName?: string;
+    fixedMoveType?: string;
     onComplete: (data: MovementData) => Promise<void>;
     onCancel: () => void;
 }
 
 const MOVEMENT_TYPES = {
     IN: [
+        { value: "CAPITAL_CONTRIBUTION", label: "Aporte de Capital (Socio)" },
         { value: "TIP", label: "Propina" },
         { value: "OTHER_IN", label: "Otro Depósito (Varios)" },
         { value: "COUNTING_ERROR", label: "Error de Conteo (Sobrante)" },
@@ -51,13 +58,21 @@ export function MovementWizard({
     maxOutboundAmount,
     fixedAccountId,
     fixedAccountName,
+    initialContactId,
+    initialContactName,
     onComplete,
-    onCancel
+    onCancel,
+    initialAccountName,
+    fixedMoveType
 }: MovementWizardProps) {
     const [step, setStep] = useState(1)
     const [impact, setImpact] = useState<'IN' | 'OUT' | 'TRANSFER'>('IN')
     const [moveType, setMoveType] = useState('TIP')
-    
+
+    // Partner context
+    const [contactId, setContactId] = useState<number | undefined>(initialContactId)
+    const [contactName, setContactName] = useState<string | undefined>(initialContactName)
+
     // For Transfers
     const [transferDirection, setTransferDirection] = useState<'IN' | 'OUT'>('OUT') // IN = receive from, OUT = send to
     const [transferTargetId, setTransferTargetId] = useState<string>("") // POS transfer target
@@ -65,7 +80,7 @@ export function MovementWizard({
     const [toAccountId, setToAccountId] = useState<string>("") // Treasury to
     const [fromAccountName, setFromAccountName] = useState("") // Display name
     const [toAccountName, setToAccountName] = useState("") // Display name
-    
+
     const [amount, setAmount] = useState('0')
     const [notes, setNotes] = useState('')
     const [submitting, setSubmitting] = useState(false)
@@ -74,12 +89,13 @@ export function MovementWizard({
         setSubmitting(true)
         try {
             const numAmount = parseFloat(amount) || 0
-            
+
             const data: MovementData = {
                 impact,
                 moveType: impact === 'TRANSFER' ? 'TRANSFER' : moveType,
                 amount: numAmount,
                 notes,
+                contactId,
             }
 
             if (impact === 'TRANSFER') {
@@ -111,6 +127,34 @@ export function MovementWizard({
             setSubmitting(false)
         }
     }
+
+    // If fixedMoveType is present, set it and potentially skip to the amount step (Step 4)
+    useEffect(() => {
+        if (fixedMoveType) {
+            const foundIn = MOVEMENT_TYPES.IN.find(t => t.value === fixedMoveType);
+            const foundOut = MOVEMENT_TYPES.OUT.find(t => t.value === fixedMoveType);
+
+            if (foundIn) {
+                setImpact('IN');
+                setMoveType(fixedMoveType);
+            } else if (foundOut) {
+                setImpact('OUT');
+                setMoveType(fixedMoveType);
+            } else if (fixedMoveType === 'TRANSFER') {
+                setImpact('TRANSFER');
+                setMoveType('TRANSFER');
+            }
+
+            // If fixedMoveType is provided, we can skip directly to step 4 (Amount)
+            // unless it's a treasury context and needs account selection first (step 2)
+            if (context === 'treasury' && fixedMoveType !== 'TRANSFER') {
+                // For treasury IN/OUT, we still need to select the account first (Step 2)
+                setStep(2);
+            } else {
+                setStep(4);
+            }
+        }
+    }, [fixedMoveType, context]);
 
     const renderStep = () => {
         return (
@@ -202,7 +246,7 @@ export function MovementWizard({
                                                     <h3 className="font-bold">Detalles del Traspaso</h3>
                                                     <p className="text-sm text-muted-foreground">{fixedAccountName}</p>
                                                 </div>
-                                                
+
                                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                                     <Button
                                                         variant="outline"
@@ -236,11 +280,11 @@ export function MovementWizard({
                                                         }}
                                                     />
                                                 </div>
-                                                
+
                                                 <div className="flex gap-2 pt-4">
                                                     <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                                                    <Button 
-                                                        onClick={() => setStep(4)} 
+                                                    <Button
+                                                        onClick={() => setStep(4)}
                                                         className="flex-1"
                                                         disabled={!transferTargetId}
                                                     >
@@ -256,7 +300,7 @@ export function MovementWizard({
                                                     <h3 className="font-bold">Motivo del {impact === "IN" ? "Depósito" : "Retiro"}</h3>
                                                 </div>
                                                 <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
-                                                    {MOVEMENT_TYPES[impact as 'IN'|'OUT'].map((t) => (
+                                                    {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
                                                         <Button
                                                             key={t.value}
                                                             variant={moveType === t.value ? "default" : "outline"}
@@ -272,8 +316,8 @@ export function MovementWizard({
                                                 </div>
                                                 <div className="flex gap-2 pt-4">
                                                     <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                                                    <Button 
-                                                        onClick={() => setStep(4)} 
+                                                    <Button
+                                                        onClick={() => setStep(4)}
                                                         className="flex-1"
                                                         disabled={!moveType}
                                                     >
@@ -317,8 +361,8 @@ export function MovementWizard({
                                                 </div>
                                                 <div className="flex gap-2 pt-4">
                                                     <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                                                    <Button 
-                                                        onClick={() => setStep(4)} 
+                                                    <Button
+                                                        onClick={() => setStep(4)}
                                                         className="flex-1"
                                                         disabled={!fromAccountId || !toAccountId}
                                                     >
@@ -347,12 +391,12 @@ export function MovementWizard({
                                                 </div>
                                                 <div className="flex gap-2 pt-4">
                                                     <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                                                    <Button 
-                                                        onClick={() => setStep(3)} 
+                                                    <Button
+                                                        onClick={() => setStep(fixedMoveType ? 4 : 3)}
                                                         className="flex-1"
                                                         disabled={!isReady}
                                                     >
-                                                        Siguiente
+                                                        {fixedMoveType ? 'Continuar' : 'Siguiente'}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -368,7 +412,7 @@ export function MovementWizard({
                                             <p className="text-sm text-muted-foreground">Indique la razón del {impact === "IN" ? "depósito" : "retiro"}</p>
                                         </div>
                                         <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
-                                            {MOVEMENT_TYPES[impact as 'IN'|'OUT'].map((t) => (
+                                            {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
                                                 <Button
                                                     key={t.value}
                                                     variant={moveType === t.value ? "default" : "outline"}
@@ -384,8 +428,8 @@ export function MovementWizard({
                                         </div>
                                         <div className="flex gap-2 pt-4">
                                             <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Atrás</Button>
-                                            <Button 
-                                                onClick={() => setStep(4)} 
+                                            <Button
+                                                onClick={() => setStep(4)}
                                                 className="flex-1"
                                                 disabled={!moveType}
                                             >
@@ -396,17 +440,18 @@ export function MovementWizard({
                                 )
 
                             case 4: // Amount
+                                const isPartnerReason = moveType === 'PARTNER_WITHDRAWAL' || moveType === 'CAPITAL_CONTRIBUTION';
                                 return (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                                         <div className="text-center space-y-1">
-                                            <h3 className="font-bold text-lg uppercase tracking-tight">Monto y Notas</h3>
+                                            <h3 className="font-bold text-lg uppercase tracking-tight">Monto</h3>
                                             <Badge variant="outline" className={cn(
                                                 "capitalize font-bold border-2",
-                                                impact === "IN" ? "border-emerald-500 text-emerald-600 bg-emerald-50" : 
-                                                impact === "OUT" ? "border-amber-500 text-amber-600 bg-amber-50" :
-                                                "border-blue-500 text-blue-600 bg-blue-50"
+                                                impact === "IN" ? "border-emerald-500 text-emerald-600 bg-emerald-50" :
+                                                    impact === "OUT" ? "border-amber-500 text-amber-600 bg-amber-50" :
+                                                        "border-blue-500 text-blue-600 bg-blue-50"
                                             )}>
-                                                {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN'|'OUT'].find(t => t.value === moveType)?.label}
+                                                {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}
                                             </Badge>
                                         </div>
 
@@ -425,19 +470,28 @@ export function MovementWizard({
                                             />
                                         </div>
 
-                                        <Textarea
-                                            value={notes}
-                                            onChange={(e) => setNotes(e.target.value)}
-                                            placeholder="Notas opcionales..."
-                                            className="min-h-[60px] resize-none text-sm"
-                                        />
+                                        {(isPartnerReason) && (
+                                            <div className="space-y-2 bg-primary/5 p-4 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <Label className="text-xs font-bold uppercase text-primary/70 mb-1 block tracking-wider">Socio Responsable</Label>
+                                                <AdvancedContactSelector
+                                                    value={contactId ? contactId.toString() : null}
+                                                    onChange={(val) => setContactId(val ? parseInt(val) : undefined)}
+                                                    onSelectContact={(acc) => setContactName(acc.name)}
+                                                    placeholder={contactName || "Seleccionar Socio..."}
+                                                    isPartnerOnly={isPartnerReason}
+                                                    disabled={!!initialContactId}
+                                                />
+                                            </div>
+                                        )}
+
+
 
                                         <div className="flex gap-2">
-                                            <Button variant="outline" onClick={() => setStep(impact === 'TRANSFER' ? 2 : (context === 'pos' ? 2 : 3))} className="flex-1">Atrás</Button>
-                                            <Button 
-                                                onClick={() => setStep(5)} 
+                                            <Button variant="outline" onClick={() => setStep((impact === 'TRANSFER' || fixedMoveType) ? 2 : (context === 'pos' ? 2 : 3))} className="flex-1">Atrás</Button>
+                                            <Button
+                                                onClick={() => setStep(5)}
                                                 className="flex-1"
-                                                disabled={parseFloat(amount) <= 0}
+                                                disabled={parseFloat(amount) <= 0 || ((moveType === 'PARTNER_WITHDRAWAL' || moveType === 'CAPITAL_CONTRIBUTION') && !contactId)}
                                             >
                                                 Siguiente
                                             </Button>
@@ -467,17 +521,23 @@ export function MovementWizard({
                                                     {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
                                                 </Badge>
                                             </div>
+                                            {contactName && (
+                                                <div className="p-4 flex justify-between items-center text-sm">
+                                                    <span className="text-muted-foreground font-medium">Socio:</span>
+                                                    <span className="font-bold">{contactName}</span>
+                                                </div>
+                                            )}
                                             {impact !== 'TRANSFER' && (
                                                 <div className="p-4 flex justify-between items-center text-sm">
                                                     <span className="text-muted-foreground font-medium">Motivo:</span>
-                                                    <span className="font-bold">{MOVEMENT_TYPES[impact as 'IN'|'OUT'].find(t => t.value === moveType)?.label}</span>
+                                                    <span className="font-bold">{MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}</span>
                                                 </div>
                                             )}
                                             {(impact === 'OUT' || impact === 'TRANSFER') && (
                                                 <div className="p-4 flex justify-between items-start text-sm">
                                                     <span className="text-muted-foreground font-medium">Origen:</span>
                                                     <span className="font-bold text-right max-w-[180px]">
-                                                        {context === 'pos' 
+                                                        {context === 'pos'
                                                             ? (impact === 'TRANSFER' && transferDirection === 'IN' ? fromAccountName : fixedAccountName)
                                                             : fromAccountName
                                                         }

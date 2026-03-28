@@ -92,6 +92,23 @@ class TreasuryService:
         # 5. Generate Accounting Entry
         if not is_pending_registration:
             TreasuryService._create_accounting_entry(movement)
+
+        # 6. Create PartnerTransaction if applicable
+        if movement.justify_reason in [TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION, TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL] and movement.contact and movement.contact.is_partner:
+            from contacts.partner_models import PartnerTransaction
+            tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH if movement.movement_type == TreasuryMovement.Type.INBOUND else PartnerTransaction.Type.WITHDRAWAL
+            PartnerTransaction.objects.get_or_create(
+                treasury_movement=movement,
+                defaults={
+                    'partner': movement.contact,
+                    'transaction_type': tx_type,
+                    'amount': movement.amount,
+                    'date': movement.date,
+                    'description': movement.notes or f"{movement.get_justify_reason_display()}",
+                    'journal_entry': movement.journal_entry,
+                    'created_by': created_by
+                }
+            )
         
         return movement
 
@@ -259,12 +276,16 @@ class TreasuryService:
             
             # Credit Source (Revenue / Debtor)
             source_acc = None
-            if movement.invoice or movement.sale_order:
-                # Customer Account
-                source_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
-            elif movement.justify_reason:
-                # Operational Reasons (Tips, Adjustments)
-                source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
+            if movement.justify_reason == TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION and movement.contact and movement.contact.is_partner:
+                 source_acc = movement.contact.partner_account
+
+            if not source_acc:
+                if movement.invoice or movement.sale_order:
+                    # Customer Account
+                    source_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+                elif movement.justify_reason:
+                    # Operational Reasons (Tips, Adjustments)
+                    source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
             
             if not source_acc and movement.contact:
                 source_acc = movement.contact.account_receivable
@@ -280,15 +301,19 @@ class TreasuryService:
              
              # Debit Target (Expense / Creditor)
              target_acc = None
-             if movement.invoice or movement.purchase_order or movement.sale_order:
-                  is_sale = bool(movement.sale_order or (movement.invoice and movement.invoice.sale_order))
-                  if is_sale:
-                      target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
-                  else:
-                      # Supplier Account
-                      target_acc = (movement.contact.account_payable if movement.contact else None) or settings.default_payable_account
-             elif movement.justify_reason:
-                  target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
+             if movement.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL and movement.contact and movement.contact.is_partner:
+                  target_acc = movement.contact.partner_account
+
+             if not target_acc:
+                 if movement.invoice or movement.purchase_order or movement.sale_order:
+                      is_sale = bool(movement.sale_order or (movement.invoice and movement.invoice.sale_order))
+                      if is_sale:
+                          target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+                      else:
+                          # Supplier Account
+                          target_acc = (movement.contact.account_payable if movement.contact else None) or settings.default_payable_account
+                 elif movement.justify_reason:
+                      target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
              
              if not target_acc and movement.contact:
                   target_acc = movement.contact.account_payable

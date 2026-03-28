@@ -1,4 +1,4 @@
-import type { Employee, Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
+import type { ContactMini, Employee, Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 
 export interface ProfileUser {
   id: number
@@ -15,6 +15,7 @@ export interface ProfileUser {
 
 export interface MyProfile {
   user: ProfileUser
+  contact_detail: ContactMini | null
   employee: Employee | null
   payrolls: Payroll[]
   advances: SalaryAdvance[]
