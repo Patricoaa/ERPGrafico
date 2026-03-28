@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { 
-    Users, 
+    Banknote, 
     TrendingUp, 
     Plus, 
     ArrowRightLeft, 
@@ -100,47 +100,29 @@ export function EquityCompositionTab() {
                 <IndustrialCard variant="industrial">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex items-center justify-between">
-                            Número de Socios
-                            <Users className="h-4 w-4 text-blue-500" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {partners.length}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                            Personas o entidades con participación
-                        </p>
-                    </CardContent>
-                </IndustrialCard>
-
-                <IndustrialCard variant="industrial">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex items-center justify-between">
                             Estado del Capital
                             <PieChart className="h-4 w-4 text-amber-500" />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {(() => {
-                            const totalPct = partners.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_equity_percentage) || 0), 0)
                             const totalSubscribed = parseFloat(summary?.total_capital || '0')
-                            const totalContributed = partners.reduce((sum: number, p: any) => sum + (parseFloat(p.partner_balance) || 0), 0)
-                            const pctPaid = totalSubscribed > 0 ? Math.min(100, Math.round((totalContributed / totalSubscribed) * 100)) : 0
+                            const totalEnteradoSinExcedente = partners.reduce((sum: number, p: any) => {
+                                const s = parseFloat(p.partner_total_contributions) || 0
+                                const e = parseFloat(p.partner_balance) || 0
+                                return sum + Math.min(e, s)
+                            }, 0)
+                            const pctPaid = totalSubscribed > 0 ? Math.min(100, Math.round((totalEnteradoSinExcedente / totalSubscribed) * 100)) : 0
                             return (
                                 <>
-                                    <div className="text-2xl font-bold text-amber-600">
-                                        {totalPct.toFixed(1)}%
+                                    <div className="text-2xl font-bold text-emerald-600">
+                                        {pctPaid}%
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-1">
-                                        Participación asignada
+                                        Capital efectivamente enterado
                                     </p>
                                     {totalSubscribed > 0 && (
                                         <div className="mt-2 space-y-1">
-                                            <div className="flex items-center justify-between text-[9px]">
-                                                <span className="text-muted-foreground font-bold uppercase">Enterado</span>
-                                                <span className="font-mono font-bold text-emerald-600">{pctPaid}%</span>
-                                            </div>
                                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                                 <div 
                                                     className="h-full bg-emerald-500 rounded-full transition-all" 
@@ -149,6 +131,34 @@ export function EquityCompositionTab() {
                                             </div>
                                         </div>
                                     )}
+                                </>
+                            )
+                        })()}
+                    </CardContent>
+                </IndustrialCard>
+
+                <IndustrialCard variant="industrial">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex items-center justify-between">
+                            Excedente Total
+                            <Banknote className="h-4 w-4 text-blue-500" />
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {(() => {
+                            const totalExcedente = partners.reduce((sum: number, p: any) => {
+                                const suscrito = parseFloat(p.partner_total_contributions) || 0
+                                const enterado = parseFloat(p.partner_balance) || 0
+                                return sum + Math.max(0, enterado - suscrito)
+                            }, 0)
+                            return (
+                                <>
+                                    <div className="text-2xl font-bold font-mono text-blue-600">
+                                        {formatCurrency(totalExcedente)}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Aportes que superan el suscrito
+                                    </p>
                                 </>
                             )
                         })()}
@@ -221,9 +231,10 @@ export function EquityCompositionTab() {
                             {hasPartners ? (
                                 partners.map((partner) => {
                                     const suscrito = parseFloat(partner.partner_total_contributions) || 0
-                                    const enterado = parseFloat(partner.partner_balance) || 0
-                                    const pendiente = Math.max(0, suscrito - enterado)
-                                    const pctEnterado = suscrito > 0 ? Math.min(100, Math.round((enterado / suscrito) * 100)) : 0
+                                    const enteradoReal = parseFloat(partner.partner_balance) || 0
+                                    const enteradoAMostrar = Math.min(enteradoReal, suscrito)
+                                    const pendiente = Math.max(0, suscrito - enteradoReal)
+                                    const pctEnterado = suscrito > 0 ? Math.min(100, Math.round((enteradoAMostrar / suscrito) * 100)) : 0
                                     return (
                                         <TableRow key={partner.id} className="hover:bg-muted/30 transition-colors">
                                             <TableCell className="font-medium pl-6 py-4">
@@ -251,7 +262,7 @@ export function EquityCompositionTab() {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="space-y-1">
-                                                    <div className="font-mono font-bold text-emerald-600">{formatCurrency(enterado)}</div>
+                                                    <div className="font-mono font-bold text-emerald-600">{formatCurrency(enteradoAMostrar)}</div>
                                                     <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                                                         <div 
                                                             className="h-full bg-emerald-500 rounded-full transition-all"
@@ -261,7 +272,11 @@ export function EquityCompositionTab() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right pr-6">
-                                                {pendiente > 0 ? (
+                                                {enteradoReal > suscrito ? (
+                                                    <Badge variant="outline" className="text-[9px] text-blue-600 border-blue-300 bg-blue-50">
+                                                        Excedente +{formatCurrency(enteradoReal - suscrito)}
+                                                    </Badge>
+                                                ) : pendiente > 0 ? (
                                                     <span className="font-mono font-bold text-rose-600">{formatCurrency(pendiente)}</span>
                                                 ) : (
                                                     <Badge variant="outline" className="text-[9px] text-emerald-600 border-emerald-300 bg-emerald-50">

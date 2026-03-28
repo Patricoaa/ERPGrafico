@@ -9,7 +9,8 @@ import {
     Wallet,
     Calendar,
     Search,
-    Plus
+    Plus,
+    Package
 } from "lucide-react"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
+import { InventoryContributionModal } from "@/components/settings/partners/InventoryContributionModal"
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "all", label: "Todos los tipos" },
@@ -38,6 +40,9 @@ const TRANSACTION_TYPE_OPTIONS = [
     { value: "CAPITAL_CASH", label: "Aporte Efectivo" },
     { value: "CAPITAL_INVENTORY", label: "Aporte en Bienes" },
     { value: "WITHDRAWAL", label: "Retiro" },
+    { value: "DIVIDEND", label: "Dividendos" },
+    { value: "LOAN_IN", label: "Préstamo de Socio" },
+    { value: "LOAN_OUT", label: "Préstamo a Socio" },
     { value: "TRANSFER_IN", label: "Transferencia (Ingreso)" },
     { value: "TRANSFER_OUT", label: "Transferencia (Egreso)" },
 ]
@@ -50,6 +55,7 @@ export function PartnerLedgerTab() {
     const [filterType, setFilterType] = useState<string>("all")
     const [search, setSearch] = useState("")
     const [isMovementOpen, setIsMovementOpen] = useState(false)
+    const [isInventoryOpen, setIsInventoryOpen] = useState(false)
 
     const fetchData = async () => {
         setLoading(true)
@@ -180,7 +186,15 @@ export function PartnerLedgerTab() {
                                 onClick={() => setIsMovementOpen(true)}
                             >
                                 <Plus className="h-4 w-4 mr-2" />
-                                Registrar Aporte/Retiro
+                                Aporte/Retiro Efectivo
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-10 border-amber-200 hover:bg-amber-50 text-amber-700"
+                                onClick={() => setIsInventoryOpen(true)}
+                            >
+                                <Package className="h-4 w-4 mr-2" />
+                                Aporte/Retiro Bienes
                             </Button>
                         </div>
                     </div>
@@ -293,6 +307,13 @@ export function PartnerLedgerTab() {
                 onOpenChange={setIsMovementOpen}
                 onSuccess={fetchData}
                 variant="partners"
+            />
+
+            {/* Inventory Contribution Modal */}
+            <InventoryContributionModal
+                open={isInventoryOpen}
+                onOpenChange={setIsInventoryOpen}
+                onSuccess={fetchData}
             />
         </div>
     )

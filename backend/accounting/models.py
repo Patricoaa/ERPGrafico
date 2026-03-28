@@ -590,12 +590,7 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Gasto por Ajuste (Mermas)"),
         help_text=_("Cuenta de gasto para registrar mermas o pérdidas de inventario.")
     )
-    initial_inventory_account = models.ForeignKey(
-        Account, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='settings_initial_inventory',
-        verbose_name=_("Cuenta de Inventario Inicial (Patrimonio/Contrapartida)"),
-        help_text=_("Cuenta usada como contrapartida al cargar el stock por primera vez.")
-    )
+    # initial_inventory_account REMOVED — Inventario Inicial adjustment type was deprecated
     revaluation_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_revaluation',

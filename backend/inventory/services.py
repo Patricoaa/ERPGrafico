@@ -71,7 +71,7 @@ class StockService:
 
         # 1. Logic for unit_cost and cost pondering
         if unit_cost is None or unit_cost == 0:
-            if quantity > 0 and (product.cost_price == 0 or adjustment_reason == StockMove.AdjustmentReason.INITIAL):
+            if quantity > 0 and product.cost_price == 0:
                  raise ValidationError(f"Debe especificar un costo unitario para esta entrada de stock del producto {product.name}.")
             unit_cost = product.cost_price
 
@@ -124,14 +124,13 @@ class StockService:
             if partner_contact and partner_contact.partner_account:
                 contra_account = partner_contact.partner_account
             else:
-                contra_account = settings.partner_capital_contribution_account or settings.initial_inventory_account
+                contra_account = settings.partner_capital_contribution_account
         elif adjustment_reason == StockMove.AdjustmentReason.PARTNER_WITHDRAWAL:
             if partner_contact and partner_contact.partner_account:
                 contra_account = partner_contact.partner_account
             else:
                 contra_account = settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
-        elif adjustment_reason == StockMove.AdjustmentReason.INITIAL:
-            contra_account = settings.initial_inventory_account
+        # INITIAL was removed — legacy records with INITIAL will fall through to generic gain/loss
         elif adjustment_reason == StockMove.AdjustmentReason.REVALUATION:
             contra_account = settings.revaluation_account
         elif quantity > 0:

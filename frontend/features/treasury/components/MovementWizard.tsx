@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Banknote, LogOut, ArrowRightLeft, Loader2 } from "lucide-react"
+import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import api from "@/lib/api"
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';
@@ -28,7 +29,6 @@ interface MovementWizardProps {
     fixedAccountName?: string; // For display
     initialContactId?: number; // For partner/client specific context
     initialContactName?: string;
-    initialAccountName?: string;
     initialAccountName?: string;
     fixedMoveType?: string;
     variant?: 'partners' | 'standard';
@@ -87,6 +87,24 @@ export function MovementWizard({
     const [amount, setAmount] = useState('0')
     const [notes, setNotes] = useState('')
     const [submitting, setSubmitting] = useState(false)
+
+    // Partner capital warning state
+    const [partnerCapitalInfo, setPartnerCapitalInfo] = useState<{ subscribed: number; balance: number; pending: number } | null>(null)
+
+    // Fetch partner capital info when contactId changes and moveType is CAPITAL_CONTRIBUTION
+    useEffect(() => {
+        if (contactId && moveType === 'CAPITAL_CONTRIBUTION') {
+            api.get(`/contacts/${contactId}/`).then(res => {
+                const p = res.data
+                const subscribed = parseFloat(p.partner_total_contributions) || 0
+                const balance = parseFloat(p.partner_balance) || 0
+                const pending = Math.max(0, subscribed - balance)
+                setPartnerCapitalInfo({ subscribed, balance, pending })
+            }).catch(() => setPartnerCapitalInfo(null))
+        } else {
+            setPartnerCapitalInfo(null)
+        }
+    }, [contactId, moveType])
 
     const handleComplete = async () => {
         setSubmitting(true)
@@ -172,7 +190,10 @@ export function MovementWizard({
                                             <h3 className="text-lg font-bold">Tipo de Movimiento</h3>
                                             <p className="text-sm text-muted-foreground">Seleccione la operación a realizar</p>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className={cn(
+                                            "grid grid-cols-1 gap-4",
+                                            variant === 'partners' ? "md:grid-cols-2 max-w-xl mx-auto" : "md:grid-cols-3"
+                                        )}>
                                             <Button
                                                 variant="outline"
                                                 className={cn(
@@ -189,8 +210,8 @@ export function MovementWizard({
                                                     <Banknote className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold">Depósito</span>
-                                                    <span className="text-xs text-muted-foreground">Carga de efectivo</span>
+                                                    <span className="font-bold">{variant === 'partners' ? 'Aporte de Socio' : 'Depósito'}</span>
+                                                    <span className="text-xs text-muted-foreground">{variant === 'partners' ? 'Ingreso de capital' : 'Carga de efectivo'}</span>
                                                 </div>
                                             </Button>
 
@@ -210,8 +231,8 @@ export function MovementWizard({
                                                     <LogOut className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold">Retiro</span>
-                                                    <span className="text-xs text-muted-foreground">Salida de efectivo</span>
+                                                    <span className="font-bold">{variant === 'partners' ? 'Retiro de Socio' : 'Retiro'}</span>
+                                                    <span className="text-xs text-muted-foreground">{variant === 'partners' ? 'Salida de capital' : 'Salida de efectivo'}</span>
                                                 </div>
                                             </Button>
 
@@ -302,7 +323,7 @@ export function MovementWizard({
                                         return (
                                             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                                                 <div className="text-center mb-4">
-                                                    <h3 className="font-bold">Motivo del {impact === "IN" ? "Depósito" : "Retiro"}</h3>
+                                                    <h3 className="font-bold">Motivo del {variant === 'partners' ? (impact === 'IN' ? 'Aporte' : 'Retiro') : (impact === "IN" ? "Depósito" : "Retiro")}</h3>
                                                 </div>
                                                 <div className="grid gap-2 max-h-[300px] overflow-y-auto pr-1">
                                                     {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
@@ -421,7 +442,7 @@ export function MovementWizard({
                                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                                         <div className="text-center mb-4">
                                             <h3 className="font-bold text-lg">Motivo del Movimiento</h3>
-                                            <p className="text-sm text-muted-foreground">Indique la razón del {impact === "IN" ? "depósito" : "retiro"}</p>
+                                            <p className="text-sm text-muted-foreground">Indique la razón del {variant === 'partners' ? (impact === 'IN' ? 'aporte' : 'retiro') : (impact === "IN" ? "depósito" : "retiro")}</p>
                                         </div>
                                         <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
                                             {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
@@ -488,7 +509,10 @@ export function MovementWizard({
                                                 <AdvancedContactSelector
                                                     value={contactId ? contactId.toString() : null}
                                                     onChange={(val) => setContactId(val ? parseInt(val) : undefined)}
-                                                    onSelectContact={(acc) => setContactName(acc.name)}
+                                                    onSelectContact={(acc) => {
+                                                        setContactName(acc.name)
+                                                        setPartnerCapitalInfo(null) // reset while loading
+                                                    }}
                                                     placeholder={contactName || "Seleccionar Socio..."}
                                                     isPartnerOnly={isPartnerReason}
                                                     disabled={!!initialContactId}
@@ -496,8 +520,53 @@ export function MovementWizard({
                                             </div>
                                         )}
 
-
-
+                                        {/* Option B: Warning when contribution exceeds pending subscribed capital */}
+                                        {moveType === 'CAPITAL_CONTRIBUTION' && contactId && partnerCapitalInfo && (() => {
+                                            const amountNum = parseFloat(amount) || 0
+                                            if (amountNum <= 0) return null
+                                            if (amountNum > partnerCapitalInfo.subscribed && partnerCapitalInfo.subscribed > 0) {
+                                                // Exceeds total subscribed (very unusual)
+                                                return (
+                                                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                                                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <span className="font-bold block">Aporte supera el capital suscrito total</span>
+                                                            <span>El socio tiene suscrito {formatCurrency(partnerCapitalInfo.subscribed)}. Este aporte excede ese monto. Considere registrar primero un Aumento de Capital.</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            } else if (partnerCapitalInfo.pending <= 0) {
+                                                // Already fully paid
+                                                return (
+                                                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+                                                        <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <span className="font-bold block">Capital ya enterado</span>
+                                                            <span>Este socio ya tiene su suscripción completamente pagada ({formatCurrency(partnerCapitalInfo.subscribed)}). Este aporte generará un excedente en su cuenta particular.</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            } else if (amountNum > partnerCapitalInfo.pending) {
+                                                // Exceeds remaining pending
+                                                return (
+                                                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                                                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <span className="font-bold block">Aporte supera el capital pendiente</span>
+                                                            <span>El socio tiene {formatCurrency(partnerCapitalInfo.pending)} pendiente de entero. Este aporte genera un excedente de {formatCurrency(amountNum - partnerCapitalInfo.pending)} en su cuenta particular.</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            } else {
+                                                // Within range — show a positive info
+                                                return (
+                                                    <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                                                        <Info className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                                        <span>Pendiente de entero: <strong>{formatCurrency(partnerCapitalInfo.pending)}</strong></span>
+                                                    </div>
+                                                )
+                                            }
+                                        })()}
                                         <div className="flex gap-2">
                                             <Button variant="outline" onClick={() => setStep((impact === 'TRANSFER' || fixedMoveType) ? 2 : (context === 'pos' ? 2 : 3))} className="flex-1">Atrás</Button>
                                             <Button

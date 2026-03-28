@@ -317,7 +317,7 @@ class AccountingService:
             # Inventory Adjustments (Missing)
             'adjustment_income_account': '4.2.02',  # Ganancia por Ajuste de Inventario (needs creation)
             'adjustment_expense_account': '5.2.07', # Pérdida por Ajuste de Inventario (needs creation)
-            'initial_inventory_account': '3.1.02',  # Contrapartida Inicial (needs creation)
+            # initial_inventory_account removed — field deprecated
             'revaluation_account': '5.1.03',        # Ajuste por Revalorización (needs creation)
 
             # Treasury Reconciliation (Missing)
