@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 
 interface SalesOrdersModalProps {
@@ -25,15 +26,27 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
     const windowWidth = useWindowWidth(150, open)
 
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { isHubOpen, closeHub } = useHubPanel()
+    const [wasOpenBeforeHub, setWasOpenBeforeHub] = useState(false)
 
     // Jump behavior: Close Hub if we are opening Sales Notes from a collapsed tab
     useEffect(() => {
         if (open && isSheetCollapsed("POS_SALES")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            closeHub()
         }
-    }, [open, isSheetCollapsed, closeCommandCenter])
+    }, [open, isSheetCollapsed, closeHub])
+
+    // Temporarily hide this sheet if the Order Hub is opened (e.g. from within a document here)
+    useEffect(() => {
+        if (isHubOpen && open) {
+            setWasOpenBeforeHub(true)
+            onOpenChange(false)
+        } else if (!isHubOpen && wasOpenBeforeHub) {
+            setWasOpenBeforeHub(false)
+            onOpenChange(true)
+        }
+    }, [isHubOpen]) // intentionally omitting open/onOpenChange to avoid loops
 
     const handleOpenChange = (newOpen: boolean) => {
         onOpenChange(newOpen)

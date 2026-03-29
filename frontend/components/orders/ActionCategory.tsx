@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
+import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
@@ -11,20 +11,22 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "../shared/ActionConfirmModal"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
-const DocumentCompletionModal = dynamic(() => import("../shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
-const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
-const ReceiptModal = dynamic(() => import("../purchasing/ReceiptModal").then(m => m.ReceiptModal))
-const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
-const PaymentModal = dynamic(() => import("../shared/PaymentDialog").then(m => m.PaymentDialog))
-const PaymentReferenceModal = dynamic(() => import("../shared/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
-const NoteCheckoutWizard = dynamic(() => import("../billing/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
-const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-const TransactionViewModal = dynamic(() => import("../shared/TransactionViewModal").then(m => m.TransactionViewModal))
-const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
-const WorkOrderForm = dynamic(() => import("../forms/WorkOrderForm").then(m => m.WorkOrderForm))
+// Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
+const DocumentCompletionModal = dynamic(() => import("../shared/DocumentCompletionModal").then(m => m.default || (m as any).DocumentCompletionModal))
+const DeliveryModal = dynamic(() => import("@/features/sales").then(m => (m as any).DeliveryModal || m.default))
+const ReceiptModal = dynamic(() => import("../purchasing/ReceiptModal").then(m => (m as any).ReceiptModal || m.default))
+const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => (m as any).PaymentHistoryModal || m.default))
+const PaymentModal = dynamic(() => import("../shared/PaymentDialog").then(m => m.default || (m as any).PaymentDialog))
+const PaymentReferenceModal = dynamic(() => import("../shared/PaymentReferenceModal").then(m => (m as any).PaymentReferenceModal || m.default))
+const NoteCheckoutWizard = dynamic(() => import("../billing/NoteCheckoutWizard").then(m => (m as any).NoteCheckoutWizard || m.default))
+const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => (m as any).DocumentListModal || m.default))
+const TransactionViewModal = dynamic(() => import("../shared/TransactionViewModal").then(m => (m as any).TransactionViewModal || m.default))
+const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => (m as any).NoteLogisticsModal || m.default))
+const WorkOrderForm = dynamic(() => import("../forms/WorkOrderForm").then(m => (m as any).WorkOrderForm || m.default))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface ActionCategoryProps {
     category: CategoryType
@@ -69,9 +71,20 @@ export const ActionCategory = forwardRef(({
         onConfirm: () => { }
     })
 
+    const { setHubTemporarilyHidden, triggerAction } = useHubPanel()
+
     // Notify parent about modal state changes without clobbering other instances
     useEffect(() => {
-    }, [activeModal, hasNotifiedOpen])
+        const isAnyModalActive = activeModal !== null || confirmModal.open;
+        if (isAnyModalActive) {
+            console.log(`[ActionEngine] Hub should hide now. activeModal: ${activeModal}, confirmOpen: ${confirmModal.open}`);
+            setHubTemporarilyHidden(true)
+            return () => {
+                console.log(`[ActionEngine] Hub should restore now.`);
+                setHubTemporarilyHidden(false)
+            }
+        }
+    }, [activeModal, confirmModal.open, setHubTemporarilyHidden])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({
@@ -86,12 +99,26 @@ export const ActionCategory = forwardRef(({
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
     const handleActionClick = (actionId: string) => {
-        console.log(`[ActionEngine] Handling action click: ${actionId}`, { orderId: order?.id });
+        if (!order) {
+            console.error(`[ActionEngine] ERROR: No order context available for action: ${actionId}`);
+            toast.error("Error: Los datos del pedido no han cargado. Reintente en un momento.");
+            return;
+        }
+
         const action = category.actions.find(a => a.id === actionId)
         if (action?.onClick) {
             action.onClick(order)
             return
         }
+
+        // PERF-09 & HUB-05: Delegation to Global Engine
+        // If this is a UI instance (not the headless engine), delegate to the stable global engine.
+        if (!headless) {
+            console.log(`[ActionEngine] Delegating action ${actionId} to global engine`);
+            triggerAction(actionId);
+            return;
+        }
+
 
         switch (actionId) {
             case 'complete-folio':
@@ -103,6 +130,11 @@ export const ActionCategory = forwardRef(({
             case 'register-payment-ref':
             case 'create-credit-note':
             case 'create-debit-note':
+            case 'create-work-order':
+            case 'view-work-orders':
+            case 'register-merchandise-return':
+            case 'register-payment-return':
+                console.log(`[ActionEngine] Setting activeModal to: ${actionId}`);
                 setActiveModal(actionId)
                 break
             case 'view-documents':
@@ -117,8 +149,6 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                // If only one, open directly. If multiple, eventually we might need a list, 
-                // but user wants TransactionViewModal. We'll open the latest one.
                 const targetDoc = docs[0]
                 const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
                 const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
@@ -128,30 +158,18 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
+                console.log(`[ActionEngine] Opening transaction view for:`, { viewType, viewId });
                 setViewConfig({ type: viewType, id: viewId })
                 setActiveModal('transaction-view')
                 break
             case 'regenerate-document':
                 handleRegenerateDocument()
                 break
-            case 'create-work-order':
-                setActiveModal(actionId)
-                break
-            case 'view-work-orders':
-                // For Work Orders we'll keep it as a list for now or open specific one
-                setActiveModal(actionId)
-                break
             case 'annul-document':
                 handleAnnulDocument()
                 break
             case 'delete-draft':
                 handleDeleteDraft()
-                break
-            case 'register-merchandise-return':
-                setActiveModal(actionId)
-                break
-            case 'register-payment-return':
-                setActiveModal(actionId)
                 break
             default:
                 console.warn(`No handler for action: ${actionId}`)
@@ -349,8 +367,9 @@ export const ActionCategory = forwardRef(({
                 </div>
             )}
 
-            {/* Modals */}
-            {activeModal === 'complete-folio' && (
+            {/* Modals with Suspense to prevent layout unmount on first load */}
+            <Suspense fallback={null}>
+                {activeModal === 'complete-folio' && (
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
@@ -481,6 +500,7 @@ export const ActionCategory = forwardRef(({
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
             />
+            </Suspense>
         </>
     )
 })

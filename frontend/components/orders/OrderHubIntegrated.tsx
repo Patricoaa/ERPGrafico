@@ -22,7 +22,6 @@ interface OrderHubIntegratedProps {
     posSessionId?: number | null
     showAnimations?: boolean
     compact?: boolean
-    actionEngineRef?: React.RefObject<any>
 }
 
 export function OrderHubIntegrated({
@@ -33,8 +32,7 @@ export function OrderHubIntegrated({
     onEdit,
     posSessionId = null,
     showAnimations = true,
-    compact = false,
-    actionEngineRef: externalActionEngineRef
+    compact = false
 }: OrderHubIntegratedProps) {
     const {
         order,
@@ -50,9 +48,6 @@ export function OrderHubIntegrated({
         payments
     } = data
 
-    // Use external ref if provided (from sheet parent), otherwise default to null (won't trigger actions)
-    const actionEngineRef = externalActionEngineRef
-    
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
     
 
@@ -74,26 +69,9 @@ export function OrderHubIntegrated({
 
     if (!activeDoc) return null
 
-    // Utility to render the timeline connector
-    const Connector = ({ index }: { index: number }) => {
-        if (index === visiblePhases.length - 1) return null
-        return (
-            <div className={cn(
-                "absolute bg-border/20 z-0",
-                "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
-            )} />
-        )
-    }
-
     const PhaseWrapper = ({ children, index }: { children: React.ReactNode, index: number }) => (
-        <div className={cn(
-            "relative flex flex-col",
-            "pl-12 text-left w-full"
-        )}>
-            <Connector index={index} />
-            <div className="w-full flex-1 relative z-10 flex flex-col">
-                {children}
-            </div>
+        <div className="w-full relative z-10 flex flex-col">
+            {children}
         </div>
     )
 
@@ -119,11 +97,10 @@ export function OrderHubIntegrated({
                                 order={order}
                                 activeDoc={activeDoc}
                                 type={type || 'sale'}
+                                userPermissions={userPermissions}
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 onEdit={onEdit}
-                                userPermissions={userPermissions}
-                                actionEngineRef={actionEngineRef}
                             />
                         </PhaseWrapper>
 
@@ -135,11 +112,9 @@ export function OrderHubIntegrated({
                                 activeDoc={activeDoc}
                                 invoices={invoices}
                                 billingIsComplete={billingIsComplete}
-                                registry={registry}
                                 userPermissions={userPermissions}
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
-                                actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
                             />
                         </PhaseWrapper>
@@ -151,11 +126,9 @@ export function OrderHubIntegrated({
                                 noteStatuses={noteStatuses}
                                 activeDoc={activeDoc}
                                 payments={payments}
-                                registry={registry}
                                 userPermissions={userPermissions}
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
-                                actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
                             />
                         </PhaseWrapper>
@@ -166,11 +139,9 @@ export function OrderHubIntegrated({
                                 <ProductionPhase
                                     order={order}
                                     activeDoc={activeDoc}
-                                    registry={registry}
                                     userPermissions={userPermissions}
                                     onActionSuccess={onActionSuccess}
                                     openDetails={openDetails}
-                                    actionEngineRef={actionEngineRef}
                                     showAnimations={showAnimations}
                                 />
                             </PhaseWrapper>
@@ -185,11 +156,9 @@ export function OrderHubIntegrated({
                                     noteStatuses={noteStatuses}
                                     isSale={type === 'sale'}
                                     invoices={invoices}
-                                    registry={registry}
                                     userPermissions={userPermissions}
                                     onActionSuccess={onActionSuccess}
                                     openDetails={openDetails}
-                                    actionEngineRef={actionEngineRef}
                                     showAnimations={showAnimations}
                                     logisticsProgress={data.logisticsProgress}
                                 />

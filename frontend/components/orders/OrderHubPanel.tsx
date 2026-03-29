@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useRef, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Badge } from "@/components/ui/badge"
 import {
     LayoutDashboard,
-    CheckCircleIcon,
+    CheckCircle2,
     PlayCircle,
-    AlertCircle,
+    MinusCircle,
     XCircle,
     X
 } from "lucide-react"
@@ -16,7 +17,6 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
-import { ActionCategory } from "./ActionCategory"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -43,9 +43,9 @@ export function OrderHubPanel({
     const hubData = useOrderHubData({ orderId, invoiceId, type, enabled: true })
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
     
+    const { setHubTemporarilyHidden } = useHubPanel()
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
     
-    const actionEngineRef = useRef<any>(null)
     
     const { openWorkOrder } = useGlobalModals()
 
@@ -58,7 +58,7 @@ export function OrderHubPanel({
     }
 
     const globalStatus = useMemo(() => {
-        if (!activeDoc) return { label: 'Cargando', variant: 'neutral', icon: AlertCircle }
+        if (!activeDoc) return { label: 'Cargando', variant: 'neutral', icon: MinusCircle }
         
         const { noteStatuses, hubStatuses, billingIsComplete, totalOTs, totalOTProgress, logisticsProgress, payments } = hubData
         
@@ -66,10 +66,10 @@ export function OrderHubPanel({
         if (docToEvaluate?.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
 
         if (isNoteMode) {
-            if (noteStatuses.isComplete) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
+            if (noteStatuses.isComplete) return { label: 'Completado', variant: 'success', icon: CheckCircle2 }
             const hasProgress = noteStatuses.logistics !== 'neutral' || noteStatuses.treasury !== 'neutral'
             if (hasProgress) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
-            return { label: 'Borrador', variant: 'neutral', icon: AlertCircle }
+            return { label: 'Borrador', variant: 'neutral', icon: MinusCircle }
         }
 
         const stages = []
@@ -78,10 +78,10 @@ export function OrderHubPanel({
         stages.push(billingIsComplete)
         stages.push((activeDoc.status === 'PAID' || activeDoc.payment_status === 'PAID' || parseFloat(activeDoc.pending_amount || '0') <= 0) && !hubStatuses.hasPendingTransactions)
 
-        if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircleIcon }
+        if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircle2 }
         if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
 
-        return { label: 'Pendiente', variant: 'neutral', icon: AlertCircle }
+        return { label: 'Pendiente', variant: 'neutral', icon: MinusCircle }
     }, [hubData, isNoteMode, activeInvoice, activeDoc, type])
 
     if (!activeDoc) {
@@ -168,22 +168,6 @@ export function OrderHubPanel({
                 </div>
             </div>
             
-            {/* ACTION ENGINE (Headless) - Mounted at panel level for stable modal lifecycle */}
-            <ActionCategory
-                ref={actionEngineRef}
-                category={{ 
-                    id: 'hub-engine', 
-                    label: '', 
-                    icon: null as any, 
-                    actions: Object.values(type === 'purchase' || type === 'obligation' ? purchaseOrderActions : saleOrderActions).flatMap(c => c.actions) 
-                }}
-                order={activeDoc}
-                userPermissions={hubData.userPermissions}
-                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                posSessionId={posSessionId}
-                headless={true}
-            />
-
             {/* Content wrapped in ScrollArea */}
             <ScrollArea className="flex-1 w-full" type="always">
                 <div className="p-3 pt-1">
@@ -194,7 +178,6 @@ export function OrderHubPanel({
                         openDetails={openDetails}
                         onEdit={onEdit}
                         posSessionId={posSessionId}
-                        actionEngineRef={actionEngineRef}
                         compact={true}
                     />
                 </div>
