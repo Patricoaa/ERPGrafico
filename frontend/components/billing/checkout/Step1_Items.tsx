@@ -22,6 +22,8 @@ export function Step1_Items({
     isCreditNote
 }: Step1_ItemsProps) {
     const lines = originalInvoice?.lines || []
+    const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA';
+
 
     const toggleItem = (lineId: number) => {
         const line = lines.find((l: any) => l.id === lineId)
@@ -49,8 +51,10 @@ export function Step1_Items({
                     uom_id: line.uom,
                     unit_price: line.unit_price || line.unit_cost || 0,
                     unit_price_gross: line.unit_price_gross || line.unit_price || line.unit_cost || 0,
-                    tax_amount: line.unit_price_gross ? (line.unit_price_gross - (line.unit_price || line.unit_cost || 0)) : 0,
+                    tax_rate: line.tax_rate ?? (originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA' ? 0 : 19),
+                    tax_amount: (line.unit_price || line.unit_cost || 0) * ((line.tax_rate ?? (originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA' ? 0 : 19)) / 100),
                     reason: ""
+
                 }
             ])
         }
@@ -59,10 +63,16 @@ export function Step1_Items({
     const updateItem = (lineId: number, field: string, value: any) => {
         setSelectedItems(selectedItems.map(item => {
             if (item.line_id === lineId) {
-                return { ...item, [field]: value }
+                const updated = { ...item, [field]: value }
+                if (field === 'unit_price') {
+                    const rate = parseFloat(updated.tax_rate ?? 0) / 100
+                    updated.tax_amount = value * rate
+                }
+                return updated
             }
             return item
         }))
+
     }
 
     // Helper to check if row is selected
@@ -114,6 +124,7 @@ export function Step1_Items({
                             const showMaxBadge = (isCreditNote ||
                                 (line.product_type === 'STORABLE') ||
                                 (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize)) && !(isPurchase && !isCreditNote);
+
 
                             return (
                                 <TableRow key={line.id} className={cn(
@@ -193,23 +204,31 @@ export function Step1_Items({
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-4">
-                                        <div className="max-w-[120px] mx-auto">
-                                            <Input
-                                                type="number"
-                                                disabled={!selected || isCreditNote}
-                                                value={itemData?.unit_price ?? ""}
-                                                onChange={(e) => {
-                                                    const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
-                                                    updateItem(line.id, 'unit_price', val);
-                                                }}
-                                                className={cn(
-                                                    "h-10 text-center font-bold transition-all tabular-nums",
-                                                    (!selected || isCreditNote) && "opacity-50"
-                                                )}
-                                                min={0}
-                                            />
+                                        <div className="max-w-[120px] mx-auto flex flex-col items-center gap-1">
+                                            <div className="relative w-full">
+                                                <Input
+                                                    type="number"
+                                                    disabled={!selected || isCreditNote}
+                                                    value={itemData?.unit_price ?? ""}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
+                                                        updateItem(line.id, 'unit_price', val);
+                                                    }}
+                                                    className={cn(
+                                                        "h-10 text-center font-bold transition-all tabular-nums",
+                                                        (!selected || isCreditNote) && "opacity-50"
+                                                    )}
+                                                    min={0}
+                                                />
+                                            </div>
+                                            {isExempt && (
+                                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">
+                                                    Exento
+                                                </span>
+                                            )}
                                         </div>
                                     </TableCell>
+
                                     <TableCell>
                                         <Input
                                             placeholder="Indique motivo..."

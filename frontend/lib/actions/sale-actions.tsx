@@ -259,29 +259,23 @@ export const saleOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Only show if there's a FACTURA (not BOLETA)
-                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'FACTURA'
-                    )
-                    // Don't show if there are any boletas (fiscal restriction)
-                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'BOLETA'
-                    )
-                    return hasFactura && !hasBoleta
+                    // Show if there is any DTE associated with the order
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
+                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
                 },
                 isDisabled: (order) => {
-                    const invoices = order.related_documents?.invoices || []
+                    const invoices = order.related_documents?.invoices || order.invoices || []
 
-                    const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
+                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        inv.dte_type === 'FACTURA' &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
 
-                    // Relaxed rules: Only require a posted invoice with folio
-                    return !hasIssuedFacturaWithFolio
+                    return !hasIssuedDTEWithFolio
                 },
+
                 disabledTooltip: (order) => {
                     if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
                     if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"
@@ -296,28 +290,23 @@ export const saleOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Only show if there's a FACTURA (not BOLETA)
-                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'FACTURA'
-                    )
-                    // Don't show if there are any boletas (fiscal restriction)
-                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'BOLETA'
-                    )
-                    return hasFactura && !hasBoleta
+                    // Show if there is any DTE associated with the order
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
+                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
                 },
                 isDisabled: (order) => {
-                    const invoices = order.related_documents?.invoices || []
+                    const invoices = order.related_documents?.invoices || order.invoices || []
 
-                    const hasIssuedFacturaWithFolio = invoices.some((inv: any) =>
+                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        inv.dte_type === 'FACTURA' &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
 
-                    return !hasIssuedFacturaWithFolio
+                    return !hasIssuedDTEWithFolio
                 },
+
                 disabledTooltip: (order) => {
                     if (order.status !== 'PAID') return "La orden debe estar completamente pagada"
                     if (order.delivery_status !== 'DELIVERED') return "La logística debe estar completamente finalizada"

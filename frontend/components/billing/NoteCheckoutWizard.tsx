@@ -83,6 +83,9 @@ export function NoteCheckoutWizard({
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
     const total = totalNet + totalTax
 
+    const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
+
+
     // Reset state on open
     useEffect(() => {
         if (open) {
@@ -397,16 +400,22 @@ export function NoteCheckoutWizard({
                     <div className="p-2 bg-primary/10 rounded-xl">
                         <FileText className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                        <span className="font-black tracking-tighter uppercase block">
-                            {title}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-black tracking-tighter uppercase block text-lg">
+                                {title}
+                            </span>
+                            {isExempt && (
+                                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase rounded shadow-sm border border-emerald-200">
+                                    Documento Exento
+                                </span>
+                            )}
+                        </div>
                         {originalInvoice && (
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                                 corrigiendo {originalInvoice.dte_type_display} {originalInvoice.number}
                             </p>
                         )}
-                    </div>
+
                 </div>
             }
             footer={
@@ -479,6 +488,7 @@ export function NoteCheckoutWizard({
                             totalNet={totalNet}
                             totalTax={totalTax}
                             total={total}
+                            isExempt={isExempt}
                         />
                     </div>
                 )}
