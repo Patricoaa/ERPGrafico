@@ -14,7 +14,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -56,7 +56,7 @@ interface TreasuryMovement {
 }
 
 export function TreasuryMovementsClientView() {
-    const { openContact, openTreasuryAccount } = useGlobalModals()
+    const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
     const [openModal, setOpenModal] = useState(false)

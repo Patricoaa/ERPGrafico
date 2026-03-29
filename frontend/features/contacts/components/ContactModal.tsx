@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import { 
@@ -37,9 +38,9 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ColumnDef } from "@tanstack/react-table"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from "@/lib/order-status-utils"
@@ -78,20 +79,14 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
+            closeCommandCenter()
         }
         onOpenChange(newOpen)
     }
@@ -571,7 +566,8 @@ interface InsightsTableProps {
 }
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
-    const { openCommandCenter, openWorkOrder } = useGlobalModals()
+    const { openWorkOrder } = useGlobalModals()
+    const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
     // Metrics Calculation
@@ -687,7 +683,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                         if (type === 'work_order') {
                             openWorkOrder(row.original.id)
                         } else {
-                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }
                     }}
                 >
@@ -831,7 +827,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row) => (
+                            {table.getRowModel().rows.map((row: any) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}
@@ -840,7 +836,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                                         if (type === 'work_order') {
                                             openWorkOrder(row.original.id)
                                         } else {
-                                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                                         }
                                     }}
                                 />
@@ -854,7 +850,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
 }
 
 function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean }) {
-    const { openCommandCenter } = useGlobalModals()
+    const { openHub } = useHubPanel()
 
     if (loading) {
         return (
@@ -914,12 +910,12 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row) => (
+                            {table.getRowModel().rows.map((row: any) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}
                                     type="ledger"
-                                    onActionClick={() => openCommandCenter(row.original.id, 'sale')}
+                                    onActionClick={() => openHub({ orderId: row.original.id, type: 'sale' })}
                                 />
                             ))}
                         </div>

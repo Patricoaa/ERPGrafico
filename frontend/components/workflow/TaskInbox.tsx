@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, MapPin, TrendingUp } from "lucide-react"
 import { toast } from "sonner"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -29,7 +30,8 @@ export function TaskInbox() {
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
-    const { openWorkOrder, openCommandCenter, openContact } = useGlobalModals()
+    const { openWorkOrder, openContact } = useGlobalModalActions()
+    const { openHub } = useHubPanel()
     const { user } = useAuth()
     
     // Track counts for notifications
@@ -95,7 +97,7 @@ export function TaskInbox() {
         if (task.task_type === 'OT_CREATION') {
             const saleOrderId = task.data?.sale_order_id || (task.data?.order_type === 'sale' ? task.object_id : null)
             if (saleOrderId) {
-                openCommandCenter(saleOrderId, 'sale')
+                openHub({ orderId: saleOrderId, type: 'sale' })
             } else {
                 openWorkOrder(task.object_id)
             }
@@ -104,21 +106,21 @@ export function TaskInbox() {
             openWorkOrder(task.object_id)
         } else if (task.task_type?.includes('OC_')) {
             // Purchase Order tasks
-            openCommandCenter(task.object_id, 'purchase')
+            openHub({ orderId: task.object_id, type: 'purchase' })
         } else if (task.task_type?.includes('OV_')) {
             // Sale Order tasks
-            openCommandCenter(task.object_id, 'sale')
+            openHub({ orderId: task.object_id, type: 'sale' })
         } else if (task.task_type?.includes('NC_') || task.task_type?.includes('ND_')) {
             // Credit/Debit notes - determine type from context
             // For now, default to 'sale' - could be enhanced based on task metadata
-            openCommandCenter(task.object_id, 'sale')
+            openHub({ orderId: task.object_id, type: 'sale' })
         } else if (task.task_type?.startsWith('HUB_')) {
             // HUB stage tasks → open Command Center
             const orderType = task.data?.order_type || 'sale'
             if (task.data?.is_invoice || task.task_type?.includes('_NC_') || task.task_type?.includes('_ND_')) {
-                openCommandCenter(null, orderType, task.object_id)
+                openHub({ orderId: null, invoiceId: task.object_id, type: orderType })
             } else {
-                openCommandCenter(task.object_id, orderType)
+                openHub({ orderId: task.object_id, type: orderType })
             }
         } else if (task.task_type === 'CREDIT_POS_REQUEST') {
             // No full document, just a quick approval

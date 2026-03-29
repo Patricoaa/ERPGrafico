@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { 
     Sheet, 
     SheetHeader, 
@@ -36,6 +37,7 @@ import { Badge } from "@/components/ui/badge"
 // Import dialogs
 import { PricingRuleForm } from "./PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductFormProps {
     open: boolean
@@ -58,25 +60,29 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
+    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
     const [activeTab, setActiveTab] = useState("general")
 
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
+        if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
+            setConfirmCloseOpen(true)
+            return
+        }
         if (newOpen && isSheetCollapsed("PRODUCT_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
+            closeCommandCenter()
         }
         onOpenChange(newOpen)
+    }
+
+    const handleConfirmClose = () => {
+        setConfirmCloseOpen(false)
+        onOpenChange(false)
     }
 
     const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
@@ -844,7 +850,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     )
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
                 sheetId="PRODUCT_DETAIL"
                 open={open}

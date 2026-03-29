@@ -32,7 +32,7 @@ import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 
 interface TreasuryAccountsViewProps {
@@ -40,7 +40,7 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
-    const { openTreasuryAccount } = useGlobalModals()
+    const { openTreasuryAccount } = useGlobalModalActions()
     const { accounts, deleteAccount, refetch } = useTreasuryAccounts()
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)

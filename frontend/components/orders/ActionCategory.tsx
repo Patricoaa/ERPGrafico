@@ -1,26 +1,32 @@
 "use client"
 
-import { useState, forwardRef, useImperativeHandle } from "react"
+import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
 import { getActionBadgeCount } from "@/lib/actions/utils"
-import { DocumentCompletionModal } from "../shared/DocumentCompletionModal"
-import { DeliveryModal } from "@/features/sales"
-import { ReceiptModal } from "../purchasing/ReceiptModal"
-import { PaymentHistoryModal } from "./PaymentHistoryModal"
-import { PaymentDialog as PaymentModal } from "../shared/PaymentDialog"
-import { PaymentReferenceModal } from "../shared/PaymentReferenceModal"
-import { NoteCheckoutWizard } from "../billing/NoteCheckoutWizard"
+import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { DocumentListModal } from './DocumentListModal'
-import { TransactionViewModal } from "../shared/TransactionViewModal"
-import { NoteLogisticsModal } from "./NoteLogisticsModal"
-import { WorkOrderForm } from "../forms/WorkOrderForm"
+import { ActionConfirmModal } from "../shared/ActionConfirmModal"
+
+// Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
+// Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
+const DocumentCompletionModal = dynamic(() => import("../shared/DocumentCompletionModal").then(m => m.default || (m as any).DocumentCompletionModal))
+const DeliveryModal = dynamic(() => import("@/features/sales").then(m => (m as any).DeliveryModal || m.default))
+const ReceiptModal = dynamic(() => import("../purchasing/ReceiptModal").then(m => (m as any).ReceiptModal || m.default))
+const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => (m as any).PaymentHistoryModal || m.default))
+const PaymentModal = dynamic(() => import("../shared/PaymentDialog").then(m => m.default || (m as any).PaymentDialog))
+const PaymentReferenceModal = dynamic(() => import("../shared/PaymentReferenceModal").then(m => (m as any).PaymentReferenceModal || m.default))
+const NoteCheckoutWizard = dynamic(() => import("../billing/NoteCheckoutWizard").then(m => (m as any).NoteCheckoutWizard || m.default))
+const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => (m as any).DocumentListModal || m.default))
+const TransactionViewModal = dynamic(() => import("../shared/TransactionViewModal").then(m => (m as any).TransactionViewModal || m.default))
+const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => (m as any).NoteLogisticsModal || m.default))
+const WorkOrderForm = dynamic(() => import("../forms/WorkOrderForm").then(m => (m as any).WorkOrderForm || m.default))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface ActionCategoryProps {
     category: CategoryType
@@ -32,6 +38,7 @@ interface ActionCategoryProps {
     ghost?: boolean
     showBadge?: boolean
     posSessionId?: number | null
+    headless?: boolean
 }
 
 export const ActionCategory = forwardRef(({
@@ -43,11 +50,41 @@ export const ActionCategory = forwardRef(({
     compact = false,
     ghost = false,
     showBadge = true,
-    posSessionId = null
+    posSessionId = null,
+    headless = false
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean
+        title: string
+        description: React.ReactNode
+        onConfirm: () => Promise<void> | void
+        variant?: 'destructive' | 'warning'
+        confirmText?: string
+    }>({
+        open: false,
+        title: "",
+        description: null,
+        onConfirm: () => { }
+    })
+
+    const { setHubTemporarilyHidden, triggerAction } = useHubPanel()
+
+    // Notify parent about modal state changes without clobbering other instances
+    useEffect(() => {
+        const isAnyModalActive = activeModal !== null || confirmModal.open;
+        if (isAnyModalActive) {
+            console.log(`[ActionEngine] Hub should hide now. activeModal: ${activeModal}, confirmOpen: ${confirmModal.open}`);
+            setHubTemporarilyHidden(true)
+            return () => {
+                console.log(`[ActionEngine] Hub should restore now.`);
+                setHubTemporarilyHidden(false)
+            }
+        }
+    }, [activeModal, confirmModal.open, setHubTemporarilyHidden])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({
@@ -62,12 +99,26 @@ export const ActionCategory = forwardRef(({
     const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
 
     const handleActionClick = (actionId: string) => {
-        console.log(`[ActionEngine] Handling action click: ${actionId}`, { orderId: order?.id });
+        if (!order) {
+            console.error(`[ActionEngine] ERROR: No order context available for action: ${actionId}`);
+            toast.error("Error: Los datos del pedido no han cargado. Reintente en un momento.");
+            return;
+        }
+
         const action = category.actions.find(a => a.id === actionId)
         if (action?.onClick) {
             action.onClick(order)
             return
         }
+
+        // PERF-09 & HUB-05: Delegation to Global Engine
+        // If this is a UI instance (not the headless engine), delegate to the stable global engine.
+        if (!headless) {
+            console.log(`[ActionEngine] Delegating action ${actionId} to global engine`);
+            triggerAction(actionId);
+            return;
+        }
+
 
         switch (actionId) {
             case 'complete-folio':
@@ -79,6 +130,11 @@ export const ActionCategory = forwardRef(({
             case 'register-payment-ref':
             case 'create-credit-note':
             case 'create-debit-note':
+            case 'create-work-order':
+            case 'view-work-orders':
+            case 'register-merchandise-return':
+            case 'register-payment-return':
+                console.log(`[ActionEngine] Setting activeModal to: ${actionId}`);
                 setActiveModal(actionId)
                 break
             case 'view-documents':
@@ -93,8 +149,6 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                // If only one, open directly. If multiple, eventually we might need a list, 
-                // but user wants TransactionViewModal. We'll open the latest one.
                 const targetDoc = docs[0]
                 const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
                 const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
@@ -104,30 +158,18 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
+                console.log(`[ActionEngine] Opening transaction view for:`, { viewType, viewId });
                 setViewConfig({ type: viewType, id: viewId })
                 setActiveModal('transaction-view')
                 break
             case 'regenerate-document':
                 handleRegenerateDocument()
                 break
-            case 'create-work-order':
-                setActiveModal(actionId)
-                break
-            case 'view-work-orders':
-                // For Work Orders we'll keep it as a list for now or open specific one
-                setActiveModal(actionId)
-                break
             case 'annul-document':
                 handleAnnulDocument()
                 break
             case 'delete-draft':
                 handleDeleteDraft()
-                break
-            case 'register-merchandise-return':
-                setActiveModal(actionId)
-                break
-            case 'register-payment-return':
-                setActiveModal(actionId)
                 break
             default:
                 console.warn(`No handler for action: ${actionId}`)
@@ -155,9 +197,14 @@ export const ActionCategory = forwardRef(({
             const errorMessage = error.response?.data?.error || "Error al anular documento"
 
             if (errorMessage.includes("pagos asociados") && !force) {
-                if (confirm("El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?")) {
-                    handleAnnulDocument(true)
-                }
+                setConfirmModal({
+                    open: true,
+                    title: "Anular Documento con Pagos",
+                    variant: "warning",
+                    confirmText: "Anular Todo",
+                    onConfirm: () => handleAnnulDocument(true),
+                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?"
+                })
             } else {
                 toast.error(errorMessage)
             }
@@ -204,19 +251,27 @@ export const ActionCategory = forwardRef(({
             return
         }
 
-        if (!confirm("¿Estás seguro de que deseas eliminar este borrador?")) return
-
-        setIsProcessing(true)
-        try {
-            await api.delete(`/billing/invoices/${draftInvoice.id}/`)
-            toast.success("Borrador eliminado correctamente")
-            onActionSuccess?.()
-        } catch (error: any) {
-            console.error("Error deleting draft:", error)
-            toast.error("No se pudo eliminar el borrador")
-        } finally {
-            setIsProcessing(false)
-        }
+        setConfirmModal({
+            open: true,
+            title: "Eliminar Borrador",
+            variant: "destructive",
+            confirmText: "Eliminar",
+            onConfirm: async () => {
+                setIsProcessing(true)
+                try {
+                    await api.delete(`/billing/invoices/${draftInvoice.id}/`)
+                    toast.success("Borrador eliminado correctamente")
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: any) {
+                    console.error("Error deleting draft:", error)
+                    toast.error("No se pudo eliminar el borrador")
+                } finally {
+                    setIsProcessing(false)
+                }
+            },
+            description: "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer."
+        })
     }
 
     const handlePaymentConfirm = async (data: any) => {
@@ -263,52 +318,58 @@ export const ActionCategory = forwardRef(({
     }) || []
 
     const categoryBadgeCount = filteredActions.reduce((acc, action) => acc + (getActionBadgeCount(action, order) || 0), 0)
-
-    // Only return null if there are no actions AND no active modal to show
-    if (filteredActions.length === 0 && !activeModal) return null
+    
+    // PERF-09: Headless Persistence
+    // The engine must remain mounted to handle modals even if no actions are visible or if it's headless.
+    if (!headless && filteredActions.length === 0 && !activeModal) return null
 
     return (
-        <div className={cn(
-            layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
-        )}>
-            {layout === 'list' && (category.icon || category.label) && (
-                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                    {category.icon && (
-                        <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                            <category.icon className="h-4 w-4" />
+        <>
+            {!headless && (
+                <div className={cn(
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
+                )}>
+                    {layout === 'list' && (category.icon || category.label) && (
+                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                            {category.icon && (
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                    <category.icon className="h-4 w-4" />
+                                </div>
+                            )}
+                            {category.label && <h3 className="font-semibold text-sm">{category.label}</h3>}
+                            {categoryBadgeCount > 0 && (
+                                <Badge variant="secondary" className="ml-auto text-[10px] h-5">
+                                    {categoryBadgeCount}
+                                </Badge>
+                            )}
                         </div>
                     )}
-                    {category.label && <h3 className="font-semibold text-sm">{category.label}</h3>}
-                    {categoryBadgeCount > 0 && (
-                        <Badge variant="secondary" className="ml-auto text-[10px] h-5">
-                            {categoryBadgeCount}
-                        </Badge>
-                    )}
+
+                    <div className={cn(
+                        layout === 'grid' ? (compact ? "grid grid-cols-1 gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
+                            layout === 'flex' ? "flex flex-wrap items-center justify-center gap-1.5" :
+                                "space-y-1.5"
+                    )}>
+                        {filteredActions.map((action) => (
+                            <ActionButton
+                                key={action.id}
+                                action={action}
+                                order={order}
+                                userPermissions={userPermissions}
+                                onClick={() => handleActionClick(action.id)}
+                                showBadge={showBadge}
+                                compact={compact}
+                                ghost={ghost}
+                                className={layout === 'flex' ? "w-auto" : ""}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
-            <div className={cn(
-                layout === 'grid' ? (compact ? "grid grid-cols-1 gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
-                    layout === 'flex' ? "flex flex-wrap items-center justify-center gap-1.5" :
-                        "space-y-1.5"
-            )}>
-                {filteredActions.map((action) => (
-                    <ActionButton
-                        key={action.id}
-                        action={action}
-                        order={order}
-                        userPermissions={userPermissions}
-                        onClick={() => handleActionClick(action.id)}
-                        showBadge={showBadge}
-                        compact={compact}
-                        ghost={ghost}
-                        className={layout === 'flex' ? "w-auto" : ""}
-                    />
-                ))}
-            </div>
-
-            {/* Modals */}
-            {activeModal === 'complete-folio' && (
+            {/* Modals with Suspense to prevent layout unmount on first load */}
+            <Suspense fallback={null}>
+                {activeModal === 'complete-folio' && (
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
@@ -430,6 +491,18 @@ export const ActionCategory = forwardRef(({
                     }}
                 />
             )}
-        </div>
+            <ActionConfirmModal
+                open={confirmModal.open}
+                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                title={confirmModal.title}
+                description={confirmModal.description}
+                onConfirm={confirmModal.onConfirm}
+                variant={confirmModal.variant}
+                confirmText={confirmModal.confirmText}
+            />
+            </Suspense>
+        </>
     )
 })
+
+ActionCategory.displayName = "ActionCategory"

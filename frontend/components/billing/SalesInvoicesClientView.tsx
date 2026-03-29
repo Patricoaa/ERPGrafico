@@ -16,7 +16,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -24,10 +24,10 @@ import { InvoiceCard } from "@/components/billing/InvoiceCard"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
+    const { openHub } = useHubPanel()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
-    const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
 
     const handleAnnul = async (id: number, force: boolean = false) => {
         if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
@@ -117,9 +117,11 @@ export function SalesInvoicesClientView() {
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setSelectedHub({
+                                onClick={() => openHub({
                                     orderId: inv.sale_order,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null
+                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null,
+                                    type: 'sale',
+                                    onActionSuccess: refetch
                                 })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3 w-full"
@@ -261,14 +263,12 @@ export function SalesInvoicesClientView() {
                                         item={inv}
                                         type="sale_invoice"
                                         onClick={() => {
-                                            if (inv.sale_order) {
-                                                setSelectedHub({
-                                                    orderId: inv.sale_order,
-                                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null
-                                                })
-                                            } else {
-                                                setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })
-                                            }
+                                            openHub({
+                                                orderId: inv.sale_order || null,
+                                                invoiceId: inv.id,
+                                                type: 'sale',
+                                                onActionSuccess: refetch
+                                            })
                                         }}
                                     />
                                 )
@@ -315,14 +315,7 @@ export function SalesInvoicesClientView() {
                 />
             )}
 
-            <OrderCommandCenter
-                orderId={selectedHub.orderId}
-                invoiceId={selectedHub.invoiceId}
-                type="sale"
-                open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
-                onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
-                onActionSuccess={refetch}
-            />
+
         </div>
     )
 }

@@ -5,6 +5,7 @@ import { SalesOrdersView } from "@/features/sales"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, Suspense } from "react"
+import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { 
     Sheet, 
     SheetHeader, 
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 
 interface SalesOrdersModalProps {
@@ -22,28 +24,38 @@ interface SalesOrdersModalProps {
 
 export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrdersModalProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+    const windowWidth = useWindowWidth(150, open)
 
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { isHubOpen, closeHub } = useHubPanel()
+    const [wasOpenBeforeHub, setWasOpenBeforeHub] = useState(false)
 
+    // Jump behavior: Close Hub if we are opening Sales Notes from a collapsed tab
     useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+        if (open && isSheetCollapsed("POS_SALES")) {
+            closeHub()
+        }
+    }, [open, isSheetCollapsed, closeHub])
+
+    // Temporarily hide this sheet if the Order Hub is opened (e.g. from within a document here)
+    useEffect(() => {
+        if (isHubOpen && open) {
+            setWasOpenBeforeHub(true)
+            onOpenChange(false)
+        } else if (!isHubOpen && wasOpenBeforeHub) {
+            setWasOpenBeforeHub(false)
+            onOpenChange(true)
+        }
+    }, [isHubOpen]) // intentionally omitting open/onOpenChange to avoid loops
 
     const handleOpenChange = (newOpen: boolean) => {
-        if (newOpen && isSheetCollapsed("POS_SALES")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
-        }
         onOpenChange(newOpen)
     }
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChange}>
+        <Sheet open={open} onOpenChange={handleOpenChange} modal={false}>
             <CollapsibleSheet
                 sheetId="POS_SALES"
                 open={open}

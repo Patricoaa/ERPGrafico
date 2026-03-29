@@ -6,6 +6,8 @@ import { formatDocumentId } from "@/lib/order-status-utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
@@ -13,11 +15,9 @@ interface BillingPhaseProps {
     activeDoc: any
     invoices: any[]
     billingIsComplete: boolean
-    registry: any
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
-    actionEngineRef: any
     posSessionId?: number | null
 }
 
@@ -27,13 +27,14 @@ export function BillingPhase({
     activeDoc,
     invoices,
     billingIsComplete,
-    registry,
     userPermissions,
     onActionSuccess,
     openDetails,
-    actionEngineRef,
-    posSessionId
+    posSessionId = null
 }: BillingPhaseProps) {
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+        ? purchaseOrderActions 
+        : saleOrderActions
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -175,7 +176,6 @@ export function BillingPhase({
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
-                actionEngineRef={actionEngineRef}
                 stageId="billing"
                 isComplete={billingIsComplete}
                 posSessionId={posSessionId}
