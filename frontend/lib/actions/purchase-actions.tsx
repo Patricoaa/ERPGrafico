@@ -248,25 +248,23 @@ export const purchaseOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Only show if there's a FACTURA or PURCHASE_INV (not BOLETA)
-                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
-                    )
-                    // Don't show if there are any boletas (fiscal restriction)
-                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'BOLETA'
-                    )
-                    return hasFactura && !hasBoleta
+                    // Show if there is any DTE associated with the order
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const validDTEs = ['FACTURA', 'PURCHASE_INV', 'BOLETA', 'BOLETA_EXENTA']
+                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+
+                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type) &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
-                    return !hasIssuedFacturaWithFolio
+
+                    return !hasIssuedDTEWithFolio
                 },
+
                 disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de crédito"
             },
             {
@@ -277,25 +275,23 @@ export const purchaseOrderActions: ActionRegistry = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (order) => {
                     if (!order) return false
-                    // Only show if there's a FACTURA or PURCHASE_INV (not BOLETA)
-                    const hasFactura = order.related_documents?.invoices?.some((inv: any) =>
-                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type)
-                    )
-                    // Don't show if there are any boletas (fiscal restriction)
-                    const hasBoleta = order.related_documents?.invoices?.some((inv: any) =>
-                        inv.dte_type === 'BOLETA'
-                    )
-                    return hasFactura && !hasBoleta
+                    // Show if there is any DTE associated with the order
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+                    const validDTEs = ['FACTURA', 'PURCHASE_INV', 'BOLETA', 'BOLETA_EXENTA']
+                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
                 },
                 isDisabled: (order) => {
-                    const hasIssuedFacturaWithFolio = order.related_documents?.invoices?.some((inv: any) =>
+                    const invoices = order.related_documents?.invoices || order.invoices || []
+
+                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
                         inv.status !== 'DRAFT' &&
-                        ['FACTURA', 'PURCHASE_INV'].includes(inv.dte_type) &&
                         inv.number &&
                         inv.number !== 'Draft'
                     )
-                    return !hasIssuedFacturaWithFolio
+
+                    return !hasIssuedDTEWithFolio
                 },
+
                 disabledTooltip: "Debe registrar el folio de la factura antes de crear una nota de débito"
             }
         ]
