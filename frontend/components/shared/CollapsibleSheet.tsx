@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { SheetContent } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -47,6 +47,22 @@ export function CollapsibleSheet({
     const isCollapsed = isSheetCollapsed(sheetId)
     const offset = getSheetOffset(sheetId)
     const stackIndex = getSheetIndex(sheetId)
+    
+    // PERF-07: DOM Pruning Engine
+    // Detaches the subtree from CSS layout calculations without unmounting React instances (preserves hook form states)
+    const [isHidden, setIsHidden] = useState(isCollapsed)
+
+    useEffect(() => {
+        let timeout: NodeJS.Timeout
+        if (isCollapsed) {
+            // Apply display:none after the 500ms slide-out transition ends
+            timeout = setTimeout(() => setIsHidden(true), 500)
+        } else {
+            // Remove display:none immediately to allow slide-in transition
+            setIsHidden(false)
+        }
+        return () => clearTimeout(timeout)
+    }, [isCollapsed])
     
     // Vertical stacking for tabs when multiple sheets are hidden
     // Spread them out from top to bottom (e.g. 15%, 33%, 51%)
@@ -103,7 +119,8 @@ export function CollapsibleSheet({
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
                 "flex flex-col h-full bg-background transition-opacity duration-300",
-                isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+                isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100",
+                isHidden && "hidden" // DOM Pruning: Display none
             )}>
                 {children}
             </div>

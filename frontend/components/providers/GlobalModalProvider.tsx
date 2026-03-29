@@ -23,23 +23,29 @@ const TreasuryAccountModal = dynamic(() => import("@/features/treasury/component
     loading: () => <div className="p-4 text-center">Cargando Cuenta...</div>
 })
 
-interface GlobalModalContextType {
+interface GlobalModalActionsContextType {
     openWorkOrder: (id: number) => void
     openCommandCenter: (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => void
     closeCommandCenter: () => void
     openContact: (id: number, contact?: any) => void
     openTreasuryAccount: (id: number | null) => void
-    isCommandCenterActive: boolean
-    isSubModalActive: boolean
-    // Tab Management
     registerSheet: (id: string, fullWidth: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
+}
+
+interface GlobalModalStateContextType {
+    isCommandCenterActive: boolean
+    isSubModalActive: boolean
     getSheetOffset: (id: string) => number
     getSheetIndex: (id: string) => number
     isSheetCollapsed: (id: string) => boolean
 }
 
-const GlobalModalContext = createContext<GlobalModalContextType | undefined>(undefined)
+const GlobalModalActionsContext = createContext<GlobalModalActionsContextType | undefined>(undefined)
+const GlobalModalStateContext = createContext<GlobalModalStateContextType | undefined>(undefined)
+
+// For backwards compatibility
+type CombinedContextType = GlobalModalActionsContextType & GlobalModalStateContextType
 
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [woId, setWoId] = useState<number | null>(null)
@@ -53,18 +59,17 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [treasuryAccountId, setTreasuryAccountId] = useState<number | null>(null)
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, forced: boolean}[]>([])
 
-    const openWorkOrder = (id: number) => {
+    const openWorkOrder = useCallback((id: number) => {
         // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+        setOccId(prev => prev); // Hack to access prev if needed, but not strictly required
+        setOccInvoiceId(prev => prev);
+        
         setContactId(null)
         setTreasuryAccountId(null)
         setWoId(id)
-    }
+    }, [])
 
-    const openCommandCenter = (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => {
+    const openCommandCenter = useCallback((id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => {
         setWoId(null)
         setContactId(null)
         setOccId(id)
@@ -72,41 +77,31 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setOccType(type)
         setOccPosSessionId(posSessionId || null)
         setOccOnActionSuccess(() => onActionSuccess)
-    }
+    }, [])
 
-    const closeCommandCenter = () => {
+    const closeCommandCenter = useCallback(() => {
         setOccId(null)
         setOccInvoiceId(null)
         // deliberately leaving OCC type unchanged to keep context for UX-10 fix
-    }
+    }, [])
 
-    const openContact = (id: number, contact?: any) => {
-        // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+    const openContact = useCallback((id: number, contact?: any) => {
         setWoId(null)
         setTreasuryAccountId(null)
         setContactId(id)
         setTempContact(contact || null)
-    }
+    }, [])
 
-    const openTreasuryAccount = (id: number | null) => {
-        // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+    const openTreasuryAccount = useCallback((id: number | null) => {
         setWoId(null)
         setContactId(null)
         setTreasuryAccountId(id)
-    }
+    }, [])
 
-    const handleContactSuccess = () => {
+    const handleContactSuccess = useCallback(() => {
         setContactId(null)
         setTempContact(null)
-    }
+    }, [])
 
     // Tab Management Logic
     const registerSheet = useCallback((id: string, fullWidth: number, forced: boolean = false) => {
@@ -160,21 +155,27 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return index < sheetStack.length - 1 || sheetStack[index].forced
     }, [sheetStack])
 
+    const actionsValue = useMemo(() => ({
+        openWorkOrder,
+        openCommandCenter,
+        closeCommandCenter,
+        openContact,
+        openTreasuryAccount,
+        registerSheet,
+        unregisterSheet,
+    }), [openWorkOrder, openCommandCenter, closeCommandCenter, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
+
+    const stateValue = useMemo(() => ({
+        isCommandCenterActive: !!(occId || occInvoiceId),
+        isSubModalActive: !!(woId || contactId || treasuryAccountId),
+        getSheetOffset,
+        getSheetIndex,
+        isSheetCollapsed
+    }), [occId, occInvoiceId, woId, contactId, treasuryAccountId, getSheetOffset, getSheetIndex, isSheetCollapsed])
+
     return (
-        <GlobalModalContext.Provider value={{ 
-            openWorkOrder, 
-            openCommandCenter, 
-            closeCommandCenter,
-            openContact, 
-            openTreasuryAccount,
-            isCommandCenterActive: !!(occId || occInvoiceId),
-            isSubModalActive: !!(woId || contactId || treasuryAccountId),
-            registerSheet,
-            unregisterSheet,
-            getSheetOffset,
-            getSheetIndex,
-            isSheetCollapsed
-        }}>
+        <GlobalModalActionsContext.Provider value={actionsValue}>
+        <GlobalModalStateContext.Provider value={stateValue}>
             {children}
             {woId !== null && (
                 <WorkOrderWizard
@@ -210,14 +211,24 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     accountId={treasuryAccountId}
                 />
             )}
-        </GlobalModalContext.Provider>
+        </GlobalModalStateContext.Provider>
+        </GlobalModalActionsContext.Provider>
     )
 }
 
-export function useGlobalModals() {
-    const context = useContext(GlobalModalContext)
+export function useGlobalModalActions() {
+    const context = useContext(GlobalModalActionsContext)
     if (context === undefined) {
-        throw new Error("useGlobalModals must be used within a GlobalModalProvider")
+        throw new Error("useGlobalModalActions must be used within a GlobalModalProvider")
     }
     return context
+}
+
+export function useGlobalModals(): CombinedContextType {
+    const actions = useContext(GlobalModalActionsContext)
+    const state = useContext(GlobalModalStateContext)
+    if (actions === undefined || state === undefined) {
+        throw new Error("useGlobalModals must be used within a GlobalModalProvider")
+    }
+    return { ...actions, ...state }
 }

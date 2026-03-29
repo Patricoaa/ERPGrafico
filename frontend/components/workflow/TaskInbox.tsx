@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, MapPin, TrendingUp } from "lucide-react"
 import { toast } from "sonner"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -29,7 +29,7 @@ export function TaskInbox() {
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
-    const { openWorkOrder, openCommandCenter, openContact } = useGlobalModals()
+    const { openWorkOrder, openCommandCenter, openContact } = useGlobalModalActions()
     const { user } = useAuth()
     
     // Track counts for notifications

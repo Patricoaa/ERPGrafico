@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { AttachmentList } from "./AttachmentList"
 import { useRouter } from "next/navigation"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useBranding } from "@/contexts/BrandingProvider"
 
 type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
@@ -83,7 +83,7 @@ const SidebarSection = ({ title, children }: { title: string, children: React.Re
 const SidebarContent = ({ data, currentType, closeModal }: { data: any, currentType: string, closeModal: () => void }) => {
     if (!data) return null
     const router = useRouter()
-    const { openContact } = useGlobalModals()
+    const { openContact } = useGlobalModalActions()
 
     const renderStatusSection = () => (
         <SidebarSection title="Estado">
