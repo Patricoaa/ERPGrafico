@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
@@ -33,9 +33,8 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
+    const { openCommandCenter } = useGlobalModals()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
-    const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
 
     const { orders } = useSalesOrders({
         filters: {
@@ -260,9 +259,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                                     hideStatus={hideStatusInCards}
                                                     onClick={() => {
                                                         if (viewMode === 'orders') {
-                                                            setSelectedOrderId(item.id)
+                                                            openCommandCenter(item.id, 'sale', null, posSessionId, onActionSuccess)
                                                         } else {
-                                                            setSelectedInvoiceId(item.id)
+                                                            openCommandCenter(null, 'sale', item.id, posSessionId, onActionSuccess)
                                                         }
                                                     }}
                                                 />
@@ -275,23 +274,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     </Tabs>
                 </div>
             )}
-
-            <OrderCommandCenter
-                orderId={selectedOrderId}
-                invoiceId={selectedInvoiceId}
-                type="sale"
-                open={selectedOrderId !== null || selectedInvoiceId !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setSelectedOrderId(null)
-                        setSelectedInvoiceId(null)
-                    }
-                }}
-                onActionSuccess={() => {
-                    if (onActionSuccess) onActionSuccess()
-                }}
-                posSessionId={posSessionId}
-            />
         </div>
     )
 }

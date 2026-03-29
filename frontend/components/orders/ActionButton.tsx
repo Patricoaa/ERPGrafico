@@ -40,7 +40,7 @@ export function ActionButton({
             disabled={isDisabled}
             className={cn(
                 "w-full justify-start text-left font-medium transition-all duration-200 group h-auto",
-                compact ? "py-1.5 px-2" : "py-2 px-3",
+                compact ? "py-1 px-1.5" : "py-2 px-3",
                 ghost ? "hover:bg-black/5 dark:hover:bg-white/5 border-none shadow-none active:scale-[0.98] transition-all duration-200" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5'),
                 isDisabled && "opacity-50 cursor-not-allowed",
                 className
@@ -49,7 +49,7 @@ export function ActionButton({
             <div className="flex items-center gap-2 w-full overflow-hidden">
                 <div className={cn(
                     "rounded-md shrink-0 transition-colors flex items-center justify-center",
-                    compact ? "p-1 h-6 w-6" : "p-1.5 h-8 w-8",
+                    compact ? "p-0.5 h-5 w-5" : "p-1.5 h-8 w-8",
                     ghost ? "bg-transparent" : (action.variant === 'destructive' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground')
                 )}>
                     <Icon className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", ghost ? "" : "transition-transform duration-200 group-hover:-translate-x-0.5")} />

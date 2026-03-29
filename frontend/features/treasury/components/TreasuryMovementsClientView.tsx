@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Plus, ArrowRight, Eye } from "lucide-react"
+import { Plus, ArrowDown, Eye } from "lucide-react"
 import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -14,6 +14,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -34,11 +35,16 @@ interface TreasuryMovement {
     pos_session: number | null
     from_account: number | null
     from_account_name: string | null
+    from_account_account_id: number | null
+    from_account_code: string | null
     to_account: number | null
     to_account_name: string | null
+    to_account_account_id: number | null
+    to_account_code: string | null
     justify_reason: string | null
     justify_reason_display: string | null
     partner_name: string | null
+    partner_id: number | null
     reference: string | null
     involved_accounts?: string[]
     document_info?: {
@@ -50,6 +56,7 @@ interface TreasuryMovement {
 }
 
 export function TreasuryMovementsClientView() {
+    const { openContact, openTreasuryAccount } = useGlobalModals()
     const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
     const [openModal, setOpenModal] = useState(false)
@@ -130,32 +137,80 @@ export function TreasuryMovementsClientView() {
             cell: ({ row }) => {
                 const m = row.original;
                 const type = m.movement_type;
-                let source = "Particular";
-                let destination = "Caja";
+                
+                // Define entities in the flow
+                let sourceData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
+                let destData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
 
-                if (type === 'TRANSFER') {
-                    source = m.from_account_name || 'Origen';
-                    destination = m.to_account_name || 'Destino';
+                if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                    sourceData = { 
+                        label: m.from_account_name || 'Origen', 
+                        type: 'account', 
+                        id: m.from_account_account_id || undefined,
+                        accountCode: m.from_account_code || ''
+                    };
+                    destData = { 
+                        label: m.to_account_name || 'Destino', 
+                        type: 'account', 
+                        id: m.to_account_account_id || undefined,
+                        accountCode: m.to_account_code || ''
+                    };
                 } else if (type === 'INBOUND') {
-                    source = m.partner_name || 'Origen Externo';
-                    destination = m.to_account_name || 'Caja';
+                    sourceData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
+                    destData = { 
+                        label: m.to_account_name || 'Caja', 
+                        type: 'account', 
+                        id: m.to_account_account_id || undefined,
+                        accountCode: m.to_account_code || ''
+                    };
                 } else if (type === 'OUTBOUND') {
-                    source = m.from_account_name || 'Caja';
-                    destination = m.partner_name || 'Destino Externo';
-                } else if (type === 'ADJUSTMENT') {
-                    source = m.from_account_name || 'Ajuste';
-                    destination = m.to_account_name || 'Ajuste';
+                    sourceData = { 
+                        label: m.from_account_name || 'Caja', 
+                        type: 'account', 
+                        id: m.from_account_account_id || undefined,
+                        accountCode: m.from_account_code || ''
+                    };
+                    destData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
                 }
 
+                const EntityLink = ({ data, colorClass = "text-muted-foreground" }: { data: typeof sourceData, colorClass?: string }) => {
+                    if (data.type === 'contact' && data.id) {
+                        return (
+                            <span 
+                                onClick={(e) => { e.stopPropagation(); openContact(data.id!); }}
+                                className={cn("font-bold truncate max-w-[150px] cursor-pointer hover:text-primary hover:underline transition-colors", colorClass)}
+                                title={data.label}
+                            >
+                                {data.label}
+                            </span>
+                        );
+                    }
+                    if (data.type === 'account' && data.id) {
+                        return (
+                            <span 
+                                onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    // Use the treasury account ID (m.from_account or m.to_account) 
+                                    // instead of the accounting account ID (data.id)
+                                    // because the TreasuryAccountModal expects the TreasuryAccount ID.
+                                    // Wait, I should check which ID I put in sourceData.id
+                                    openTreasuryAccount(m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null)));
+                                }}
+                                className={cn("font-bold truncate max-w-[150px] cursor-pointer hover:text-primary hover:underline transition-colors", colorClass)}
+                                title={data.label}
+                            >
+                                {data.label}
+                            </span>
+                        );
+                    }
+                    return <span className={cn("font-bold truncate max-w-[150px] opacity-70", colorClass)} title={data.label}>{data.label}</span>;
+                };
+
                 return (
-                    <div className="flex items-center gap-2 text-xs py-1">
-                        <span className="font-bold text-muted-foreground truncate max-w-[100px]" title={source}>
-                            {source}
-                        </span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0" />
-                        <span className="font-bold truncate max-w-[100px]" title={destination}>
-                            {destination}
-                        </span>
+                    <div className="flex flex-col items-center gap-0.5 text-[11px] py-1 w-full min-w-[120px]">
+                        <EntityLink data={sourceData} colorClass="text-muted-foreground" />
+                        <ArrowDown className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
+                        <EntityLink data={destData} colorClass="text-foreground" />
                     </div>
                 );
             },

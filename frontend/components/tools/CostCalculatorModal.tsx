@@ -17,11 +17,12 @@ import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { 
     Sheet, 
-    SheetContent, 
     SheetHeader, 
     SheetTitle,
     SheetDescription
 } from "@/components/ui/sheet"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 
 interface Product {
     id: number
@@ -69,6 +70,26 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    const handleOpenChangeProxy = (newOpen: boolean) => {
+        if (newOpen && isSheetCollapsed("COST_CALCULATOR")) {
+            // Jump behavior: Close Hub if we are opening from a collapsed tab
+            openCommandCenter(null, 'sale')
+        }
+        if (!newOpen) handleClose()
+        else onOpenChange(newOpen)
+    }
+
+    const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
 
     // Use React Query for shared caching and better performance
     const { data: products = [], isLoading: loadingProducts } = useQuery({
@@ -186,10 +207,15 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-        <Sheet open={open} onOpenChange={handleClose}>
-            <SheetContent 
-                side="right" 
-                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+            <CollapsibleSheet
+                sheetId="COST_CALCULATOR"
+                open={open}
+                onOpenChange={handleOpenChangeProxy}
+                tabLabel="CALCULADORA"
+                tabIcon={Calculator}
+                fullWidth={fullWidth}
+                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
@@ -456,7 +482,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                         </Card>
                     </div>
                 </div>
-            </SheetContent>
+            </CollapsibleSheet>
         </Sheet>
     )
 }
