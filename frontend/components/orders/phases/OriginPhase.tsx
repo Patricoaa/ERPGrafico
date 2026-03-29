@@ -17,9 +17,7 @@ interface OriginPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     onEdit?: (orderId: number) => void
     userPermissions: string[]
-    actionEngineRef: any
-    isTimeline?: boolean
-    onModalChange?: (isOpen: boolean) => void
+    actionEngineRef?: any
 }
 
 export function OriginPhase({
@@ -33,9 +31,7 @@ export function OriginPhase({
     openDetails,
     onEdit,
     userPermissions,
-    actionEngineRef,
-    isTimeline = false,
-    onModalChange
+    actionEngineRef
 }: OriginPhaseProps) {
     const router = useRouter()
     const isSale = type === 'sale'
@@ -133,8 +129,6 @@ export function OriginPhase({
             userPermissions={userPermissions}
             onActionSuccess={onActionSuccess}
             actionEngineRef={actionEngineRef}
-            isTimeline={isTimeline}
-            onModalChange={onModalChange}
         >
             <div className="flex flex-col gap-1">
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (

@@ -22,7 +22,6 @@ interface OrderHubIntegratedProps {
     posSessionId?: number | null
     showAnimations?: boolean
     compact?: boolean
-    onModalChange?: (isOpen: boolean) => void
     actionEngineRef?: React.RefObject<any>
 }
 
@@ -35,7 +34,6 @@ export function OrderHubIntegrated({
     posSessionId = null,
     showAnimations = true,
     compact = false,
-    onModalChange,
     actionEngineRef: externalActionEngineRef
 }: OrderHubIntegratedProps) {
     const {
@@ -57,8 +55,7 @@ export function OrderHubIntegrated({
     
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
     
-    // isTimeline = true (Dashboard/Horizontal), false (Sheet/Vertical)
-    const isTimeline = useMemo(() => !compact, [compact])
+
 
     // Determine which phases are visible to draw the connectors correctly
     const visiblePhases = useMemo(() => {
@@ -83,7 +80,7 @@ export function OrderHubIntegrated({
         return (
             <div className={cn(
                 "absolute bg-border/20 z-0",
-                isTimeline ? "h-[2px] left-[50%] right-[-50%] top-[30px]" : "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
+                "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
             )} />
         )
     }
@@ -91,7 +88,7 @@ export function OrderHubIntegrated({
     const PhaseWrapper = ({ children, index }: { children: React.ReactNode, index: number }) => (
         <div className={cn(
             "relative flex flex-col",
-            isTimeline ? "flex-shrink-0 w-[300px] text-left" : "pl-12 text-left w-full"
+            "pl-12 text-left w-full"
         )}>
             <Connector index={index} />
             <div className="w-full flex-1 relative z-10 flex flex-col">
@@ -110,12 +107,9 @@ export function OrderHubIntegrated({
                 */}
 
                 <div className={cn(
-                    "w-full overflow-hidden flex-1",
-                    isTimeline && "overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+                    "w-full overflow-hidden flex-1"
                 )}>
-                    <div className={cn(
-                        isTimeline ? "flex flex-row gap-6 py-6 min-w-max px-4 items-stretch" : "flex flex-col gap-4 py-4"
-                    )}>
+                    <div className="flex flex-col gap-4 py-4">
                         {/* 1. Origen */}
                         <PhaseWrapper index={visiblePhases.indexOf('origin')}>
                             <OriginPhase
@@ -130,8 +124,6 @@ export function OrderHubIntegrated({
                                 onEdit={onEdit}
                                 userPermissions={userPermissions}
                                 actionEngineRef={actionEngineRef}
-                                isTimeline={isTimeline}
-                                onModalChange={onModalChange}
                             />
                         </PhaseWrapper>
 
@@ -149,8 +141,6 @@ export function OrderHubIntegrated({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
-                                isTimeline={isTimeline}
-                                onModalChange={onModalChange}
                             />
                         </PhaseWrapper>
 
@@ -167,8 +157,6 @@ export function OrderHubIntegrated({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
-                                isTimeline={isTimeline}
-                                onModalChange={onModalChange}
                             />
                         </PhaseWrapper>
 
@@ -184,8 +172,6 @@ export function OrderHubIntegrated({
                                     openDetails={openDetails}
                                     actionEngineRef={actionEngineRef}
                                     showAnimations={showAnimations}
-                                    isTimeline={isTimeline}
-                                    onModalChange={onModalChange}
                                 />
                             </PhaseWrapper>
                         )}
@@ -205,8 +191,6 @@ export function OrderHubIntegrated({
                                     openDetails={openDetails}
                                     actionEngineRef={actionEngineRef}
                                     showAnimations={showAnimations}
-                                    isTimeline={isTimeline}
-                                    onModalChange={onModalChange}
                                     logisticsProgress={data.logisticsProgress}
                                 />
                             </PhaseWrapper>

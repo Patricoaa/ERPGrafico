@@ -1,21 +1,12 @@
 "use client"
 
-import { useState, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar, ArrowRight, Receipt, FileBadge, Package, GitBranch, ChevronDown } from "lucide-react"
+import { Calendar, ArrowRight, Receipt, FileBadge, Package, GitBranch } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { InvoiceHubStatus } from "@/components/billing/InvoiceHubStatus"
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { motion, AnimatePresence } from "framer-motion"
-import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { ActionCategory } from "@/components/orders/ActionCategory"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
-import { OrderHubIntegrated } from "@/components/orders/OrderHubIntegrated"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 type InvoiceType = 'sale_invoice' | 'purchase_invoice'
 
@@ -37,24 +28,10 @@ const dteTypeLabel: Record<string, string> = {
 }
 
 export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps) {
-    const { openCommandCenter } = useGlobalModalActions()
+    const { openHub } = useHubPanel()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
     const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type)
-
-    const [isExpanded, setIsExpanded] = useState(false)
-    const actionEngineRef = useRef<any>(null)
-    const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
-    
-    const hubData = useOrderHubData({ 
-        invoiceId: item.id, 
-        type: isSale ? 'sale' : 'purchase', 
-        enabled: isExpanded 
-    })
-
-    const openDetails = (docType: string, docId: number | string) => {
-        setDetailsModal({ open: true, type: docType, id: docId })
-    }
 
     // Icon and color scheme
     let Icon = Receipt
@@ -80,24 +57,24 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
 
     const total = parseFloat(item.total ?? '0')
 
+    const handleClick = () => {
+        if (onClick) {
+            onClick()
+        }
+    }
+
     return (
         <div className={cn("flex flex-col gap-0 w-full min-w-0 max-w-full", className)}>
             <div
                 className={cn(
-                    "group flex items-center justify-between p-4 bg-card border border-border/50 transition-all cursor-pointer relative z-10",
-                    isExpanded ? "rounded-t-2xl border-b-0 shadow-sm" : "rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                    "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl transition-all cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 relative z-10"
                 )}
-                onClick={() => {
-                    setIsExpanded(!isExpanded)
-                    // We REMOVED onClick?.() here to prevent expanding and opening the sheet AT THE SAME TIME
-                    // This allows the card to JUST expand, like in OrderCard.
-                }}
+                onClick={handleClick}
             >
                 {/* Left: icon + info */}
                 <div className="flex items-center gap-4 min-w-0">
                     <div className={cn(
-                        "w-12 h-12 shrink-0 rounded-xl flex flex-col items-center justify-center border transition-transform duration-300",
-                        isExpanded ? "scale-90 opacity-80" : "group-hover:scale-105",
+                        "w-12 h-12 shrink-0 rounded-xl flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-105",
                         iconBg, iconColor, iconBorder
                     )}>
                         <Icon className="h-6 w-6" />
@@ -132,9 +109,9 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     if (item.corrected_invoice) {
-                                        openCommandCenter(null, 'sale', item.corrected_invoice.id)
+                                        openHub({ orderId: null, invoiceId: item.corrected_invoice.id, type: 'sale' })
                                     } else if (item.sale_order || item.purchase_order) {
-                                        openCommandCenter(item.sale_order || item.purchase_order, item.sale_order ? 'sale' : 'purchase', null)
+                                        openHub({ orderId: item.sale_order || item.purchase_order, type: item.sale_order ? 'sale' : 'purchase' })
                                     }
                                 }}
                             >
@@ -153,7 +130,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                         className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
                                         onClick={(e) => {
                                             e.stopPropagation()
-                                            openCommandCenter(null, isSale ? 'sale' : 'purchase', adj.id)
+                                            openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase' })
                                         }}
                                     >
                                         <GitBranch className="size-3" />
@@ -170,74 +147,11 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                         <MoneyDisplay amount={total} showColor={false} className="text-sm" />
                     </div>
 
-                    <div className={cn("transition-transform duration-500 ml-2", isExpanded ? "rotate-90" : "rotate-0")}>
+                    <div className="transition-transform duration-500 ml-2">
                         <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100" />
                     </div>
                 </div>
             </div>
-
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="overflow-hidden border border-t-0 border-border/50 rounded-b-2xl bg-muted/5"
-                    >
-                        <div className="p-4 pt-0">
-                            <ActionCategory
-                                ref={actionEngineRef}
-                                category={{ 
-                                    id: 'card-engine', 
-                                    label: '', 
-                                    icon: null as any, 
-                                    actions: Object.values(isSale ? saleOrderActions : purchaseOrderActions).flatMap(c => c.actions) 
-                                }}
-                                order={hubData.activeDoc}
-                                userPermissions={hubData.userPermissions}
-                                onActionSuccess={hubData.fetchOrderDetails}
-                                headless={true}
-                            />
-                            <OrderHubIntegrated 
-                                data={hubData}
-                                type={isSale ? 'sale' : 'purchase'}
-                                compact={false}
-                                openDetails={openDetails}
-                                actionEngineRef={actionEngineRef}
-                                onActionSuccess={() => hubData.fetchOrderDetails()}
-                            />
-                            
-                            <div className="flex justify-end pt-4 mt-2 border-t border-border/40">
-                                <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="rounded-full gap-2 px-4 shadow-sm hover:bg-primary hover:text-white transition-all"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (onClick) {
-                                            onClick()
-                                        } else {
-                                            openCommandCenter(null, isSale ? 'sale' : 'purchase', item.id)
-                                        }
-                                        setIsExpanded(false)
-                                    }}
-                                >
-                                    Abrir Panel Completo
-                                    <ArrowRight className="size-3" />
-                                </Button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <TransactionViewModal
-                open={detailsModal.open}
-                onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
-                type={detailsModal.type}
-                id={Number(detailsModal.id)}
-            />
         </div>
     )
 }

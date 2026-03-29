@@ -16,8 +16,6 @@ interface ProductionPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     showAnimations: boolean
-    isTimeline?: boolean
-    onModalChange?: (isOpen: boolean) => void
 }
 
 export function ProductionPhase({
@@ -28,9 +26,7 @@ export function ProductionPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    showAnimations,
-    isTimeline = false,
-    onModalChange
+    showAnimations
 }: ProductionPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -115,8 +111,6 @@ export function ProductionPhase({
                 showDocProgress={true}
                 stageId="production"
                 isComplete={totalOTProgress === 100 && totalOTs > 0}
-                isTimeline={isTimeline}
-                onModalChange={onModalChange}
             >
                 {totalOTs > 0 ? (
                     <div className="space-y-1 px-1">

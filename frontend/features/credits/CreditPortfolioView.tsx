@@ -144,7 +144,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 function ContactRow({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) { }
 
@@ -156,7 +156,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [writingOff, setWritingOff] = useState(false)
     const [showWriteOffDialog, setShowWriteOffDialog] = useState(false)
-    const [selectedDocForHub, setSelectedDocForHub] = useState<number | null>(null)
+    const { openHub } = useHubPanel()
 
     const totalDebt = Number(contact.credit_balance_used)
     const aging = contact.credit_aging
@@ -366,7 +366,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                     className="font-bold text-primary hover:underline flex items-center justify-center gap-1 mx-auto"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        setSelectedDocForHub(entry.id)
+                                                                        openHub({ orderId: entry.id, type: 'sale' })
                                                                     }}
                                                                 >
                                                                     NV-{entry.number}
@@ -432,17 +432,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                         <p className="text-[12px] text-muted-foreground italic">Sin documentos pendientes.</p>
                                     )}
 
-                                    <OrderCommandCenter
-                                        open={!!selectedDocForHub}
-                                        onOpenChange={(o) => !o && setSelectedDocForHub(null)}
-                                        orderId={selectedDocForHub}
-                                        type="sale"
-                                        onActionSuccess={() => {
-                                            setLedger(null)
-                                            handleExpand()
-                                            onRefresh()
-                                        }}
-                                    />
+
 
                                     {/* Per-document write-off confirmation dialog (default customer only) */}
                                     <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
