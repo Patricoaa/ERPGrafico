@@ -56,22 +56,6 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     })()}
                 />
 
-                {/* Logistics */}
-                <StatusBadge
-                    icon={Package}
-                    status={statuses.logistics}
-                    tooltip={(() => {
-                        const deliveries = note.related_documents?.deliveries || []
-                        const receipts = note.related_documents?.receipts || []
-                        const moves = note.related_stock_moves || []
-
-                        if (deliveries.length > 0) return `Logística (${deliveries.length} despachos)`
-                        if (receipts.length > 0) return `Logística (${receipts.length} recepciones)`
-                        if (moves.length > 0) return `Logística (${moves.length} movimientos)`
-                        return "Sin movimientos"
-                    })()}
-                />
-
                 {/* Billing */}
                 <StatusBadge
                     icon={Receipt}
@@ -92,6 +76,22 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     icon={Banknote}
                     status={statuses.treasury}
                     tooltip={`Tesorería: ${translateStatus(note.payment_status || note.status)}`}
+                />
+
+                {/* Logistics */}
+                <StatusBadge
+                    icon={Package}
+                    status={statuses.logistics}
+                    tooltip={(() => {
+                        const deliveries = note.related_documents?.deliveries || []
+                        const receipts = note.related_documents?.receipts || []
+                        const moves = note.related_stock_moves || []
+
+                        if (deliveries.length > 0) return `Logística (${deliveries.length} despachos)`
+                        if (receipts.length > 0) return `Logística (${receipts.length} recepciones)`
+                        if (moves.length > 0) return `Logística (${moves.length} movimientos)`
+                        return "Sin movimientos"
+                    })()}
                 />
             </TooltipProvider>
         </div>

@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import {
     Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetDescription,
 } from '@/components/ui/sheet'
+import { CollapsibleSheet } from '@/components/shared/CollapsibleSheet'
+import { Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -106,8 +107,16 @@ export function OrderActionPanel({
     const paymentProgress = getPaymentProgress()
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-[500px] sm:w-[600px] flex flex-col p-0">
+        <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
+            <CollapsibleSheet
+                sheetId={`ACTION_PANEL_${orderId}`}
+                open={open}
+                onOpenChange={onOpenChange}
+                tabLabel="Acciones"
+                tabIcon={Zap}
+                fullWidth={500}
+            >
+                <div className="flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-xl">
                         {loading ? (
@@ -251,7 +260,8 @@ export function OrderActionPanel({
                         </div>
                     )}
                 </ScrollArea>
-            </SheetContent>
+                </div>
+            </CollapsibleSheet>
         </Sheet>
     )
 }

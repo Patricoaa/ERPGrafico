@@ -42,7 +42,7 @@ const salesSchema = z.object({
     default_revenue_account: z.string().nullable(),
     default_service_revenue_account: z.string().nullable(),
     default_subscription_revenue_account: z.string().nullable(),
-    pos_default_credit_percentage: z.number(),
+    pos_default_credit_percentage: z.coerce.number().min(0).max(100),
     pos_enable_line_discounts: z.boolean(),
     pos_enable_total_discounts: z.boolean(),
     pos_line_discount_user: z.number().nullable(),
@@ -51,7 +51,7 @@ const salesSchema = z.object({
     pos_global_discount_group: z.string(),
     terminal_commission_bridge_account: z.string().nullable(),
     terminal_iva_bridge_account: z.string().nullable(),
-    credit_auto_block_days: z.number().nullable(),
+    credit_auto_block_days: z.coerce.number().nullable(),
     default_uncollectible_expense_account: z.string().nullable(),
 })
 
@@ -306,6 +306,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
                                                                     </div>
                                                                 </FormControl>
+                                                                <FormMessage className="text-[10px]" />
                                                             </div>
                                                         )}
                                                     />
@@ -337,6 +338,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
                                                                     </div>
                                                                 </FormControl>
+                                                                <FormMessage className="text-[10px]" />
                                                             </div>
                                                         )}
                                                     />
@@ -393,6 +395,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                                 <FormControl>
                                                                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                                                                 </FormControl>
+                                                                <FormMessage />
                                                             </div>
                                                         )}
                                                     />
@@ -425,6 +428,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                                                                 <FormControl>
                                                                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                                                                 </FormControl>
+                                                                <FormMessage />
                                                             </div>
                                                         )}
                                                     />

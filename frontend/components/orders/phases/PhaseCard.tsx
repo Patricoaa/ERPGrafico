@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ActionCategory } from "../ActionCategory"
-import { Eye, Settings2 } from "lucide-react"
+import { Eye, Settings2, CheckCircle2, PlayCircle, MinusCircle, XCircle } from "lucide-react"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface PhaseCardProps {
     title: string
@@ -18,7 +19,6 @@ interface PhaseCardProps {
     documents?: any[]
     onViewDetail?: (docType: string, id: number | string) => void
     emptyMessage?: string
-    actionEngineRef?: any
     showDocProgress?: boolean
     stageId?: string
     isComplete?: boolean
@@ -37,12 +37,12 @@ export function PhaseCard({
     documents = [],
     onViewDetail,
     emptyMessage = "No disponible",
-    actionEngineRef,
     showDocProgress = false,
     stageId = '',
     isComplete = false,
     posSessionId = null
 }: PhaseCardProps) {
+    const { triggerAction } = useHubPanel()
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
 
@@ -85,29 +85,51 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "flex flex-col h-full transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-sm group/card bg-transparent",
-            variantStyles[variant] || variantStyles.neutral,
-            "hover:translate-y-[-2px] hover:shadow-xl hover:border-white/20 shadow-none",
+            "flex flex-col h-full transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
+            (variantStyles[variant] || variantStyles.neutral),
+            "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-white/5", // Free-flowing height for Sheet
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
+            {/* Premium Glow Effect */}
+            <div className="absolute -inset-px bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            
             {/* Background Gradient for Success */}
             {isSuccess && (
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent pointer-events-none" />
             )}
 
-            <div className="p-2 px-3 border-b border-white/5 flex items-center gap-2 bg-white/5 shrink-0">
-                <div className={cn("p-1.5 rounded-lg shadow-inner transition-transform duration-500 group-hover/card:scale-110", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])}>
-                    {isSuccess ? <div className="relative">
-                        <Icon className="h-4 w-4" />
-                        <div className="absolute -top-1 -right-1 bg-green-500 rounded-full border-2 border-background">
-                            <svg className="w-2 h-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+            <div className={cn(
+                "border-b border-white/10 flex items-center shrink-0 transition-all",
+                "bg-white/5 p-3 px-4 gap-3"
+            )}>
+                <div className={cn(
+                    "p-1 shadow-inner transition-transform duration-500 group-hover/card:scale-110", 
+                    iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
+                    "p-2 flex items-center justify-center rounded-xl h-9 w-9 shrink-0"
+                )}>
+                    <div className="relative flex items-center justify-center w-full h-full">
+                        <Icon className="h-5 w-5 opacity-90" />
+                        
+                        {/* Mini Status Badge */}
+                        <div className={cn(
+                            "absolute -top-2 -right-2 rounded-full bg-background border shadow-sm",
+                            isSuccess && "text-green-600 border-green-600/30",
+                            isActive && "text-blue-600 border-blue-600/30",
+                            variant === 'destructive' && "text-red-600 border-red-600/30",
+                            variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
+                        )}>
+                            {isSuccess && <CheckCircle2 className="size-3.5 bg-green-500/10 rounded-full" />}
+                            {isActive && <PlayCircle className="size-3.5 bg-blue-500/10 rounded-full" />}
+                            {variant === 'destructive' && <XCircle className="size-3.5 bg-red-500/10 rounded-full" />}
+                            {variant === 'neutral' && !isActive && !isSuccess && <MinusCircle className="size-3.5 bg-muted/10 rounded-full" />}
                         </div>
-                    </div> : <Icon className="h-4 w-4" />}
+                    </div>
                 </div>
                 <div className="flex-1">
-                    <h3 className="font-black text-[12px] uppercase tracking-widest text-foreground/90 leading-none">
+                    <h3 className={cn(
+                        "font-black uppercase tracking-widest text-foreground/90 leading-none",
+                        "text-xs tracking-wider"
+                    )}>
                         {title}
                     </h3>
                 </div>
@@ -129,7 +151,6 @@ export function PhaseCard({
                             <Tooltip key={idx}>
                                 <TooltipTrigger asChild>
                                     <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
-                                        {/* Wrapped in div to allow tooltip on disabled button */}
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -143,8 +164,8 @@ export function PhaseCard({
                                             )}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                console.log(`[PhaseCard] Header button clicked: ${action.id}`);
-                                                actionEngineRef?.current?.handleActionClick(action.id);
+                                                console.log(`[PhaseCard] Triggering global action: ${action.id}`);
+                                                triggerAction(action.id);
                                             }}
                                         >
                                             <action.icon className="h-4 w-4" />
@@ -160,28 +181,41 @@ export function PhaseCard({
                 </div>
             </div>
 
-            <CardContent className="p-3 flex-1 flex flex-col gap-2 relative z-10 overflow-hidden">
-                {/* Documents List - Uniform Row Style */}
-                <div className="space-y-1">
+            <CardContent className={cn(
+                "flex-1 flex flex-col relative z-10 overflow-hidden",
+                "p-3 px-5 gap-2" // Vertical formatting
+            )}>
+                {/* Documents List */}
+                <div className={cn("w-full", "space-y-2")}>
                     {documents.length > 0 ? (
                         documents.map((doc: any, i: number) => (
                             <div key={i} className={cn(
-                                "flex items-center justify-between p-1.5 px-2 bg-muted/5 rounded-xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-9",
+                                "flex items-center justify-between bg-muted/5 border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc",
+                                "rounded-xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
                                 doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed",
-                                doc.isWarning && "bg-orange-500/5 border-orange-500/10 hover:bg-orange-500/15"
+                                doc.isWarning && "bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/15"
                             )}>
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <div className="h-6 w-6 flex items-center justify-center bg-background rounded-lg border border-border/20 shadow-sm shrink-0">
-                                        <doc.icon className="h-3 w-3 text-primary/80" />
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className={cn(
+                                        "flex items-center justify-center bg-background rounded-lg border border-border/20 shadow-sm shrink-0",
+                                        "h-8 w-8"
+                                    )}>
+                                        <doc.icon className="text-primary/80 h-4 w-4" />
                                     </div>
                                     <div className="flex flex-col overflow-hidden">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-[11px] font-black text-foreground/90 truncate max-w-[120px]" title={doc.number}>
-                                                {doc.number}
-                                            </span>
-                                            {doc.status === 'CANCELLED' && (
-                                                <Badge variant="outline" className="text-[7px] h-3 px-1 border-slate-400 text-slate-500 font-bold uppercase">Anulada</Badge>
-                                            )}
+                                        <div className="flex flex-col justify-center">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                    "font-black text-foreground/90 truncate",
+                                                    "text-[13px] max-w-full"
+                                                )} title={doc.number}>
+                                                    {doc.number}
+                                                </span>
+                                                {doc.status === 'CANCELLED' && (
+                                                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-slate-400 text-slate-500 font-bold uppercase">Anulada</Badge>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -192,8 +226,12 @@ export function PhaseCard({
                                             key={idx}
                                             variant="ghost"
                                             size="icon"
-                                            className={cn("h-7 w-7 rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10")}
-                                            onClick={(e) => { e.stopPropagation(); action.onClick() }}
+                                            className={cn("rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-8 w-8")}
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                e.preventDefault();
+                                                action.onClick();
+                                            }}
                                             title={action.title}
                                         >
                                             <action.icon className="h-4 w-4" />
@@ -203,8 +241,12 @@ export function PhaseCard({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg"
-                                        onClick={() => !doc.disabled && onViewDetail?.(doc.docType, doc.id)}
+                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg", "h-8 w-8")}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
+                                        }}
                                         disabled={doc.disabled}
                                         title="Ver Detalles"
                                     >
@@ -214,16 +256,21 @@ export function PhaseCard({
                             </div>
                         ))
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-4 border border-dashed border-border/20 rounded-2xl bg-muted/5">
-                            <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                        <div className="flex flex-col items-center justify-center py-2 border border-dashed border-border/20 rounded-2xl bg-muted/5">
+                            <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                         </div>
                     )}
                 </div>
 
-                {/* Visual Support Container - FLAT */}
-                <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                    {children}
-                </div>
+                {/* Visual Support Container */}
+                {children && (
+                    <div className={cn(
+                        "flex-1 flex flex-col justify-center",
+                        "my-2 px-1 text-[12px]"
+                    )}>
+                        {children}
+                    </div>
+                )}
 
                 {/* Actions Section */}
                 <div className="mt-auto">
@@ -249,7 +296,7 @@ export function PhaseCard({
                 </div>
             </CardContent>
 
-            {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
+            {/* Bottom Ghost Actions */}
             {categorizedActions.secondary.filter((a: any) =>
                 !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
             ).length > 0 && (

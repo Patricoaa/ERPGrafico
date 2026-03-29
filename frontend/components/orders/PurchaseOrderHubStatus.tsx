@@ -67,11 +67,6 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
                     tooltip={`Origen: ${originLabel}`}
                 />
                 <StatusBadge
-                    icon={Package}
-                    status={statuses.reception}
-                    tooltip={`Recepción: ${receptionProgress}%`}
-                />
-                <StatusBadge
                     icon={Receipt}
                     status={statuses.billing}
                     tooltip={statuses.billing === 'success' ? "Facturado" : "Pendiente de Facturación"}
@@ -80,6 +75,11 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
                     icon={Banknote}
                     status={statuses.treasury}
                     tooltip={`Tesorería: ${paidPct}% Pagado${statuses.hasPendingTransactions ? ' - falta N° de transacción' : ''}`}
+                />
+                <StatusBadge
+                    icon={Package}
+                    status={statuses.reception}
+                    tooltip={`Recepción: ${receptionProgress}%`}
                 />
             </TooltipProvider>
         </div>

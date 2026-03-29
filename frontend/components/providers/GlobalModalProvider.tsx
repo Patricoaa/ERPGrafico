@@ -1,12 +1,7 @@
 "use client"
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from "react"
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
-
-const OrderCommandCenter = dynamic(() => import("@/components/orders/OrderCommandCenter").then(mod => mod.OrderCommandCenter), {
-    ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Centro de Comando...</div>
-})
 
 const WorkOrderWizard = dynamic(() => import("@/components/production/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
     ssr: false,
@@ -23,90 +18,63 @@ const TreasuryAccountModal = dynamic(() => import("@/features/treasury/component
     loading: () => <div className="p-4 text-center">Cargando Cuenta...</div>
 })
 
-interface GlobalModalContextType {
+interface GlobalModalActionsContextType {
     openWorkOrder: (id: number) => void
-    openCommandCenter: (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => void
     openContact: (id: number, contact?: any) => void
     openTreasuryAccount: (id: number | null) => void
-    isCommandCenterActive: boolean
-    isSubModalActive: boolean
-    // Tab Management
     registerSheet: (id: string, fullWidth: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
+}
+
+interface GlobalModalStateContextType {
+    isSubModalActive: boolean
     getSheetOffset: (id: string) => number
     getSheetIndex: (id: string) => number
     isSheetCollapsed: (id: string) => boolean
 }
 
-const GlobalModalContext = createContext<GlobalModalContextType | undefined>(undefined)
+const GlobalModalActionsContext = createContext<GlobalModalActionsContextType | undefined>(undefined)
+const GlobalModalStateContext = createContext<GlobalModalStateContextType | undefined>(undefined)
+
+// For backwards compatibility
+type CombinedContextType = GlobalModalActionsContextType & GlobalModalStateContextType
 
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [woId, setWoId] = useState<number | null>(null)
-    const [occId, setOccId] = useState<number | null>(null)
-    const [occInvoiceId, setOccInvoiceId] = useState<number | null>(null)
-    const [occType, setOccType] = useState<'purchase' | 'sale' | 'obligation'>('sale')
-    const [occPosSessionId, setOccPosSessionId] = useState<number | null>(null)
-    const [occOnActionSuccess, setOccOnActionSuccess] = useState<(() => void) | undefined>(undefined)
     const [contactId, setContactId] = useState<number | null>(null)
     const [tempContact, setTempContact] = useState<any>(null)
     const [treasuryAccountId, setTreasuryAccountId] = useState<number | null>(null)
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, forced: boolean}[]>([])
 
-    const openWorkOrder = (id: number) => {
-        // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+    const openWorkOrder = useCallback((id: number) => {
         setContactId(null)
         setTreasuryAccountId(null)
         setWoId(id)
-    }
+    }, [])
 
-    const openCommandCenter = (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => {
-        setWoId(null)
-        setContactId(null)
-        setOccId(id)
-        setOccInvoiceId(invoiceId || null)
-        setOccType(type)
-        setOccPosSessionId(posSessionId || null)
-        setOccOnActionSuccess(() => onActionSuccess)
-    }
-
-    const openContact = (id: number, contact?: any) => {
-        // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+    const openContact = useCallback((id: number, contact?: any) => {
         setWoId(null)
         setTreasuryAccountId(null)
         setContactId(id)
         setTempContact(contact || null)
-    }
+    }, [])
 
-    const openTreasuryAccount = (id: number | null) => {
-        // Keep occId/occInvoiceId if already open, allowing it to collapse
-        if (!occId && !occInvoiceId) {
-            setOccId(null)
-            setOccInvoiceId(null)
-        }
+    const openTreasuryAccount = useCallback((id: number | null) => {
         setWoId(null)
         setContactId(null)
         setTreasuryAccountId(id)
-    }
+    }, [])
 
-    const handleContactSuccess = () => {
+    const handleContactSuccess = useCallback(() => {
         setContactId(null)
         setTempContact(null)
-    }
+    }, [])
 
     // Tab Management Logic
     const registerSheet = useCallback((id: string, fullWidth: number, forced: boolean = false) => {
         setSheetStack(prev => {
             const existingIndex = prev.findIndex(s => s.id === id)
             if (existingIndex !== -1) {
-                // Update width or forced status if changed
                 if (prev[existingIndex].width === fullWidth && prev[existingIndex].forced === forced) return prev
                 const newStack = [...prev]
                 newStack[existingIndex] = { id, width: fullWidth, forced }
@@ -127,15 +95,10 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         const index = sheetStack.findIndex(s => s.id === id)
         if (index === -1 || index === sheetStack.length - 1) return 0
         
-        // The offset for sheet [index] is the sum of visible widths of all sheets from [index + 1] to end
         let totalOffset = 0
         for (let i = index + 1; i < sheetStack.length; i++) {
             const sheet = sheetStack[i]
-            // A sheet at index [i] is "collapsed" if it's not the top-most OR if it's forced
             const isColl = i < sheetStack.length - 1 || sheet.forced
-            
-            // If the foreground sheet is collapsed, it shouldn't push the background sheet horizontally
-            // because we use vertical stacking for tabs at the screen edge.
             totalOffset += isColl ? 0 : sheet.width
         }
         return totalOffset
@@ -148,25 +111,27 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const isSheetCollapsed = useCallback((id: string) => {
         const index = sheetStack.findIndex(s => s.id === id)
         if (index === -1) return false
-        
-        // It's collapsed if it's not the top-most OR if it's forced
         return index < sheetStack.length - 1 || sheetStack[index].forced
     }, [sheetStack])
 
+    const actionsValue = useMemo(() => ({
+        openWorkOrder,
+        openContact,
+        openTreasuryAccount,
+        registerSheet,
+        unregisterSheet,
+    }), [openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
+
+    const stateValue = useMemo(() => ({
+        isSubModalActive: !!(woId || contactId || treasuryAccountId),
+        getSheetOffset,
+        getSheetIndex,
+        isSheetCollapsed
+    }), [woId, contactId, treasuryAccountId, getSheetOffset, getSheetIndex, isSheetCollapsed])
+
     return (
-        <GlobalModalContext.Provider value={{ 
-            openWorkOrder, 
-            openCommandCenter, 
-            openContact, 
-            openTreasuryAccount,
-            isCommandCenterActive: !!(occId || occInvoiceId),
-            isSubModalActive: !!(woId || contactId || treasuryAccountId),
-            registerSheet,
-            unregisterSheet,
-            getSheetOffset,
-            getSheetIndex,
-            isSheetCollapsed
-        }}>
+        <GlobalModalActionsContext.Provider value={actionsValue}>
+        <GlobalModalStateContext.Provider value={stateValue}>
             {children}
             {woId !== null && (
                 <WorkOrderWizard
@@ -175,23 +140,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     onOpenChange={(open) => !open && setWoId(null)}
                 />
             )}
-            {(occId !== null || occInvoiceId !== null) && (
-                <OrderCommandCenter
-                    orderId={occId}
-                    invoiceId={occInvoiceId}
-                    type={occType}
-                    open={occId !== null || occInvoiceId !== null}
-                    onOpenChange={(open) => { if (!open) { setOccId(null); setOccInvoiceId(null); } }}
-                    isExternalModalOpen={!!(woId || contactId || treasuryAccountId)}
-                    posSessionId={occPosSessionId}
-                    onActionSuccess={occOnActionSuccess}
-                />
-            )}
             {contactId !== null && (
                 <ContactModal
                     open={contactId !== null}
                     onOpenChange={(open) => !open && setContactId(null)}
-                    contact={tempContact || { id: contactId }} // Pass ID if full contact not available
+                    contact={tempContact || { id: contactId }}
                     onSuccess={handleContactSuccess}
                 />
             )}
@@ -202,14 +155,24 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     accountId={treasuryAccountId}
                 />
             )}
-        </GlobalModalContext.Provider>
+        </GlobalModalStateContext.Provider>
+        </GlobalModalActionsContext.Provider>
     )
 }
 
-export function useGlobalModals() {
-    const context = useContext(GlobalModalContext)
+export function useGlobalModalActions() {
+    const context = useContext(GlobalModalActionsContext)
     if (context === undefined) {
-        throw new Error("useGlobalModals must be used within a GlobalModalProvider")
+        throw new Error("useGlobalModalActions must be used within a GlobalModalProvider")
     }
     return context
+}
+
+export function useGlobalModals(): CombinedContextType {
+    const actions = useContext(GlobalModalActionsContext)
+    const state = useContext(GlobalModalStateContext)
+    if (actions === undefined || state === undefined) {
+        throw new Error("useGlobalModals must be used within a GlobalModalProvider")
+    }
+    return { ...actions, ...state }
 }
