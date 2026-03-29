@@ -6,8 +6,13 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
-import { BaseModal } from "@/components/shared/BaseModal"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle,
+    SheetDescription
+} from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import {
     LayoutDashboard,
@@ -15,7 +20,11 @@ import {
     PlayCircle,
     AlertCircle,
     XCircle,
+    X,
+    Settings2
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { ActionCategory } from "./ActionCategory"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
@@ -31,7 +40,7 @@ import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
 // import { OrderHeaderDashboard } from "./OrderHeaderDashboard"
 
-interface OrderCommandCenterProps {
+export interface OrderCommandCenterProps {
     orderId?: number | null
     invoiceId?: number | null
     type?: 'purchase' | 'sale' | 'obligation'
@@ -40,6 +49,7 @@ interface OrderCommandCenterProps {
     onActionSuccess?: () => void
     onEdit?: (orderId: number) => void
     posSessionId?: number | null
+    isExternalModalOpen?: boolean
 }
 
 export function OrderCommandCenter({
@@ -50,7 +60,8 @@ export function OrderCommandCenter({
     onOpenChange,
     onActionSuccess,
     onEdit,
-    posSessionId = null
+    posSessionId = null,
+    isExternalModalOpen = false
 }: OrderCommandCenterProps) {
     const [order, setOrder] = useState<any>(null)
     const [activeInvoice, setActiveInvoice] = useState<any>(null)
@@ -245,6 +256,7 @@ export function OrderCommandCenter({
         return { label: 'Pendiente', variant: 'neutral', icon: AlertCircle }
     }
 
+    const isCollapsed = isExternalModalOpen || detailsModal.open
     const globalStatus = getGlobalStatus()
     const StatusIcon = globalStatus.icon
 
@@ -265,60 +277,97 @@ export function OrderCommandCenter({
     }[visibleCols as 3 | 4 | 5] || "lg:grid-cols-5"
 
     return (
-        <>
-            <BaseModal
-                open={open}
-                onOpenChange={onOpenChange}
-                size="full"
-                className={cn("bg-background/95 backdrop-blur-md border-border transition-all duration-500 h-auto max-h-[90vh]", maxWidth)}
-                contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <LayoutDashboard className="h-6 w-6 text-primary" />
-                        {isNoteMode ? (
-                            <span className="flex items-center gap-2">
-                                HUB de {activeInvoice.dte_type_display} {(activeInvoice.number && activeInvoice.number !== 'Draft') ? `${activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC-' : 'ND-'}${activeInvoice.number}` : '(BORRADOR)'}
-                            </span>
-                        ) : "HUB de mando"}
-                        <span className="text-muted-foreground font-light mx-2">|</span>
-                        <Badge
-                            variant='outline'
-                            className={cn(
-                                "rounded-sm border-2 px-2 py-0.5 gap-1.5 font-bold uppercase tracking-tight text-[10px]",
-                                globalStatus.variant === 'success' && "border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 bg-green-500/5",
-                                globalStatus.variant === 'active' && "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-500/5",
-                                globalStatus.variant === 'destructive' && "border-red-600 text-red-600 dark:border-red-400 dark:text-red-400 bg-red-500/5",
-                                globalStatus.variant === 'neutral' && "border-muted-foreground text-muted-foreground bg-muted/5"
-                            )}
-                        >
-                            <StatusIcon className='size-3' />
-                            {globalStatus.label}
-                        </Badge>
-                    </div>
-                }
-                description={
-                    <span className="flex items-center gap-4">
-                        <span className="flex items-center gap-1.5 text-xs font-medium">
-                            <span className="text-muted-foreground/30 ml-2">
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent 
+                side="right" 
+                className={cn(
+                    "max-w-[100vw] w-full sm:max-w-[500px] sm:w-[500px] p-0 flex flex-col border-l shadow-2xl overflow-visible rounded-l-3xl z-[100] transition-all duration-500 ease-in-out",
+                    isCollapsed ? "translate-x-full border-transparent" : "translate-x-0"
+                )}
+                // Avoid overlay blocking interaction with foreground modals when collapsed
+                onPointerDownOutside={(e) => { if (isCollapsed) e.preventDefault() }}
+                onInteractOutside={(e) => { if (isCollapsed) e.preventDefault() }}
+            >
+                {/* Vertical Tab (Solapa) - Only visible when collapsed */}
+                <div 
+                    onClick={() => isCollapsed && setDetailsModal(p => ({ ...p, open: false }))}
+                    className={cn(
+                        "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full w-[42px] h-[140px] bg-primary/95 backdrop-blur-md rounded-l-2xl border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
+                        isCollapsed ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-0"
+                    )}
+                >
+                    <div className="flex flex-col items-center gap-3 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
+                        <LayoutDashboard className="h-5 w-5 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
+                        <div className="flex flex-col items-center whitespace-nowrap">
+                            <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest">
                                 {isNoteMode ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')}
                                 -{activeDoc.number || activeDoc.id}
                             </span>
-                            <span className="text-muted-foreground/30">|</span>
-                            {formatPlainDate(activeDoc.created_at || activeDoc.date)}
-                            <span className="text-muted-foreground/30 ml-2">|</span>
-                            <span className="text-foreground tracking-tight font-semibold ml-1">
-                                {isNoteMode ? (activeDoc.contact_name || activeDoc.contact?.name) : (type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name)}
-                            </span>
-                        </span>
-                    </span>
-                }
-            >
-                <TooltipProvider delayDuration={0}>
-                    <div className="p-6 pt-2">
+                        </div>
+                    </div>
+                </div>
 
-                        {/* Responsive Grid: dynamic columns based on content */}
-                        <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4", gridCols)}>
+                <div className={cn("flex flex-col h-full bg-background transition-opacity duration-300", isCollapsed ? "opacity-20 grayscale pointer-events-none" : "opacity-100")}>
+                <SheetHeader className="p-4 pb-2 border-b bg-background sticky top-0 z-50 shrink-0">
+                    <div className="flex items-center justify-between w-full pr-12 text-left">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                                <LayoutDashboard className="h-5 w-5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-3">
+                                    <SheetTitle className="text-lg font-bold tracking-tight text-foreground leading-none">
+                                        {isNoteMode ? activeInvoice.dte_type_display : "HUB de Mando"}
+                                    </SheetTitle>
+                                    <Badge
+                                        variant='outline'
+                                        className={cn(
+                                            "rounded-sm border px-1.5 py-0.5 gap-1 font-bold uppercase tracking-tight text-[10px]",
+                                            globalStatus.variant === 'success' && "border-green-600/30 text-green-600 bg-green-500/5",
+                                            globalStatus.variant === 'active' && "border-blue-600/30 text-blue-600 bg-blue-500/5",
+                                            globalStatus.variant === 'destructive' && "border-red-600/30 text-red-600 bg-red-500/5",
+                                            globalStatus.variant === 'neutral' && "border-muted-foreground/30 text-muted-foreground bg-muted/5"
+                                        )}
+                                    >
+                                        <StatusIcon className='size-2.5' />
+                                        {globalStatus.label}
+                                    </Badge>
+                                </div>
+                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
+                                    <span className="flex items-center gap-2">
+                                        <span className="font-bold text-foreground">
+                                            {isNoteMode ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')}
+                                            -{activeDoc.number || activeDoc.id}
+                                        </span>
+                                        <span className="opacity-40">|</span>
+                                        {formatPlainDate(activeDoc.created_at || activeDoc.date)}
+                                        <span className="opacity-40">|</span>
+                                        <span className="text-foreground">
+                                            {isNoteMode ? (activeDoc.contact_name || activeDoc.contact?.name) : (type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name)}
+                                        </span>
+                                    </span>
+                                </SheetDescription>
+                            </div>
+                        </div>
+                    </div>
+                </SheetHeader>
 
+                {/* Custom Close Button for Sheet (Top Right Corner) */}
+                <div className="absolute top-4 right-4 z-[60]">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto scrollbar-thin p-4 pt-2">
+                    <TooltipProvider delayDuration={0}>
+                        {/* Vertical Stack: Cards are stacked vertically for scanning */}
+                        <div className="flex flex-col gap-2 pb-10">
                             {/* 1. Origen */}
                             <OriginPhase
                                 isNoteMode={!!isNoteMode}
@@ -335,31 +384,35 @@ export function OrderCommandCenter({
                             />
 
                             {/* 2. Producción */}
-                            <ProductionPhase
-                                order={order}
-                                activeDoc={activeDoc}
-                                registry={registry}
-                                userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                openDetails={openDetails}
-                                actionEngineRef={actionEngineRef}
-                                showAnimations={showAnimations}
-                            />
+                            {showProduction && (
+                                <ProductionPhase
+                                    order={order}
+                                    activeDoc={activeDoc}
+                                    registry={registry}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                    openDetails={openDetails}
+                                    actionEngineRef={actionEngineRef}
+                                    showAnimations={showAnimations}
+                                />
+                            )}
 
                             {/* 3. Logística / Cumplimiento */}
-                            <LogisticsPhase
-                                activeDoc={activeDoc}
-                                isNoteMode={!!isNoteMode}
-                                noteStatuses={noteStatuses}
-                                isSale={isSale}
-                                invoices={invoices}
-                                registry={registry}
-                                userPermissions={userPermissions}
-                                onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                openDetails={openDetails}
-                                actionEngineRef={actionEngineRef}
-                                showAnimations={showAnimations}
-                            />
+                            {showLogistics && (
+                                <LogisticsPhase
+                                    activeDoc={activeDoc}
+                                    isNoteMode={!!isNoteMode}
+                                    noteStatuses={noteStatuses}
+                                    isSale={isSale}
+                                    invoices={invoices}
+                                    registry={registry}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                    openDetails={openDetails}
+                                    actionEngineRef={actionEngineRef}
+                                    showAnimations={showAnimations}
+                                />
+                            )}
 
                             {/* 4. Facturación */}
                             <BillingPhase
@@ -389,40 +442,47 @@ export function OrderCommandCenter({
                                 actionEngineRef={actionEngineRef}
                                 posSessionId={posSessionId}
                             />
+
+                            {/* Global Actions Category at the end of stack */}
+                            {userPermissions.length > 0 && (
+                                <div className="mt-2 border-t border-border/40 pt-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Settings2 className="h-4 w-4 text-muted-foreground" />
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Acciones Globales</h4>
+                                    </div>
+                                    <ActionCategory
+                                        category={{
+                                            title: 'Acciones Disponibles',
+                                            actions: [
+                                                ...(registry.global?.actions || []),
+                                                ...(isNoteMode ? [] : (registry.actions || []) as unknown as any[]),
+                                                ...(isNoteMode ? (registry.notes_global?.actions || []) : [])
+                                            ]
+                                        } as any}
+                                        order={activeDoc}
+                                        userPermissions={userPermissions}
+                                        onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                                        layout="grid"
+                                        compact={false}
+                                        ref={actionEngineRef}
+                                        posSessionId={posSessionId}
+                                    />
+                                </div>
+                            )}
                         </div>
+                    </TooltipProvider>
+                </div>
 
-                        {userPermissions.length > 0 && (
-                            <div className="mt-2 border-t border-border/40 pt-4">
-                                <ActionCategory
-                                    category={{
-                                        title: 'Acciones Disponibles',
-                                        actions: [
-                                            ...(registry.global?.actions || []),
-                                            ...(isNoteMode ? [] : (registry.actions || []) as unknown as any[]),
-                                            ...(isNoteMode ? (registry.notes_global?.actions || []) : [])
-                                        ]
-                                    } as any}
-                                    order={activeDoc}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                                    layout="flex"
-                                    compact={false}
-                                    ref={actionEngineRef}
-                                    posSessionId={posSessionId}
-                                />
-                            </div>
-                        )}
-                    </div>
-                </TooltipProvider>
+                </div>
 
-                {/* Shared Modal for viewing Details */}
+                {/* Shared Modal for viewing Details remains as is since it might need more space */}
                 <TransactionViewModal
                     open={detailsModal.open}
                     onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
                     type={detailsModal.type}
                     id={Number(detailsModal.id)}
                 />
-            </BaseModal >
-        </>
+            </SheetContent>
+        </Sheet>
     )
 }

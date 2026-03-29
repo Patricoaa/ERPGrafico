@@ -182,7 +182,11 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     is_inbound = serializers.SerializerMethodField()
     # Account Names
     from_account_name = serializers.CharField(source='from_account.name', read_only=True, allow_null=True)
+    from_account_account_id = serializers.IntegerField(source='from_account.account.id', read_only=True, allow_null=True)
+    from_account_code = serializers.CharField(source='from_account.account.code', read_only=True, allow_null=True)
     to_account_name = serializers.CharField(source='to_account.name', read_only=True, allow_null=True)
+    to_account_account_id = serializers.IntegerField(source='to_account.account.id', read_only=True, allow_null=True)
+    to_account_code = serializers.CharField(source='to_account.account.code', read_only=True, allow_null=True)
     
     payment_method_new_name = serializers.CharField(source='payment_method_new.name', read_only=True, allow_null=True)
 

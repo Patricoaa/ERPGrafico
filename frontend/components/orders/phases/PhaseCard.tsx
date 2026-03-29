@@ -85,9 +85,9 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "flex flex-col h-full transition-all duration-500 border-2 rounded-3xl relative overflow-hidden backdrop-blur-sm group/card bg-transparent",
+            "flex flex-col h-full transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-sm group/card bg-transparent",
             variantStyles[variant] || variantStyles.neutral,
-            "hover:translate-y-[-4px] hover:shadow-2xl hover:border-white/20 shadow-none",
+            "hover:translate-y-[-2px] hover:shadow-xl hover:border-white/20 shadow-none",
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
             {/* Background Gradient for Success */}
@@ -95,8 +95,8 @@ export function PhaseCard({
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent pointer-events-none" />
             )}
 
-            <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/5">
-                <div className={cn("p-2 rounded-xl shadow-inner transition-transform duration-500 group-hover/card:scale-110", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])}>
+            <div className="p-2 px-3 border-b border-white/5 flex items-center gap-2 bg-white/5 shrink-0">
+                <div className={cn("p-1.5 rounded-lg shadow-inner transition-transform duration-500 group-hover/card:scale-110", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])}>
                     {isSuccess ? <div className="relative">
                         <Icon className="h-4 w-4" />
                         <div className="absolute -top-1 -right-1 bg-green-500 rounded-full border-2 border-background">
@@ -135,7 +135,7 @@ export function PhaseCard({
                                             size="icon"
                                             disabled={disabled}
                                             className={cn(
-                                                "h-8 w-8 rounded-full transition-all active:scale-90 border border-white/10 shadow-sm",
+                                                "h-7 w-7 rounded-lg transition-all active:scale-90 border border-white/10 shadow-sm",
                                                 "bg-white/5 hover:bg-white/10",
                                                 (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
                                                 action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
@@ -160,19 +160,19 @@ export function PhaseCard({
                 </div>
             </div>
 
-            <CardContent className="p-5 flex-1 flex flex-col gap-4 relative z-10">
+            <CardContent className="p-3 flex-1 flex flex-col gap-2 relative z-10 overflow-hidden">
                 {/* Documents List - Uniform Row Style */}
-                <div className="space-y-2 min-h-[40px]">
+                <div className="space-y-1">
                     {documents.length > 0 ? (
                         documents.map((doc: any, i: number) => (
                             <div key={i} className={cn(
-                                "flex items-center justify-between p-2.5 bg-muted/5 rounded-2xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-12",
+                                "flex items-center justify-between p-1.5 px-2 bg-muted/5 rounded-xl border border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc h-9",
                                 doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed",
                                 doc.isWarning && "bg-orange-500/5 border-orange-500/10 hover:bg-orange-500/15"
                             )}>
-                                <div className="flex items-center gap-2.5 overflow-hidden">
-                                    <div className="h-8 w-8 flex items-center justify-center bg-background rounded-xl border border-border/20 shadow-sm shrink-0">
-                                        <doc.icon className="h-4 w-4 text-primary/80" />
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="h-6 w-6 flex items-center justify-center bg-background rounded-lg border border-border/20 shadow-sm shrink-0">
+                                        <doc.icon className="h-3 w-3 text-primary/80" />
                                     </div>
                                     <div className="flex flex-col overflow-hidden">
                                         <div className="flex items-center gap-1.5">
@@ -221,7 +221,7 @@ export function PhaseCard({
                 </div>
 
                 {/* Visual Support Container - FLAT */}
-                <div className="flex-1 flex flex-col justify-center min-h-[100px]">
+                <div className="flex-1 flex flex-col justify-center min-h-[40px]">
                     {children}
                 </div>
 

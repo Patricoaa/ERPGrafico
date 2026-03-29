@@ -1,14 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Package, Loader2, AlertCircle, Factory, Truck, ShoppingCart, Scale, Layers } from "lucide-react"
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle,
+    SheetDescription
+} from "@/components/ui/sheet"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { productSchema, type ProductFormValues } from "./product/schema"
-
-import { BaseModal } from "@/components/shared/BaseModal"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -173,6 +178,29 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             }
         }
     }, [productType, form])
+
+    // Validate activeTab when relevant product settings change
+    const hasBom = form.watch("has_bom")
+    const canBeSold = form.watch("can_be_sold")
+    const hasVariants = form.watch("has_variants")
+
+    useEffect(() => {
+        const isTabValid = (tab: string): boolean => {
+            switch (tab) {
+                case "general": return true
+                case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom
+                case "logistics": return ['STORABLE', 'MANUFACTURABLE'].includes(productType)
+                case "commercial": return productType === 'SUBSCRIPTION'
+                case "pricing": return canBeSold && productType !== 'SUBSCRIPTION'
+                case "variants": return hasVariants && !variantMode
+                default: return false
+            }
+        }
+
+        if (!isTabValid(activeTab)) {
+            setActiveTab("general")
+        }
+    }, [productType, hasBom, canBeSold, hasVariants, activeTab, variantMode])
 
     // Synchronize allowed_sale_uoms with base UoM and filter incompatible units
     const stockUomId = form.watch("uom")
@@ -710,41 +738,51 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                 </div>
                             </TabsContent>
 
-                            <ProductManufacturingTab
-                                form={form as any}
-                                initialData={initialData}
-                                products={products}
-                                uoms={uoms}
-                                variantMode={variantMode}
-                            />
+                            { (form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
+                                <ProductManufacturingTab
+                                    form={form as any}
+                                    initialData={initialData}
+                                    products={products}
+                                    uoms={uoms}
+                                    variantMode={variantMode}
+                                />
+                            )}
 
-                            <ProductVariantsTab
-                                key={variantsRefreshKey}
-                                form={form as any}
-                                initialData={initialData}
-                                onTabChange={(tab: string) => setActiveTab(tab)}
-                            />
+                            { form.watch("has_variants") && !variantMode && (
+                                <ProductVariantsTab
+                                    key={variantsRefreshKey}
+                                    form={form as any}
+                                    initialData={initialData}
+                                    onTabChange={(tab: string) => setActiveTab(tab)}
+                                />
+                            )}
 
-                            <ProductInventoryTab
-                                form={form as any}
-                                initialData={initialData}
-                                warehouses={warehouses}
-                                uoms={uoms}
-                            />
+                            { ['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
+                                <ProductInventoryTab
+                                    form={form as any}
+                                    initialData={initialData}
+                                    warehouses={warehouses}
+                                    uoms={uoms}
+                                />
+                            )}
 
-                            <TabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
-                                <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                            </TabsContent>
+                            { form.watch("product_type") === 'SUBSCRIPTION' && (
+                                <TabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
+                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
+                                </TabsContent>
+                            )}
 
-                            <ProductPricingTab
-                                initialData={initialData}
-                                pricingRules={pricingRules}
-                                fetchPricingRules={fetchPricingRules}
-                                onOpenRuleDialog={(rule) => {
-                                    setSelectedPricingRule(rule || null)
-                                    setPricingRuleDialogOpen(true)
-                                }}
-                            />
+                            { form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
+                                <ProductPricingTab
+                                    initialData={initialData}
+                                    pricingRules={pricingRules}
+                                    fetchPricingRules={fetchPricingRules}
+                                    onOpenRuleDialog={(rule) => {
+                                        setSelectedPricingRule(rule || null)
+                                        setPricingRuleDialogOpen(true)
+                                    }}
+                                />
+                            )}
                         </form>
                     </Form>
                 </div>
@@ -785,32 +823,51 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     )
 
     return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size="full"
-            hideScrollArea
-            contentClassName="p-0 overflow-hidden flex flex-col"
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-xl">
-                        <Package className="h-5 w-5 text-primary" />
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent 
+                side="right" 
+                className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
+            >
+                <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
+                    <div className="flex items-center justify-between w-full pr-12 text-left">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                                <Package className="h-6 w-6" />
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-3">
+                                    <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
+                                        Ficha de Producto
+                                    </SheetTitle>
+                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold shrink-0 uppercase tracking-widest h-5">
+                                        {initialData?.internal_code || "Nuevo"}
+                                    </Badge>
+                                </div>
+                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
+                                    {initialData?.name || form.watch("name") || 'Nuevo Producto'} • {variantMode ? "Edición de Variante" : "Configuración Maestra"}
+                                </SheetDescription>
+                            </div>
+                        </div>
                     </div>
-                    <span className="font-bold tracking-tight">{initialData?.name || form.watch("name") || 'Nuevo Producto'}</span>
-                    {initialData?.internal_code && (
-                        <Badge variant="outline" className="font-mono text-[10px] bg-primary/5 text-primary border-primary/20">
-                            {initialData.internal_code}
-                        </Badge>
-                    )}
+                </SheetHeader>
+
+                {/* Custom Close Button for Sheet (Top Right Corner) */}
+                <div className="absolute top-4 right-4 z-[60]">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
                 </div>
-            }
-            description={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest">
-                    {variantMode ? "Edición de Variante" : "Configuración Maestra de Producto"}
+
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    {formContent}
                 </div>
-            }
-            footer={
-                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
+
+                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto shrink-0">
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
@@ -828,9 +885,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </Button>
                 </div>
-            }
-        >
-            {formContent}
-        </BaseModal>
+            </SheetContent>
+        </Sheet>
     )
 }
