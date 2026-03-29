@@ -63,6 +63,14 @@ export const treasuryApi = {
     },
 
     /**
+     * Fetch single treasury account
+     */
+    getAccount: async (id: number): Promise<TreasuryAccount> => {
+        const { data } = await api.get<TreasuryAccount>(`/treasury/accounts/${id}/`)
+        return data
+    },
+
+    /**
      * Create new treasury account
      */
     createAccount: async (payload: TreasuryAccountCreatePayload): Promise<TreasuryAccount> => {

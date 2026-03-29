@@ -288,9 +288,9 @@ export const ActionCategory = forwardRef(({
             )}
 
             <div className={cn(
-                layout === 'grid' ? (compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
-                    layout === 'flex' ? "flex flex-wrap items-center justify-center gap-2" :
-                        "space-y-2"
+                layout === 'grid' ? (compact ? "grid grid-cols-1 gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
+                    layout === 'flex' ? "flex flex-wrap items-center justify-center gap-1.5" :
+                        "space-y-1.5"
             )}>
                 {filteredActions.map((action) => (
                     <ActionButton
