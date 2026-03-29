@@ -37,6 +37,7 @@ interface ActionCategoryProps {
     showBadge?: boolean
     posSessionId?: number | null
     onModalChange?: (isOpen: boolean) => void
+    headless?: boolean
 }
 
 export const ActionCategory = forwardRef(({
@@ -49,7 +50,8 @@ export const ActionCategory = forwardRef(({
     ghost = false,
     showBadge = true,
     posSessionId = null,
-    onModalChange
+    onModalChange,
+    headless = false
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
     const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -312,44 +314,48 @@ export const ActionCategory = forwardRef(({
     if (filteredActions.length === 0 && !activeModal) return null
 
     return (
-        <div className={cn(
-            layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
-        )}>
-            {layout === 'list' && (category.icon || category.label) && (
-                <div className="flex items-center gap-2 pb-2 border-b border-border/50">
-                    {category.icon && (
-                        <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                            <category.icon className="h-4 w-4" />
+        <>
+            {!headless && (
+                <div className={cn(
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50")
+                )}>
+                    {layout === 'list' && (category.icon || category.label) && (
+                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                            {category.icon && (
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                                    <category.icon className="h-4 w-4" />
+                                </div>
+                            )}
+                            {category.label && <h3 className="font-semibold text-sm">{category.label}</h3>}
+                            {categoryBadgeCount > 0 && (
+                                <Badge variant="secondary" className="ml-auto text-[10px] h-5">
+                                    {categoryBadgeCount}
+                                </Badge>
+                            )}
                         </div>
                     )}
-                    {category.label && <h3 className="font-semibold text-sm">{category.label}</h3>}
-                    {categoryBadgeCount > 0 && (
-                        <Badge variant="secondary" className="ml-auto text-[10px] h-5">
-                            {categoryBadgeCount}
-                        </Badge>
-                    )}
+
+                    <div className={cn(
+                        layout === 'grid' ? (compact ? "grid grid-cols-1 gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
+                            layout === 'flex' ? "flex flex-wrap items-center justify-center gap-1.5" :
+                                "space-y-1.5"
+                    )}>
+                        {filteredActions.map((action) => (
+                            <ActionButton
+                                key={action.id}
+                                action={action}
+                                order={order}
+                                userPermissions={userPermissions}
+                                onClick={() => handleActionClick(action.id)}
+                                showBadge={showBadge}
+                                compact={compact}
+                                ghost={ghost}
+                                className={layout === 'flex' ? "w-auto" : ""}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
-
-            <div className={cn(
-                layout === 'grid' ? (compact ? "grid grid-cols-1 gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-4") :
-                    layout === 'flex' ? "flex flex-wrap items-center justify-center gap-1.5" :
-                        "space-y-1.5"
-            )}>
-                {filteredActions.map((action) => (
-                    <ActionButton
-                        key={action.id}
-                        action={action}
-                        order={order}
-                        userPermissions={userPermissions}
-                        onClick={() => handleActionClick(action.id)}
-                        showBadge={showBadge}
-                        compact={compact}
-                        ghost={ghost}
-                        className={layout === 'flex' ? "w-auto" : ""}
-                    />
-                ))}
-            </div>
 
             {/* Modals */}
             {activeModal === 'complete-folio' && (
@@ -483,7 +489,7 @@ export const ActionCategory = forwardRef(({
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
             />
-        </div>
+        </>
     )
 })
 
