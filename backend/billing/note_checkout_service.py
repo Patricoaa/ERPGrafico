@@ -277,8 +277,25 @@ class NoteCheckoutService:
             unit_price = Decimal(str(item.get('unit_price', 0)))
             tax_amount = Decimal(str(item.get('tax_amount', 0)))
             
+            # Safety: If tax_amount is 0 but it's not an exempt document, re-calculate it
+            is_exempt = workflow.corrected_invoice.dte_type in [
+                Invoice.DTEType.FACTURA_EXENTA,
+                Invoice.DTEType.BOLETA_EXENTA
+            ]
+            
+            if tax_amount == 0 and not is_exempt:
+                # tax_rate remains Decimal('19.00') or found from orig_line
+                
+                tax_amount = (unit_price * (tax_rate / 100)).quantize(Decimal('1.'), rounding='ROUND_HALF_UP')
+            
+            # ABSOLUTE FORCE: If Document is Exempt, tax is ALWAYS 0
+            if is_exempt:
+                tax_amount = Decimal('0')
+
             line_net = quantity * unit_price
             line_tax = quantity * tax_amount
+
+
             
             total_net += line_net
             total_tax += line_tax
@@ -713,7 +730,14 @@ class NoteCheckoutService:
             product = Product.objects.get(id=item['product_id'])
             line_net = Decimal(str(item['line_net']))
             
-            # 1. Main Net Amount Line (Revenue/Expense reversal) - ALWAYS FULL IVOICE AMOUNT
+            # 1. Main Net Amount Line (Revenue/Expense reversal) - ALWAYS FULL INVOICE AMOUNT
+            # SPECIAL CASE: For Purchase Boletas, we merge tax into the reversal as it was capitalized
+            is_purchase_boleta = not is_sale and workflow.corrected_invoice.dte_type == Invoice.DTEType.BOLETA
+            line_amount = line_net
+            if is_purchase_boleta:
+                line_tax = Decimal(str(item.get('line_tax', 0)))
+                line_amount += line_tax
+
             if product.product_type == Product.Type.SERVICE:
                 product_account = product.income_account or settings.default_service_revenue_account or settings.default_revenue_account
             elif product.product_type == Product.Type.CONSUMABLE:
@@ -734,11 +758,11 @@ class NoteCheckoutService:
                 raise ValidationError(f"No se encontró cuenta de {account_req} para '{product.name}'.")
             
             if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-                debit_amount = line_net if is_sale else 0
-                credit_amount = 0 if is_sale else line_net
+                debit_amount = line_amount if is_sale else 0
+                credit_amount = 0 if is_sale else line_amount
             else:
-                debit_amount = 0 if is_sale else line_net
-                credit_amount = line_net if is_sale else 0
+                debit_amount = 0 if is_sale else line_amount
+                credit_amount = line_amount if is_sale else 0
             
             JournalItem.objects.create(
                 entry=entry,
@@ -747,14 +771,11 @@ class NoteCheckoutService:
                 credit=credit_amount,
                 label=f"{product.name} - {item['reason']}" if item.get('reason') else product.name
             )
-            
-            # 2. COGS Reversal: REMOVED
-            # Responsability moved to Logistics Documents (Returns/deliveries)
-            # The Note only handles Revenue/Expense Reversal + AR/AP + Tax.
-            pass
+
         
-        # Tax entry
-        if invoice.total_tax > 0:
+        # Tax entry (Only if NOT a Purchase Boleta, where tax was already merged into cost reversal)
+        is_purchase_boleta = not is_sale and workflow.corrected_invoice.dte_type == Invoice.DTEType.BOLETA
+        if invoice.total_tax > 0 and not is_purchase_boleta:
             tax_account = settings.default_tax_payable_account if is_sale else settings.default_tax_receivable_account
             
             if not tax_account:
@@ -775,6 +796,7 @@ class NoteCheckoutService:
                 credit=credit_amount,
                 label="Impuesto (IVA)"
             )
+
         
         return entry
     

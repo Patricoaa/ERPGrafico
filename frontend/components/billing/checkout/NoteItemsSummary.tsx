@@ -4,20 +4,26 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
+import { cn } from "@/lib/utils"
+
 
 interface NoteItemsSummaryProps {
     items: any[]
     totalNet: number
     totalTax: number
     total: number
+    isExempt?: boolean
 }
+
 
 export function NoteItemsSummary({
     items,
     totalNet,
     totalTax,
-    total
+    total,
+    isExempt = false
 }: NoteItemsSummaryProps) {
+
     return (
         <div className="h-full flex flex-col bg-muted/20 border-l">
             <div className="flex-1 overflow-auto custom-scrollbar">
@@ -67,12 +73,15 @@ export function NoteItemsSummary({
                     <span>Subtotal Neto</span>
                     <span className="whitespace-nowrap font-mono">{formatCurrency(totalNet)}</span>
                 </div>
-                {totalTax > 0 && (
+                {(totalTax > 0 || isExempt) && (
                     <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
-                        <span>IVA (19%)</span>
-                        <span className="whitespace-nowrap font-mono">{formatCurrency(totalTax)}</span>
+                        <span>IVA {isExempt ? "(0% Exento)" : "(19%)"}</span>
+                        <span className={cn("whitespace-nowrap font-mono", isExempt && "opacity-40")}>
+                            {formatCurrency(totalTax)}
+                        </span>
                     </div>
                 )}
+
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Ajuste</span>
