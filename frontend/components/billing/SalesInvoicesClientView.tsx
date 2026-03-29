@@ -261,14 +261,10 @@ export function SalesInvoicesClientView() {
                                         item={inv}
                                         type="sale_invoice"
                                         onClick={() => {
-                                            if (inv.sale_order) {
-                                                setSelectedHub({
-                                                    orderId: inv.sale_order,
-                                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null
-                                                })
-                                            } else {
-                                                setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })
-                                            }
+                                            setSelectedHub({
+                                                orderId: inv.sale_order || null,
+                                                invoiceId: inv.id
+                                            })
                                         }}
                                     />
                                 )

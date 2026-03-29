@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Calendar, ArrowRight, Receipt, FileBadge, Package, GitBranch, ChevronDown } from "lucide-react"
@@ -11,6 +11,9 @@ import { InvoiceHubStatus } from "@/components/billing/InvoiceHubStatus"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { motion, AnimatePresence } from "framer-motion"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
+import { ActionCategory } from "@/components/orders/ActionCategory"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { OrderHubIntegrated } from "@/components/orders/OrderHubIntegrated"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
@@ -40,6 +43,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
     const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type)
 
     const [isExpanded, setIsExpanded] = useState(false)
+    const actionEngineRef = useRef<any>(null)
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
     
     const hubData = useOrderHubData({ 
@@ -182,11 +186,25 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                         className="overflow-hidden border border-t-0 border-border/50 rounded-b-2xl bg-muted/5"
                     >
                         <div className="p-4 pt-0">
+                            <ActionCategory
+                                ref={actionEngineRef}
+                                category={{ 
+                                    id: 'card-engine', 
+                                    label: '', 
+                                    icon: null as any, 
+                                    actions: Object.values(isSale ? saleOrderActions : purchaseOrderActions).flatMap(c => c.actions) 
+                                }}
+                                order={hubData.activeDoc}
+                                userPermissions={hubData.userPermissions}
+                                onActionSuccess={hubData.fetchOrderDetails}
+                                headless={true}
+                            />
                             <OrderHubIntegrated 
                                 data={hubData}
                                 type={isSale ? 'sale' : 'purchase'}
-                                compact={true}
+                                compact={false}
                                 openDetails={openDetails}
+                                actionEngineRef={actionEngineRef}
                                 onActionSuccess={() => hubData.fetchOrderDetails()}
                             />
                             
@@ -197,7 +215,12 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                     className="rounded-full gap-2 px-4 shadow-sm hover:bg-primary hover:text-white transition-all"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        openCommandCenter(null, isSale ? 'sale' : 'purchase', item.id)
+                                        if (onClick) {
+                                            onClick()
+                                        } else {
+                                            openCommandCenter(null, isSale ? 'sale' : 'purchase', item.id)
+                                        }
+                                        setIsExpanded(false)
                                     }}
                                 >
                                     Abrir Panel Completo

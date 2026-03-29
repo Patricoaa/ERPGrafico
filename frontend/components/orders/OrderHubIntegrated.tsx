@@ -23,6 +23,7 @@ interface OrderHubIntegratedProps {
     showAnimations?: boolean
     compact?: boolean
     onModalChange?: (isOpen: boolean) => void
+    actionEngineRef?: React.RefObject<any>
 }
 
 export function OrderHubIntegrated({
@@ -34,7 +35,8 @@ export function OrderHubIntegrated({
     posSessionId = null,
     showAnimations = true,
     compact = false,
-    onModalChange
+    onModalChange,
+    actionEngineRef: externalActionEngineRef
 }: OrderHubIntegratedProps) {
     const {
         order,
@@ -50,14 +52,13 @@ export function OrderHubIntegrated({
         payments
     } = data
 
-    const actionEngineRef = useRef<any>(null)
+    // Use external ref if provided (from sheet parent), otherwise default to null (won't trigger actions)
+    const actionEngineRef = externalActionEngineRef
+    
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
-    const [isCompact, setIsCompact] = useState(compact)
-
-    // Sync prop if changed externally
-    useEffect(() => {
-        setIsCompact(compact)
-    }, [compact])
+    
+    // isTimeline = true (Dashboard/Horizontal), false (Sheet/Vertical)
+    const isTimeline = useMemo(() => !compact, [compact])
 
     // Determine which phases are visible to draw the connectors correctly
     const visiblePhases = useMemo(() => {
@@ -70,6 +71,10 @@ export function OrderHubIntegrated({
         return phases
     }, [showProduction, showLogistics])
 
+    // Memoize the engine category only if NOT headless (meaning we are the engine)
+    // Actually, in the new architecture, the engine is in the parent, so we don't need this locally anymore.
+    // We'll keep the registry for visibility logic in phases.
+
     if (!activeDoc) return null
 
     // Utility to render the timeline connector
@@ -78,7 +83,7 @@ export function OrderHubIntegrated({
         return (
             <div className={cn(
                 "absolute bg-border/20 z-0",
-                isCompact ? "h-[2px] left-[50%] right-[-50%] top-[30px]" : "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
+                isTimeline ? "h-[2px] left-[50%] right-[-50%] top-[30px]" : "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
             )} />
         )
     }
@@ -86,7 +91,7 @@ export function OrderHubIntegrated({
     const PhaseWrapper = ({ children, index }: { children: React.ReactNode, index: number }) => (
         <div className={cn(
             "relative flex flex-col",
-            isCompact ? "flex-shrink-0 w-[300px] text-left" : "pl-12 text-left w-full"
+            isTimeline ? "flex-shrink-0 w-[300px] text-left" : "pl-12 text-left w-full"
         )}>
             <Connector index={index} />
             <div className="w-full flex-1 relative z-10 flex flex-col">
@@ -98,136 +103,115 @@ export function OrderHubIntegrated({
     return (
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col w-full h-full">
-                {/* Header Actions */}
-                <div className="flex justify-end px-4 py-2 border-b bg-muted/5">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsCompact(!isCompact)}
-                        className="text-xs h-8 text-muted-foreground hover:text-foreground font-semibold"
-                    >
-                        {isCompact ? "Ver como Lista" : "Ver como Línea de Tiempo"}
-                    </Button>
-                </div>
+                {/* 
+                  ACTION ENGINE REMOVED FROM HERE 
+                  It is now hosted by the parent (OrderCommandCenter or OrderCard) 
+                  to ensure its lifecycle is independent of the sheet content's visibility.
+                */}
+
                 <div className={cn(
                     "w-full overflow-hidden flex-1",
-                    isCompact && "overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+                    isTimeline && "overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                 )}>
                     <div className={cn(
-                        isCompact ? "flex flex-row gap-6 py-6 min-w-max px-4 items-stretch" : "flex flex-col gap-4 py-4"
+                        isTimeline ? "flex flex-row gap-6 py-6 min-w-max px-4 items-stretch" : "flex flex-col gap-4 py-4"
                     )}>
                         {/* 1. Origen */}
-                    <PhaseWrapper index={visiblePhases.indexOf('origin')}>
-                        <OriginPhase
-                            isNoteMode={!!isNoteMode}
-                            activeInvoice={activeInvoice}
-                            noteStatuses={noteStatuses}
-                            order={order}
-                            activeDoc={activeDoc}
-                            type={type || 'sale'}
-                            onActionSuccess={onActionSuccess}
-                            openDetails={openDetails}
-                            onEdit={onEdit}
-                            userPermissions={userPermissions}
-                            actionEngineRef={actionEngineRef}
-                            isTimeline={isCompact}
-                            onModalChange={onModalChange}
-                        />
-                    </PhaseWrapper>
-
-                    {/* 2. Facturación */}
-                    <PhaseWrapper index={visiblePhases.indexOf('billing')}>
-                        <BillingPhase
-                            isNoteMode={!!isNoteMode}
-                            noteStatuses={noteStatuses}
-                            activeDoc={activeDoc}
-                            invoices={invoices}
-                            billingIsComplete={billingIsComplete}
-                            registry={registry}
-                            userPermissions={userPermissions}
-                            onActionSuccess={onActionSuccess}
-                            openDetails={openDetails}
-                            actionEngineRef={actionEngineRef}
-                            posSessionId={posSessionId}
-                            isTimeline={isCompact}
-                            onModalChange={onModalChange}
-                        />
-                    </PhaseWrapper>
-
-                    {/* 3. Tesorería */}
-                    <PhaseWrapper index={visiblePhases.indexOf('treasury')}>
-                        <TreasuryPhase
-                            isNoteMode={!!isNoteMode}
-                            noteStatuses={noteStatuses}
-                            activeDoc={activeDoc}
-                            payments={payments}
-                            registry={registry}
-                            userPermissions={userPermissions}
-                            onActionSuccess={onActionSuccess}
-                            openDetails={openDetails}
-                            actionEngineRef={actionEngineRef}
-                            posSessionId={posSessionId}
-                            isTimeline={isCompact}
-                            onModalChange={onModalChange}
-                        />
-                    </PhaseWrapper>
-
-                    {/* 4. Producción */}
-                    {showProduction && (
-                        <PhaseWrapper index={visiblePhases.indexOf('production')}>
-                            <ProductionPhase
+                        <PhaseWrapper index={visiblePhases.indexOf('origin')}>
+                            <OriginPhase
+                                isNoteMode={!!isNoteMode}
+                                activeInvoice={activeInvoice}
+                                noteStatuses={noteStatuses}
                                 order={order}
                                 activeDoc={activeDoc}
-                                registry={registry}
-                                userPermissions={userPermissions}
+                                type={type || 'sale'}
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
+                                onEdit={onEdit}
+                                userPermissions={userPermissions}
                                 actionEngineRef={actionEngineRef}
-                                showAnimations={showAnimations}
-                                isTimeline={isCompact}
+                                isTimeline={isTimeline}
                                 onModalChange={onModalChange}
                             />
                         </PhaseWrapper>
-                    )}
 
-                    {/* 5. Logística / Cumplimiento */}
-                    {showLogistics && (
-                        <PhaseWrapper index={visiblePhases.indexOf('logistics')}>
-                            <LogisticsPhase
-                                activeDoc={activeDoc}
+                        {/* 2. Facturación */}
+                        <PhaseWrapper index={visiblePhases.indexOf('billing')}>
+                            <BillingPhase
                                 isNoteMode={!!isNoteMode}
                                 noteStatuses={noteStatuses}
-                                isSale={type === 'sale'}
+                                activeDoc={activeDoc}
                                 invoices={invoices}
+                                billingIsComplete={billingIsComplete}
                                 registry={registry}
                                 userPermissions={userPermissions}
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
-                                showAnimations={showAnimations}
-                                isTimeline={isCompact}
+                                posSessionId={posSessionId}
+                                isTimeline={isTimeline}
                                 onModalChange={onModalChange}
-                                logisticsProgress={data.logisticsProgress}
                             />
                         </PhaseWrapper>
-                    )}
-                </div>
 
-                {/* Hidden Action Engine for global secondary actions (modals, etc) */}
-                <div 
-                    className="absolute h-0 w-0 overflow-hidden opacity-0 pointer-events-none invisible"
-                    aria-hidden="true"
-                >
-                    <ActionCategory
-                        ref={actionEngineRef}
-                        category={{ id: 'engine', label: '', icon: null as any, actions: Object.values(registry).flatMap(c => c.actions) }}
-                        order={activeDoc}
-                        userPermissions={userPermissions}
-                        onActionSuccess={onActionSuccess}
-                        posSessionId={posSessionId}
-                        onModalChange={onModalChange}
-                    />
-                </div>
+                        {/* 3. Tesorería */}
+                        <PhaseWrapper index={visiblePhases.indexOf('treasury')}>
+                            <TreasuryPhase
+                                isNoteMode={!!isNoteMode}
+                                noteStatuses={noteStatuses}
+                                activeDoc={activeDoc}
+                                payments={payments}
+                                registry={registry}
+                                userPermissions={userPermissions}
+                                onActionSuccess={onActionSuccess}
+                                openDetails={openDetails}
+                                actionEngineRef={actionEngineRef}
+                                posSessionId={posSessionId}
+                                isTimeline={isTimeline}
+                                onModalChange={onModalChange}
+                            />
+                        </PhaseWrapper>
+
+                        {/* 4. Producción */}
+                        {showProduction && (
+                            <PhaseWrapper index={visiblePhases.indexOf('production')}>
+                                <ProductionPhase
+                                    order={order}
+                                    activeDoc={activeDoc}
+                                    registry={registry}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={onActionSuccess}
+                                    openDetails={openDetails}
+                                    actionEngineRef={actionEngineRef}
+                                    showAnimations={showAnimations}
+                                    isTimeline={isTimeline}
+                                    onModalChange={onModalChange}
+                                />
+                            </PhaseWrapper>
+                        )}
+
+                        {/* 5. Logística / Cumplimiento */}
+                        {showLogistics && (
+                            <PhaseWrapper index={visiblePhases.indexOf('logistics')}>
+                                <LogisticsPhase
+                                    activeDoc={activeDoc}
+                                    isNoteMode={!!isNoteMode}
+                                    noteStatuses={noteStatuses}
+                                    isSale={type === 'sale'}
+                                    invoices={invoices}
+                                    registry={registry}
+                                    userPermissions={userPermissions}
+                                    onActionSuccess={onActionSuccess}
+                                    openDetails={openDetails}
+                                    actionEngineRef={actionEngineRef}
+                                    showAnimations={showAnimations}
+                                    isTimeline={isTimeline}
+                                    onModalChange={onModalChange}
+                                    logisticsProgress={data.logisticsProgress}
+                                />
+                            </PhaseWrapper>
+                        )}
+                    </div>
                 </div>
             </div>
         </TooltipProvider>
