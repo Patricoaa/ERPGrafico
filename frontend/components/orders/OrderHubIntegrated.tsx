@@ -195,7 +195,7 @@ export function OrderHubIntegrated({
 
                 {/* Hidden Action Engine for global secondary actions (modals, etc) */}
                 <div 
-                    className="absolute h-0 w-0 overflow-hidden opacity-0 pointer-events-none invisible pointer-events-none"
+                    className="absolute h-0 w-0 overflow-hidden opacity-0 pointer-events-none invisible"
                     aria-hidden="true"
                 >
                     <ActionCategory

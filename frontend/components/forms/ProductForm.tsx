@@ -844,7 +844,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     )
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
                 sheetId="PRODUCT_DETAIL"
                 open={open}

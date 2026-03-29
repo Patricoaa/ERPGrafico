@@ -32,18 +32,21 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
-    const handleOpenChange = (newOpen: boolean) => {
-        if (newOpen && isSheetCollapsed("POS_SALES")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
+    // Jump behavior: Close Hub if we are opening Sales Notes from a collapsed tab
+    useEffect(() => {
+        if (open && isSheetCollapsed("POS_SALES")) {
             openCommandCenter(null, 'sale')
         }
+    }, [open, isSheetCollapsed, openCommandCenter])
+
+    const handleOpenChange = (newOpen: boolean) => {
         onOpenChange(newOpen)
     }
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChange}>
+        <Sheet open={open} onOpenChange={handleOpenChange} modal={false}>
             <CollapsibleSheet
                 sheetId="POS_SALES"
                 open={open}

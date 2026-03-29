@@ -48,13 +48,21 @@ function SheetContent({
   className,
   children,
   side = "right",
+  hideOverlay = false,
+  onPointerDownOutside,
+  onFocusOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
+  hideOverlay?: boolean
+  onPointerDownOutside?: (event: any) => void
+  onFocusOutside?: (event: any) => void
+  onInteractOutside?: (event: any) => void
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      {!hideOverlay && <SheetOverlay />}
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
@@ -69,6 +77,9 @@ function SheetContent({
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
           className
         )}
+        onPointerDownOutside={onPointerDownOutside}
+        onFocusOutside={onFocusOutside}
+        onInteractOutside={onInteractOutside}
         {...props}
       >
         {children}

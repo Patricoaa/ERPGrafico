@@ -17,6 +17,7 @@ interface CollapsibleSheetProps {
     side?: "top" | "bottom" | "left" | "right"
     forceCollapse?: boolean
     fullWidth?: number
+    hideOverlay?: boolean
 }
 
 export function CollapsibleSheet({
@@ -29,7 +30,8 @@ export function CollapsibleSheet({
     className,
     side = "right",
     forceCollapse = false,
-    fullWidth = 500
+    fullWidth = 500,
+    hideOverlay = true
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
 
@@ -58,15 +60,16 @@ export function CollapsibleSheet({
                 isCollapsed ? "border-primary/10" : "translate-x-0",
                 className
             )}
+            hideOverlay={hideOverlay}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onFocusOutside={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
             style={{
                 transform: isCollapsed ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
-                zIndex: 100 + (isCollapsed ? 0 : 10), // Basic z-index stacking if needed
+                zIndex: 40 + (isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 maxWidth: fullWidth,
                 width: fullWidth
             }}
-            // Avoid overlay blocking interaction with foreground modals when collapsed
-            onPointerDownOutside={(e) => { if (isCollapsed) e.preventDefault() }}
-            onInteractOutside={(e) => { if (isCollapsed) e.preventDefault() }}
         >
             {/* Vertical Tab (Solapa) - Only visible when collapsed */}
             <div

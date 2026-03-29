@@ -207,7 +207,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
                 sheetId="COST_CALCULATOR"
                 open={open}
@@ -240,18 +240,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                         </div>
                     </div>
                 </SheetHeader>
-
-                {/* Custom Close Button for Sheet (Top Right Corner) */}
-                <div className="absolute top-4 right-4 z-[60]">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                        onClick={handleClose}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
 
                 {/* Custom Close Button for Sheet (Top Right Corner) */}
                 <div className="absolute top-4 right-4 z-[60]">
