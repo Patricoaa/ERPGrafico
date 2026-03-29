@@ -24,6 +24,11 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
+import { ActionCategory } from "./ActionCategory"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { toast } from "sonner"
+
 
 export interface OrderCommandCenterProps {
     orderId?: number | null
@@ -56,6 +61,7 @@ export function OrderCommandCenter({
     // BUG-03 fix: Use a ref counter instead of a boolean to prevent race conditions
     // when multiple ActionCategory instances call onModalChange simultaneously.
     const modalOpenCountRef = useRef(0)
+    const actionEngineRef = useRef<any>(null)
     const [isInternalActionModalOpen, setIsInternalActionModalOpen] = useState(false)
     
     const handleModalChange = useCallback((isOpen: boolean) => {
@@ -164,6 +170,25 @@ export function OrderCommandCenter({
                         </div>
                     </div>
                 </SheetHeader>
+                
+                {/* ACTION ENGINE (Headless) - TOP LEVEL FOR MODAL VISIBILITY */}
+                {/* Mounted here to ensure modals survive sheet collapse transitions */}
+                <ActionCategory
+                    ref={actionEngineRef}
+                    category={{ 
+                        id: 'hub-engine', 
+                        label: '', 
+                        icon: null as any, 
+                        actions: Object.values(type === 'purchase' || type === 'obligation' ? purchaseOrderActions : saleOrderActions).flatMap(c => c.actions) 
+                    }}
+                    order={activeDoc}
+                    userPermissions={hubData.userPermissions}
+                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                    posSessionId={posSessionId}
+                    onModalChange={handleModalChange}
+                    headless={true}
+                />
+
 
                 {/* Custom Close Button for Sheet (Top Right Corner) */}
                 <div className="absolute top-4 right-4 z-[60]">
@@ -186,6 +211,8 @@ export function OrderCommandCenter({
                         onEdit={onEdit}
                         posSessionId={posSessionId}
                         onModalChange={handleModalChange}
+                        actionEngineRef={actionEngineRef}
+                        compact={true}
                     />
                 </div>
 

@@ -119,8 +119,8 @@ export function CollapsibleSheet({
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
                 "flex flex-col h-full bg-background transition-opacity duration-300",
-                isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100",
-                isHidden && "hidden" // DOM Pruning: Display none
+                (isCollapsed && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
+                (isHidden && !forceCollapse) && "hidden" // DO NOT prune from DOM if forced (modal is likely open)
             )}>
                 {children}
             </div>

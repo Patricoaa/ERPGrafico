@@ -458,14 +458,10 @@ export default function PurchaseInvoicesPage() {
                                             item={doc}
                                             type="purchase_invoice"
                                             onClick={() => {
-                                                if (doc.purchase_order) {
-                                                    setSelectedHub({
-                                                        orderId: doc.purchase_order,
-                                                        invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null
-                                                    })
-                                                } else {
-                                                    setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })
-                                                }
+                                                setSelectedHub({
+                                                    orderId: doc.purchase_order || null,
+                                                    invoiceId: doc.id
+                                                })
                                             }}
                                         />
                                     )

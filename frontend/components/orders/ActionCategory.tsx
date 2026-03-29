@@ -309,9 +309,10 @@ export const ActionCategory = forwardRef(({
     }) || []
 
     const categoryBadgeCount = filteredActions.reduce((acc, action) => acc + (getActionBadgeCount(action, order) || 0), 0)
-
-    // Only return null if there are no actions AND no active modal to show
-    if (filteredActions.length === 0 && !activeModal) return null
+    
+    // PERF-09: Headless Persistence
+    // The engine must remain mounted to handle modals even if no actions are visible or if it's headless.
+    if (!headless && filteredActions.length === 0 && !activeModal) return null
 
     return (
         <>

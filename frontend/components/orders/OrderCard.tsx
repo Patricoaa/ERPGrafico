@@ -10,7 +10,10 @@ import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { ActionCategory } from "./ActionCategory"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { motion, AnimatePresence } from "framer-motion"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
@@ -28,6 +31,7 @@ interface OrderCardProps {
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, className }: OrderCardProps) {
     const { openCommandCenter, openWorkOrder } = useGlobalModalActions()
     const [isExpanded, setIsExpanded] = useState(false)
+    const actionEngineRef = useRef<any>(null)
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
 
     const isSale = type === 'sale'
@@ -182,12 +186,26 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                         }}
                     >
                         <div className="p-4 bg-muted/20 border-t border-border/10">
+                            <ActionCategory
+                                ref={actionEngineRef}
+                                category={{ 
+                                    id: 'card-engine', 
+                                    label: '', 
+                                    icon: null as any, 
+                                    actions: Object.values(isSale ? saleOrderActions : purchaseOrderActions).flatMap(c => c.actions) 
+                                }}
+                                order={hubData.activeDoc}
+                                userPermissions={hubData.userPermissions}
+                                onActionSuccess={hubData.fetchOrderDetails}
+                                headless={true}
+                            />
                             <OrderHubIntegrated 
                                 data={hubData}
                                 type={isPurchase ? 'purchase' : 'sale'}
                                 onActionSuccess={hubData.fetchOrderDetails}
                                 openDetails={openDetails}
-                                compact={true}
+                                actionEngineRef={actionEngineRef}
+                                compact={false}
                                 showAnimations={true}
                             />
                             
@@ -199,6 +217,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onClick?.()
+                                        setIsExpanded(false)
                                     }}
                                 >
                                     Abrir Panel Completo
