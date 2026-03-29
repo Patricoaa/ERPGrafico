@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
@@ -33,7 +33,7 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openCommandCenter } = useGlobalModals()
+    const { openCommandCenter } = useGlobalModalActions()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     const { orders } = useSalesOrders({

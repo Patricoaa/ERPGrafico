@@ -9,7 +9,7 @@ import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
@@ -26,7 +26,7 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, className }: OrderCardProps) {
-    const { openCommandCenter, openWorkOrder } = useGlobalModals()
+    const { openCommandCenter, openWorkOrder } = useGlobalModalActions()
     const [isExpanded, setIsExpanded] = useState(false)
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
 

@@ -8,7 +8,7 @@ import { formatPlainDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { InvoiceHubStatus } from "@/components/billing/InvoiceHubStatus"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { motion, AnimatePresence } from "framer-motion"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "@/components/orders/OrderHubIntegrated"
@@ -34,7 +34,7 @@ const dteTypeLabel: Record<string, string> = {
 }
 
 export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps) {
-    const { openCommandCenter } = useGlobalModals()
+    const { openCommandCenter } = useGlobalModalActions()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
     const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type)

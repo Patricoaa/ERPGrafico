@@ -16,7 +16,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -77,7 +77,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
-    const { openCommandCenter } = useGlobalModals()
+    const { openCommandCenter } = useGlobalModalActions()
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
