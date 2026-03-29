@@ -18,6 +18,8 @@ interface OriginPhaseProps {
     onEdit?: (orderId: number) => void
     userPermissions: string[]
     actionEngineRef: any
+    isTimeline?: boolean
+    onModalChange?: (isOpen: boolean) => void
 }
 
 export function OriginPhase({
@@ -31,7 +33,9 @@ export function OriginPhase({
     openDetails,
     onEdit,
     userPermissions,
-    actionEngineRef
+    actionEngineRef,
+    isTimeline = false,
+    onModalChange
 }: OriginPhaseProps) {
     const router = useRouter()
     const isSale = type === 'sale'
@@ -129,11 +133,13 @@ export function OriginPhase({
             userPermissions={userPermissions}
             onActionSuccess={onActionSuccess}
             actionEngineRef={actionEngineRef}
+            isTimeline={isTimeline}
+            onModalChange={onModalChange}
         >
-            <div className="flex flex-col gap-2">
-                {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => (
+            <div className="flex flex-col gap-1">
+                {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (
                     <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
-                        <span className="text-foreground/70 line-clamp-2 leading-tight">
+                        <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
                             {line.product_name || line.description}
                         </span>
                         <span className="shrink-0 font-bold text-primary/80">
@@ -141,6 +147,12 @@ export function OriginPhase({
                         </span>
                     </div>
                 ))}
+                {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
+                    <div className="text-[9px] text-muted-foreground/60 italic pt-0.5 flex justify-between items-center bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                        <span>Y {(activeDoc?.lines || activeDoc?.items || []).length - 3} productos más...</span>
+                        <span className="font-bold text-primary/40 text-[8px] uppercase tracking-tighter">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
+                    </div>
+                )}
             </div>
         </PhaseCard>
     )

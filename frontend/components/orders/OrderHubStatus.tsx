@@ -66,7 +66,16 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
                     status={statuses.origin}
                     tooltip={`Origen: ${originLabel}`}
                 />
-
+                <StatusBadge
+                    icon={Receipt}
+                    status={statuses.billing}
+                    tooltip={statuses.billing === 'success' ? "Facturado" : "Pendiente de Facturación"}
+                />
+                <StatusBadge
+                    icon={Banknote}
+                    status={statuses.treasury}
+                    tooltip={`Tesorería: ${paidPct}% Pagado${statuses.hasPendingTransactions ? ' - falta N° de transacción' : ''}`}
+                />
                 {showProduction && (
                     <StatusBadge
                         icon={ClipboardList}
@@ -78,16 +87,6 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
                     icon={Package}
                     status={statuses.logistics}
                     tooltip={`Logística: ${logisticsProgress}%`}
-                />
-                <StatusBadge
-                    icon={Receipt}
-                    status={statuses.billing}
-                    tooltip={statuses.billing === 'success' ? "Facturado" : "Pendiente de Facturación"}
-                />
-                <StatusBadge
-                    icon={Banknote}
-                    status={statuses.treasury}
-                    tooltip={`Tesorería: ${paidPct}% Pagado${statuses.hasPendingTransactions ? ' - falta N° de transacción' : ''}`}
                 />
             </TooltipProvider>
         </div>

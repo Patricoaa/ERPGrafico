@@ -10,6 +10,11 @@ import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useOrderHubData } from "@/hooks/useOrderHubData"
+import { OrderHubIntegrated } from "./OrderHubIntegrated"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface OrderCardProps {
     item: any
@@ -21,12 +26,30 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, className }: OrderCardProps) {
-    const { openCommandCenter } = useGlobalModals()
+    const { openCommandCenter, openWorkOrder } = useGlobalModals()
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
+
     const isSale = type === 'sale'
-    const isPurchase = type === 'purchase'
-    const isWorkOrder = type === 'work_order'
     const isNote = type === 'note'
+    const isPurchase = type === 'purchase' || (isNote && (item.purchase_order || item.purchase_order_id || item.supplier_name))
+    const isWorkOrder = type === 'work_order'
     const isLedger = type === 'ledger'
+
+    const hubData = useOrderHubData({ 
+        orderId: isNote ? null : item.id, 
+        invoiceId: isNote ? item.id : null, 
+        type: isPurchase ? 'purchase' : 'sale', 
+        enabled: isExpanded 
+    })
+
+    const openDetails = (docType: string, docId: number | string) => {
+        if (docType === 'work_order') {
+            openWorkOrder(Number(docId))
+            return
+        }
+        setDetailsModal({ open: true, type: docType, id: docId })
+    }
 
     // Determine Icon and Colors
     let Icon = ShoppingCart
@@ -71,144 +94,128 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     const originalTotal = item.total || item.effective_total || displayTotal
 
     return (
-        <div
-            className={cn(
-                "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer",
-                className
-            )}
-            onClick={onClick}
-        >
-            <div className="flex items-center gap-4">
-                <div className={cn("w-12 h-12 rounded-xl flex flex-col items-center justify-center border", iconBg, iconColor, iconBorder)}>
-                    <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {itemNumber}
-                        </span>
-                        <h4 className="font-bold text-foreground">
-                            {itemName}
-                        </h4>
-                        {isSale && item.pos_session && (
-                            <Badge variant="secondary" className="text-[10px] h-4 bg-primary/10 text-primary border-primary/20">
-                                POS #{item.pos_session}
-                            </Badge>
-                        )}
+        <div className={cn("flex flex-col gap-0 overflow-hidden bg-card border border-border/50 rounded-2xl hover:border-primary/30 transition-all", isExpanded && "ring-2 ring-primary/20 bg-background shadow-2xl z-10", className)}>
+            <div
+                className={cn(
+                    "group flex items-center justify-between p-4 cursor-pointer hover:bg-primary/[0.02] transition-colors",
+                    isExpanded && "border-b border-border/40"
+                )}
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="flex items-center gap-4 min-w-[30%]">
+                    <div className={cn("w-12 h-12 rounded-xl flex flex-col items-center justify-center border transition-all duration-500", iconBg, iconColor, iconBorder, isExpanded && "scale-90 rotate-3")}>
+                        <Icon className="h-6 w-6" />
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatPlainDate(item.date)}
-                        </span>
-                        {item.warehouse_name && (
-                            <span className="flex items-center gap-1">
-                                <Package className="h-3 w-3" />
-                                {item.warehouse_name}
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {itemNumber}
                             </span>
-                        )}
-                        {isLedger && item.pending_amount && parseFloat(item.pending_amount) > 0 && (
-                            <Badge variant="destructive" className="h-4 text-[9px] px-1 font-bold">
-                                PENDIENTE
-                            </Badge>
-                        )}
+                            <h4 className="font-bold text-foreground line-clamp-1 max-w-[150px]">
+                                {itemName}
+                            </h4>
+                        </div>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatPlainDate(item.date)}
+                            </span>
+                            {isSale && item.pos_session && (
+                                <Badge variant="secondary" className="text-[10px] h-3.5 bg-primary/10 text-primary border-primary/20 px-1 py-0 leading-none">
+                                    POS #{item.pos_session}
+                                </Badge>
+                            )}
+                            {item.warehouse_name && (
+                                <span className="flex items-center gap-1">
+                                    <Package className="h-3 w-3" />
+                                    {item.warehouse_name}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex items-center gap-6">
+                {/* CENTERED MINI STATES */}
                 {!hideStatus && (
-                    <div className="hidden sm:flex items-center gap-3">
-                        {/* Parent Invoice Link (only for Notes) */}
-                        {isNote && (item.corrected_invoice || item.sale_order || item.purchase_order) && (
-                            <Badge 
-                                variant="outline" 
-                                className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (item.corrected_invoice) {
-                                        openCommandCenter(null, 'sale', item.corrected_invoice.id)
-                                    } else {
-                                        // Fallback to order if no specific invoice linked
-                                        openCommandCenter(item.sale_order || item.purchase_order, item.sale_order ? 'sale' : 'purchase', null)
-                                    }
-                                }}
-                            >
-                                <GitBranch className="size-3" />
-                                {item.corrected_invoice?.display_id || item.sale_order_number || item.purchase_order_number || 'Ver Origen'}
-                            </Badge>
-                        )}
-
-                        {/* Associated Notes Links (for Orders/other docs) */}
-                        {!isNote && item.related_documents?.notes?.length > 0 && (
-                            <div className="flex items-center gap-1.5">
-                                {item.related_documents.notes.map((note: any) => (
-                                    <Badge 
-                                        key={note.id}
-                                        variant="outline" 
-                                        className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            openCommandCenter(null, isPurchase ? 'purchase' : 'sale', note.id)
-                                        }}
-                                    >
-                                        <GitBranch className="size-3" />
-                                        {note.display_id || note.number}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="flex flex-col items-end">
-                            {isSale || isLedger ? (
-                                <OrderHubStatus order={item} />
+                    <div className="flex-1 flex justify-center px-4">
+                        <div className={cn("transition-all duration-700", isExpanded ? "opacity-0 scale-90 translate-y-2 pointer-events-none" : "opacity-100 scale-100 translate-y-0")}>
+                            {isNote ? (
+                                <NoteHubStatus note={item} />
                             ) : isPurchase ? (
                                 <PurchaseOrderHubStatus order={item} />
-                            ) : isNote ? (
-                                <NoteHubStatus note={item} />
-                            ) : isWorkOrder ? (
-                                <Badge variant={item.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
-                                    {item.status}
-                                </Badge>
-                            ) : null}
+                            ) : (
+                                <OrderHubStatus order={item} />
+                            )}
                         </div>
                     </div>
                 )}
 
-                <div className="text-right min-w-[120px]">
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                        {isLedger ? 'Saldo Pendiente' : 'Total'}
-                    </div>
-                    <MoneyDisplay 
-                        amount={displayTotal} 
-                        showColor={!isLedger} 
-                        className={cn("text-sm", isLedger && "text-red-600 dark:text-red-400")}
-                    />
-                    {isLedger && originalTotal !== displayTotal && (
-                        <div className="text-[10px] text-muted-foreground line-through opacity-50">
-                            <MoneyDisplay 
-                                amount={originalTotal} 
-                                showColor={false} 
-                                className="font-medium"
-                            />
+                <div className="flex items-center gap-6">
+                    <div className="text-right min-w-[100px]">
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+                            Total
                         </div>
-                    )}
-                </div>
+                        <MoneyDisplay 
+                            amount={displayTotal} 
+                            showColor={!isLedger} 
+                            className={cn("text-sm", isLedger && "text-red-600 dark:text-red-400")}
+                        />
+                    </div>
 
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="group-hover:translate-x-1 transition-transform"
-                    onClick={(e) => {
-                        if (onActionClick) {
-                            e.stopPropagation()
-                            onActionClick()
-                        }
-                    }}
-                >
-                    <ArrowRight className="h-5 w-5 text-primary" />
-                </Button>
+                    <div className={cn("transition-transform duration-500", isExpanded ? "rotate-90" : "rotate-0")}>
+                        <ArrowRight className="h-5 w-5 text-primary" />
+                    </div>
+                </div>
             </div>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ 
+                            type: 'spring', 
+                            damping: 25, 
+                            stiffness: 120,
+                            opacity: { duration: 0.2 }
+                        }}
+                    >
+                        <div className="p-4 bg-muted/20 border-t border-border/10">
+                            <OrderHubIntegrated 
+                                data={hubData}
+                                type={isPurchase ? 'purchase' : 'sale'}
+                                onActionSuccess={hubData.fetchOrderDetails}
+                                openDetails={openDetails}
+                                compact={true}
+                                showAnimations={true}
+                            />
+                            
+                            <div className="flex justify-end pt-4 mt-2 border-t border-border/40">
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="rounded-full gap-2 px-4 shadow-sm hover:bg-primary hover:text-white transition-all"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onClick?.()
+                                    }}
+                                >
+                                    Abrir Panel Completo
+                                    <ArrowRight className="size-3" />
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <TransactionViewModal
+                open={detailsModal.open}
+                onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
+                type={detailsModal.type}
+                id={Number(detailsModal.id)}
+            />
         </div>
     )
 }

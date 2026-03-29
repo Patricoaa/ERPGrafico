@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, forwardRef, useImperativeHandle } from "react"
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
@@ -32,6 +32,7 @@ interface ActionCategoryProps {
     ghost?: boolean
     showBadge?: boolean
     posSessionId?: number | null
+    onModalChange?: (isOpen: boolean) => void
 }
 
 export const ActionCategory = forwardRef(({
@@ -43,11 +44,24 @@ export const ActionCategory = forwardRef(({
     compact = false,
     ghost = false,
     showBadge = true,
-    posSessionId = null
+    posSessionId = null,
+    onModalChange
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
+
+    // Notify parent about modal state changes without clobbering other instances
+    useEffect(() => {
+        if (activeModal && !hasNotifiedOpen) {
+            onModalChange?.(true)
+            setHasNotifiedOpen(true)
+        } else if (!activeModal && hasNotifiedOpen) {
+            onModalChange?.(false)
+            setHasNotifiedOpen(false)
+        }
+    }, [activeModal, onModalChange, hasNotifiedOpen])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({

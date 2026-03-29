@@ -16,7 +16,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -74,10 +74,10 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
-    const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+
+    const { openCommandCenter } = useGlobalModals()
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
@@ -88,7 +88,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             const id = parseInt(openHubStr, 10)
             if (!isNaN(id)) {
                 hubOpenedFromUrl.current = true
-                setSelectedOrderId(id)
+                openCommandCenter(id, 'purchase', null, null, fetchOrders)
             }
         }
     }, [searchParams])
@@ -271,7 +271,11 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado Hub" />
             ),
-            cell: ({ row }) => <NoteHubStatus note={row.original} />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <NoteHubStatus note={row.original} />
+                </div>
+            ),
             meta: { title: "Estado" },
         },
         // Filters for Notes (Hidden)
@@ -291,7 +295,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => setSelectedInvoiceId(row.original.id)}
+                        onClick={() => openCommandCenter(null, 'purchase', row.original.id, null, fetchNotes)}
                         className="h-8 px-3 w-full"
                     >
                         <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -399,7 +403,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => setSelectedOrderId(row.original.id)}
+                        onClick={() => openCommandCenter(row.original.id, 'purchase', null, null, fetchOrders)}
                         className="h-8 px-3 w-full"
                     >
                         <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -512,7 +516,6 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                             </div>
                         }
                         globalFilterFields={["number"]}
-                        showToolbarSort={true}
                         renderCustomView={(table) => {
                             const rows = table.getRowModel().rows
                             if (rows.length === 0) {
@@ -534,9 +537,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                                                 type={viewMode === 'orders' ? 'purchase' : 'note'}
                                                 onClick={() => {
                                                     if (viewMode === 'orders') {
-                                                        setSelectedOrderId(item.id)
+                                                        openCommandCenter(item.id, 'purchase', null, null, fetchOrders)
                                                     } else {
-                                                        setSelectedInvoiceId(item.id)
+                                                        openCommandCenter(null, 'purchase', item.id, null, fetchNotes)
                                                     }
                                                 }}
                                             />
@@ -612,24 +615,6 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     />
                 )
             }
-
-            <OrderCommandCenter
-                orderId={selectedOrderId}
-                invoiceId={selectedInvoiceId}
-                type="purchase"
-                open={selectedOrderId !== null || selectedInvoiceId !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setSelectedOrderId(null)
-                        setSelectedInvoiceId(null)
-                    }
-                }}
-                onActionSuccess={fetchOrders}
-                onEdit={(id) => {
-                    setSelectedOrderId(null)
-                    setCheckoutOrderId(id)
-                }}
-            />
         </div>
     )
 }

@@ -20,6 +20,8 @@ interface LogisticsPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     showAnimations: boolean
+    isTimeline?: boolean
+    onModalChange?: (isOpen: boolean) => void
 }
 
 export function LogisticsPhase({
@@ -33,7 +35,9 @@ export function LogisticsPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    showAnimations
+    showAnimations,
+    isTimeline = false,
+    onModalChange
 }: LogisticsPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -190,9 +194,11 @@ export function LogisticsPhase({
                 showDocProgress={true}
                 stageId="logistics"
                 isComplete={logisticsProgress >= 100}
+                isTimeline={isTimeline}
+                onModalChange={onModalChange}
             >
-                <div className="space-y-1.5 py-1">
-                    {(activeDoc?.lines || activeDoc?.items || []).map((line: any, idx: number) => {
+                <div className="space-y-1 py-0.5">
+                    {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => {
                         const total = parseFloat(line.quantity) || 1
                         const processedField = isSale
                             ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
@@ -224,6 +230,11 @@ export function LogisticsPhase({
                             </div>
                         )
                     })}
+                    {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
+                        <div className="text-[8px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-white/5 mt-1 uppercase tracking-tighter font-bold">
+                            + {(activeDoc?.lines || activeDoc?.items || []).length - 3} ítems adicionales en proceso
+                        </div>
+                    )}
                 </div>
             </PhaseCard>
 
