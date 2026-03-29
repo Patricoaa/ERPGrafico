@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react"
 import { 
     Sheet, 
-    SheetContent, 
     SheetHeader, 
     SheetTitle,
-    SheetDescription
+    SheetDescription,
 } from "@/components/ui/sheet"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -59,6 +60,26 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
 
     const [activeTab, setActiveTab] = useState("general")
+
+    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    const handleOpenChangeProxy = (newOpen: boolean) => {
+        if (newOpen && isSheetCollapsed("PRODUCT_DETAIL")) {
+            // Jump behavior: Close Hub if we are opening from a collapsed tab
+            openCommandCenter(null, 'sale')
+        }
+        onOpenChange(newOpen)
+    }
+
+    const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -823,10 +844,15 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     )
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent 
-                side="right" 
-                className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+            <CollapsibleSheet
+                sheetId="PRODUCT_DETAIL"
+                open={open}
+                onOpenChange={handleOpenChangeProxy}
+                tabLabel="FICHA PRODUCTO"
+                tabIcon={Package}
+                fullWidth={fullWidth}
+                className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
@@ -885,7 +911,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </Button>
                 </div>
-            </SheetContent>
+            </CollapsibleSheet>
         </Sheet>
     )
 }

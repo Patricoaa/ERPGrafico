@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ActionCategory } from "./ActionCategory"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import api from "@/lib/api"
@@ -276,38 +277,23 @@ export function OrderCommandCenter({
         3: "lg:grid-cols-3"
     }[visibleCols as 3 | 4 | 5] || "lg:grid-cols-5"
 
+    const prefix = isNoteMode 
+        ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') 
+        : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')
+    const tabLabel = `${prefix}-${activeDoc.number || activeDoc.id}`
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent 
-                side="right" 
-                className={cn(
-                    "max-w-[100vw] w-full sm:max-w-[500px] sm:w-[500px] p-0 flex flex-col border-l shadow-2xl overflow-visible rounded-l-3xl z-[100] transition-all duration-500 ease-in-out",
-                    isCollapsed ? "translate-x-full border-transparent" : "translate-x-0"
-                )}
-                // Avoid overlay blocking interaction with foreground modals when collapsed
-                onPointerDownOutside={(e) => { if (isCollapsed) e.preventDefault() }}
-                onInteractOutside={(e) => { if (isCollapsed) e.preventDefault() }}
+            <CollapsibleSheet
+                sheetId="HUB_MANDO"
+                open={open}
+                onOpenChange={onOpenChange}
+                tabLabel={tabLabel}
+                tabIcon={LayoutDashboard}
+                forceCollapse={isExternalModalOpen || detailsModal.open}
+                fullWidth={500}
+                className="max-w-[100vw] w-full sm:max-w-[500px] sm:w-[500px]"
             >
-                {/* Vertical Tab (Solapa) - Only visible when collapsed */}
-                <div 
-                    onClick={() => isCollapsed && setDetailsModal(p => ({ ...p, open: false }))}
-                    className={cn(
-                        "absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full w-[42px] h-[140px] bg-primary/95 backdrop-blur-md rounded-l-2xl border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
-                        isCollapsed ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-0"
-                    )}
-                >
-                    <div className="flex flex-col items-center gap-3 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
-                        <LayoutDashboard className="h-5 w-5 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
-                        <div className="flex flex-col items-center whitespace-nowrap">
-                            <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest">
-                                {isNoteMode ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')}
-                                -{activeDoc.number || activeDoc.id}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={cn("flex flex-col h-full bg-background transition-opacity duration-300", isCollapsed ? "opacity-20 grayscale pointer-events-none" : "opacity-100")}>
                 <SheetHeader className="p-4 pb-2 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-3">
@@ -473,8 +459,6 @@ export function OrderCommandCenter({
                     </TooltipProvider>
                 </div>
 
-                </div>
-
                 {/* Shared Modal for viewing Details remains as is since it might need more space */}
                 <TransactionViewModal
                     open={detailsModal.open}
@@ -482,7 +466,7 @@ export function OrderCommandCenter({
                     type={detailsModal.type}
                     id={Number(detailsModal.id)}
                 />
-            </SheetContent>
+            </CollapsibleSheet>
         </Sheet>
     )
 }
