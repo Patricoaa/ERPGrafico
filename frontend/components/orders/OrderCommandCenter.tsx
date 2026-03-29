@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback, useMemo } from "react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { 
     Sheet, 
@@ -52,7 +52,19 @@ export function OrderCommandCenter({
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
     
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
+    
+    // BUG-03 fix: Use a ref counter instead of a boolean to prevent race conditions
+    // when multiple ActionCategory instances call onModalChange simultaneously.
+    const modalOpenCountRef = useRef(0)
     const [isInternalActionModalOpen, setIsInternalActionModalOpen] = useState(false)
+    
+    const handleModalChange = useCallback((isOpen: boolean) => {
+        modalOpenCountRef.current += isOpen ? 1 : -1
+        // Clamp to 0 minimum to prevent negative counts from mismatched calls
+        if (modalOpenCountRef.current < 0) modalOpenCountRef.current = 0
+        setIsInternalActionModalOpen(modalOpenCountRef.current > 0)
+    }, [])
+    
     const { openWorkOrder } = useGlobalModals()
 
     if (!activeDoc) return null
@@ -65,7 +77,7 @@ export function OrderCommandCenter({
         setDetailsModal({ open: true, type: docType, id: docId })
     }
 
-    const getGlobalStatus = () => {
+    const globalStatus = useMemo(() => {
         const { noteStatuses, hubStatuses, billingIsComplete, totalOTs, totalOTProgress, logisticsProgress, payments } = hubData
         
         const docToEvaluate = isNoteMode ? activeInvoice : activeDoc
@@ -88,9 +100,8 @@ export function OrderCommandCenter({
         if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
 
         return { label: 'Pendiente', variant: 'neutral', icon: AlertCircle }
-    }
+    }, [hubData, isNoteMode, activeInvoice, activeDoc, type])
 
-    const globalStatus = getGlobalStatus()
     const StatusIcon = globalStatus.icon
 
     const prefix = isNoteMode 
@@ -174,7 +185,7 @@ export function OrderCommandCenter({
                         openDetails={openDetails}
                         onEdit={onEdit}
                         posSessionId={posSessionId}
-                        onModalChange={setIsInternalActionModalOpen}
+                        onModalChange={handleModalChange}
                     />
                 </div>
 

@@ -5,6 +5,7 @@ import { SalesOrdersView } from "@/features/sales"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, Suspense } from "react"
+import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { 
     Sheet, 
     SheetHeader, 
@@ -22,22 +23,17 @@ interface SalesOrdersModalProps {
 
 export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrdersModalProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+    const windowWidth = useWindowWidth(150, open)
 
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
     // Jump behavior: Close Hub if we are opening Sales Notes from a collapsed tab
     useEffect(() => {
         if (open && isSheetCollapsed("POS_SALES")) {
-            openCommandCenter(null, 'sale')
+            // Jump behavior: Close Hub if we are opening from a collapsed tab
+            closeCommandCenter()
         }
-    }, [open, isSheetCollapsed, openCommandCenter])
+    }, [open, isSheetCollapsed, closeCommandCenter])
 
     const handleOpenChange = (newOpen: boolean) => {
         onOpenChange(newOpen)

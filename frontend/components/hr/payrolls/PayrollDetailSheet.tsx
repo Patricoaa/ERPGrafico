@@ -6,7 +6,7 @@ import {
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { FileText } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { PayrollDetailContent } from "./PayrollDetailContent"
 
 interface PayrollDetailSheetProps {
@@ -18,21 +18,17 @@ interface PayrollDetailSheetProps {
     employee?: any
 }
 
+import { useWindowWidth } from "@/hooks/useWindowWidth"
+
 export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, viewMode = 'admin', employee }: PayrollDetailSheetProps) {
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("PAYROLL_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
+            closeCommandCenter()
         }
         onOpenChange(newOpen)
     }

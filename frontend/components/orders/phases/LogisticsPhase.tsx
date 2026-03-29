@@ -22,6 +22,7 @@ interface LogisticsPhaseProps {
     showAnimations: boolean
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
+    logisticsProgress: number
 }
 
 export function LogisticsPhase({
@@ -37,7 +38,8 @@ export function LogisticsPhase({
     actionEngineRef,
     showAnimations,
     isTimeline = false,
-    onModalChange
+    onModalChange,
+    logisticsProgress
 }: LogisticsPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -143,25 +145,7 @@ export function LogisticsPhase({
         return docs
     })()
 
-    // Calculate dynamic logistics progressLogic phase for logistics
-    const logisticsProgress = isNoteMode ? noteStatuses.logisticsProgress : (() => {
-        const lines = activeDoc.lines || activeDoc.items || []
-        if (lines.length === 0) return 0
 
-        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
-        if (totalOrdered === 0) return 100
-
-        const totalProcessed = lines.reduce((acc: number, line: any) => {
-            const processedField = isSale
-                ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
-                : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
-
-            const processed = line[processedField] || 0
-            return acc + (parseFloat(processed) || 0)
-        }, 0)
-
-        return Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
-    })()
 
     const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
 

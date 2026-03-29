@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { getNoteHubStatuses, getHubStatuses } from "@/lib/order-status-utils"
 
@@ -12,60 +13,53 @@ interface UseOrderHubDataProps {
 }
 
 export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: UseOrderHubDataProps) {
-    const [order, setOrder] = useState<any>(null)
-    const [activeInvoice, setActiveInvoice] = useState<any>(null)
-    const [loading, setLoading] = useState(false)
-    const [userPermissions, setUserPermissions] = useState<string[]>([])
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchOrderDetails = async () => {
-        if (!orderId && !invoiceId) return
-        setLoading(true)
-        setError(null)
-        try {
+    const { 
+        data, 
+        isLoading: loading, 
+        error,
+        refetch: fetchOrderDetails
+    } = useQuery({
+        queryKey: ['orderHub', { orderId, invoiceId, type }],
+        queryFn: async () => {
+            if (!orderId && !invoiceId) return { activeInvoice: null, order: null }
+            let activeInvoice = null
+            let order = null
+            
             if (invoiceId) {
                 const invRes = await api.get(`/billing/invoices/${invoiceId}/`)
-                setActiveInvoice(invRes.data)
+                activeInvoice = invRes.data
 
                 if (invRes.data.sale_order || invRes.data.purchase_order) {
                     const oType = invRes.data.sale_order ? 'sales' : 'purchasing'
                     const oId = invRes.data.sale_order || invRes.data.purchase_order
                     const orderRes = await api.get(`/${oType}/orders/${oId}/`)
-                    setOrder(orderRes.data)
-                } else {
-                    setOrder(null)
+                    order = orderRes.data
                 }
             } else if (orderId) {
                 const endpoint =
                     type === 'purchase' ? `/purchasing/orders/${orderId}/` :
                         `/sales/orders/${orderId}/`
                 const response = await api.get(endpoint)
-                setOrder(response.data)
-                setActiveInvoice(null)
+                order = response.data
             }
-        } catch (err: any) {
-            console.error("Error fetching order/invoice details:", err)
-            setError(err.message || "Failed to fetch order details")
-        } finally {
-            setLoading(false)
-        }
-    }
+            return { activeInvoice, order }
+        },
+        enabled: enabled && !!(orderId || invoiceId),
+        staleTime: 1000 * 30, // 30 seconds cache
+    })
 
-    const fetchUserPermissions = async () => {
-        try {
+    const { data: userPermissions = [] } = useQuery({
+        queryKey: ['userPermissions'],
+        queryFn: async () => {
             const response = await api.get('/auth/user/')
-            setUserPermissions(response.data.permissions || [])
-        } catch (error) {
-            console.error("Error fetching permissions:", error)
-        }
-    }
+            return response.data.permissions || []
+        },
+        enabled: enabled,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
+    })
 
-    useEffect(() => {
-        if (enabled && (orderId || invoiceId)) {
-            fetchOrderDetails()
-            fetchUserPermissions()
-        }
-    }, [enabled, orderId, invoiceId, type])
+    const { order, activeInvoice } = data || { order: null, activeInvoice: null }
+
 
     const activeDoc = activeInvoice || order
     const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)
