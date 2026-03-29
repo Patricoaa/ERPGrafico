@@ -49,8 +49,9 @@ export function CollapsibleSheet({
     const stackIndex = getSheetIndex(sheetId)
     
     // Vertical stacking for tabs when multiple sheets are hidden
-    // Spread them out from top to bottom (e.g. 20%, 45%, 70%)
-    const verticalOffset = stackIndex === -1 ? "50%" : `${15 + (stackIndex * 24)}%`
+    // Spread them out from top to bottom (e.g. 15%, 33%, 51%)
+    // Reduced spacing to allow for up to 5-6 tabs without overflowing
+    const verticalOffset = stackIndex === -1 ? "50%" : `${15 + (stackIndex * 18)}%`
 
     return (
         <SheetContent
@@ -61,11 +62,13 @@ export function CollapsibleSheet({
                 className
             )}
             hideOverlay={hideOverlay}
+            hideCloseButton={true}
             onPointerDownOutside={(e) => e.preventDefault()}
             onFocusOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
             style={{
                 transform: isCollapsed ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
+                willChange: 'transform',
                 zIndex: 40 + (isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 maxWidth: fullWidth,
                 width: fullWidth
@@ -75,13 +78,17 @@ export function CollapsibleSheet({
             <div
                 onClick={() => isCollapsed && onOpenChange(true)}
                 className={cn(
-                    "absolute left-0 -translate-x-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-2xl border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
-                    isCollapsed ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-0"
+                    "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-2xl border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
+                    isCollapsed ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
                 style={{
                     top: verticalOffset,
-                    transform: 'translateY(-50%)'
+                    marginTop: '-90px', // Replaces translateY(-50%) to avoid webkit nested transform compositing bugs
                 }}
+                role="button"
+                tabIndex={isCollapsed ? 0 : -1}
+                onKeyDown={(e) => { if (isCollapsed && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpenChange(true) } }}
+                aria-label={`Expandir panel ${tabLabel}`}
             >
                 <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
                     <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />

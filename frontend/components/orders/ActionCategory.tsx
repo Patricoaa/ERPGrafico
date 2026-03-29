@@ -6,19 +6,22 @@ import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
 import { getActionBadgeCount } from "@/lib/actions/utils"
-import { DocumentCompletionModal } from "../shared/DocumentCompletionModal"
-import { DeliveryModal } from "@/features/sales"
-import { ReceiptModal } from "../purchasing/ReceiptModal"
-import { PaymentHistoryModal } from "./PaymentHistoryModal"
-import { PaymentDialog as PaymentModal } from "../shared/PaymentDialog"
-import { PaymentReferenceModal } from "../shared/PaymentReferenceModal"
-import { NoteCheckoutWizard } from "../billing/NoteCheckoutWizard"
+import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { DocumentListModal } from './DocumentListModal'
-import { TransactionViewModal } from "../shared/TransactionViewModal"
-import { NoteLogisticsModal } from "./NoteLogisticsModal"
-import { WorkOrderForm } from "../forms/WorkOrderForm"
 import { ActionConfirmModal } from "../shared/ActionConfirmModal"
+
+// Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
+const DocumentCompletionModal = dynamic(() => import("../shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
+const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
+const ReceiptModal = dynamic(() => import("../purchasing/ReceiptModal").then(m => m.ReceiptModal))
+const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
+const PaymentModal = dynamic(() => import("../shared/PaymentDialog").then(m => m.PaymentDialog))
+const PaymentReferenceModal = dynamic(() => import("../shared/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
+const NoteCheckoutWizard = dynamic(() => import("../billing/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
+const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
+const TransactionViewModal = dynamic(() => import("../shared/TransactionViewModal").then(m => m.TransactionViewModal))
+const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
+const WorkOrderForm = dynamic(() => import("../forms/WorkOrderForm").then(m => m.WorkOrderForm))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
@@ -258,19 +261,6 @@ export const ActionCategory = forwardRef(({
             },
             description: "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer."
         })
-        return
-
-        setIsProcessing(true)
-        try {
-            await api.delete(`/billing/invoices/${draftInvoice.id}/`)
-            toast.success("Borrador eliminado correctamente")
-            onActionSuccess?.()
-        } catch (error: any) {
-            console.error("Error deleting draft:", error)
-            toast.error("No se pudo eliminar el borrador")
-        } finally {
-            setIsProcessing(false)
-        }
     }
 
     const handlePaymentConfirm = async (data: any) => {

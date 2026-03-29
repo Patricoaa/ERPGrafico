@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import { 
@@ -78,20 +79,14 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
+            closeCommandCenter()
         }
         onOpenChange(newOpen)
     }
@@ -831,7 +826,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row) => (
+                            {table.getRowModel().rows.map((row: any) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}
@@ -914,7 +909,7 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row) => (
+                            {table.getRowModel().rows.map((row: any) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}

@@ -26,6 +26,7 @@ const TreasuryAccountModal = dynamic(() => import("@/features/treasury/component
 interface GlobalModalContextType {
     openWorkOrder: (id: number) => void
     openCommandCenter: (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null, posSessionId?: number | null, onActionSuccess?: () => void) => void
+    closeCommandCenter: () => void
     openContact: (id: number, contact?: any) => void
     openTreasuryAccount: (id: number | null) => void
     isCommandCenterActive: boolean
@@ -71,6 +72,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         setOccType(type)
         setOccPosSessionId(posSessionId || null)
         setOccOnActionSuccess(() => onActionSuccess)
+    }
+
+    const closeCommandCenter = () => {
+        setOccId(null)
+        setOccInvoiceId(null)
+        // deliberately leaving OCC type unchanged to keep context for UX-10 fix
     }
 
     const openContact = (id: number, contact?: any) => {
@@ -157,6 +164,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         <GlobalModalContext.Provider value={{ 
             openWorkOrder, 
             openCommandCenter, 
+            closeCommandCenter,
             openContact, 
             openTreasuryAccount,
             isCommandCenterActive: !!(occId || occInvoiceId),

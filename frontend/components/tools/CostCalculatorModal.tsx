@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -66,24 +66,20 @@ interface CostCalculatorModalProps {
 import { useQuery } from "@tanstack/react-query"
 import { inventoryApi } from "@/features/inventory/api/inventoryApi"
 
+import { useWindowWidth } from "@/hooks/useWindowWidth"
+
 export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalProps) {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
-    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
 
-    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-    useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth)
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+    const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("COST_CALCULATOR")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            openCommandCenter(null, 'sale')
+            closeCommandCenter()
         }
         if (!newOpen) handleClose()
         else onOpenChange(newOpen)
@@ -296,7 +292,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             />
                                                         ) : (
                                                             <DynamicIcon 
-                                                                name={(typeof product.category === 'object' ? product.category?.icon : categories.find(c => c.id === product.category)?.icon) || "Package"} 
+                                                                name={(typeof product.category === 'object' ? product.category?.icon : categories.find((c: any) => c.id === product.category)?.icon) || "Package"} 
                                                                 className="h-12 w-12 text-muted-foreground/20 group-hover:scale-110 transition-transform" 
                                                             />
                                                         )}
@@ -379,7 +375,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             <img src={item.product.image} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <DynamicIcon 
-                                                                name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find(c => c.id === item.product.category)?.icon) || "Package"} 
+                                                                name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find((c: any) => c.id === item.product.category)?.icon) || "Package"} 
                                                                 className="h-4 w-4 text-muted-foreground/20" 
                                                             />
                                                         )}

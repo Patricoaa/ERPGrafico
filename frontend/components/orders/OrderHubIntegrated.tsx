@@ -1,7 +1,8 @@
 "use client"
 
-import { useRef, useMemo } from "react"
+import { useRef, useMemo, useState, useEffect } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
 import { OriginPhase } from "./phases/OriginPhase"
 import { ProductionPhase } from "./phases/ProductionPhase"
 import { LogisticsPhase } from "./phases/LogisticsPhase"
@@ -51,6 +52,12 @@ export function OrderHubIntegrated({
 
     const actionEngineRef = useRef<any>(null)
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
+    const [isCompact, setIsCompact] = useState(compact)
+
+    // Sync prop if changed externally
+    useEffect(() => {
+        setIsCompact(compact)
+    }, [compact])
 
     // Determine which phases are visible to draw the connectors correctly
     const visiblePhases = useMemo(() => {
@@ -71,7 +78,7 @@ export function OrderHubIntegrated({
         return (
             <div className={cn(
                 "absolute bg-border/20 z-0",
-                compact ? "h-[2px] left-[50%] right-[-50%] top-[30px]" : "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
+                isCompact ? "h-[2px] left-[50%] right-[-50%] top-[30px]" : "w-[2px] left-[19px] top-[32px] bottom-[-8px]"
             )} />
         )
     }
@@ -79,7 +86,7 @@ export function OrderHubIntegrated({
     const PhaseWrapper = ({ children, index }: { children: React.ReactNode, index: number }) => (
         <div className={cn(
             "relative flex flex-col",
-            compact ? "flex-shrink-0 w-[300px] text-left" : "pl-12 text-left w-full"
+            isCompact ? "flex-shrink-0 w-[300px] text-left" : "pl-12 text-left w-full"
         )}>
             <Connector index={index} />
             <div className="w-full flex-1 relative z-10 flex flex-col">
@@ -89,15 +96,27 @@ export function OrderHubIntegrated({
     )
 
     return (
-        <TooltipProvider delayDuration={0}>
-            <div className={cn(
-                "w-full overflow-hidden",
-                compact && "overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
-            )}>
+        <TooltipProvider delayDuration={150}>
+            <div className="flex flex-col w-full h-full">
+                {/* Header Actions */}
+                <div className="flex justify-end px-4 py-2 border-b bg-muted/5">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsCompact(!isCompact)}
+                        className="text-xs h-8 text-muted-foreground hover:text-foreground font-semibold"
+                    >
+                        {isCompact ? "Ver como Lista" : "Ver como Línea de Tiempo"}
+                    </Button>
+                </div>
                 <div className={cn(
-                    compact ? "flex flex-row gap-6 py-6 min-w-max px-4 items-stretch" : "flex flex-col gap-4 py-4"
+                    "w-full overflow-hidden flex-1",
+                    isCompact && "overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                 )}>
-                    {/* 1. Origen */}
+                    <div className={cn(
+                        isCompact ? "flex flex-row gap-6 py-6 min-w-max px-4 items-stretch" : "flex flex-col gap-4 py-4"
+                    )}>
+                        {/* 1. Origen */}
                     <PhaseWrapper index={visiblePhases.indexOf('origin')}>
                         <OriginPhase
                             isNoteMode={!!isNoteMode}
@@ -111,7 +130,7 @@ export function OrderHubIntegrated({
                             onEdit={onEdit}
                             userPermissions={userPermissions}
                             actionEngineRef={actionEngineRef}
-                            isTimeline={compact}
+                            isTimeline={isCompact}
                             onModalChange={onModalChange}
                         />
                     </PhaseWrapper>
@@ -130,7 +149,7 @@ export function OrderHubIntegrated({
                             openDetails={openDetails}
                             actionEngineRef={actionEngineRef}
                             posSessionId={posSessionId}
-                            isTimeline={compact}
+                            isTimeline={isCompact}
                             onModalChange={onModalChange}
                         />
                     </PhaseWrapper>
@@ -148,7 +167,7 @@ export function OrderHubIntegrated({
                             openDetails={openDetails}
                             actionEngineRef={actionEngineRef}
                             posSessionId={posSessionId}
-                            isTimeline={compact}
+                            isTimeline={isCompact}
                             onModalChange={onModalChange}
                         />
                     </PhaseWrapper>
@@ -165,7 +184,7 @@ export function OrderHubIntegrated({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
-                                isTimeline={compact}
+                                isTimeline={isCompact}
                                 onModalChange={onModalChange}
                             />
                         </PhaseWrapper>
@@ -186,8 +205,9 @@ export function OrderHubIntegrated({
                                 openDetails={openDetails}
                                 actionEngineRef={actionEngineRef}
                                 showAnimations={showAnimations}
-                                isTimeline={compact}
+                                isTimeline={isCompact}
                                 onModalChange={onModalChange}
+                                logisticsProgress={data.logisticsProgress}
                             />
                         </PhaseWrapper>
                     )}
@@ -207,6 +227,7 @@ export function OrderHubIntegrated({
                         posSessionId={posSessionId}
                         onModalChange={onModalChange}
                     />
+                </div>
                 </div>
             </div>
         </TooltipProvider>
