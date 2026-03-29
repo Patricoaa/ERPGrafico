@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { ActionCategory } from "../ActionCategory"
-import { Eye, Settings2 } from "lucide-react"
+import { Eye, Settings2, CheckCircle2, PlayCircle, MinusCircle, XCircle } from "lucide-react"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface PhaseCardProps {
     title: string
@@ -18,7 +19,6 @@ interface PhaseCardProps {
     documents?: any[]
     onViewDetail?: (docType: string, id: number | string) => void
     emptyMessage?: string
-    actionEngineRef?: any
     showDocProgress?: boolean
     stageId?: string
     isComplete?: boolean
@@ -37,12 +37,12 @@ export function PhaseCard({
     documents = [],
     onViewDetail,
     emptyMessage = "No disponible",
-    actionEngineRef,
     showDocProgress = false,
     stageId = '',
     isComplete = false,
     posSessionId = null
 }: PhaseCardProps) {
+    const { triggerAction } = useHubPanel()
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
 
@@ -105,16 +105,25 @@ export function PhaseCard({
                 <div className={cn(
                     "p-1 shadow-inner transition-transform duration-500 group-hover/card:scale-110", 
                     iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-                    "p-2 flex items-center justify-center rounded-xl h-9 w-9"
+                    "p-2 flex items-center justify-center rounded-xl h-9 w-9 shrink-0"
                 )}>
-                    {isSuccess ? <div className="relative flex items-center justify-center">
-                        <Icon className="h-5 w-5" />
-                        <div className="absolute -top-1 -right-1 bg-green-500 rounded-full border-2 border-background">
-                            <svg className="w-2 h-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                    <div className="relative flex items-center justify-center w-full h-full">
+                        <Icon className="h-5 w-5 opacity-90" />
+                        
+                        {/* Mini Status Badge */}
+                        <div className={cn(
+                            "absolute -top-2 -right-2 rounded-full bg-background border shadow-sm",
+                            isSuccess && "text-green-600 border-green-600/30",
+                            isActive && "text-blue-600 border-blue-600/30",
+                            variant === 'destructive' && "text-red-600 border-red-600/30",
+                            variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
+                        )}>
+                            {isSuccess && <CheckCircle2 className="size-3.5 bg-green-500/10 rounded-full" />}
+                            {isActive && <PlayCircle className="size-3.5 bg-blue-500/10 rounded-full" />}
+                            {variant === 'destructive' && <XCircle className="size-3.5 bg-red-500/10 rounded-full" />}
+                            {variant === 'neutral' && !isActive && !isSuccess && <MinusCircle className="size-3.5 bg-muted/10 rounded-full" />}
                         </div>
-                    </div> : <Icon className="h-5 w-5" />}
+                    </div>
                 </div>
                 <div className="flex-1">
                     <h3 className={cn(
@@ -155,7 +164,8 @@ export function PhaseCard({
                                             )}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                actionEngineRef?.current?.handleActionClick(action.id);
+                                                console.log(`[PhaseCard] Triggering global action: ${action.id}`);
+                                                triggerAction(action.id);
                                             }}
                                         >
                                             <action.icon className="h-4 w-4" />

@@ -5,6 +5,8 @@ import { formatDocumentId } from "@/lib/order-status-utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface OriginPhaseProps {
     isNoteMode: boolean
@@ -17,7 +19,6 @@ interface OriginPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     onEdit?: (orderId: number) => void
     userPermissions: string[]
-    actionEngineRef?: any
 }
 
 export function OriginPhase({
@@ -30,9 +31,11 @@ export function OriginPhase({
     onActionSuccess,
     openDetails,
     onEdit,
-    userPermissions,
-    actionEngineRef
+    userPermissions
 }: OriginPhaseProps) {
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+        ? purchaseOrderActions 
+        : saleOrderActions
     const router = useRouter()
     const isSale = type === 'sale'
 
@@ -128,7 +131,6 @@ export function OriginPhase({
             order={activeDoc}
             userPermissions={userPermissions}
             onActionSuccess={onActionSuccess}
-            actionEngineRef={actionEngineRef}
         >
             <div className="flex flex-col gap-1">
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (

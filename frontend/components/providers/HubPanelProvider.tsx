@@ -16,6 +16,10 @@ interface HubPanelContextType {
     closeHub: () => void
     isHubOpen: boolean
     hubConfig: HubConfig | null
+    isHubTemporarilyHidden: boolean
+    setHubTemporarilyHidden: (hidden: boolean) => void
+    actionEngineRef: React.RefObject<any>
+    triggerAction: (actionId: string) => void
 }
 
 const HubPanelContext = createContext<HubPanelContextType | undefined>(undefined)
@@ -29,16 +33,28 @@ export function HubPanelProvider({
 }) {
     const pathname = usePathname()
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
+    const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
+    const actionEngineRef = React.useRef<any>(null)
+
+    const triggerAction = useCallback((actionId: string) => {
+        if (actionEngineRef.current) {
+            actionEngineRef.current.handleActionClick(actionId)
+        } else {
+            console.warn("[HubPanelProvider] actionEngineRef.current is NULL. cannot trigger action:", actionId)
+        }
+    }, [])
 
     const isHubOpen = hubConfig !== null
 
     const openHub = useCallback((config: HubConfig) => {
         setHubConfig(config)
+        setHubTemporarilyHidden(false) // Reset on open
         onHubOpenChange?.(true)
     }, [onHubOpenChange])
 
     const closeHub = useCallback(() => {
         setHubConfig(null)
+        setHubTemporarilyHidden(false) // Reset on close
         onHubOpenChange?.(false)
     }, [onHubOpenChange])
 
@@ -51,8 +67,12 @@ export function HubPanelProvider({
         openHub,
         closeHub,
         isHubOpen,
-        hubConfig
-    }), [openHub, closeHub, isHubOpen, hubConfig])
+        hubConfig,
+        isHubTemporarilyHidden,
+        setHubTemporarilyHidden,
+        actionEngineRef,
+        triggerAction
+    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction])
 
     return (
         <HubPanelContext.Provider value={value}>

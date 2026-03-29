@@ -7,6 +7,8 @@ import { formatDocumentId } from "@/lib/order-status-utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface LogisticsPhaseProps {
     activeDoc: any
@@ -14,15 +16,13 @@ interface LogisticsPhaseProps {
     noteStatuses: any
     isSale: boolean
     invoices: any[]
-    registry: any
-    userPermissions: string[]
-    onActionSuccess?: () => void
-    openDetails: (docType: string, id: number | string) => void
-    actionEngineRef: any
-    showAnimations: boolean
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
     logisticsProgress: number
+    userPermissions: string[]
+    onActionSuccess?: () => void
+    openDetails: (docType: string, id: number | string) => void
+    showAnimations: boolean
 }
 
 export function LogisticsPhase({
@@ -31,16 +31,18 @@ export function LogisticsPhase({
     noteStatuses,
     isSale,
     invoices,
-    registry,
+    onModalChange,
+    logisticsProgress,
     userPermissions,
     onActionSuccess,
     openDetails,
-    actionEngineRef,
     showAnimations,
-    isTimeline = false,
-    onModalChange,
-    logisticsProgress
+    isTimeline = false
 }: LogisticsPhaseProps) {
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+        ? purchaseOrderActions 
+        : saleOrderActions
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -174,7 +176,6 @@ export function LogisticsPhase({
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
-                actionEngineRef={actionEngineRef}
                 showDocProgress={true}
                 stageId="logistics"
                 isComplete={logisticsProgress >= 100}

@@ -6,28 +6,30 @@ import { Progress } from "@/components/ui/progress"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface ProductionPhaseProps {
     order: any
     activeDoc: any
-    registry: any
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
-    actionEngineRef: any
     showAnimations: boolean
 }
 
 export function ProductionPhase({
     order,
     activeDoc,
-    registry,
     userPermissions,
     onActionSuccess,
     openDetails,
-    actionEngineRef,
     showAnimations
 }: ProductionPhaseProps) {
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+        ? purchaseOrderActions 
+        : saleOrderActions
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -107,7 +109,6 @@ export function ProductionPhase({
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
-                actionEngineRef={actionEngineRef}
                 showDocProgress={true}
                 stageId="production"
                 isComplete={totalOTProgress === 100 && totalOTs > 0}

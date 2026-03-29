@@ -8,17 +8,17 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
+import { saleOrderActions } from "@/lib/actions/sale-actions"
+import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean
     noteStatuses: any
     activeDoc: any
     payments: any[]
-    registry: any
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
-    actionEngineRef: any
     posSessionId?: number | null
 }
 
@@ -27,13 +27,15 @@ export function TreasuryPhase({
     noteStatuses,
     activeDoc,
     payments,
-    registry,
     userPermissions,
     onActionSuccess,
     openDetails,
-    actionEngineRef,
     posSessionId
 }: TreasuryPhaseProps) {
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+        ? purchaseOrderActions 
+        : saleOrderActions
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -157,7 +159,6 @@ export function TreasuryPhase({
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
-                actionEngineRef={actionEngineRef}
                 stageId="treasury"
                 isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
