@@ -18,10 +18,16 @@ const ContactModal = dynamic(() => import("@/features/contacts/components/Contac
     loading: () => <div className="p-4 text-center">Cargando Ficha...</div>
 })
 
+const TreasuryAccountModal = dynamic(() => import("@/features/treasury/components/TreasuryAccountModal").then(mod => mod.TreasuryAccountModal), {
+    ssr: false,
+    loading: () => <div className="p-4 text-center">Cargando Cuenta...</div>
+})
+
 interface GlobalModalContextType {
     openWorkOrder: (id: number) => void
     openCommandCenter: (id: number | null, type: 'purchase' | 'sale' | 'obligation', invoiceId?: number | null) => void
     openContact: (id: number, contact?: any) => void
+    openTreasuryAccount: (id: number | null) => void
 }
 
 const GlobalModalContext = createContext<GlobalModalContextType | undefined>(undefined)
@@ -33,11 +39,16 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [occType, setOccType] = useState<'purchase' | 'sale' | 'obligation'>('sale')
     const [contactId, setContactId] = useState<number | null>(null)
     const [tempContact, setTempContact] = useState<any>(null)
+    const [treasuryAccountId, setTreasuryAccountId] = useState<number | null>(null)
 
     const openWorkOrder = (id: number) => {
-        setOccId(null)
-        setOccInvoiceId(null)
+        // Keep occId/occInvoiceId if already open, allowing it to collapse
+        if (!occId && !occInvoiceId) {
+            setOccId(null)
+            setOccInvoiceId(null)
+        }
         setContactId(null)
+        setTreasuryAccountId(null)
         setWoId(id)
     }
 
@@ -50,11 +61,26 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }
 
     const openContact = (id: number, contact?: any) => {
+        // Keep occId/occInvoiceId if already open, allowing it to collapse
+        if (!occId && !occInvoiceId) {
+            setOccId(null)
+            setOccInvoiceId(null)
+        }
         setWoId(null)
-        setOccId(null)
-        setOccInvoiceId(null)
+        setTreasuryAccountId(null)
         setContactId(id)
         setTempContact(contact || null)
+    }
+
+    const openTreasuryAccount = (id: number | null) => {
+        // Keep occId/occInvoiceId if already open, allowing it to collapse
+        if (!occId && !occInvoiceId) {
+            setOccId(null)
+            setOccInvoiceId(null)
+        }
+        setWoId(null)
+        setContactId(null)
+        setTreasuryAccountId(id)
     }
 
     const handleContactSuccess = () => {
@@ -63,7 +89,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <GlobalModalContext.Provider value={{ openWorkOrder, openCommandCenter, openContact }}>
+        <GlobalModalContext.Provider value={{ openWorkOrder, openCommandCenter, openContact, openTreasuryAccount }}>
             {children}
             {woId !== null && (
                 <WorkOrderWizard
@@ -79,6 +105,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     type={occType}
                     open={occId !== null || occInvoiceId !== null}
                     onOpenChange={(open) => { if (!open) { setOccId(null); setOccInvoiceId(null); } }}
+                    isExternalModalOpen={!!(woId || contactId || treasuryAccountId)}
                 />
             )}
             {contactId !== null && (
@@ -87,6 +114,13 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     onOpenChange={(open) => !open && setContactId(null)}
                     contact={tempContact || { id: contactId }} // Pass ID if full contact not available
                     onSuccess={handleContactSuccess}
+                />
+            )}
+            {treasuryAccountId !== null && (
+                <TreasuryAccountModal
+                    open={treasuryAccountId !== null}
+                    onOpenChange={(open) => !open && setTreasuryAccountId(null)}
+                    accountId={treasuryAccountId}
                 />
             )}
         </GlobalModalContext.Provider>

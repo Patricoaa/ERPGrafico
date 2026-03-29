@@ -363,7 +363,7 @@ class AccountingMapper:
             revenue_gross_grouping[rev_acc] = revenue_gross_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
-            {'account': receivable_account, 'debit': order.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
+            {'account': receivable_account, 'debit': order.total, 'credit': Decimal('0.00'), 'partner': order.customer, 'partner_name': order.customer.name},
         ]
         
         # Distribute Total Net across accounts based on Gross grouping
@@ -402,7 +402,7 @@ class AccountingMapper:
              raise ValidationError("Falta configuración de cuentas para Compras.")
 
         items = [
-            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': order.total, 'partner': order.supplier.name},
+            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': order.total, 'partner': order.supplier, 'partner_name': order.supplier.name},
             {'account': clearing_account, 'debit': order.total_net, 'credit': Decimal('0.00')}
         ]
         
@@ -541,7 +541,7 @@ class AccountingMapper:
             revenue_gross_grouping[rev_acc] = revenue_gross_grouping.get(rev_acc, Decimal('0.00')) + line.subtotal
 
         items = [
-            {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer.name},
+            {'account': receivable_account, 'debit': invoice.total, 'credit': Decimal('0.00'), 'partner': order.customer, 'partner_name': order.customer.name},
         ]
         
         # Check if document is tax-exempt
@@ -597,7 +597,7 @@ class AccountingMapper:
              raise ValidationError("Falta configuración de cuentas para Factura de Compra.")
 
         items = [
-            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': invoice.total, 'partner': order.supplier.name},
+            {'account': payable_account, 'debit': Decimal('0.00'), 'credit': invoice.total, 'partner': order.supplier, 'partner_name': order.supplier.name},
             {'account': stock_input_account, 'debit': invoice.total_net, 'credit': Decimal('0.00'), 'label': "Limpieza Cuenta Puente Recepción"}
         ]
         

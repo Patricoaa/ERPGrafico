@@ -3,7 +3,13 @@
 import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle,
+    SheetDescription
+} from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
@@ -23,7 +29,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X } from "lucide-react"
 import { OrderCard } from "@/components/orders/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -222,48 +228,45 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     return (
-        <>
-            <BaseModal
-                open={open}
-                onOpenChange={onOpenChange}
-                title={
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl">
-                            <User className="h-5 w-5 text-primary" />
-                        </div>
-                        <span className="font-bold tracking-tight">Ficha de Contacto</span>
-                    </div>
-                }
-                description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {contact?.display_id && (
-                            <>
-                                <span>{contact.display_id}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Nuevo Contacto"}</span>
-                        {form.watch("tax_id") && (
-                            <>
-                                <span className="opacity-30">|</span>
-                                <span>{formatRUT(form.watch("tax_id"))}</span>
-                            </>
-                        )}
-                    </div>
-                }
-                size="full"
-                hideScrollArea={true}
-                footer={
-                    <div className="flex justify-end gap-3 w-full px-6 py-3 border-t border-border/40">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
-                            Cancelar
-                        </Button>
-                        <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-xl text-xs font-bold">
-                            {contact ? "Guardar Cambios" : "Crear Contacto"}
-                        </Button>
-                    </div>
-                }
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent 
+                side="right" 
+                className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
             >
+                <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
+                    <div className="flex items-center justify-between w-full pr-12 text-left">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                                <User className="h-6 w-6" />
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-3">
+                                    <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
+                                        Ficha de Contacto
+                                    </SheetTitle>
+                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold shrink-0 uppercase tracking-widest h-5">
+                                        {contact?.display_id ? contact.display_id : "Nuevo"}
+                                    </Badge>
+                                </div>
+                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
+                                    {form.watch("name") || "Nuevo Contacto"} {form.watch("tax_id") ? `• ${formatRUT(form.watch("tax_id"))}` : ""}
+                                </SheetDescription>
+                            </div>
+                        </div>
+                    </div>
+                </SheetHeader>
+
+                {/* Custom Close Button for Sheet (Top Right Corner) */}
+                <div className="absolute top-4 right-4 z-[60]">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-hidden">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -500,6 +503,15 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     </form>
                 </Form>
 
+                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
+                        Cancelar
+                    </Button>
+                    <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-xl text-xs font-bold">
+                        {contact ? "Guardar Cambios" : "Crear Contacto"}
+                    </Button>
+                </div>
+
                 <ActionConfirmModal
                     open={isConfirmModalOpen}
                     onOpenChange={setIsConfirmModalOpen}
@@ -521,8 +533,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         </div>
                     }
                 />
-            </BaseModal >
-        </>
+            </SheetContent>
+        </Sheet>
     )
 }
 

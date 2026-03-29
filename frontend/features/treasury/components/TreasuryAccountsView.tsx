@@ -32,6 +32,7 @@ import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 
 interface TreasuryAccountsViewProps {
@@ -39,12 +40,11 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
-    const { accounts, deleteAccount, refetch, createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
+    const { openTreasuryAccount } = useGlobalModals()
+    const { accounts, deleteAccount, refetch } = useTreasuryAccounts()
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [currentAccount, setCurrentAccount] = useState<TreasuryAccount | null>(null)
 
     const handleDelete = async (id: number) => {
         try {
@@ -54,22 +54,12 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         }
     }
 
-    const openCreate = () => {
-        setCurrentAccount(null)
-        setDialogOpen(true)
-        setIsAccountModalOpen(false) // Reset external trigger
+    const handleAdd = () => {
+        openTreasuryAccount(null)
     }
 
-    // Reset external creation trigger state when modal opens
-    useEffect(() => {
-        if (isAccountModalOpen) {
-            openCreate()
-        }
-    }, [isAccountModalOpen])
-
-    const openEdit = (account: TreasuryAccount) => {
-        setCurrentAccount(account)
-        setDialogOpen(true)
+    const handleEdit = (account: TreasuryAccount) => {
+        openTreasuryAccount(account.id)
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [
@@ -179,7 +169,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const acc = row.original
                 return (
                     <div className="flex items-center gap-2 justify-end">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(acc)} title="Editar">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(acc)} title="Editar">
                             <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(acc.id)} title="Eliminar">
@@ -204,7 +194,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     title: "Cuentas de Tesorería",
                     description: "Registre y configure sus cuentas bancarias y de efectivo.",
                     actions: (
-                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsAccountModalOpen(true)} title="Nueva Cuenta">
+                        <Button size="icon" className="rounded-full h-8 w-8" onClick={handleAdd} title="Nueva Cuenta">
                             <Plus className="h-4 w-4" />
                         </Button>
                     )
@@ -282,266 +272,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     <PaymentMethodManagement externalOpen={isMethodModalOpen} onExternalOpenChange={setIsMethodModalOpen} />
                 </TabsContent>
             </Tabs>
-
-            <AccountDialog
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                account={currentAccount}
-                onSuccess={() => {
-                    refetch()
-                    setDialogOpen(false)
-                }}
-                createAccount={createAccount}
-                updateAccount={updateAccount}
-                isSubmitting={isCreating || isUpdating}
-            />
         </div>
-    )
-}
-
-interface AccountDialogProps {
-    open: boolean
-    onOpenChange: (o: boolean) => void
-    account: TreasuryAccount | null
-    onSuccess: () => void
-    createAccount: (payload: Partial<TreasuryAccount>) => Promise<TreasuryAccount>
-    updateAccount: (params: { id: number, payload: Partial<TreasuryAccount> }) => Promise<TreasuryAccount>
-    isSubmitting: boolean
-}
-
-function AccountDialog({ open, onOpenChange, account, onSuccess, createAccount, updateAccount, isSubmitting }: AccountDialogProps) {
-    const [name, setName] = useState("")
-    const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
-    const [currency, setCurrency] = useState("CLP")
-    const [accountingAccount, setAccountingAccount] = useState<number | null>(null)
-    const [location, setLocation] = useState("")
-    const [custodian, setCustodian] = useState<number | null>(null)
-    const [isPhysical, setIsPhysical] = useState(false)
-    const [bank, setBank] = useState<number | null>(null)
-    const [accountNumber, setAccountNumber] = useState("")
-    const [banks, setBanks] = useState<any[]>([])
-
-    useEffect(() => {
-        const fetchBanks = async () => {
-            try {
-                const data = await treasuryApi.getBanks()
-                setBanks(data)
-            } catch (err) { }
-        }
-        if (open) fetchBanks()
-    }, [open])
-
-    useEffect(() => {
-        if (!open) return
-
-        if (account) {
-            setName(account.name)
-            setType(account.account_type)
-            setCurrency(account.currency)
-            setAccountingAccount(account.account ? Number(account.account) : null)
-            setLocation(account.location || "")
-            setCustodian(account.custodian || null)
-            setIsPhysical(account.is_physical || false)
-            setBank(account.bank ? Number(account.bank) : null)
-            setAccountNumber(account.account_number || "")
-        } else {
-            setName("")
-            setType("CASH")
-            setCurrency("CLP")
-            setAccountingAccount(null)
-            setLocation("")
-            setCustodian(null)
-            setIsPhysical(false)
-            setBank(null)
-            setAccountNumber("")
-        }
-    }, [open, account])
-
-    const requiresBank = (accountType: string) => {
-        return ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(accountType)
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        try {
-            const allowsCash = type === 'CASH'
-            const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(type)
-            const allowsTransfer = ['CHECKING'].includes(type)
-
-            const payload = {
-                name,
-                account_type: type,
-                currency,
-                account: accountingAccount,
-                allows_cash: allowsCash,
-                allows_card: allowsCard,
-                allows_transfer: allowsTransfer,
-                location,
-                custodian,
-                is_physical: isPhysical,
-                bank: requiresBank(type) ? bank : null,
-                account_number: requiresBank(type) ? accountNumber : null
-            }
-            if (account) {
-                await updateAccount({ id: account.id, payload })
-            } else {
-                await createAccount(payload)
-            }
-            onSuccess()
-        } catch (error: any) {
-            // Error handled by hook
-        }
-    }
-
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size={account ? "xl" : "lg"}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Landmark className="h-5 w-5 text-primary" />
-                    </div>
-                    <span>{account ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
-                </div>
-            }
-            description={account ? "Modifique los detalles de la cuenta y revise su historial." : "Complete la información para registrar una nueva cuenta."}
-            hideScrollArea={true}
-            className="h-[85vh]"
-            footer={
-                <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="account-form" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {account ? "Guardar Cambios" : "Crear Cuenta"}
-                    </Button>
-                </>
-            }
-        >
-            <div className="flex-1 flex overflow-hidden h-full">
-                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                    <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label className={FORM_STYLES.label}>Nombre de la Cuenta</Label>
-                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" className={FORM_STYLES.input} required />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Tipo</Label>
-                                        <Select value={type} onValueChange={(v: any) => setType(v)}>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
-                                                <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                                <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                                <SelectItem value="CHECKBOOK">Chequera</SelectItem>
-                                                <SelectItem value="CASH">Efectivo</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Moneda</Label>
-                                        <Select value={currency} onValueChange={setCurrency}>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                                <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-
-                                {requiresBank(type) && (
-                                    <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                        <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                            <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
-                                        </Label>
-                                        <Select value={bank?.toString() || ""} onValueChange={(v) => setBank(v ? Number(v) : null)}>
-                                            <SelectTrigger className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}>
-                                                <SelectValue placeholder="Seleccione banco..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {banks.map((b: any) => (
-                                                    <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-
-                                {requiresBank(type) && (
-                                    <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                        <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                            <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
-                                        </Label>
-                                        <Input
-                                            value={accountNumber}
-                                            onChange={e => setAccountNumber(e.target.value)}
-                                            placeholder="Ej: 0123456789"
-                                            className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}
-                                        />
-                                    </div>
-                                )}
-
-                                <div className="grid gap-2">
-                                    <Label className={FORM_STYLES.label}>Cuenta Contable</Label>
-                                    <AccountSelector
-                                        value={accountingAccount?.toString() || null}
-                                        onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
-                                        accountType="ASSET"
-                                        isReconcilable={true}
-                                        placeholder="Seleccione cuenta..."
-                                    />
-                                    <p className="text-[10px] text-muted-foreground italic">
-                                        Vínculo con el plan de cuentas.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="p-4 border rounded-xl bg-warning/5 space-y-3 border-warning/10">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox id="is-physical" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
-                                        <Label htmlFor="is-physical" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
-                                    </div>
-                                    {isPhysical && (
-                                        <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
-                                            <div className="grid gap-1.5">
-                                                <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Ubicación</Label>
-                                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className={cn(FORM_STYLES.input, "h-8 text-xs bg-white")} />
-                                            </div>
-                                            <div className="grid gap-1.5">
-                                                <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Custodio</Label>
-                                                <UserSelector value={custodian} onChange={setCustodian} />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                {account?.id && (
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
-                            entityType="treasuryaccount"
-                            entityId={account.id}
-                            className="h-full border-none"
-                            title="Historial de Cambios"
-                        />
-                    </div>
-                )}
-            </div>
-        </BaseModal>
     )
 }
 
