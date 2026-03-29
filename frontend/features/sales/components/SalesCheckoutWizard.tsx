@@ -11,7 +11,7 @@ import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Step3_Delivery } from "./checkout/Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./checkout/Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./checkout/OrderSummaryCard"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./checkout/ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -87,6 +87,7 @@ export function SalesCheckoutWizard({
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
     const { dateString, serverDate } = useServerDate()
+    const { openHub } = useHubPanel()
 
     // Use a ref to track whether we've already hydrated for the current open session
     const didHydrateRef = useRef(false)
@@ -253,7 +254,6 @@ export function SalesCheckoutWizard({
 
     const [salesSettings, setSalesSettings] = useState<any>(null)
     const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
-    const [selectedDocForHub, setSelectedDocForHub] = useState<number | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
 
     // Fetch pending debts if customer has active debt
@@ -953,7 +953,15 @@ export function SalesCheckoutWizard({
                                                                 size="sm" 
                                                                 variant="outline" 
                                                                 className="h-7 text-xs border-rose-200 text-rose-700 hover:bg-rose-100 font-bold"
-                                                                onClick={() => setSelectedDocForHub(debt.id)}
+                                                                onClick={() => {
+                                                                    openHub(debt.id, 'sale', () => {
+                                                                        if (selectedCustomerId) {
+                                                                            api.get(`/contacts/${selectedCustomerId}/`)
+                                                                                .then(res => setSelectedCustomer(res.data))
+                                                                                .catch(err => console.error("Error refreshing customer:", err))
+                                                                        }
+                                                                    })
+                                                                }}
                                                             >
                                                                 Pagar NV-{debt.number}
                                                             </Button>
@@ -988,7 +996,15 @@ export function SalesCheckoutWizard({
                                                         key={debt.id}
                                                         size="sm" 
                                                         className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold"
-                                                        onClick={() => setSelectedDocForHub(debt.id)}
+                                                        onClick={() => {
+                                                            openHub(debt.id, 'sale', () => {
+                                                                if (selectedCustomerId) {
+                                                                    api.get(`/contacts/${selectedCustomerId}/`)
+                                                                        .then(res => setSelectedCustomer(res.data))
+                                                                        .catch(err => console.error("Error refreshing customer:", err))
+                                                                }
+                                                            })
+                                                        }}
                                                     >
                                                         Pagar NV-{debt.number}
                                                     </Button>
@@ -1131,22 +1147,6 @@ export function SalesCheckoutWizard({
             </AlertDialogContent>
         </AlertDialog>
 
-        <OrderCommandCenter
-            open={!!selectedDocForHub}
-            onOpenChange={(o) => !o && setSelectedDocForHub(null)}
-            orderId={selectedDocForHub}
-            type="sale"
-            onActionSuccess={() => {
-                // Refresh customer data to update debt
-                if (selectedCustomerId) {
-                    api.get(`/contacts/${selectedCustomerId}/`)
-                        .then(res => {
-                            setSelectedCustomer(res.data)
-                        })
-                        .catch(err => console.error("Error refreshing customer:", err))
-                }
-            }}
-        />
         </>
     )
 }

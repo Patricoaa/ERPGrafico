@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
@@ -33,7 +33,7 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openCommandCenter } = useGlobalModalActions()
+    const { openHub } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     const { orders } = useSalesOrders({
@@ -263,9 +263,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                                     hideStatus={hideStatusInCards}
                                                     onClick={() => {
                                                         if (viewMode === 'orders') {
-                                                            openCommandCenter(item.id, 'sale', null, posSessionId, onActionSuccess)
+                                                            openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess })
                                                         } else {
-                                                            openCommandCenter(null, 'sale', item.id, posSessionId, onActionSuccess)
+                                                            openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess })
                                                         }
                                                     }}
                                                 />

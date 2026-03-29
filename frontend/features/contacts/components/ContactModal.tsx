@@ -38,9 +38,9 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ColumnDef } from "@tanstack/react-table"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from "@/lib/order-status-utils"
@@ -566,7 +566,8 @@ interface InsightsTableProps {
 }
 
 function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
-    const { openCommandCenter, openWorkOrder } = useGlobalModals()
+    const { openWorkOrder } = useGlobalModals()
+    const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
     // Metrics Calculation
@@ -682,7 +683,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                         if (type === 'work_order') {
                             openWorkOrder(row.original.id)
                         } else {
-                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }
                     }}
                 >
@@ -835,7 +836,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                                         if (type === 'work_order') {
                                             openWorkOrder(row.original.id)
                                         } else {
-                                            openCommandCenter(row.original.id, type === 'purchase' ? 'purchase' : 'sale')
+                                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                                         }
                                     }}
                                 />
@@ -849,7 +850,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
 }
 
 function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean }) {
-    const { openCommandCenter } = useGlobalModals()
+    const { openHub } = useHubPanel()
 
     if (loading) {
         return (
@@ -914,7 +915,7 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
                                     key={row.original.id}
                                     item={row.original}
                                     type="ledger"
-                                    onActionClick={() => openCommandCenter(row.original.id, 'sale')}
+                                    onActionClick={() => openHub({ orderId: row.original.id, type: 'sale' })}
                                 />
                             ))}
                         </div>

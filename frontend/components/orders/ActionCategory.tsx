@@ -36,7 +36,6 @@ interface ActionCategoryProps {
     ghost?: boolean
     showBadge?: boolean
     posSessionId?: number | null
-    onModalChange?: (isOpen: boolean) => void
     headless?: boolean
 }
 
@@ -50,7 +49,6 @@ export const ActionCategory = forwardRef(({
     ghost = false,
     showBadge = true,
     posSessionId = null,
-    onModalChange,
     headless = false
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
@@ -73,14 +71,7 @@ export const ActionCategory = forwardRef(({
 
     // Notify parent about modal state changes without clobbering other instances
     useEffect(() => {
-        if (activeModal && !hasNotifiedOpen) {
-            onModalChange?.(true)
-            setHasNotifiedOpen(true)
-        } else if (!activeModal && hasNotifiedOpen) {
-            onModalChange?.(false)
-            setHasNotifiedOpen(false)
-        }
-    }, [activeModal, onModalChange, hasNotifiedOpen])
+    }, [activeModal, hasNotifiedOpen])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({

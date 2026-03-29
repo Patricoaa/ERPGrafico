@@ -19,8 +19,6 @@ interface BillingPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     posSessionId?: number | null
-    isTimeline?: boolean
-    onModalChange?: (isOpen: boolean) => void
 }
 
 export function BillingPhase({
@@ -34,9 +32,7 @@ export function BillingPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    posSessionId = null,
-    isTimeline = false,
-    onModalChange
+    posSessionId = null
 }: BillingPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -183,8 +179,6 @@ export function BillingPhase({
                 stageId="billing"
                 isComplete={billingIsComplete}
                 posSessionId={posSessionId}
-                isTimeline={isTimeline}
-                onModalChange={onModalChange}
             />
 
             <ActionConfirmModal

@@ -50,6 +50,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import dynamic from "next/dynamic"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { TaskActionCard } from "@/components/workflow/TaskActionCard"
 import { MaterialAssignmentTabs } from "./MaterialAssignmentTabs"
@@ -157,7 +158,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [rectificationProducedQty, setRectificationProducedQty] = useState<number | null>(null)
     const [isRectifying, setIsRectifying] = useState(false)
     const { user } = useAuth()
-    const { openCommandCenter } = useGlobalModals()
+    const { openHub } = useHubPanel()
 
     const pendingTasks = order?.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
     const canUserCompleteTask = (task: any) => {
@@ -646,7 +647,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         order={order}
                         currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
-                        onOpenCommandCenter={openCommandCenter}
+                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as any })}
                         onAnnul={() => handleAnnulOrder()}
                         onDelete={() => setIsDeleteModalOpen(true)}
                         isAnnuling={isAnnuling}
@@ -1278,7 +1279,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         variant="outline"
                                                                         size="sm"
                                                                         className="gap-2 h-8"
-                                                                        onClick={() => openCommandCenter(m.purchase_order_id, 'purchase')}
+                                                                        onClick={() => openHub({ orderId: m.purchase_order_id, type: 'purchase' })}
                                                                     >
                                                                         <LayoutDashboard className="h-4 w-4" />
                                                                         Abrir HUB de OC
@@ -1462,7 +1463,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             </div>
                                             <div className="flex gap-3">
 
-                                                <Button onClick={() => order?.sale_order && openCommandCenter(order.sale_order, 'sale')} className="gap-2 font-semibold">
+                                                <Button onClick={() => order?.sale_order && openHub({ orderId: order.sale_order, type: 'sale' })} className="gap-2 font-semibold">
                                                     <LayoutDashboard className="h-4 w-4" />
                                                     Ir al HUB de Venta
                                                 </Button>

@@ -23,8 +23,6 @@ interface PhaseCardProps {
     stageId?: string
     isComplete?: boolean
     posSessionId?: number | null
-    isTimeline?: boolean
-    onModalChange?: (isOpen: boolean) => void
 }
 
 export function PhaseCard({
@@ -43,9 +41,7 @@ export function PhaseCard({
     showDocProgress = false,
     stageId = '',
     isComplete = false,
-    posSessionId = null,
-    isTimeline = false,
-    onModalChange
+    posSessionId = null
 }: PhaseCardProps) {
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
@@ -91,8 +87,7 @@ export function PhaseCard({
         <Card className={cn(
             "flex flex-col h-full transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
             (variantStyles[variant] || variantStyles.neutral),
-            isTimeline && "shadow-xl border-white/20 bg-card/60 hover:bg-card/80 w-full min-h-[240px]", // Premium Box Style for Timeline
-            !isTimeline && "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-white/5", // Free-flowing height for Sheet
+            "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-white/5", // Free-flowing height for Sheet
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
             {/* Premium Glow Effect */}
@@ -105,12 +100,12 @@ export function PhaseCard({
 
             <div className={cn(
                 "border-b border-white/10 flex items-center shrink-0 transition-all",
-                isTimeline ? "bg-transparent pb-1.5 justify-center gap-2 p-2 px-3" : "bg-white/5 p-3 px-4 gap-3"
+                "bg-white/5 p-3 px-4 gap-3"
             )}>
                 <div className={cn(
                     "p-1 shadow-inner transition-transform duration-500 group-hover/card:scale-110", 
                     iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-                    isTimeline ? "p-2 rounded-full border border-border/40 bg-background" : "p-2 flex items-center justify-center rounded-xl h-9 w-9"
+                    "p-2 flex items-center justify-center rounded-xl h-9 w-9"
                 )}>
                     {isSuccess ? <div className="relative flex items-center justify-center">
                         <Icon className="h-5 w-5" />
@@ -124,7 +119,7 @@ export function PhaseCard({
                 <div className="flex-1">
                     <h3 className={cn(
                         "font-black uppercase tracking-widest text-foreground/90 leading-none",
-                        isTimeline ? "text-[10px] opacity-70" : "text-xs tracking-wider"
+                        "text-xs tracking-wider"
                     )}>
                         {title}
                     </h3>
@@ -147,7 +142,6 @@ export function PhaseCard({
                             <Tooltip key={idx}>
                                 <TooltipTrigger asChild>
                                     <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
-                                        {/* Wrapped in div to allow tooltip on disabled button */}
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -161,7 +155,6 @@ export function PhaseCard({
                                             )}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                console.log(`[PhaseCard] Header button clicked: ${action.id}`);
                                                 actionEngineRef?.current?.handleActionClick(action.id);
                                             }}
                                         >
@@ -180,32 +173,32 @@ export function PhaseCard({
 
             <CardContent className={cn(
                 "flex-1 flex flex-col relative z-10 overflow-hidden",
-                isTimeline ? "p-4 gap-2.5" : "p-3 px-5 gap-2" // More horizontal padding in Sheet
+                "p-3 px-5 gap-2" // Vertical formatting
             )}>
-                {/* Documents List - Uniform Row Style */}
-                <div className={cn("w-full", isTimeline ? "space-y-1" : "space-y-2")}>
+                {/* Documents List */}
+                <div className={cn("w-full", "space-y-2")}>
                     {documents.length > 0 ? (
                         documents.map((doc: any, i: number) => (
                             <div key={i} className={cn(
                                 "flex items-center justify-between bg-muted/5 border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc",
-                                isTimeline ? "rounded-xl border h-8 p-1 px-1.5" : "rounded-xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
+                                "rounded-xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
                                 doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed",
                                 doc.isWarning && "bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/15"
                             )}>
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <div className={cn(
                                         "flex items-center justify-center bg-background rounded-lg border border-border/20 shadow-sm shrink-0",
-                                        isTimeline ? "h-6 w-6" : "h-8 w-8"
+                                        "h-8 w-8"
                                     )}>
-                                        <doc.icon className={cn("text-primary/80", isTimeline ? "h-3 w-3" : "h-4 w-4")} />
+                                        <doc.icon className="text-primary/80 h-4 w-4" />
                                     </div>
                                     <div className="flex flex-col overflow-hidden">
                                         <div className="flex flex-col justify-center">
-                                            {!isTimeline && <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>}
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
                                             <div className="flex items-center gap-2">
                                                 <span className={cn(
                                                     "font-black text-foreground/90 truncate",
-                                                    isTimeline ? "text-[11px] max-w-[120px]" : "text-[13px] max-w-full"
+                                                    "text-[13px] max-w-full"
                                                 )} title={doc.number}>
                                                     {doc.number}
                                                 </span>
@@ -223,7 +216,7 @@ export function PhaseCard({
                                             key={idx}
                                             variant="ghost"
                                             size="icon"
-                                            className={cn("rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", isTimeline ? "h-7 w-7" : "h-8 w-8")}
+                                            className={cn("rounded-lg", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-8 w-8")}
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
                                                 e.preventDefault();
@@ -238,7 +231,7 @@ export function PhaseCard({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg", isTimeline ? "h-7 w-7" : "h-8 w-8")}
+                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded-lg", "h-8 w-8")}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             e.preventDefault();
@@ -259,12 +252,11 @@ export function PhaseCard({
                     )}
                 </div>
 
-                {/* Visual Support Container - FLAT */}
+                {/* Visual Support Container */}
                 {children && (
                     <div className={cn(
                         "flex-1 flex flex-col justify-center",
-                        !isTimeline && "my-2 px-1 text-[12px]", // Compact vertical, free horizontal
-                        isTimeline && "min-h-[30px]"
+                        "my-2 px-1 text-[12px]"
                     )}>
                         {children}
                     </div>
@@ -282,7 +274,6 @@ export function PhaseCard({
                             compact={true}
                             showBadge={false}
                             posSessionId={posSessionId}
-                            onModalChange={onModalChange}
                         />
                     )}
 
@@ -295,7 +286,7 @@ export function PhaseCard({
                 </div>
             </CardContent>
 
-            {/* Bottom Ghost Actions - Centered and Borderless - FLAT */}
+            {/* Bottom Ghost Actions */}
             {categorizedActions.secondary.filter((a: any) =>
                 !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
             ).length > 0 && (
@@ -314,7 +305,6 @@ export function PhaseCard({
                             ghost={true}
                             showBadge={false}
                             posSessionId={posSessionId}
-                            onModalChange={onModalChange}
                         />
                     </div>
                 )}

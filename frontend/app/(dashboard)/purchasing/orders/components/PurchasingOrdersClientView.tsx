@@ -17,6 +17,7 @@ import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegis
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -77,7 +78,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
-    const { openCommandCenter } = useGlobalModalActions()
+    const { openHub } = useHubPanel()
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
@@ -88,7 +89,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             const id = parseInt(openHubStr, 10)
             if (!isNaN(id)) {
                 hubOpenedFromUrl.current = true
-                openCommandCenter(id, 'purchase', null, null, fetchOrders)
+                openHub({ orderId: id, type: 'purchase', onActionSuccess: fetchOrders })
             }
         }
     }, [searchParams])
@@ -295,7 +296,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => openCommandCenter(null, 'purchase', row.original.id, null, fetchNotes)}
+                        onClick={() => openHub({ orderId: null, invoiceId: row.original.id, type: 'purchase', onActionSuccess: fetchNotes })}
                         className="h-8 px-3 w-full"
                     >
                         <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -403,7 +404,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => openCommandCenter(row.original.id, 'purchase', null, null, fetchOrders)}
+                        onClick={() => openHub({ orderId: row.original.id, type: 'purchase', onActionSuccess: fetchOrders })}
                         className="h-8 px-3 w-full"
                     >
                         <LayoutDashboard className="h-4 w-4 mr-1" />
@@ -537,9 +538,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                                                 type={viewMode === 'orders' ? 'purchase' : 'note'}
                                                 onClick={() => {
                                                     if (viewMode === 'orders') {
-                                                        openCommandCenter(item.id, 'purchase', null, null, fetchOrders)
+                                                        openHub({ orderId: item.id, type: 'purchase', onActionSuccess: fetchOrders })
                                                     } else {
-                                                        openCommandCenter(null, 'purchase', item.id, null, fetchNotes)
+                                                        openHub({ orderId: null, invoiceId: item.id, type: 'purchase', onActionSuccess: fetchNotes })
                                                     }
                                                 }}
                                             />
