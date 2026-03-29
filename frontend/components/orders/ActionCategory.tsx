@@ -18,6 +18,7 @@ import { DocumentListModal } from './DocumentListModal'
 import { TransactionViewModal } from "../shared/TransactionViewModal"
 import { NoteLogisticsModal } from "./NoteLogisticsModal"
 import { WorkOrderForm } from "../forms/WorkOrderForm"
+import { ActionConfirmModal } from "../shared/ActionConfirmModal"
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
@@ -51,6 +52,19 @@ export const ActionCategory = forwardRef(({
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean
+        title: string
+        description: React.ReactNode
+        onConfirm: () => Promise<void> | void
+        variant?: 'destructive' | 'warning'
+        confirmText?: string
+    }>({
+        open: false,
+        title: "",
+        description: null,
+        onConfirm: () => { }
+    })
 
     // Notify parent about modal state changes without clobbering other instances
     useEffect(() => {
@@ -169,9 +183,14 @@ export const ActionCategory = forwardRef(({
             const errorMessage = error.response?.data?.error || "Error al anular documento"
 
             if (errorMessage.includes("pagos asociados") && !force) {
-                if (confirm("El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?")) {
-                    handleAnnulDocument(true)
-                }
+                setConfirmModal({
+                    open: true,
+                    title: "Anular Documento con Pagos",
+                    variant: "warning",
+                    confirmText: "Anular Todo",
+                    onConfirm: () => handleAnnulDocument(true),
+                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?"
+                })
             } else {
                 toast.error(errorMessage)
             }
@@ -218,7 +237,28 @@ export const ActionCategory = forwardRef(({
             return
         }
 
-        if (!confirm("¿Estás seguro de que deseas eliminar este borrador?")) return
+        setConfirmModal({
+            open: true,
+            title: "Eliminar Borrador",
+            variant: "destructive",
+            confirmText: "Eliminar",
+            onConfirm: async () => {
+                setIsProcessing(true)
+                try {
+                    await api.delete(`/billing/invoices/${draftInvoice.id}/`)
+                    toast.success("Borrador eliminado correctamente")
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: any) {
+                    console.error("Error deleting draft:", error)
+                    toast.error("No se pudo eliminar el borrador")
+                } finally {
+                    setIsProcessing(false)
+                }
+            },
+            description: "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer."
+        })
+        return
 
         setIsProcessing(true)
         try {
@@ -444,6 +484,17 @@ export const ActionCategory = forwardRef(({
                     }}
                 />
             )}
+            <ActionConfirmModal
+                open={confirmModal.open}
+                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                title={confirmModal.title}
+                description={confirmModal.description}
+                onConfirm={confirmModal.onConfirm}
+                variant={confirmModal.variant}
+                confirmText={confirmModal.confirmText}
+            />
         </div>
     )
 })
+
+ActionCategory.displayName = "ActionCategory"

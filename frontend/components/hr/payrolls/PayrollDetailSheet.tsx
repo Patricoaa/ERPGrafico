@@ -39,7 +39,7 @@ export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, vi
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
                 sheetId="PAYROLL_DETAIL"
                 open={open}

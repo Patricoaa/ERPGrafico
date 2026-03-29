@@ -99,7 +99,7 @@ export function OrderCommandCenter({
     const tabLabel = `${prefix}-${activeDoc.number || activeDoc.id}`
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
+        <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
             <CollapsibleSheet
                 sheetId="HUB_MANDO"
                 open={open}
