@@ -146,7 +146,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             id: "status_hub",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Hub" />,
-            cell: ({ row }) => <NoteHubStatus note={row.original} />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <NoteHubStatus note={row.original} />
+                </div>
+            ),
             meta: { title: "Estado" },
         },
         {

@@ -20,6 +20,8 @@ interface TreasuryPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     actionEngineRef: any
     posSessionId?: number | null
+    isTimeline?: boolean
+    onModalChange?: (isOpen: boolean) => void
 }
 
 export function TreasuryPhase({
@@ -32,7 +34,9 @@ export function TreasuryPhase({
     onActionSuccess,
     openDetails,
     actionEngineRef,
-    posSessionId
+    posSessionId,
+    isTimeline = false,
+    onModalChange
 }: TreasuryPhaseProps) {
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -161,24 +165,26 @@ export function TreasuryPhase({
                 stageId="treasury"
                 isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
+                isTimeline={isTimeline}
+                onModalChange={onModalChange}
             >
-                <div className="space-y-1 py-1">
-                    <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-muted-foreground">PAGADO</span>
-                        <span className="text-green-500">
+                <div className="space-y-0.5 py-0.5">
+                    <div className="flex items-center justify-between text-[10.5px] font-bold">
+                        <span className="text-muted-foreground/60 uppercase tracking-tighter">Pagado</span>
+                        <span className="text-green-500/90">
                             {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-muted-foreground">PENDIENTE</span>
+                    <div className="flex items-center justify-between text-[10.5px] font-bold">
+                        <span className="text-muted-foreground/60 uppercase tracking-tighter">Pendiente</span>
                         <span className={cn(parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-orange-500" : "text-muted-foreground/30")}>
                             {formatCurrency(activeDoc.pending_amount || 0)}
                         </span>
                     </div>
                     {hasPendingTransactions && (
-                        <div className="flex items-center gap-1 mt-1 text-[9px] text-orange-400 animate-pulse font-medium">
-                            <AlertCircle className="size-3" />
-                            FALTA N° TRANSACCIÓN
+                        <div className="flex items-center gap-1 mt-0.5 text-[8.5px] text-orange-400/80 animate-pulse font-black uppercase tracking-widest">
+                            <AlertCircle className="size-2.5" />
+                            Falta N° TRX
                         </div>
                     )}
                 </div>
