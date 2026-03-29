@@ -40,6 +40,7 @@ import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
 import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { ColumnDef } from "@tanstack/react-table"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -77,6 +78,25 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
+    const { openCommandCenter, isSheetCollapsed } = useGlobalModals()
+
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    const handleOpenChangeProxy = (newOpen: boolean) => {
+        if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
+            // Jump behavior: Close Hub if we are opening from a collapsed tab
+            openCommandCenter(null, 'sale')
+        }
+        onOpenChange(newOpen)
+    }
+
+    const fullWidth = Math.min(windowWidth * 0.90, 1600) // Match the 90vw logic
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
@@ -228,10 +248,15 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent 
-                side="right" 
-                className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw] p-0 flex flex-col border-l shadow-2xl overflow-hidden rounded-l-3xl z-[100]"
+        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
+            <CollapsibleSheet
+                sheetId="CONTACT_DETAIL"
+                open={open}
+                onOpenChange={handleOpenChangeProxy}
+                tabLabel="FICHA CONTACTO"
+                tabIcon={User}
+                fullWidth={fullWidth}
+                className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
@@ -533,7 +558,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         </div>
                     }
                 />
-            </SheetContent>
+            </CollapsibleSheet>
         </Sheet>
     )
 }
