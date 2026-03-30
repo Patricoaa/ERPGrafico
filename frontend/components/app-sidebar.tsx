@@ -37,7 +37,7 @@ const categoryItems: Record<string, any> = {
     "sales": [
         { title: "Configuración Ventas", url: "/settings/sales" },
         { title: "Notas de Venta", url: "/sales/orders" },
-        { title: "POS", url: "/sales/pos" },
+        { title: "POS", url: "/pos" },
         { title: "Terminales", url: "/sales/terminals" },
         { title: "Cartera de Créditos", url: "/sales/credits" },
     ],
@@ -148,6 +148,7 @@ export function AppSidebar({ activeCategory, isVisible, onMouseEnter, onMouseLea
                             >
                                 <Link
                                     href={item.url}
+                                    target={item.title === "POS" ? "_blank" : undefined}
                                     className="flex items-center gap-4 px-5 py-3 rounded-[10px] text-[11px] font-bold uppercase tracking-widest text-sidebar-foreground/40 hover:bg-primary/10 hover:text-primary transition-all group font-mono"
                                 >
                                     <div className="h-1.5 w-1.5 rounded-full bg-sidebar-foreground/10 group-hover:bg-primary group-hover:scale-150 transition-all duration-300" />

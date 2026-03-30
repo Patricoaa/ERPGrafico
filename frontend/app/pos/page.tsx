@@ -322,8 +322,19 @@ function POSPageContent() {
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
                             {currentSession?.status === 'OPEN' && (
-                                <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                                <>
+                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
+                                        <Lock className="mr-2 h-4 w-4" />
+                                        Cerrar Caja
+                                    </DropdownMenuItem>
+                                </>
                             )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => window.location.href = '/'} className="text-primary font-bold">
+                                <LogOut className="mr-2 h-4 w-4 rotate-180" />
+                                Volver al ERP
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
@@ -355,8 +366,8 @@ function POSPageContent() {
                                 </Card>
                             </motion.div>
                         ) : (
-                             <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
-                                 <SalesCheckoutWizardContent
+                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
+                                <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
                                     orderLines={items}
@@ -379,7 +390,7 @@ function POSPageContent() {
                                     onStateChange={setWizardState}
                                     isInline
                                 />
-                             </motion.div>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
@@ -437,17 +448,17 @@ function POSPageContent() {
                             <Printer className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
                             Imprimir
                         </Button>
-                        <AlertDialogCancel 
+                        <AlertDialogCancel
                             className="flex-1 h-16 border-emerald-200 text-emerald-800 hover:bg-emerald-50 rounded-2xl text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
                         </AlertDialogCancel>
                     </AlertDialogFooter>
-                    
+
                     {/* Hidden Receipt for Printing */}
                     {completedSaleData && (
-                        <PrintableReceipt 
+                        <PrintableReceipt
                             ref={posContentRef}
                             data={{
                                 ...(completedSaleData.sale_order_detail || completedSaleData),
