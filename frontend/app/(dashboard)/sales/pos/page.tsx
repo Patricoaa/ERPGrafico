@@ -20,6 +20,18 @@ import {
 import { toast } from 'sonner'
 import * as Validation from '@/lib/pos/validation'
 import { cn } from "@/lib/utils"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Check, Printer } from 'lucide-react'
+import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
 // Context and Hooks
 import { POSProvider, usePOS } from './contexts/POSContext'
@@ -97,6 +109,8 @@ function POSPageContent() {
     const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts } = useDrafts()
     const { filteredProducts, categories, searchTerm, setSearchTerm, selectedCategoryId, setSelectedCategoryId, refreshProducts, toggleFavorite } = useProducts()
 
+    const [completedSaleData, setCompletedSaleData] = useState<any>(null)
+
     useEffect(() => { if (lastSaved) refreshProducts(true) }, [lastSaved, refreshProducts])
 
     const sessionControlRef = useRef<SessionControlHandle>(null)
@@ -127,7 +141,7 @@ function POSPageContent() {
     }, [searchParams, currentSession?.id, loading, loadDraft])
 
     useEffect(() => {
-        if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading) return
+        if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading || wizardState?.isFinished) return
         const timer = setTimeout(() => saveDraft(undefined, true), 2000)
         return () => clearTimeout(timer)
     }, [items, selectedCustomerId, wizardState, currentSession, loading])
@@ -199,7 +213,8 @@ function POSPageContent() {
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
-    const handleCheckoutComplete = async () => {
+    const handleCheckoutComplete = async (resData: any) => {
+        setCompletedSaleData(resData)
         setCurrentDraftId(null); setWizardState(null); clearCart()
         await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
@@ -333,9 +348,31 @@ function POSPageContent() {
                                 </Card>
                             </motion.div>
                         ) : (
-                            <motion.div key="checkout" initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
-                                <SalesCheckoutWizardContent order={null} orderLines={items} total={totals.total_gross} totalDiscountAmount={totalDiscountAmount} onComplete={handleCheckoutComplete} onCancel={() => setPosMode('SHOPPING')} initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)} posSessionId={currentSession?.id} terminalId={currentSession?.terminal} quickSale={wizardState?.isQuickSale} initialStep={wizardState?.step} initialDteData={wizardState?.dteData} initialPaymentData={wizardState?.paymentData} initialDeliveryData={wizardState?.deliveryData} initialApprovalTaskId={wizardState?.approvalTaskId} initialIsWaitingApproval={wizardState?.isWaitingApproval} initialIsApproved={wizardState?.isApproved} initialDraftId={currentDraftId} onStateChange={setWizardState} isInline />
-                            </motion.div>
+                             <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
+                                 <SalesCheckoutWizardContent
+                                    key={currentDraftId || 'checkout-new'}
+                                    order={null}
+                                    orderLines={items}
+                                    total={totals.total_gross}
+                                    totalDiscountAmount={totalDiscountAmount}
+                                    onComplete={handleCheckoutComplete}
+                                    onCancel={() => setPosMode('SHOPPING')}
+                                    initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
+                                    posSessionId={currentSession?.id}
+                                    terminalId={currentSession?.terminal}
+                                    quickSale={wizardState?.isQuickSale}
+                                    initialStep={wizardState?.step}
+                                    initialDteData={wizardState?.dteData}
+                                    initialPaymentData={wizardState?.paymentData}
+                                    initialDeliveryData={wizardState?.deliveryData}
+                                    initialApprovalTaskId={wizardState?.approvalTaskId}
+                                    initialIsWaitingApproval={wizardState?.isWaitingApproval}
+                                    initialIsApproved={wizardState?.isApproved}
+                                    initialDraftId={currentDraftId}
+                                    onStateChange={setWizardState}
+                                    isInline
+                                />
+                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
@@ -373,6 +410,48 @@ function POSPageContent() {
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
+
+            <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
+                <AlertDialogContent className="max-w-md bg-white border-primary/10 shadow-2xl">
+                    <AlertDialogHeader>
+                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-xl shadow-primary/20">
+                            <Check className="h-10 w-10 stroke-[3px]" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-black text-center text-slate-900 uppercase tracking-tight">¡Venta Exitosa!</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-muted-foreground font-medium text-base">
+                            La venta se ha procesado con éxito. ¿Desea imprimir el comprobante térmico para el cliente?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-6">
+                        <Button
+                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group transition-all"
+                            onClick={() => window.print()}
+                        >
+                            <Printer className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
+                            Imprimir
+                        </Button>
+                        <AlertDialogCancel 
+                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-lg font-bold transition-colors"
+                            onClick={() => setCompletedSaleData(null)}
+                        >
+                            Cerrar
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                    
+                    {/* Hidden Receipt for Printing */}
+                    {completedSaleData && (
+                        <div className="hidden print:block print-container border-none p-0 m-0">
+                            <PrintableReceipt 
+                                data={completedSaleData.sale_order_detail || completedSaleData}
+                                currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
+                                mainTitle="Ticket de Venta"
+                                subTitle={completedSaleData.client_name || completedSaleData.partner_name || "Cliente Contado"}
+                                isPreview={false}
+                            />
+                        </div>
+                    )}
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

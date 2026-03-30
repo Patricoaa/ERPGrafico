@@ -527,6 +527,7 @@ class BillingService:
         
         # Credit bypass by approved task
         bypass_credit_validation = False
+        resolved_approval_task = None  # Track the task for post-checkout consumption marking
         if credit_approval_task_id:
             from workflow.models import Task
             try:
@@ -537,6 +538,13 @@ class BillingService:
                     approved_customer_id = task_data.get('customer_id')
                     approved_credit_str = task_data.get('required_credit', '0')
                     approved_credit = Decimal(approved_credit_str)
+
+                    # 0. Check Reuse (Anti-replay)
+                    if task_data.get('consumed_by_invoice_id'):
+                        raise ValidationError(
+                            f"Seguridad: Esta aprobación de crédito ya fue utilizada en la factura #{task_data['consumed_by_invoice_id']}. "
+                            f"Solicite una nueva aprobación."
+                        )
 
                     # 1. Check Customer
                     if approved_customer_id and int(approved_customer_id) != order.customer_id:
@@ -552,6 +560,7 @@ class BillingService:
                             f"que fue aprobado previamente (${approved_credit:,.0f})."
                         )
                     bypass_credit_validation = True
+                    resolved_approval_task = task
                     order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
                     order.credit_approval_task = task
                 else:
@@ -811,6 +820,15 @@ class BillingService:
                 # Log but don't fail the whole checkout if draft deletion fails
                 print(f"WARNING: Failed to delete draft {draft_id} after checkout: {e}")
             
+            
+        # 6. Mark credit approval task as consumed (anti-replay)
+        if resolved_approval_task:
+            task_data = resolved_approval_task.data or {}
+            task_data['consumed_by_invoice_id'] = invoice.id
+            task_data['consumed_at'] = str(timezone.now())
+            resolved_approval_task.data = task_data
+            resolved_approval_task.save(update_fields=['data'])
+
         return invoice
 
 

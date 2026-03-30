@@ -28,6 +28,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     work_orders = serializers.SerializerMethodField()
     is_tax_exempt = serializers.ReadOnlyField()
     pos_session = serializers.IntegerField(source='sale_order.pos_session', read_only=True, allow_null=True)
+    sale_order_detail = SaleOrderSerializer(source='sale_order', read_only=True, allow_null=True)
 
     class Meta:
         model = Invoice
@@ -41,7 +42,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'purchase_order_number', 'po_receiving_status', 'partner_name', 'partner_id',
             'related_documents', 'related_stock_moves', 'related_returns',
             'lines', 'pending_amount', 'serialized_payments', 'adjustments',
-            'order_delivery_status', 'work_orders', 'is_tax_exempt', 'pos_session'
+            'order_delivery_status', 'work_orders', 'is_tax_exempt', 'pos_session',
+            'sale_order_detail'
         ]
 
     def get_serialized_payments(self, obj):
