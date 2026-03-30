@@ -177,8 +177,21 @@ class DraftCartService:
                 'created_at': d.created_at.isoformat(),
             })
         
+        # Include Session Status for real-time synchronization
+        session_status = 'OPEN'
+        closed_by_name = None
+        try:
+            session = POSSession.objects.select_related('closed_by').get(id=pos_session_id)
+            session_status = session.status
+            if session_status == 'CLOSED' and session.closed_by:
+                closed_by_name = session.closed_by.get_full_name() or session.closed_by.username
+        except POSSession.DoesNotExist:
+            session_status = 'CLOSED'
+        
         return {
             'drafts': drafts,
+            'session_status': session_status,
+            'closed_by_name': closed_by_name,
             'server_time': timezone.now().isoformat(),
         }
     

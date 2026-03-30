@@ -28,6 +28,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
+import { PINPadModal } from "@/components/pos/PINPadModal"
 
 export interface SalesCheckoutWizardContentProps {
     order: any | null
@@ -54,6 +55,7 @@ export interface SalesCheckoutWizardContentProps {
     initialDraftId?: number | null
     onStateChange?: (state: any) => void
     isInline?: boolean // Flag to adjust UI for inline use
+    isSessionHost?: boolean // Whether current user is the host of the POSSession (Shared PC)
 }
 
 export function SalesCheckoutWizardContent({
@@ -79,7 +81,8 @@ export function SalesCheckoutWizardContent({
     initialIsApproved,
     initialDraftId,
     onStateChange,
-    isInline = false
+    isInline = false,
+    isSessionHost = false
 }: SalesCheckoutWizardContentProps) {
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
@@ -115,6 +118,8 @@ export function SalesCheckoutWizardContent({
         date: null,
         notes: ''
     })
+
+    const [pinModalOpen, setPinModalOpen] = useState(false)
 
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
@@ -402,7 +407,7 @@ export function SalesCheckoutWizardContent({
     }
 
     // Checkout handlers
-    const executeCheckout = async () => {
+    const executeCheckout = async (pin?: string) => {
         setLoading(true)
         try {
             const formData = new FormData()
@@ -497,6 +502,10 @@ export function SalesCheckoutWizardContent({
                 formData.append('draft_id', initialDraftId.toString())
             }
 
+            if (pin) {
+                formData.append('pos_pin', pin)
+            }
+
             const res = await api.post('/billing/invoices/pos_checkout/', formData)
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
@@ -528,7 +537,12 @@ export function SalesCheckoutWizardContent({
         const validation = await validateCurrentStep()
         if (validation.requireApproval) return
         if (!validation.isValid) return
-        executeCheckout()
+
+        if (isSessionHost) {
+            setPinModalOpen(true)
+        } else {
+            executeCheckout()
+        }
     }
 
     const handleRequestApproval = async () => {
@@ -873,6 +887,15 @@ export function SalesCheckoutWizardContent({
                     />
                 </div>
             )}
+
+            <PINPadModal 
+                open={pinModalOpen}
+                onOpenChange={setPinModalOpen}
+                onConfirm={(pin) => {
+                    setPinModalOpen(false)
+                    executeCheckout(pin)
+                }}
+            />
         </div>
     )
 }

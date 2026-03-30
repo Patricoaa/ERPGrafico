@@ -175,9 +175,35 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+        # PIN Validation & Context Logic
+        pos_pin = request.data.get('pos_pin')
+        from core.services import PINService
+        
+        salesperson = request.user
+        
+        if pos_pin:
+            # If PIN is provided, the salesperson is the owner of that PIN (Action Signing)
+            pin_user = PINService.validate_pin(pos_pin)
+            if not pin_user:
+                 return Response(
+                    {'error': 'PIN de seguridad incorrecto.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            salesperson = pin_user
+        else:
+            # If no PIN provided, check if current user is the Host of the session
+            # Rule: Host sessions are considered "Shared Terminals" and require PIN signatures.
+            if request.user == session.user:
+                 return Response(
+                    {'error': 'Se requiere PIN de autorización para confirmar la venta en este terminal.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            # Satellite PC logic: User is already identified via JWT and is NOT the host.
+            salesperson = request.user
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        order = serializer.save(pos_session=session)
+        order = serializer.save(pos_session=session, salesperson=salesperson)
         
         # Parse files for lines if any
         line_files = {}

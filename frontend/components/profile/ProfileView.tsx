@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { getMyProfile, changePassword, downloadPayrollPdf, downloadMultiplePayrollPdfs } from "@/lib/profile/api"
+import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from "@/lib/profile/api"
 import type { MyProfile } from "@/types/profile"
 import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -46,6 +46,19 @@ const passwordSchema = z.object({
     path: ["confirm_password"],
 })
 type PasswordFormValues = z.infer<typeof passwordSchema>
+
+const pinSchema = z.object({
+    current_password: z.string().min(1, "Ingrese su contraseña actual"),
+    new_pin: z.string()
+        .min(1, "El PIN no puede estar vacío")
+        .max(4, "Máximo 4 dígitos")
+        .regex(/^\d+$/, "El PIN debe ser solo números"),
+    confirm_pin: z.string().min(1, "Confirme el nuevo PIN"),
+}).refine(data => data.new_pin === data.confirm_pin, {
+    message: "Los PINs no coinciden",
+    path: ["confirm_pin"],
+})
+type PinFormValues = z.infer<typeof pinSchema>
 
 interface ProfileViewProps {
     activeTab: string
@@ -254,6 +267,15 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                 transition={{ duration: 0.4, delay: 0.1 }}
             >
                 <PasswordChangeCard />
+            </motion.div>
+
+            {/* POS PIN Change Card */}
+            <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+            >
+                <PinChangeCard />
             </motion.div>
         </div>
     )
@@ -765,5 +787,107 @@ function PersonalTab({
                 employee={employee}
             />
         </div>
+    )
+}
+
+function PinChangeCard() {
+    const [saving, setSaving] = useState(false)
+
+    const form = useForm<PinFormValues>({
+        resolver: zodResolver(pinSchema),
+        defaultValues: { current_password: "", new_pin: "", confirm_pin: "" },
+    })
+
+    const onSubmit = async (data: PinFormValues) => {
+        setSaving(true)
+        try {
+            await changePin({
+                current_password: data.current_password,
+                new_pin: data.new_pin,
+            })
+            toast.success("PIN de Punto de Venta (POS) actualizado exitosamente")
+            form.reset()
+        } catch (err: any) {
+            toast.error(err?.response?.data?.detail || "Error al cambiar PIN")
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    return (
+        <Card className="border shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b bg-muted/30">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
+                        <Wallet className="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold tracking-tight">Pin de Seguridad POS</h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Defina su PIN para operaciones en Punto de Venta</p>
+                    </div>
+                </div>
+            </div>
+            <CardContent className="p-6">
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                        <FormField control={form.control} name="current_password" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Contraseña Actual</FormLabel>
+                                <FormControl>
+                                    <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="new_pin" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Nuevo PIN (máx 4 dígitos)</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            {...field} 
+                                            type="password" 
+                                            pattern="\d*" 
+                                            inputMode="numeric" 
+                                            placeholder="••••" 
+                                            className={FORM_STYLES.input} 
+                                            maxLength={4}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            <FormField control={form.control} name="confirm_pin" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={FORM_STYLES.label}>Confirmar PIN</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            {...field} 
+                                            type="password" 
+                                            pattern="\d*" 
+                                            inputMode="numeric" 
+                                            placeholder="••••" 
+                                            className={FORM_STYLES.input} 
+                                            maxLength={4}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                            <Button type="submit" disabled={saving} className="rounded-xl text-xs font-bold gap-2">
+                                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                <Wallet className="h-4 w-4" />
+                                Guardar PIN
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     )
 }

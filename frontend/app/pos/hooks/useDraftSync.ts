@@ -29,6 +29,8 @@ export interface SyncDraft {
 
 interface SyncResponse {
     drafts: SyncDraft[]
+    session_status: 'OPEN' | 'CLOSED'
+    closed_by_name: string | null
     server_time: string
 }
 
@@ -41,6 +43,7 @@ interface UseDraftSyncOptions {
     onDraftDeleted?: (draftId: number) => void
     onDraftUpdated?: (draft: SyncDraft) => void
     onLockChanged?: (draft: SyncDraft) => void
+    onSessionStateChange?: (status: 'OPEN' | 'CLOSED', closedByName: string | null) => void
 }
 
 // ── Browser Session Key ──────────────────────────────────────────
@@ -69,6 +72,7 @@ export function useDraftSync({
     onDraftDeleted,
     onDraftUpdated,
     onLockChanged,
+    onSessionStateChange,
 }: UseDraftSyncOptions) {
     const { user } = useAuth()
     const [syncDrafts, setSyncDrafts] = useState<SyncDraft[]>([])
@@ -77,12 +81,13 @@ export function useDraftSync({
     
     const browserSessionKey = useRef(getBrowserSessionKey())
     const prevDraftsRef = useRef<SyncDraft[]>([])
-    const callbacksRef = useRef({ onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged })
+    const prevStatusRef = useRef<'OPEN' | 'CLOSED' | null>(null)
+    const callbacksRef = useRef({ onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange })
     
     // Keep callbacks ref up to date
     useEffect(() => {
-        callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged }
-    }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged])
+        callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
+    }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
 
     // ── Diff detection ──────────────────────────────────────────
 
@@ -141,6 +146,16 @@ export function useDraftSync({
         try {
             const res = await api.get(`/sales/pos-drafts/sync/?pos_session_id=${posSessionId}`)
             const data: SyncResponse = res.data
+            
+            // Handle Session Status Sync
+            if (data.session_status && prevStatusRef.current !== data.session_status) {
+                // If it was already set (not first load) and changed to CLOSED
+                if (prevStatusRef.current === 'OPEN' && data.session_status === 'CLOSED') {
+                    callbacksRef.current.onSessionStateChange?.('CLOSED', data.closed_by_name)
+                }
+                prevStatusRef.current = data.session_status
+            }
+
             setSyncDrafts(data.drafts)
             detectChanges(data.drafts)
         } catch (error) {
