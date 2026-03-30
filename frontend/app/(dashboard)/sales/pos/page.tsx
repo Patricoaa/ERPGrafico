@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
+import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
@@ -107,6 +108,12 @@ function POSPageContent() {
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
     const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts } = useDrafts()
+
+    const posContentRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({
+        contentRef: posContentRef,
+        documentTitle: 'Ticket de Venta',
+    })
     const { filteredProducts, categories, searchTerm, setSearchTerm, selectedCategoryId, setSelectedCategoryId, refreshProducts, toggleFavorite } = useProducts()
 
     const [completedSaleData, setCompletedSaleData] = useState<any>(null)
@@ -141,7 +148,7 @@ function POSPageContent() {
     }, [searchParams, currentSession?.id, loading, loadDraft])
 
     useEffect(() => {
-        if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading || wizardState?.isFinished) return
+        if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading) return
         const timer = setTimeout(() => saveDraft(undefined, true), 2000)
         return () => clearTimeout(timer)
     }, [items, selectedCustomerId, wizardState, currentSession, loading])
@@ -412,26 +419,26 @@ function POSPageContent() {
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-white border-primary/10 shadow-2xl">
+                <AlertDialogContent className="max-w-md bg-white border-emerald-100 shadow-2xl">
                     <AlertDialogHeader>
-                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-xl shadow-primary/20">
+                        <div className="mx-auto bg-emerald-500 text-white p-4 rounded-full mb-4 shadow-xl shadow-emerald-500/20">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-black text-center text-slate-900 uppercase tracking-tight">¡Venta Exitosa!</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-muted-foreground font-medium text-base">
-                            La venta se ha procesado con éxito. ¿Desea imprimir el comprobante térmico para el cliente?
+                        <AlertDialogTitle className="text-2xl font-black text-center text-emerald-950">¡Venta Exitosa!</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-emerald-800/60 font-medium">
+                            La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-6">
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
                         <Button
-                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group transition-all"
-                            onClick={() => window.print()}
+                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 group"
+                            onClick={() => handlePrint()}
                         >
-                            <Printer className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
+                            <Printer className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
                             Imprimir
                         </Button>
                         <AlertDialogCancel 
-                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-lg font-bold transition-colors"
+                            className="flex-1 h-16 border-emerald-200 text-emerald-800 hover:bg-emerald-50 rounded-2xl text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
@@ -440,15 +447,16 @@ function POSPageContent() {
                     
                     {/* Hidden Receipt for Printing */}
                     {completedSaleData && (
-                        <div className="hidden print:block print-container border-none p-0 m-0">
-                            <PrintableReceipt 
-                                data={completedSaleData.sale_order_detail || completedSaleData}
-                                currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
-                                mainTitle="Ticket de Venta"
-                                subTitle={completedSaleData.client_name || completedSaleData.partner_name || "Cliente Contado"}
-                                isPreview={false}
-                            />
-                        </div>
+                        <PrintableReceipt 
+                            ref={posContentRef}
+                            data={{
+                                ...(completedSaleData.sale_order_detail || completedSaleData),
+                                terminal_name: currentSession?.terminal_name
+                            }}
+                            currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
+                            mainTitle="Ticket de Venta"
+                            subTitle={completedSaleData.client_name || "Cliente Contado"}
+                        />
                     )}
                 </AlertDialogContent>
             </AlertDialog>

@@ -6,7 +6,8 @@ import { SidebarSection, SidebarContent } from "./transaction-modal/SidebarConte
 import { RelatedDocumentsSection } from "./transaction-modal/RelatedDocumentsSection"
 import { PaymentHistorySection } from "./transaction-modal/PaymentHistorySection"
 import { PrintableReceipt } from "./transaction-modal/PrintableReceipt"
-import React, { useState, useEffect, Fragment } from "react"
+import React, { useState, useEffect, Fragment, useRef } from "react"
+import { useReactToPrint } from "react-to-print"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +25,7 @@ import { AttachmentList } from "./AttachmentList"
 import { useRouter } from "next/navigation"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { Separator } from "@/components/ui/separator"
 
 type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
 
@@ -43,11 +45,15 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [editingPayment, setEditingPayment] = useState<any>(null)
-    const [showReceiptPreview, setShowReceiptPreview] = useState(false)
 
-    const handlePrint = () => {
-        setShowReceiptPreview(true)
-    }
+    const contentRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({
+        contentRef,
+        documentTitle: () => {
+            const info = getHeaderInfo()
+            return info.main || "Detalle de Transacción"
+        },
+    })
 
     useEffect(() => {
         if (open) {
@@ -62,7 +68,6 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             setData(null)
             setHistory([])
             setEditingPayment(null)
-            setShowReceiptPreview(false)
         }
     }, [open, initialType, initialId])
 
@@ -242,26 +247,13 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 headerClassName="sr-only"
                 size="xl"
                 hideScrollArea={true}
-                className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black"
+                className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black [&>button[data-slot=dialog-close]]:hidden"
             >
-                {/* Simplified Overlay for Receipts - As per user request */}
-                {showReceiptPreview && (
-                    <div className="fixed inset-0 z-[110] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden">
-                        <div className="w-full max-w-[400px] animate-in zoom-in-95 duration-200">
-                            <PrintableReceipt
-                                data={data}
-                                currentType={currentType}
-                                mainTitle={mainTitle}
-                                subTitle={subTitle}
-                                onClose={() => setShowReceiptPreview(false)}
-                                isPreview={true}
-                            />
-                        </div>
-                    </div>
-                )}
+
 
                 {/* Standard hidden receipt for actual browser print command */}
                 <PrintableReceipt
+                    ref={contentRef}
                     data={data}
                     currentType={currentType}
                     mainTitle={mainTitle}
@@ -291,16 +283,33 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 print:hidden">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handlePrint}
-                                className="font-bold border-2 hover:bg-primary hover:text-primary-foreground gap-2 transition-all rounded-xl h-10 px-4"
+                        {/* Action Buttons & Close Control */}
+                        <div className="flex items-center gap-4 print:hidden">
+                            {/* ButtonGroup Container */}
+                            <div className="flex items-center bg-background rounded-xl shadow-sm border border-border/60 overflow-hidden">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handlePrint}
+                                    className="font-bold hover:bg-primary/5 hover:text-primary gap-2 transition-all h-10 px-4 rounded-none border-0"
+                                >
+                                    <Printer className="h-4 w-4" />
+                                    Imprimir
+                                </Button>
+                                {/* Placeholder for future buttons in the group */}
+                            </div>
+
+                            <div className="flex items-center h-8">
+                                <Separator orientation="vertical" className="w-[1px] h-6 bg-border/60" />
+                            </div>
+
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-full text-muted-foreground hover:bg-rose-50 hover:text-rose-500 transition-all" 
+                                onClick={() => onOpenChange(false)}
                             >
-                                <Printer className="h-4 w-4" />
-                                Imprimir
+                                <X className="h-5 w-5" />
                             </Button>
                         </div>
 
@@ -490,20 +499,38 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                     {(currentType === 'sale_order' || currentType === 'invoice') && data && (
                                                         <div className="flex justify-end pt-4">
                                                             <div className="w-full md:w-80 space-y-3 bg-muted/30 p-6 rounded-3xl border border-border/40">
-                                                                <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                                                    <span>Suma de Productos:</span>
-                                                                    <span className="font-mono text-primary">{formatCurrency((data.lines || data.items || []).reduce((acc: number, item: any) => acc + parseFloat(item.subtotal || 0), 0))}</span>
-                                                                </div>
+                                                                {(() => {
+                                                                    const lines = data.lines || data.items || [];
+                                                                    const itemsSum = lines.reduce((acc: number, item: any) => acc + parseFloat(item.subtotal || 0), 0);
+                                                                    const lineDiscountsSum = lines.reduce((acc: number, item: any) => acc + parseFloat(item.discount_amount || 0), 0);
+                                                                    const globalDiscount = parseFloat(data.total_discount_amount || 0);
 
-                                                                {parseFloat(data.total_discount_amount || 0) > 0 && (
-                                                                    <div className="flex justify-between items-center text-xs font-bold text-red-600 uppercase tracking-wider bg-red-50/50 p-2 rounded-lg border border-red-100/50">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Plus className="h-3 w-3 rotate-45" />
-                                                                            <span>Descuento Global:</span>
-                                                                        </div>
-                                                                        <span className="font-mono">-{formatCurrency(data.total_discount_amount)}</span>
-                                                                    </div>
-                                                                )}
+                                                                    return (
+                                                                        <>
+                                                                            <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                                                                <span>Suma de Productos:</span>
+                                                                                <span className="font-mono text-primary">{formatCurrency(itemsSum + lineDiscountsSum)}</span>
+                                                                            </div>
+
+                                                                            {lineDiscountsSum > 0 && (
+                                                                                <div className="flex justify-between items-center text-xs font-bold text-blue-600/70 uppercase tracking-wider italic">
+                                                                                    <span>Descuentos por Línea:</span>
+                                                                                    <span className="font-mono">-{formatCurrency(lineDiscountsSum)}</span>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {globalDiscount > 0 && (
+                                                                                <div className="flex justify-between items-center text-xs font-bold text-red-600 uppercase tracking-wider bg-red-50/50 p-2 rounded-lg border border-red-100/50">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <Plus className="h-3 w-3 rotate-45" />
+                                                                                        <span>Descuento Global:</span>
+                                                                                    </div>
+                                                                                    <span className="font-mono">-{formatCurrency(globalDiscount)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()}
 
                                                                 <div className="pt-2 border-t border-border/60 space-y-2">
                                                                     <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">
