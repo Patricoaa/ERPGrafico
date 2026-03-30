@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart } from 'lucide-react'
+import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
     DropdownMenu,
@@ -255,6 +255,18 @@ function POSPageContent() {
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
 
+    const handleSuspendDraft = async (finalState: any) => {
+        await saveDraft(undefined, true, finalState)
+        await releaseCurrentLock()
+        setCurrentDraftId(null)
+        setWizardState(null)
+        clearCart()
+        await fetchDrafts()
+        forceSync()
+        setPosMode('SHOPPING')
+        toast.success("Borrador liberado y listo para pago")
+    }
+
     const handleQuickSale = () => {
         const check = Validation.canQuickSale(items, selectedCustomerId); if (!check.allowed) { toast.error(check.reason); return }
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
@@ -313,27 +325,36 @@ function POSPageContent() {
                             }
                         }
 
-                        return syncDrafts.length > 0 && (posMode === 'SHOPPING' || (posMode === 'CHECKOUT' && isPaymentStep)) && (
+                        return syncDrafts.length > 0 && (
                             <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300">
                                 {quickDrafts.map(d => {
                                     const lockInfo = getLockInfo(d.id)
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
+                                    const isWaitingPayment = !!d.wizard_state?.isWaitingPayment;
                                     return (
                                     <Button
                                         key={d.id}
                                         variant="outline"
                                         size="sm"
                                         className={cn(
-                                            "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold border-dashed transition-all duration-300",
-                                            currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm" : "text-muted-foreground",
+                                            "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative",
+                                            currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                             isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
-                                            lockedByOther && "border-destructive/40 opacity-60"
+                                            lockedByOther && "border-destructive/40 opacity-60",
+                                            isWaitingPayment && currentDraftId !== d.id && "border-amber-500 text-amber-700 bg-amber-100/50 shadow-md border-solid ring-2 ring-amber-500/30 animate-in zoom-in-95 duration-500"
                                         )}
                                         onClick={() => handleLoadDraft(d)}
-                                        title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : undefined}
+                                        title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
                                     >
                                         {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
-                                        {d.id}
+                                        {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
+                                            <div className="flex items-center gap-1">
+                                                {d.id}
+                                                <Wallet className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
+                                            </div>
+                                        ) : (
+                                            (!isWaitingPayment || currentDraftId === d.id) && d.id
+                                        )}
                                         {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
                                     </Button>
                                     )
@@ -410,6 +431,7 @@ function POSPageContent() {
                                     totalDiscountAmount={totalDiscountAmount}
                                     onComplete={handleCheckoutComplete}
                                     onCancel={() => setPosMode('SHOPPING')}
+                                    onSuspend={handleSuspendDraft}
                                     initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                                     posSessionId={currentSession?.id}
                                     terminalId={currentSession?.terminal}
@@ -465,26 +487,29 @@ function POSPageContent() {
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-white border-emerald-100 shadow-2xl">
+                <AlertDialogContent className="max-w-md bg-white border-primary/10 shadow-2xl">
                     <AlertDialogHeader>
-                        <div className="mx-auto bg-emerald-500 text-white p-4 rounded-full mb-4 shadow-xl shadow-emerald-500/20">
+                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-xl shadow-primary/20">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-black text-center text-emerald-950">¡Venta Exitosa!</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-emerald-800/60 font-medium">
+                        <AlertDialogTitle className="text-2xl font-black text-center text-primary-950">¡Venta Exitosa!</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-primary/60 font-medium">
                             La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
                         <Button
-                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 group"
-                            onClick={() => handlePrint()}
+                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group"
+                            onClick={() => {
+                                handlePrint();
+                                setCompletedSaleData(null);
+                            }}
                         >
                             <Printer className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
                             Imprimir
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-16 border-emerald-200 text-emerald-800 hover:bg-emerald-50 rounded-2xl text-lg font-bold"
+                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar

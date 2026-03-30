@@ -2,7 +2,7 @@
 
 import { usePOS } from "../contexts/POSContext"
 import { cn } from "@/lib/utils"
-import { Check, ChevronRight, ShoppingCart, User, Factory, FileText, Truck, CreditCard } from "lucide-react"
+import { Check, ChevronRight, ShoppingCart, User, Factory, FileText, Truck, Wallet as WalletIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function POSCheckoutHeader() {
@@ -28,7 +28,7 @@ export function POSCheckoutHeader() {
     if (!isOnlyService) {
         steps.push({ id: nextStepId++, label: 'Entrega', icon: Truck })
     }
-    steps.push({ id: nextStepId++, label: 'Pago', icon: CreditCard })
+    steps.push({ id: nextStepId++, label: 'Pago', icon: WalletIcon })
 
     return (
         <div className="flex items-center justify-center gap-1 sm:gap-4 overflow-x-auto no-scrollbar py-1 animate-in fade-in duration-700">

@@ -21,6 +21,7 @@ import {
     User,
     ChevronRight,
     Lock,
+    Wallet,
 } from "lucide-react"
 import {
     AlertDialog,
@@ -57,6 +58,7 @@ interface DraftCart {
         approvalTaskId?: number | null
         isWaitingApproval?: boolean
         isApproved?: boolean
+        isWaitingPayment?: boolean
     } | null
 }
 
@@ -321,7 +323,16 @@ export function DraftCartsList({
                                                         Tú
                                                     </Badge>
                                                 )}
-                                                {draft.wizard_state?.step && !lockedByOther && (
+                                                {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 border-amber-300 gap-0.5 shrink-0 shadow-sm"
+                                                    >
+                                                        <Wallet className="h-2.5 w-2.5" />
+                                                        Por Pagar
+                                                    </Badge>
+                                                )}
+                                                {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
                                                     <Badge
                                                         variant="outline"
                                                         className="h-4 px-1 text-[9px] bg-amber-50 text-amber-600 border-amber-200 gap-0.5 shrink-0"
