@@ -125,7 +125,17 @@ function POSPageContent() {
         posSessionId: currentSession?.id || null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
-        onDraftDeleted: handleDraftDeleted,
+        onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
+        onSessionStateChange: (status, closedBy) => {
+            if (status === 'CLOSED') {
+                toast.error("Sesión Cerrada", {
+                    description: `La sesión ha sido cerrada por ${closedBy || 'otro terminal'}.`,
+                    duration: null, // Keep it visible
+                })
+                // Update local session state to null to trigger clean UI reset
+                setCurrentSession(null)
+            }
+        }
     })
 
     const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
