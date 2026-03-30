@@ -39,7 +39,7 @@ export default function SalesPage() {
                 className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
                 <motion.div variants={item}>
-                    <Link href="/sales/pos">
+                    <Link href="/pos" target="_blank">
                         <IndustrialCard variant="industrial" className="group hover:border-primary/50 transition-all cursor-pointer border-t-primary relative overflow-hidden shadow-none hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
                             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <ArrowUpRight className="h-5 w-5 text-primary" />
