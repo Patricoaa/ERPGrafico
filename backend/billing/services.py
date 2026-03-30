@@ -458,7 +458,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -558,6 +558,9 @@ class BillingService:
                     raise ValidationError(f"La tarea de aprobación de crédito {task.id} aún no está completada.")
             except Task.DoesNotExist:
                 raise ValidationError("Tarea de aprobación de crédito no encontrada.")
+        elif direct_credit_approval and user and user.has_perm('sales.approve_credit'):
+            bypass_credit_validation = True
+            order.credit_assignment_origin = SaleOrder.CreditOrigin.MANUAL
 
         if not bypass_credit_validation and required_credit > 0:
             contact = order.customer

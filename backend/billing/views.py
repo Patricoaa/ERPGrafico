@@ -197,6 +197,10 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if not all([order_data, dte_type, payment_method]):
             return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
             
+        direct_credit_approval = request.data.get('direct_credit_approval', False)
+        if isinstance(direct_credit_approval, str):
+            direct_credit_approval = direct_credit_approval.lower() == 'true'
+            
         try:
             invoice = BillingService.pos_checkout(
                 order_data, dte_type, payment_method, 
@@ -218,7 +222,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 payment_method_id=payment_method_id,
                 user=request.user,
                 credit_approval_task_id=request.data.get('credit_approval_task_id'),
-                draft_id=request.data.get('draft_id')
+                draft_id=request.data.get('draft_id'),
+                direct_credit_approval=direct_credit_approval
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

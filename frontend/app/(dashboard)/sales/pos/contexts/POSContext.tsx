@@ -18,6 +18,8 @@ export interface WizardState {
     isApproved?: boolean
     isLoading?: boolean
     isQuickSale?: boolean
+    selectedCustomerName?: string
+    selectedCustomerId?: string | number
 }
 
 interface POSContextValue {
@@ -70,6 +72,10 @@ interface POSContextValue {
     loading: boolean
     setLoading: (loading: boolean) => void
     defaultCustomerId: number | null
+    
+    // View Mode
+    posMode: 'SHOPPING' | 'CHECKOUT'
+    setPosMode: (mode: 'SHOPPING' | 'CHECKOUT') => void
 }
 
 const POSContext = createContext<POSContextValue | undefined>(undefined)
@@ -92,6 +98,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Draft & Wizard State
     const [currentDraftId, setCurrentDraftId] = useState<number | null>(null)
     const [wizardState, setWizardState] = useState<WizardState | null>(null)
+    const [posMode, setPosMode] = useState<'SHOPPING' | 'CHECKOUT'>('SHOPPING')
 
     // Fetch default customer on mount
     useEffect(() => {
@@ -213,12 +220,17 @@ export function POSProvider({ children }: { children: ReactNode }) {
         // UI
         loading,
         setLoading,
-        defaultCustomerId
+        defaultCustomerId,
+        
+        // View Mode
+        posMode,
+        setPosMode
     }), [
         currentSession, products, categories, uoms, items, selectedCustomerId, 
         totalDiscountAmount, currentDraftId, wizardState, bomCache, 
         componentCache, updateBomCache, updateComponentCache, addItem, 
-        updateItem, removeItem, clearCart, totals, loading, defaultCustomerId
+        updateItem, removeItem, clearCart, totals, loading, defaultCustomerId,
+        posMode, setPosMode
     ])
 
     return <POSContext.Provider value={value}>{children}</POSContext.Provider>
