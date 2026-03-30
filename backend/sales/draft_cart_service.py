@@ -5,13 +5,185 @@ from typing import List, Optional, Dict, Any
 from .models import DraftCart
 from treasury.models import POSSession
 
+# Lock expires after this many seconds without heartbeat
+LOCK_TIMEOUT_SECONDS = 15
+
 
 class DraftCartService:
     """
     Servicio para gestionar borradores de carrito POS por sesión.
     Borradores compartidos entre todos los usuarios de una sesión.
+    Incluye bloqueo optimista con heartbeat para evitar edición concurrente.
     """
     
+    # ── Lock Management ──────────────────────────────────────────────
+
+    @staticmethod
+    def acquire_lock(draft_id: int, pos_session_id: int, user, session_key: str) -> Dict[str, Any]:
+        """
+        Intenta adquirir el lock de un borrador.
+        Si el lock existe pero ha expirado (sin heartbeat), lo toma.
+        
+        Returns:
+            dict: {acquired: bool, locked_by_name: str|None, locked_at: datetime|None}
+        """
+        try:
+            draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
+        except DraftCart.DoesNotExist:
+            return {'acquired': False, 'error': 'Borrador no encontrado'}
+        
+        now = timezone.now()
+        lock_expired = (
+            draft.locked_at is None or
+            (now - draft.locked_at).total_seconds() > LOCK_TIMEOUT_SECONDS
+        )
+        
+        # Lock is free or expired
+        if not draft.locked_by or lock_expired:
+            draft.locked_by = user
+            draft.locked_at = now
+            draft.lock_session_key = session_key
+            draft.save(update_fields=['locked_by', 'locked_at', 'lock_session_key'])
+            return {'acquired': True}
+        
+        # Already locked by same user+session
+        if draft.locked_by == user and draft.lock_session_key == session_key:
+            draft.locked_at = now  # Refresh heartbeat
+            draft.save(update_fields=['locked_at'])
+            return {'acquired': True}
+        
+        # Locked by someone else
+        locked_name = draft.locked_by.get_full_name() or draft.locked_by.username
+        return {
+            'acquired': False,
+            'locked_by_name': locked_name,
+            'locked_at': draft.locked_at.isoformat() if draft.locked_at else None,
+        }
+
+    @staticmethod
+    def release_lock(draft_id: int, pos_session_id: int, user, session_key: str = '') -> bool:
+        """
+        Libera el lock de un borrador.
+        Solo el usuario+sesión que tiene el lock puede liberarlo.
+        Si session_key es vacío, libera cualquier lock del usuario.
+        
+        Returns:
+            True si se liberó correctamente
+        """
+        try:
+            draft = DraftCart.objects.get(id=draft_id, pos_session_id=pos_session_id)
+        except DraftCart.DoesNotExist:
+            return False
+        
+        if not draft.locked_by:
+            return True  # Already unlocked
+        
+        can_unlock = (
+            draft.locked_by == user and
+            (not session_key or draft.lock_session_key == session_key)
+        )
+        
+        if can_unlock:
+            draft.locked_by = None
+            draft.locked_at = None
+            draft.lock_session_key = ''
+            draft.save(update_fields=['locked_by', 'locked_at', 'lock_session_key'])
+            return True
+        
+        return False
+
+    @staticmethod
+    def refresh_lock(draft_id: int, pos_session_id: int, user, session_key: str) -> bool:
+        """
+        Renueva el heartbeat del lock.
+        Solo el owner del lock puede renovarlo.
+        
+        Returns:
+            True si se renovó correctamente
+        """
+        try:
+            draft = DraftCart.objects.get(
+                id=draft_id,
+                pos_session_id=pos_session_id,
+                locked_by=user,
+                lock_session_key=session_key,
+            )
+            draft.locked_at = timezone.now()
+            draft.save(update_fields=['locked_at'])
+            return True
+        except DraftCart.DoesNotExist:
+            return False
+
+    @staticmethod
+    def cleanup_stale_locks():
+        """
+        Libera locks que no han tenido heartbeat en LOCK_TIMEOUT_SECONDS.
+        Llamado desde el endpoint de sync para mantener locks limpios.
+        """
+        cutoff = timezone.now() - timedelta(seconds=LOCK_TIMEOUT_SECONDS)
+        stale = DraftCart.objects.filter(
+            locked_by__isnull=False,
+            locked_at__lt=cutoff,
+        )
+        count = stale.update(locked_by=None, locked_at=None, lock_session_key='')
+        return count
+    
+    # ── Sync ─────────────────────────────────────────────────────────
+
+    @staticmethod
+    def get_sync_data(pos_session_id: int, since: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Retorna estado ligero de todos los borradores de la sesión.
+        Si se proporciona `since`, solo los modificados después de esa fecha.
+        
+        Respuesta diseñada para ser lo más liviana posible (sin items del carrito).
+        """
+        # Limpiar locks expirados antes de responder
+        DraftCartService.cleanup_stale_locks()
+        
+        qs = DraftCart.objects.filter(
+            pos_session_id=pos_session_id,
+        ).select_related('customer', 'locked_by', 'created_by', 'last_modified_by')
+        
+        drafts = []
+        for d in qs.order_by('-updated_at'):
+            locked_name = None
+            if d.locked_by:
+                locked_name = d.locked_by.get_full_name() or d.locked_by.username
+            
+            created_name = None
+            if d.created_by:
+                created_name = d.created_by.get_full_name() or d.created_by.username
+            
+            modified_name = None
+            if d.last_modified_by:
+                modified_name = d.last_modified_by.get_full_name() or d.last_modified_by.username
+
+            drafts.append({
+                'id': d.id,
+                'name': d.name,
+                'customer_name': d.customer.name if d.customer else None,
+                'item_count': len(d.items) if d.items else 0,
+                'total_gross': float(d.total_gross),
+                'is_locked': d.locked_by is not None,
+                'locked_by_name': locked_name,
+                'locked_by_id': d.locked_by_id,
+                'lock_session_key': d.lock_session_key,
+                'locked_at': d.locked_at.isoformat() if d.locked_at else None,
+                'created_by_full_name': created_name,
+                'last_modified_by_full_name': modified_name,
+                'wizard_state': d.wizard_state,
+                'updated_at': d.updated_at.isoformat(),
+                'created_at': d.created_at.isoformat(),
+            })
+        
+        return {
+            'drafts': drafts,
+            'server_time': timezone.now().isoformat(),
+        }
+    
+    # ── CRUD Original ────────────────────────────────────────────────
+
     @staticmethod
     def save_draft(
         pos_session_id: int,
@@ -22,26 +194,13 @@ class DraftCartService:
         notes: str = "",
         wizard_state: Optional[Dict[str, Any]] = None,
         total_discount_amount: Decimal = Decimal('0.00'),
-        draft_id: Optional[int] = None
+        draft_id: Optional[int] = None,
+        session_key: str = "",
     ) -> DraftCart:
         """
         Guarda o actualiza un borrador de carrito.
         La sesión debe estar OPEN.
-        
-        Args:
-            pos_session_id: ID de la sesión POS (requerido)
-            user: Usuario que está guardando
-            items: Lista de items del carrito
-            customer_id: ID del cliente (opcional)
-            name: Nombre del borrador
-            notes: Notas adicionales
-            draft_id: ID del borrador a actualizar (si existe)
-        
-        Returns:
-            DraftCart: Borrador guardado
-        
-        Raises:
-            ValueError: Si la sesión no existe o está cerrada
+        Valida ownership del lock si el borrador está bloqueado.
         """
         # Validar que la sesión existe y está abierta
         try:
@@ -52,7 +211,7 @@ class DraftCartService:
         except POSSession.DoesNotExist:
             raise ValueError("La sesión POS no existe o está cerrada")
         
-        # Calcular totales (si no vienen explícitos, se calculan del precio unitario)
+        # Calcular totales
         total_net = Decimal('0.00')
         total_gross = Decimal('0.00')
         
@@ -75,6 +234,22 @@ class DraftCartService:
                 id=draft_id,
                 pos_session_id=pos_session_id
             )
+            
+            # Validar lock ownership si está bloqueado por otro
+            if draft.locked_by and draft.locked_by != user:
+                now = timezone.now()
+                lock_expired = (
+                    draft.locked_at and 
+                    (now - draft.locked_at).total_seconds() > LOCK_TIMEOUT_SECONDS
+                )
+                if not lock_expired:
+                    locked_name = draft.locked_by.get_full_name() or draft.locked_by.username
+                    raise ValueError(f"Este borrador está siendo editado por {locked_name}")
+            
+            # Refrescar heartbeat al guardar si tiene el lock
+            if session_key and draft.locked_by == user and draft.lock_session_key == session_key:
+                draft.locked_at = timezone.now()
+            
             draft.items = items
             draft.total_net = total_net
             draft.total_gross = total_gross
@@ -100,7 +275,10 @@ class DraftCartService:
                 wizard_state=wizard_state,
                 total_net=total_net,
                 total_discount_amount=total_discount_amount,
-                total_gross=total_gross
+                total_gross=total_gross,
+                locked_by=user if session_key else None,
+                locked_at=timezone.now() if session_key else None,
+                lock_session_key=session_key,
             )
         
         draft.save()
@@ -110,13 +288,6 @@ class DraftCartService:
     def load_draft(draft_id: int, pos_session_id: int) -> Optional[DraftCart]:
         """
         Carga un borrador de la sesión actual.
-        
-        Args:
-            draft_id: ID del borrador
-            pos_session_id: ID de la sesión actual
-        
-        Returns:
-            DraftCart o None si no existe
         """
         try:
             return DraftCart.objects.get(
@@ -130,16 +301,10 @@ class DraftCartService:
     def list_drafts(pos_session_id: int) -> List[DraftCart]:
         """
         Lista TODOS los borradores de una sesión (multi-usuario).
-        
-        Args:
-            pos_session_id: ID de la sesión
-        
-        Returns:
-            Lista de borradores de la sesión
         """
         return list(
             DraftCart.objects.filter(pos_session_id=pos_session_id)
-            .select_related('customer', 'created_by', 'last_modified_by', 'pos_session')
+            .select_related('customer', 'created_by', 'last_modified_by', 'locked_by')
             .order_by('-updated_at')
         )
     
@@ -147,13 +312,6 @@ class DraftCartService:
     def delete_draft(draft_id: int, pos_session_id: int) -> bool:
         """
         Elimina un borrador de la sesión.
-        
-        Args:
-            draft_id: ID del borrador
-            pos_session_id: ID de la sesión
-        
-        Returns:
-            True si se eliminó correctamente
         """
         try:
             draft = DraftCart.objects.get(
@@ -169,13 +327,6 @@ class DraftCartService:
     def cleanup_on_session_close(session_id: int) -> int:
         """
         Elimina TODOS los borradores al cerrar la sesión.
-        Este método debe llamarse desde el servicio de cierre de sesión.
-        
-        Args:
-            session_id: ID de la sesión que se está cerrando
-        
-        Returns:
-            Número de borradores eliminados
         """
         deleted_count, _ = DraftCart.objects.filter(
             pos_session_id=session_id
@@ -186,13 +337,6 @@ class DraftCartService:
     def cleanup_old_drafts(days: int = 1) -> int:
         """
         Elimina borradores más antiguos que X días.
-        Por defecto: 1 día.
-        
-        Args:
-            days: Días de antigüedad para eliminar
-        
-        Returns:
-            Número de borradores eliminados
         """
         cutoff_date = timezone.now() - timedelta(days=days)
         deleted_count, _ = DraftCart.objects.filter(

@@ -1,5 +1,5 @@
 // useDrafts Hook
-// Manages draft carts (save/load/delete)
+// Manages draft carts (save/load/delete) with lock integration
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
@@ -7,7 +7,18 @@ import type { CartItem, DraftCart } from '@/types/pos'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 
-export function useDrafts() {
+interface UseDraftsOptions {
+    /** Browser session key for lock operations */
+    browserSessionKey?: string
+    /** Callback to acquire lock before loading a draft */
+    acquireLock?: (draftId: number) => Promise<{ acquired: boolean, error?: string, locked_by_name?: string }>
+    /** Callback to release lock when done with a draft */
+    releaseLock?: (draftId?: number) => Promise<void>
+    /** Force sync after mutations */
+    forceSync?: () => void
+}
+
+export function useDrafts(options: UseDraftsOptions = {}) {
     const {
         items,
         setItems,
@@ -49,7 +60,7 @@ export function useDrafts() {
     }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
 
     // Save current cart as draft
-    const saveDraft = useCallback(async (name?: string, silent = false) => {
+    const saveDraft = useCallback(async (name?: string, silent = false, manualWizardState?: any) => {
         if (items.length === 0 || isLoading || isSaving) {
             return
         }
@@ -69,9 +80,10 @@ export function useDrafts() {
                     total_gross: (item.qty || 0) * (item.unit_price_gross || 0),
                     manufacturing_data: item.manufacturing_data
                 })),
-            customer_id: selectedCustomerId,
-            wizard_state: wizardState
-        }
+                customer_id: selectedCustomerId,
+                wizard_state: manualWizardState || wizardState,
+                session_key: options.browserSessionKey || '',
+            }
 
             let res;
             if (currentDraftId) {
@@ -85,6 +97,7 @@ export function useDrafts() {
                         // Retry as post
                         res = await api.post('/sales/pos-drafts/', draftData)
                         setCurrentDraftId(res.data.id)
+                        if (options.acquireLock) await options.acquireLock(res.data.id)
                         if (!silent) {
                             toast.success("Borrador guardado (nuevo)")
                         }
@@ -96,12 +109,16 @@ export function useDrafts() {
                 // Create new
                 res = await api.post('/sales/pos-drafts/', draftData)
                 setCurrentDraftId(res.data.id)
+                if (options.acquireLock) await options.acquireLock(res.data.id)
                 if (!silent) {
                     toast.success("Borrador guardado")
                 }
             }
 
             setLastSaved(new Date())
+
+            // Notify sync to pick up changes
+            options.forceSync?.()
 
             // Refresh drafts list without full loading indicator
             api.get(`/sales/pos-drafts/?pos_session_id=${currentSession?.id}`).then(r => {
@@ -117,18 +134,38 @@ export function useDrafts() {
         } finally {
             setIsSaving(false)
         }
-    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading])
+    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading, options.browserSessionKey, options.forceSync])
 
-    // Load a draft into cart
+    // Load a draft into cart (with lock acquisition)
     const loadDraft = useCallback(async (draftId: number) => {
         if (!currentSession?.id) return
+        
+        // Try to acquire lock before loading
+        if (options.acquireLock) {
+            const lockResult = await options.acquireLock(draftId)
+            if (!lockResult.acquired) {
+                const errorMsg = lockResult.locked_by_name 
+                    ? `Este borrador está siendo editado por ${lockResult.locked_by_name}`
+                    : (lockResult.error || 'No se pudo bloquear el borrador')
+                toast.error(errorMsg, {
+                    description: 'Espere a que el otro usuario termine de editarlo.',
+                    duration: 5000,
+                })
+                throw new Error(errorMsg)
+            }
+        }
+
         setIsLoading(true)
         try {
+            // Release lock on previous draft if any
+            if (currentDraftId && currentDraftId !== draftId && options.releaseLock) {
+                await options.releaseLock(currentDraftId)
+            }
+
             const res = await api.get(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
             const draft = res.data
 
             // Reconstruct cart items from draft
-            // This requires fetching full product data
             const itemPromises = draft.items.map(async (draftItem: any) => {
                 try {
                     const productRes = await api.get(`/inventory/products/${draftItem.product_id}/`)
@@ -172,14 +209,18 @@ export function useDrafts() {
                 setCurrentDraftId(null)
                 setWizardState(null)
                 fetchDrafts() // Refresh list
-            } else {
+            } else if (!error.message?.includes('siendo editado')) {
                 toast.error("Error al cargar borrador")
             }
-            throw error // Re-throw so caller (DraftCartsList) doesn't show success
+            // Release the lock we acquired if loading failed
+            if (options.releaseLock) {
+                await options.releaseLock(draftId)
+            }
+            throw error
         } finally {
             setIsLoading(false)
         }
-    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState, currentSession, fetchDrafts])
+    }, [setItems, setSelectedCustomerId, setCurrentDraftId, setWizardState, currentSession, currentDraftId, fetchDrafts, options.acquireLock, options.releaseLock])
 
     // Delete a draft
     const deleteDraft = useCallback(async (draftId: number) => {
@@ -188,16 +229,23 @@ export function useDrafts() {
             await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
             toast.success("Borrador eliminado")
             await fetchDrafts()
+            options.forceSync?.()
         } catch (error) {
             console.error("Error deleting draft:", error)
             toast.error("Error al eliminar borrador")
         }
-    }, [fetchDrafts])
+    }, [fetchDrafts, currentSession?.id, options.forceSync])
+
+    // Release lock on current draft (used when clearing cart or completing sale)
+    const releaseCurrentLock = useCallback(async () => {
+        if (currentDraftId && options.releaseLock) {
+            await options.releaseLock(currentDraftId)
+        }
+    }, [currentDraftId, options.releaseLock])
 
     // Auto-save (optional, can be triggered manually)
     const autoSave = useCallback(async () => {
         if (items.length === 0) return
-
         await saveDraft(`Auto-guardado ${new Date().toLocaleTimeString()}`)
     }, [items, saveDraft])
 
@@ -215,6 +263,7 @@ export function useDrafts() {
         loadDraft,
         deleteDraft,
         fetchDrafts,
-        autoSave
+        autoSave,
+        releaseCurrentLock,
     }
 }

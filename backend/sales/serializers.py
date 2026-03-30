@@ -39,7 +39,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'subtotal', 'quantity_delivered', 
             'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
             'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom',
-            'related_note', 'available_stock'
+            'related_note', 'available_stock', 'delivery_status', 'delivery_date'
         ]
 
     def get_product_type(self, obj):
@@ -106,6 +106,19 @@ class SaleLineSerializer(serializers.ModelSerializer):
             'current_stage': ot.current_stage,
             'current_stage_display': ot.get_current_stage_display()
         }
+
+    delivery_status = serializers.SerializerMethodField()
+    delivery_date = serializers.SerializerMethodField()
+
+    def get_delivery_status(self, obj):
+        if obj.quantity_delivered >= obj.quantity:
+            return 'ENTREGADO'
+        if obj.quantity_delivered > 0:
+            return 'PARCIAL'
+        return 'PENDIENTE'
+
+    def get_delivery_date(self, obj):
+        return obj.order.delivery_date if obj.order else None
 
     def validate(self, data):
         product = data.get('product')

@@ -1,6 +1,6 @@
 "use client"
 
-import { CreditCard } from "lucide-react"
+import { Wallet } from "lucide-react"
 import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
 import { useEffect } from "react"
 
@@ -17,7 +17,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, 
         <div className="space-y-4">
             <div className="flex flex-col gap-1">
                 <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-primary" />
+                    <Wallet className="h-5 w-5 text-primary" />
                     Registro de Pago
                 </h3>
                 <p className="text-sm text-muted-foreground">

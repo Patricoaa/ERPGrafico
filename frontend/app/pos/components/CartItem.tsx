@@ -29,6 +29,7 @@ interface CartItemProps {
     onRemove: (cartItemId: string) => void
     onOpenNumpad: (cartItemId: string, field: 'qty' | 'price' | 'discount', currentValue: number) => void
     showLineDiscount?: boolean
+    posMode?: 'SHOPPING' | 'CHECKOUT'
 }
 
 function CartItemComponent({
@@ -42,7 +43,8 @@ function CartItemComponent({
     onDiscountChange,
     onRemove,
     onOpenNumpad,
-    showLineDiscount
+    showLineDiscount,
+    posMode = 'SHOPPING'
 }: CartItemProps) {
     const { isTouchPOS } = useDeviceContext()
     const itemUom = uoms.find(u => u.id === item.uom)
@@ -220,21 +222,23 @@ function CartItemComponent({
 
             {/* Actions */}
             <TableCell className="py-2 align-top">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                        "opacity-0 group-hover:opacity-100 transition-opacity",
-                        // Touch-friendly sizing
-                        isTouchPOS ? "h-10 w-10" : "h-6 w-6"
-                    )}
-                    onClick={() => onRemove(item.cartItemId)}
-                >
-                    <Trash2 className={cn(
-                        "text-destructive",
-                        isTouchPOS ? "h-5 w-5" : "h-3 w-3"
-                    )} />
-                </Button>
+                {posMode === 'SHOPPING' && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "opacity-0 group-hover:opacity-100 transition-opacity",
+                            // Touch-friendly sizing
+                            isTouchPOS ? "h-10 w-10" : "h-6 w-6"
+                        )}
+                        onClick={() => onRemove(item.cartItemId)}
+                    >
+                        <Trash2 className={cn(
+                            "text-destructive",
+                            isTouchPOS ? "h-5 w-5" : "h-3 w-3"
+                        )} />
+                    </Button>
+                )}
             </TableCell>
         </TableRow>
     )
@@ -246,6 +250,7 @@ export const CartItem = memo(CartItemComponent, (prevProps, nextProps) => {
         prevProps.item === nextProps.item &&
         prevProps.maxQty === nextProps.maxQty &&
         prevProps.onQuantityChange === nextProps.onQuantityChange &&
-        prevProps.showLineDiscount === nextProps.showLineDiscount
+        prevProps.showLineDiscount === nextProps.showLineDiscount &&
+        prevProps.posMode === nextProps.posMode
     )
 })
