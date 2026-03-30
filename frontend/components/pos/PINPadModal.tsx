@@ -44,11 +44,11 @@ export function PINPadModal({
         >
             <div className="flex flex-col items-center gap-6 py-6 font-primary">
                 {/* Visual PIN Feedback */}
-                <div className="flex gap-4 justify-center mb-2">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div className="flex gap-6 justify-center mb-2">
+                    {[0, 1, 2, 3].map((i) => (
                         <div 
                             key={i} 
-                            className={`w-4 h-4 rounded-full border-2 transition-all duration-300 shadow-sm ${
+                            className={`w-5 h-5 rounded-full border-2 transition-all duration-300 shadow-sm ${
                                 pin.length > i 
                                     ? "bg-primary border-primary scale-125 shadow-primary/20" 
                                     : "bg-muted border-muted-foreground/10"
@@ -59,7 +59,9 @@ export function PINPadModal({
 
                 <Numpad
                     value={pin}
-                    onChange={setPin}
+                    onChange={(val) => {
+                        if (val.length <= 4) setPin(val)
+                    }}
                     onConfirm={handleConfirm}
                     onClose={() => onOpenChange(false)}
                     allowDecimal={false}

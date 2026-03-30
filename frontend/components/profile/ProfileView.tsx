@@ -50,8 +50,8 @@ type PasswordFormValues = z.infer<typeof passwordSchema>
 const pinSchema = z.object({
     current_password: z.string().min(1, "Ingrese su contraseña actual"),
     new_pin: z.string()
-        .min(4, "Mínimo 4 dígitos")
-        .max(6, "Máximo 6 dígitos")
+        .min(1, "El PIN no puede estar vacío")
+        .max(4, "Máximo 4 dígitos")
         .regex(/^\d+$/, "El PIN debe ser solo números"),
     confirm_pin: z.string().min(1, "Confirme el nuevo PIN"),
 }).refine(data => data.new_pin === data.confirm_pin, {
@@ -843,7 +843,7 @@ function PinChangeCard() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="new_pin" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nuevo PIN (4-6 dígitos)</FormLabel>
+                                    <FormLabel className={FORM_STYLES.label}>Nuevo PIN (máx 4 dígitos)</FormLabel>
                                     <FormControl>
                                         <Input 
                                             {...field} 
@@ -852,7 +852,7 @@ function PinChangeCard() {
                                             inputMode="numeric" 
                                             placeholder="••••" 
                                             className={FORM_STYLES.input} 
-                                            maxLength={6}
+                                            maxLength={4}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -870,7 +870,7 @@ function PinChangeCard() {
                                             inputMode="numeric" 
                                             placeholder="••••" 
                                             className={FORM_STYLES.input} 
-                                            maxLength={6}
+                                            maxLength={4}
                                         />
                                     </FormControl>
                                     <FormMessage />
