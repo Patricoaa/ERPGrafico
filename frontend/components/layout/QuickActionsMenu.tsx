@@ -32,7 +32,7 @@ const actions = [
     {
         title: "POS",
         icon: ShoppingCart,
-        url: "/sales/pos",
+        url: "/pos",
         color: "text-emerald-500",
         permission: "sales.view_dashboard_sales",
     },
@@ -106,6 +106,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                     <TooltipTrigger asChild>
                                         <Link
                                             href={action.url}
+                                            target={action.title === "POS" ? "_blank" : undefined}
                                             className={cn(
                                                 "relative flex items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 group hover:scale-110 active:scale-95",
                                                 isActive

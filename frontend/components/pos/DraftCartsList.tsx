@@ -6,6 +6,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { formatCurrency } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -19,6 +20,8 @@ import {
     ShoppingCart,
     User,
     ChevronRight,
+    Lock,
+    Wallet,
 } from "lucide-react"
 import {
     AlertDialog,
@@ -30,6 +33,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import type { SyncDraft } from '@/app/pos/hooks/useDraftSync'
 
 interface DraftCart {
     id: number
@@ -54,7 +58,14 @@ interface DraftCart {
         approvalTaskId?: number | null
         isWaitingApproval?: boolean
         isApproved?: boolean
+        isWaitingPayment?: boolean
     } | null
+}
+
+interface LockInfo {
+    isLocked: boolean
+    lockedByName: string | null
+    isOwnLock: boolean
 }
 
 interface DraftCartsListProps {
@@ -64,6 +75,10 @@ interface DraftCartsListProps {
     open?: boolean
     onOpenChange?: (open: boolean) => void
     showTrigger?: boolean
+    /** Real-time sync data for lock indicators */
+    syncDrafts?: SyncDraft[]
+    /** Function to get lock info for a draft */
+    getLockInfo?: (draftId: number) => LockInfo
 }
 
 export function DraftCartsList({
@@ -72,7 +87,9 @@ export function DraftCartsList({
     onDraftDeleted,
     open: externalOpen,
     onOpenChange: setExternalOpen,
-    showTrigger = true
+    showTrigger = true,
+    syncDrafts,
+    getLockInfo,
 }: DraftCartsListProps) {
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [loading, setLoading] = useState(false)
@@ -80,6 +97,7 @@ export function DraftCartsList({
     const [deletingId, setDeletingId] = useState<number | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
     const [confirmDeleteName, setConfirmDeleteName] = useState("")
+    const [prevDraftIds, setPrevDraftIds] = useState<Set<number>>(new Set())
 
     const isControlled = externalOpen !== undefined
     const open = isControlled ? externalOpen : internalOpen
@@ -94,7 +112,9 @@ export function DraftCartsList({
         try {
             const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
             const data = response.data.results || response.data
-            setDrafts(Array.isArray(data) ? data : [])
+            const newDrafts = Array.isArray(data) ? data : []
+            setDrafts(newDrafts)
+            setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))
         } catch (error: any) {
             console.error("Error al cargar borradores:", error)
             toast.error("Error al cargar los borradores")
@@ -109,17 +129,58 @@ export function DraftCartsList({
         }
     }, [open, posSessionId])
 
+    // Auto-refresh drafts when syncDrafts changes (new/deleted drafts)
+    useEffect(() => {
+        if (!open || !syncDrafts) return
+        const syncIds = new Set(syncDrafts.map(d => d.id))
+        const localIds = new Set(drafts.map(d => d.id))
+        
+        // Check if there are differences
+        let hasDiff = syncIds.size !== localIds.size
+        if (!hasDiff) {
+            for (const id of syncIds) {
+                if (!localIds.has(id)) { hasDiff = true; break }
+            }
+        }
+        
+        if (hasDiff) {
+            fetchDrafts()
+        }
+    }, [syncDrafts, open])
+
     const handleLoadDraft = async (draft: DraftCart) => {
+        // Check lock before even trying
+        if (getLockInfo) {
+            const lock = getLockInfo(draft.id)
+            if (lock.isLocked && !lock.isOwnLock) {
+                toast.error(`Borrador en uso por ${lock.lockedByName}`, {
+                    description: 'Espere a que el otro usuario termine de editarlo.',
+                    duration: 5000,
+                })
+                return
+            }
+        }
+        
         try {
             await onLoadDraft(draft)
             setOpen(false)
         } catch (error) {
-            // Already handled
+            // Already handled in useDrafts
         }
     }
 
     const handleDeleteDraft = async (draftId: number, draftName: string) => {
         if (!posSessionId) return
+        
+        // Prevent deleting locked drafts
+        if (getLockInfo) {
+            const lock = getLockInfo(draftId)
+            if (lock.isLocked && !lock.isOwnLock) {
+                toast.error(`No se puede eliminar: en uso por ${lock.lockedByName}`)
+                return
+            }
+        }
+        
         setDeletingId(draftId)
         try {
             await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${posSessionId}`)
@@ -197,6 +258,7 @@ export function DraftCartsList({
                             <p className="text-sm">No hay borradores en esta sesión</p>
                         </div>
                     ) : (
+                        <TooltipProvider delayDuration={200}>
                         <ScrollArea className="max-h-[65vh]">
                             {/* Column headers */}
                             <div className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b">
@@ -208,13 +270,23 @@ export function DraftCartsList({
                             </div>
 
                             <div className="divide-y divide-border/60">
-                                {drafts.map((draft) => (
+                                {drafts.map((draft) => {
+                                    const lockInfo = getLockInfo?.(draft.id)
+                                    const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
+                                    
+                                    return (
                                     <div
                                         key={draft.id}
-                                        className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 hover:bg-muted/40 transition-colors group"
+                                        className={cn(
+                                            "grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
+                                            lockedByOther && "bg-destructive/[0.03] hover:bg-destructive/[0.06]"
+                                        )}
                                     >
                                         {/* ID */}
-                                        <span className="text-center text-[11px] font-mono font-bold text-primary/70">
+                                        <span className={cn(
+                                            "text-center text-[11px] font-mono font-bold",
+                                            lockedByOther ? "text-destructive/60" : "text-primary/70"
+                                        )}>
                                             {draft.id}
                                         </span>
 
@@ -224,7 +296,43 @@ export function DraftCartsList({
                                                 <span className="text-sm font-medium truncate leading-tight">
                                                     {draft.name || `Borrador #${draft.id}`}
                                                 </span>
-                                                {draft.wizard_state?.step && (
+                                                {/* Lock indicator */}
+                                                {lockedByOther && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="h-4 px-1.5 text-[9px] bg-destructive/10 text-destructive border-destructive/30 gap-0.5 shrink-0 cursor-help"
+                                                            >
+                                                                <Lock className="h-2.5 w-2.5" />
+                                                                {lockInfo?.lockedByName || 'En uso'}
+                                                            </Badge>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                                            Este borrador está siendo editado por <strong>{lockInfo?.lockedByName}</strong>. 
+                                                            No se puede cargar hasta que termine.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                                {lockInfo?.isOwnLock && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-primary/10 text-primary border-primary/30 gap-0.5 shrink-0"
+                                                    >
+                                                        <Lock className="h-2.5 w-2.5" />
+                                                        Tú
+                                                    </Badge>
+                                                )}
+                                                {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 border-amber-300 gap-0.5 shrink-0 shadow-sm"
+                                                    >
+                                                        <Wallet className="h-2.5 w-2.5" />
+                                                        Por Pagar
+                                                    </Badge>
+                                                )}
+                                                {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
                                                     <Badge
                                                         variant="outline"
                                                         className="h-4 px-1 text-[9px] bg-amber-50 text-amber-600 border-amber-200 gap-0.5 shrink-0"
@@ -279,8 +387,11 @@ export function DraftCartsList({
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                disabled={deletingId === draft.id}
+                                                className={cn(
+                                                    "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10",
+                                                    lockedByOther && "!opacity-0 pointer-events-none"
+                                                )}
+                                                disabled={deletingId === draft.id || !!lockedByOther}
                                                 onClick={() => {
                                                     setConfirmDeleteId(draft.id)
                                                     setConfirmDeleteName(draft.name)
@@ -293,17 +404,34 @@ export function DraftCartsList({
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-7 px-2 text-[11px] font-medium gap-0.5 hover:bg-primary/10 hover:text-primary"
+                                                className={cn(
+                                                    "h-7 px-2 text-[11px] font-medium gap-0.5",
+                                                    lockedByOther 
+                                                        ? "text-muted-foreground cursor-not-allowed" 
+                                                        : "hover:bg-primary/10 hover:text-primary"
+                                                )}
+                                                disabled={!!lockedByOther}
                                                 onClick={() => handleLoadDraft(draft)}
                                             >
-                                                Cargar
-                                                <ChevronRight className="h-3 w-3" />
+                                                {lockedByOther ? (
+                                                    <>
+                                                        <Lock className="h-3 w-3" />
+                                                        En uso
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Cargar
+                                                        <ChevronRight className="h-3 w-3" />
+                                                    </>
+                                                )}
                                             </Button>
                                         </div>
                                     </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </ScrollArea>
+                        </TooltipProvider>
                     )}
                 </div>
             </BaseModal>

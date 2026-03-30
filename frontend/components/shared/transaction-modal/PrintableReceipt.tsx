@@ -3,47 +3,143 @@ import { Button } from "@/components/ui/button"
 import { X, Printer } from "lucide-react"
 import { formatPlainDate, translateStatus, translateReceivingStatus, translatePaymentMethod, formatCurrency, cn } from "@/lib/utils"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { useCompanySettings } from "@/features/settings"
 
-export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subTitle, onClose, isPreview = false }: { data: any, currentType: string, mainTitle: string, subTitle: string, onClose?: () => void, isPreview?: boolean }) => {
+const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
+    if (!dateStr) return '-'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return '-'
+
+    return new Intl.DateTimeFormat('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).format(date)
+}
+
+export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: any, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
     const { logo } = useBranding()
+    const { settings: company } = useCompanySettings()
     if (!data) return null
 
-    const renderHeader = () => (
-        <div className="text-center space-y-1 mb-4 border-b-2 border-black pb-4 flex flex-col items-center">
-            {logo && (
-                <div className="mb-2">
-                    <img src={logo} alt="Logo" className="max-h-16 object-contain" />
+    const isSaleOrder = currentType === 'sale_order'
+    const terminalName = data.terminal_name || data.pos_session?.terminal_name || data.session?.terminal_name
+
+    const renderHeader = () => {
+        const titleToShow = isSaleOrder ? "Comprobante de venta" : mainTitle
+        const prefix = isSaleOrder ? "NV-" : ""
+        const docNumber = data.number || data.id
+
+        return (
+            <div className="text-center space-y-2 mb-2 border-b border-dashed border-black/20 pb-2 flex flex-col items-center">
+                {logo && (
+                    <div className="mb-2 grayscale">
+                        <img src={logo} alt="Logo" className="max-h-16 object-contain" />
+                    </div>
+                )}
+
+                {/* Transaction Info Block (Now at the top) */}
+                <div className="w-full flex flex-col items-center gap-1">
+                    <h1 className="text-xs font-black uppercase tracking-widest leading-tight">{titleToShow}</h1>
+                    <h2 className="text-xl font-black font-mono tracking-tighter">{prefix}{docNumber}</h2>
                 </div>
-            )}
-            <h1 className="text-sm font-black uppercase tracking-widest leading-tight">{mainTitle}</h1>
-            <h2 className="text-lg font-black font-mono tracking-tighter">{subTitle}</h2>
-            <p className="text-[10px] font-bold uppercase text-black/60">{formatPlainDate(data.date || data.created_at)}</p>
-        </div>
-    )
+
+                {/* Company Info Block (Now below transaction info) */}
+                {company && (
+                    <div className="pt-3 border-t border-dashed border-black/20 w-full space-y-0.5">
+                        <div className="text-sm font-black uppercase tracking-tight">{company.name}</div>
+                        <div className="text-[10px] font-bold">RUT: {company.tax_id}</div>
+                        <div className="text-[9px] opacity-80 uppercase leading-none">{company.address}</div>
+                        {company.phone && <div className="text-[9px] font-bold tracking-tighter">TEL: {company.phone}</div>}
+                    </div>
+                )}
+
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                    @media print {
+                        @page {
+                            size: 80mm auto;
+                            margin: 0;
+                        }
+                        html, body {
+                            background: white !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            width: 80mm !important;
+                            height: auto !important;
+                            min-height: 100% !important;
+                            overflow: visible !important;
+                        }
+                        
+                        /* Override any parent visibility when printing into the react-to-print iframe */
+                        body {
+                            visibility: visible !important;
+                        }
+
+                        .print-section {
+                            visibility: visible !important;
+                            display: block !important;
+                            width: 80mm !important;
+                            margin: 0 !important;
+                            padding: 8mm 4mm !important; 
+                            background: white !important;
+                            color: black !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                            height: auto !important;
+                        }
+
+                        /* Ensure ALL nested elements are visible */
+                        .print-section, .print-section *:not(style):not(script) {
+                            visibility: visible !important;
+                        }
+
+                        .no-print {
+                            display: none !important;
+                        }
+                        
+                        /* Forced Grayscale for all images */
+                        img {
+                            filter: grayscale(100%) !important;
+                        }
+                    }
+                `}} />
+            </div>
+        )
+    }
 
     const renderContextualInfo = () => {
         const contactName = data.customer_name || data.supplier_name || data.partner_name || data.contact_name
         const contactRut = data.customer_rut || data.supplier_rut || data.partner_rut
 
         return (
-            <div className="space-y-4 mb-4 text-[11px] leading-tight">
+            <div className="space-y-2 mb-2 text-[11px] leading-tight">
                 {/* Contact Section */}
                 {contactName && (
-                    <div className="border-b border-black/10 pb-2">
-                        <div className="font-black uppercase text-[9px] text-black/50">Asociado a:</div>
-                        <div className="font-bold uppercase tracking-tight">{contactName}</div>
-                        {contactRut && <div className="font-mono text-[10px] opacity-70">{contactRut}</div>}
+                    <div className="pb-1">
+                        <div className="font-black uppercase text-[8px] text-black/50 leading-none mb-1">Asociado a:</div>
+                        <div className="font-bold uppercase tracking-tight text-[10px]">
+                            {contactName} {contactRut && <span className="font-mono text-[9px] font-black opacity-80">({contactRut})</span>}
+                        </div>
+                        {isSaleOrder && terminalName && (
+                            <div className="mt-1">
+                                <span className="font-black uppercase text-[7px] text-black/40 block leading-none">Terminal / Caja:</span>
+                                <span className="font-black uppercase text-[9px] tracking-tight">{terminalName}</span>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Specific Details Grid */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                    {currentType === 'sale_order' && (
-                        <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Vendedor:</span> {data.salesperson_name || 'N/A'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Canal:</span> {data.channel || 'SISTEMA'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado:</span> {translateStatus(data.status)}</div>
-                        </>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {!isSaleOrder && currentType === 'sale_order' && terminalName && (
+                        <div className="col-span-2">
+                            <span className="font-black uppercase text-[8px] text-black/40 block">Terminal / Caja:</span>
+                            <span className="font-black uppercase">{terminalName}</span>
+                        </div>
                     )}
                     {currentType === 'invoice' && (
                         <>
@@ -56,7 +152,7 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
                     {currentType === 'payment' && (
                         <>
                             <div><span className="font-black uppercase text-[8px] text-black/40 block">Método:</span> {translatePaymentMethod(data.payment_method)}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px) text-black/40 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
                             {data.invoice_display_id && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Documento Relacionado:</span> {data.invoice_display_id}</div>}
                         </>
                     )}
@@ -126,7 +222,7 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
             )
         }
 
-        // Logistics specific table (PrintableReceipt)
+        // Logistics specific table
         if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') {
             const isOutbound = currentType === 'sale_delivery';
             return (
@@ -156,34 +252,69 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
             )
         }
 
+        const renderTableRow = (line: any, idx: number) => {
+            const hasDiscount = parseFloat(line.discount_amount || 0) > 0;
+            const quantity = Math.round(line.quantity || 0);
+            const deliveredQty = Math.round(line.delivered_quantity !== undefined
+                ? line.delivered_quantity
+                : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0)));
+
+            const isImmediate = deliveredQty === quantity;
+            const productCode = line.sku || line.product_code || line.product?.sku || line.product?.default_code;
+
+            return (
+                <tr key={line.id || idx} className="border-b border-black/5 align-top text-[9px]">
+                    <td className="py-1 pr-1 font-bold break-words leading-none">
+                        <div className="flex flex-col">
+                            <span>{line.description || line.product_name || line.product?.name}</span>
+                            {productCode && <span className="text-[7px] font-mono text-black/40 uppercase mt-0.5">{productCode}</span>}
+                            {!isSaleOrder && line.delivery_status && (
+                                <span className={cn(
+                                    "text-[7px] font-black uppercase inline-block w-fit px-1 rounded-sm mt-0.5",
+                                    line.delivery_status === 'ENTREGADO' ? "bg-black/5 text-black" : "bg-black text-white"
+                                )}>
+                                    {line.delivery_status === 'ENTREGADO' ? '✓ Ent.' : '⏳ Pend.'}
+                                </span>
+                            )}
+                        </div>
+                    </td>
+                    <td className="py-1 text-center font-mono w-8">{quantity}</td>
+                    <td className="py-1 text-right font-mono w-14">{formatCurrency(line.unit_price_gross || line.unit_price || line.unit_cost)}</td>
+                    <td className="py-1 text-right font-mono w-10 text-black/60">{hasDiscount ? `-${formatCurrency(line.discount_amount)}` : '-'}</td>
+                    <td className="py-1 text-right font-black font-mono w-16">
+                        {formatCurrency(line.subtotal || line.amount || (line.unit_price * line.quantity) || 0)}
+                    </td>
+                    {isSaleOrder && (
+                        <td className="py-1 text-center font-mono w-10">
+                            {deliveredQty}{!isImmediate && <span className="font-black text-[10px] ml-0.5">*</span>}
+                        </td>
+                    )}
+                </tr>
+            )
+        }
+
         return (
-            <div className="mb-4">
-                <div className="grid grid-cols-[1fr,30px,50px,40px,60px] gap-1 border-b-2 border-black pb-1 mb-1 text-[7px] font-black uppercase tracking-widest">
-                    <div>Descripción</div>
-                    <div className="text-center">Cant</div>
-                    <div className="text-right">P. Unit</div>
-                    <div className="text-right">Desc.</div>
-                    <div className="text-right">Total</div>
-                </div>
-                <div className="space-y-2">
-                    {lines.map((line: any, idx: number) => {
-                        const hasDiscount = parseFloat(line.discount_amount || 0) > 0;
-                        return (
-                            <div key={line.id || idx} className="grid grid-cols-[1fr,30px,50px,40px,60px] gap-1 text-[9px] leading-tight border-b border-black/5 pb-1">
-                                <div className="font-bold flex flex-col">
-                                    <span>{line.description || line.product_name}</span>
-                                    {line.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{line.product_code}</span>}
-                                </div>
-                                <div className="text-center font-mono">{Math.round(line.quantity || 0)}</div>
-                                <div className="text-right font-mono">{formatCurrency(line.unit_price_gross || line.unit_price || line.unit_cost)}</div>
-                                <div className="text-right font-mono text-black/60">{hasDiscount ? `-${formatCurrency(line.discount_amount)}` : '-'}</div>
-                                <div className="text-right font-black font-mono">
-                                    {formatCurrency(line.subtotal || line.amount || (line.unit_price * line.quantity) || 0)}
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
+            <div className="mb-4 pt-2 border-y-2 border-black">
+                {isSaleOrder && (
+                    <div className="text-[9px] font-black uppercase mb-2 border-b border-dashed border-black/20 pb-1">
+                        Detalle de los Productos
+                    </div>
+                )}
+                <table className="w-full border-collapse mb-1">
+                    <thead>
+                        <tr className="border-b border-black text-[7px] font-black uppercase tracking-widest text-left">
+                            <th className="pb-1 pl-0">Descripción</th>
+                            <th className="pb-1 text-center w-8">Cant</th>
+                            <th className="pb-1 text-right w-14">P. Uni</th>
+                            <th className="pb-1 text-right w-10">Desc</th>
+                            <th className="pb-1 text-right w-16">Total</th>
+                            {isSaleOrder && <th className="pb-1 text-center w-10">Ent.</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {lines.map((line: any, idx: number) => renderTableRow(line, idx))}
+                    </tbody>
+                </table>
             </div>
         )
     }
@@ -220,79 +351,104 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
             )
         }
 
-        if (!data.total && !data.amount) return null
-
         const totalValue = data.total || data.amount
+        const lines = data.lines || data.items || []
+        const totalLineDiscounts = lines.reduce((acc: number, cur: any) => acc + parseFloat(cur.discount_amount || 0), 0)
 
         return (
-            <div className="border-t-2 border-black pt-2 space-y-1">
+            <div className="pt-2 space-y-1">
                 {data.total_net !== undefined && (
                     <div className="flex justify-between text-[9px] font-bold opacity-60">
                         <span className="uppercase tracking-wider">Subtotal Neto:</span>
                         <span className="font-mono">{formatCurrency(data.total_net || 0)}</span>
                     </div>
                 )}
+
+                {/* Always show discount rows for Sale Orders */}
+                <div className="flex justify-between text-[9px] font-bold opacity-60">
+                    <span className="uppercase tracking-wider">Descuento Unitario:</span>
+                    <span className="font-mono">{totalLineDiscounts > 0 ? `-${formatCurrency(totalLineDiscounts)}` : formatCurrency(0)}</span>
+                </div>
+                <div className="flex justify-between text-[9px] font-bold opacity-60">
+                    <span className="uppercase tracking-wider">Descuento Global:</span>
+                    <span className="font-mono">{parseFloat(data.total_discount_amount || 0) > 0 ? `-${formatCurrency(data.total_discount_amount)}` : formatCurrency(0)}</span>
+                </div>
+
                 {data.total_tax !== undefined && (
                     <div className="flex justify-between text-[9px] font-bold opacity-60">
                         <span className="uppercase tracking-wider">IVA (19%):</span>
                         <span className="font-mono">{formatCurrency(data.total_tax || 0)}</span>
                     </div>
                 )}
-                {parseFloat(data.total_discount_amount || 0) > 0 && (
-                    <div className="flex justify-between text-[9px] font-black text-red-600">
-                        <span className="uppercase tracking-wider">Descuento Global:</span>
-                        <span className="font-mono">-{formatCurrency(data.total_discount_amount)}</span>
-                    </div>
-                )}
-                <div className="flex justify-between items-center pt-2 mt-1 border-t border-dashed border-black/20">
+                <div className="flex justify-between items-center py-2 border-y border-black/10 mt-2 bg-black/5 px-1">
                     <span className="text-xs font-black uppercase tracking-tight">Total Final:</span>
                     <span className="text-xl font-black font-mono tracking-tighter">{formatCurrency(totalValue)}</span>
                 </div>
+
+                {isSaleOrder && (
+                    <div className="pt-2 pb-1 space-y-1">
+                        <div className="flex justify-between text-[10px] font-black uppercase">
+                            <span>Medio de Pago:</span>
+                            <span className="font-mono">{translatePaymentMethod(data.payment_method || data.related_documents?.payments?.[0]?.payment_method || 'CASH')}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-black uppercase">
+                            <span>Pagado:</span>
+                            <span className="font-mono">{formatCurrency(data.total_paid || 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-black uppercase">
+                            <span>Pendiente:</span>
+                            <span className="font-mono">{formatCurrency(Math.max(0, totalValue - (data.total_paid || 0)))}</span>
+                        </div>
+                    </div>
+                )}
             </div>
         )
     }
 
     return (
-        <div className={cn(
-            "print:block w-[80mm] mx-auto bg-white text-black font-sans relative",
-            isPreview ? "block p-6 rounded-2xl shadow-2xl border border-black/5" : "hidden p-4"
-        )}>
-            {/* Close button for preview */}
-            {onClose && (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg border border-black/10 hover:bg-black/5 print:hidden group z-10"
-                >
-                    <X className="h-4 w-4 text-black group-hover:scale-110 transition-transform" />
-                </Button>
-            )}
-
+        <div
+            ref={ref}
+            className="print:block print-section w-[80mm] mx-auto bg-white text-black font-sans relative hidden p-4"
+        >
             {renderHeader()}
             {renderContextualInfo()}
             {renderItemsTable()}
             {renderTotals()}
 
-            <div className="mt-8 text-center space-y-2 border-t border-black/10 pt-4">
+            {isSaleOrder && (
+                (() => {
+                    const lines = data.lines || data.items || []
+                    const hasPending = lines.some((line: any) => {
+                        const qty = Math.round(line.quantity || 0)
+                        const delivered = Math.round(line.delivered_quantity !== undefined
+                            ? line.delivered_quantity
+                            : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0)))
+                        return delivered < qty
+                    })
+                    const deliveryDate = data.expected_delivery_date || data.scheduled_date || data.delivery_date
+
+                    if (!hasPending && !deliveryDate) return null
+
+                    return (
+                        <div className="mt-2 border-y-2 border-black py-2">
+                            <p className="text-[8px] font-black uppercase mb-1 underline">Observaciones:</p>
+                            <p className="text-[9px] leading-tight italic">
+                                (*) Productos con entrega pendiente.
+                                {deliveryDate && (
+                                    <span className="block mt-1">Fecha estimada de entrega: {formatPlainDate(deliveryDate)}</span>
+                                )}
+                            </p>
+                        </div>
+                    )
+                })()
+            )}
+
+            <div className="mt-8 text-center space-y-2 pt-4">
                 <p className="text-[9px] font-black uppercase tracking-widest text-black/40">Gracias por su preferencia</p>
                 <p className="text-[8px] font-mono text-black/20 italic">Generado por ERPGrafico</p>
             </div>
-
-            {/* Print button inside preview */}
-            {isPreview && (
-                <div className="mt-6 pt-6 border-t border-dashed border-black/20 flex justify-center print:hidden">
-                    <Button
-                        onClick={() => window.print()}
-                        className="bg-black text-white hover:bg-black/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-xl shadow-lg border-2 border-black"
-                    >
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir Ahora
-                    </Button>
-                </div>
-            )}
         </div>
     )
-})
+}))
 
 PrintableReceipt.displayName = "PrintableReceipt"

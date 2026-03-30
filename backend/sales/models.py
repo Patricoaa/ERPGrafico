@@ -612,6 +612,27 @@ class DraftCart(models.Model):
         default=0
     )
     
+    # Locking — Bloqueo optimista con heartbeat
+    locked_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='locked_draft_carts',
+        verbose_name=_("Bloqueado Por")
+    )
+    locked_at = models.DateTimeField(
+        _("Bloqueado Desde"),
+        null=True, blank=True,
+        help_text=_("Última renovación del heartbeat del lock")
+    )
+    lock_session_key = models.CharField(
+        _("Clave de Sesión del Lock"),
+        max_length=64,
+        blank=True,
+        default='',
+        help_text=_("UUID único de la pestaña del navegador que tiene el lock")
+    )
+
     # Auditoría temporal
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

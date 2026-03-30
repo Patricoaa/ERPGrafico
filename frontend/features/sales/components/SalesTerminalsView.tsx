@@ -64,7 +64,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                     description: "Registro cronológico de aperturas y cierres de terminales POS.",
                     actions: null,
                     children: (
-                        <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
+                        <Button onClick={() => window.open('/pos', '_blank')} className="bg-primary hover:bg-primary/90">
                             <Store className="mr-2 h-4 w-4" />
                             Ir al POS
                         </Button>

@@ -165,7 +165,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         <div className={cn("flex-1 space-y-4", !hideHeader && "p-8 pt-6")}>
             {!hideHeader && (
                 <PageHeader title="Sesiones Punto de Venta" description="Historial de aperturas y cierres de caja.">
-                    <Button onClick={() => router.push('/sales/pos')} className="bg-primary hover:bg-primary/90">
+                    <Button onClick={() => window.open('/pos', '_blank')} className="bg-primary hover:bg-primary/90">
                         <Store className="mr-2 h-4 w-4" />
                         Ir al POS
                     </Button>

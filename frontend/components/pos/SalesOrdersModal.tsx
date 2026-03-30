@@ -4,6 +4,7 @@ import { ShoppingCart, FileText, Loader2, X } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
 import { useState, useEffect, Suspense } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { 
@@ -113,24 +114,26 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-hidden p-6">
-                        {open && (
-                            <Suspense fallback={
-                                <div className="flex h-full w-full items-center justify-center p-20">
-                                    <div className="flex flex-col items-center gap-4">
-                                        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-                                        <p className="text-sm font-medium text-muted-foreground animate-pulse">Cargando datos de ventas...</p>
+                    <ScrollAreaUI className="flex-1 px-6">
+                        <div className="py-6">
+                            {open && (
+                                <Suspense fallback={
+                                    <div className="flex h-full w-full items-center justify-center p-20">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
+                                            <p className="text-sm font-medium text-muted-foreground animate-pulse">Cargando datos de ventas...</p>
+                                        </div>
                                     </div>
-                                </div>
-                            }>
-                                <SalesOrdersView
-                                    posSessionId={posSessionId}
-                                    viewMode={viewMode}
-                                    onActionSuccess={() => onOpenChange(false)}
-                                />
-                            </Suspense>
-                        )}
-                    </div>
+                                }>
+                                    <SalesOrdersView
+                                        posSessionId={posSessionId}
+                                        viewMode={viewMode}
+                                        onActionSuccess={() => onOpenChange(false)}
+                                    />
+                                </Suspense>
+                            )}
+                        </div>
+                    </ScrollAreaUI>
                 </div>
             </CollapsibleSheet>
         </Sheet>

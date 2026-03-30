@@ -4,8 +4,8 @@ from .models import DraftCart
 
 class DraftCartSerializer(serializers.ModelSerializer):
     """
-    Serializer para borradores de carrito POS por sesión.
-    Incluye información del cliente y usuarios que crearon/modificaron.
+    Serializer completo para borradores de carrito POS por sesión.
+    Incluye información del cliente, usuarios y estado de lock.
     """
     customer_name = serializers.CharField(
         source='customer.name',
@@ -31,6 +31,10 @@ class DraftCartSerializer(serializers.ModelSerializer):
     
     item_count = serializers.SerializerMethodField()
     
+    # Lock fields
+    is_locked = serializers.SerializerMethodField()
+    locked_by_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = DraftCart
         fields = [
@@ -51,6 +55,11 @@ class DraftCartSerializer(serializers.ModelSerializer):
             'last_modified_by',
             'last_modified_by_username',
             'last_modified_by_full_name',
+            'is_locked',
+            'locked_by',
+            'locked_by_name',
+            'locked_at',
+            'lock_session_key',
             'created_at',
             'updated_at',
         ]
@@ -72,4 +81,24 @@ class DraftCartSerializer(serializers.ModelSerializer):
         if obj.last_modified_by:
             full_name = obj.last_modified_by.get_full_name()
             return full_name if full_name else obj.last_modified_by.username
+        return None
+    
+    def get_is_locked(self, obj):
+        """Retorna si el borrador está activamente bloqueado"""
+        if not obj.locked_by:
+            return False
+        # Check if lock has expired
+        from django.utils import timezone
+        from .draft_cart_service import LOCK_TIMEOUT_SECONDS
+        if obj.locked_at:
+            elapsed = (timezone.now() - obj.locked_at).total_seconds()
+            if elapsed > LOCK_TIMEOUT_SECONDS:
+                return False
+        return True
+    
+    def get_locked_by_name(self, obj):
+        """Retorna nombre del usuario que tiene el lock"""
+        if obj.locked_by and self.get_is_locked(obj):
+            full_name = obj.locked_by.get_full_name()
+            return full_name if full_name else obj.locked_by.username
         return None

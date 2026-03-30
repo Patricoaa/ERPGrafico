@@ -10,11 +10,6 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { HubPanelProvider, useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { OrderHubPanel } from "@/components/orders/OrderHubPanel"
-import { ActionCategory } from "@/components/orders/ActionCategory"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
-import { useOrderHubData } from "@/hooks/useOrderHubData"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -31,14 +26,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const [isSidebarVisible, setIsSidebarVisible] = useState(false)
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, actionEngineRef } = useHubPanel()
-    const { activeDoc, fetchOrderDetails, userPermissions } = useOrderHubData({ 
-        orderId: hubConfig?.orderId, 
-        invoiceId: hubConfig?.invoiceId, 
-        type: hubConfig?.type || 'sale', 
-        enabled: isHubOpen 
-    })
-
+    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
 
     const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden
@@ -123,14 +111,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     isHubEffectivelyOpen && "mr-[500px]"
                 )}
             >
-                <main className={cn(
-                    "flex-1 overflow-y-auto pb-24",
-                    pathname.includes('/sales/pos') && "flex flex-col overflow-hidden"
-                )}>
-                    <div className={cn(
-                        "p-0 w-full",
-                        pathname.includes('/sales/pos') && "flex-1 flex flex-col overflow-hidden"
-                    )}>
+                <main className="flex-1 overflow-y-auto pb-24">
+                    <div className="p-0 w-full">
                         {children}
                     </div>
                 </main>
@@ -140,25 +122,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 />
             </div>
 
-            {/* Hub Panel (Right) - Fixed position, NO Dialog/Portal */}
-            <div 
-                className={cn(
-                    "fixed top-0 right-0 h-screen w-[500px] z-30 border-l shadow-2xl transition-transform duration-500 ease-in-out bg-background",
-                    isHubEffectivelyOpen ? "translate-x-0" : "translate-x-full"
-                )}
-            >
-                {isHubOpen && hubConfig && (
-                    <OrderHubPanel
-                        orderId={hubConfig.orderId}
-                        invoiceId={hubConfig.invoiceId}
-                        type={hubConfig.type}
-                        onClose={closeHub}
-                        onActionSuccess={hubConfig.onActionSuccess}
-                        posSessionId={hubConfig.posSessionId}
-                    />
-                )}
-            </div>
-
             {/* Task Inbox Sidebar (Right) - Fixed position */}
             <div className="fixed right-0 top-0 h-screen z-40">
                 <TaskInboxSidebar
@@ -166,34 +129,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     onClose={() => setIsInboxOpen(false)}
                 />
             </div>
-
-            {/* 
-                STABLE ACTION ENGINE (Headless) 
-                Mounted outside the sliding sidebar to ensure modal stability.
-            */}
-            {/* 
-                STABLE ACTION ENGINE (Headless) 
-                Mounted outside the sliding sidebar to ensure modal stability.
-            */}
-            {isHubOpen && (
-                <div className="sr-only" aria-hidden="true" id="global-action-engine">
-                    <ActionCategory
-                        key={hubConfig?.orderId || hubConfig?.invoiceId || 'engine'}
-                        ref={actionEngineRef}
-                        category={{ 
-                            id: 'hub-engine', 
-                            label: 'Global Engine', 
-                            icon: null as any, 
-                            actions: Object.values(hubConfig?.type === 'purchase' || hubConfig?.type === 'obligation' ? purchaseOrderActions : saleOrderActions).flatMap(c => c.actions) 
-                        }}
-                        order={activeDoc}
-                        userPermissions={userPermissions || []}
-                        onActionSuccess={() => { fetchOrderDetails(); hubConfig?.onActionSuccess?.() }}
-                        posSessionId={hubConfig?.posSessionId}
-                        headless={true}
-                    />
-                </div>
-            )}
 
             <Toaster />
         </div>
