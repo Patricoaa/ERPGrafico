@@ -7,12 +7,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
-import { ShoppingCart, Zap, Clock } from 'lucide-react'
+import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from '@/lib/currency'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+import type { WizardState } from '../contexts/POSContext'
 import { useSalesSettings } from '@/features/settings'
 
 interface CartProps {
@@ -42,6 +43,8 @@ interface CartProps {
     onOpenNumpad: (cartItemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => void
     onQuickSale: () => void
     onConfirmSale: () => void
+    posMode?: 'SHOPPING' | 'CHECKOUT'
+    wizardState?: WizardState | null
 }
 
 export function Cart({
@@ -64,7 +67,9 @@ export function Cart({
     onQuickSale,
     onConfirmSale,
     totalDiscountAmount = 0,
-    onTotalDiscountChange
+    onTotalDiscountChange,
+    posMode = 'SHOPPING',
+    wizardState
 }: CartProps) {
     const { isTouchPOS } = useDeviceContext()
     const { canApplyLineDiscount, canApplyGlobalDiscount } = useSalesSettings()
@@ -72,20 +77,69 @@ export function Cart({
     const showLineDiscounts = canApplyLineDiscount
     const showTotalDiscounts = canApplyGlobalDiscount
 
+    const customerName = wizardState?.selectedCustomerName || "Cliente General"
+    const dteType = wizardState?.dteData?.type
+    const deliveryType = wizardState?.deliveryData?.type
+    const deliveryDate = wizardState?.deliveryData?.date
+
+    const getDteLabel = (type: string) => {
+        switch (type) {
+            case 'BOLETA': return 'Boleta'
+            case 'FACTURA': return 'Factura'
+            case 'BOLETA_EXENTA': return 'Boleta Exenta'
+            case 'FACTURA_EXENTA': return 'Factura Exenta'
+            case 'NONE': return 'Sin Documento'
+            default: return type
+        }
+    }
+
+    const getDeliveryLabel = (type: string) => {
+        switch (type) {
+            case 'IMMEDIATE': return 'Inmediata'
+            case 'PARTIAL': return 'Parcial'
+            case 'LATER': return 'Programada'
+            default: return type
+        }
+    }
+
     return (
         <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-6 pt-[24px] pb-4 border-b bg-background/50 flex justify-between items-start rounded-t-xl h-[88px] shrink-0">
-                    <span className="font-semibold text-xl leading-none mt-1">Resumen de Venta</span>
-                    <span className="text-sm font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full -mt-1">
-                        {items.length} items
-                    </span>
+                <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-xl h-[88px] shrink-0 gap-1.5">
+                    <div className="flex justify-between items-center">
+                        <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
+                        <div className="flex items-center gap-2">
+                             {currentDraftId && (
+                                <Badge variant="outline" className="text-[10px] h-5 px-2 bg-primary/5 font-bold text-primary uppercase tracking-tighter border-primary/20 gap-1 font-mono">
+                                    #{currentDraftId}
+                                </Badge>
+                            )}
+                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-md uppercase tracking-tighter">
+                                {items.length} Items
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            {lastSaved && (
+                                <div className="flex items-center text-[10px] text-muted-foreground font-medium gap-1 opacity-80">
+                                    <Clock className="h-3 w-3" />
+                                    <span>
+                                        {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        {saving && <div className="h-1 w-12 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
+                    </div>
                 </div>
 
                 {/* Items List */}
-                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl relative">
+                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl relative scrollbar-thin">
                     {items.length === 0 ? (
+                        /* Empty State ... */
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
                             <div className="h-24 w-24 rounded-full bg-muted/30 flex items-center justify-center border-2 border-dashed border-muted-foreground/10 mb-2">
                                 <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
@@ -98,6 +152,7 @@ export function Cart({
                             </div>
                         </div>
                     ) : (
+                        /* Table Content ... */
                         <Table>
                             <TableHeader className="bg-background/50 sticky top-0 z-10">
                                 <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
@@ -131,6 +186,7 @@ export function Cart({
                                             onRemove={onItemRemove}
                                             onOpenNumpad={onOpenNumpad}
                                             showLineDiscount={showLineDiscounts}
+                                            posMode={posMode}
                                         />
                                     )
                                 })}
@@ -141,43 +197,70 @@ export function Cart({
 
                 {/* Footer with Totals and Actions */}
                 <div className="p-4 bg-muted/20 border-t space-y-4">
-                    {/* Status Bar */}
-                    <div className="flex justify-between items-center px-1 min-h-[16px]">
-                        <div>
-                            {currentDraftId && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 bg-background font-normal text-muted-foreground uppercase tracking-widest border-muted-foreground/20 gap-1 font-mono">
-                                    Borrador
-                                    <span className="font-bold text-primary/70">#{currentDraftId}</span>
-                                </Badge>
+                    {/* Sale Metadata Summary (New Section) */}
+                    {(customerName || dteType || deliveryType) && items.length > 0 && (
+                        <div className="flex flex-col gap-2 p-3 bg-background/50 rounded-lg border border-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                    <User className="h-3 w-3 text-primary" />
+                                    <span>Cliente</span>
+                                </div>
+                                <span className="font-bold text-primary truncate max-w-[180px]">{customerName}</span>
+                            </div>
+
+                            {dteType && (
+                                <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-2">
+                                    <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                        <FileText className="h-3 w-3 text-blue-500" />
+                                        <span>Documento</span>
+                                    </div>
+                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-100 uppercase">
+                                        {getDteLabel(dteType)}
+                                    </Badge>
+                                </div>
+                            )}
+
+                            {deliveryType && (
+                                <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-4">
+                                    <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                        <Truck className="h-3 w-3 text-emerald-500" />
+                                        <span>Logística</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-emerald-50 text-emerald-700 border-emerald-100 uppercase">
+                                            {getDeliveryLabel(deliveryType)}
+                                        </Badge>
+                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
+                                            <Calendar className="h-3 w-3" />
+                                            {deliveryDate ? new Date(deliveryDate).toLocaleDateString() : new Date().toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
                             )}
                         </div>
-                        {lastSaved && (
-                            <div className="flex items-center text-[10px] text-muted-foreground gap-1 opacity-70">
-                                <Clock className="h-3 w-3" />
-                                <span>
-                                    {saving ? "Guardando..." : `Actualizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                                </span>
-                            </div>
-                        )}
-                    </div>
+                    )}
 
-                    {/* Quick Sale Button */}
-                    <Button
-                        variant="outline"
-                        className={cn(
-                            "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
-                            isTouchPOS ? "h-14 text-base" : "h-12 text-sm"
-                        )}
-                        disabled={loading || items.length === 0 || !canQuickSale.allowed}
-                        onClick={onQuickSale}
-                        title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
-                    >
-                        <Zap className={cn(
-                            "mr-2",
-                            isTouchPOS ? "h-6 w-6" : "h-5 w-5"
-                        )} />
-                        {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
-                    </Button>
+                    {/* Status Bar removed from here */}
+
+                    {posMode === 'SHOPPING' && (
+                        /* Quick Sale Button */
+                        <Button
+                            variant="outline"
+                            className={cn(
+                                "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
+                                isTouchPOS ? "h-14 text-base" : "h-12 text-sm"
+                            )}
+                            disabled={loading || items.length === 0 || !canQuickSale.allowed}
+                            onClick={onQuickSale}
+                            title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
+                        >
+                            <Zap className={cn(
+                                "mr-2",
+                                isTouchPOS ? "h-6 w-6" : "h-5 w-5"
+                            )} />
+                            {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
+                        </Button>
+                    )}
 
                     {/* Totals */}
                     <div className="space-y-1">
@@ -207,23 +290,25 @@ export function Cart({
                         </div>
                     </div>
 
-                    {/* Confirm Sale Button */}
-                    <Button
-                        id="confirm-sale-btn"
-                        className={cn(
-                            "w-full shadow-lg font-black uppercase tracking-tight",
-                            isTouchPOS ? "h-20 text-2xl" : "h-16 text-xl"
-                        )}
-                        size="lg"
-                        disabled={loading || items.length === 0}
-                        onClick={onConfirmSale}
-                    >
-                        <ShoppingCart className={cn(
-                            "mr-2",
-                            isTouchPOS ? "h-8 w-8" : "h-6 w-6"
-                        )} />
-                        {loading ? "Procesando..." : "Confirmar Venta"}
-                    </Button>
+                    {posMode === 'SHOPPING' && (
+                        /* Confirm Sale Button */
+                        <Button
+                            id="confirm-sale-btn"
+                            className={cn(
+                                "w-full shadow-lg font-black uppercase tracking-tight",
+                                isTouchPOS ? "h-20 text-2xl" : "h-16 text-xl"
+                            )}
+                            size="lg"
+                            disabled={loading || items.length === 0}
+                            onClick={onConfirmSale}
+                        >
+                            <ShoppingCart className={cn(
+                                "mr-2",
+                                isTouchPOS ? "h-8 w-8" : "h-6 w-6"
+                            )} />
+                            {loading ? "Procesando..." : "Confirmar Venta"}
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>

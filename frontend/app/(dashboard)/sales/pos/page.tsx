@@ -1,16 +1,5 @@
 "use client"
 
-/**
- * POS Main Page - Refactored
- * 
- * This is the refactored version of the POS page using modular architecture:
- * - POSContext for centralized state
- * - Custom hooks for business logic
- * - Modular UI components
- * 
- * Reduced from 1486 lines to ~300 lines while maintaining all functionality
- */
-
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
@@ -18,7 +7,8 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut } from 'lucide-react'
+import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import * as Validation from '@/lib/pos/validation'
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
 // Context and Hooks
@@ -40,24 +29,21 @@ import { useCart } from './hooks/useCart'
 import { useStockValidation } from './hooks/useStockValidation'
 import { useDrafts } from './hooks/useDrafts'
 
-// UI Components (always loaded - lightweight)
+// UI Components
 import { SearchBar } from './components/SearchBar'
 import { CategoryFilter } from './components/CategoryFilter'
 import { ProductGrid } from './components/ProductGrid'
 import { Cart } from './components/Cart'
+import { POSCheckoutHeader } from './components/POSCheckoutHeader'
+import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
-// Lightweight shared components
+// Shared components
 import { SessionControl, SessionControlHandle } from '@/components/pos/SessionControl'
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/components/pos/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing'
 import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
 
-// 🚀 Lazy-loaded heavy components (modals only used when triggered)
-const SalesCheckoutWizard = dynamic(
-    () => import('@/features/sales/components/SalesCheckoutWizard'),
-    { ssr: false, loading: () => <div className="p-4">Cargando...</div> }
-)
-
+// Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
     () => import('@/components/pos/POSVariantSelectorModal').then(mod => ({ default: mod.POSVariantSelectorModal })),
     { ssr: false }
@@ -101,519 +87,260 @@ function POSPageContent() {
         updateItem,
         totalDiscountAmount,
         setTotalDiscountAmount,
+        posMode,
+        setPosMode,
     } = usePOS()
 
     const { user } = useAuth()
+    const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
+    const { limits: stockLimits, calculateMaxQty } = useStockValidation()
+    const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts } = useDrafts()
+    const { filteredProducts, categories, searchTerm, setSearchTerm, selectedCategoryId, setSelectedCategoryId, refreshProducts, toggleFavorite } = useProducts()
 
-    // Cart management
-    const {
-        addProductToCart,
-        updateQuantity,
-        removeFromCart,
-        clearCart,
-        canCheckout,
-        fetchEffectivePrice
-    } = useCart()
+    useEffect(() => { if (lastSaved) refreshProducts(true) }, [lastSaved, refreshProducts])
 
-    // Stock validation
-    const {
-        limits: stockLimits,
-        updateLimits,
-        calculateMaxQty
-    } = useStockValidation()
-
-    // Drafts management
-    const {
-        saveDraft,
-        loadDraft,
-        drafts,
-        isSaving,
-        lastSaved,
-        deleteDraft,
-        fetchDrafts
-    } = useDrafts()
-
-    // Products management
-    const {
-        filteredProducts,
-        categories,
-        searchTerm,
-        setSearchTerm,
-        selectedCategoryId,
-        setSelectedCategoryId,
-        limits: productLimits,
-        setLimits: setProductLimits,
-        refreshProducts,
-        toggleFavorite
-    } = useProducts()
-
-    // Refresh products when a draft is saved to update stock indicators (silent)
-    useEffect(() => {
-        if (lastSaved) {
-            refreshProducts(true)
-        }
-    }, [lastSaved, refreshProducts])
-
-    // Refs
     const sessionControlRef = useRef<SessionControlHandle>(null)
     const scannerFeedbackRef = useRef<ScannerFeedbackHandle>(null)
-
-    // Query client for cache invalidation
     const queryClient = useQueryClient()
     const searchParams = useSearchParams()
 
-    // Local UI state
-    const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [draftsListOpen, setDraftsListOpen] = useState(false)
     const [variantModalOpen, setVariantModalOpen] = useState(false)
     const [selectedProductForVariant, setSelectedProductForVariant] = useState<any>(null)
     const [numpadOpen, setNumpadOpen] = useState(false)
-    const [numpadConfig, setNumpadConfig] = useState<{
-        itemId: string | 'cart'
-        field: 'qty' | 'price' | 'discount'
-        initialValue: number
-    } | null>(null)
+    const [numpadConfig, setNumpadConfig] = useState<any>(null)
     const [numpadValue, setNumpadValue] = useState("0")
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
 
-    // Track shared session state
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setIsSharedSession(!!localStorage.getItem('shared_pos_session_id'))
-        }
-    }, [currentSession])
+    useEffect(() => { if (typeof window !== 'undefined') setIsSharedSession(!!localStorage.getItem('shared_pos_session_id')) }, [currentSession])
 
-    // Load Draft from URL if present
     useEffect(() => {
-        const draftIdStr = searchParams.get('draftId')
-        if (draftIdStr && currentSession?.id && !loading && !draftLoadedFromUrl.current) {
-            const dId = parseInt(draftIdStr)
-            if (!isNaN(dId)) {
+        const dIdStr = searchParams.get('draftId')
+        if (dIdStr && currentSession?.id && !loading && !draftLoadedFromUrl.current) {
+            const dId = parseInt(dIdStr); if (!isNaN(dId)) {
                 draftLoadedFromUrl.current = true
-                console.log("Loading draft from URL:", dId)
-                // Small delay to ensure POS is fully initialized
-                setTimeout(() => {
-                    loadDraft(dId).then(() => {
-                        // Drafts from approval (from notifications) are essentially checkouts in progress
-                        setCheckoutOpen(true)
-                    }).catch((err) => {
-                        console.error("Failed to load draft from URL", err)
-                    })
-                }, 500)
+                setTimeout(() => loadDraft(dId).then(() => setPosMode('CHECKOUT')), 500)
             }
         }
     }, [searchParams, currentSession?.id, loading, loadDraft])
 
-    // Auto-save drafts
     useEffect(() => {
         if (!currentSession?.id || items.length === 0 || loading || wizardState?.isLoading) return
-
-        // Skip auto-save if the wizard is in a loading/transition state (e.g. processing final checkout)
-        if (wizardState?.isLoading) return
-
-        const timer = setTimeout(() => {
-            saveDraft(undefined, true)
-        }, 2000)
-
+        const timer = setTimeout(() => saveDraft(undefined, true), 2000)
         return () => clearTimeout(timer)
     }, [items, selectedCustomerId, wizardState, currentSession, loading])
 
-    // Sync customer from Wizard back to POS Context
     useEffect(() => {
-        const wizardCustomerId = wizardState?.selectedCustomerId
-        if (wizardCustomerId && wizardCustomerId !== selectedCustomerId?.toString()) {
-            const parsedId = parseInt(wizardCustomerId)
-            if (!isNaN(parsedId)) {
-                setSelectedCustomerId(parsedId)
-            }
+        const wCustId = wizardState?.selectedCustomerId
+        if (wCustId && wCustId.toString() !== selectedCustomerId?.toString()) {
+            const parsed = parseInt(wCustId.toString()); if (!isNaN(parsed)) setSelectedCustomerId(parsed)
         }
-    }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
+    }, [wizardState?.selectedCustomerId, selectedCustomerId])
 
-    // Product click handler
     const handleProductClick = (product: any) => {
         if (product.has_variants && product.variants_count > 0) {
-            setSelectedProductForVariant(product)
-            setVariantModalOpen(true)
-        } else {
-            addProductToCart(product)
-        }
+            setSelectedProductForVariant(product); setVariantModalOpen(true)
+        } else addProductToCart(product)
     }
 
-    // Search Enter handler
     const handleSearchEnter = () => {
         const term = searchTerm.toLowerCase().trim()
         if (!term) return
-
-        // Try exact code match
-        const exactMatch = filteredProducts.find(p =>
-            p.code.toLowerCase() === term || p.internal_code?.toLowerCase() === term
-        )
-
-        if (exactMatch) {
-            handleProductClick(exactMatch)
-            setSearchTerm("")
-            return
-        }
-
-        // If only one result, add it
-        if (filteredProducts.length === 1) {
-            handleProductClick(filteredProducts[0])
-            setSearchTerm("")
-            return
-        }
-
-        // Trigger error feedback
+        const exact = filteredProducts.find(p => p.code.toLowerCase() === term || p.internal_code?.toLowerCase() === term)
+        if (exact) { handleProductClick(exact); setSearchTerm(""); return }
+        if (filteredProducts.length === 1) { handleProductClick(filteredProducts[0]); setSearchTerm(""); return }
         scannerFeedbackRef.current?.triggerError()
     }
 
-    // Numpad handlers
-    const handleOpenNumpad = (itemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => {
-        setNumpadConfig({ itemId, field, initialValue: currentValue })
-        setNumpadValue(currentValue.toString())
-        setNumpadOpen(true)
+    const handleOpenNumpad = (itemId: any, field: any, currentVal: number) => {
+        setNumpadConfig({ itemId, field, initialValue: currentVal }); setNumpadValue(currentVal.toString()); setNumpadOpen(true)
     }
 
     const handleNumpadConfirm = (value: number) => {
         if (!numpadConfig) return
-
-        if (numpadConfig.itemId === 'cart') {
-            if (numpadConfig.field === 'discount') {
-                handleTotalDiscountChange(value)
-            }
-        } else {
-            if (numpadConfig.field === 'qty') {
-                updateQuantity(numpadConfig.itemId, value)
-            } else if (numpadConfig.field === 'price') {
-                handleItemPriceChange(numpadConfig.itemId, value)
-            } else if (numpadConfig.field === 'discount') {
+        if (numpadConfig.itemId === 'cart') { if (numpadConfig.field === 'discount') setTotalDiscountAmount(value) }
+        else {
+            if (numpadConfig.field === 'qty') updateQuantity(numpadConfig.itemId, value)
+            else if (numpadConfig.field === 'price') handleItemPriceChange(numpadConfig.itemId, value)
+            else if (numpadConfig.field === 'discount') {
                 const item = items.find(i => i.cartItemId === numpadConfig.itemId)
                 if (item) {
-                    const totalBeforeDiscount = item.qty * item.unit_price_gross
-                    const percent = totalBeforeDiscount > 0 ? (value / totalBeforeDiscount) * 100 : 0
+                    const totalBefore = item.qty * item.unit_price_gross
+                    const percent = totalBefore > 0 ? (value / totalBefore) * 100 : 0
                     handleItemDiscountChange(numpadConfig.itemId, value, percent)
                 }
             }
         }
-
         setNumpadOpen(false)
-        setNumpadConfig(null)
     }
 
-    // Cart item handlers with price updates
-    const handleItemUomChange = async (cartItemId: string, uomId: number, uomName: string) => {
-        const item = items.find(i => i.cartItemId === cartItemId)
-        if (!item) return
-
+    const handleItemUomChange = async (itemId: string, uomId: number, uomName: string) => {
+        const item = items.find(i => i.cartItemId === itemId); if (!item) return
         const prices = await fetchEffectivePrice(item, item.qty, uomId)
-
-        // Update via context
-        updateItem(cartItemId, {
-            uom: uomId,
-            uom_name: uomName,
-            unit_price_net: prices.net,
-            unit_price_gross: prices.gross,
-            total_net: PricingUtils.calculateLineNet(item.qty, prices.net),
-            total_gross: Math.round(item.qty * prices.gross)
-        })
+        updateItem(itemId, { uom: uomId, uom_name: uomName, unit_price_net: prices.net, unit_price_gross: prices.gross, total_net: PricingUtils.calculateLineNet(item.qty, prices.net), total_gross: Math.round(item.qty * prices.gross) })
     }
 
-    const handleItemPriceChange = (cartItemId: string, priceGross: number) => {
-        const item = items.find(i => i.cartItemId === cartItemId)
-        if (!item) return
-
-        const newNet = PricingUtils.grossToNet(priceGross)
+    const handleItemPriceChange = (itemId: string, priceGross: number) => {
+        const item = items.find(i => i.cartItemId === itemId); if (!item) return
         const linePricing = PricingUtils.calculateLineFromGross(item.qty, priceGross, item.discount_amount || 0)
-
-        updateItem(cartItemId, {
-            unit_price_net: newNet,
-            unit_price_gross: priceGross,
-            total_net: linePricing.net,
-            total_gross: linePricing.gross
-        })
+        updateItem(itemId, { unit_price_net: PricingUtils.grossToNet(priceGross), unit_price_gross: priceGross, total_net: linePricing.net, total_gross: linePricing.gross })
     }
 
-    const handleItemDiscountChange = (cartItemId: string, amount: number, percent: number) => {
-        const item = items.find(i => i.cartItemId === cartItemId)
-        if (!item) return
-
+    const handleItemDiscountChange = (itemId: string, amount: number, percent: number) => {
+        const item = items.find(i => i.cartItemId === itemId); if (!item) return
         const linePricing = PricingUtils.calculateLineFromGross(item.qty, item.unit_price_gross, amount)
-
-        updateItem(cartItemId, {
-            discount_amount: amount,
-            discount_percentage: percent,
-            total_net: linePricing.net,
-            total_gross: linePricing.gross
-        })
+        updateItem(itemId, { discount_amount: amount, discount_percentage: percent, total_net: linePricing.net, total_gross: linePricing.gross })
     }
 
-    const handleTotalDiscountChange = (amount: number) => {
-        setTotalDiscountAmount(amount)
-    }
-
-    // Checkout handlers
     const handleConfirmSale = () => {
-        const check = canCheckout()
-        if (!check.valid) {
-            toast.error(check.error)
-            return
-        }
-        // Reset wizard state for a fresh sale (prevents stale data from previous sale)
-        setWizardState({
-            step: 1,
-            isQuickSale: false
-        })
-        setCheckoutOpen(true)
+        const check = canCheckout(); if (!check.valid) { toast.error(check.error); return }
+        setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
     const handleCheckoutComplete = async () => {
-        // Clear local state IMMEDIATELY to prevent auto-save from recreating the draft
-        // The backend already deleted it, so we must stop referring to it globally
-        setCurrentDraftId(null)
-        setWizardState(null)
-        clearCart()
-
-        // Refresh drafts list without full loading indicator to sync with backend deletion
-        await fetchDrafts()
-
-        // Invalidate sales cache so the Sales Notes modal shows the new sale immediately
-        queryClient.invalidateQueries({ queryKey: ['sales'] })
-
-        setCheckoutOpen(false)
-        toast.success("Venta completada exitosamente")
+        setCurrentDraftId(null); setWizardState(null); clearCart()
+        await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
+        setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
-
 
     const handleQuickSale = () => {
-        const quickSaleCheck = Validation.canQuickSale(items, selectedCustomerId)
-        if (!quickSaleCheck.allowed) {
-            toast.error(quickSaleCheck.reason)
-            return
-        }
-
-        // Force default customer for quick sale if none selected
-        if (!selectedCustomerId && defaultCustomerId) {
-            setSelectedCustomerId(defaultCustomerId)
-        }
-
-        // Determine last step (Payment) based on items
-        const currentIsOnlyService = items.every(line => line.product_type === 'SERVICE');
-        const currentHasManufacturing = items.some(line =>
-            line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
-        );
-        const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
-
-        // Open checkout in quick sale mode, pre-filling defaults
-        const quickSaleState = {
-            step: lastStep,
-            dteData: {
-                type: 'BOLETA', // Default to Boleta
-                number: '',
-                date: new Date().toISOString().split('T')[0],
-                attachment: null,
-                isPending: false
-            },
-            deliveryData: {
-                type: 'IMMEDIATE', // Default to Immediate
-                date: null,
-                notes: ''
-            }
-        }
-
-        setWizardState({
-            ...quickSaleState,
-            isQuickSale: true
-        } as any)
-
-        // Use a small timeout to ensure wizardState is committed to React's state 
-        // before the modal opens, guaranteeing the hydration effect reads the fresh props
-        setTimeout(() => setCheckoutOpen(true), 0)
+        const check = Validation.canQuickSale(items, selectedCustomerId); if (!check.allowed) { toast.error(check.reason); return }
+        if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
+        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
+        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
+        const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
+        setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
-    // Draft handlers
     const handleLoadDraft = async (draft: any) => {
-        await loadDraft(draft.id)
-        setDraftsListOpen(false)
-        // Only reopen the wizard if the draft was saved mid-checkout;
-        // pure cart drafts (no wizard_state) just restore the items.
-        if (draft.wizard_state && draft.wizard_state.step) {
-            setCheckoutOpen(true)
-        }
+        await loadDraft(draft.id); setDraftsListOpen(false)
+        if (draft.wizard_state?.step) setPosMode('CHECKOUT')
     }
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
 
     return (
-        <div className={cn("flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500")}>
-            {/* Header */}
-            <div className="flex items-center justify-between py-1 px-1 mb-1">
-                <div className="flex items-center gap-4">
+        <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500">
+            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] border-b pb-2">
+                {/* Left: Terminal & Session Info */}
+                <div className="flex items-center gap-4 flex-1">
                     <h2 className="text-xl font-bold tracking-tight">
                         {currentSession?.terminal_name || "Punto de Venta"}
                     </h2>
-
-                    {currentSession && currentSession.status === 'OPEN' && (
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary gap-1 px-2 py-0.5 text-[10px] items-center h-5 font-bold">
-                                Sesión #{currentSession.id}
-                            </Badge>
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 gap-1.5 px-2 py-0.5 text-[10px] items-center h-5 font-medium">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                Cajero: {user?.first_name} {user?.last_name}
-                            </Badge>
+                    {currentSession?.status === 'OPEN' && (
+                        <div className="hidden sm:flex items-center gap-2">
+                            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-5 font-bold uppercase transition-colors">Sesión #{currentSession.id}</Badge>
+                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 px-2 py-0.5 text-[10px] h-5 font-medium uppercase">{user?.first_name} {user?.last_name}</Badge>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Quick Drafts - Horizontal access */}
-                    {drafts.length > 0 && (
-                        <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in slide-in-from-right-2">
-                            {drafts.slice(0, 5).map((draft) => (
-                                <Button
-                                    key={draft.id}
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn(
-                                        "h-8 w-8 p-0 text-[10px] font-mono font-bold border-dashed hover:border-primary hover:text-primary transition-all",
-                                        currentDraftId === draft.id ? "bg-primary/5 border-primary text-primary" : "bg-background/50 text-muted-foreground"
-                                    )}
-                                    onClick={() => handleLoadDraft(draft)}
-                                    title={`${draft.name} · ${draft.item_count} ítem(s)`}
-                                >
-                                    {draft.id}
-                                </Button>
-                            ))}
-                        </div>
-                    )}
+                {/* Middle: Steps Header */}
+                <div className="flex-1 flex justify-center px-4">
+                    <div className="w-full max-w-2xl">
+                        <POSCheckoutHeader />
+                    </div>
+                </div>
 
-                    {/* Actions Menu */}
+                {/* Right: Actions & Menu */}
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                    {(() => {
+                        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
+                        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
+                        const totalSteps = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
+                        const isPaymentStep = wizardState?.step === totalSteps
+
+                        // Prioritize current draft in quick view
+                        const quickDrafts = [...drafts].slice(0, 5)
+                        if (currentDraftId && !quickDrafts.find(d => d.id === currentDraftId)) {
+                            const current = drafts.find(d => d.id === currentDraftId)
+                            if (current) {
+                                quickDrafts.unshift(current)
+                                quickDrafts.pop()
+                            }
+                        }
+
+                        return drafts.length > 0 && (posMode === 'SHOPPING' || (posMode === 'CHECKOUT' && isPaymentStep)) && (
+                            <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300">
+                                {quickDrafts.map(d => (
+                                    <Button
+                                        key={d.id}
+                                        variant="outline"
+                                        size="sm"
+                                        className={cn(
+                                            "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold border-dashed transition-all duration-300",
+                                            currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm" : "text-muted-foreground",
+                                            isSaving && currentDraftId === d.id && "animate-pulse opacity-70"
+                                        )}
+                                        onClick={() => handleLoadDraft(d)}
+                                    >
+                                        {d.id}
+                                        {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
+                                    </Button>
+                                ))}
+                                {currentDraftId === null && items.length > 0 && (
+                                    <Badge variant="outline" className="h-8 border-dashed text-[9px] px-2 opacity-50 bg-muted/20">Nuevo...</Badge>
+                                )}
+                            </div>
+                        )
+                    })()}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
+                            <Button variant="outline" size="sm" className="gap-2 h-9">
                                 <LayoutGrid className="h-4 w-4" />
-                                Menú
+                                <span className="hidden sm:inline">Menú</span>
                                 <ChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Menú de Operaciones</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}>
-                                <Save className="mr-2 h-4 w-4" />
-                                <span>Ver Borradores</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}>
-                                <BarChart3 className="mr-2 h-4 w-4" />
-                                <span>Reporte Parcial</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}>
-                                <FileText className="mr-2 h-4 w-4" />
-                                <span>Notas de Venta</span>
-                            </DropdownMenuItem>
-
+                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
                             {currentSession?.status === 'OPEN' && (
-                                <>
-
-                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}>
-                                        <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                        <span>Movimiento de Caja</span>
-                                    </DropdownMenuItem>
-
-                                    {isSharedSession ? (
-                                        <DropdownMenuItem
-                                            onClick={() => sessionControlRef.current?.disconnectSharedSession()}
-                                            className="text-red-600 focus:text-red-700 focus:bg-red-50 font-medium"
-                                        >
-                                            <LogOut className="mr-2 h-4 w-4" />
-                                            <span>Desconectar de Caja</span>
-                                        </DropdownMenuItem>
-                                    ) : (
-                                        <DropdownMenuItem
-                                            onClick={() => sessionControlRef.current?.requestCloseSession()}
-                                            className="text-red-600 focus:text-red-700 focus:bg-red-50 font-medium"
-                                        >
-                                            <Lock className="mr-2 h-4 w-4" />
-                                            <span>Cerrar Caja</span>
-                                        </DropdownMenuItem>
-                                    )}
-                                </>
+                                <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
                             )}
                         </DropdownMenuContent>
                     </DropdownMenu>
-
-                    {/* Session Control - Updates session state on open/close */}
-                    <SessionControl
-                        ref={sessionControlRef}
-                        onSessionChange={setCurrentSession}
-                        session={currentSession ?? undefined}
-                        hideSessionInfo={true}
-                    />
+                    <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-                {/* Session Closed Overlay */}
                 {currentSession !== undefined && (!currentSession || currentSession.status !== 'OPEN') && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-2xl border-primary/20 animate-in fade-in zoom-in duration-300">
-                            <CardHeader className="text-center pb-2">
-                                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
-                                    <Lock className="h-8 w-8 text-primary" />
-                                </div>
-                                <CardTitle className="text-2xl">Caja Cerrada</CardTitle>
-                                <div className="space-y-1">
-                                    <p className="text-muted-foreground">
-                                        Debe abrir una sesión de caja para realizar ventas.
-                                    </p>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="flex justify-center pb-8">
-                                <SessionControl
-                                    onSessionChange={setCurrentSession}
-                                    session={currentSession ?? undefined}
-                                />
-                            </CardContent>
+                        <Card className="w-full max-w-md shadow-2xl border-primary/20 p-8 text-center space-y-4">
+                            <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
+                            <h3 className="text-2xl font-bold">Caja Cerrada</h3>
+                            <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
+                            <SessionControl onSessionChange={setCurrentSession} session={currentSession ?? undefined} />
                         </Card>
                     </div>
                 )}
 
-                {/* Left: Products */}
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col overflow-hidden shadow-none bg-muted/20 border">
-                        <CardHeader className="pb-3 px-6 border-b bg-background/50 rounded-t-xl">
-                            <div className="flex flex-col gap-4">
-                                <SearchBar
-                                    value={searchTerm}
-                                    onChange={setSearchTerm}
-                                    onEnter={handleSearchEnter}
-                                />
-                                <CategoryFilter
-                                    categories={categories}
-                                    selectedCategoryId={selectedCategoryId}
-                                    onSelectCategory={setSelectedCategoryId}
-                                />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-auto p-6 pt-4">
-                                <ProductGrid
-                                    products={filteredProducts}
-                                    categories={categories}
-                                    limits={stockLimits}
-                                    onProductClick={handleProductClick}
-                                    onToggleFavorite={toggleFavorite}
-                                />
-                        </CardContent>
-                    </Card>
+                    <AnimatePresence mode="wait">
+                        {posMode === 'SHOPPING' ? (
+                            <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
+                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border">
+                                    <div className="p-4 border-b bg-background/50 space-y-4">
+                                        <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
+                                        <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
+                                    </div>
+                                    <div className="flex-1 overflow-auto p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
+                                </Card>
+                            </motion.div>
+                        ) : (
+                            <motion.div key="checkout" initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
+                                <SalesCheckoutWizardContent order={null} orderLines={items} total={totals.total_gross} totalDiscountAmount={totalDiscountAmount} onComplete={handleCheckoutComplete} onCancel={() => setPosMode('SHOPPING')} initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)} posSessionId={currentSession?.id} terminalId={currentSession?.terminal} quickSale={wizardState?.isQuickSale} initialStep={wizardState?.step} initialDteData={wizardState?.dteData} initialPaymentData={wizardState?.paymentData} initialDeliveryData={wizardState?.deliveryData} initialApprovalTaskId={wizardState?.approvalTaskId} initialIsWaitingApproval={wizardState?.isWaitingApproval} initialIsApproved={wizardState?.isApproved} initialDraftId={currentDraftId} onStateChange={setWizardState} isInline />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                {/* Right: Cart */}
-                <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0 overflow-hidden">
+                <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0">
                     <Cart
                         items={items}
                         products={filteredProducts}
@@ -635,73 +362,17 @@ function POSPageContent() {
                         onConfirmSale={handleConfirmSale}
                         totalDiscountAmount={totalDiscountAmount}
                         onTotalDiscountChange={setTotalDiscountAmount}
+                        posMode={posMode}
+                        wizardState={wizardState}
                     />
                 </div>
             </div>
 
-            {/* Modals */}
-            <SalesCheckoutWizard
-                key={`checkout-wizard-${wizardState?.isQuickSale ? 'quick' : 'normal'}-${checkoutOpen ? 'open' : 'closed'}`}
-                open={checkoutOpen}
-                onOpenChange={setCheckoutOpen}
-                order={null}
-                orderLines={items}
-                total={totals.total_gross}
-                totalDiscountAmount={totalDiscountAmount}
-                onComplete={handleCheckoutComplete}
-                initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
-                posSessionId={currentSession?.id}
-                terminalId={currentSession?.terminal}
-                quickSale={wizardState?.isQuickSale}
-                initialStep={wizardState?.step}
-                initialDteData={wizardState?.dteData}
-                initialPaymentData={wizardState?.paymentData}
-                initialDeliveryData={wizardState?.deliveryData}
-                initialApprovalTaskId={wizardState?.approvalTaskId}
-                initialIsWaitingApproval={wizardState?.isWaitingApproval}
-                initialIsApproved={wizardState?.isApproved}
-                initialDraftId={currentDraftId}
-                onStateChange={setWizardState}
-            />
-
-            <POSVariantSelectorModal
-                open={variantModalOpen}
-                onOpenChange={setVariantModalOpen}
-                product={selectedProductForVariant}
-                onSelect={(variant) => {
-                    addProductToCart(variant as any)
-                }}
-                items={items}
-                bomCache={bomCache}
-                componentCache={componentCache}
-                calculateMaxQty={calculateMaxQty}
-            />
-
-            <DraftCartsList
-                open={draftsListOpen}
-                onOpenChange={setDraftsListOpen}
-                posSessionId={currentSession?.id || null}
-                onLoadDraft={handleLoadDraft}
-                showTrigger={false}
-            />
-
-            <NumpadModal
-                open={numpadOpen}
-                onOpenChange={setNumpadOpen}
-                title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"}
-                value={numpadValue}
-                onChange={setNumpadValue}
-                onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))}
-                allowDecimal={true}
-            />
-
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
+            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} />
+            <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
-
-            <SalesOrdersModal
-                open={ordersModalOpen}
-                onOpenChange={setOrdersModalOpen}
-                posSessionId={currentSession?.id}
-            />
+            <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
         </div>
     )
 }
