@@ -1,6 +1,7 @@
 import AuthGuard from "@/components/auth/AuthGuard"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { Toaster } from "@/components/ui/sonner"
+import { POSShell } from "./components/POSShell"
 
 export default function POSLayout({
     children,
@@ -12,7 +13,9 @@ export default function POSLayout({
             <ErrorBoundary>
                 <div className="flex h-screen bg-background overflow-hidden font-sans">
                     <main className="flex-1 flex flex-col overflow-hidden">
-                        {children}
+                        <POSShell>
+                            {children}
+                        </POSShell>
                     </main>
                     <Toaster />
                 </div>
@@ -20,3 +23,4 @@ export default function POSLayout({
         </AuthGuard>
     )
 }
+

@@ -11,6 +11,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar borradores de carrito POS por sesión.
     Todos los usuarios de una sesión ven los mismos borradores (multi-usuario).
+    Incluye sincronización en vivo y bloqueo optimista.
     """
     serializer_class = DraftCartSerializer
     permission_classes = [StandardizedModelPermissions]
@@ -25,24 +26,13 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         if not pos_session_id:
             return DraftCart.objects.none()
         
-        # TODO: Validar que el usuario tiene acceso a esta sesión
-        # Por ahora, confiamos en que el frontend solo envía sesiones válidas
         return DraftCart.objects.filter(
             pos_session_id=pos_session_id
-        ).select_related('customer', 'created_by', 'last_modified_by', 'pos_session')
+        ).select_related('customer', 'created_by', 'last_modified_by', 'pos_session', 'locked_by')
     
     def create(self, request):
         """
         POST /api/sales/pos-drafts/ - Guardar nuevo borrador
-        
-        Body:
-        {
-            "pos_session_id": 1,
-            "items": [...],
-            "customer_id": 123,  # opcional
-            "name": "Mi borrador",  # opcional
-            "notes": "notas"  # opcional
-        }
         """
         pos_session_id = request.data.get('pos_session_id')
         items = request.data.get('items', [])
@@ -50,6 +40,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         name = request.data.get('name', '')
         notes = request.data.get('notes', '')
         wizard_state = request.data.get('wizard_state')
+        session_key = request.data.get('session_key', '')
         
         if not pos_session_id:
             return Response(
@@ -71,7 +62,8 @@ class DraftCartViewSet(viewsets.ModelViewSet):
                 customer_id=customer_id,
                 name=name,
                 notes=notes,
-                wizard_state=wizard_state
+                wizard_state=wizard_state,
+                session_key=session_key,
             )
             
             serializer = self.get_serializer(draft)
@@ -92,6 +84,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         name = request.data.get('name', '')
         notes = request.data.get('notes', '')
         wizard_state = request.data.get('wizard_state')
+        session_key = request.data.get('session_key', '')
         
         if not pos_session_id:
             return Response(
@@ -108,7 +101,8 @@ class DraftCartViewSet(viewsets.ModelViewSet):
                 name=name,
                 notes=notes,
                 wizard_state=wizard_state,
-                draft_id=int(pk)
+                draft_id=int(pk),
+                session_key=session_key,
             )
             
             serializer = self.get_serializer(draft)
@@ -152,9 +146,6 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     def restore(self, request, pk=None):
         """
         POST /api/sales/pos-drafts/{id}/restore/ - Restaurar borrador al carrito activo
-        
-        Returns:
-            Datos completos del borrador para cargar en el carrito
         """
         pos_session_id = request.data.get('pos_session_id')  
         
@@ -174,3 +165,127 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(draft)
         return Response(serializer.data)
+
+    # ── Sync Endpoint ────────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'])
+    def sync(self, request):
+        """
+        GET /api/sales/pos-drafts/sync/?pos_session_id=X
+        
+        Endpoint ligero para polling. Retorna estado de todos los borradores
+        de la sesión sin incluir los items del carrito (solo metadatos + locks).
+        Limpia automáticamente locks expirados.
+        """
+        pos_session_id = request.query_params.get('pos_session_id')
+        
+        if not pos_session_id:
+            return Response(
+                {"error": "Se requiere pos_session_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        data = DraftCartService.get_sync_data(
+            pos_session_id=int(pos_session_id),
+        )
+        
+        return Response(data)
+
+    # ── Lock Endpoints ───────────────────────────────────────────────
+
+    @action(detail=True, methods=['post'])
+    def lock(self, request, pk=None):
+        """
+        POST /api/sales/pos-drafts/{id}/lock/
+        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
+        
+        Adquiere el lock del borrador. Si ya está lockeado por otro,
+        retorna 423 Locked con información del holder.
+        """
+        pos_session_id = request.data.get('pos_session_id')
+        session_key = request.data.get('session_key', '')
+        
+        if not pos_session_id or not session_key:
+            return Response(
+                {"error": "Se requiere pos_session_id y session_key"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        result = DraftCartService.acquire_lock(
+            draft_id=int(pk),
+            pos_session_id=int(pos_session_id),
+            user=request.user,
+            session_key=session_key,
+        )
+        
+        if result.get('acquired'):
+            return Response({"locked": True})
+        
+        return Response(
+            {
+                "locked": False,
+                "locked_by_name": result.get('locked_by_name'),
+                "locked_at": result.get('locked_at'),
+                "error": result.get('error', f"Borrador en uso por {result.get('locked_by_name', 'otro usuario')}"),
+            },
+            status=423  # HTTP 423 Locked
+        )
+
+    @action(detail=True, methods=['post'])
+    def unlock(self, request, pk=None):
+        """
+        POST /api/sales/pos-drafts/{id}/unlock/
+        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
+        
+        Libera el lock del borrador.
+        """
+        pos_session_id = request.data.get('pos_session_id')
+        session_key = request.data.get('session_key', '')
+        
+        if not pos_session_id:
+            return Response(
+                {"error": "Se requiere pos_session_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        success = DraftCartService.release_lock(
+            draft_id=int(pk),
+            pos_session_id=int(pos_session_id),
+            user=request.user,
+            session_key=session_key,
+        )
+        
+        return Response({"unlocked": success})
+
+    @action(detail=True, methods=['post'])
+    def heartbeat(self, request, pk=None):
+        """
+        POST /api/sales/pos-drafts/{id}/heartbeat/
+        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
+        
+        Renueva el lock (heartbeat). Debe llamarse periódicamente
+        para mantener el lock activo.
+        """
+        pos_session_id = request.data.get('pos_session_id')
+        session_key = request.data.get('session_key', '')
+        
+        if not pos_session_id or not session_key:
+            return Response(
+                {"error": "Se requiere pos_session_id y session_key"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        success = DraftCartService.refresh_lock(
+            draft_id=int(pk),
+            pos_session_id=int(pos_session_id),
+            user=request.user,
+            session_key=session_key,
+        )
+        
+        if success:
+            return Response({"refreshed": True})
+        
+        return Response(
+            {"refreshed": False, "error": "Lock perdido o no existe"},
+            status=status.HTTP_409_CONFLICT
+        )
