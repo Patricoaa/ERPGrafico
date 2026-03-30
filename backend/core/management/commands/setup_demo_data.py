@@ -4,6 +4,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password
 from decimal import Decimal
 import random
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
@@ -756,7 +757,8 @@ class Command(BaseCommand):
                     'last_name': last,
                     'contact': contact,
                     'is_staff': True,
-                    'is_superuser': (role_name == Roles.ADMIN)
+                    'is_superuser': (role_name == Roles.ADMIN),
+                    'pos_pin': make_password('1234')
                 }
             )
 
@@ -789,8 +791,9 @@ class Command(BaseCommand):
                 for gname in ['Supervisor', 'Bodega', 'Ventas', 'Pre-Prensa', 'Taller', 'Terminaciones', 'Despacho', 'Diseño', 'Administración']:
                     user.groups.add(Group.objects.get(name=gname))
 
-            # Set static password
+            # Set static password and PIN
             user.set_password('111111')
+            user.pos_pin = make_password('1234')
             user.save()
             
             status = "created" if created else "updated"

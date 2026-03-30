@@ -8,6 +8,12 @@ import os
 import uuid
 
 class User(AbstractUser):
+    pos_pin = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("PIN para Punto de Venta (hasheado)")
+    )
     contact = models.OneToOneField(
         'contacts.Contact', 
         on_delete=models.SET_NULL, 
