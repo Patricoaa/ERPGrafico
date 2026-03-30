@@ -821,7 +821,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
 
 
-    if (!currentSession) {
+    if (!currentSession || currentSession.status !== 'OPEN') {
         return (
             <>
                 <Button
