@@ -19,6 +19,14 @@ import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, A
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
 
 export interface SalesCheckoutWizardContentProps {
@@ -28,6 +36,7 @@ export interface SalesCheckoutWizardContentProps {
     totalDiscountAmount?: number
     onComplete: (data?: any) => void
     onCancel?: () => void
+    onSuspend?: (finalState: any) => void
     customerName?: string
     initialCustomerName?: string
     initialCustomerId?: string
@@ -54,6 +63,7 @@ export function SalesCheckoutWizardContent({
     totalDiscountAmount = 0,
     onComplete,
     onCancel,
+    onSuspend,
     initialCustomerName = "",
     initialCustomerId = "",
     channel = "POS",
@@ -80,6 +90,7 @@ export function SalesCheckoutWizardContent({
     ), [initialOrderLines]);
 
     const [step, setStep] = useState(initialStep || (hasManufacturing ? 2 : 1))
+    const [showSuspendDialog, setShowSuspendDialog] = useState(false)
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
@@ -221,6 +232,9 @@ export function SalesCheckoutWizardContent({
         }
     }, [selectedCustomerId])
 
+    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
+    const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
+
     useEffect(() => {
         if (onStateChange) {
             onStateChange({
@@ -234,13 +248,11 @@ export function SalesCheckoutWizardContent({
                 selectedCustomerName,
                 approvalTaskId,
                 isWaitingApproval,
-                isQuickSale: quickSale
+                isQuickSale: quickSale,
+                isWaitingPayment: step === totalSteps
             })
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName])
-
-    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
-    const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
 
     const { accounts } = useTreasuryAccounts({
         context: terminalId ? 'POS' : 'GENERAL',
@@ -374,6 +386,10 @@ export function SalesCheckoutWizardContent({
     const handleNext = async () => {
         const validation = await validateCurrentStep()
         if (!validation.isValid) return
+        if (step === totalSteps - 1) {
+            setShowSuspendDialog(true)
+            return
+        }
         setStep(prev => prev + 1)
     }
 
@@ -798,6 +814,52 @@ export function SalesCheckoutWizardContent({
                         </div>
                     </div>
                 )}
+
+                <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Continuar al Pago?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Ha completado los pasos previos. Puede pagar ahora mismo en esta caja, o enviar el cobro a otro terminal.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+                            <Button
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() => {
+                                    const nextStep = step + 1;
+                                    const finalState = {
+                                        step: nextStep,
+                                        dteData,
+                                        paymentData,
+                                        deliveryData,
+                                        isApproved,
+                                        isLoading: false,
+                                        selectedCustomerId,
+                                        selectedCustomerName,
+                                        isQuickSale: quickSale,
+                                        isWaitingPayment: true
+                                    };
+                                    setStep(nextStep);
+                                    setShowSuspendDialog(false);
+                                    onSuspend?.(finalState);
+                                }}
+                            >
+                                Pagar en otro terminal
+                            </Button>
+                            <Button
+                                className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90"
+                                onClick={() => {
+                                    setShowSuspendDialog(false);
+                                    setStep(prev => prev + 1);
+                                }}
+                            >
+                                Continuar al pago aquí
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
 
             {!isInline && (

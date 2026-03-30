@@ -60,7 +60,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
 
     // Save current cart as draft
-    const saveDraft = useCallback(async (name?: string, silent = false) => {
+    const saveDraft = useCallback(async (name?: string, silent = false, manualWizardState?: any) => {
         if (items.length === 0 || isLoading || isSaving) {
             return
         }
@@ -81,7 +81,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                     manufacturing_data: item.manufacturing_data
                 })),
                 customer_id: selectedCustomerId,
-                wizard_state: wizardState,
+                wizard_state: manualWizardState || wizardState,
                 session_key: options.browserSessionKey || '',
             }
 
