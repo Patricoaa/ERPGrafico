@@ -17,7 +17,77 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
             )}
             <h1 className="text-sm font-black uppercase tracking-widest leading-tight">{mainTitle}</h1>
             <h2 className="text-lg font-black font-mono tracking-tighter">{subTitle}</h2>
-            <p className="text-[10px] font-bold uppercase text-black/60">{formatPlainDate(data.date || data.created_at)}</p>
+            {data.dte_type_display && currentType === 'invoice' && (
+                <div className="mt-1 px-3 py-1 bg-black text-white text-[10px] font-black uppercase tracking-tighter rounded-sm">
+                    {data.dte_type_display} {data.number ? `Nº ${data.number}` : '(BORRADOR)'}
+                </div>
+            )}
+            {currentType === 'sale_order' && (
+                <div className="mt-1 px-3 py-1 bg-black text-white text-[10px] font-black uppercase tracking-tighter rounded-sm">
+                    NOTA DE VENTA {data.number ? `NV-${data.number}` : '(BORRADOR)'}
+                </div>
+            )}
+            <p className="text-[10px] font-bold uppercase text-black/60 pt-1">{formatPlainDate(data.date || data.created_at)}</p>
+            
+            <style dangerouslySetInnerHTML={{ __html: `
+                @media print {
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
+                    }
+                    html, body {
+                        background: white !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        height: auto !important;
+                        min-height: 100% !important;
+                        width: 80mm !important;
+                        overflow: visible !important;
+                    }
+                    
+                    /* Hide EVERYTHING in the app by default */
+                    body * {
+                        display: none !important;
+                    }
+
+                    /* Only show the print-container, its ancestors, and children */
+                    .print-container, 
+                    .print-container *,
+                    .print-section,
+                    .print-section * {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    }
+
+                    /* Ensure parent chain doesn't clip */
+                    .print-container {
+                        width: 80mm !important;
+                        position: absolute !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        height: auto !important;
+                        overflow: visible !important;
+                    }
+
+                    /* Thermal Ticket Specifics */
+                    .print-section {
+                        width: 80mm !important;
+                        margin: 0 !important;
+                        padding: 8mm 4mm !important;
+                        background: white !important;
+                        color: black !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        height: auto !important;
+                        min-height: 10mm !important;
+                    }
+
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}} />
         </div>
     )
 
@@ -47,10 +117,10 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
                     )}
                     {currentType === 'invoice' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo DTE:</span> {data.dte_type}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Folio:</span> {data.folio_number || 'S/N'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Vencimiento:</span> {formatPlainDate(data.due_date)}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado Pago:</span> {data.payment_status}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo DTE:</span> {data.dte_type_display || data.dte_type}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Folio:</span> {data.number || data.folio_number || 'S/N'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Vencimiento:</span> {formatPlainDate(data.due_date || data.date)}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado Pago:</span> {data.payment_status_display || data.payment_status || translateStatus(data.status)}</div>
                         </>
                     )}
                     {currentType === 'payment' && (
@@ -172,7 +242,20 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
                             <div key={line.id || idx} className="grid grid-cols-[1fr,30px,50px,40px,60px] gap-1 text-[9px] leading-tight border-b border-black/5 pb-1">
                                 <div className="font-bold flex flex-col">
                                     <span>{line.description || line.product_name}</span>
-                                    {line.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{line.product_code}</span>}
+                                    <div className="flex gap-2 items-center">
+                                        {line.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{line.product_code}</span>}
+                                        {line.delivery_status && (
+                                            <span className={cn(
+                                                "text-[7px] font-black uppercase px-1 rounded-sm",
+                                                line.delivery_status === 'ENTREGADO' ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700"
+                                            )}>
+                                                {line.delivery_status === 'ENTREGADO' ? '✓ Entregado' : '⏳ Pendiente'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {line.delivery_status !== 'ENTREGADO' && line.delivery_date && (
+                                        <span className="text-[7px] text-black/50 font-bold">Entrega: {formatPlainDate(line.delivery_date)}</span>
+                                    )}
                                 </div>
                                 <div className="text-center font-mono">{Math.round(line.quantity || 0)}</div>
                                 <div className="text-right font-mono">{formatCurrency(line.unit_price_gross || line.unit_price || line.unit_cost)}</div>
@@ -254,8 +337,8 @@ export const PrintableReceipt = React.memo(({ data, currentType, mainTitle, subT
 
     return (
         <div className={cn(
-            "print:block w-[80mm] mx-auto bg-white text-black font-sans relative",
-            isPreview ? "block p-6 rounded-2xl shadow-2xl border border-black/5" : "hidden p-4"
+            "print:block print-section w-[80mm] mx-auto bg-white text-black font-sans relative",
+            isPreview ? "block p-6 rounded-2xl shadow-2xl border border-black/5" : "flex flex-col p-4"
         )}>
             {/* Close button for preview */}
             {onClose && (

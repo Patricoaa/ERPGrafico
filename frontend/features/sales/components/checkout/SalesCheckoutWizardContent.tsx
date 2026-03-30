@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
 import { Step1_DTE } from "./Step1_DTE"
@@ -15,19 +15,9 @@ import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Step0_Customer } from "./Step0_Customer"
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -36,7 +26,7 @@ export interface SalesCheckoutWizardContentProps {
     orderLines: any[]
     total: number
     totalDiscountAmount?: number
-    onComplete: () => void
+    onComplete: (data?: any) => void
     onCancel?: () => void
     customerName?: string
     initialCustomerName?: string
@@ -81,15 +71,41 @@ export function SalesCheckoutWizardContent({
     onStateChange,
     isInline = false
 }: SalesCheckoutWizardContentProps) {
-    const [step, setStep] = useState(initialStep || 1)
+    const { dateString, serverDate } = useServerDate()
+    const { openHub, isHubOpen } = useHubPanel()
+    const { hasPermission } = useAuth()
+    
+    const hasManufacturing = useMemo(() => initialOrderLines.some((line: any) =>
+        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+    ), [initialOrderLines]);
+
+    const [step, setStep] = useState(initialStep || (hasManufacturing ? 2 : 1))
     const [loading, setLoading] = useState(false)
     const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
-    const { dateString, serverDate } = useServerDate()
-    const { openHub } = useHubPanel()
-    const { hasPermission } = useAuth()
-    const canDirectApprove = hasPermission('sales.approve_credit')
+    const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
+    const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
+    const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
+    const [dteData, setDteData] = useState<any>(initialDteData || {
+        type: 'BOLETA',
+        number: '',
+        date: dateString || '',
+        attachment: null,
+        isPending: false
+    })
+    const [paymentData, setPaymentData] = useState<any>(initialPaymentData || {
+        method: 'CASH',
+        amount: 0,
+        transactionNumber: '',
+        treasuryAccountId: null,
+        isPending: false
+    })
+    const [deliveryData, setDeliveryData] = useState<any>(initialDeliveryData || {
+        type: 'IMMEDIATE',
+        date: null,
+        notes: ''
+    })
 
-    // Use a ref to track whether we've already hydrated
+    const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
 
     // Sync order lines and hydrate step data
@@ -100,67 +116,20 @@ export function SalesCheckoutWizardContent({
             
             if (quickSale) {
                 const currentIsOnlyService = initialOrderLines.every((line: any) => line.product_type === 'SERVICE');
-                const currentHasManufacturing = initialOrderLines.some((line: any) =>
+                const hasMfg = initialOrderLines.some((line: any) =>
                     line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
                 );
-                const lastStep = (currentIsOnlyService ? 3 : 4) + (currentHasManufacturing ? 1 : 0);
-                
+                const lastStep = (currentIsOnlyService ? 3 : 4) + (hasMfg ? 1 : 0);
                 const jumpStep = (initialStep && initialStep > 1) ? initialStep : lastStep
                 setStep(jumpStep)
-
-                setDteData(initialDteData ?? {
-                    type: 'BOLETA',
-                    number: '',
-                    date: dateString || '',
-                    attachment: null,
-                    isPending: false
-                })
-                setDeliveryData(initialDeliveryData ?? {
-                    type: 'IMMEDIATE',
-                    date: null,
-                    notes: ''
-                })
-
-                if (initialCustomerId) {
-                    setSelectedCustomerId(initialCustomerId)
-                }
+                if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
             } else {
-                setStep(initialStep ?? 1)
-                setDteData(initialDteData ?? {
-                    type: 'BOLETA',
-                    number: '',
-                    date: dateString || '',
-                    attachment: null,
-                    isPending: false
-                })
-                setDeliveryData(initialDeliveryData ?? {
-                    type: 'IMMEDIATE',
-                    date: null,
-                    notes: ''
-                })
+                setStep(initialStep ?? (currentOrderLines.some((line: any) =>
+                    line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+                ) ? 2 : 1))
             }
-            
-            setPaymentData(initialPaymentData ?? {
-                method: 'CASH',
-                amount: 0,
-                transactionNumber: '',
-                treasuryAccountId: null,
-                isPending: false
-            })
-
-            setSelectedCustomerId(initialCustomerId ?? null)
-            setSelectedCustomerName(initialCustomerName ?? null)
-            setSelectedCustomer(null)
         }
     }, [initialStep, quickSale]) 
-
-    const [dteData, setDteData] = useState(initialDteData || {
-        type: 'BOLETA',
-        number: '',
-        date: '',
-        attachment: null,
-        isPending: false
-    })
 
     useEffect(() => {
         if (dateString && !initialDteData) {
@@ -179,25 +148,11 @@ export function SalesCheckoutWizardContent({
         return Math.max(0, linesTotal - totalDiscountAmount);
     }, [currentOrderLines, dteData.type, totalDiscountAmount]);
 
-    const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
-    const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
-    const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
-
-    const [paymentData, setPaymentData] = useState(initialPaymentData || {
-        method: 'CASH',
-        amount: 0,
-        transactionNumber: '',
-        treasuryAccountId: null,
-        isPending: false
-    })
-
-    // Track previous total to know when it changes
     const prevTotalRef = useRef(currentTotal)
 
     useEffect(() => {
         const hasTotalChanged = prevTotalRef.current !== currentTotal
         if (hasTotalChanged) {
-            // If the payment amount was matching the previous total, update it to the new total
             if (paymentData.amount === prevTotalRef.current || paymentData.amount === 0) {
                 setPaymentData((prev: any) => ({ ...prev, amount: currentTotal }))
             }
@@ -214,21 +169,12 @@ export function SalesCheckoutWizardContent({
     const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    const [deliveryData, setDeliveryData] = useState<any>(initialDeliveryData || {
-        type: 'IMMEDIATE',
-        date: null,
-        notes: ''
-    })
-
-    const hasManufacturing = currentOrderLines.some((line: any) =>
-        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
-    );
-
     const [salesSettings, setSalesSettings] = useState<any>(null)
     const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
 
-    useEffect(() => {
+
+    const refreshDebts = useCallback(() => {
         if (selectedCustomer && (Number(selectedCustomer.credit_balance_used || 0) > 0)) {
             setLoadingDebts(true)
             api.get(`/contacts/${selectedCustomer.id}/credit_ledger/`)
@@ -242,6 +188,19 @@ export function SalesCheckoutWizardContent({
             setPendingDebts(null)
         }
     }, [selectedCustomer])
+
+    useEffect(() => {
+        refreshDebts()
+    }, [refreshDebts])
+
+    // Sync debts when Hub closes (after potential payments)
+    const prevHubOpenRef = useRef(isHubOpen)
+    useEffect(() => {
+        if (prevHubOpenRef.current && !isHubOpen) {
+            refreshDebts()
+        }
+        prevHubOpenRef.current = isHubOpen
+    }, [isHubOpen, refreshDebts])
 
     useEffect(() => {
             api.get('/accounting/settings/current/')
@@ -268,13 +227,17 @@ export function SalesCheckoutWizardContent({
                 step,
                 dteData,
                 paymentData,
+                deliveryData,
                 isApproved,
                 isLoading: loading,
                 selectedCustomerId,
-                selectedCustomerName
+                selectedCustomerName,
+                approvalTaskId,
+                isWaitingApproval,
+                isQuickSale: quickSale
             })
         }
-    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, onStateChange, selectedCustomerId, selectedCustomerName])
+    }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName])
 
     const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
     const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
@@ -518,9 +481,9 @@ export function SalesCheckoutWizardContent({
                 formData.append('draft_id', initialDraftId.toString())
             }
 
-            await api.post('/billing/invoices/pos_checkout/', formData)
+            const res = await api.post('/billing/invoices/pos_checkout/', formData)
             toast.success("Venta procesada correctamente")
-            onComplete()
+            onComplete(res.data)
         } catch (error: any) {
             console.error("Checkout error:", error)
             const rawError = error.response?.data?.error || "Error al procesar la venta"
@@ -593,31 +556,52 @@ export function SalesCheckoutWizardContent({
         }
     }
 
+    const checkApprovalStatus = async (taskId: number, silent = false) => {
+        try {
+            const response = await api.get(`/workflow/tasks/${taskId}/`)
+            const task = response.data
+
+            if (task.status === 'COMPLETED') {
+                if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+                if (!silent) toast.success("¡Crédito aprobado!") // only explicitly toast if manual check
+                setApprovedTaskData(task.data)
+                setIsWaitingApproval(false)
+                setIsApproved(true)
+                return 'COMPLETED'
+            } else if (task.status === 'REJECTED' || task.status === 'CANCELLED') {
+                if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+                toast.error("La solicitud de crédito fue rechazada.")
+                setIsWaitingApproval(false)
+                setApprovalTaskId(null)
+                return 'REJECTED'
+            } else {
+                if (!silent) toast.info("Aún está pendiente de autorización...")
+                return 'PENDING'
+            }
+        } catch (error) {
+            console.error("Error checking task:", error)
+            if (!silent) toast.error("Error al consultar la tarea.")
+            return 'ERROR'
+        }
+    }
+
     const pollApprovalStatus = (taskId: number) => {
         if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
 
-        pollingIntervalRef.current = setInterval(async () => {
-            try {
-                const response = await api.get(`/workflow/tasks/${taskId}/`)
-                const task = response.data
+        // Run immediately first
+        checkApprovalStatus(taskId, true)
 
-                if (task.status === 'COMPLETED') {
-                    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
-                    toast.success("¡Crédito aprobado!")
-                    setApprovedTaskData(task.data)
-                    setIsWaitingApproval(false)
-                    setIsApproved(true)
-                } else if (task.status === 'REJECTED' || task.status === 'CANCELLED') {
-                    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
-                    toast.error("La solicitud de crédito fue rechazada.")
-                    setIsWaitingApproval(false)
-                    setApprovalTaskId(null)
-                }
-            } catch (error) {
-                console.error("Error polling task:", error)
-            }
-        }, 3000)
+        pollingIntervalRef.current = setInterval(() => {
+            checkApprovalStatus(taskId, true)
+        }, 5000)
     }
+
+    // Auto-resume polling if loaded from draft in waiting state
+    useEffect(() => {
+        if (isWaitingApproval && approvalTaskId && !pollingIntervalRef.current) {
+            pollApprovalStatus(approvalTaskId)
+        }
+    }, [isWaitingApproval, approvalTaskId])
 
     const cancelApprovalRequest = () => {
         if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
@@ -636,6 +620,7 @@ export function SalesCheckoutWizardContent({
     useEffect(() => {
         return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current) }
     }, [])
+
 
     return (
         <div className={`flex h-full min-h-0 ${isInline ? 'flex-col' : ''}`}>
@@ -657,47 +642,133 @@ export function SalesCheckoutWizardContent({
 
             <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-1 p-6 overflow-y-auto">
-                    {/* Alerts and Step Rendering */}
-                    {creditApprovalRequired && !isApproved && (
-                         <Alert className="mb-4 border-amber-500/50 bg-amber-500/5">
-                            {isWaitingApproval ? (
-                                <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
-                            ) : (
-                                <AlertCircle className="h-4 w-4 text-amber-500" />
-                            )}
-                            <AlertTitle className="text-amber-700 font-bold">
-                                {isWaitingApproval ? "Esperando Autorización..." : "Autorización Requerida"}
-                            </AlertTitle>
-                            <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                <span className="text-amber-700/80 text-sm">
-                                    {isWaitingApproval 
-                                        ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
-                                        : creditApprovalReason}
-                                </span>
-                                <div className="flex gap-2">
-                                    {isWaitingApproval ? null : (
-                                        <>
-                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10">
-                                                Ajustar
+                    <>
+                        {/* Pending Debts Banner - Compact Version */}
+                        {pendingDebts && pendingDebts.length > 0 && (
+                            <Alert className="mb-4 border border-orange-500/30 bg-orange-500/5 p-3 sm:py-2.5">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-orange-500/10 p-1.5 rounded-full shrink-0">
+                                            <FileWarning className="h-3.5 w-3.5 text-orange-600" />
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                            <span className="text-sm font-bold text-orange-800 shrink-0">
+                                                Deudas Pendientes ({pendingDebts.length})
+                                            </span>
+                                            <span className="text-xs text-orange-700/80 leading-none">
+                                                Total: <span className="font-bold font-mono">${pendingDebts.reduce((sum: number, d: any) => sum + Number(d.balance || 0), 0).toLocaleString('es-CL')}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5 ml-8 sm:ml-0">
+                                        {pendingDebts.slice(0, 4).map((debt: any) => (
+                                            <Button
+                                                key={debt.id}
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-6 px-2 border-orange-500/20 text-orange-800 hover:bg-orange-500/10 text-[10px] gap-1 font-medium bg-white/50"
+                                                onClick={() => openHub({ orderId: debt.id, type: 'sale' })}
+                                            >
+                                                <span className="font-mono">NV-{debt.number}</span>
+                                                <span className="opacity-60">${Number(debt.balance).toLocaleString('es-CL')}</span>
+                                                {debt.days_overdue > 0 && (
+                                                    <span className="text-red-600 font-bold ml-0.5">{debt.days_overdue}d</span>
+                                                )}
                                             </Button>
-                                            {canDirectApprove && (
-                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm">
-                                                    Aprobar
-                                                </Button>
-                                            )}
-                                            <Button size="sm" onClick={handleRequestApproval} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
-                                                Solicitar
-                                            </Button>
-                                        </>
-                                    )}
+                                        ))}
+                                        {pendingDebts.length > 4 && (
+                                            <div className="text-[10px] text-orange-600/70 py-1 px-1.5 bg-orange-500/5 rounded border border-orange-500/10">
+                                                +{pendingDebts.length - 4}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </AlertDescription>
-                         </Alert>
-                    )}
-                    
-                    <div className={(creditApprovalRequired || isWaitingApproval) && !isApproved ? "opacity-30 pointer-events-none" : ""}>
-                        {renderStep()}
-                    </div>
+                            </Alert>
+                        )}
+
+                        {/* Credit Approval Alert */}
+                        {creditApprovalRequired && (
+                            <Alert className={`mb-4 border ${isApproved ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-amber-500/50 bg-amber-500/5'}`}>
+                                {isWaitingApproval ? (
+                                    <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                                ) : isApproved ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                ) : (
+                                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                                )}
+                                <AlertTitle className={`font-bold ${isApproved ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
+                                </AlertTitle>
+                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                                    <span className={`text-sm ${isApproved ? 'text-emerald-700/80' : 'text-amber-700/80'}`}>
+                                        {isWaitingApproval 
+                                            ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
+                                            : isApproved 
+                                                ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
+                                                : creditApprovalReason}
+                                    </span>
+                                    {!isApproved && (
+                                        <div className="flex gap-2">
+                                            {isWaitingApproval ? (
+                                                <>
+                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10">
+                                                        Cancelar
+                                                    </Button>
+                                                    {approvalTaskId && (
+                                                        <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm">
+                                                            Verificar Estado
+                                                        </Button>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10">
+                                                        Ajustar
+                                                    </Button>
+                                                    {canDirectApprove && (
+                                                        <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm">
+                                                            Aprobar
+                                                        </Button>
+                                                    )}
+                                                    <Button size="sm" onClick={handleRequestApproval} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
+                                                        Solicitar
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+                        {securityErrorMessage && (
+                            <Alert className="mb-4 border border-red-500/50 bg-red-500/5">
+                                <ShieldAlert className="h-4 w-4 text-red-500" />
+                                <AlertTitle className="font-bold text-red-700">Alerta de Seguridad</AlertTitle>
+                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                                    <span className="text-sm text-red-700/80">{securityErrorMessage}</span>
+                                    <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => {
+                                            setSecurityErrorMessage(null)
+                                            setApprovalTaskId(null)
+                                            setIsApproved(false)
+                                            setIsWaitingApproval(false)
+                                            setCreditApprovalRequired(false)
+                                        }} 
+                                        className="border-red-500/30 text-red-700 hover:bg-red-500/10 shrink-0"
+                                    >
+                                        Entendido
+                                    </Button>
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        
+                        <div className={((creditApprovalRequired || isWaitingApproval) && !isApproved) || securityErrorMessage ? "opacity-30 pointer-events-none" : ""}>
+                            {renderStep()}
+                        </div>
+                    </>
                 </div>
 
                 {isInline && (
