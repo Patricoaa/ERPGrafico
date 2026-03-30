@@ -109,3 +109,23 @@ class ActionLoggingService:
             ip_address=ip_address,
             metadata=metadata or {}
         )
+
+class PINService:
+    @staticmethod
+    def validate_pin(pin_text):
+        """
+        Validates if a plain-text PIN matches ANY active user's pos_pin.
+        Returns the User object if found and valid, else None.
+        """
+        if not pin_text:
+            return None
+            
+        from core.models import User
+        # Iterate active users to check hashes.
+        # Note: Optimize with a separate lookup table or PIN salt if scale becomes an issue.
+        active_users = User.objects.filter(is_active=True).exclude(pos_pin__isnull=True).exclude(pos_pin='')
+        
+        for user in active_users:
+            if user.check_pos_pin(pin_text):
+                return user
+        return None
