@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
@@ -41,6 +41,7 @@ import { useProducts } from './hooks/useProducts'
 import { useCart } from './hooks/useCart'
 import { useStockValidation } from './hooks/useStockValidation'
 import { useDrafts } from './hooks/useDrafts'
+import { useDraftSync, type SyncDraft } from './hooks/useDraftSync'
 
 // UI Components
 import { SearchBar } from './components/SearchBar'
@@ -107,7 +108,32 @@ function POSPageContent() {
     const { user } = useAuth()
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
-    const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts } = useDrafts()
+
+    // ── Real-time Sync ──────────────────────────────────────────
+    const handleNewDraft = useCallback((draft: SyncDraft) => {
+        toast.info(`Nuevo borrador creado`, {
+            description: `"${draft.name}" por ${draft.created_by_full_name || 'otro usuario'}`,
+            duration: 4000,
+        })
+    }, [])
+
+    const handleDraftDeleted = useCallback((_draftId: number) => {
+        // Silently refresh — the list will update via sync
+    }, [])
+
+    const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
+        posSessionId: currentSession?.id || null,
+        enabled: !!currentSession?.id,
+        onNewDraft: handleNewDraft,
+        onDraftDeleted: handleDraftDeleted,
+    })
+
+    const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
+        browserSessionKey,
+        acquireLock,
+        releaseLock,
+        forceSync,
+    })
 
     const posContentRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({
@@ -222,8 +248,10 @@ function POSPageContent() {
 
     const handleCheckoutComplete = async (resData: any) => {
         setCompletedSaleData(resData)
+        await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
         await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
+        forceSync()
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
 
@@ -276,18 +304,21 @@ function POSPageContent() {
                         const isPaymentStep = wizardState?.step === totalSteps
 
                         // Prioritize current draft in quick view
-                        const quickDrafts = [...drafts].slice(0, 5)
+                        const quickDrafts = [...syncDrafts].slice(0, 5)
                         if (currentDraftId && !quickDrafts.find(d => d.id === currentDraftId)) {
-                            const current = drafts.find(d => d.id === currentDraftId)
+                            const current = syncDrafts.find(d => d.id === currentDraftId)
                             if (current) {
                                 quickDrafts.unshift(current)
                                 quickDrafts.pop()
                             }
                         }
 
-                        return drafts.length > 0 && (posMode === 'SHOPPING' || (posMode === 'CHECKOUT' && isPaymentStep)) && (
+                        return syncDrafts.length > 0 && (posMode === 'SHOPPING' || (posMode === 'CHECKOUT' && isPaymentStep)) && (
                             <div className="hidden lg:flex items-center gap-1 mr-2 animate-in fade-in zoom-in duration-300">
-                                {quickDrafts.map(d => (
+                                {quickDrafts.map(d => {
+                                    const lockInfo = getLockInfo(d.id)
+                                    const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
+                                    return (
                                     <Button
                                         key={d.id}
                                         variant="outline"
@@ -295,14 +326,18 @@ function POSPageContent() {
                                         className={cn(
                                             "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold border-dashed transition-all duration-300",
                                             currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm" : "text-muted-foreground",
-                                            isSaving && currentDraftId === d.id && "animate-pulse opacity-70"
+                                            isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
+                                            lockedByOther && "border-destructive/40 opacity-60"
                                         )}
                                         onClick={() => handleLoadDraft(d)}
+                                        title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : undefined}
                                     >
+                                        {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
                                         {d.id}
                                         {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
                                     </Button>
-                                ))}
+                                    )
+                                })}
                                 {currentDraftId === null && items.length > 0 && (
                                     <Badge variant="outline" className="h-8 border-dashed text-[9px] px-2 opacity-50 bg-muted/20">Nuevo...</Badge>
                                 )}
@@ -424,7 +459,7 @@ function POSPageContent() {
             </div>
 
             <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} />
+            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
