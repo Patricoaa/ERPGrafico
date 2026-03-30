@@ -222,10 +222,10 @@ class ChangePinView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate numericality and length for PIN
-        if not new_pin.isdigit() or not (4 <= len(new_pin) <= 6):
+        # Validate numericality and length for PIN (max 4 digits)
+        if not new_pin.isdigit() or not (len(new_pin) <= 4):
             return Response(
-                {'detail': 'El PIN debe ser numérico y tener entre 4 y 6 dígitos.'},
+                {'detail': 'El PIN debe ser numérico y tener un máximo de 4 dígitos.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
