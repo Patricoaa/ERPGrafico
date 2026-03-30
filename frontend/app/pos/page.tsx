@@ -446,6 +446,7 @@ function POSPageContent() {
                                     initialDraftId={currentDraftId}
                                     onStateChange={setWizardState}
                                     isInline
+                                    isSessionHost={user?.id === currentSession?.user}
                                 />
                             </motion.div>
                         )}
