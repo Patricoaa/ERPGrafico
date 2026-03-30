@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import type { MyProfile, ChangePasswordPayload } from "@/types/profile"
+import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types/profile"
 
 export async function getMyProfile(): Promise<MyProfile> {
   const res = await api.get('/core/auth/my-profile/')
@@ -13,6 +13,11 @@ export async function getEmployeePayrollPreview(payrollId: number | string): Pro
 
 export async function changePassword(data: ChangePasswordPayload): Promise<{ detail: string }> {
   const res = await api.post('/core/auth/change-password/', data)
+  return res.data
+}
+
+export async function changePin(data: ChangePinPayload): Promise<{ detail: string }> {
+  const res = await api.post('/core/auth/change-pin/', data)
   return res.data
 }
 

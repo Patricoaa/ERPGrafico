@@ -13,6 +13,7 @@ from .serializers import (
 )
 from .services import ActionLoggingService
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password
 from inventory.models import Product, StockMove
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
@@ -198,6 +199,48 @@ class ChangePasswordView(APIView):
         )
 
         return Response({'detail': 'Contraseña actualizada exitosamente.'})
+
+
+class ChangePinView(APIView):
+    """Allows the authenticated user to change their own POS PIN."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get('current_password', '')
+        new_pin = request.data.get('new_pin', '')
+
+        if not current_password or not new_pin:
+            return Response(
+                {'detail': 'Debe proporcionar la contraseña actual y el nuevo PIN.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {'detail': 'La contraseña actual es incorrecta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate numericality and length for PIN (max 4 digits)
+        if not new_pin.isdigit() or not (len(new_pin) <= 4):
+            return Response(
+                {'detail': 'El PIN debe ser numérico y tener un máximo de 4 dígitos.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # We store the PIN securely using make_password but in the pos_pin field
+        user.pos_pin = make_password(new_pin)
+        user.save()
+
+        ActionLoggingService.log_action(
+            user=user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {user.username} cambió su PIN de POS.",
+            request=request
+        )
+
+        return Response({'detail': 'PIN de POS actualizado exitosamente.'})
 
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

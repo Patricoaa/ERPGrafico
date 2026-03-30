@@ -468,7 +468,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center space-y-2 mb-6">
-                            <h3 className="text-lg font-bold">Bienvenido al POS</h3>
+                            <h3 className="text-lg font-bold">Bienvenido a la terminal de POS</h3>
                             <p className="text-sm text-muted-foreground">¿Qué desea realizar hoy?</p>
                         </div>
 
@@ -494,7 +494,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <Unlock className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
-                                    <span className="font-bold text-lg block">Abrir Nueva Caja</span>
+                                    <span className="font-bold text-lg block">Abrir Nueva Terminal</span>
                                     <span className="text-xs text-muted-foreground">
                                         {terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).length} terminales libres
                                     </span>
@@ -511,11 +511,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <Users className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
-                                    <span className="font-bold text-lg block">Unirse a Caja</span>
+                                    <span className="font-bold text-lg block">Unirse a Terminal</span>
                                     <span className="text-xs text-muted-foreground">
                                         {availableSessions.length > 0
-                                            ? `${availableSessions.length} cajas activas`
-                                            : "No hay cajas activas"}
+                                            ? `${availableSessions.length} terminales activas`
+                                            : "No hay terminales activas"}
                                     </span>
                                 </div>
                             </Button>
@@ -659,15 +659,15 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                             { value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" },
                                                             { value: "THEFT", label: "Faltante / Robo" },
                                                             { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                          ].find(opt => opt.value === openingJustifyReason)?.label
+                                                        ].find(opt => opt.value === openingJustifyReason)?.label
                                                         : [
                                                             { value: "COUNTING_ERROR", label: "Error de Conteo / Ajuste" },
                                                             { value: "TIP", label: "Propina" },
                                                             { value: "TRANSFER", label: "Traspaso (Dinero recibido de otra caja)" },
                                                             { value: "OTHER_IN", label: "Otro Depósito" },
                                                             { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                          ].find(opt => opt.value === openingJustifyReason)?.label
-                                                      ) || "Seleccione motivo..."
+                                                        ].find(opt => opt.value === openingJustifyReason)?.label
+                                                    ) || "Seleccione motivo..."
                                                     : "Seleccione motivo..."}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -700,14 +700,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                             ...(accountingSettings?.pos_partner_withdrawal_account ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" }] : []),
                                                             ...(accountingSettings?.pos_theft_account ? [{ value: "THEFT", label: "Faltante / Robo" }] : []),
                                                             { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                          ]
+                                                        ]
                                                         : [
                                                             { value: "COUNTING_ERROR", label: "Error de Conteo (Ajuste)" },
                                                             { value: "TIP", label: "Propina" },
                                                             { value: "TRANSFER", label: "Traspaso (Dinero Recibido)" },
                                                             { value: "OTHER_IN", label: "Otro Depósito" },
                                                             { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                          ]).map((opt) => (
+                                                        ]).map((opt) => (
                                                             <div
                                                                 key={opt.value}
                                                                 className={cn(
@@ -787,8 +787,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 return (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-4">
-                            <h3 className="font-bold">Unirse a Caja Existente</h3>
-                            <p className="text-sm text-muted-foreground">Seleccione una caja activa para operar</p>
+                            <h3 className="font-bold">Unirse a terminal existente</h3>
+                            <p className="text-sm text-muted-foreground">Seleccione una terminal activa para operar</p>
                         </div>
                         <div className="grid gap-2">
                             {availableSessions.map((session) => (
@@ -821,7 +821,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
 
 
-    if (!currentSession) {
+    if (!currentSession || currentSession.status !== 'OPEN') {
         return (
             <>
                 <Button
