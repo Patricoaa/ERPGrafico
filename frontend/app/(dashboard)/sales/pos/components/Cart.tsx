@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
-import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar } from 'lucide-react'
+import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar, Edit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from '@/lib/currency'
@@ -27,6 +27,8 @@ interface CartProps {
         total_tax: number
         total_discount?: number
         total_gross_before_discount?: number
+        line_discount_total?: number
+        global_discount_total?: number
     }
     totalDiscountAmount?: number
     onTotalDiscountChange?: (amount: number) => void
@@ -272,18 +274,51 @@ export function Cart({
                             <span>IVA (19%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
-                        {(showTotalDiscounts || (totals.total_discount || 0) > 0) && (
+                        
+                        {/* Line Discounts (Sum of all per-item discounts) */}
+                        {(totals.line_discount_total || 0) > 0 && (
+                            <div className="flex justify-between text-sm text-muted-foreground/80 italic">
+                                <span>Descuentos por Línea</span>
+                                <span>-{formatCurrency(totals.line_discount_total || 0)}</span>
+                            </div>
+                        )}
+
+                        {/* Global Discount (Editable) */}
+                        {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
                             <div
                                 className={cn(
-                                    "flex justify-between text-sm",
-                                    showTotalDiscounts ? "text-blue-600 font-medium cursor-pointer hover:underline" : "text-muted-foreground"
+                                    "flex justify-between items-center transition-all duration-200 rounded-lg p-1.5 -mx-1.5",
+                                    showTotalDiscounts 
+                                        ? "cursor-pointer hover:bg-blue-50/50 group" 
+                                        : "text-muted-foreground"
                                 )}
                                 onClick={() => showTotalDiscounts && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
                             >
-                                <span>{showTotalDiscounts ? 'Añadir Dscto. Global' : 'Descuento'}</span>
-                                <span>{(totals.total_discount || 0) > 0 ? `-${formatCurrency(totals.total_discount || 0)}` : '$0'}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={cn(
+                                        "text-sm font-medium",
+                                        showTotalDiscounts ? "text-blue-600" : "text-muted-foreground"
+                                    )}>
+                                        Descuento Global
+                                    </span>
+                                    {showTotalDiscounts && (
+                                        <Edit className="h-3 w-3 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    )}
+                                </div>
+                                <div className={cn(
+                                    "font-mono text-sm px-2 py-1 rounded border border-dashed transition-colors",
+                                    (totals.global_discount_total || 0) > 0 
+                                        ? "text-blue-600 bg-blue-50/50 border-blue-200" 
+                                        : "text-muted-foreground/40 border-muted-foreground/20 group-hover:border-blue-200 group-hover:text-blue-400"
+                                )}>
+                                    {(totals.global_discount_total || 0) > 0 
+                                        ? `-${formatCurrency(totals.global_discount_total || 0)}` 
+                                        : showTotalDiscounts ? "Añadir..." : "$0"
+                                    }
+                                </div>
                             </div>
                         )}
+
                         <div className="flex justify-between text-xl font-bold pt-2 border-t">
                             <span>Total</span>
                             <span>{formatCurrency(totals.total_gross)}</span>

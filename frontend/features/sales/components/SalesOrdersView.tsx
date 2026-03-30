@@ -161,14 +161,14 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     ]
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="w-full h-full">
             {loadingNotes ? (
-                <div className="flex items-center justify-center flex-1 py-12">
+                <div className="flex items-center justify-center py-12">
                     <div className="text-muted-foreground">Cargando datos...</div>
                 </div>
             ) : (
-                <div className="flex-1 overflow-hidden">
-                    <Tabs value={viewMode} className="w-full h-full flex flex-col">
+                <div className="w-full">
+                    <Tabs value={viewMode} className="w-full flex flex-col">
                         <DataTable
                             columns={viewMode === 'orders' ? columns : noteColumns}
                             data={viewMode === 'orders' ? filteredOrders : filteredNotes}

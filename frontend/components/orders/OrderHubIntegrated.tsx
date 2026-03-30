@@ -77,16 +77,8 @@ export function OrderHubIntegrated({
 
     return (
         <TooltipProvider delayDuration={150}>
-            <div className="flex flex-col w-full h-full">
-                {/* 
-                  ACTION ENGINE REMOVED FROM HERE 
-                  It is now hosted by the parent (OrderCommandCenter or OrderCard) 
-                  to ensure its lifecycle is independent of the sheet content's visibility.
-                */}
-
-                <div className={cn(
-                    "w-full overflow-hidden flex-1"
-                )}>
+            <div className="flex flex-col w-full">
+                <div className="w-full">
                     <div className="flex flex-col gap-4 py-4">
                         {/* 1. Origen */}
                         <PhaseWrapper index={visiblePhases.indexOf('origin')}>

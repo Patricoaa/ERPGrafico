@@ -26,7 +26,9 @@ export function calculateCartTotals(items: CartItem[], totalDiscount: number = 0
         total_net: total_net_sum,
         total_tax: total_tax_sum,
         total_gross_before_discount: total_gross_before_global_discount,
-        total_discount: line_discounts_sum + totalDiscount
+        total_discount: line_discounts_sum + totalDiscount,
+        line_discount_total: line_discounts_sum,
+        global_discount_total: totalDiscount
     }
 }
 

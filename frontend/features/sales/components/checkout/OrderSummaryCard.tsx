@@ -90,10 +90,16 @@ export function OrderSummaryCard({
                         <span className="whitespace-nowrap font-mono">{formatCurrency(tax)}</span>
                     </div>
                 )}
-                {totalDiscount > 0 && (
+                {lineDiscounts > 0 && (
+                    <div className="flex justify-between text-xs font-bold text-blue-600/70 italic">
+                        <span>Descuentos por Línea</span>
+                        <span className="whitespace-nowrap font-mono">-{formatCurrency(lineDiscounts)}</span>
+                    </div>
+                )}
+                {totalDiscountAmount > 0 && (
                     <div className="flex justify-between text-xs font-bold text-blue-600">
-                        <span>Descuento</span>
-                        <span className="whitespace-nowrap font-mono">-{formatCurrency(totalDiscount)}</span>
+                        <span>Descuento Global</span>
+                        <span className="whitespace-nowrap font-mono">-{formatCurrency(totalDiscountAmount)}</span>
                     </div>
                 )}
                 <Separator className="my-2 opacity-50" />
