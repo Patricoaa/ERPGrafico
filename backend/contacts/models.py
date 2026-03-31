@@ -71,17 +71,44 @@ class Contact(models.Model):
         max_digits=5, decimal_places=2, 
         null=True, blank=True,
         validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
-        help_text=_("Porcentaje de participación societaria.")
+        help_text=_("Cache desnormalizado del % vigente. Fuente de verdad: PartnerEquityStake.")
     )
     partner_since = models.DateField(_("Socio Desde"), null=True, blank=True)
-    partner_account = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='partner_contacts',
+    partner_contribution_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_contribution_contacts',
         limit_choices_to={'account_type': AccountType.EQUITY},
-        verbose_name=_("Cuenta Particular del Socio"),
-        help_text=_("Subcuenta de patrimonio individual para este socio.")
+        verbose_name=_("Cuenta de Aportes del Socio"),
+        help_text=_("Subcuenta para aportes de capital de este socio (3.1.02.XX).")
+    )
+    partner_provisional_withdrawal_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_prov_withdrawal_contacts',
+        limit_choices_to={'account_type': AccountType.EQUITY},
+        verbose_name=_("Cuenta Retiros Provisorios del Socio"),
+        help_text=_("Subcuenta (contra patrimonio) para retiros provisorios de este socio (3.1.05.XX).")
+    )
+    partner_earnings_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_earnings_contacts',
+        limit_choices_to={'account_type': AccountType.EQUITY},
+        verbose_name=_("Cuenta Utilidades del Socio"),
+        help_text=_("Subcuenta para utilidades del ejercicio asignadas a este socio (3.1.06.XX).")
+    )
+    partner_receivable_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_receivable_contacts',
+        limit_choices_to={'account_type': AccountType.ASSET},
+        verbose_name=_("Cuenta Capital por Cobrar"),
+        help_text=_("Subcuenta (activo) para capital suscrito pendiente de pago de este socio (1.1.05.XX).")
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -103,16 +130,26 @@ class Contact(models.Model):
         if self.is_default_vendor:
             Contact.objects.filter(is_default_vendor=True).exclude(pk=self.pk).update(is_default_vendor=False)
 
-        # Partner Account Auto-Creation
-        if self.is_partner and not self.partner_account:
+        # Partner Multi-Account Auto-Creation
+        if self.is_partner:
             from accounting.models import AccountingSettings, Account
             settings = AccountingSettings.objects.first()
-            if settings and settings.partner_current_account:
-                self.partner_account = Account.objects.create(
-                    name=f"C.P. {self.name}",
-                    parent=settings.partner_current_account,
-                    account_type=settings.partner_current_account.account_type
-                )
+            if settings:
+                # Map: (contact field, settings parent field, prefix)
+                account_specs = [
+                    ('partner_contribution_account', 'partner_capital_contribution_account', 'C.A.'),
+                    ('partner_provisional_withdrawal_account', 'partner_provisional_withdrawal_account', 'R.P.'),
+                    ('partner_earnings_account', 'partner_current_year_earnings_account', 'Ut.'),
+                ]
+                for contact_field, settings_field, prefix in account_specs:
+                    if not getattr(self, f'{contact_field}_id') and getattr(settings, settings_field, None):
+                        parent = getattr(settings, settings_field)
+                        new_acc = Account.objects.create(
+                            name=f"{prefix} {self.name}",
+                            parent=parent,
+                            account_type=parent.account_type
+                        )
+                        setattr(self, contact_field, new_acc)
 
         self.full_clean()
         super().save(*args, **kwargs)
@@ -300,10 +337,11 @@ class Contact(models.Model):
         
         withdrawals = self.partner_transactions.filter(
             transaction_type__in=[
+                PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
                 PartnerTransaction.Type.WITHDRAWAL,
                 PartnerTransaction.Type.LOAN_FROM_COMPANY,
                 PartnerTransaction.Type.CAPITAL_RETURN,
-                PartnerTransaction.Type.DIVIDEND,
+                PartnerTransaction.Type.DIVIDEND_PAYMENT,
             ]
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
@@ -341,15 +379,31 @@ class Contact(models.Model):
             transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
-        return subs - reds - trans_out + trans_in
+        # Reinvestments (+)
+        reinvest = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.REINVESTMENT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        return subs - reds - trans_out + trans_in + reinvest
 
     @property
     def partner_pending_capital(self) -> Decimal:
         """
         Subscribed (-) Paid In.
-        Positive = partner owes capital to the company.
+        Shows how much the partner still owes to the company.
+        If they paid more than subscribed, it returns 0.
         """
-        return self.partner_total_contributions - self.partner_total_paid_in
+        diff = self.partner_total_contributions - self.partner_total_paid_in
+        return max(Decimal('0'), diff)
+
+    @property
+    def partner_excess_capital(self) -> Decimal:
+        """
+        Paid In (-) Subscribed.
+        Shows how much the partner has paid above their legal commitment.
+        """
+        diff = self.partner_total_paid_in - self.partner_total_contributions
+        return max(Decimal('0'), diff)
 
     @property
     def partner_total_paid_in(self) -> Decimal:
@@ -367,7 +421,7 @@ class Contact(models.Model):
 
     @property
     def partner_total_withdrawals(self) -> Decimal:
-        """Total accumulated withdrawals by this partner."""
+        """Total accumulated formal withdrawals by this partner (excludes provisional)."""
         if not self.is_partner:
             return Decimal('0')
         from contacts.partner_models import PartnerTransaction
@@ -375,7 +429,80 @@ class Contact(models.Model):
             transaction_type__in=[
                 PartnerTransaction.Type.WITHDRAWAL,
                 PartnerTransaction.Type.CAPITAL_RETURN,
-                PartnerTransaction.Type.DIVIDEND,
+                PartnerTransaction.Type.DIVIDEND_PAYMENT,
             ]
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    @property
+    def partner_provisional_withdrawals_balance(self) -> Decimal:
+        """
+        Total accumulated provisional withdrawals that have NOT yet been 
+        liquidated against a formal profit distribution.
+        Positive = partner has outstanding advances.
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        return self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
+            distribution_resolution__isnull=True,  # Not yet liquidated
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+ 
+    @property
+    def partner_dividends_payable_balance(self) -> Decimal:
+        """
+        Calculates the outstanding balance of dividends assigned but not yet paid.
+        Formula: Sum(DIVIDEND assignments) - Sum(DIVIDEND_PAY payments).
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        assigned = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.DIVIDEND
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        paid = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.DIVIDEND_PAYMENT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return assigned - paid
+
+    @property
+    def partner_earnings_balance(self) -> Decimal:
+        """
+        Calculates the outstanding balance of undistributed earnings assigned to this partner.
+        Formula: Sum(RETAINED) - Sum(LOSS_ABSORPTION).
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        retained = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.RETAINED
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        loss = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.LOSS_ABSORPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return retained - loss
+
+    @property
+    def partner_net_equity(self) -> Decimal:
+        """
+        Total book value of the partner's equity in the company.
+        Formula: Paid-in Capital - Provisional Withdrawals + Accumulated Earnings.
+        """
+        return (
+            self.partner_total_paid_in - 
+            self.partner_provisional_withdrawals_balance + 
+            self.partner_earnings_balance
+        )
+
+
+
 

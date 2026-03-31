@@ -1,9 +1,12 @@
 from django.utils import timezone
 from datetime import timedelta
+from django.db import transaction
 from decimal import Decimal
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from .models import DraftCart
 from treasury.models import POSSession
+from inventory.models import Product, StockMove
+from inventory.services import StockService
 
 # Lock expires after this many seconds without heartbeat
 LOCK_TIMEOUT_SECONDS = 15
@@ -356,3 +359,99 @@ class DraftCartService:
             updated_at__lt=cutoff_date
         ).delete()
         return deleted_count
+
+    @staticmethod
+    @transaction.atomic
+    def process_withdrawal(draft_id: int, pos_session_id: int, user, partner_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Procesa el retiro de stock de los items del carrito para un socio.
+        Valida que el cliente sea socio y los productos sean almacenables/fabricables con stock.
+        """
+        try:
+            draft = DraftCart.objects.get(
+                id=draft_id,
+                pos_session_id=pos_session_id
+            )
+        except DraftCart.DoesNotExist:
+            raise ValueError("Borrador no encontrado")
+
+        # Priorizar partner_id si se proporciona, de lo contrario usar el del borrador
+        if partner_id:
+            from contacts.models import Contact
+            try:
+                customer = Contact.objects.get(id=partner_id)
+            except Contact.DoesNotExist:
+                raise ValueError("Socio no encontrado.")
+        else:
+            customer = draft.customer
+
+        if not customer:
+            raise ValueError("Debe indicar un socio para realizar el retiro.")
+        
+        if not customer.is_partner:
+            raise ValueError(f"El cliente {customer.name} no está marcado como Socio.")
+
+        if not draft.items:
+            raise ValueError("El carrito está vacío.")
+
+        # Determinar bodega (fallback a la primera encontrada si no hay específica)
+        from inventory.models import Warehouse
+        warehouse = Warehouse.objects.first()
+        if not warehouse:
+            raise ValueError("No se encontró una bodega para procesar el retiro.")
+
+        processed_moves = []
+        
+        for item in draft.items:
+            product_id = item.get('id') or item.get('product_id')
+            qty = Decimal(str(item.get('quantity', 0)))
+            
+            if qty <= 0:
+                continue
+                
+            try:
+                product = Product.objects.get(id=product_id)
+            except Product.DoesNotExist:
+                raise ValueError(f"Producto ID {product_id} no encontrado.")
+
+            # Validaciones solicitadas por el usuario
+            # 1. Capacidad de ser almacenados (track_inventory)
+            if not product.track_inventory:
+                raise ValueError(f"El producto '{product.name}' no tiene habilitado el control de stock.")
+            
+            # 2. Tipo Almacenable o Fabricable Simple
+            if product.product_type not in [Product.Type.STORABLE, Product.Type.MANUFACTURABLE]:
+                raise ValueError(f"El producto '{product.name}' no puede ser retirado (solo Almacenables o Fabricables).")
+
+            # 3. Stock disponible
+            # Usamos qty_available que descuenta reservas
+            if product.qty_available < qty:
+                raise ValueError(
+                    f"Stock insuficiente para '{product.name}'. "
+                    f"Disponible: {product.qty_available}, Requerido: {qty}"
+                )
+
+            # Ejecutar movimiento de stock (Salida)
+            # El motivo es PARTNER_WITHDRAWAL
+            description = f"Retiro de utilidades POS - {draft.name}"
+            
+            move = StockService.adjust_stock(
+                product=product,
+                warehouse=warehouse,
+                quantity=-qty, # Cantidad negativa para salida
+                unit_cost=product.cost_price,
+                description=description,
+                adjustment_reason=StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
+                partner_contact=customer
+            )
+            processed_moves.append(move.id)
+
+        # Si todo fue exitoso, eliminar el borrador
+        draft.delete()
+        
+        return {
+            "success": True,
+            "message": "Retiro procesado exitosamente.",
+            "moves_count": len(processed_moves),
+            "customer_name": customer.name
+        }

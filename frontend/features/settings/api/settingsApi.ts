@@ -172,8 +172,30 @@ export const settingsApi = {
          return {
              partner_capital_social_account: data.partner_capital_social_account,
              partner_capital_social_account_name: data.partner_capital_social_account_name,
+             
+             partner_capital_contribution_account: data.partner_capital_contribution_account,
+             partner_capital_contribution_account_name: data.partner_capital_contribution_account_name,
+             
+             partner_withdrawal_account: data.partner_withdrawal_account,
+             partner_withdrawal_account_name: data.partner_withdrawal_account_name,
+             
+             partner_provisional_withdrawal_account: data.partner_provisional_withdrawal_account,
+             partner_provisional_withdrawal_account_name: data.partner_provisional_withdrawal_account_name,
+             
+             partner_retained_earnings_account: data.partner_retained_earnings_account,
+             partner_retained_earnings_account_name: data.partner_retained_earnings_account_name,
+             
+             partner_current_year_earnings_account: data.partner_current_year_earnings_account,
+             partner_current_year_earnings_account_name: data.partner_current_year_earnings_account_name,
+             
+             partner_dividends_payable_account: data.partner_dividends_payable_account,
+             partner_dividends_payable_account_name: data.partner_dividends_payable_account_name,
+             
+             partner_capital_receivable_account: data.partner_capital_receivable_account,
+             partner_capital_receivable_account_name: data.partner_capital_receivable_account_name,
          }
      },
+
  
      /**
       * Update partner settings

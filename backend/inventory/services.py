@@ -120,15 +120,31 @@ class StockService:
         contra_account = None
         
         if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION:
-            # Use partner's individual account or the generic capital contributions account
-            if partner_contact and partner_contact.partner_account:
-                contra_account = partner_contact.partner_account
-            else:
+            # Smart Contribution: Priority Capital Receivable > Equity
+            if partner_contact:
+                if partner_contact.partner_pending_capital > 0:
+                    # Clear pending debt first (Asset reduction)
+                    contra_account = settings.partner_capital_receivable_account
+                else:
+                    # Direct Equity increase
+                    contra_account = partner_contact.partner_contribution_account
+            
+            # Fallback
+            if not contra_account:
                 contra_account = settings.partner_capital_contribution_account
+                
         elif adjustment_reason == StockMove.AdjustmentReason.PARTNER_WITHDRAWAL:
-            if partner_contact and partner_contact.partner_account:
-                contra_account = partner_contact.partner_account
-            else:
+            # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
+            if partner_contact:
+                if partner_contact.partner_dividends_payable_balance > 0:
+                    # Pay out dividends (Liability reduction)
+                    contra_account = settings.partner_dividends_payable_account
+                else:
+                    # Record provisional withdrawal (Equity contra)
+                    contra_account = partner_contact.partner_provisional_withdrawal_account
+            
+            # Fallback
+            if not contra_account:
                 contra_account = settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
         # INITIAL was removed — legacy records with INITIAL will fall through to generic gain/loss
         elif adjustment_reason == StockMove.AdjustmentReason.REVALUATION:
@@ -172,14 +188,26 @@ class StockService:
             StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
         ]:
             from contacts.partner_models import PartnerTransaction
-            tx_type = (
-                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
-                if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION
-                else PartnerTransaction.Type.WITHDRAWAL
-            )
+            
+            # Determine appropriate transaction type based on the smart logic above
+            target_tx_type = PartnerTransaction.Type.OTHER
+            if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION:
+                if contra_account == settings.partner_capital_receivable_account:
+                    # If we used the receivable account, it's technically a "Capital Payment" in goods
+                    # But for simplicity we use the Inventory Contribution type
+                    target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
+                else:
+                    target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
+            else:
+                # Withdrawal side: Smart Type Selection
+                if contra_account == settings.partner_dividends_payable_account:
+                    target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
+                else:
+                    target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
+
             PartnerTransaction.objects.create(
                 partner=partner_contact,
-                transaction_type=tx_type,
+                transaction_type=target_tx_type,
                 amount=total_value,
                 date=timezone.now().date(),
                 description=f"{description} - {product.internal_code}",

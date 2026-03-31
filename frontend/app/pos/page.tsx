@@ -19,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
+import api from '@/lib/api'
 import * as Validation from '@/lib/pos/validation'
 import { cn } from "@/lib/utils"
 import {
@@ -56,6 +57,8 @@ import { SessionControl, SessionControlHandle } from '@/components/pos/SessionCo
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/components/pos/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing'
 import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
+import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
+import { Label } from '@/components/ui/label'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
@@ -144,6 +147,11 @@ function POSPageContent() {
         releaseLock,
         forceSync,
     })
+
+    const [isWithdrawing, setIsWithdrawing] = useState(false)
+    const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
+    const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
+    const [selectedPartnerName, setSelectedPartnerName] = useState<string>("")
 
     const posContentRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({
@@ -256,6 +264,45 @@ function POSPageContent() {
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
+    const handleWithdraw = async () => {
+        if (!currentDraftId) {
+            toast.error("Guarde el carrito como borrador primero o espere a la sincronización automática.")
+            return
+        }
+
+        if (!selectedPartnerId) {
+            toast.error("Debe seleccionar un socio para realizar el retiro.")
+            return
+        }
+
+        setIsWithdrawing(true)
+        try {
+            const res = await api.post(`/sales/pos-drafts/${currentDraftId}/withdraw/`, {
+                pos_session_id: currentSession?.id,
+                partner_id: selectedPartnerId
+            })
+
+            toast.success(res.data.message || "Retiro procesado exitosamente")
+            setWithdrawDialogOpen(false)
+            setSelectedPartnerId(null)
+            setSelectedPartnerName("")
+
+            // Cleanup POS state
+            await releaseCurrentLock()
+            setCurrentDraftId(null)
+            setWizardState(null)
+            clearCart()
+            await fetchDrafts()
+            forceSync()
+            setPosMode('SHOPPING')
+        } catch (error: any) {
+            const msg = error.response?.data?.error || "Error al procesar el retiro"
+            toast.error(msg)
+        } finally {
+            setIsWithdrawing(false)
+        }
+    }
+
     const handleCheckoutComplete = async (resData: any) => {
         setCompletedSaleData(resData)
         await releaseCurrentLock()
@@ -342,31 +389,31 @@ function POSPageContent() {
                                     const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
                                     const isWaitingPayment = !!d.wizard_state?.isWaitingPayment;
                                     return (
-                                    <Button
-                                        key={d.id}
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative",
-                                            currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
-                                            isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
-                                            lockedByOther && "border-destructive/40 opacity-60",
-                                            isWaitingPayment && currentDraftId !== d.id && "border-amber-500 text-amber-700 bg-amber-100/50 shadow-md border-solid ring-2 ring-amber-500/30 animate-in zoom-in-95 duration-500"
-                                        )}
-                                        onClick={() => handleLoadDraft(d)}
-                                        title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
-                                    >
-                                        {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
-                                        {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
-                                            <div className="flex items-center gap-1">
-                                                {d.id}
-                                                <Wallet className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
-                                            </div>
-                                        ) : (
-                                            (!isWaitingPayment || currentDraftId === d.id) && d.id
-                                        )}
-                                        {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
-                                    </Button>
+                                        <Button
+                                            key={d.id}
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn(
+                                                "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative",
+                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
+                                                isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
+                                                lockedByOther && "border-destructive/40 opacity-60",
+                                                isWaitingPayment && currentDraftId !== d.id && "border-amber-500 text-amber-700 bg-amber-100/50 shadow-md border-solid ring-2 ring-amber-500/30 animate-in zoom-in-95 duration-500"
+                                            )}
+                                            onClick={() => handleLoadDraft(d)}
+                                            title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
+                                        >
+                                            {lockedByOther && <Lock className="mr-0.5 h-2.5 w-2.5 text-destructive" />}
+                                            {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
+                                                <div className="flex items-center gap-1">
+                                                    {d.id}
+                                                    <Wallet className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
+                                                </div>
+                                            ) : (
+                                                (!isWaitingPayment || currentDraftId === d.id) && d.id
+                                            )}
+                                            {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
+                                        </Button>
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
@@ -387,6 +434,19 @@ function POSPageContent() {
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
+
+                            {/* Partner Withdrawal Option */}
+                            {items.length > 0 && (
+                                <DropdownMenuItem
+                                    onClick={() => setWithdrawDialogOpen(true)}
+                                    disabled={items.some(i => !i.track_inventory || (i.product_type !== 'STORABLE' && i.product_type !== 'MANUFACTURABLE'))}
+                                    className="font-bold text-amber-600 focus:text-amber-700"
+                                >
+                                    <ShoppingCart className="mr-2 h-4 w-4" />
+                                    Retiro de Socio
+                                </DropdownMenuItem>
+                            )}
+
                             {currentSession?.status === 'OPEN' && (
                                 <>
                                     <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
@@ -540,6 +600,55 @@ function POSPageContent() {
                             subTitle={completedSaleData.client_name || "Cliente Contado"}
                         />
                     )}
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Partner Withdrawal Confirmation */}
+            <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+                <AlertDialogContent className="max-w-md bg-white border-amber-100 shadow-2xl">
+                    <AlertDialogHeader>
+                        <div className="mx-auto bg-amber-500 text-white p-4 rounded-full mb-4 shadow-lg shadow-amber-200">
+                            <ShoppingCart className="h-8 w-8" />
+                        </div>
+                        <AlertDialogTitle className="text-xl font-bold text-center text-amber-950">Confirmar Retiro de Socio</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-amber-900/60 font-medium pt-2 text-sm">
+                            Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
+                            <br />
+                            Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="space-y-4 my-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-amber-900/50 tracking-widest pl-1">Seleccionar Socio</Label>
+                            <AdvancedContactSelector
+                                value={selectedPartnerId}
+                                onChange={setSelectedPartnerId}
+                                onSelectContact={(c) => setSelectedPartnerName(c.name)}
+                                isPartnerOnly={true}
+                                placeholder="Buscar socio..."
+                            />
+                        </div>
+
+
+                    </div>
+
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
+                        <Button
+                            className="flex-1 h-12 rounded-xl text-sm font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-200 disabled:opacity-50"
+                            onClick={handleWithdraw}
+                            disabled={isWithdrawing || !selectedPartnerId}
+                        >
+                            {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                            Confirmar Retiro
+                        </Button>
+                        <AlertDialogCancel
+                            className="flex-1 h-12 border-amber-200 text-amber-900 hover:bg-amber-50 rounded-xl text-sm font-bold"
+                            disabled={isWithdrawing}
+                        >
+                            Cancelar
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>

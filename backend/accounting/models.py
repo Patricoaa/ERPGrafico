@@ -770,17 +770,41 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta Retiros de Socios"),
         help_text=_("Cuenta padre de patrimonio para retiros de socios (ej: 3.1.03).")
     )
-    partner_current_account = models.ForeignKey(
+    partner_capital_receivable_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='settings_partner_current',
-        verbose_name=_("Cuenta Particular de Socios"),
-        help_text=_("Cuenta padre de patrimonio para cuenta corriente de socios (ej: 3.1.04).")
+        related_name='settings_partner_receivable',
+        verbose_name=_("Cuenta por Cobrar Aportes Socios"),
+        help_text=_("Cuenta de activo donde se registran las deudas de los socios por capital suscrito no pagado (ej: 1.1.04).")
     )
     partner_capital_social_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_partner_capital_social',
         verbose_name=_("Cuenta de Capital Social"),
         help_text=_("Cuenta global de patrimonio para el capital social de la empresa (ej: 3.1.01).")
+    )
+    partner_provisional_withdrawal_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_prov_withdrawal',
+        verbose_name=_("Cuenta Retiros Provisorios"),
+        help_text=_("Cuenta padre de patrimonio (contra) para retiros provisorios de socios (ej: 3.1.05).")
+    )
+    partner_retained_earnings_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_retained',
+        verbose_name=_("Cuenta Utilidades Retenidas"),
+        help_text=_("Cuenta de patrimonio para utilidades retenidas (ej: 3.2.01).")
+    )
+    partner_current_year_earnings_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_current_earnings',
+        verbose_name=_("Cuenta Utilidades del Ejercicio"),
+        help_text=_("Cuenta de patrimonio para las utilidades del ejercicio vigente (ej: 3.2.02).")
+    )
+    partner_dividends_payable_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_partner_dividends',
+        verbose_name=_("Cuenta Dividendos por Pagar"),
+        help_text=_("Cuenta de pasivo corriente para dividendos declarados pendientes de pago (ej: 2.1.07).")
     )
 
     # DTE Configuration
