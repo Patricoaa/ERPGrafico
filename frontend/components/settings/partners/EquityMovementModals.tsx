@@ -45,9 +45,11 @@ interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
+    initialPartnerId?: string
+    initialAmount?: string
 }
 
-export function SubscriptionMovementModal({ open, onOpenChange, onSuccess }: ModalProps) {
+export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initialPartnerId, initialAmount }: ModalProps) {
     const [loading, setLoading] = useState(false)
     const [partners, setPartners] = useState<any[]>([])
     const [showConfirm, setShowConfirm] = useState(false)
@@ -72,9 +74,19 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess }: Mod
     useEffect(() => {
         if (open) {
             partnersApi.getPartners().then(setPartners)
-            resetForm()
+            
+            if (initialPartnerId || initialAmount) {
+                setFormData(prev => ({
+                    ...prev,
+                    contact_id: initialPartnerId || "",
+                    amount: initialAmount || "",
+                    description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
+                }))
+            } else {
+                resetForm()
+            }
         }
-    }, [open])
+    }, [open, initialPartnerId, initialAmount])
 
     // Selected partner info
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
@@ -456,7 +468,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                                 <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
                                 <span>{buyer?.name}</span>
                             </div>
-                            <p>Esto modificará los porcentajes de participación y generará un asiento contable entre las cuentas particulares. ¿Desea continuar?</p>
+                            <p>Esto modificará los porcentajes de participación y generará un asiento contable reclasificando el capital suscrito y los saldos pendientes entre los socios involucrados. ¿Desea continuar?</p>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -473,3 +485,301 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
         </>
     )
 }
+
+function useTreasuryAccounts() {
+    const [accounts, setAccounts] = useState<any[]>([])
+    
+    useEffect(() => {
+        // Fetch treasury accounts for the dropdowns
+        import("@/lib/api").then(m => m.default).then(api => {
+            api.get('/treasury/accounts/').then(res => setAccounts(res.data)).catch(console.error)
+        })
+    }, [])
+    
+    return accounts
+}
+
+export function CapitalContributionModal({ open, onOpenChange, onSuccess }: ModalProps) {
+    const [loading, setLoading] = useState(false)
+    const [partners, setPartners] = useState<any[]>([])
+    const treasuryAccounts = useTreasuryAccounts()
+    
+    const [formData, setFormData] = useState({
+        contact_id: "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        treasury_account_id: "",
+        description: ""
+    })
+
+    const resetForm = () => {
+        setFormData({
+            contact_id: "",
+            amount: "",
+            date: new Date().toISOString().split('T')[0],
+            treasury_account_id: "",
+            description: ""
+        })
+    }
+
+    useEffect(() => {
+        if (open) {
+            partnersApi.getPartners().then(setPartners)
+            resetForm()
+        }
+    }, [open])
+
+    const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
+    const pendingCapital = selectedPartner ? Number(selectedPartner.partner_pending_capital) || 0 : 0
+
+    const handleSubmit = async () => {
+        if (!formData.contact_id || !formData.amount || !formData.treasury_account_id) {
+            toast.error("Debe completar todos los campos obligatorios.")
+            return
+        }
+
+        setLoading(true)
+        try {
+            await partnersApi.createTransaction(parseInt(formData.contact_id), {
+                transaction_type: 'CAPITAL_CASH',
+                amount: parseFloat(formData.amount),
+                date: formData.date,
+                treasury_account_id: parseInt(formData.treasury_account_id),
+                description: formData.description
+            })
+            toast.success("Aporte efectivo registrado exitosamente")
+            onSuccess()
+            onOpenChange(false)
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al registrar aporte")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm() }}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-emerald-500" />
+                        Aporte de Capital Efectivo
+                    </DialogTitle>
+                    <DialogDescription>
+                        Ingrese el capital en efectivo o transferencia a una cuenta de tesorería.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label>Socio Aportante</Label>
+                        <Select value={formData.contact_id} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccione un socio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {partners.map(p => (
+                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {selectedPartner && (
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                                Capital Pendiente (por cobrar): <span className="font-mono font-bold text-emerald-600">{formatCurrency(pendingCapital)}</span>
+                            </p>
+                        )}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Cuenta de Tesorería (Destino)</Label>
+                        <Select value={formData.treasury_account_id} onValueChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Cuenta bancaria o caja" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {treasuryAccounts.map(a => (
+                                    <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Monto Ingresado ($)</Label>
+                        <Input 
+                            type="number" 
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Fecha del Aporte</Label>
+                        <Input 
+                            type="date" 
+                            value={formData.date}
+                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Descripción / Motivo</Label>
+                        <Input 
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Ej: Aporte inicial o expansión"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Registrar Aporte
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: ModalProps) {
+    const [loading, setLoading] = useState(false)
+    const [partners, setPartners] = useState<any[]>([])
+    const treasuryAccounts = useTreasuryAccounts()
+    
+    const [formData, setFormData] = useState({
+        contact_id: "",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        treasury_account_id: "",
+        description: ""
+    })
+
+    const resetForm = () => {
+        setFormData({
+            contact_id: "",
+            amount: "",
+            date: new Date().toISOString().split('T')[0],
+            treasury_account_id: "",
+            description: ""
+        })
+    }
+
+    useEffect(() => {
+        if (open) {
+            partnersApi.getPartners().then(setPartners)
+            resetForm()
+        }
+    }, [open])
+
+    const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
+    const withdrawalsBalance = selectedPartner ? (parseFloat(selectedPartner.partner_provisional_withdrawals_balance) || 0) : 0
+
+    const handleSubmit = async () => {
+        if (!formData.contact_id || !formData.amount || !formData.treasury_account_id) {
+            toast.error("Debe completar todos los campos obligatorios.")
+            return
+        }
+
+        setLoading(true)
+        try {
+            await partnersApi.createTransaction(parseInt(formData.contact_id), {
+                transaction_type: 'PROV_WITHDRAWAL',
+                amount: parseFloat(formData.amount),
+                date: formData.date,
+                treasury_account_id: parseInt(formData.treasury_account_id),
+                description: formData.description || 'Retiro Provisorio de Utilidades'
+            })
+            toast.success("Retiro provisorio registrado exitosamente")
+            onSuccess()
+            onOpenChange(false)
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || "Error al registrar retiro")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetForm() }}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-rose-500" />
+                        Registro de Retiro Provisorio
+                    </DialogTitle>
+                    <DialogDescription>
+                        Adelanto a cuenta de utilidades. Este retiro descontará caja y quedará pendiente de liquidar en el cierre anual.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label>Socio que Retira</Label>
+                        <Select value={formData.contact_id} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccione un socio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {partners.map(p => (
+                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {selectedPartner && (
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                                Acumulado en Retiros Provisorios (Deuda del Socio): <span className="font-mono font-bold text-rose-600">{formatCurrency(withdrawalsBalance)}</span>
+                            </p>
+                        )}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Cuenta de Tesorería (Origen)</Label>
+                        <Select value={formData.treasury_account_id} onValueChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Cuenta bancaria o caja" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {treasuryAccounts.map(a => (
+                                    <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Monto a Retirar ($)</Label>
+                        <Input 
+                            type="number" 
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Fecha del Retiro</Label>
+                        <Input 
+                            type="date" 
+                            value={formData.date}
+                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Descripción / Motivo</Label>
+                        <Input 
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Ej: Adelanto utilidades Octubre"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                        Cancelar
+                    </Button>
+                    <Button variant="destructive" onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Confirmar Egreso
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+

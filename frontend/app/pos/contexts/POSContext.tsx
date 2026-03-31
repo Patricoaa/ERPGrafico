@@ -39,6 +39,8 @@ interface POSContextValue {
     items: CartItem[]
     selectedCustomerId: number | null
     setSelectedCustomerId: (id: number | null) => void
+    selectedCustomer: any | null
+    setSelectedCustomer: (customer: any | null) => void
     totalDiscountAmount: number
     setTotalDiscountAmount: (amount: number) => void
 
@@ -92,6 +94,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
+    const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null)
     const [defaultCustomerId, setDefaultCustomerId] = useState<number | null>(null)
     const [totalDiscountAmount, setTotalDiscountAmount] = useState<number>(0)
 
@@ -110,7 +113,10 @@ export function POSProvider({ children }: { children: ReactNode }) {
                 if (defaultCustomer) {
                     setDefaultCustomerId(defaultCustomer.id)
                     // Only set as selected if none is already selected (prevents overwriting draft loads)
-                    setSelectedCustomerId(prev => prev ? prev : defaultCustomer.id)
+                    if (!selectedCustomerId) {
+                        setSelectedCustomerId(defaultCustomer.id)
+                        setSelectedCustomer(defaultCustomer)
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching default customer:", error)
@@ -125,6 +131,17 @@ export function POSProvider({ children }: { children: ReactNode }) {
             setSelectedCustomerId(defaultCustomerId)
         }
     }, [currentSession, defaultCustomerId, selectedCustomerId])
+
+    // Fetch full customer details when ID changes
+    useEffect(() => {
+        if (selectedCustomerId && (!selectedCustomer || selectedCustomer.id !== selectedCustomerId)) {
+            api.get(`/contacts/${selectedCustomerId}/`)
+                .then(res => setSelectedCustomer(res.data))
+                .catch(err => console.error("Error fetching customer in POSContext:", err))
+        } else if (!selectedCustomerId) {
+            setSelectedCustomer(null)
+        }
+    }, [selectedCustomerId])
 
     // Reset draft state when session changes - Adjust state during render pattern
     const [handledSessionId, setHandledSessionId] = useState<number | null>(null);
@@ -192,6 +209,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
         items,
         selectedCustomerId,
         setSelectedCustomerId,
+        selectedCustomer,
+        setSelectedCustomer,
         totalDiscountAmount,
         setTotalDiscountAmount,
 

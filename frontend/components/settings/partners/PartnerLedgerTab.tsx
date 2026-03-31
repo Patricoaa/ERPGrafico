@@ -30,19 +30,30 @@ import { formatCurrency, formatPlainDate as formatDate } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { InventoryContributionModal } from "@/components/settings/partners/InventoryContributionModal"
+import { CapitalContributionModal, ProvisionalWithdrawalModal } from "@/components/settings/partners/EquityMovementModals"
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "all", label: "Todos los tipos" },
-    { value: "SUBSCRIPTION", label: "Suscripción" },
-    { value: "REDUCTION", label: "Reducción" },
+    { value: "SUBSCRIPTION", label: "Suscripción de Capital" },
+    { value: "REDUCTION", label: "Reducción de Capital" },
     { value: "CAPITAL_CASH", label: "Aporte Efectivo" },
     { value: "CAPITAL_INVENTORY", label: "Aporte en Bienes" },
-    { value: "WITHDRAWAL", label: "Retiro" },
-    { value: "DIVIDEND", label: "Dividendos" },
-    { value: "LOAN_IN", label: "Préstamo de Socio" },
-    { value: "LOAN_OUT", label: "Préstamo a Socio" },
+    { value: "PROV_WITHDRAWAL", label: "Retiro Provisorio (Anticipo)" },
+    { value: "WITHDRAWAL", label: "Retiro de Utilidades" },
+    { value: "DIVIDEND", label: "Distribución (Asignación)" },
+    { value: "DIVIDEND_PAY", label: "Pago de Dividendo" },
+    { value: "REINVESTMENT", label: "Reinversión de Utilidades" },
+    { value: "RETAINED", label: "Utilidades Retenidas" },
+    { value: "LOSS_ABSORB", label: "Absorción de Pérdidas" },
     { value: "TRANSFER_IN", label: "Transferencia (Ingreso)" },
     { value: "TRANSFER_OUT", label: "Transferencia (Egreso)" },
 ]
@@ -54,7 +65,10 @@ export function PartnerLedgerTab() {
     const [filterPartner, setFilterPartner] = useState<string>("all")
     const [filterType, setFilterType] = useState<string>("all")
     const [search, setSearch] = useState("")
-    const [isMovementOpen, setIsMovementOpen] = useState(false)
+    
+    // Movement Modals
+    const [isContributionOpen, setIsContributionOpen] = useState(false)
+    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isInventoryOpen, setIsInventoryOpen] = useState(false)
 
     const fetchData = async () => {
@@ -82,7 +96,34 @@ export function PartnerLedgerTab() {
         return <Skeleton className="h-[500px] w-full" />
     }
 
-    const filteredTxs = transactions.filter(tx => {
+    // Identify Inflow vs Outflow types for UI and Balance
+    const isInflow = (type: string) => [
+        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY', 
+        'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
+    ].includes(type)
+    
+    const isOutflow = (type: string) => [
+        'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION', 
+        'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
+    ].includes(type)
+
+    // Calculate Running Balance and filter
+    // To calculate a true running balance, we sort by date ASC
+    const sortedTxs = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    
+    let runningBalance = 0
+    const txsWithBalance = sortedTxs.map(tx => {
+        const amount = parseFloat(tx.amount) || 0
+        if (isInflow(tx.transaction_type)) {
+            runningBalance += amount
+        } else if (isOutflow(tx.transaction_type)) {
+            runningBalance -= amount
+        }
+        return { ...tx, balance_after: runningBalance }
+    })
+
+    // Now filter the result for display (usually newest first in table)
+    const filteredTxs = txsWithBalance.reverse().filter(tx => {
         const matchesPartner = filterPartner === "all" || tx.partner?.toString() === filterPartner
         const matchesType = filterType === "all" || tx.transaction_type === filterType
         const matchesSearch = !search ||
@@ -91,34 +132,30 @@ export function PartnerLedgerTab() {
         return matchesPartner && matchesType && matchesSearch
     })
 
-    // Accumulated totals
-    const totals = filteredTxs.reduce((acc, tx) => {
-        const amount = parseFloat(tx.amount) || 0
-        const type = tx.transaction_type
-        if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
-            acc.inflows += amount
-        } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
-            acc.outflows += amount
-        }
-        return acc
-    }, { inflows: 0, outflows: 0 })
-
     const getTransactionIcon = (type: string) => {
-        if (type.includes('CAPITAL') || type === 'SUBSCRIPTION' || type === 'TRANSFER_IN') return <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-        if (type === 'WITHDRAWAL' || type === 'DIVIDEND' || type === 'REDUCTION' || type === 'TRANSFER_OUT') return <ArrowDownLeft className="h-4 w-4 text-rose-500" />
+        if (isInflow(type)) return <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+        if (isOutflow(type)) return <ArrowDownLeft className="h-4 w-4 text-rose-500" />
         return <History className="h-4 w-4 text-muted-foreground" />
     }
 
     const getTransactionColor = (type: string) => {
         if (type === 'SUBSCRIPTION') return 'bg-blue-100 text-blue-700 border-blue-200'
         if (type.includes('TRANSFER')) return 'bg-amber-100 text-amber-700 border-amber-200'
-        if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY') return 'bg-emerald-100 text-emerald-700 border-emerald-200'
-        if (type === 'WITHDRAWAL' || type === 'DIVIDEND') return 'bg-rose-100 text-rose-700 border-rose-200'
-        if (type === 'REDUCTION') return 'bg-orange-100 text-orange-700 border-orange-200'
+        if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'REINVESTMENT' || type === 'RETAINED') 
+            return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+        if (isOutflow(type)) return 'bg-rose-100 text-rose-700 border-rose-200'
         return 'bg-muted text-muted-foreground border-transparent'
     }
 
     const hasActiveFilters = filterPartner !== "all" || filterType !== "all" || search !== ""
+
+    // Total summary for footer (based on filtered set)
+    const totals = filteredTxs.reduce((acc, tx) => {
+        const amount = parseFloat(tx.amount) || 0
+        if (isInflow(tx.transaction_type)) acc.inflows += amount
+        else if (isOutflow(tx.transaction_type)) acc.outflows += amount
+        return acc
+    }, { inflows: 0, outflows: 0 })
 
     return (
         <div className="space-y-6">
@@ -181,13 +218,26 @@ export function PartnerLedgerTab() {
                                     <Filter className="h-4 w-4" />
                                 </Button>
                             )}
-                            <Button
-                                className="h-10"
-                                onClick={() => setIsMovementOpen(true)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Aporte/Retiro Efectivo
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button className="h-10">
+                                        <Wallet className="h-4 w-4 mr-2" />
+                                        Movimiento de Caja
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 font-mono text-xs">
+                                    <DropdownMenuLabel>Operaciones de Tesorería</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setIsContributionOpen(true)} className="gap-2 cursor-pointer font-medium text-emerald-600 focus:text-emerald-700">
+                                        <ArrowUpRight className="h-4 w-4" />
+                                        <span>Registrar Aporte Efectivo</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700">
+                                        <ArrowDownLeft className="h-4 w-4" />
+                                        <span>Registrar Retiro Socio</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                                 variant="outline"
                                 className="h-10 border-amber-200 hover:bg-amber-50 text-amber-700"
@@ -207,14 +257,14 @@ export function PartnerLedgerTab() {
                     <div>
                         <CardTitle className="text-lg flex items-center gap-2">
                             <History className="h-5 w-5 text-primary" />
-                            Detalle de Movimientos
+                            Libro Auxiliar de Socios
                             {hasActiveFilters && (
-                                <Badge variant="secondary" className="text-[9px] ml-2">
+                                <Badge variant="secondary" className="text-[9px] ml-2 font-mono">
                                     {filteredTxs.length} de {transactions.length}
                                 </Badge>
                             )}
                         </CardTitle>
-                        <CardDescription>Historial cronológico de capital comprometido vs pagado</CardDescription>
+                        <CardDescription>Trazabilidad cronológica de aportes, retiros y utilidades</CardDescription>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -223,10 +273,10 @@ export function PartnerLedgerTab() {
                             <TableRow className="bg-muted/50 hover:bg-muted/50">
                                 <TableHead className="text-[10px] font-bold uppercase pl-6">Fecha</TableHead>
                                 <TableHead className="text-[10px] font-bold uppercase">Socio</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase">Tipo</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase">Descripción</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase">Tipo y Concepto</TableHead>
                                 <TableHead className="text-[10px] font-bold uppercase text-right">Referencia</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Monto</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right">Monto</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6 text-primary">Saldo</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -243,32 +293,37 @@ export function PartnerLedgerTab() {
                                             <div className="text-xs font-bold">{tx.partner_name}</div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={`text-[9px] font-bold uppercase h-5 ${getTransactionColor(tx.transaction_type)}`}>
-                                                {tx.transaction_type_display}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-xs max-w-xs truncate">
-                                            {tx.description}
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="outline" className={`text-[9px] font-bold uppercase w-fit h-5 px-1 ${getTransactionColor(tx.transaction_type)}`}>
+                                                    {tx.transaction_type_display}
+                                                </Badge>
+                                                <span className="text-[10px] text-muted-foreground max-w-[200px] truncate">{tx.description}</span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {tx.journal_entry_display ? (
-                                                <Badge variant="secondary" className="text-[9px] font-mono hover:bg-muted cursor-default">
+                                                <Button variant="ghost" className="h-6 px-2 text-[10px] font-mono hover:bg-primary/10 hover:text-primary transition-all">
                                                     {tx.journal_entry_display}
-                                                </Badge>
+                                                </Button>
                                             ) : '-'}
                                         </TableCell>
-                                        <TableCell className="text-right pr-6 font-mono font-bold">
+                                        <TableCell className="text-right font-mono text-xs font-bold">
                                             <div className="flex items-center justify-end gap-1">
                                                 {getTransactionIcon(tx.transaction_type)}
-                                                {formatCurrency(tx.amount)}
+                                                <span className={isOutflow(tx.transaction_type) ? 'text-rose-600' : 'text-emerald-600'}>
+                                                    {isOutflow(tx.transaction_type) ? '-' : '+'}{formatCurrency(tx.amount)}
+                                                </span>
                                             </div>
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6 font-mono text-xs font-bold text-primary bg-primary/5">
+                                            {formatCurrency(tx.balance_after)}
                                         </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-32 text-center text-muted-foreground uppercase text-[10px] italic">
-                                        No hay movimientos registrados para los criterios seleccionados.
+                                        No hay movimientos registrados.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -277,22 +332,26 @@ export function PartnerLedgerTab() {
                         {filteredTxs.length > 0 && (
                             <tfoot>
                                 <TableRow className="bg-muted/30 font-bold border-t-2">
-                                    <TableCell colSpan={4} className="pl-6 text-[10px] font-extrabold uppercase text-muted-foreground">
-                                        Totales ({filteredTxs.length} movimientos)
+                                    <TableCell colSpan={3} className="pl-6 text-[10px] font-extrabold uppercase text-muted-foreground leading-tight">
+                                        Totales de la Selección<br/>
+                                        <span className="text-[9px] font-medium italic">({filteredTxs.length} movimientos)</span>
                                     </TableCell>
-                                    <TableCell className="text-right text-[10px] font-extrabold uppercase">
-                                        <div className="space-y-0.5">
-                                            <div className="text-emerald-600">Ingresos</div>
-                                            <div className="text-rose-600">Egresos</div>
-                                            <div className="text-primary border-t pt-0.5">Neto</div>
+                                    <TableCell className="text-right text-[10px] font-bold uppercase pr-4">
+                                        <div className="flex flex-col justify-end">
+                                            <span className="text-emerald-600">Ingresos (+)</span>
+                                            <span className="text-rose-600">Retiros (-)</span>
+                                            <span className="text-primary border-t border-muted-foreground/20 mt-0.5 pt-0.5">Saldo Neto</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right pr-6 font-mono">
-                                        <div className="space-y-0.5">
-                                            <div className="text-emerald-600 font-bold">+{formatCurrency(totals.inflows)}</div>
-                                            <div className="text-rose-600 font-bold">-{formatCurrency(totals.outflows)}</div>
-                                            <div className="text-primary font-extrabold border-t pt-0.5">{formatCurrency(totals.inflows - totals.outflows)}</div>
+                                    <TableCell className="text-right font-mono text-xs pr-4">
+                                        <div className="flex flex-col justify-end">
+                                            <span className="text-emerald-600">+{formatCurrency(totals.inflows)}</span>
+                                            <span className="text-rose-600">-{formatCurrency(totals.outflows)}</span>
+                                            <span className="text-primary border-t border-muted-foreground/20 mt-0.5 pt-0.5 font-extrabold">{formatCurrency(totals.inflows - totals.outflows)}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="bg-primary/10 text-right pr-6 font-mono text-sm font-black text-primary">
+                                        {formatCurrency(filteredTxs[0].balance_after)}
                                     </TableCell>
                                 </TableRow>
                             </tfoot>
@@ -302,14 +361,18 @@ export function PartnerLedgerTab() {
             </IndustrialCard>
 
             {/* Movement Wizard Modal */}
-            <CashMovementModal
-                open={isMovementOpen}
-                onOpenChange={setIsMovementOpen}
+            <CapitalContributionModal 
+                open={isContributionOpen}
+                onOpenChange={setIsContributionOpen}
                 onSuccess={fetchData}
-                variant="partners"
+            />
+            
+            <ProvisionalWithdrawalModal 
+                open={isWithdrawalOpen}
+                onOpenChange={setIsWithdrawalOpen}
+                onSuccess={fetchData}
             />
 
-            {/* Inventory Contribution Modal */}
             <InventoryContributionModal
                 open={isInventoryOpen}
                 onOpenChange={setIsInventoryOpen}
