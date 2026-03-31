@@ -7,7 +7,7 @@ import { OrderHubStatus } from "./OrderHubStatus"
 import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 
 interface OrderCardProps {
     item: any

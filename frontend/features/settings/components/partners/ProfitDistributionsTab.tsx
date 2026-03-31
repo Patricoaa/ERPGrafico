@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { IndustrialCard } from "@/components/ui/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { 

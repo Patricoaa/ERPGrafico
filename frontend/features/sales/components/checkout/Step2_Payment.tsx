@@ -1,7 +1,7 @@
 "use client"
 
 import { Wallet } from "lucide-react"
-import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useEffect } from "react"
 
 interface Step2_PaymentProps {

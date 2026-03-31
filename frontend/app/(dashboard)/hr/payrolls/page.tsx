@@ -31,7 +31,7 @@ import {
 import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { cn } from "@/lib/utils"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import { FORM_STYLES } from "@/lib/styles"
 import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
 

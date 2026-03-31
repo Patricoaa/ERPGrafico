@@ -22,7 +22,7 @@ import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } fr
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-import { IndustrialCard } from "@/components/shared/IndustrialCard";
+import { IndustrialCard } from "@/components/ui/IndustrialCard";
 import { LAYOUT_TOKENS } from "@/lib/styles";
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];

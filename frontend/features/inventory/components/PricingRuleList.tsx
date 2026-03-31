@@ -11,7 +11,7 @@ import { PricingRuleForm } from "@/components/forms/PricingRuleForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 
 interface PricingRule {
     id: number

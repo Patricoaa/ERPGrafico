@@ -13,7 +13,7 @@ import {
     getPayrollPayments
 } from "@/lib/hr/api"
 import { getEmployeePayrollPreview } from "@/lib/profile/api"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
