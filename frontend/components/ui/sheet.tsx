@@ -57,9 +57,9 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   hideOverlay?: boolean
   hideCloseButton?: boolean
-  onPointerDownOutside?: (event: any) => void
-  onFocusOutside?: (event: any) => void
-  onInteractOutside?: (event: any) => void
+  onPointerDownOutside?: (event: Event) => void
+  onFocusOutside?: (event: Event) => void
+  onInteractOutside?: (event: Event) => void
 }) {
   const { hideCloseButton, ...restProps } = props
   return (

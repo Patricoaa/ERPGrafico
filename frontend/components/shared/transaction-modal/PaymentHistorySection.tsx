@@ -3,8 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Banknote, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, translatePaymentMethod, formatCurrency } from "@/lib/utils"
+import type { TransactionData } from "../TransactionViewModal"
 
-export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: any, currentType: string, navigateTo: any, handleDeletePayment: any }) => {
+export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: TransactionData, currentType: string, navigateTo: (type: string, id: number | string) => void, handleDeletePayment: (id: number) => void }) => {
     const payments = data?.serialized_payments || data?.payments_detail || [];
     if (payments.length === 0) return null;
 
@@ -25,7 +26,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {payments.map((pay: any) => (
+                        {payments.map((pay: { id: number, date?: string, created_at?: string, payment_method?: string, journal_name?: string, transaction_number?: string, reference?: string, amount?: number | string }) => (
                             <TableRow key={pay.id} className="hover:bg-muted/10 transition-colors">
                                 <TableCell className="text-xs font-semibold">{formatPlainDate(pay.date || pay.created_at)}</TableCell>
                                 <TableCell>

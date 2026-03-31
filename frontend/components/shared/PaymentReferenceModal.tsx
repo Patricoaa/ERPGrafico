@@ -12,10 +12,22 @@ import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatPlainDate } from "@/lib/utils"
 
+export interface Payment {
+    id: number
+    amount: number | string
+    payment_method: string
+    payment_method_display?: string
+    transaction_number?: string
+    is_pending_registration?: boolean
+    date?: string
+    created_at?: string
+    reference?: string
+}
+
 interface PaymentReferenceModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    payments: any[]
+    payments: Payment[]
     onSuccess: () => void
 }
 
@@ -26,7 +38,7 @@ export function PaymentReferenceModal({
     onSuccess
 }: PaymentReferenceModalProps) {
     // Filter payments that need a reference (TRANSFER or CARD with missing info)
-    const pendingPayments = payments?.filter((p: any) => {
+    const pendingPayments = payments?.filter((p: Payment) => {
         const method = p.payment_method?.toUpperCase()
         const isTransferOrCard = method === 'TRANSFER' || method === 'CARD' || method === 'BANK'
         const hasNoRef = !p.transaction_number || p.transaction_number === "" || p.transaction_number === "null"

@@ -29,6 +29,116 @@ import { Separator } from "@/components/ui/separator"
 
 type EntityType = 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'cash_movement'
 
+export interface TransactionLine {
+    id?: number | string;
+    product_type?: string;
+    subtotal?: string | number;
+    amount?: string | number;
+    discount_amount?: string | number;
+    product_name?: string;
+    product_code?: string;
+    quantity?: number | string;
+    uom_name?: string;
+    unit_price_gross?: number;
+    unit_price?: number;
+    unit_cost?: number;
+    description?: string;
+    product?: { name?: string, sku?: string, default_code?: string };
+    uom?: { name?: string };
+    delivered_quantity?: number;
+    qty_delivered?: number;
+    delivery_status?: string;
+    sku?: string;
+    account_name?: string;
+    account_code?: string;
+    label?: string;
+    debit?: string | number;
+    credit?: string | number;
+}
+
+export interface RelatedDocument {
+    id: number | string;
+    display_id: string;
+    number?: string | number;
+    type?: string;
+    type_display?: string;
+    docType?: string;
+    date?: string;
+    amount?: number | string;
+    method?: string;
+    payment_method?: string;
+    payment_method_display?: string;
+    code?: string;
+}
+
+export interface TransactionData {
+    id?: number | string;
+    display_id?: string;
+    number?: string | number;
+    reference?: string;
+    transaction_number?: string;
+    total_net?: number | string;
+    total_tax?: number | string;
+    total?: number | string;
+    amount?: number | string;
+    payment_type?: string;
+    movement_type?: string;
+    from_container_name?: string;
+    to_container_name?: string;
+    payment_method?: string;
+    dte_type?: string;
+    reference_code?: string;
+    code?: string;
+    total_discount_amount?: number | string;
+    total_paid?: number | string;
+    terminal_name?: string;
+    pos_session?: { id: number, terminal_name?: string };
+    session?: { id: number, terminal_name?: string };
+    customer?: { id: number, name: string, full_name?: string, tax_id?: string, email?: string, phone?: string, address?: string };
+    partner?: { id: number, name: string, full_name?: string, tax_id?: string, email?: string, phone?: string, address?: string };
+    partner_name?: string;
+    customer_name?: string;
+    supplier_name?: string;
+    contact_name?: string;
+    customer_rut?: string;
+    supplier_rut?: string;
+    partner_rut?: string;
+    folio?: string | number;
+    folio_number?: string | number;
+    timestamp?: string;
+    date?: string;
+    due_date?: string;
+    created_at?: string;
+    status?: string | number;
+    payment_status?: string;
+    notes?: string;
+    invoice_display_id?: string;
+    warehouse_name?: string;
+    origin_document?: string;
+    journal_name?: string;
+    period_name?: string;
+    move_type_display?: string;
+    priority?: string;
+    completion_percentage?: number | string;
+    lines?: TransactionLine[];
+    items?: TransactionLine[];
+    adjustments?: RelatedDocument[];
+    related_returns?: RelatedDocument[];
+    work_orders?: RelatedDocument[];
+    related_stock_moves?: RelatedDocument[];
+    journal_entry?: number | string | RelatedDocument;
+    journal_entry_number?: string;
+    journal_entry_display_id?: string;
+    related_documents?: {
+        invoices?: RelatedDocument[];
+        notes?: RelatedDocument[];
+        deliveries?: RelatedDocument[];
+        receipts?: RelatedDocument[];
+        payments?: RelatedDocument[];
+    };
+    [key: string]: unknown;
+}
+
 interface TransactionViewModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -40,11 +150,11 @@ interface TransactionViewModalProps {
 
 export function TransactionViewModal({ open, onOpenChange, type: initialType, id: initialId, view = 'all' }: TransactionViewModalProps) {
     const [history, setHistory] = useState<{ type: string, id: number | string }[]>([])
-    const [currentType, setCurrentType] = useState<any>(initialType)
+    const [currentType, setCurrentType] = useState<string>(initialType)
     const [currentId, setCurrentId] = useState<number | string>(initialId)
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<TransactionData | null>(null)
     const [loading, setLoading] = useState(false)
-    const [editingPayment, setEditingPayment] = useState<any>(null)
+    const [editingPayment, setEditingPayment] = useState<{ isReceivable?: boolean, amount?: number, transactionId?: number | string, transactionType?: string } | null>(null)
 
     const contentRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({
@@ -118,9 +228,10 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 setData(response.data)
             }
 
-        } catch (error: any) {
-            console.error("Error fetching transaction details:", error)
-            const msg = error.response?.data?.error || error.message || "Error desconocido"
+        } catch (error) {
+            const err = error as { response?: { data?: { error?: string } }, message?: string }
+            console.error("Error fetching transaction details:", err)
+            const msg = err.response?.data?.error || err.message || "Error desconocido"
             toast.error(`Error al cargar: ${msg}`)
         } finally {
             if (idAtStart === currentId && typeAtStart === currentType) {
@@ -192,7 +303,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
             case 'sale_delivery':
                 return { main: "Despacho de Venta", sub: data.display_id || `DES-${data.number || data.id}` }
             case 'purchase_receipt':
-                const isService = (data.lines || []).some((l: any) => l.product_type === 'SERVICE')
+                const isService = (data.lines || []).some((l) => l.product_type === 'SERVICE')
                 return { main: isService ? "Entrega de Servicio" : "Recepción de Compra", sub: `REC-${data.id}` }
             case 'sale_return':
             case 'purchase_return':
@@ -257,7 +368,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                     data={data}
                     currentType={currentType}
                     mainTitle={mainTitle}
-                    subTitle={subTitle}
+                    subTitle={subTitle as string}
                 />
 
                 <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background print:hidden">
@@ -397,7 +508,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.items || []).map((item: any, idx: number) => (
+                                                                    {(data.items || []).map((item, idx: number) => (
                                                                         <TableRow key={item.id || idx} className="hover:bg-muted/5 transition-colors border-border/40">
                                                                             <TableCell className="px-6 py-4">
                                                                                 <div className="flex flex-col">
@@ -423,7 +534,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.lines || []).map((line: any) => {
+                                                                    {(data.lines || []).map((line) => {
                                                                         const isExit = currentType === 'sale_delivery';
                                                                         return (
                                                                             <TableRow key={line.id} className="hover:bg-muted/5 border-border/40">
@@ -463,8 +574,8 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {(data.lines || data.items || []).map((item: any, idx: number) => {
-                                                                        const hasLineDiscount = parseFloat(item.discount_amount || 0) > 0
+                                                                    {(data.lines || data.items || []).map((item, idx: number) => {
+                                                                        const hasLineDiscount = parseFloat(String(item.discount_amount || 0)) > 0
                                                                         return (
                                                                             <Fragment key={item.id || idx}>
                                                                                 <TableRow className="hover:bg-muted/5 border-border/40">
@@ -474,7 +585,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                             <span className="text-[9px] font-mono text-muted-foreground uppercase mt-0.5">{item.product_code}</span>
                                                                                         </div>
                                                                                     </TableCell>
-                                                                                    <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(item.quantity || 0))}</TableCell>
+                                                                                    <TableCell className="text-center font-bold text-[13px] font-mono">{Math.round(parseFloat(String(item.quantity || 0)))}</TableCell>
                                                                                     <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price_gross || item.unit_price || item.unit_cost)}</TableCell>
                                                                                     <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">
                                                                                         {hasLineDiscount ? (
@@ -501,9 +612,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                             <div className="w-full md:w-80 space-y-3 bg-muted/30 p-6 rounded-3xl border border-border/40">
                                                                 {(() => {
                                                                     const lines = data.lines || data.items || [];
-                                                                    const itemsSum = lines.reduce((acc: number, item: any) => acc + parseFloat(item.subtotal || 0), 0);
-                                                                    const lineDiscountsSum = lines.reduce((acc: number, item: any) => acc + parseFloat(item.discount_amount || 0), 0);
-                                                                    const globalDiscount = parseFloat(data.total_discount_amount || 0);
+                                                                    const itemsSum = lines.reduce((acc: number, item) => acc + parseFloat(String(item.subtotal || "0")), 0);
+                                                                    const lineDiscountsSum = lines.reduce((acc: number, item) => acc + parseFloat(String(item.discount_amount || "0")), 0);
+                                                                    const globalDiscount = parseFloat(String(data.total_discount_amount || "0"));
 
                                                                     return (
                                                                         <>

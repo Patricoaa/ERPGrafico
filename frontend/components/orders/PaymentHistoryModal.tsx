@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
+import type { TransactionData } from "@/components/shared/TransactionViewModal"
 
 interface Payment {
     id: number
@@ -28,7 +29,7 @@ interface Payment {
 interface PaymentHistoryModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    order: any
+    order: TransactionData
 }
 
 export function PaymentHistoryModal({
@@ -115,7 +116,7 @@ export function PaymentHistoryModal({
                 <div className="mt-4 p-4 rounded-lg bg-primary/5 flex justify-between items-center border border-primary/10">
                     <span className="text-sm font-medium">Total Pagado:</span>
                     <span className="text-lg font-bold text-primary">
-                        {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(p.amount as any), 0))}
+                        {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(String(p.amount)), 0))}
                     </span>
                 </div>
             </div>

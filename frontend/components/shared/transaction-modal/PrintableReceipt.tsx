@@ -4,6 +4,7 @@ import { X, Printer } from "lucide-react"
 import { formatPlainDate, translateStatus, translateReceivingStatus, translatePaymentMethod, formatCurrency, cn } from "@/lib/utils"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { useCompanySettings } from "@/features/settings"
+import type { TransactionData, TransactionLine } from "../TransactionViewModal"
 
 const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
     if (!dateStr) return '-'
@@ -20,7 +21,7 @@ const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
     }).format(date)
 }
 
-export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: any, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
+export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: TransactionData, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
     const { logo } = useBranding()
     const { settings: company } = useCompanySettings()
     if (!data) return null
@@ -127,7 +128,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         {isSaleOrder && terminalName && (
                             <div className="mt-1">
                                 <span className="font-black uppercase text-[7px] text-black/40 block leading-none">Terminal / Caja:</span>
-                                <span className="font-black uppercase text-[9px] tracking-tight">{terminalName}</span>
+                                <span className="font-black uppercase text-[9px] tracking-tight">{String(terminalName)}</span>
                             </div>
                         )}
                     </div>
@@ -143,37 +144,37 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                     )}
                     {currentType === 'invoice' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo DTE:</span> {data.dte_type}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Folio:</span> {data.folio_number || 'S/N'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo DTE:</span> {String(data.dte_type || '')}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Folio:</span> {String(data.folio_number || data.folio || 'S/N')}</div>
                             <div><span className="font-black uppercase text-[8px] text-black/40 block">Vencimiento:</span> {formatPlainDate(data.due_date)}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado Pago:</span> {data.payment_status}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado Pago:</span> {String(data.payment_status || '')}</div>
                         </>
                     )}
                     {currentType === 'payment' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Método:</span> {translatePaymentMethod(data.payment_method)}</div>
-                            <div><span className="font-black uppercase text-[8px) text-black/40 block">Referencia:</span> {data.transaction_number || data.reference || '-'}</div>
-                            {data.invoice_display_id && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Documento Relacionado:</span> {data.invoice_display_id}</div>}
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Método:</span> {translatePaymentMethod(String(data.payment_method || ''))}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {String(data.transaction_number || data.reference || '-')}</div>
+                            {data.invoice_display_id && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Documento Relacionado:</span> {String(data.invoice_display_id)}</div>}
                         </>
                     )}
                     {(currentType === 'sale_delivery' || currentType === 'purchase_receipt') && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Almacén:</span> {data.warehouse_name || '-'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado:</span> {translateReceivingStatus(data.status)}</div>
-                            {data.origin_document && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Origen:</span> {data.origin_document}</div>}
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Almacén:</span> {String(data.warehouse_name || '-')}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Estado:</span> {translateReceivingStatus(String(data.status || ''))}</div>
+                            {data.origin_document && <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Origen:</span> {String(data.origin_document)}</div>}
                         </>
                     )}
                     {currentType === 'journal_entry' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Diario:</span> {data.journal_name || '-'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Periodo:</span> {data.period_name || '-'}</div>
-                            <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {data.reference || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Diario:</span> {String(data.journal_name || '-')}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Periodo:</span> {String(data.period_name || '-')}</div>
+                            <div className="col-span-2"><span className="font-black uppercase text-[8px] text-black/40 block">Referencia:</span> {String(data.reference || '-')}</div>
                         </>
                     )}
                     {currentType === 'inventory' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo:</span> {data.move_type_display || '-'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Origen/Destino:</span> {data.warehouse_name || '-'}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Tipo:</span> {String(data.move_type_display || '-')}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Origen/Destino:</span> {String(data.warehouse_name || '-')}</div>
                         </>
                     )}
                     {currentType === 'cash_movement' && (
@@ -184,8 +185,8 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                     )}
                     {currentType === 'work_order' && (
                         <>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Prioridad:</span> {data.priority || 'BAJA'}</div>
-                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Progreso:</span> {data.completion_percentage}%</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Prioridad:</span> {String(data.priority || 'BAJA')}</div>
+                            <div><span className="font-black uppercase text-[8px] text-black/40 block">Progreso:</span> {String(data.completion_percentage || '0')}%</div>
                         </>
                     )}
                 </div>
@@ -207,14 +208,14 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         <div className="text-right">Haber</div>
                     </div>
                     <div className="space-y-2">
-                        {lines.map((item: any, idx: number) => (
+                        {lines.map((item: TransactionLine, idx: number) => (
                             <div key={item.id || idx} className="grid grid-cols-[1fr,60px,60px] gap-1 text-[9px] leading-tight border-b border-black/5 pb-1">
                                 <div className="font-bold flex flex-col">
-                                    <span>{item.account_name}</span>
-                                    <span className="text-[7px] font-mono text-black/40">{item.account_code}</span>
+                                    <span>{String(item.account_name || '')}</span>
+                                    <span className="text-[7px] font-mono text-black/40">{String(item.account_code || '')}</span>
                                 </div>
-                                <div className="text-right font-mono">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</div>
-                                <div className="text-right font-mono">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</div>
+                                <div className="text-right font-mono">{Number(item.debit || 0) > 0 ? formatCurrency(Number(item.debit)) : '-'}</div>
+                                <div className="text-right font-mono">{Number(item.credit || 0) > 0 ? formatCurrency(Number(item.credit)) : '-'}</div>
                             </div>
                         ))}
                     </div>
@@ -233,14 +234,14 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         <div className="text-center">UOM</div>
                     </div>
                     <div className="space-y-2">
-                        {lines.map((item: any, idx: number) => (
+                        {lines.map((item: TransactionLine, idx: number) => (
                             <div key={item.id || idx} className="grid grid-cols-[1fr,40px,50px] gap-2 text-[10px] leading-tight border-b border-black/5 pb-1">
                                 <div className="font-bold flex flex-col">
-                                    <span>{item.product_name || item.product?.name}</span>
+                                    <span>{item.product_name || item.product?.name || ''}</span>
                                     {item.product_code && <span className="text-[7px] font-mono text-black/40 uppercase">{item.product_code}</span>}
                                 </div>
                                 <div className="text-right font-black font-mono">
-                                    {isOutbound ? `-${Math.round(item.quantity || 0)}` : `+${Math.round(item.quantity || 0)}`}
+                                    {isOutbound ? `-${Math.round(Number(item.quantity) || 0)}` : `+${Math.round(Number(item.quantity) || 0)}`}
                                 </div>
                                 <div className="text-center font-bold text-[8px] uppercase text-black/60 pt-0.5">
                                     {item.uom_name || item.uom?.name || 'UN'}
@@ -252,12 +253,12 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
             )
         }
 
-        const renderTableRow = (line: any, idx: number) => {
-            const hasDiscount = parseFloat(line.discount_amount || 0) > 0;
-            const quantity = Math.round(line.quantity || 0);
-            const deliveredQty = Math.round(line.delivered_quantity !== undefined
+        const renderTableRow = (line: TransactionLine, idx: number) => {
+            const hasDiscount = parseFloat(String(line.discount_amount || 0)) > 0;
+            const quantity = Math.round(Number(line.quantity || 0));
+            const deliveredQty = Math.round(Number(line.delivered_quantity !== undefined
                 ? line.delivered_quantity
-                : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0)));
+                : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0))));
 
             const isImmediate = deliveredQty === quantity;
             const productCode = line.sku || line.product_code || line.product?.sku || line.product?.default_code;
@@ -279,10 +280,10 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         </div>
                     </td>
                     <td className="py-1 text-center font-mono w-8">{quantity}</td>
-                    <td className="py-1 text-right font-mono w-14">{formatCurrency(line.unit_price_gross || line.unit_price || line.unit_cost)}</td>
-                    <td className="py-1 text-right font-mono w-10 text-black/60">{hasDiscount ? `-${formatCurrency(line.discount_amount)}` : '-'}</td>
+                    <td className="py-1 text-right font-mono w-14">{formatCurrency(Number(line.unit_price_gross || line.unit_price || line.unit_cost || 0))}</td>
+                    <td className="py-1 text-right font-mono w-10 text-black/60">{hasDiscount ? `-${formatCurrency(Number(line.discount_amount || 0))}` : '-'}</td>
                     <td className="py-1 text-right font-black font-mono w-16">
-                        {formatCurrency(line.subtotal || line.amount || (line.unit_price * line.quantity) || 0)}
+                        {formatCurrency(Number(line.subtotal || line.amount || (Number(line.unit_price ?? 0) * Number(line.quantity ?? 0)) || 0))}
                     </td>
                     {isSaleOrder && (
                         <td className="py-1 text-center font-mono w-10">
@@ -312,7 +313,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         </tr>
                     </thead>
                     <tbody>
-                        {lines.map((line: any, idx: number) => renderTableRow(line, idx))}
+                        {lines.map((line, idx: number) => renderTableRow(line, idx))}
                     </tbody>
                 </table>
             </div>
@@ -331,8 +332,8 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
 
         if (currentType === 'journal_entry') {
             const lines = data.lines || data.items || []
-            const totalDebit = lines.reduce((acc: number, cur: any) => acc + Number(cur.debit), 0)
-            const totalCredit = lines.reduce((acc: number, cur: any) => acc + Number(cur.credit), 0)
+            const totalDebit = lines.reduce((acc: number, cur) => acc + Number(cur.debit), 0)
+            const totalCredit = lines.reduce((acc: number, cur) => acc + Number(cur.credit), 0)
 
             return (
                 <div className="border-t-2 border-black pt-2 space-y-1">
@@ -353,7 +354,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
 
         const totalValue = data.total || data.amount
         const lines = data.lines || data.items || []
-        const totalLineDiscounts = lines.reduce((acc: number, cur: any) => acc + parseFloat(cur.discount_amount || 0), 0)
+        const totalLineDiscounts = lines.reduce((acc: number, cur) => acc + parseFloat(String(cur.discount_amount || 0)), 0)
 
         return (
             <div className="pt-2 space-y-1">
@@ -371,7 +372,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                 </div>
                 <div className="flex justify-between text-[9px] font-bold opacity-60">
                     <span className="uppercase tracking-wider">Descuento Global:</span>
-                    <span className="font-mono">{parseFloat(data.total_discount_amount || 0) > 0 ? `-${formatCurrency(data.total_discount_amount)}` : formatCurrency(0)}</span>
+                    <span className="font-mono">{parseFloat(String(data.total_discount_amount || 0)) > 0 ? `-${formatCurrency(Number(data.total_discount_amount))}` : formatCurrency(0)}</span>
                 </div>
 
                 {data.total_tax !== undefined && (
@@ -397,7 +398,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         </div>
                         <div className="flex justify-between text-[10px] font-black uppercase">
                             <span>Pendiente:</span>
-                            <span className="font-mono">{formatCurrency(Math.max(0, totalValue - (data.total_paid || 0)))}</span>
+                            <span className="font-mono">{formatCurrency(Math.max(0, Number(totalValue) - Number(data.total_paid || 0)))}</span>
                         </div>
                     </div>
                 )}
@@ -414,15 +415,37 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
             {renderContextualInfo()}
             {renderItemsTable()}
             {renderTotals()}
+ 
+            {/* Payments Section (Moved from items table to here) */}
+            {data.related_documents?.payments && data.related_documents.payments.length > 0 && (
+                <div className="mt-2 border-t border-dashed border-black/20 pt-2">
+                    <p className="text-[8px] font-black uppercase mb-1">Pagos Registrados:</p>
+                    {data.related_documents.payments.map((pay, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-0.5">
+                            <div className="flex flex-col">
+                                <div className="text-[9px] font-bold uppercase tracking-tight">
+                                    {String(pay.payment_method_display || pay.method || pay.payment_method || 'Otro')}
+                                </div>
+                                <div className="text-[8px] opacity-70">
+                                    {formatFullDateTime(pay.date ? String(pay.date) : (pay.created_at ? String(pay.created_at) : ''))}
+                                </div>
+                            </div>
+                            <div className="font-black text-[10px]">
+                                {formatCurrency(Number(pay.amount || 0))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {isSaleOrder && (
                 (() => {
                     const lines = data.lines || data.items || []
-                    const hasPending = lines.some((line: any) => {
-                        const qty = Math.round(line.quantity || 0)
-                        const delivered = Math.round(line.delivered_quantity !== undefined
+                    const hasPending = lines.some((line) => {
+                        const qty = Math.round(Number(line.quantity) || 0)
+                        const delivered = Math.round(Number(line.delivered_quantity !== undefined
                             ? line.delivered_quantity
-                            : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0)))
+                            : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0))))
                         return delivered < qty
                     })
                     const deliveryDate = data.expected_delivery_date || data.scheduled_date || data.delivery_date

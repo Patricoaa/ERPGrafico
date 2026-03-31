@@ -11,12 +11,15 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { VariantProps } from "class-variance-authority"
+import { type VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
 
 export type BaseModalVariant = "default" | "transaction" | "wizard" | "raw"
 
-interface BaseModalProps extends VariantProps<typeof dialogContentVariants> {
+export interface BaseModalProps extends 
+    Omit<React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>, "title">,
+    VariantProps<typeof dialogContentVariants> {
     open: boolean
     onOpenChange: (open: boolean) => void
     title: string | React.ReactNode
@@ -24,12 +27,12 @@ interface BaseModalProps extends VariantProps<typeof dialogContentVariants> {
     children: React.ReactNode
     footer?: React.ReactNode
     headerActions?: React.ReactNode
-    className?: string
     contentClassName?: string
     headerClassName?: string
     footerClassName?: string
     hideScrollArea?: boolean
     variant?: BaseModalVariant
+    showCloseButton?: boolean
 }
 
 export function BaseModal({
@@ -47,12 +50,13 @@ export function BaseModal({
     footerClassName,
     hideScrollArea = false,
     variant = "default",
+    showCloseButton = true,
+    ...props
 }: BaseModalProps) {
     const isTransaction = variant === "transaction"
     const isWizard = variant === "wizard"
     const isRaw = variant === "raw"
 
-    // Dynamic styles based on variant
     const headerStyles = cn(
         "px-6 py-4 flex-shrink-0",
         isTransaction && "bg-primary text-primary-foreground border-b-0",
@@ -77,11 +81,13 @@ export function BaseModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 size={size}
+                showCloseButton={showCloseButton && !isTransaction} // Hide standard close if transaction for custom design
                 className={cn(
                     "p-0 overflow-hidden flex flex-col max-h-[95vh]",
                     isTransaction && "border-none shadow-2xl",
                     className
                 )}
+                {...props}
             >
                 {(title || description || headerActions) && (
                     <DialogHeader className={headerStyles}>

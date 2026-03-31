@@ -8,7 +8,7 @@ import api from '@/lib/api'
 
 interface DataManagementProps {
     endpoint: string
-    templateData: any[]
+    templateData: Record<string, unknown>[]
     onImportSuccess: () => void
     exportFilename?: string
 }
@@ -32,7 +32,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
             }
 
             const headers = Object.keys(data[0]).join(',')
-            const csv = data.map((row: any) =>
+            const csv = data.map((row: Record<string, unknown>) =>
                 Object.values(row).map(val =>
                     typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
                 ).join(',')
@@ -53,7 +53,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 
     const downloadTemplate = () => {
         const headers = Object.keys(templateData[0]).join(',')
-        const csv = templateData.map((row: any) =>
+        const csv = templateData.map((row: Record<string, unknown>) =>
             Object.values(row).map(val =>
                 typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
             ).join(',')
@@ -83,8 +83,9 @@ export const DataManagement: React.FC<DataManagementProps> = ({
             })
             toast.success("Datos importados correctamente")
             onImportSuccess()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al importar datos. Verifique el formato.")
+        } catch (error) {
+            const err = error as { response?: { data?: { error?: string } } }
+            toast.error(err.response?.data?.error || "Error al importar datos. Verifique el formato.")
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = ''
         }
