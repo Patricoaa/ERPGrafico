@@ -96,12 +96,27 @@ class TreasuryService:
         # 6. Create PartnerTransaction if applicable
         if movement.justify_reason in [TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION, TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL] and movement.contact and movement.contact.is_partner:
             from contacts.partner_models import PartnerTransaction
-            tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH if movement.movement_type == TreasuryMovement.Type.INBOUND else PartnerTransaction.Type.WITHDRAWAL
+            partner = movement.contact
+            
+            # Smart Type Selection
+            if movement.movement_type == TreasuryMovement.Type.INBOUND:
+                # If it's an inbound contribution, check if it's paying a pending capital subscription
+                if partner.partner_pending_capital > 0:
+                    target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH # Generic but correct
+                else:
+                    target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH
+            else:
+                # Withdrawal side: Smart Type Selection
+                if partner.partner_dividends_payable_balance > 0:
+                    target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
+                else:
+                    target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
+
             PartnerTransaction.objects.get_or_create(
                 treasury_movement=movement,
                 defaults={
                     'partner': movement.contact,
-                    'transaction_type': tx_type,
+                    'transaction_type': target_tx_type,
                     'amount': movement.amount,
                     'date': movement.date,
                     'description': movement.notes or f"{movement.get_justify_reason_display()}",
@@ -277,7 +292,12 @@ class TreasuryService:
             # Credit Source (Revenue / Debtor)
             source_acc = None
             if movement.justify_reason == TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION and movement.contact and movement.contact.is_partner:
-                 source_acc = movement.contact.partner_account
+                # Smart Contribution: Priority Capital Receivable > Equity
+                partner = movement.contact
+                if partner.partner_pending_capital > 0:
+                    source_acc = settings.partner_capital_receivable_account
+                else:
+                    source_acc = partner.partner_contribution_account or settings.partner_capital_contribution_account
 
             if not source_acc:
                 if movement.invoice or movement.sale_order:
@@ -302,7 +322,12 @@ class TreasuryService:
              # Debit Target (Expense / Creditor)
              target_acc = None
              if movement.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL and movement.contact and movement.contact.is_partner:
-                  target_acc = movement.contact.partner_account
+                  # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
+                  partner = movement.contact
+                  if partner.partner_dividends_payable_balance > 0:
+                      target_acc = settings.partner_dividends_payable_account
+                  else:
+                      target_acc = partner.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
 
              if not target_acc:
                  if movement.invoice or movement.purchase_order or movement.sale_order:

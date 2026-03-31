@@ -17,6 +17,8 @@ class ContactSerializer(serializers.ModelSerializer):
     partner_pending_capital = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_total_withdrawals = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_earnings_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
@@ -32,6 +34,7 @@ class ContactSerializer(serializers.ModelSerializer):
             'partner_balance',
             'partner_total_contributions', 'partner_total_paid_in', 'partner_pending_capital',
             'partner_provisional_withdrawals_balance', 'partner_total_withdrawals',
+            'partner_earnings_balance', 'partner_net_equity',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -45,10 +48,12 @@ class ContactListSerializer(serializers.ModelSerializer):
     partner_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_total_contributions = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_earnings_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
-        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital', 'partner_provisional_withdrawals_balance']
+        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital', 'partner_provisional_withdrawals_balance', 'partner_earnings_balance', 'partner_net_equity']
 
 from .partner_models import PartnerTransaction, PartnerEquityStake, ProfitDistributionResolution, ProfitDistributionLine
 

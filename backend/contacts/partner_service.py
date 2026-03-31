@@ -690,43 +690,30 @@ class PartnerService:
 
     @staticmethod
     def get_global_summary() -> dict:
-        """Calculates global metrics for the partner dashboard."""
-        from django.db.models import Sum
-
-        subs = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        """Calculates global metrics for the partner dashboard using aggregated contact properties."""
+        partners = Contact.objects.filter(is_partner=True)
         
-        reds = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        # Subscribed Capital Sum
+        total_subscribed = sum([p.partner_total_contributions for p in partners])
+        # Paid-in Capital Sum
+        total_paid_in = sum([p.partner_total_paid_in for p in partners])
+        # Pending Capital (Receivable from partners)
+        total_pending = sum([p.partner_pending_capital for p in partners])
+        # Provisional Withdrawals (Advances)
+        total_prov_withdrawals = sum([p.partner_provisional_withdrawals_balance for p in partners])
+        # Accumulated Earnings (Retained)
+        total_earnings = sum([p.partner_earnings_balance for p in partners])
+        # Net Equity Book Value
+        total_net_equity = sum([p.partner_net_equity for p in partners])
 
-        trans_in = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        trans_out = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-
-        reinvest = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.REINVESTMENT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-
-        total_capital = subs - reds + trans_in - trans_out + reinvest
-
-        # Total provisional withdrawals
-        prov_withdrawals = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
-            distribution_resolution__isnull=True,
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-
-        partner_count = Contact.objects.filter(is_partner=True).count()
-        
         return {
-            'total_capital': total_capital,
-            'partner_count': partner_count,
-            'total_provisional_withdrawals': prov_withdrawals,
+            'total_capital': total_subscribed,
+            'total_paid_in': total_paid_in,
+            'total_pending': total_pending,
+            'total_provisional_withdrawals': total_prov_withdrawals,
+            'total_earnings': total_earnings,
+            'total_net_equity': total_net_equity,
+            'partner_count': partners.count(),
             'last_updated': timezone.now().isoformat(),
         }
 

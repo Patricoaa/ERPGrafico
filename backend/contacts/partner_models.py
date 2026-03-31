@@ -30,6 +30,7 @@ class PartnerTransaction(models.Model):
         DIVIDEND = 'DIVIDEND', _('Distribución de Utilidades (Asignación)')
         DIVIDEND_PAYMENT = 'DIVIDEND_PAY', _('Pago de Dividendo')
         REINVESTMENT = 'REINVESTMENT', _('Reinversión de Utilidades')
+        RETAINED = 'RETAINED', _('Utilidades Retenidas (Asignación)')
         LOSS_ABSORPTION = 'LOSS_ABSORB', _('Absorción de Pérdidas')
 
         # Equity Composition Movements

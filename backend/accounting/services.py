@@ -120,8 +120,8 @@ class AccountingService:
             ('1.1.04.03', 'Retenciones de Impuestos (Activo)', AccountType.ASSET, '1.1.04', None, None, None),
             ('1.1.04.04', 'PPM por Recuperar', AccountType.ASSET, '1.1.04', None, None, None),
             
-            ('1.1.05', 'Cuentas por Cobrar Socios (Aportes)', AccountType.ASSET, '1.1', None, None, None),
-            ('1.1.05.01', 'Aportes por Enterar', AccountType.ASSET, '1.1.05', None, None, None),
+            ('1.1.05', 'Cuentas por Cobrar Socios', AccountType.ASSET, '1.1', None, None, None),
+            ('1.1.05.01', 'Capital por Cobrar (Suscrito)', AccountType.ASSET, '1.1.05', None, None, None),
             
             ('1.1.06', 'Cuentas Puente Activo', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.06.01', 'Salida de Stock (Pendiente de Facturar)', AccountType.ASSET, '1.1.06', None, None, None),
@@ -158,18 +158,20 @@ class AccountingService:
             
             ('2.1.06', 'Cuentas Puente Pasivo', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
-            ('2.1.07', 'Dividendos por Pagar', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
+            ('2.1.07', 'Dividendos por Pagar (Socios)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
 
             # 3.1 Paid-in Capital
             ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
-            ('3.1.01', 'Capital Social', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.01', 'Capital Social (Maestro)', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.02', 'Aportes de Capital', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.05', 'Retiros Provisorios de Socios', AccountType.EQUITY, '3.1', None, None, None),
-            ('3.1.06', 'Utilidades del Ejercicio (Socios)', AccountType.EQUITY, '3.1', None, None, None),
-            ('3.2', 'Ganancias y Pérdidas', AccountType.EQUITY, None, None, None, None),
-            ('3.2.01', 'Resultados de Ejercicios Anteriores', AccountType.EQUITY, '3.2', None, None, None),
-            ('3.2.02', 'Resultado del Ejercicio', AccountType.EQUITY, '3.2', None, None, None),
+            ('3.1.06', 'Utilidades del Ejercicio (Distribuciones)', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.2', 'Reservas y Ganancias', AccountType.EQUITY, None, None, None, None),
+            ('3.2.01', 'Utilidades Retenidas (Consolidadas)', AccountType.EQUITY, '3.2', None, None, None),
+            ('3.3', 'Resultado del Ejercicio', AccountType.EQUITY, None, None, None, None),
+            ('3.4', 'Resultado Ejercicio Actual', AccountType.EQUITY, None, None, None, None),
+            ('3.4.01', 'Resultado Neto del Ejercicio', AccountType.EQUITY, '3.4', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
@@ -276,7 +278,7 @@ class AccountingService:
             'partner_withdrawal_account': '3.1.03',
             'partner_provisional_withdrawal_account': '3.1.05',
             'partner_retained_earnings_account': '3.2.01',
-            'partner_current_year_earnings_account': '3.2.02',
+            'partner_current_year_earnings_account': '3.4.01',
             'partner_dividends_payable_account': '2.1.07',
             'partner_capital_receivable_account': '1.1.05.01',
             
