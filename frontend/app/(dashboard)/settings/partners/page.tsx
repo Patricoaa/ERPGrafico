@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation"
 import { EquityCompositionTab } from "@/components/settings/partners/EquityCompositionTab"
 import { PartnerLedgerTab } from "@/components/settings/partners/PartnerLedgerTab"
 import { PartnerAccountingTab } from "@/components/settings/partners/PartnerAccountingTab"
+import { ProfitDistributionsTab } from "@/components/settings/partners/ProfitDistributionsTab"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export default function PartnersSettingsPage() {
@@ -38,6 +39,12 @@ export default function PartnersSettingsPage() {
                         href: "/settings/partners?tab=ledger"
                     },
                     {
+                        value: "distributions",
+                        label: "Distribución de Utilidades",
+                        iconName: "pie-chart",
+                        href: "/settings/partners?tab=distributions"
+                    },
+                    {
                         value: "config",
                         label: "Configuración",
                         iconName: "settings",
@@ -55,6 +62,9 @@ export default function PartnersSettingsPage() {
                     </TabsContent>
                     <TabsContent value="ledger">
                         <PartnerLedgerTab />
+                    </TabsContent>
+                    <TabsContent value="distributions">
+                        <ProfitDistributionsTab />
                     </TabsContent>
                     <TabsContent value="config">
                         <PartnerAccountingTab />

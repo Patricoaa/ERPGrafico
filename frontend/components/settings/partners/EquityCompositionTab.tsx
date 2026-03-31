@@ -11,8 +11,20 @@ import {
     PieChart,
     Building2,
     Info,
-    UserPlus
+    UserPlus,
+    MoreHorizontal,
+    Wallet,
+    LogOut
 } from "lucide-react"
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,7 +41,12 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SubscriptionMovementModal, EquityTransferModal } from "@/components/settings/partners/EquityMovementModals"
+import { 
+    SubscriptionMovementModal, 
+    EquityTransferModal, 
+    CapitalContributionModal, 
+    ProvisionalWithdrawalModal 
+} from "@/components/settings/partners/EquityMovementModals"
 import { AddPartnerModal } from "@/components/settings/partners/AddPartnerModal"
 import { InitialCapitalModal } from "@/components/settings/InitialCapitalModal"
 
@@ -41,6 +58,10 @@ export function EquityCompositionTab() {
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
+    
+    // Custom action modals
+    const [isContributionOpen, setIsContributionOpen] = useState(false)
+    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
 
     const fetchData = async () => {
         setLoading(true)
@@ -223,8 +244,10 @@ export function EquityCompositionTab() {
                                 <TableHead className="text-[10px] font-bold uppercase">RUT</TableHead>
                                 <TableHead className="text-[10px] font-bold uppercase text-right">Participación</TableHead>
                                 <TableHead className="text-[10px] font-bold uppercase text-right">Capital Suscrito</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-right">Capital Enterado</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6">Pendiente</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right">Enterado Real</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right text-rose-600">Retiros Prov.</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-right pr-6 text-blue-600">Saldo Final</TableHead>
+                                <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -269,20 +292,38 @@ export function EquityCompositionTab() {
                                                             style={{ width: `${pctEnterado}%` }}
                                                         />
                                                     </div>
+                                                    {pendiente > 0 && (
+                                                        <div className="text-[10px] text-rose-500 font-medium whitespace-nowrap">Falta: {formatCurrency(pendiente)}</div>
+                                                    )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right pr-6">
-                                                {enteradoReal > suscrito ? (
-                                                    <Badge variant="outline" className="text-[9px] text-blue-600 border-blue-300 bg-blue-50">
-                                                        Excedente +{formatCurrency(enteradoReal - suscrito)}
-                                                    </Badge>
-                                                ) : pendiente > 0 ? (
-                                                    <span className="font-mono font-bold text-rose-600">{formatCurrency(pendiente)}</span>
-                                                ) : (
-                                                    <Badge variant="outline" className="text-[9px] text-emerald-600 border-emerald-300 bg-emerald-50">
-                                                        Enterado
-                                                    </Badge>
-                                                )}
+                                            <TableCell className="text-right text-rose-600 font-mono text-xs">
+                                                {formatCurrency(parseFloat(partner.partner_provisional_withdrawals_balance) || 0)}
+                                            </TableCell>
+                                            <TableCell className="text-right pr-6 font-mono font-bold text-blue-600">
+                                                {formatCurrency(parseFloat(partner.partner_balance) || 0)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Abrir menú</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Acciones Rápidas</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => setIsContributionOpen(true)}>
+                                                            <Wallet className="mr-2 h-4 w-4 text-emerald-600" />
+                                                            <span>Ingresar Aporte Cash</span>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)}>
+                                                            <LogOut className="mr-2 h-4 w-4 text-rose-600" />
+                                                            <span>Registrar Retiro Prov.</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     )
@@ -319,6 +360,16 @@ export function EquityCompositionTab() {
             <EquityTransferModal 
                 open={isTransferOpen} 
                 onOpenChange={setIsTransferOpen}
+                onSuccess={fetchData}
+            />
+            <CapitalContributionModal
+                open={isContributionOpen}
+                onOpenChange={setIsContributionOpen}
+                onSuccess={fetchData}
+            />
+            <ProvisionalWithdrawalModal
+                open={isWithdrawalOpen}
+                onOpenChange={setIsWithdrawalOpen}
                 onSuccess={fetchData}
             />
             <AddPartnerModal 

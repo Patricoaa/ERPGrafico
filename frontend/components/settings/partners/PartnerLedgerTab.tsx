@@ -30,8 +30,16 @@ import { formatCurrency, formatPlainDate as formatDate } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { InventoryContributionModal } from "@/components/settings/partners/InventoryContributionModal"
+import { CapitalContributionModal, ProvisionalWithdrawalModal } from "@/components/settings/partners/EquityMovementModals"
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "all", label: "Todos los tipos" },
@@ -54,7 +62,10 @@ export function PartnerLedgerTab() {
     const [filterPartner, setFilterPartner] = useState<string>("all")
     const [filterType, setFilterType] = useState<string>("all")
     const [search, setSearch] = useState("")
-    const [isMovementOpen, setIsMovementOpen] = useState(false)
+    
+    // Movement Modals
+    const [isContributionOpen, setIsContributionOpen] = useState(false)
+    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isInventoryOpen, setIsInventoryOpen] = useState(false)
 
     const fetchData = async () => {
@@ -181,13 +192,26 @@ export function PartnerLedgerTab() {
                                     <Filter className="h-4 w-4" />
                                 </Button>
                             )}
-                            <Button
-                                className="h-10"
-                                onClick={() => setIsMovementOpen(true)}
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Aporte/Retiro Efectivo
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button className="h-10">
+                                        <Wallet className="h-4 w-4 mr-2" />
+                                        Movimiento de Caja
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 font-mono text-xs">
+                                    <DropdownMenuLabel>Operaciones de Tesorería</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setIsContributionOpen(true)} className="gap-2 cursor-pointer font-medium text-emerald-600 focus:text-emerald-700">
+                                        <ArrowUpRight className="h-4 w-4" />
+                                        <span>Registrar Aporte Efectivo</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)} className="gap-2 cursor-pointer font-medium text-rose-600 focus:text-rose-700">
+                                        <ArrowDownLeft className="h-4 w-4" />
+                                        <span>Registrar Retiro Socio</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                                 variant="outline"
                                 className="h-10 border-amber-200 hover:bg-amber-50 text-amber-700"
@@ -302,14 +326,18 @@ export function PartnerLedgerTab() {
             </IndustrialCard>
 
             {/* Movement Wizard Modal */}
-            <CashMovementModal
-                open={isMovementOpen}
-                onOpenChange={setIsMovementOpen}
+            <CapitalContributionModal 
+                open={isContributionOpen}
+                onOpenChange={setIsContributionOpen}
                 onSuccess={fetchData}
-                variant="partners"
+            />
+            
+            <ProvisionalWithdrawalModal 
+                open={isWithdrawalOpen}
+                onOpenChange={setIsWithdrawalOpen}
+                onSuccess={fetchData}
             />
 
-            {/* Inventory Contribution Modal */}
             <InventoryContributionModal
                 open={isInventoryOpen}
                 onOpenChange={setIsInventoryOpen}
