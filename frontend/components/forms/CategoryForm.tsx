@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 import {

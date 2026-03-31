@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -7,7 +7,7 @@ interface PageProps {
 
 // Lazy load the SalesSettingsView component
 const SalesSettingsView = lazy(() =>
-    import("@/components/settings/SalesSettingsView").then(module => ({
+    import("@/features/settings/components/SalesSettingsView").then(module => ({
         default: module.SalesSettingsView
     }))
 )
@@ -22,3 +22,4 @@ export default async function SalesSettingsPage({ searchParams }: PageProps) {
         </Suspense>
     )
 }
+

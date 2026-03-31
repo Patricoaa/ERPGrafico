@@ -7,22 +7,22 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
-import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
-import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
+import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
+import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
+import { OrderCommandCenter } from "@/features/orders/components/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { InvoiceCard } from "@/components/billing/InvoiceCard"
+import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 
 interface PurchaseDocument {
     id: number
@@ -554,3 +554,5 @@ export default function PurchaseInvoicesPage() {
         </div >
     )
 }
+
+

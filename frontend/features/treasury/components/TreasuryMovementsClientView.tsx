@@ -10,7 +10,7 @@ import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -343,3 +343,4 @@ export function TreasuryMovementsClientView() {
 }
 
 export default TreasuryMovementsClientView
+

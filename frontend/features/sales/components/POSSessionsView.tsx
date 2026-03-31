@@ -12,8 +12,8 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { POSReport } from "@/components/pos/POSReport"
-import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
+import { POSReport } from "@/features/pos/components/POSReport"
+import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { PageHeader } from "@/components/shared/PageHeader"
 
 interface POSSession {

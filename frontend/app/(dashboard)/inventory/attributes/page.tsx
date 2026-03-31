@@ -1,4 +1,4 @@
-import { AttributeManager } from "@/components/inventory/AttributeManager"
+import { AttributeManager } from "@/features/inventory/components/AttributeManager"
 
 export default function AttributesPage() {
     return (
@@ -7,3 +7,4 @@ export default function AttributesPage() {
         </div>
     )
 }
+

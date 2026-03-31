@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 // Lazy load the heavy SalesTerminalsView component
 const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView"))
@@ -18,3 +18,4 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
         </Suspense>
     )
 }
+

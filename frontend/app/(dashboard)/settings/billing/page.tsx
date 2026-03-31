@@ -1,6 +1,6 @@
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { BillingSettingsView } from "@/components/settings/BillingSettingsView"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { BillingSettingsView } from "@/features/settings/components/BillingSettingsView"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -16,3 +16,4 @@ export default async function BillingSettingsPage({ searchParams }: PageProps) {
         </Suspense>
     )
 }
+

@@ -1,6 +1,6 @@
 import { Tabs } from "@/components/ui/tabs"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { AnalysisView } from "@/components/finances/AnalysisView"
+import { AnalysisView } from "@/features/finances/components/AnalysisView"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>

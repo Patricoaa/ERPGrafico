@@ -1,6 +1,6 @@
 "use client"
 
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { IndustrialCard } from "@/components/ui/IndustrialCard"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingCart, Users, Play, ArrowUpRight } from "lucide-react"
 import Link from "next/link"
@@ -79,3 +79,4 @@ export default function SalesPage() {
         </div>
     )
 }
+

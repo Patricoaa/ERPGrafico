@@ -33,10 +33,10 @@ import { Switch } from "@/components/ui/switch"
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@/components/ui/tabs"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import {
     Loader2, Plus, UserCog, Search, Pencil, ShieldCheck,
@@ -730,3 +730,4 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
         </Dialog>
     )
 }
+

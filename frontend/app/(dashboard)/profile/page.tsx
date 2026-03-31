@@ -1,4 +1,4 @@
-import { ProfileView } from "@/components/profile/ProfileView"
+import { ProfileView } from "@/features/profile/components/ProfileView"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>

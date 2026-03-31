@@ -31,7 +31,7 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Badge } from "@/components/ui/badge"
 
 // Import dialogs

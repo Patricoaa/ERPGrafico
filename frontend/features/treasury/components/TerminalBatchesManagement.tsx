@@ -12,7 +12,7 @@ import { format, subDays } from "date-fns"
 import { es } from "date-fns/locale"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { DateRangeFilter, type DateRange } from "@/components/shared/DateRangeFilter"
 
 // Lazy load feature components
@@ -254,3 +254,4 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
 }
 
 export default TerminalBatchesManagement
+

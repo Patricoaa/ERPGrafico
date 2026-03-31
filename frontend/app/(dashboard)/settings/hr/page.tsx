@@ -1,12 +1,12 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
 }
 
 const HRSettingsView = lazy(() =>
-    import("@/components/settings/HRSettingsView").then(module => ({
+    import("@/features/settings/components/HRSettingsView").then(module => ({
         default: module.HRSettingsView
     }))
 )
@@ -21,3 +21,4 @@ export default async function HRSettingsPage({ searchParams }: PageProps) {
         </Suspense>
     )
 }
+

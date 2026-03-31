@@ -1,4 +1,4 @@
-import { UsersSettingsView } from "@/components/settings/UsersSettingsView"
+import { UsersSettingsView } from "@/features/settings/components/UsersSettingsView"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>

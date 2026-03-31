@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 const TreasuryAccountsView = lazy(() =>
     import("@/features/treasury").then(module => ({
@@ -21,3 +21,4 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         </Suspense>
     )
 }
+

@@ -28,7 +28,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
-import { PINPadModal } from "@/components/pos/PINPadModal"
+import { PINPadModal } from "@/features/pos/components/PINPadModal"
 
 export interface SalesCheckoutWizardContentProps {
     order: any | null

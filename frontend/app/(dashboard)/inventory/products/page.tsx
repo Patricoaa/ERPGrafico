@@ -1,9 +1,9 @@
 import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ProductList } from "@/components/inventory/ProductList"
-import { CategoryList } from "@/components/inventory/CategoryList"
-import { PricingRuleList } from "@/components/inventory/PricingRuleList"
+import { ProductList } from "@/features/inventory/components/ProductList"
+import { CategoryList } from "@/features/inventory/components/CategoryList"
+import { PricingRuleList } from "@/features/inventory/components/PricingRuleList"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -106,3 +106,4 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
         </div>
     )
 }
+

@@ -53,26 +53,26 @@ import { POSCheckoutHeader } from './components/POSCheckoutHeader'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
-import { SessionControl, SessionControlHandle } from '@/components/pos/SessionControl'
-import { ScannerFeedback, ScannerFeedbackHandle } from '@/components/pos/ScannerFeedback'
+import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
+import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing'
-import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
+import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
-    () => import('@/components/pos/POSVariantSelectorModal').then(mod => ({ default: mod.POSVariantSelectorModal })),
+    () => import('@/features/pos/components/POSVariantSelectorModal').then(mod => ({ default: mod.POSVariantSelectorModal })),
     { ssr: false }
 )
 
 const DraftCartsList = dynamic(
-    () => import('@/components/pos/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
+    () => import('@/features/pos/components/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
     { ssr: false }
 )
 
 const NumpadModal = dynamic(
-    () => import('@/components/pos/NumpadModal').then(mod => ({ default: mod.NumpadModal })),
+    () => import('@/features/pos/components/NumpadModal').then(mod => ({ default: mod.NumpadModal })),
     { ssr: false }
 )
 
