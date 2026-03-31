@@ -18,6 +18,27 @@ import { es } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
+interface LedgerMovement {
+    id: number
+    date: string
+    description: string
+    label?: string
+    debit: string | number
+    credit: string | number
+    balance: string | number
+    entry_id: number
+    partner?: string
+    reference?: string
+}
+
+interface LedgerData {
+    movements: LedgerMovement[]
+    opening_balance: number
+    closing_balance: number
+    period_debit: number
+    period_credit: number
+}
+
 interface LedgerModalProps {
     accountId: number
     accountName: string
@@ -29,7 +50,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     const { serverDate } = useServerDate()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<LedgerData | null>(null)
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
@@ -77,7 +98,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<LedgerMovement>[] = [
         {
             accessorKey: "date",
             header: ({ column }) => (
@@ -208,7 +229,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 footer={
                     <div className="w-full flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
                         <span>Libro Mayor • {accountName}</span>
-                        <span>{data?.movements.length || 0} Registros</span>
+                        <span>{data?.movements?.length || 0} Registros</span>
                     </div>
                 }
                 headerActions={

@@ -17,6 +17,8 @@ import {
     ExpandedState,
     getExpandedRowModel,
     Row,
+    RowSelectionState,
+    Table as ReactTable,
 } from "@tanstack/react-table"
 
 import {
@@ -52,12 +54,12 @@ interface DataTableProps<TData, TValue> {
         }[]
     }[]
     toolbarAction?: React.ReactNode
-    onRowSelectionChange?: (selection: any) => void
+    onRowSelectionChange?: (selection: RowSelectionState) => void
     initialColumnVisibility?: VisibilityState
     hiddenColumns?: string[]
     useAdvancedFilter?: boolean
     onReset?: () => void
-    renderCustomView?: (table: any) => React.ReactNode
+    renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void

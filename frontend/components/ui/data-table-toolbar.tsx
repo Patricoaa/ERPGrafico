@@ -100,7 +100,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <>
                                                 <DropdownMenuSeparator className="mx-2 h-4 w-px bg-border inline-block" />
                                                 <span className="text-primary font-medium">
-                                                    {(currentSortColumn.columnDef.meta as any)?.title ||
+                                                    {(currentSortColumn.columnDef.meta as { title?: string })?.title ||
                                                         (typeof currentSortColumn.columnDef.header === 'string'
                                                             ? currentSortColumn.columnDef.header
                                                             : currentSortColumn.id)}
@@ -123,7 +123,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             className="flex items-center justify-between"
                                         >
                                             <span>
-                                                {(column.columnDef.meta as any)?.title ||
+                                                {(column.columnDef.meta as { title?: string })?.title ||
                                                     (typeof column.columnDef.header === 'string'
                                                         ? column.columnDef.header
                                                         : column.id)}
@@ -184,7 +184,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <>
                                                 <DropdownMenuSeparator className="mx-2 h-4 w-px bg-border inline-block" />
                                                 <span className="text-primary font-medium">
-                                                    {(currentSortColumn.columnDef.meta as any)?.title ||
+                                                    {(currentSortColumn.columnDef.meta as { title?: string })?.title ||
                                                         (typeof currentSortColumn.columnDef.header === 'string'
                                                             ? currentSortColumn.columnDef.header
                                                             : currentSortColumn.id)}
@@ -207,7 +207,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             className="flex items-center justify-between"
                                         >
                                             <span>
-                                                {(column.columnDef.meta as any)?.title ||
+                                                {(column.columnDef.meta as { title?: string })?.title ||
                                                     (typeof column.columnDef.header === 'string'
                                                         ? column.columnDef.header
                                                         : column.id)}

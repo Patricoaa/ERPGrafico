@@ -92,7 +92,7 @@ export function PaymentMethodCardSelector({
 
     const handleMethodChange = (val: string) => {
         const isReClick = paymentData.method === val
-        onPaymentDataChange({ ...paymentData, method: val as any })
+        onPaymentDataChange({ ...paymentData, method: val as PaymentData['method'] })
         if (isReClick) {
             openAmountModal()
         } else {

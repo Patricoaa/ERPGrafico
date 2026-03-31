@@ -64,9 +64,10 @@ export function DocumentCompletionModal({
             toast.success("Documento finalizado correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error finalizing document:", error)
-            toast.error(error.response?.data?.error || "Error al finalizar el documento")
+            const apiError = error as { response?: { data?: { error?: string } } }
+            toast.error(apiError.response?.data?.error || "Error al finalizar el documento")
         } finally {
             setSubmitting(false)
         }
