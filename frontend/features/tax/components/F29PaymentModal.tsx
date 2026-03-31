@@ -16,7 +16,7 @@ import {
 import { formatCurrency, cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 
 interface F29PaymentModalProps {
     isOpen: boolean

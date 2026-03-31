@@ -20,6 +20,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Import modular components
 import { ProductTypeSelector } from "./product/ProductTypeSelector"
@@ -62,9 +63,12 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
+    // UI UX Pro Max: Track initial load for advanced skeletons
+    const [isFetchingInitialData, setIsFetchingInitialData] = useState(false)
+
     const [activeTab, setActiveTab] = useState("general")
 
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
 
     const windowWidth = useWindowWidth(150, open)
 
@@ -74,8 +78,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             return
         }
         if (newOpen && isSheetCollapsed("PRODUCT_DETAIL")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            // Jump behavior: Hub was closed here previously
         }
         onOpenChange(newOpen)
     }
@@ -312,10 +315,23 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
     useEffect(() => {
         if (open) {
-            fetchCategories()
-            fetchUoMs()
-            fetchProducts()
-            fetchWarehouses()
+            setIsFetchingInitialData(true)
+            
+            const initOperations = [
+                fetchCategories(),
+                fetchUoMs(),
+                fetchProducts(),
+                fetchWarehouses()
+            ];
+            
+            if (initialData?.id) {
+                initOperations.push(fetchPricingRules() as any)
+            }
+
+            Promise.all(initOperations).finally(() => {
+                setIsFetchingInitialData(false)
+            });
+
             if (initialData) {
                 form.reset({
                     code: initialData.code || "",
@@ -388,7 +404,6 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     preferred_supplier: initialData.preferred_supplier?.id?.toString() || initialData.preferred_supplier?.toString() || "",
                 })
                 setImagePreview(initialData.image || null)
-                fetchPricingRules()
             } else {
                 form.reset({
                     code: "",
@@ -719,9 +734,30 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="flex-1 overflow-y-auto scrollbar-thin">
-                    <Form {...form}>
-                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
-                            <TabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {isFetchingInitialData ? (
+                        <div className="p-6 space-y-8 animate-in fade-in duration-500">
+                            <div className="flex items-center gap-4">
+                                <Skeleton className="h-10 w-48 rounded-md" />
+                                <Skeleton className="h-10 w-32 rounded-md" />
+                                <Skeleton className="h-10 w-32 rounded-md" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                <div className="md:col-span-3 space-y-4">
+                                    <Skeleton className="h-[250px] w-full rounded-2xl" />
+                                    <Skeleton className="h-32 w-full rounded-2xl" />
+                                </div>
+                                <div className="md:col-span-9 space-y-4">
+                                    <Skeleton className="h-16 w-full rounded-2xl" />
+                                    <Skeleton className="h-40 w-full rounded-2xl" />
+                                    <Skeleton className="h-64 w-full rounded-2xl" />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <Form {...form}>
+                            <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
+                                <fieldset disabled={loading} className="group min-w-0 transition-opacity group-disabled:opacity-75">
+                                    <TabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                     <div className="md:col-span-3 space-y-8">
                                         <div className="space-y-4">
@@ -799,19 +835,21 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                                 </TabsContent>
                             )}
 
-                            { form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
-                                <ProductPricingTab
-                                    initialData={initialData}
-                                    pricingRules={pricingRules}
-                                    fetchPricingRules={fetchPricingRules}
-                                    onOpenRuleDialog={(rule) => {
-                                        setSelectedPricingRule(rule || null)
-                                        setPricingRuleDialogOpen(true)
-                                    }}
-                                />
-                            )}
-                        </form>
-                    </Form>
+                                { form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
+                                    <ProductPricingTab
+                                        initialData={initialData}
+                                        pricingRules={pricingRules}
+                                        fetchPricingRules={fetchPricingRules}
+                                        onOpenRuleDialog={(rule) => {
+                                            setSelectedPricingRule(rule || null)
+                                            setPricingRuleDialogOpen(true)
+                                        }}
+                                    />
+                                )}
+                                </fieldset>
+                            </form>
+                        </Form>
+                    )}
                 </div>
 
                 {/* Activity Sidebar */}

@@ -8,7 +8,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay";
 
 interface CashFlowItem {
     name: string;

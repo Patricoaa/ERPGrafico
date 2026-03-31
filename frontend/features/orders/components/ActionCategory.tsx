@@ -8,21 +8,21 @@ import { Action, ActionCategory as CategoryType } from "@/types/actions"
 import { getActionBadgeCount } from "@/lib/actions/utils"
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "../shared/ActionConfirmModal"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
-const DocumentCompletionModal = dynamic(() => import("../shared/DocumentCompletionModal").then(m => m.default || (m as any).DocumentCompletionModal))
-const DeliveryModal = dynamic(() => import("@/features/sales").then(m => (m as any).DeliveryModal || m.default))
-const ReceiptModal = dynamic(() => import("../purchasing/ReceiptModal").then(m => (m as any).ReceiptModal || m.default))
-const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => (m as any).PaymentHistoryModal || m.default))
-const PaymentModal = dynamic(() => import("../shared/PaymentDialog").then(m => m.default || (m as any).PaymentDialog))
-const PaymentReferenceModal = dynamic(() => import("../shared/PaymentReferenceModal").then(m => (m as any).PaymentReferenceModal || m.default))
-const NoteCheckoutWizard = dynamic(() => import("../billing/NoteCheckoutWizard").then(m => (m as any).NoteCheckoutWizard || m.default))
-const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => (m as any).DocumentListModal || m.default))
-const TransactionViewModal = dynamic(() => import("../shared/TransactionViewModal").then(m => (m as any).TransactionViewModal || m.default))
-const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => (m as any).NoteLogisticsModal || m.default))
-const WorkOrderForm = dynamic(() => import("../forms/WorkOrderForm").then(m => (m as any).WorkOrderForm || m.default))
+const DocumentCompletionModal = dynamic(() => import("@/components/shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
+const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
+const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
+const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
+const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentDialog").then(m => m.PaymentDialog))
+const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
+const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
+const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
+const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
+const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
+const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(m => m.WorkOrderForm))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"

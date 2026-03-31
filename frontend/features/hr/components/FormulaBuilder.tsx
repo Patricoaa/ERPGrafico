@@ -18,7 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { IndustrialCard } from "@/components/ui/IndustrialCard"
 
 interface FormulaBuilderProps {
     value: string;

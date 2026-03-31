@@ -15,7 +15,7 @@ import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud } from "lucid
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
-import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 // --- STEP 1: General Information ---

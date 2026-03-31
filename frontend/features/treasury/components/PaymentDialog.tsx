@@ -15,7 +15,7 @@ import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
-import { PaymentMethodCardSelector, PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 

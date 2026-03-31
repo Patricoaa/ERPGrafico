@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { IndustrialCard } from "@/components/shared/IndustrialCard";
+import { IndustrialCard } from "@/components/ui/IndustrialCard";
 import { LAYOUT_TOKENS } from "@/lib/styles";
 import {
     PieChart,

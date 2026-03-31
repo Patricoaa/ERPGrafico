@@ -19,7 +19,7 @@ import { PricingUtils } from "@/lib/pricing"
 // Components
 import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"
 import { Step1_GeneralInfo, Step2_LineItems, Step3_Review, Step4_Payment } from "./notes/PurchaseNoteWizardSteps"
-import { PaymentData } from "@/components/shared/PaymentMethodCardSelector"
+import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 interface PurchaseNoteModalProps {
     open: boolean

@@ -67,6 +67,8 @@ export function PaymentForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
+    const [isFetchingMethods, setIsFetchingMethods] = useState(false)
+    const [isFetchingInvoices, setIsFetchingInvoices] = useState(false)
     const [orders, setOrders] = useState<any[]>([])
     const [availableMethods, setAvailableMethods] = useState<any[]>([])
 
@@ -95,6 +97,7 @@ export function PaymentForm({
             setOrders([])
             return
         }
+        setIsFetchingInvoices(true)
         try {
             const res = await api.get('/billing/invoices/')
             let results = res.data.results || res.data
@@ -106,6 +109,8 @@ export function PaymentForm({
             setOrders(results)
         } catch (error) {
             console.error("Error fetching invoices:", error)
+        } finally {
+            setIsFetchingInvoices(false)
         }
     }
 
@@ -117,6 +122,7 @@ export function PaymentForm({
     useEffect(() => {
         const fetchAccountMethods = async () => {
             if (treasuryAccountId) {
+                setIsFetchingMethods(true)
                 try {
                     const direction = paymentType === "INBOUND" ? "for_sales=true" : "for_purchases=true"
                     const res = await api.get(`/treasury/payment-methods/?treasury_account=${treasuryAccountId}&${direction}`)
@@ -134,6 +140,8 @@ export function PaymentForm({
                     }
                 } catch (err) {
                     setAvailableMethods([])
+                } finally {
+                    setIsFetchingMethods(false)
                 }
             } else {
                 setAvailableMethods([])
@@ -203,8 +211,9 @@ export function PaymentForm({
             >
                 <Form {...form}>
                     <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-                        <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
-                            {!initialData && (
+                        <fieldset disabled={loading} className="space-y-6 group">
+                            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border group-disabled:opacity-60 transition-opacity">
+                                {!initialData && (
                                 <FormField
                                     control={form.control}
                                     name="payment_type"
@@ -279,10 +288,17 @@ export function PaymentForm({
                                         render={({ field }) => (
                                             <FormItem className="animate-in slide-in-from-top-2 duration-300">
                                                 <FormLabel className={FORM_STYLES.label}>Método Detallado</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                                <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFetchingMethods}>
                                                     <FormControl>
                                                         <SelectTrigger className="border-blue-200 bg-blue-50/30">
-                                                            <SelectValue placeholder="Canal de pago..." />
+                                                            {isFetchingMethods ? (
+                                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    Cargando...
+                                                                </div>
+                                                            ) : (
+                                                                <SelectValue placeholder="Canal de pago..." />
+                                                            )}
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -333,10 +349,17 @@ export function PaymentForm({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel className={FORM_STYLES.label}>Vincular Documento (Opcional)</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "__none__"}>
+                                                <Select onValueChange={field.onChange} value={field.value || "__none__"} disabled={isFetchingInvoices}>
                                                     <FormControl>
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Seleccione..." />
+                                                            {isFetchingInvoices ? (
+                                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    Cargando...
+                                                                </div>
+                                                            ) : (
+                                                                <SelectValue placeholder="Seleccione..." />
+                                                            )}
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -369,6 +392,7 @@ export function PaymentForm({
                                 )}
                             />
                         </div>
+                        </fieldset>
                     </form>
                 </Form>
             </BaseModal>

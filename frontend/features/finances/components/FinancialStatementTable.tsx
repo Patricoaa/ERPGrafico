@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay";
 
 interface AccountNode {
     id: number | string;

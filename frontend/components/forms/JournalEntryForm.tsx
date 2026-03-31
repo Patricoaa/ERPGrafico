@@ -42,7 +42,7 @@ import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
-import { ActivitySidebar } from "../audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({

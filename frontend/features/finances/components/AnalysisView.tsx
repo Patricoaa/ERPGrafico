@@ -9,7 +9,7 @@ import { DateRangeSelector } from "@/features/finances/components/DateRangeSelec
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 const RatiosView = dynamic(() => import("@/features/finances/components/RatiosView").then(mod => mod.RatiosView), {
     ssr: false,

@@ -24,7 +24,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { useServerDate } from "@/hooks/useServerDate"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 
 interface DeclarationWizardProps {
