@@ -103,7 +103,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         }
     }, [open, initialResolution])
 
-    const handleCreateDraft = async () => {
+    const handleCreateOrUpdateDraft = async () => {
         if (!formData.fiscal_year || !formData.net_result || !formData.resolution_date) {
             toast.error("Complete los parámetros obligatorios")
             return
@@ -111,32 +111,71 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         
         setLoading(true)
         try {
-            const res = await partnersApi.createProfitDistribution({
-                fiscal_year: formData.fiscal_year,
-                net_result: parseFloat(formData.net_result),
-                resolution_date: formData.resolution_date,
-                acta_number: formData.acta_number,
-                notes: formData.notes
-            })
-            setDraftResolution(res)
-            setLines(res.lines || [])
+            if (draftResolution?.status === 'DRAFT') {
+                // Update existing draft with PATCH and then recalculate
+                await partnersApi.updateProfitDistribution(draftResolution.id, {
+                    fiscal_year: formData.fiscal_year,
+                    net_result: parseFloat(formData.net_result),
+                    resolution_date: formData.resolution_date,
+                    acta_number: formData.acta_number,
+                    notes: formData.notes
+                })
+                const res = await partnersApi.recalculateProfitDistribution(draftResolution.id)
+                setDraftResolution(res)
+                setLines(res.lines || [])
+            } else {
+                // Create new
+                const res = await partnersApi.createProfitDistribution({
+                    fiscal_year: formData.fiscal_year,
+                    net_result: parseFloat(formData.net_result),
+                    resolution_date: formData.resolution_date,
+                    acta_number: formData.acta_number,
+                    notes: formData.notes
+                })
+                setDraftResolution(res)
+                setLines(res.lines || [])
+            }
             
-            // Initialize destinations
+            // Sync destinations
             const dests: Record<number, string> = {}
-            res.lines?.forEach((l: any) => {
+            lines?.forEach((l: any) => {
                 dests[l.id] = l.destination
             })
             setLineDestinations(dests)
             
             setStep(2)
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al crear borrador de distribución")
+            toast.error(error.response?.data?.error || "Error al procesar distribución")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDeleteDraft = async () => {
+        if (!draftResolution) return
+        
+        setLoading(true)
+        try {
+            await partnersApi.deleteProfitDistribution(draftResolution.id)
+            toast.success("Borrador eliminado")
+            onSuccess()
+            onOpenChange(false)
+            resetFlow()
+        } catch (error: any) {
+            toast.error("Error al eliminar borrador")
         } finally {
             setLoading(false)
         }
     }
 
     const handleUpdateDestinations = async () => {
+        // Validation: All lines must have a destination
+        const allSet = lines.every(l => !!lineDestinations[l.id])
+        if (!allSet) {
+            toast.error("Debe asignar un destino para todos los socios antes de continuar")
+            return
+        }
+
         setLoading(true)
         try {
             const updates = Object.keys(lineDestinations).map(id => ({
@@ -372,32 +411,56 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     )}
                 </div>
 
-                <div className="bg-muted/30 px-6 py-4 border-t flex items-center justify-between">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>
-                        {step === 1 ? 'Cancelar' : 'Cerrar sin Ejecutar'}
-                    </Button>
-                    
-                    {step === 1 && (
-                        <Button onClick={handleCreateDraft} disabled={loading}>
-                            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                            Continuar a Asignación <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                    )}
-                    
-                    {step === 2 && (
-                        <Button onClick={handleUpdateDestinations} disabled={loading}>
-                            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                            Revisar Ejecución <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                    )}
+                <DialogFooter className="px-6 py-4 border-t flex items-center justify-between sm:justify-between">
+                    <div className="flex gap-2">
+                        {draftResolution?.status === 'DRAFT' && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                onClick={handleDeleteDraft}
+                                disabled={loading}
+                            >
+                                Eliminar Borrador
+                            </Button>
+                        )}
+                    </div>
 
-                    {step === 3 && (
-                        <Button onClick={handleExecute} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 font-bold">
-                            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                            Ejecutar Distribución Contable
-                        </Button>
-                    )}
-                </div>
+                    <div className="flex gap-2">
+                        {step > 1 && step < 4 && (
+                            <Button 
+                                variant="outline" 
+                                onClick={() => setStep(step - 1)}
+                                disabled={loading}
+                            >
+                                Atrás
+                            </Button>
+                        )}
+
+                        {step === 1 && (
+                            <Button onClick={handleCreateOrUpdateDraft} disabled={loading}>
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Calculator className="h-4 w-4 mr-2" />}
+                                {draftResolution ? "Actualizar y Recalcular" : "Generar Borrador"}
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+
+                        {step === 2 && (
+                            <Button onClick={handleUpdateDestinations} disabled={loading}>
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                Continuar Revisión
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+
+                        {step === 3 && (
+                            <Button onClick={handleExecute} className="bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
+                                Confirmar y Ejecutar Contabilidad
+                            </Button>
+                        )}
+                    </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )

@@ -45,9 +45,11 @@ interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
+    initialPartnerId?: string
+    initialAmount?: string
 }
 
-export function SubscriptionMovementModal({ open, onOpenChange, onSuccess }: ModalProps) {
+export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initialPartnerId, initialAmount }: ModalProps) {
     const [loading, setLoading] = useState(false)
     const [partners, setPartners] = useState<any[]>([])
     const [showConfirm, setShowConfirm] = useState(false)
@@ -72,9 +74,19 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess }: Mod
     useEffect(() => {
         if (open) {
             partnersApi.getPartners().then(setPartners)
-            resetForm()
+            
+            if (initialPartnerId || initialAmount) {
+                setFormData(prev => ({
+                    ...prev,
+                    contact_id: initialPartnerId || "",
+                    amount: initialAmount || "",
+                    description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
+                }))
+            } else {
+                resetForm()
+            }
         }
-    }, [open])
+    }, [open, initialPartnerId, initialAmount])
 
     // Selected partner info
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
@@ -518,7 +530,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
     }, [open])
 
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
-    const pendingCapital = selectedPartner ? Math.max(0, (parseFloat(selectedPartner.partner_total_contributions) || 0) - (parseFloat(selectedPartner.partner_balance) || 0)) : 0
+    const pendingCapital = selectedPartner ? Number(selectedPartner.partner_pending_capital) || 0 : 0
 
     const handleSubmit = async () => {
         if (!formData.contact_id || !formData.amount || !formData.treasury_account_id) {

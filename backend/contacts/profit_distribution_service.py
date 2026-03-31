@@ -61,17 +61,47 @@ class ProfitDistributionService:
             status=ProfitDistributionResolution.Status.DRAFT,
         )
 
+        ProfitDistributionService._generate_resolution_lines(resolution)
+
+        return resolution
+
+    @staticmethod
+    @transaction.atomic
+    def recalculate_draft_resolution(resolution: ProfitDistributionResolution) -> ProfitDistributionResolution:
+        """
+        Refreshes a draft resolution by deleting current lines and 
+        re-calculating them based on current partner data.
+        """
+        if resolution.status != ProfitDistributionResolution.Status.DRAFT:
+            raise ValidationError("Solo se pueden recalcular resoluciones en estado borrador.")
+            
+        # Delete existing lines
+        resolution.lines.all().delete()
+        
+        # Re-generate lines
+        ProfitDistributionService._generate_resolution_lines(resolution)
+        
+        # Update timestamp
+        resolution.save(update_fields=['updated_at'])
+        
+        return resolution
+
+    @staticmethod
+    def _generate_resolution_lines(resolution: ProfitDistributionResolution):
+        """
+        Helper to generate lines for a resolution.
+        """
         partners = Contact.objects.filter(is_partner=True)
         
         for partner in partners:
             # 1. Get exact percentage at resolution date
-            pct = PartnerService.get_equity_percentage_at_date(partner, resolution_date)
+            pct = PartnerService.get_equity_percentage_at_date(partner, resolution.resolution_date)
             
             if pct <= 0:
                 continue
 
             # 2. Calculate Gross Amount
-            gross_amount = (net_result * (pct / Decimal('100.0'))).quantize(Decimal('0.00'))
+            gross_amount = (resolution.net_result * (pct / Decimal('100.0'))).quantize(Decimal('0.00'))
 
             # 3. Handle Losses vs Profits
             offset_amount = Decimal('0')
@@ -102,8 +132,6 @@ class ProfitDistributionService:
                 net_amount=net_amount,
                 destination=default_dest,
             )
-
-        return resolution
 
     @staticmethod
     @transaction.atomic

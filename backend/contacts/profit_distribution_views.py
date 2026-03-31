@@ -79,6 +79,26 @@ class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
+    def recalculate(self, request, pk=None):
+        """Recalculate lines for a draft resolution with fresh data"""
+        resolution = self.get_object()
+        try:
+            ProfitDistributionService.recalculate_draft_resolution(resolution)
+            return Response(self.get_serializer(resolution).data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        """Delete a resolution if it's not EXECUTED"""
+        instance = self.get_object()
+        if instance.status == ProfitDistributionResolution.Status.EXECUTED:
+            return Response(
+                {"error": "No se puede eliminar una resolución que ya ha sido ejecutada contablemente."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'])
     def mass_payment(self, request, pk=None):
         """Execute mass payment for all dividend lines of this resolution"""
         resolution = self.get_object()

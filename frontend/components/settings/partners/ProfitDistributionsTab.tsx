@@ -20,7 +20,8 @@ import {
     Plus,
     Calendar,
     ChevronRight,
-    Loader2
+    Loader2,
+    Wallet
 } from "lucide-react"
 import {
     DropdownMenu,
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentModal"
+import { toast } from "sonner"
 
 export function ProfitDistributionsTab() {
     const [distributions, setDistributions] = useState<any[]>([])
@@ -242,11 +244,12 @@ export function ProfitDistributionsTab() {
             {/* Modal Flows */}
             {isFlowOpen && (
                 <CreateDistributionFlow 
-                    open={isFlowOpen}
-                    onOpenChange={(open) => {
+                    open={isFlowOpen} 
+                    onOpenChange={(open: boolean) => {
                         setIsFlowOpen(open)
                         if (!open) fetchDistributions()
                     }}
+                    onSuccess={fetchDistributions}
                     initialResolution={selectedResolution}
                 />
             )}
@@ -254,11 +257,9 @@ export function ProfitDistributionsTab() {
             {isMassPaymentOpen && (
                 <MassPaymentModal
                     open={isMassPaymentOpen}
-                    onOpenChange={(open) => {
-                        setIsMassPaymentOpen(open)
-                        if (!open) fetchDistributions()
-                    }}
-                    resolutionId={selectedResolution?.id}
+                    onOpenChange={setIsMassPaymentOpen}
+                    resolution={selectedResolution}
+                    onSuccess={fetchDistributions}
                 />
             )}
         </div>

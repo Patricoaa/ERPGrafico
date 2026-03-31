@@ -401,7 +401,7 @@ class Command(BaseCommand):
                 'name': "Socio Administrador (Socio A)",
                 'email': "socio.a@empresa.cl",
                 'is_partner': True,
-                'partner_capital_account': acc_cap_a,
+                'partner_contribution_account': acc_cap_a,
                 'partner_earnings_account': acc_earn_a,
                 'partner_receivable_account': acc_recv_a
             }
@@ -418,7 +418,7 @@ class Command(BaseCommand):
                 'name': "Socio Capitalista (Socio B)",
                 'email': "socio.b@empresa.cl",
                 'is_partner': True,
-                'partner_capital_account': acc_cap_b,
+                'partner_contribution_account': acc_cap_b,
                 'partner_earnings_account': acc_earn_b,
                 'partner_receivable_account': acc_recv_b
             }

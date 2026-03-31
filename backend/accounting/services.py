@@ -121,7 +121,7 @@ class AccountingService:
             ('1.1.04.04', 'PPM por Recuperar', AccountType.ASSET, '1.1.04', None, None, None),
             
             ('1.1.05', 'Cuentas por Cobrar Socios', AccountType.ASSET, '1.1', None, None, None),
-            ('1.1.05.01', 'Capital por Cobrar (Suscrito)', AccountType.ASSET, '1.1.05', None, None, None),
+            ('1.1.05.01', 'Capital por Cobrar (Activo)', AccountType.ASSET, '1.1.05', None, None, None),
             
             ('1.1.06', 'Cuentas Puente Activo', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.06.01', 'Salida de Stock (Pendiente de Facturar)', AccountType.ASSET, '1.1.06', None, None, None),
@@ -158,20 +158,20 @@ class AccountingService:
             
             ('2.1.06', 'Cuentas Puente Pasivo', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
-            ('2.1.07', 'Dividendos por Pagar (Socios)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
+            ('2.1.07', 'Dividendos por Pagar (Pasivo)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
 
             # 3.1 Paid-in Capital
             ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
-            ('3.1.01', 'Capital Social (Maestro)', AccountType.EQUITY, '3.1', None, None, None),
+            ('3.1.01', 'Capital Social (Cuenta Maestra)', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.02', 'Aportes de Capital', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.05', 'Retiros Provisorios de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.06', 'Utilidades del Ejercicio (Distribuciones)', AccountType.EQUITY, '3.1', None, None, None),
             ('3.2', 'Reservas y Ganancias', AccountType.EQUITY, None, None, None, None),
-            ('3.2.01', 'Utilidades Retenidas (Consolidadas)', AccountType.EQUITY, '3.2', None, None, None),
+            ('3.2.01', 'Utilidades Retenidas (Consolidada)', AccountType.EQUITY, '3.2', None, None, None),
             ('3.3', 'Resultado del Ejercicio', AccountType.EQUITY, None, None, None, None),
             ('3.4', 'Resultado Ejercicio Actual', AccountType.EQUITY, None, None, None, None),
-            ('3.4.01', 'Resultado Neto del Ejercicio', AccountType.EQUITY, '3.4', None, None, None),
+            ('3.4.01', 'Utilidad del Ejercicio Actual', AccountType.EQUITY, '3.4', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
@@ -348,8 +348,9 @@ class AccountingService:
                 setattr(settings, field, account)
         
         settings.save()
-        
-        return f"Plan de cuentas IFRS robusto cargado. {created_count} nuevas cuentas creadas. Mapeos de configuración actualizados."
+
+        return f"Plan de cuentas IFRS robusto cargado. {created_count} nuevas cuentas creadas. Mapeos de configuración actualizados (Contabilidad)."
+
 
 
 from decimal import Decimal

@@ -101,6 +101,15 @@ class Contact(models.Model):
         verbose_name=_("Cuenta Utilidades del Socio"),
         help_text=_("Subcuenta para utilidades del ejercicio asignadas a este socio (3.1.06.XX).")
     )
+    partner_receivable_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_receivable_contacts',
+        limit_choices_to={'account_type': AccountType.ASSET},
+        verbose_name=_("Cuenta Capital por Cobrar"),
+        help_text=_("Subcuenta (activo) para capital suscrito pendiente de pago de este socio (1.1.05.XX).")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -381,9 +390,20 @@ class Contact(models.Model):
     def partner_pending_capital(self) -> Decimal:
         """
         Subscribed (-) Paid In.
-        Positive = partner owes capital to the company.
+        Shows how much the partner still owes to the company.
+        If they paid more than subscribed, it returns 0.
         """
-        return self.partner_total_contributions - self.partner_total_paid_in
+        diff = self.partner_total_contributions - self.partner_total_paid_in
+        return max(Decimal('0'), diff)
+
+    @property
+    def partner_excess_capital(self) -> Decimal:
+        """
+        Paid In (-) Subscribed.
+        Shows how much the partner has paid above their legal commitment.
+        """
+        diff = self.partner_total_paid_in - self.partner_total_contributions
+        return max(Decimal('0'), diff)
 
     @property
     def partner_total_paid_in(self) -> Decimal:
@@ -482,4 +502,7 @@ class Contact(models.Model):
             self.partner_provisional_withdrawals_balance + 
             self.partner_earnings_balance
         )
+
+
+
 
