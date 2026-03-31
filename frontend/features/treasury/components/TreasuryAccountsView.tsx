@@ -26,10 +26,10 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -277,3 +277,4 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 }
 
 export default TreasuryAccountsView
+

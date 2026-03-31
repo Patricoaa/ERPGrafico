@@ -2,8 +2,8 @@
 
 import React, { useState } from "react"
 import { TabsContent } from "@/components/ui/tabs"
-import { UoMList } from "@/components/inventory/UoMList"
-import { UoMCategoryList } from "@/components/inventory/UoMCategoryList"
+import { UoMList } from "@/features/inventory/components/UoMList"
+import { UoMCategoryList } from "@/features/inventory/components/UoMCategoryList"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -80,3 +80,4 @@ export function UoMsView({ activeTab }: UoMsViewProps) {
         </>
     )
 }
+

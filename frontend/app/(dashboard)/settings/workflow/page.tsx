@@ -1,6 +1,6 @@
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { WorkflowSettings } from "@/components/workflow/WorkflowSettings"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { WorkflowSettings } from "@/features/workflow/components/WorkflowSettings"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -16,3 +16,4 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
         </Suspense>
     )
 }
+

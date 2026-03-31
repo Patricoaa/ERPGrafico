@@ -1,4 +1,4 @@
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { IndustrialCard } from "@/components/ui/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Settings, Building2, Shield, History, FileText, Database } from "lucide-react"
@@ -97,3 +97,4 @@ export default function SettingsPage() {
         </div>
     )
 }
+

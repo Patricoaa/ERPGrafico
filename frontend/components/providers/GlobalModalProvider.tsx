@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
 
-const WorkOrderWizard = dynamic(() => import("@/components/production/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
+const WorkOrderWizard = dynamic(() => import("@/features/production/components/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
     ssr: false,
     loading: () => <div className="p-4 text-center">Cargando Gestor de OT...</div>
 })

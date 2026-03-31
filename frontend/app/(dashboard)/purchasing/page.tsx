@@ -1,4 +1,4 @@
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { IndustrialCard } from "@/components/ui/IndustrialCard"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, FileText, ShoppingBag } from "lucide-react"
 import Link from "next/link"
@@ -30,3 +30,4 @@ export default function PurchasingPage() {
         </div>
     )
 }
+

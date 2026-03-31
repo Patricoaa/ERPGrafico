@@ -9,7 +9,7 @@ import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { BarcodeDialog } from "@/components/inventory/BarcodeDialog"
+import { BarcodeDialog } from "@/features/inventory/components/BarcodeDialog"
 import { useState } from "react"
 
 export interface ProductBasicInfoProps {

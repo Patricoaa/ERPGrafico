@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 const ContactsClientView = lazy(() =>
     import("@/features/contacts").then(m => ({ default: m.ContactsClientView }))
@@ -18,3 +18,4 @@ export default function ContactsPage() {
         </Suspense>
     )
 }
+

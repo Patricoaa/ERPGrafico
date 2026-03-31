@@ -10,7 +10,7 @@ import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -34,7 +34,7 @@ import {
 import {
     Plus, Pencil, Trash2, Loader2, WalletCards, CheckCircle2, Clock, History
 } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
@@ -442,3 +442,4 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
         </BaseModal>
     )
 }
+

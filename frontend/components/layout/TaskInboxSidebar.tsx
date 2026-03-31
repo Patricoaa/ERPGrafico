@@ -2,7 +2,7 @@
 
 import { X, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { TaskInbox } from "@/components/workflow/TaskInbox"
+import { TaskInbox } from "@/features/workflow/components/TaskInbox"
 import { cn } from "@/lib/utils"
 
 interface TaskInboxSidebarProps {

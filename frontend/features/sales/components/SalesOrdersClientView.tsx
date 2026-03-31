@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { ShoppingCart } from "lucide-react"
@@ -134,3 +134,4 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
 }
 
 export default SalesOrdersClientView
+

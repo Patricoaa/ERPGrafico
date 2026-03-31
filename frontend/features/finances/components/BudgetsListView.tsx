@@ -14,7 +14,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { BudgetEditor } from "@/components/finances/BudgetEditor"
+import { BudgetEditor } from "@/features/finances/components/BudgetEditor"
 
 interface Budget {
     id: number

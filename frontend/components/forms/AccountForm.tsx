@@ -33,7 +33,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),

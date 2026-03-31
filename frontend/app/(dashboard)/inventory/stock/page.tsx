@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { WarehouseList } from "@/components/inventory/WarehouseList"
-import { MovementList } from "@/components/inventory/MovementList"
-import { StockReport } from "@/components/inventory/StockReport"
+import { WarehouseList } from "@/features/inventory/components/WarehouseList"
+import { MovementList } from "@/features/inventory/components/MovementList"
+import { StockReport } from "@/features/inventory/components/StockReport"
 import { Warehouse, History, FileBarChart } from "lucide-react"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -102,3 +102,4 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
         </div>
     )
 }
+

@@ -29,11 +29,11 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { PaymentDialog } from "@/components/shared/PaymentDialog"
 import { FORM_STYLES } from "@/lib/styles"
-import { PayrollDetailSheet } from "@/components/hr/payrolls/PayrollDetailSheet"
+import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -569,3 +569,4 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
         </Dialog>
     )
 }
+

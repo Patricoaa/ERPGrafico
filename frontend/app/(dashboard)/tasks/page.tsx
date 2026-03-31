@@ -1,4 +1,4 @@
-import { TaskInbox } from "@/components/workflow/TaskInbox"
+import { TaskInbox } from "@/features/workflow/components/TaskInbox"
 
 export default function TasksPage() {
     return (

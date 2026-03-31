@@ -8,7 +8,7 @@ import { Banknote, List, Receipt, Plus, Store } from "lucide-react"
 import { POSSessionsView } from "@/features/sales/components/POSSessionsView"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -115,3 +115,4 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
 }
 
 export default SalesTerminalsView
+

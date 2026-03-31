@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Tabs } from "@/components/ui/tabs"
 
@@ -37,3 +37,4 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
         </div>
     )
 }
+

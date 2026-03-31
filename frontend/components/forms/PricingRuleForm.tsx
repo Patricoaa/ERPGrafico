@@ -32,7 +32,7 @@ import { toast } from "sonner"
 import { Plus, Tags } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 // schemas and types remain the same
 const formSchema = z.object({

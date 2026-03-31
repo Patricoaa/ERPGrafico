@@ -17,7 +17,7 @@ import { Loader2, Landmark, CreditCard } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 

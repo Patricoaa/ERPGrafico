@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -7,7 +7,7 @@ interface PageProps {
 
 // Lazy load the InventorySettingsView component
 const InventorySettingsView = lazy(() =>
-    import("@/components/settings/InventorySettingsView").then(module => ({
+    import("@/features/settings/components/InventorySettingsView").then(module => ({
         default: module.InventorySettingsView
     }))
 )
@@ -22,3 +22,4 @@ export default async function InventorySettingsPage({ searchParams }: PageProps)
         </Suspense>
     )
 }
+

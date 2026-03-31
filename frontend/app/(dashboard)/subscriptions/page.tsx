@@ -26,8 +26,8 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ProductForm } from "@/components/forms/ProductForm"
-import { SubscriptionHistoryModal } from "@/components/inventory/SubscriptionHistoryModal"
-import { ArchivingRestrictionsDialog } from "@/components/inventory/ArchivingRestrictionsDialog"
+import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
+import { ArchivingRestrictionsDialog } from "@/features/inventory/components/ArchivingRestrictionsDialog"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -484,3 +484,4 @@ export default function SubscriptionsPage() {
         </div>
     )
 }
+

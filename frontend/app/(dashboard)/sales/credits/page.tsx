@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { Suspense, lazy } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LoadingFallback } from "@/components/ui/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
 import { Tabs } from "@/components/ui/tabs"
@@ -76,3 +76,4 @@ export default async function CreditsPage({ searchParams }: PageProps) {
         </div>
     )
 }
+
