@@ -36,9 +36,10 @@ interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
+    initialResolution?: any
 }
 
-export function CreateDistributionFlow({ open, onOpenChange, onSuccess }: ModalProps) {
+export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     
@@ -71,6 +72,36 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess }: ModalP
             notes: ""
         })
     }
+
+    // Hydrate state if initialResolution is provided
+    useEffect(() => {
+        if (open && initialResolution) {
+            setDraftResolution(initialResolution)
+            setFormData({
+                fiscal_year: initialResolution.fiscal_year,
+                net_result: initialResolution.net_result.toString(),
+                resolution_date: initialResolution.resolution_date,
+                acta_number: initialResolution.acta_number || "",
+                notes: initialResolution.notes || ""
+            })
+            setLines(initialResolution.lines || [])
+            
+            const dests: Record<number, string> = {}
+            initialResolution.lines?.forEach((l: any) => {
+                dests[l.id] = l.destination
+            })
+            setLineDestinations(dests)
+
+            // Jump to correct step based on status
+            if (initialResolution.status === 'DRAFT') {
+                setStep(2)
+            } else if (initialResolution.status === 'APPROVED') {
+                setStep(3)
+            }
+        } else if (!open) {
+            resetFlow()
+        }
+    }, [open, initialResolution])
 
     const handleCreateDraft = async () => {
         if (!formData.fiscal_year || !formData.net_result || !formData.resolution_date) {
@@ -125,8 +156,11 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess }: ModalP
     const handleExecute = async () => {
         setLoading(true)
         try {
-            // First approve, then execute
-            await partnersApi.approveProfitDistribution(draftResolution.id)
+            // Only approve if not already approved
+            if (draftResolution.status === 'DRAFT') {
+                await partnersApi.approveProfitDistribution(draftResolution.id)
+            }
+            
             await partnersApi.executeProfitDistribution(draftResolution.id)
             
             toast.success("Distribución contable ejecutada con éxito")
@@ -280,12 +314,12 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess }: ModalP
                                                             <SelectContent>
                                                                 {draftResolution.is_profit ? (
                                                                     <>
-                                                                    <SelectItem value="DIVIDEND_PAYABLE">Pagar Dividendo</SelectItem>
-                                                                    <SelectItem value="RETAIN">Retener Utilidades</SelectItem>
+                                                                    <SelectItem value="DIVIDEND">Pagar Dividendo</SelectItem>
+                                                                    <SelectItem value="RETAINED">Retener Utilidades</SelectItem>
                                                                     <SelectItem value="REINVEST">Reinvertir (Capital)</SelectItem>
                                                                     </>
                                                                 ) : (
-                                                                    <SelectItem value="ABSORB_LOSS">Absorber Pérdida</SelectItem>
+                                                                    <SelectItem value="LOSS">Absorber Pérdida</SelectItem>
                                                                 )}
                                                             </SelectContent>
                                                         </Select>

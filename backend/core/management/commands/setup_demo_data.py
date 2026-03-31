@@ -359,7 +359,7 @@ class Command(BaseCommand):
         }
 
     def _create_partners(self, accounts):
-        # Default customer (used in POS for quick sales without selecting a specific customer)
+        # 1. Default customer
         c_default, _ = Contact.objects.get_or_create(
             tax_id="66000000-0",
             defaults={
@@ -373,6 +373,58 @@ class Command(BaseCommand):
             c_default.is_default_customer = True
             c_default.save()
 
+        # 2. Company Owners (Partners for the Hybrid Model)
+        # We create them first to ensure they have their individual accounts mapped
+        def get_or_create_subaccount(parent_code, partner_name, suffix):
+            parent = Account.objects.get(code=parent_code)
+            code = f"{parent_code}.{suffix}"
+            name = f"{parent.name} - {partner_name}"
+            acc, _ = Account.objects.get_or_create(
+                code=code,
+                defaults={
+                    'name': name,
+                    'account_type': parent.account_type,
+                    'parent': parent,
+                    'is_reconcilable': True
+                }
+            )
+            return acc
+
+        # Socio A: Administrador
+        acc_cap_a = get_or_create_subaccount('3.1.01', "Socio A", "001")
+        acc_earn_a = get_or_create_subaccount('3.2.01', "Socio A", "001")
+        acc_recv_a = get_or_create_subaccount('1.1.05.01', "Socio A", "001")
+        
+        socio_a, _ = Contact.objects.get_or_create(
+            tax_id="11222333-4",
+            defaults={
+                'name': "Socio Administrador (Socio A)",
+                'email': "socio.a@empresa.cl",
+                'is_partner': True,
+                'partner_capital_account': acc_cap_a,
+                'partner_earnings_account': acc_earn_a,
+                'partner_receivable_account': acc_recv_a
+            }
+        )
+
+        # Socio B: Capitalista
+        acc_cap_b = get_or_create_subaccount('3.1.01', "Socio B", "002")
+        acc_earn_b = get_or_create_subaccount('3.2.01', "Socio B", "002")
+        acc_recv_b = get_or_create_subaccount('1.1.05.01', "Socio B", "002")
+        
+        socio_b, _ = Contact.objects.get_or_create(
+            tax_id="22333444-5",
+            defaults={
+                'name': "Socio Capitalista (Socio B)",
+                'email': "socio.b@empresa.cl",
+                'is_partner': True,
+                'partner_capital_account': acc_cap_b,
+                'partner_earnings_account': acc_earn_b,
+                'partner_receivable_account': acc_recv_b
+            }
+        )
+
+        # 3. Regular Customers and Suppliers
         c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
         c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl", 'account_receivable': accounts['receivable']})
         
@@ -382,6 +434,7 @@ class Command(BaseCommand):
 
         return {
             'default_customer': c_default,
+            'owners': [socio_a, socio_b],
             'customers': [c1, c2],
             'suppliers': [s1, s2, s3]
         }

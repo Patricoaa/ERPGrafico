@@ -428,4 +428,58 @@ class Contact(models.Model):
             transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
             distribution_resolution__isnull=True,  # Not yet liquidated
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+ 
+    @property
+    def partner_dividends_payable_balance(self) -> Decimal:
+        """
+        Calculates the outstanding balance of dividends assigned but not yet paid.
+        Formula: Sum(DIVIDEND assignments) - Sum(DIVIDEND_PAY payments).
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        assigned = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.DIVIDEND
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        paid = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.DIVIDEND_PAYMENT
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return assigned - paid
+
+    @property
+    def partner_earnings_balance(self) -> Decimal:
+        """
+        Calculates the outstanding balance of undistributed earnings assigned to this partner.
+        Formula: Sum(RETAINED) - Sum(LOSS_ABSORPTION).
+        """
+        if not self.is_partner:
+            return Decimal('0')
+        from contacts.partner_models import PartnerTransaction
+        from django.db.models import Sum
+        
+        retained = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.RETAINED
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        loss = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.LOSS_ABSORPTION
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        
+        return retained - loss
+
+    @property
+    def partner_net_equity(self) -> Decimal:
+        """
+        Total book value of the partner's equity in the company.
+        Formula: Paid-in Capital - Provisional Withdrawals + Accumulated Earnings.
+        """
+        return (
+            self.partner_total_paid_in - 
+            self.partner_provisional_withdrawals_balance + 
+            self.partner_earnings_balance
+        )
 

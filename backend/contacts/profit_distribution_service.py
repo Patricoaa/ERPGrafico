@@ -55,8 +55,6 @@ class ProfitDistributionService:
             fiscal_year=fiscal_year,
             resolution_date=resolution_date,
             net_result=net_result,
-            is_profit=net_result > 0,
-            is_loss=net_result < 0,
             acta_number=acta_number,
             notes=notes,
             created_by=created_by,
@@ -93,7 +91,7 @@ class ProfitDistributionService:
             # Default destination: Pay out (if profit), Absorb (if loss)
             default_dest = ProfitDistributionLine.Destination.DIVIDEND_PAYABLE
             if resolution.is_loss:
-                default_dest = ProfitDistributionLine.Destination.ABSORB_LOSS
+                default_dest = ProfitDistributionLine.Destination.LOSS_ABSORPTION
 
             ProfitDistributionLine.objects.create(
                 resolution=resolution,
@@ -203,7 +201,7 @@ class ProfitDistributionService:
                     remaining_offset -= tx.amount # Simplification: assuming full match or over-match for now. 
                     # Note: We link the resolution to the withdrawal transaction to mark it as liquidated.
                 
-                # Accouting for Offset (Credit the Provisional Withdrawal account to reduce the contra-equity)
+                # Accounting for Offset (Credit the Provisional Withdrawal account to reduce the contra-equity)
                 JournalItem.objects.create(
                     entry=entry,
                     account=partner.partner_provisional_withdrawal_account,
@@ -213,19 +211,46 @@ class ProfitDistributionService:
                     credit=line.provisional_withdrawals_offset,
                 )
 
+                # NEW: Create a Partner Transaction for the Offset (so it's visible in the Ledger)
+                PartnerTransaction.objects.create(
+                    partner=partner,
+                    transaction_type=PartnerTransaction.Type.DIVIDEND,
+                    amount=line.provisional_withdrawals_offset,
+                    date=resolution.resolution_date,
+                    description=f"Compensación Retiros Provisorios - Ejercicio {resolution.fiscal_year}",
+                    journal_entry=entry,
+                    distribution_resolution=resolution,
+                    created_by=executed_by,
+                )
+
             # Record final destination of Net Amount
-            if line.net_amount > 0 or line.destination == ProfitDistributionLine.Destination.ABSORB_LOSS:
+            if line.net_amount > 0 or line.destination == ProfitDistributionLine.Destination.LOSS_ABSORPTION:
                 abs_net = abs(line.net_amount)
                 
-                if line.destination == ProfitDistributionLine.Destination.RETAIN:
-                    # Credit Retained Earnings
+                if line.destination == ProfitDistributionLine.Destination.RETAINED:
+                    # Credit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_retained_earnings_account,
+                        account=partner.partner_earnings_account,
+                        partner=partner,
                         label=f"Utilidades Retenidas {partner.name}",
                         debit=0,
                         credit=abs_net,
                     )
+                    
+                    # Create Partner Transaction for History
+                    ptx = PartnerTransaction.objects.create(
+                        partner=partner,
+                        transaction_type=PartnerTransaction.Type.RETAINED,
+                        amount=abs_net,
+                        date=resolution.resolution_date,
+                        description=f"Utilidades Retenidas Ejercicio {resolution.fiscal_year}",
+                        journal_entry=entry,
+                        distribution_resolution=resolution,
+                        created_by=executed_by,
+                    )
+                    line.partner_transaction = ptx
+                    line.save(update_fields=['partner_transaction'])
                     
                 elif line.destination == ProfitDistributionLine.Destination.DIVIDEND_PAYABLE:
                     if not settings.partner_dividends_payable_account:
@@ -239,17 +264,32 @@ class ProfitDistributionService:
                         debit=0,
                         credit=abs_net,
                     )
+
+                    # Create Partner Transaction for History (Allocation)
+                    ptx = PartnerTransaction.objects.create(
+                        partner=partner,
+                        transaction_type=PartnerTransaction.Type.DIVIDEND,
+                        amount=abs_net,
+                        date=resolution.resolution_date,
+                        description=f"Asignación Dividendos Ejercicio {resolution.fiscal_year}",
+                        journal_entry=entry,
+                        distribution_resolution=resolution,
+                        created_by=executed_by,
+                    )
+                    line.partner_transaction = ptx
+                    line.save(update_fields=['partner_transaction'])
                     
                 elif line.destination == ProfitDistributionLine.Destination.REINVEST:
                     if not settings.partner_capital_social_account:
                         raise ValidationError("Falta configurar la Cuenta de Capital Social.")
-                    if not partner.partner_account:
-                        raise ValidationError(f"El socio {partner.name} no tiene Cuenta Particular.")
+                    if not partner.partner_contribution_account:
+                        raise ValidationError(f"El socio {partner.name} no tiene cuenta de capital asignada.")
 
-                    # Credit Capital Social directly via Reinvestment
+                    # Credit Partner's Specific Capital Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_capital_social_account,
+                        account=partner.partner_contribution_account,
+                        partner=partner,
                         label=f"Reinversión de Utilidades {partner.name}",
                         debit=0,
                         credit=abs_net,
@@ -269,11 +309,12 @@ class ProfitDistributionService:
                     line.partner_transaction = ptx
                     line.save(update_fields=['partner_transaction'])
 
-                elif line.destination == ProfitDistributionLine.Destination.ABSORB_LOSS:
-                    # Debit Retained Earnings or Partner Account (depends on setup, let's use Retained Earnings)
+                elif line.destination == ProfitDistributionLine.Destination.LOSS_ABSORPTION:
+                    # Debit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_retained_earnings_account,
+                        account=partner.partner_earnings_account,
+                        partner=partner,
                         label=f"Absorción de Pérdida {partner.name}",
                         debit=abs_net,
                         credit=0,
