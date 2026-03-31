@@ -158,7 +158,7 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
                     {totalOutflows > 0 && (
                         <div className="flex justify-between">
                             <span className="font-bold uppercase text-black/70">(-) Retiros / Gastos:</span>
-                            <span className="font-black font-mono text-red-600">-{formatCurrency(totalOutflows)}</span>
+                            <span className="font-black font-mono text-destructive">-{formatCurrency(totalOutflows)}</span>
                         </div>
                     )}
 

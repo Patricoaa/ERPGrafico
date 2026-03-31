@@ -324,12 +324,12 @@ export function ProductSelector({
                                                         {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                             <>
                                                                 <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                    (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
+                                                                    (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-destructive"
                                                                 )}>
                                                                     Stock: {product.current_stock || 0}
                                                                 </Badge>
                                                                 <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-red-500/10"
+                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-destructive/10"
                                                                 )}>
                                                                     Disp: {product.qty_available || 0}
                                                                 </Badge>
@@ -338,21 +338,21 @@ export function ProductSelector({
 
                                                         {/* Manufacturing Badges */}
                                                         {product.requires_advanced_manufacturing ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-purple-600 bg-purple-50">
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-primary bg-primary/10">
                                                                 Fab: Avanzada
                                                             </Badge>
                                                         ) : product.mfg_auto_finalize ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-orange-600 bg-orange-50">
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-amber-700 bg-orange-50">
                                                                 Fab: Express
                                                             </Badge>
                                                         ) : product.has_bom ? (
-                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-blue-600",
-                                                                (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-red-500 bg-red-50"
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-primary",
+                                                                (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-destructive bg-red-50"
                                                             )}>
                                                                 Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                             </Badge>
                                                         ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-slate-300 text-slate-500 bg-slate-50">
+                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border text-muted-foreground bg-muted">
                                                                 Sin Receta
                                                             </Badge>
                                                         ) : null}

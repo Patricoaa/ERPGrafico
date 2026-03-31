@@ -230,11 +230,11 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         if (currentType === 'purchase_order') return <FileText className="h-5 w-5" />
         if (currentType === 'invoice') return <Receipt className="h-5 w-5" />
         if (currentType === 'journal_entry') return <Hash className="h-5 w-5" />
-        if (currentType === 'inventory') return <Package className="h-5 w-5 text-blue-600" />
+        if (currentType === 'inventory') return <Package className="h-5 w-5 text-primary" />
         if (currentType === 'payment') return <Banknote className="h-5 w-5 text-emerald-600" />
-        if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-indigo-600" />
-        if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') return <Package className="h-5 w-5 text-orange-600" />
-        if (currentType === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-blue-600" />
+        if (currentType === 'work_order') return <ClipboardList className="h-5 w-5 text-primary" />
+        if (currentType === 'sale_delivery' || currentType === 'purchase_receipt') return <Package className="h-5 w-5 text-amber-700" />
+        if (currentType === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-primary" />
         return <FileText className="h-5 w-5" />
     }
 
@@ -406,7 +406,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                 </div>
                                                                             </TableCell>
                                                                             <TableCell className="text-xs italic text-muted-foreground leading-snug">{item.label || '-'}</TableCell>
-                                                                            <TableCell className="text-right font-black text-[13px] text-blue-600 font-mono tracking-tighter">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</TableCell>
+                                                                            <TableCell className="text-right font-black text-[13px] text-primary font-mono tracking-tighter">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</TableCell>
                                                                             <TableCell className="text-right font-black text-[13px] text-emerald-600 font-mono tracking-tighter px-6">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</TableCell>
                                                                         </TableRow>
                                                                     ))}
@@ -441,7 +441,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                 </TableCell>
                                                                                 <TableCell className="text-center font-bold text-[11px] uppercase px-6">
                                                                                     {isExit ? (
-                                                                                        <span className="text-orange-600 bg-orange-600/10 px-2 py-1 rounded-md">Salida</span>
+                                                                                        <span className="text-amber-700 bg-orange-600/10 px-2 py-1 rounded-md">Salida</span>
                                                                                     ) : (
                                                                                         <span className="text-emerald-600 bg-emerald-600/10 px-2 py-1 rounded-md">Entrada</span>
                                                                                     )}
@@ -478,7 +478,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                                     <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">{formatCurrency(item.unit_price_gross || item.unit_price || item.unit_cost)}</TableCell>
                                                                                     <TableCell className="text-right font-semibold text-[12px] text-muted-foreground font-mono">
                                                                                         {hasLineDiscount ? (
-                                                                                            <span className="text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-sm">
+                                                                                            <span className="text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-sm">
                                                                                                 -{formatCurrency(item.discount_amount)}
                                                                                             </span>
                                                                                         ) : '-'}
@@ -513,14 +513,14 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                                                                             </div>
 
                                                                             {lineDiscountsSum > 0 && (
-                                                                                <div className="flex justify-between items-center text-xs font-bold text-blue-600/70 uppercase tracking-wider italic">
+                                                                                <div className="flex justify-between items-center text-xs font-bold text-primary/70 uppercase tracking-wider italic">
                                                                                     <span>Descuentos por Línea:</span>
                                                                                     <span className="font-mono">-{formatCurrency(lineDiscountsSum)}</span>
                                                                                 </div>
                                                                             )}
 
                                                                             {globalDiscount > 0 && (
-                                                                                <div className="flex justify-between items-center text-xs font-bold text-red-600 uppercase tracking-wider bg-red-50/50 p-2 rounded-lg border border-red-100/50">
+                                                                                <div className="flex justify-between items-center text-xs font-bold text-destructive uppercase tracking-wider bg-red-50/50 p-2 rounded-lg border border-red-100/50">
                                                                                     <div className="flex items-center gap-2">
                                                                                         <Plus className="h-3 w-3 rotate-45" />
                                                                                         <span>Descuento Global:</span>

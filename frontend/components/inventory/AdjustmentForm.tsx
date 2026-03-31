@@ -485,8 +485,8 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                 {/* Conversion Alert / Info */}
                 {conversion && baseUoM && (
                     <Alert variant="default" className="bg-blue-50/50 border-blue-100 text-blue-900 py-2">
-                        <Info className="h-4 w-4 text-blue-600 mt-0.5" />
-                        <AlertTitle className="text-xs font-bold text-blue-700 mb-1">Conversión Automática</AlertTitle>
+                        <Info className="h-4 w-4 text-primary mt-0.5" />
+                        <AlertTitle className="text-xs font-bold text-primary mb-1">Conversión Automática</AlertTitle>
                         <AlertDescription className="text-xs opacity-90">
                             Se registrará como <strong>{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</strong> a un costo base de <strong>${conversion.cost.toFixed(2)}</strong>.
                         </AlertDescription>

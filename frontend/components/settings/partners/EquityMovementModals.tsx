@@ -351,7 +351,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <ArrowRightLeft className="h-5 w-5 text-blue-500" />
+                            <ArrowRightLeft className="h-5 w-5 text-primary" />
                             Transferencia de Participación
                         </DialogTitle>
                         <DialogDescription>
@@ -457,7 +457,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
             <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+                        <AlertDialogTitle className="flex items-center gap-2 text-primary">
                             <ArrowRightLeft className="h-5 w-5" />
                             Confirmar Transferencia de Capital
                         </AlertDialogTitle>
@@ -475,7 +475,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={handleSubmit}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-primary hover:bg-primary"
                         >
                             Sí, Transferir
                         </AlertDialogAction>

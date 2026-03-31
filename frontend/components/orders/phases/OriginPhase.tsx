@@ -78,13 +78,13 @@ export function OriginPhase({
                 ...(order?.status === 'DRAFT' ? [{
                     icon: Trash2,
                     title: 'Eliminar Borrador',
-                    color: 'text-red-500 hover:bg-red-500/10',
+                    color: 'text-destructive hover:bg-destructive/10',
                     onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order?.id}/` : `/sales/orders/${order?.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
                 }] : []),
                 ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
                     icon: X,
                     title: 'Anular Orden',
-                    color: 'text-red-600 hover:bg-red-600/10',
+                    color: 'text-destructive hover:bg-destructive/10',
                     onClick: () => handleAnnulOrder(order?.id)
                 }] : [])
             ]

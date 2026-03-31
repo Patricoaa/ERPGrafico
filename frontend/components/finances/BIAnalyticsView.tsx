@@ -66,7 +66,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
-                        <DollarSign className="h-4 w-4 text-blue-500" />
+                        <DollarSign className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
@@ -245,7 +245,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-blue-600">{performance.ar_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-primary">{performance.ar_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -259,7 +259,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-red-600">{performance.ap_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-destructive">{performance.ap_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                             </div>
                         </div>
                     </CardContent>

@@ -63,8 +63,8 @@ export function ProfitDistributionsTab() {
             case 'DRAFT': return 'bg-amber-100 text-amber-800 border-amber-300'
             case 'APPROVED': return 'bg-blue-100 text-blue-800 border-blue-300'
             case 'EXECUTED': return 'bg-emerald-100 text-emerald-800 border-emerald-300'
-            case 'CANCELLED': return 'bg-gray-100 text-gray-800 border-gray-300'
-            default: return 'bg-gray-100 text-gray-800'
+            case 'CANCELLED': return 'bg-secondary text-secondary-foreground text-foreground border'
+            default: return 'bg-secondary text-secondary-foreground text-foreground'
         }
     }
 
@@ -155,7 +155,7 @@ export function ProfitDistributionsTab() {
                                                         </Badge>
                                                     )}
                                                     {totals.reinvest > 0 && (
-                                                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 text-[10px]">
+                                                        <Badge variant="secondary" className="bg-blue-50 text-primary border-blue-100 text-[10px]">
                                                             REINV: {formatCurrency(totals.reinvest)}
                                                         </Badge>
                                                     )}
@@ -209,7 +209,7 @@ export function ProfitDistributionsTab() {
                                                         )}
                                                         {dist.status === 'EXECUTED' && totals.dividends > 0 && (
                                                             <DropdownMenuItem 
-                                                                className="text-blue-600 font-bold"
+                                                                className="text-primary font-bold"
                                                                 onClick={() => {
                                                                     setSelectedResolution(dist)
                                                                     setIsMassPaymentOpen(true)

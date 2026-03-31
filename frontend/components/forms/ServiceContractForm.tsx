@@ -327,7 +327,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                         </Card>
 
                         {/* Accounting details */}
-                        <Card className="border-indigo-100 bg-indigo-50/10">
+                        <Card className="border-indigo-100 bg-primary/10/10">
                             <CardContent className="pt-6 space-y-4">
                                 <h3 className="text-sm font-semibold text-indigo-900 border-b pb-2 flex justify-between items-center">
                                     Configuración Contable
@@ -345,7 +345,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                                         <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="inherited" className="font-semibold text-indigo-600 italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                        <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
                                                         {accounts.filter((a: any) => a.account_type === 'EXPENSE').map((a: any) => (
                                                             <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
                                                         ))}
@@ -365,7 +365,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                                         <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="inherited" className="font-semibold text-indigo-600 italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                        <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
                                                         {accounts.filter((a: any) => a.account_type === 'LIABILITY').map((a: any) => (
                                                             <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
                                                         ))}

@@ -101,7 +101,7 @@ export default function AuditHubPage() {
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="bg-slate-50 font-normal">
+                <DataCell.Badge variant="outline" className="bg-muted font-normal">
                     {row.original.user_name || "Sistema"}
                 </DataCell.Badge>
             )
@@ -232,8 +232,8 @@ export default function AuditHubPage() {
                         Registro unificado de acciones y cambios en el sistema.
                     </p>
                 </div>
-                <div className="bg-slate-100 p-3 rounded-full">
-                    <History className="h-6 w-6 text-slate-500" />
+                <div className="bg-secondary text-secondary-foreground p-3 rounded-full">
+                    <History className="h-6 w-6 text-muted-foreground" />
                 </div>
             </div>
 
@@ -261,11 +261,11 @@ export default function AuditHubPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
                 <Card className="bg-green-50/30 border-green-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-green-100/50 rounded-full">
-                            <LogIn className="h-5 w-5 text-green-600" />
+                        <div className="p-2 bg-emerald-100/50 rounded-full">
+                            <LogIn className="h-5 w-5 text-emerald-700" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">Logins (Sesión)</p>
+                            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Logins (Sesión)</p>
                             <p className="text-2xl font-bold text-green-900">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                         </div>
                     </CardContent>
@@ -274,22 +274,22 @@ export default function AuditHubPage() {
                 <Card className="bg-blue-50/30 border-blue-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
                         <div className="p-2 bg-blue-100/50 rounded-full">
-                            <Activity className="h-5 w-5 text-blue-600" />
+                            <Activity className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tight">Cambios Datos</p>
+                            <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
                             <p className="text-2xl font-bold text-blue-900">{logs.filter(l => l.source === 'history').length}</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-indigo-50/30 border-indigo-100 shadow-sm">
+                <Card className="bg-primary/10/30 border-indigo-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-indigo-100/50 rounded-full">
-                            <Settings className="h-5 w-5 text-indigo-600" />
+                        <div className="p-2 bg-primary/10/50 rounded-full">
+                            <Settings className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-tight">Configuración</p>
+                            <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Configuración</p>
                             <p className="text-2xl font-bold text-indigo-900">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                         </div>
                     </CardContent>
@@ -298,10 +298,10 @@ export default function AuditHubPage() {
                 <Card className="bg-red-50/30 border-red-100 shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
                         <div className="p-2 bg-red-100/50 rounded-full">
-                            <ShieldAlert className="h-5 w-5 text-red-600" />
+                            <ShieldAlert className="h-5 w-5 text-destructive" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-red-600 font-bold uppercase tracking-tight">Incidentes</p>
+                            <p className="text-[10px] text-destructive font-bold uppercase tracking-tight">Incidentes</p>
                             <p className="text-2xl font-bold text-red-900">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                         </div>
                     </CardContent>

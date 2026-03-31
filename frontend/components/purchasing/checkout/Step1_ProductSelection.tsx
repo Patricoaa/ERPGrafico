@@ -189,7 +189,7 @@ export function Step1_ProductSelection({
                                                     <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
                                                         <div className="flex justify-between">
                                                             <span className="text-muted-foreground">Neto (sin IVA)</span>
-                                                            <span className="font-bold text-green-600">
+                                                            <span className="font-bold text-emerald-700">
                                                                 {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                             </span>
                                                         </div>

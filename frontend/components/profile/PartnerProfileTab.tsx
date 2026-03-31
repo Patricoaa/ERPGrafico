@@ -211,7 +211,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
+                                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                         <Briefcase className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">

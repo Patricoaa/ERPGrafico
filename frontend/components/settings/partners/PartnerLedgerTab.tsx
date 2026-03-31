@@ -139,7 +139,7 @@ export function PartnerLedgerTab() {
     }
 
     const getTransactionColor = (type: string) => {
-        if (type === 'SUBSCRIPTION') return 'bg-blue-100 text-blue-700 border-blue-200'
+        if (type === 'SUBSCRIPTION') return 'bg-blue-100 text-primary border-blue-200'
         if (type.includes('TRANSFER')) return 'bg-amber-100 text-amber-700 border-amber-200'
         if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'REINVESTMENT' || type === 'RETAINED') 
             return 'bg-emerald-100 text-emerald-700 border-emerald-200'

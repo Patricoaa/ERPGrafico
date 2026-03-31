@@ -818,7 +818,7 @@ function PinChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
                         <Wallet className="h-5 w-5" />
                     </div>
                     <div>

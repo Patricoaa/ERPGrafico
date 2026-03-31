@@ -216,7 +216,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 rounded-2xl text-blue-600 shadow-sm border border-blue-100 hidden sm:block">
+                            <div className="p-3 bg-blue-50 rounded-2xl text-primary shadow-sm border border-blue-100 hidden sm:block">
                                 <Calculator className="h-6 w-6" />
                             </div>
                             <div className="flex flex-col">
@@ -224,7 +224,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
                                         Calculadora de Costos
                                     </SheetTitle>
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
+                                    <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
                                         <Info className="h-3 w-3" />
                                         Modo Simulación
                                     </Badge>
@@ -242,7 +242,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
                         onClick={handleClose}
                     >
                         <X className="h-5 w-5" />
@@ -272,7 +272,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                 <CardContent className="p-6">
                                     {loading && products.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center h-[200px] gap-3 text-muted-foreground">
-                                            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
                                             <p>Cargando productos...</p>
                                         </div>
                                     ) : (
@@ -297,7 +297,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             />
                                                         )}
                                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <Badge className="bg-blue-600 text-white shadow-lg border-none">
+                                                            <Badge className="bg-primary text-white shadow-lg border-none">
                                                                 <Plus className="h-3 w-3 mr-1" /> Agregar
                                                             </Badge>
                                                         </div>
@@ -319,7 +319,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             {product.name}
                                                         </p>
                                                         <div className="mt-0.5">
-                                                            <span className="text-base font-black text-blue-600">
+                                                            <span className="text-base font-black text-primary">
                                                                 {formatCurrency(product.cost_price || 0)}
                                                             </span>
                                                             <span className="text-[10px] text-muted-foreground ml-1 uppercase">
@@ -413,7 +413,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                 </div>
                                                 <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
                                                     <div className="text-right">
-                                                        <p className="text-xs font-black text-blue-700">
+                                                        <p className="text-xs font-black text-primary">
                                                             {formatCurrency(item.subtotal)}
                                                         </p>
                                                     </div>
@@ -446,19 +446,19 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     <div className="flex justify-between items-center pt-3 border-t">
                                         <div className="flex flex-col">
 
-                                            <span className="text-lg font-black text-blue-700 uppercase tracking-tighter">
+                                            <span className="text-lg font-black text-primary uppercase tracking-tighter">
                                                 Total
                                             </span>
                                         </div>
-                                        <span className="text-3xl font-black text-blue-700 tracking-tighter">
+                                        <span className="text-3xl font-black text-primary tracking-tighter">
                                             {formatCurrency(Math.round(totalCost * 1.19))}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-600/5 border border-blue-600/10 rounded-lg p-3 flex items-start gap-3">
-                                    <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-                                    <p className="text-[10px] text-blue-700/80 leading-relaxed font-medium uppercase tracking-tight">
+                                <div className="bg-primary/5 border border-blue-600/10 rounded-lg p-3 flex items-start gap-3">
+                                    <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                    <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
                                         Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
                                     </p>
                                 </div>

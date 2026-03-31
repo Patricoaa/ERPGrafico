@@ -87,8 +87,8 @@ export function PartnerAccountingTab() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (
                         <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
-                            <span className="text-blue-600">Sincronizando...</span>
+                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
+                            <span className="text-primary">Sincronizando...</span>
                         </>
                     ) : (
                         <>
@@ -179,7 +179,7 @@ export function PartnerAccountingTab() {
                 <IndustrialCard variant="industrial" className="md:col-span-2">
                     <CardHeader className="pb-4 border-b bg-muted/20">
                         <div className="flex items-center gap-3">
-                            <Info className="h-5 w-5 text-blue-500" />
+                            <Info className="h-5 w-5 text-primary" />
                             <div>
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest">Cuentas Operativas (Pasivo y Activo)</CardTitle>
                                 <CardDescription className="text-[10px]">Configura las cuentas para dividendos pendientes y capital por cobrar.</CardDescription>

@@ -171,7 +171,7 @@ export function WizardStickyFooter({
                                     <Button
                                         disabled={isNextDisabled}
                                         onClick={handleNextClick}
-                                        className={cn("gap-2", isImplicitlyApproving && "bg-blue-600 hover:bg-blue-700")}
+                                        className={cn("gap-2", isImplicitlyApproving && "bg-primary hover:bg-primary")}
                                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
                                     >
                                         {transitioning ? (

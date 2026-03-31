@@ -21,8 +21,8 @@ export default function TestPaymentMethods() {
                 <div className="border p-4 rounded">
                     <h2 className="text-xl font-bold mb-4">Sales Methods</h2>
                     {salesLoading && <p>Loading...</p>}
-                    {salesError && <p className="text-red-500">{salesError}</p>}
-                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto h-96">
+                    {salesError && <p className="text-destructive">{salesError}</p>}
+                    <pre className="text-xs bg-secondary text-secondary-foreground p-2 rounded overflow-auto h-96">
                         {JSON.stringify(salesMethods, null, 2)}
                     </pre>
                 </div>
@@ -30,8 +30,8 @@ export default function TestPaymentMethods() {
                 <div className="border p-4 rounded">
                     <h2 className="text-xl font-bold mb-4">Purchase Methods</h2>
                     {purchaseLoading && <p>Loading...</p>}
-                    {purchaseError && <p className="text-red-500">{purchaseError}</p>}
-                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto h-96">
+                    {purchaseError && <p className="text-destructive">{purchaseError}</p>}
+                    <pre className="text-xs bg-secondary text-secondary-foreground p-2 rounded overflow-auto h-96">
                         {JSON.stringify(purchaseMethods, null, 2)}
                     </pre>
                 </div>

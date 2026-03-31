@@ -110,7 +110,7 @@ function CartItemComponent({
                         type="number"
                         className={cn(
                             "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
-                            isOverLimit && "text-red-600 bg-red-50 rounded"
+                            isOverLimit && "text-destructive bg-red-50 rounded"
                         )}
                         value={item.qty}
                         onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
@@ -123,7 +123,7 @@ function CartItemComponent({
                             variant="secondary"
                             className={cn(
                                 "text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap",
-                                isOverLimit && "text-red-600 bg-red-50"
+                                isOverLimit && "text-destructive bg-red-50"
                             )}
                         >
                             MAX: {maxQty}
@@ -191,7 +191,7 @@ function CartItemComponent({
                             type="number"
                             className={cn(
                                 "h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1",
-                                (item.discount_amount || 0) > 0 && "text-blue-600 font-bold"
+                                (item.discount_amount || 0) > 0 && "text-primary font-bold"
                             )}
                             value={item.discount_amount || ""}
                             placeholder="Dscto"
@@ -200,7 +200,7 @@ function CartItemComponent({
                             onChange={handleDiscountChange}
                         />
                         {(item.discount_percentage || 0) > 0 && (
-                            <span className="text-[9px] text-blue-600 font-medium leading-none">
+                            <span className="text-[9px] text-primary font-medium leading-none">
                                 -{item.discount_percentage?.toFixed(1)}%
                             </span>
                         )}

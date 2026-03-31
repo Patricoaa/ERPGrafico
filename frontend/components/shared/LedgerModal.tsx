@@ -233,7 +233,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                         <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
                                         <Calculator className="h-4 w-4 text-muted-foreground" />
                                     </div>
-                                    <div className={`text-xl font-bold mt-1 ${data.opening_balance < 0 ? 'text-red-500' : ''}`}>
+                                    <div className={`text-xl font-bold mt-1 ${data.opening_balance < 0 ? 'text-destructive' : ''}`}>
                                         ${data.opening_balance.toLocaleString()}
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-1">
@@ -244,25 +244,25 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                             <Card className="bg-green-50/50 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-green-600 uppercase">Cargos (Debe)</p>
+                                        <p className="text-xs font-medium text-emerald-700 uppercase">Cargos (Debe)</p>
                                         <ArrowUpRight className="h-4 w-4 text-green-500" />
                                     </div>
-                                    <div className="text-xl font-bold mt-1 text-green-700">
+                                    <div className="text-xl font-bold mt-1 text-emerald-700">
                                         ${data.period_debit.toLocaleString()}
                                     </div>
-                                    <p className="text-[10px] text-green-600/70 mt-1">Total del periodo</p>
+                                    <p className="text-[10px] text-emerald-700/70 mt-1">Total del periodo</p>
                                 </CardContent>
                             </Card>
                             <Card className="bg-red-50/50 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-red-600 uppercase">Abonos (Haber)</p>
-                                        <ArrowDownRight className="h-4 w-4 text-red-500" />
+                                        <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
+                                        <ArrowDownRight className="h-4 w-4 text-destructive" />
                                     </div>
                                     <div className="text-xl font-bold mt-1 text-red-700">
                                         ${data.period_credit.toLocaleString()}
                                     </div>
-                                    <p className="text-[10px] text-red-600/70 mt-1">Total del periodo</p>
+                                    <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
                                 </CardContent>
                             </Card>
                             <Card className="bg-primary/5 border-none shadow-none">
@@ -271,7 +271,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                         <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
                                         <Scale className="h-4 w-4 text-primary" />
                                     </div>
-                                    <div className={`text-xl font-bold mt-1 ${data.closing_balance < 0 ? 'text-red-500' : 'text-primary'}`}>
+                                    <div className={`text-xl font-bold mt-1 ${data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
                                         ${data.closing_balance.toLocaleString()}
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-1">

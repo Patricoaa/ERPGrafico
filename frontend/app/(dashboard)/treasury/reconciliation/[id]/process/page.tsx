@@ -86,7 +86,7 @@ export default function ReconciliationProcessPage({ params }: { params: Promise<
             <div className="flex-1 p-8 pt-6">
                 <Card className="max-w-md mx-auto mt-12 bg-red-50/50 border-red-100">
                     <CardHeader>
-                        <CardTitle className="text-red-600 flex items-center gap-2">
+                        <CardTitle className="text-destructive flex items-center gap-2">
                             <Info className="h-5 w-5" />
                             Error
                         </CardTitle>

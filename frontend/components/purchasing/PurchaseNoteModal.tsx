@@ -234,7 +234,7 @@ export function PurchaseNoteModal({
             title={
                 <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-2xl ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100' : 'bg-blue-100'}`}>
-                        <FileBadge className={`h-6 w-6 ${noteType === 'NOTA_CREDITO' ? 'text-amber-600' : 'text-blue-600'}`} />
+                        <FileBadge className={`h-6 w-6 ${noteType === 'NOTA_CREDITO' ? 'text-amber-600' : 'text-primary'}`} />
                     </div>
                     <div>
                         <span className="font-black tracking-tighter uppercase block text-lg">
@@ -277,7 +277,7 @@ export function PurchaseNoteModal({
                             onClick={handleSubmit}
                             className={`w-48 h-12 font-bold shadow-lg hover:shadow-xl transition-all ${noteType === 'NOTA_CREDITO'
                                 ? 'bg-amber-600 hover:bg-amber-700'
-                                : 'bg-blue-600 hover:bg-blue-700'
+                                : 'bg-primary hover:bg-primary'
                                 }`}
                             disabled={submitting}
                         >

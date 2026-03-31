@@ -100,9 +100,9 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
     const getIconColor = (type: string) => {
         switch (type) {
-            case '+': return 'bg-green-100/80 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-            case '~': return 'bg-blue-100/80 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
-            case '-': return 'bg-red-100/80 text-red-600 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+            case '+': return 'bg-emerald-100/80 text-emerald-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+            case '~': return 'bg-blue-100/80 text-primary border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+            case '-': return 'bg-red-100/80 text-destructive border-red-200 dark:bg-red-900/30 dark:text-destructive dark:border-red-800'
             default: return 'bg-muted text-muted-foreground border-border'
         }
     }
@@ -140,7 +140,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                     </div>
                 ) : error ? (
                     <div className="text-center py-8">
-                        <p className="text-sm text-red-600">{error}</p>
+                        <p className="text-sm text-destructive">{error}</p>
                     </div>
                 ) : history.length === 0 ? (
                     <div className="text-center py-12">
@@ -241,11 +241,11 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                                         {formatFieldName(field)}
                                                                     </span>
                                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                                                                        <span className="rounded bg-red-500/10 px-2 py-0.5 text-red-600 dark:text-red-400 line-through decoration-red-500/50 break-words max-w-full">
+                                                                        <span className="rounded bg-destructive/10 px-2 py-0.5 text-destructive dark:text-destructive line-through decoration-red-500/50 break-words max-w-full">
                                                                             {formatValue(field, oldValue)}
                                                                         </span>
                                                                         <span className="text-muted-foreground font-bold shrink-0">→</span>
-                                                                        <span className="rounded bg-green-500/10 px-2 py-0.5 text-green-700 dark:text-green-400 font-medium break-words max-w-full">
+                                                                        <span className="rounded bg-green-500/10 px-2 py-0.5 text-emerald-700 dark:text-green-400 font-medium break-words max-w-full">
                                                                             {formatValue(field, newValue)}
                                                                         </span>
                                                                     </div>

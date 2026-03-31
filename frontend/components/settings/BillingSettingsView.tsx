@@ -151,8 +151,8 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (
                         <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
-                            <span className="text-blue-600">Guardando cambios...</span>
+                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
+                            <span className="text-primary">Guardando cambios...</span>
                         </>
                     ) : (
                         <>
@@ -228,7 +228,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                                 </FormItem>
                                             )}
                                         />
-                                        <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-[11px] text-blue-600">
+                                        <div className="p-3 rounded-lg bg-primary/5 border border-blue-500/10 text-[11px] text-primary">
                                             Esta tasa se aplica automáticamente a todos los documentos de venta y compra sujetos a IVA.
                                         </div>
                                     </CardContent>

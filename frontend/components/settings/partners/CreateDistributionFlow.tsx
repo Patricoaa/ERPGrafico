@@ -295,7 +295,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             </div>
 
                             <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4 flex gap-3">
-                                <Calculator className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                                <Calculator className="h-5 w-5 text-primary flex-shrink-0" />
                                 <div className="text-xs text-blue-800">
                                     Al continuar, el sistema buscará la <strong>participación exacta de cada socio a la fecha de resolución</strong> y pre-calculará la asignación descontando automáticamente los retiros provisorios realizados durante el año fiscal.
                                 </div>
@@ -338,7 +338,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                 <td className="px-3 py-2 text-right font-mono text-rose-500">
                                                     {parseFloat(line.provisional_withdrawals_offset) > 0 ? `-${formatCurrency(line.provisional_withdrawals_offset)}` : '0'}
                                                 </td>
-                                                <td className="px-3 py-2 text-right font-mono font-bold text-blue-600">
+                                                <td className="px-3 py-2 text-right font-mono font-bold text-primary">
                                                     {formatCurrency(line.net_amount)}
                                                 </td>
                                                 <td className="px-3 py-2">

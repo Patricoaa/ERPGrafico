@@ -888,7 +888,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
                         onClick={() => onOpenChange(false)}
                     >
                         <X className="h-5 w-5" />

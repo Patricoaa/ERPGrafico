@@ -36,7 +36,7 @@ export function TaskActionCard({
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "flex items-center justify-center rounded-full shrink-0",
-                        isPending ? "text-amber-500" : "text-green-600 bg-green-100 p-0.5"
+                        isPending ? "text-amber-500" : "text-emerald-700 bg-emerald-100 p-0.5"
                     )}>
                         {isPending ? <Circle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                     </div>
@@ -86,8 +86,8 @@ export function TaskActionCard({
                 <div className="bg-white/60 p-2.5 rounded border border-green-100/50 mt-1 ml-7 space-y-2">
                     {task.notes && (
                         <div className="flex gap-2">
-                            <MessageSquare className="h-3 w-3 text-green-600 shrink-0 mt-0.5" />
-                            <p className="text-xs italic text-slate-700">{task.notes}</p>
+                            <MessageSquare className="h-3 w-3 text-emerald-700 shrink-0 mt-0.5" />
+                            <p className="text-xs italic text-foreground">{task.notes}</p>
                         </div>
                     )}
                     {task.attachments_data && task.attachments_data.length > 0 && (
@@ -98,9 +98,9 @@ export function TaskActionCard({
                                     href={att.file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-white border border-green-200 rounded text-[10px] text-green-700 hover:bg-green-50 transition-colors"
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-white border border-green-200 rounded text-[10px] text-emerald-700 hover:bg-green-50 transition-colors"
                                 >
-                                    <Paperclip className="h-3 w-3 text-green-600" />
+                                    <Paperclip className="h-3 w-3 text-emerald-700" />
                                     <span className="max-w-[150px] truncate font-medium">{att.original_filename}</span>
                                     <Download className="h-3 w-3 opacity-40 ml-0.5" />
                                 </a>

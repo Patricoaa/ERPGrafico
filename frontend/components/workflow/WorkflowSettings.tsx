@@ -282,11 +282,11 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                 {/* Status Badge (Compact) */}
                                 <div className="shrink-0 flex items-center">
                                     {rule?.assigned_user ? (
-                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-green-50 text-green-600 border border-green-100" title={`Asignado a: ${rule.assigned_user_data?.username}`}>
+                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-green-50 text-emerald-700 border border-green-100" title={`Asignado a: ${rule.assigned_user_data?.username}`}>
                                             <CheckCircle2 className="h-4 w-4" />
                                         </div>
                                     ) : rule?.assigned_group ? (
-                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100" title={`Grupo: ${rule.assigned_group}`}>
+                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-50 text-primary border border-blue-100" title={`Grupo: ${rule.assigned_group}`}>
                                             <Users className="h-4 w-4" />
                                         </div>
                                     ) : (
@@ -424,8 +424,8 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (
                         <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
-                            <span className="text-blue-600">Actualizando...</span>
+                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
+                            <span className="text-primary">Actualizando...</span>
                         </>
                     ) : (
                         <>

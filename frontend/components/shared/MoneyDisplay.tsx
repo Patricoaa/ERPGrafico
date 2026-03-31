@@ -44,7 +44,7 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
         <span
             className={cn(
                 "font-bold font-mono tabular-nums tracking-tight",
-                showColor && isNegative && "text-red-600 dark:text-red-400",
+                showColor && isNegative && "text-destructive dark:text-destructive",
                 showColor && isPositive && "text-success",
                 className
             )}

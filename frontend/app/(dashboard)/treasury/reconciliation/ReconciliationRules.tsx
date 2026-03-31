@@ -156,7 +156,7 @@ export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) 
             accessorKey: "auto_confirm",
             header: () => <span className="text-sm font-medium text-muted-foreground">Auto Confirm</span>,
             cell: ({ row }) => row.original.auto_confirm
-                ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                ? <CheckCircle2 className="h-4 w-4 text-emerald-700 mx-auto" />
                 : <span className="text-muted-foreground">-</span>,
             enableSorting: false,
         },
@@ -167,8 +167,8 @@ export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) 
                 <div className="flex flex-col items-center">
                     <span className={cn(
                         "font-bold text-sm",
-                        row.original.success_rate > 80 ? 'text-green-600' :
-                        row.original.success_rate > 50 ? 'text-yellow-600' : 'text-muted-foreground'
+                        row.original.success_rate > 80 ? 'text-emerald-700' :
+                        row.original.success_rate > 50 ? 'text-amber-700' : 'text-muted-foreground'
                     )}>
                         {row.original.success_rate}%
                     </span>
@@ -184,7 +184,7 @@ export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) 
                     <Button variant="ghost" size="icon" onClick={() => { setEditingRule(row.original); setOpenDialog(true) }}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-red-600">
+                    <Button variant="ghost" size="icon" className="text-destructive">
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>

@@ -394,15 +394,15 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <section className="space-y-8">
                                 <div className="flex items-center gap-3">
                                     <div className="flex-1 h-px bg-border/60" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2 px-3">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
                                         <ArrowDownLeft className="h-3.5 w-3.5" />
                                         Crédito Fiscal
                                     </span>
                                     <div className="flex-1 h-px bg-border/60" />
                                 </div>
 
-                                <div className="space-y-4 bg-indigo-50/10 p-6 rounded-3xl border border-transparent hover:border-indigo-500/10 transition-all">
-                                    <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-indigo-600/50 px-1">
+                                <div className="space-y-4 bg-primary/10/10 p-6 rounded-3xl border border-transparent hover:border-primary/20/10 transition-all">
+                                    <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-primary/50 px-1">
                                         <span>Conceptos de Compra</span>
                                         <span>Monto Neto</span>
                                     </div>
@@ -423,10 +423,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     
                                     <div className="pt-4 space-y-2">
                                         <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600/50">Total Neto Compras</span>
-                                            <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} className="text-lg font-black tracking-tight text-indigo-600/80" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">Total Neto Compras</span>
+                                            <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} className="text-lg font-black tracking-tight text-primary/80" />
                                         </div>
-                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-indigo-600">
+                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/20/10 text-primary">
                                             <span className="text-xs font-black uppercase tracking-[0.1em] opacity-80">IVA Crédito ({manualFields.tax_rate}%)</span>
                                             <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black drop-shadow-sm" />
                                         </div>
@@ -509,7 +509,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <div className="space-y-10 col-span-full">
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1 h-px bg-border/60" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 flex items-center gap-2 px-3">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
                                             <History className="h-3.5 w-3.5" />
                                             Ajustes de IVA y Remanentes
                                         </span>

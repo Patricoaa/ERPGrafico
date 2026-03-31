@@ -159,7 +159,7 @@ export function PartnerSettingsTab() {
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-xl border">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-600">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
                         <Building2 className="h-5 w-5" />
                     </div>
                     <div>

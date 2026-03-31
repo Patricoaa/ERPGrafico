@@ -176,7 +176,7 @@ export function SalesInvoicesClientView() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className={disabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "text-purple-600"}
+                                                    className={disabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "text-primary"}
                                                     onClick={() => !disabled && setNotingInvoice(inv)}
                                                     disabled={disabled}
                                                     title={disabled ? "" : "Registrar Nota Crédito/Débito"}

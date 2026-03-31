@@ -34,15 +34,15 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
 
     if (isPurchase) {
         Icon = Package
-        iconBg = "bg-indigo-500/5"
+        iconBg = "bg-primary/5"
         iconColor = "text-indigo-500/60"
-        iconBorder = "border-indigo-500/10"
+        iconBorder = "border-primary/20/10"
         prefix = "OCS"
     } else if (isWorkOrder) {
         Icon = Wand2
-        iconBg = "bg-purple-500/5"
+        iconBg = "bg-primary/5"
         iconColor = "text-purple-500/60"
-        iconBorder = "border-purple-500/10"
+        iconBorder = "border-primary/20/10"
         prefix = "OT"
     } else if (isNote) {
         Icon = FileBadge
@@ -140,7 +140,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                     <MoneyDisplay 
                         amount={displayTotal} 
                         showColor={!isLedger} 
-                        className={cn("text-sm", isLedger && "text-red-600 dark:text-red-400")}
+                        className={cn("text-sm", isLedger && "text-destructive dark:text-destructive")}
                     />
                 </div>
 

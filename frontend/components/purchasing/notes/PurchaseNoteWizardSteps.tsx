@@ -84,7 +84,7 @@ export function Step1_GeneralInfo({
                         >
                             <div className="flex items-center gap-3 mb-2">
                                 <div className={`p-2 rounded-full ${noteType === 'NOTA_DEBITO' ? 'bg-blue-100' : 'bg-muted'}`}>
-                                    <FileText className={`h-5 w-5 ${noteType === 'NOTA_DEBITO' ? 'text-blue-700' : 'text-muted-foreground'}`} />
+                                    <FileText className={`h-5 w-5 ${noteType === 'NOTA_DEBITO' ? 'text-primary' : 'text-muted-foreground'}`} />
                                 </div>
                                 <span className={`font-black ${noteType === 'NOTA_DEBITO' ? 'text-blue-900' : 'text-muted-foreground'}`}>
                                     Nota de Débito

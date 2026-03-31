@@ -123,7 +123,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             label: `${receiptLabel} Parcial`,
             description: 'Confirmar cantidades específicas',
             icon: FileCheck,
-            color: 'text-blue-600'
+            color: 'text-primary'
         }
     ]
 

@@ -148,7 +148,7 @@ export function Step1_Items({
                                                     {line.product_code || line.product}
                                                 </Badge>
                                                 {line.product_type === 'MANUFACTURABLE' && (
-                                                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
+                                                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
                                                         Fab
                                                     </Badge>
                                                 )}

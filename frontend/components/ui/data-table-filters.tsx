@@ -65,7 +65,7 @@ export function DataTableFilters<TData>({
                             <ListFilter className="h-4 w-4" />
                             {isFiltered && (
                                 <Badge
-                                    className="absolute -top-2 -right-3 h-4 w-4 p-0 flex items-center justify-center bg-blue-600 text-[10px]"
+                                    className="absolute -top-2 -right-3 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[10px]"
                                 >
                                     {totalActiveFilters}
                                 </Badge>
@@ -209,7 +209,7 @@ export function DataTableFilters<TData>({
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    className="h-8 px-2 text-primary hover:text-primary hover:bg-blue-50"
                     onClick={() => {
                         table.resetColumnFilters()
                         table.setGlobalFilter("")

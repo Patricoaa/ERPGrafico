@@ -141,7 +141,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
     const ReportHeader = ({ title, dateRange }: { title: string, dateRange?: DateRange }) => (
         <div className="flex flex-col items-center text-center space-y-1 mb-8 pb-6 border-b">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h2>
+            <h2 className="text-xl font-bold text-foreground dark:text-slate-100">{title}</h2>
             {dateRange?.from && dateRange?.to && (
                 <p className="text-sm text-muted-foreground font-medium">
                     Período: {format(dateRange.from, 'dd MMMM yyyy', { locale: es })} al {format(dateRange.to, 'dd MMMM yyyy', { locale: es })}
@@ -177,14 +177,14 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                     </div>
                     <div
                         style={{ width: `${pP}%` }}
-                        className="bg-red-500 flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        className="bg-destructive flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
                         title={`Pasivos: ${fmt(p)}`}
                     >
                         Pasivos: {fmt(p)}
                     </div>
                     <div
                         style={{ width: `${eP}%` }}
-                        className="bg-blue-600 flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
+                        className="bg-primary flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
                         title={`Patrimonio: ${fmt(e)}`}
                     >
                         Patrimonio: {fmt(e)}
@@ -310,7 +310,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             </div>
                                                         </div>
                                                         {showComparison && (
-                                                            <div className={cn("text-right border-l pl-12", idx === (plData.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border-slate-300")}>
+                                                            <div className={cn("text-right border-l pl-12", idx === (plData.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
                                                                 <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
                                                                 <div className={cn("text-2xl font-black font-mono opacity-80", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
                                                                     {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
