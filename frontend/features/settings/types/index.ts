@@ -118,9 +118,32 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  
  // Partner Equity Settings
  export interface PartnerSettings {
+     // Account Mappings (Equity)
      partner_capital_social_account: string | number | null
      partner_capital_social_account_name?: string
+     
+     partner_capital_contribution_account: string | number | null
+     partner_capital_contribution_account_name?: string
+     
+     partner_withdrawal_account: string | number | null
+     partner_withdrawal_account_name?: string
+     
+     partner_provisional_withdrawal_account: string | number | null
+     partner_provisional_withdrawal_account_name?: string
+     
+     partner_retained_earnings_account: string | number | null
+     partner_retained_earnings_account_name?: string
+     
+     partner_current_year_earnings_account: string | number | null
+     partner_current_year_earnings_account_name?: string
+     
+     partner_dividends_payable_account: string | number | null
+     partner_dividends_payable_account_name?: string
+     
+     partner_capital_receivable_account: string | number | null
+     partner_capital_receivable_account_name?: string
  }
+
  
  export type PartnerSettingsUpdatePayload = Partial<PartnerSettings>
  

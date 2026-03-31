@@ -63,6 +63,12 @@ export function EquityCompositionTab() {
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
 
+    // NEW: Modal pre-filling state
+    const [subModalParams, setSubModalParams] = useState({
+        partnerId: undefined as string | undefined,
+        amount: undefined as string | undefined
+    })
+
     const fetchData = async () => {
         setLoading(true)
         try {
@@ -249,7 +255,30 @@ export function EquityCompositionTab() {
                                         <TableCell className="pl-6">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-sm">{partner.name}</span>
-                                                <span className="text-[10px] text-muted-foreground font-mono">{partner.tax_id}</span>
+                                                <span className="text-[10px] text-muted-foreground">{partner.tax_id}</span>
+                                                
+                                                {partner.partner_excess_capital > 0 && (
+                                                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded flex items-center justify-between gap-2 animate-pulse hover:animate-none">
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-amber-700 font-medium">
+                                                            <AlertCircle className="h-3 w-3" />
+                                                            Exceso: +{formatCurrency(partner.partner_excess_capital)}
+                                                        </div>
+                                                        <Button 
+                                                            variant="link" 
+                                                            size="sm" 
+                                                            className="h-auto p-0 text-[10px] font-bold text-amber-800 hover:text-amber-900 underline"
+                                                            onClick={() => {
+                                                                setSubModalParams({
+                                                                    partnerId: partner.id.toString(),
+                                                                    amount: partner.partner_excess_capital.toString()
+                                                                })
+                                                                setIsSubscriptionOpen(true)
+                                                            }}
+                                                        >
+                                                            Formalizar
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -334,8 +363,13 @@ export function EquityCompositionTab() {
             {/* Modals */}
             <SubscriptionMovementModal 
                 open={isSubscriptionOpen} 
-                onOpenChange={setIsSubscriptionOpen}
+                onOpenChange={(open) => {
+                    setIsSubscriptionOpen(open)
+                    if (!open) setSubModalParams({ partnerId: undefined, amount: undefined })
+                }}
                 onSuccess={fetchData}
+                initialPartnerId={subModalParams.partnerId}
+                initialAmount={subModalParams.amount}
             />
             <EquityTransferModal 
                 open={isTransferOpen} 

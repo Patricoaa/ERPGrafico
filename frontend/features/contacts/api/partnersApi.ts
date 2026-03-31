@@ -85,6 +85,11 @@ export const partnersApi = {
         return response.data
     },
 
+    updateProfitDistribution: async (id: number, data: any) => {
+        const response = await api.patch(`/contacts/profit-distributions/${id}/`, data)
+        return response.data
+    },
+
     updateProfitDistributionLines: async (id: number, lines: { line_id: number, destination: string }[]) => {
         const response = await api.patch(`/contacts/profit-distributions/${id}/update_destinations/`, { lines })
         return response.data
@@ -97,6 +102,16 @@ export const partnersApi = {
 
     executeProfitDistribution: async (id: number) => {
         const response = await api.post(`/contacts/profit-distributions/${id}/execute/`)
+        return response.data
+    },
+
+    recalculateProfitDistribution: async (id: number) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/recalculate/`)
+        return response.data
+    },
+
+    deleteProfitDistribution: async (id: number) => {
+        const response = await api.delete(`/contacts/profit-distributions/${id}/`)
         return response.data
     },
 
