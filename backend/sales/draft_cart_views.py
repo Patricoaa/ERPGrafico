@@ -289,3 +289,41 @@ class DraftCartViewSet(viewsets.ModelViewSet):
             {"refreshed": False, "error": "Lock perdido o no existe"},
             status=status.HTTP_409_CONFLICT
         )
+
+    @action(detail=True, methods=['post'])
+    def withdraw(self, request, pk=None):
+        """
+        POST /api/sales/pos-drafts/{id}/withdraw/
+        Body: { "pos_session_id": X }
+        
+        Procesa el retiro de stock por parte de un socio basándose en los items del carrito.
+        """
+        pos_session_id = request.data.get('pos_session_id')
+        partner_id = request.data.get('partner_id')
+        
+        if not pos_session_id:
+            return Response(
+                {"error": "Se requiere pos_session_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            result = DraftCartService.process_withdrawal(
+                draft_id=int(pk),
+                pos_session_id=int(pos_session_id),
+                user=request.user,
+                partner_id=partner_id
+            )
+            return Response(result)
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Error interno: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

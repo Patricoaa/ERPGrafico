@@ -13,6 +13,18 @@ class DraftCartSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     
+    customer_is_partner = serializers.BooleanField(
+        source='customer.is_partner',
+        read_only=True,
+        allow_null=True
+    )
+    
+    customer_tax_id = serializers.CharField(
+        source='customer.tax_id',
+        read_only=True,
+        allow_null=True
+    )
+    
     created_by_username = serializers.CharField(
         source='created_by.username',
         read_only=True,
@@ -44,6 +56,8 @@ class DraftCartSerializer(serializers.ModelSerializer):
             'notes',
             'customer',
             'customer_name',
+            'customer_is_partner',
+            'customer_tax_id',
             'items',
             'wizard_state',
             'total_net',
