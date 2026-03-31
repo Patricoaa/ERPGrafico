@@ -140,7 +140,7 @@ export default function EntriesPage() {
                             onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
                             title="Ver Detalle"
                         >
-                            <Eye className="h-4 w-4 text-blue-600" />
+                            <Eye className="h-4 w-4 text-primary" />
                         </Button>
                         {entry.state === 'DRAFT' && (
                             <>
@@ -163,7 +163,7 @@ export default function EntriesPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="text-red-500"
+                            className="text-destructive"
                             onClick={() => handleDelete(entry.id)}
                             title="Eliminar"
                         >

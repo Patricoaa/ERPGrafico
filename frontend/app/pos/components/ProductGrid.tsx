@@ -111,7 +111,7 @@ function ProductGridComponent({
                             <button
                                 className={cn(
                                     "absolute top-2 left-2 z-20 p-1.5 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm hover:scale-110 active:scale-95 transition-all",
-                                    product.is_favorite ? "text-red-500 border-red-100 bg-red-50/50" : "text-muted-foreground"
+                                    product.is_favorite ? "text-destructive border-red-100 bg-red-50/50" : "text-muted-foreground"
                                 )}
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -139,7 +139,7 @@ function ProductGridComponent({
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0
                                         ? 'bg-green-500'
-                                        : 'bg-red-500'
+                                        : 'bg-destructive'
                                         }`} />
                                     {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                 </div>
@@ -151,7 +151,7 @@ function ProductGridComponent({
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0
                                         ? 'bg-green-500'
-                                        : 'bg-red-500'
+                                        : 'bg-destructive'
                                         }`} />
                                     {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                 </div>
@@ -167,7 +167,7 @@ function ProductGridComponent({
                                         </>
                                     ) : (
                                         <>
-                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-blue-500' : 'bg-red-500'}`} />
+                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-destructive'}`} />
                                             {`${product.manufacturable_quantity ?? 0} fab.`}
                                         </>
                                     )}
@@ -179,12 +179,12 @@ function ProductGridComponent({
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     {product.has_bom ? (
                                         <>
-                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                            <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-amber-500'}`} />
                                             {`${product.manufacturable_quantity ?? 0} fab.`}
                                         </>
                                     ) : (
                                         <>
-                                            <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                            <div className="h-2 w-2 rounded-full bg-primary" />
                                             Disponible
                                         </>
                                     )}

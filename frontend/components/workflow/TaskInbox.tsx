@@ -290,14 +290,14 @@ export function TaskInbox() {
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-slate-400 group-hover:text-slate-200 transition-colors">
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-slate-200 transition-colors">
                         {isCompleted ? (
                             <span className="flex items-center gap-1 text-green-400">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 <span>{task.status === 'REJECTED' ? 'Rechazada' : 'Completada'}</span>
                             </span>
                         ) : task.status === 'REJECTED' ? (
-                            <span className="flex items-center gap-1 text-red-400">
+                            <span className="flex items-center gap-1 text-destructive">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 <span>Rechazada</span>
                             </span>
@@ -328,7 +328,7 @@ export function TaskInbox() {
                         </div>
                         <div className="text-[11px] text-muted-foreground mb-3 space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
                             {!task.data?.is_default_customer && task.data?.customer_name !== 'Publico General' && (
-                                <div className="flex justify-between items-center text-red-400/90">
+                                <div className="flex justify-between items-center text-destructive/90">
                                     <span className="opacity-70">Deuda Pendiente:</span>
                                     <span className="font-mono font-bold">
                                         ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}

@@ -50,8 +50,8 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                 {currentType === 'invoice' && (
                     <>
                         {/* Origin Documents */}
-                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', `NV-${data.sale_order_number || data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
-                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', `OCS-${data.purchase_order_number || data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', `NV-${data.sale_order_number || data.sale_order}`, <ShoppingBag className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', `OCS-${data.purchase_order_number || data.purchase_order}`, <FileText className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
 
                         {/* Corrected Invoice */}
                         {data.corrected_invoice && renderCard('invoice', data.corrected_invoice.id, 'Documento Rectificado', data.corrected_invoice.display_id, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200')}
@@ -60,13 +60,13 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                         {data.adjustments?.map((adj: any) => renderCard('invoice', adj.id, adj.dte_type_display, adj.display_id, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200'))}
 
                         {/* Related Returns (for NC/ND) */}
-                        {data.related_returns?.map((ret: any) => renderCard(ret.docType, ret.id, ret.type, ret.display_id, <Package className="h-5 w-5 text-red-600" />, 'red', 'red-50', 'red-200'))}
+                        {data.related_returns?.map((ret: any) => renderCard(ret.docType, ret.id, ret.type, ret.display_id, <Package className="h-5 w-5 text-destructive" />, 'red', 'red-50', 'red-200'))}
 
                         {/* Work Orders (for Debit Notes) */}
-                        {data.work_orders?.map((wo: any) => renderCard('work_order', wo.id, 'Orden de Trabajo', wo.number, <ClipboardList className="h-5 w-5 text-indigo-600" />, 'indigo', 'indigo-50', 'indigo-200'))}
+                        {data.work_orders?.map((wo: any) => renderCard('work_order', wo.id, 'Orden de Trabajo', wo.number, <ClipboardList className="h-5 w-5 text-primary" />, 'indigo', 'indigo-50', 'indigo-200'))}
 
                         {/* Stock Moves (for NC/ND) */}
-                        {data.related_stock_moves?.map((move: any) => renderCard('inventory', move.id, 'Movimiento de Inventario', move.display_id, <Package className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200'))}
+                        {data.related_stock_moves?.map((move: any) => renderCard('inventory', move.id, 'Movimiento de Inventario', move.display_id, <Package className="h-5 w-5 text-primary" />, 'purple', 'purple-50', 'purple-200'))}
                     </>
                 )}
 
@@ -80,10 +80,10 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                         {relatedDocs.notes?.map((note: any) => renderCard('invoice', note.id, note.type_display, note.number, <Receipt className="h-5 w-5 text-amber-600" />, 'amber', 'amber-50', 'amber-200'))}
 
                         {/* Deliveries */}
-                        {relatedDocs.deliveries?.map((del: any) => renderCard('sale_delivery', del.id, 'Despacho', del.display_id, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200'))}
+                        {relatedDocs.deliveries?.map((del: any) => renderCard('sale_delivery', del.id, 'Despacho', del.display_id, <Package className="h-5 w-5 text-amber-700" />, 'orange', 'orange-50', 'orange-200'))}
 
                         {/* Payments */}
-                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.code, <Banknote className="h-5 w-5 text-green-600" />, 'green', 'green-50', 'green-200'))}
+                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.code, <Banknote className="h-5 w-5 text-emerald-700" />, 'green', 'green-50', 'green-200'))}
                     </>
                 )}
 
@@ -91,14 +91,14 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                 {(currentType === 'sale_delivery' || currentType === 'purchase_receipt') && (
                     <>
                         {/* Origin Order */}
-                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
-                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta Origen', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
+                        {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra Origen', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
 
                         {/* Invoices */}
                         {relatedDocs.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.type_display || 'Factura', inv.display_id || inv.number, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
 
                         {/* Journal Entry */}
-                        {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
+                        {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-primary" />, 'purple', 'purple-50', 'purple-200')}
                     </>
                 )}
 
@@ -106,7 +106,7 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                 {currentType === 'purchase_order' && (
                     <>
                         {/* Work Order Origin */}
-                        {data.work_order && renderCard('work_order', data.work_order, 'Orden de Trabajo Origen', data.work_order_display_id || `OT-${data.work_order_number || data.work_order}`, <ClipboardList className="h-5 w-5 text-indigo-600" />, 'indigo', 'indigo-50', 'indigo-200')}
+                        {data.work_order && renderCard('work_order', data.work_order, 'Orden de Trabajo Origen', data.work_order_display_id || `OT-${data.work_order_number || data.work_order}`, <ClipboardList className="h-5 w-5 text-primary" />, 'indigo', 'indigo-50', 'indigo-200')}
 
                         {/* Invoices (primary invoices only) */}
                         {relatedDocs.invoices?.map((inv: any) => renderCard('invoice', inv.id, inv.type_display || 'Factura', inv.display_id || inv.number, <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200'))}
@@ -118,14 +118,14 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                         {relatedDocs.receipts?.map((rec: any) => {
                             // Handle both stock moves and service receipts
                             if (rec.docType === 'inventory') {
-                                return renderCard('inventory', rec.id, 'Movimiento de Inventario', rec.display_id || rec.number, <Package className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200');
+                                return renderCard('inventory', rec.id, 'Movimiento de Inventario', rec.display_id || rec.number, <Package className="h-5 w-5 text-primary" />, 'purple', 'purple-50', 'purple-200');
                             } else {
-                                return renderCard('purchase_receipt', rec.id, 'Recepción', rec.display_id || rec.number, <Package className="h-5 w-5 text-orange-600" />, 'orange', 'orange-50', 'orange-200');
+                                return renderCard('purchase_receipt', rec.id, 'Recepción', rec.display_id || rec.number, <Package className="h-5 w-5 text-amber-700" />, 'orange', 'orange-50', 'orange-200');
                             }
                         })}
 
                         {/* Payments */}
-                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.display_id || pay.code, <Banknote className="h-5 w-5 text-green-600" />, 'green', 'green-50', 'green-200'))}
+                        {relatedDocs.payments?.map((pay: any) => renderCard('payment', pay.id, `Pago - ${pay.payment_method_display || pay.method}`, pay.display_id || pay.code, <Banknote className="h-5 w-5 text-emerald-700" />, 'green', 'green-50', 'green-200'))}
                     </>
                 )}
 
@@ -139,8 +139,8 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                             'Documento Vinculado', 
                             data.document_info.label || data.document_info.display_id, 
                             data.document_info.type === 'invoice' ? <Receipt className="h-5 w-5 text-emerald-600" /> : 
-                            data.document_info.type === 'journal_entry' ? <Hash className="h-5 w-5 text-purple-600" /> :
-                            <ShoppingBag className="h-5 w-5 text-blue-600" />,
+                            data.document_info.type === 'journal_entry' ? <Hash className="h-5 w-5 text-primary" /> :
+                            <ShoppingBag className="h-5 w-5 text-primary" />,
                             data.document_info.type === 'invoice' ? 'emerald' : 
                             data.document_info.type === 'journal_entry' ? 'purple' : 'blue',
                             data.document_info.type === 'invoice' ? 'emerald-50' : 
@@ -153,15 +153,15 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                         {!data.document_info && (
                             <>
                                 {data.invoice && renderCard('invoice', data.invoice, 'DTE Vinculado', data.invoice_display_id || (data.invoice_number ? `FAC-${data.invoice_number}` : `FAC-${data.invoice}`), <Receipt className="h-5 w-5 text-emerald-600" />, 'emerald', 'emerald-50', 'emerald-200')}
-                                {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
-                                {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-blue-600" />, 'blue', 'blue-50', 'blue-200')}
+                                {data.sale_order && renderCard('sale_order', data.sale_order, 'Nota de Venta', data.sale_order_display_id || data.sale_order_number || `NV-${data.sale_order}`, <ShoppingBag className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
+                                {data.purchase_order && renderCard('purchase_order', data.purchase_order, 'Orden de Compra', data.purchase_order_display_id || data.purchase_order_number || `OCS-${data.purchase_order}`, <FileText className="h-5 w-5 text-primary" />, 'blue', 'blue-50', 'blue-200')}
                             </>
                         )}
                     </>
                 )}
 
                 {/* ===== COMMON: JOURNAL ENTRY ===== */}
-                {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-purple-600" />, 'purple', 'purple-50', 'purple-200')}
+                {data.journal_entry && renderCard('journal_entry', data.journal_entry, 'Asiento Contable', data.journal_entry_display_id || `AS-${data.journal_entry_number || data.journal_entry}`, <Hash className="h-5 w-5 text-primary" />, 'purple', 'purple-50', 'purple-200')}
             </div>
         </div>
     );

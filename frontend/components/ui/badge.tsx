@@ -22,7 +22,7 @@ const badgeVariants = cva(
         info:
           "border-transparent bg-info text-info-foreground [a&]:hover:bg-info/90 focus-visible:ring-info/20",
         indigo:
-          "border-transparent bg-indigo-500 text-white [a&]:hover:bg-indigo-600 focus-visible:ring-indigo-500/20",
+          "border-transparent bg-primary text-white [a&]:hover:bg-primary focus-visible:ring-indigo-500/20",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },

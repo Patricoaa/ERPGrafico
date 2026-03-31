@@ -38,15 +38,15 @@ export function WizardProcessSidebar({
                         className={cn(
                             "rounded-lg transition-all duration-200 cursor-pointer group",
                             isActive && "bg-primary text-primary-foreground shadow-sm",
-                            isPast && !isActive && "bg-green-50 text-green-700 hover:bg-green-100",
+                            isPast && !isActive && "bg-green-50 text-emerald-700 hover:bg-emerald-100",
                             isCurrent && !isActive && "bg-white border border-primary/20 text-foreground hover:border-primary/50",
                             isFuture && !isActive && "text-muted-foreground hover:bg-black/5"
                         )}
                     >
                         <div className="flex items-center space-x-3 p-3">
-                            <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-foreground" : (isPast ? "text-green-600" : "text-muted-foreground"))} />
+                            <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-foreground" : (isPast ? "text-emerald-700" : "text-muted-foreground"))} />
                             <span className="text-sm font-medium flex-1">{stage.label}</span>
-                            {isPast && <CheckCircle2 className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-green-600")} />}
+                            {isPast && <CheckCircle2 className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-emerald-700")} />}
                             {isCurrent && !isActive && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
                         </div>
 

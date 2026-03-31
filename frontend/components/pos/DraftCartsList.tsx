@@ -344,7 +344,7 @@ export function DraftCartsList({
                                                 {draft.wizard_state?.isWaitingApproval && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-blue-50 text-blue-600 border-blue-200 gap-0.5 shrink-0"
+                                                        className="h-4 px-1 text-[9px] bg-blue-50 text-primary border-blue-200 gap-0.5 shrink-0"
                                                     >
                                                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
                                                         Auth

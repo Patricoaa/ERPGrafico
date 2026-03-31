@@ -51,7 +51,7 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
                                     <TableCell className="text-xs truncate max-w-[200px]" title={line.description}>
                                         {line.description}
                                     </TableCell>
-                                    <TableCell className={`text-right text-xs font-bold ${line.is_credit ? 'text-green-600' : 'text-red-600'}`}>
+                                    <TableCell className={`text-right text-xs font-bold ${line.is_credit ? 'text-emerald-700' : 'text-destructive'}`}>
                                         {line.is_credit ? '+' : '-'}${line.amount.toLocaleString()}
                                     </TableCell>
                                     <TableCell>

@@ -50,14 +50,14 @@ export function PhaseCard({
         success: 'border-green-500/40 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]',
         active: 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]',
         neutral: 'border-white/10 bg-white/5',
-        destructive: 'border-red-500/40 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+        destructive: 'border-red-500/40 bg-destructive/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
     }
 
     const iconStyles: Record<string, string> = {
         success: 'bg-green-500/20 text-green-400',
         active: 'bg-primary/20 text-primary',
         neutral: 'bg-white/10 text-muted-foreground',
-        destructive: 'bg-red-500/20 text-red-500'
+        destructive: 'bg-destructive/20 text-destructive'
     }
 
     // Separate actions into primary (closing) and secondary
@@ -113,14 +113,14 @@ export function PhaseCard({
                         {/* Mini Status Badge */}
                         <div className={cn(
                             "absolute -top-2 -right-2 rounded-full bg-background border shadow-sm",
-                            isSuccess && "text-green-600 border-green-600/30",
-                            isActive && "text-blue-600 border-blue-600/30",
-                            variant === 'destructive' && "text-red-600 border-red-600/30",
+                            isSuccess && "text-emerald-700 border-green-600/30",
+                            isActive && "text-primary border-blue-600/30",
+                            variant === 'destructive' && "text-destructive border-red-600/30",
                             variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
                         )}>
                             {isSuccess && <CheckCircle2 className="size-3.5 bg-green-500/10 rounded-full" />}
-                            {isActive && <PlayCircle className="size-3.5 bg-blue-500/10 rounded-full" />}
-                            {variant === 'destructive' && <XCircle className="size-3.5 bg-red-500/10 rounded-full" />}
+                            {isActive && <PlayCircle className="size-3.5 bg-primary/10 rounded-full" />}
+                            {variant === 'destructive' && <XCircle className="size-3.5 bg-destructive/10 rounded-full" />}
                             {variant === 'neutral' && !isActive && !isSuccess && <MinusCircle className="size-3.5 bg-muted/10 rounded-full" />}
                         </div>
                     </div>
@@ -192,7 +192,7 @@ export function PhaseCard({
                             <div key={i} className={cn(
                                 "flex items-center justify-between bg-muted/5 border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc",
                                 "rounded-xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
-                                doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-slate-500/5 cursor-not-allowed",
+                                doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-muted0/5 cursor-not-allowed",
                                 doc.isWarning && "bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/15"
                             )}>
                                 <div className="flex items-center gap-3 overflow-hidden">
@@ -213,7 +213,7 @@ export function PhaseCard({
                                                     {doc.number}
                                                 </span>
                                                 {doc.status === 'CANCELLED' && (
-                                                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-slate-400 text-slate-500 font-bold uppercase">Anulada</Badge>
+                                                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-slate-400 text-muted-foreground font-bold uppercase">Anulada</Badge>
                                                 )}
                                             </div>
                                         </div>

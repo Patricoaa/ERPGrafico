@@ -147,7 +147,7 @@ export function TreasuryPhase({
                             ...((p.status !== 'CANCELLED') ? [{
                                 icon: Trash2,
                                 title: 'Eliminar/Anular Pago',
-                                color: 'text-red-500 hover:bg-red-500/10',
+                                color: 'text-destructive hover:bg-destructive/10',
                                 onClick: () => p.id && handleDeletePayment(p.id)
                             }] : [])
                         ]

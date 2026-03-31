@@ -694,7 +694,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <div className="flex items-center gap-2">
                                                         <s.icon className="h-4 w-4" />
                                                         <span>{s.label}</span>
-                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-green-600" />}
+                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-emerald-700" />}
                                                     </div>
                                                 </SelectItem>
                                             )
@@ -900,7 +900,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                             )}
                                                                             {m.purchase_order_number && (
-                                                                                <Badge variant="outline" className="gap-1 border-blue-200 text-blue-700 bg-blue-50">
+                                                                                <Badge variant="outline" className="gap-1 border-blue-200 text-primary bg-blue-50">
                                                                                     <FileText className="h-3 w-3" />
                                                                                     {m.purchase_order_number}
                                                                                 </Badge>
@@ -1032,7 +1032,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
-                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-green-600" : "text-destructive")}>
+                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-emerald-700" : "text-destructive")}>
                                                                         {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
                                                                     </p>
                                                                 </div>
@@ -1057,9 +1057,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_ASSIGNMENT' && (
                                         <div className="space-y-6">
-                                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex gap-3">
-                                                <Plus className="h-5 w-5 text-indigo-600 shrink-0" />
-                                                <div className="text-sm text-indigo-800">
+                                            <div className="p-4 bg-primary/10 border border-indigo-100 rounded-lg flex gap-3">
+                                                <Plus className="h-5 w-5 text-primary shrink-0" />
+                                                <div className="text-sm text-primary">
                                                     <div className="flex items-center gap-2">
                                                         <p className="font-bold">Asignación de Servicios Tercerizados</p>
                                                         <TooltipProvider>
@@ -1117,7 +1117,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     </div>
                                                                 )}
                                                                 {m.purchase_order_number && (
-                                                                    <Badge variant="outline" className="gap-1 border-blue-200 text-blue-700 bg-blue-50">
+                                                                    <Badge variant="outline" className="gap-1 border-blue-200 text-primary bg-blue-50">
                                                                         <FileText className="h-3 w-3" />
                                                                         {m.purchase_order_number}
                                                                     </Badge>
@@ -1263,7 +1263,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 <div className="space-y-0.5">
                                                                     <p className="text-sm font-bold">{m.component_name}</p>
                                                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
-                                                                        <span className={cn(isReceived ? "text-green-600" : "text-amber-600")}>{statusLabel}</span>
+                                                                        <span className={cn(isReceived ? "text-emerald-700" : "text-amber-600")}>{statusLabel}</span>
                                                                         <span>•</span>
                                                                         <span>{m.supplier_name}</span>
                                                                         <span>•</span>
@@ -1314,13 +1314,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {order.checkout_files.map((att: any) => (
                                                                     <div key={att.id} className="flex items-center gap-2 p-2 bg-blue-50/50 rounded border border-blue-100/50 text-xs hover:border-blue-200 transition-colors">
-                                                                        <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                                                                        <div className="flex-1 truncate font-medium text-blue-700" title={att.original_filename}>{att.original_filename}</div>
+                                                                        <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                                        <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>{att.original_filename}</div>
                                                                         <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
-                                                                            className="h-6 w-6 hover:bg-blue-100 text-blue-700"
+                                                                            className="h-6 w-6 hover:bg-blue-100 text-primary"
                                                                             onClick={() => window.open(att.file, '_blank')}
                                                                             title="Descargar"
                                                                         >
@@ -1587,9 +1587,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
                         <div className="bg-blue-100 p-2 rounded-full h-fit">
-                            <FileText className="h-4 w-4 text-blue-600" />
+                            <FileText className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="text-xs text-blue-700 leading-relaxed">
+                        <div className="text-xs text-primary leading-relaxed">
                             <p className="font-bold mb-1">Nota importante:</p>
                             <p>Las órdenes de compra se crearán en estado <span className="font-bold">Confirmado</span>. Deberá procesar la recepción desde el Hub de la OC para poder finalizar la OT posteriormente.</p>
                         </div>

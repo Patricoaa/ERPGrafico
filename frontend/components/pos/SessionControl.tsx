@@ -507,7 +507,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 disabled={availableSessions.length === 0}
                                 onClick={() => setWizardStep(10)} // 10 is Join Session Flow
                             >
-                                <div className="p-3 rounded-full bg-blue-100 text-blue-600 group-hover:scale-110 transition-transform">
+                                <div className="p-3 rounded-full bg-blue-100 text-primary group-hover:scale-110 transition-transform">
                                     <Users className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
@@ -747,7 +747,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         {openingInsufficientFunds && openingSelectedAccount && (
                                             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                                    <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
                                                     <div className="text-sm text-red-700 dark:text-red-300">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
@@ -855,7 +855,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                     <>
                         <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
-                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-blue-500' : 'bg-emerald-500'} animate-pulse`} />
+                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-primary' : 'bg-emerald-500'} animate-pulse`} />
                             {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
                         </Badge>
 

@@ -142,7 +142,7 @@ export default function TaxDeclarationsPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "OPEN":
-                return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Abierto</Badge>
+                return <Badge variant="outline" className="bg-primary/10 text-primary border-blue-500/20">Abierto</Badge>
             case "UNDER_REVIEW":
                 return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">En Revisión</Badge>
             case "CLOSED":
@@ -218,7 +218,7 @@ export default function TaxDeclarationsPage() {
                     return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50">Pagado</Badge>
                 }
                 if (summary.vat_to_pay > 0 && row.original.status === 'CLOSED') {
-                    return <Badge variant="outline" className="border-red-500 text-red-600 bg-red-50">Pendiente</Badge>
+                    return <Badge variant="outline" className="border-red-500 text-destructive bg-red-50">Pendiente</Badge>
                 }
                 return <span className="text-muted-foreground">-</span>
             },
@@ -425,7 +425,7 @@ export default function TaxDeclarationsPage() {
                                                                 </Badge>
                                                             ) : (
                                                                 summary.vat_to_pay > 0 && period.status === 'CLOSED' && (
-                                                                    <Badge variant="outline" className="border-red-500 text-red-600 bg-red-50 text-[10px] h-5">
+                                                                    <Badge variant="outline" className="border-red-500 text-destructive bg-red-50 text-[10px] h-5">
                                                                         Pago Pendiente
                                                                     </Badge>
                                                                 )

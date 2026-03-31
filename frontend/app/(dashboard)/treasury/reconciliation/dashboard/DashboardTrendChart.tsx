@@ -48,7 +48,7 @@ export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
                                                     <span className="text-[0.70rem] uppercase text-muted-foreground">
                                                         Conciliadas
                                                     </span>
-                                                    <span className="font-bold text-green-600">
+                                                    <span className="font-bold text-emerald-700">
                                                         {payload[1].value}
                                                     </span>
                                                 </div>

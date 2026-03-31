@@ -194,7 +194,7 @@ export default function PurchaseInvoicesPage() {
                 const doc = row.original
                 return (
                     <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-blue-500' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-slate-600'}`} />
+                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-muted-foreground'}`} />
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
@@ -262,7 +262,7 @@ export default function PurchaseInvoicesPage() {
                                 <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-orange-600 font-bold whitespace-nowrap">
+                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-amber-700 font-bold whitespace-nowrap">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                 </Badge>
                             )}
@@ -326,7 +326,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-orange-600"
+                                        className="text-amber-700"
                                         onClick={() => setReceivingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
                                     >

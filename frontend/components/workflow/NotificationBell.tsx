@@ -86,7 +86,7 @@ export function NotificationBell() {
                 <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     {count > 0 && (
-                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 ring-2 ring-background animate-pulse" />
+                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background animate-pulse" />
                     )}
                 </Button>
             </PopoverTrigger>

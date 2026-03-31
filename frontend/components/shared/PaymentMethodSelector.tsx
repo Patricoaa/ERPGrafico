@@ -70,7 +70,7 @@ export function PaymentMethodSelector({
                 id: 'CARD',
                 label: 'Tarjeta',
                 icon: CreditCard,
-                color: 'text-blue-600',
+                color: 'text-primary',
                 bg: 'bg-blue-50',
                 border: 'border-blue-200',
                 methods: methodsByType.CARD
@@ -79,9 +79,9 @@ export function PaymentMethodSelector({
                 id: 'TRANSFER',
                 label: 'Transferencia',
                 icon: Building2,
-                color: 'text-purple-600',
-                bg: 'bg-purple-50',
-                border: 'border-purple-200',
+                color: 'text-primary',
+                bg: 'bg-primary/10',
+                border: 'border-primary/20',
                 methods: methodsByType.TRANSFER
             },
             {

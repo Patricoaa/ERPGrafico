@@ -132,9 +132,9 @@ export function OrderHubPanel({
                                     variant='outline'
                                     className={cn(
                                         "rounded-sm border px-1.5 py-0.5 gap-1 font-bold uppercase tracking-tight text-[10px]",
-                                        globalStatus.variant === 'success' && "border-green-600/30 text-green-600 bg-green-500/5",
-                                        globalStatus.variant === 'active' && "border-blue-600/30 text-blue-600 bg-blue-500/5",
-                                        globalStatus.variant === 'destructive' && "border-red-600/30 text-red-600 bg-red-500/5",
+                                        globalStatus.variant === 'success' && "border-green-600/30 text-emerald-700 bg-green-500/5",
+                                        globalStatus.variant === 'active' && "border-blue-600/30 text-primary bg-primary/5",
+                                        globalStatus.variant === 'destructive' && "border-red-600/30 text-destructive bg-destructive/5",
                                         globalStatus.variant === 'neutral' && "border-muted-foreground/30 text-muted-foreground bg-muted/5"
                                     )}
                                 >
@@ -160,7 +160,7 @@ export function OrderHubPanel({
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all shrink-0" 
+                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all shrink-0" 
                         onClick={onClose}
                     >
                         <X className="h-5 w-5" />

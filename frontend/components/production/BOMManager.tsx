@@ -375,7 +375,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                                     variant="ghost"
                                                     size="icon"
                                                     title="Editar"
-                                                    className="h-8 w-8 hover:text-blue-600 hover:bg-blue-50"
+                                                    className="h-8 w-8 hover:text-primary hover:bg-blue-50"
                                                     onClick={() => handleEdit(bom)}
                                                 >
                                                     <Edit className="h-3.5 w-3.5" />
@@ -385,7 +385,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                                     variant="ghost"
                                                     size="icon"
                                                     title="Eliminar"
-                                                    className="h-8 w-8 hover:text-red-600 hover:bg-red-50"
+                                                    className="h-8 w-8 hover:text-destructive hover:bg-red-50"
                                                     onClick={() => handleDelete(bom)}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />

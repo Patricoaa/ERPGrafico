@@ -405,7 +405,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         )}
 
                         {!currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
-                            <p className="text-xs bg-blue-50 text-blue-700 p-2 rounded-md">
+                            <p className="text-xs bg-blue-50 text-primary p-2 rounded-md">
                                 Al restaurar el producto, sus suscripciones volverán a aparecer en el gestor central.
                             </p>
                         )}

@@ -170,11 +170,11 @@ export function EquityCompositionTab() {
                     <CardHeader className="pb-2">
                         <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex items-center justify-between">
                             Patrimonio Neto Socios
-                            <Building2 className="h-4 w-4 text-blue-500" />
+                            <Building2 className="h-4 w-4 text-primary" />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold font-mono text-blue-600">
+                        <div className="text-2xl font-bold font-mono text-primary">
                             {formatCurrency(summary?.total_net_equity || 0)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-1">
@@ -224,7 +224,7 @@ export function EquityCompositionTab() {
                                 <Button 
                                     variant="outline"
                                     onClick={() => setIsTransferOpen(true)}
-                                    className="border-blue-200 hover:bg-blue-50 text-blue-600"
+                                    className="border-blue-200 hover:bg-blue-50 text-primary"
                                 >
                                     <ArrowRightLeft className="h-4 w-4 mr-2" />
                                     Transferencia
@@ -351,8 +351,8 @@ export function EquityCompositionTab() {
 
             {/* Info Message */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
-                <Info className="h-5 w-5 text-blue-500 mt-0.5" />
-                <div className="text-xs text-blue-700 leading-relaxed">
+                <Info className="h-5 w-5 text-primary mt-0.5" />
+                <div className="text-xs text-primary leading-relaxed">
                     <p className="font-bold mb-1">Nota sobre la Composición Societaria:</p>
                     Esta tabla muestra la <strong>participación formal</strong> según los libros de capital. 
                     Los aumentos o transferencias aquí registrados generan asientos contables automáticos contra la cuenta de Capital Social. 

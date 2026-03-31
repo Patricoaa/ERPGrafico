@@ -135,7 +135,7 @@ export function DocumentRegistrationModal({
                         id="pending-check"
                         checked={isPending}
                         onChange={(e) => setIsPending(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                        className="h-4 w-4 rounded border text-primary focus:ring-indigo-600"
                     />
                     <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
                         Aún no recibo el documento físico / digital

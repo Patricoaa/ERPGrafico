@@ -30,7 +30,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
-                    className="rounded-xl h-9 w-9 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
+                    className="rounded-xl h-9 w-9 hover:bg-white/10 text-muted-foreground hover:text-white transition-all"
                 >
                     <X className="h-5 w-5" />
                 </Button>

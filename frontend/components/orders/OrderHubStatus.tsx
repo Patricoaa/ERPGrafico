@@ -35,10 +35,10 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
     // Helper for rendering badges
     const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {
         const colors: Record<string, string> = {
-            success: "text-green-600 bg-green-500/10 border-green-600/20",
-            active: "text-blue-600 bg-blue-500/10 border-blue-600/20",
+            success: "text-emerald-700 bg-green-500/10 border-green-600/20",
+            active: "text-primary bg-primary/10 border-blue-600/20",
             neutral: "text-muted-foreground bg-muted/50 border-muted-foreground/20",
-            destructive: "text-red-600 bg-red-500/10 border-red-600/20",
+            destructive: "text-destructive bg-destructive/10 border-red-600/20",
             not_applicable: "hidden"
         }
 

@@ -196,9 +196,9 @@ export default function SubscriptionsPage() {
             case "PAUSED":
                 return "bg-yellow-500"
             case "CANCELLED":
-                return "bg-red-500"
+                return "bg-destructive"
             default:
-                return "bg-gray-500"
+                return "bg-muted0"
         }
     }
 
@@ -317,7 +317,7 @@ export default function SubscriptionsPage() {
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                className="h-8 w-8 text-amber-700 hover:text-amber-700 hover:bg-yellow-50"
                                 onClick={() => handlePause(sub.id)}
                                 title="Pausar Suscripción"
                             >
@@ -328,7 +328,7 @@ export default function SubscriptionsPage() {
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                className="h-8 w-8 text-emerald-700 hover:text-emerald-700 hover:bg-green-50"
                                 onClick={() => handleResume(sub.id)}
                                 title="Reanudar Suscripción"
                             >
@@ -339,7 +339,7 @@ export default function SubscriptionsPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="h-8 w-8 text-primary hover:text-primary hover:bg-blue-50"
                             onClick={() => {
                                 setCurrentHistorySubscriptionId(sub.id)
                                 setIsHistoryOpen(true)

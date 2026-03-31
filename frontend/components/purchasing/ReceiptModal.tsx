@@ -376,12 +376,12 @@ export function ReceiptModal({
                                                     {status && (
                                                         <div className="flex items-center gap-1 text-xs">
                                                             {status.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
-                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
+                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-emerald-700" />}
+                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-amber-700" />}
                                                             <span className={
                                                                 status.type === 'error' ? 'text-destructive' :
-                                                                    status.type === 'success' ? 'text-green-600' :
-                                                                        'text-yellow-600'
+                                                                    status.type === 'success' ? 'text-emerald-700' :
+                                                                        'text-amber-700'
                                                             }>
                                                                 {status.message}
                                                             </span>

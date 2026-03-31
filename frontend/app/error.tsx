@@ -20,7 +20,7 @@ export default function Error({
         <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-muted/30 p-4">
             <div className="flex flex-col items-center gap-2 text-center">
                 <div className="rounded-full bg-red-100 p-3">
-                    <AlertCircle className="h-6 w-6 text-red-600" />
+                    <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
                 <h2 className="text-xl font-semibold">Algo salió mal</h2>
                 <p className="text-sm text-muted-foreground max-w-[500px]">

@@ -137,7 +137,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
 
                 <IndustrialCard variant="industrial" className="border-t-indigo-500">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-indigo-600/70">Solvencia</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Solvencia</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">{data.solvency.solvency_ratio.toFixed(2)}</div>

@@ -267,7 +267,7 @@ export function PaymentDialog({
                                         <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                             <FileUp className="h-3 w-3" /> Documento Adjunto
                                         </Label>
-                                        <div className="flex items-center gap-2 text-xs text-blue-600 font-medium p-2 bg-blue-50 rounded border border-blue-100">
+                                        <div className="flex items-center gap-2 text-xs text-primary font-medium p-2 bg-blue-50 rounded border border-blue-100">
                                             <Receipt className="h-4 w-4" />
                                             <span>Documento cargado</span>
                                             {existingInvoice.document_attachment && (

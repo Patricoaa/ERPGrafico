@@ -118,17 +118,17 @@ export function AdvancedWorkOrderSelector({
                         disabled={disabled}
                         className={cn(
                             "w-full justify-between h-auto py-2 px-3 bg-background border-dashed hover:border-indigo-400 transition-colors",
-                            selectedOrder && "border-indigo-200 bg-indigo-50/30",
+                            selectedOrder && "border-primary/20 bg-primary/10/30",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
                         {selectedOrder ? (
                             <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
                                     <ClipboardList className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start truncate leading-tight">
-                                    <span className="font-medium text-sm truncate w-full text-indigo-700">OT-{selectedOrder.number}</span>
+                                    <span className="font-medium text-sm truncate w-full text-primary">OT-{selectedOrder.number}</span>
                                     <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
                                         {selectedOrder.product_name}
                                     </span>
@@ -140,7 +140,7 @@ export function AdvancedWorkOrderSelector({
                         <div className="flex items-center gap-2">
                             {selectedOrder && (
                                 <div
-                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors"
+                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-red-100 hover:text-destructive transition-colors"
                                     onClick={clearSelection}
                                 >
                                     <X className="h-3 w-3" />
@@ -181,7 +181,7 @@ export function AdvancedWorkOrderSelector({
                                     >
                                         <div className="flex items-center gap-3 w-full overflow-hidden">
                                             <div className="flex-shrink-0 p-2 bg-muted rounded-md group-hover:bg-background transition-colors">
-                                                <Package className="h-4 w-4 text-indigo-600" />
+                                                <Package className="h-4 w-4 text-primary" />
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
@@ -203,7 +203,7 @@ export function AdvancedWorkOrderSelector({
                                                     onClick={(e) => openPreview(e, order.id)}
                                                     title="Previsualizar"
                                                 >
-                                                    <Eye className="h-4 w-4 text-blue-600" />
+                                                    <Eye className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 {selectedOrder?.id === order.id && (
                                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />

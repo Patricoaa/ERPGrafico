@@ -187,7 +187,7 @@ export default function AccountingPeriodsPage() {
                                             </div>
                                         )}
                                         {period.status === 'OPEN' && (
-                                            <div className="flex items-center gap-2 text-green-600">
+                                            <div className="flex items-center gap-2 text-emerald-700">
                                                 <CheckCircle2 className="w-4 h-4" />
                                                 <span>Periodo abierto - Se pueden registrar asientos</span>
                                             </div>

@@ -52,11 +52,11 @@ export default function AccountLedgerPage() {
                 const mov = row.original
                 return (
                     <div className="flex flex-col">
-                        <a href={`/accounting/entries`} className="text-blue-600 hover:underline text-sm font-medium">
+                        <a href={`/accounting/entries`} className="text-primary hover:underline text-sm font-medium">
                             {mov.reference || `Asiento ${mov.entry_id}`}
                         </a>
                         {mov.source_document && (
-                            <a href={mov.source_document.url} className="text-[10px] text-muted-foreground hover:text-blue-500 underline uppercase font-bold">
+                            <a href={mov.source_document.url} className="text-[10px] text-muted-foreground hover:text-primary underline uppercase font-bold">
                                 {mov.source_document.type}: {mov.source_document.name}
                             </a>
                         )}

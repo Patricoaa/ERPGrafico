@@ -163,7 +163,7 @@ export function Cart({
                                     <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
                                     <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
                                     {showLineDiscounts && (
-                                        <TableHead className="w-[15%] text-xs py-2 text-right text-blue-600/80 h-[34px]">Dscto.</TableHead>
+                                        <TableHead className="w-[15%] text-xs py-2 text-right text-primary/80 h-[34px]">Dscto.</TableHead>
                                     )}
                                     <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Total</TableHead>
                                     <TableHead className="w-[5%] py-2 h-[34px]"></TableHead>
@@ -213,10 +213,10 @@ export function Cart({
                             {dteType && (
                                 <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-2">
                                     <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                        <FileText className="h-3 w-3 text-blue-500" />
+                                        <FileText className="h-3 w-3 text-primary" />
                                         <span>Documento</span>
                                     </div>
-                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-100 uppercase">
+                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-blue-50 text-primary border-blue-100 uppercase">
                                         {getDteLabel(dteType)}
                                     </Badge>
                                 </div>
@@ -297,7 +297,7 @@ export function Cart({
                                 <div className="flex items-center gap-1.5">
                                     <span className={cn(
                                         "text-sm font-medium",
-                                        showTotalDiscounts ? "text-blue-600" : "text-muted-foreground"
+                                        showTotalDiscounts ? "text-primary" : "text-muted-foreground"
                                     )}>
                                         Descuento Global
                                     </span>
@@ -308,7 +308,7 @@ export function Cart({
                                 <div className={cn(
                                     "font-mono text-sm px-2 py-1 rounded border border-dashed transition-colors",
                                     (totals.global_discount_total || 0) > 0 
-                                        ? "text-blue-600 bg-blue-50/50 border-blue-200" 
+                                        ? "text-primary bg-blue-50/50 border-blue-200" 
                                         : "text-muted-foreground/40 border-muted-foreground/20 group-hover:border-blue-200 group-hover:text-blue-400"
                                 )}>
                                     {(totals.global_discount_total || 0) > 0 

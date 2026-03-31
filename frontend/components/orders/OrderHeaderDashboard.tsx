@@ -51,7 +51,7 @@ export function OrderHeaderDashboard({
             case 'success': return 'text-green-500 bg-green-500/10 border-green-500/20'
             case 'active': return 'text-primary bg-primary/10 border-primary/20 animate-pulse'
             case 'neutral': return 'text-muted-foreground bg-muted/10 border-white/5'
-            case 'destructive': return 'text-red-500 bg-red-500/10 border-red-500/20'
+            case 'destructive': return 'text-destructive bg-destructive/10 border-red-500/20'
             case 'not_applicable': return 'text-muted-foreground/30 bg-muted/5 border-transparent opacity-50'
             default: return 'text-muted-foreground'
         }
@@ -61,7 +61,7 @@ export function OrderHeaderDashboard({
         switch (status) {
             case 'success': return 'text-green-500'
             case 'active': return 'text-primary'
-            case 'destructive': return 'text-red-500'
+            case 'destructive': return 'text-destructive'
             default: return 'text-muted-foreground/50'
         }
     }

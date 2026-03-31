@@ -41,9 +41,9 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
 
     if (isPurchase) {
         Icon = Package
-        iconBg = "bg-indigo-500/5"
+        iconBg = "bg-primary/5"
         iconColor = "text-indigo-500/60"
-        iconBorder = "border-indigo-500/10"
+        iconBorder = "border-primary/20/10"
     } else if (isNote) {
         Icon = FileBadge
         iconBg = "bg-amber-500/5"
@@ -105,7 +105,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                         {isNote && (item.corrected_invoice || item.sale_order || item.purchase_order) && (
                             <Badge 
                                 variant="outline" 
-                                className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                                className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20/30 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     if (item.corrected_invoice) {
@@ -127,7 +127,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                     <Badge 
                                         key={adj.id}
                                         variant="outline" 
-                                        className="h-6 px-2 gap-1.5 text-[10px] font-bold border-purple-500/30 text-purple-600 bg-purple-500/5 hover:bg-purple-500/10 cursor-pointer transition-colors"
+                                        className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20/30 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase' })

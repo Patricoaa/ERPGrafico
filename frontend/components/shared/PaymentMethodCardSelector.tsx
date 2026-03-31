@@ -175,14 +175,14 @@ export function PaymentMethodCardSelector({
                 id: 'CARD',
                 label: `Tarjeta${terminalHasCardTerminal && operation === 'sales' ? ' (terminal de cobro)' : ''}`,
                 icon: CreditCard,
-                color: 'text-blue-600',
+                color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD')
             },
             {
                 id: 'TRANSFER',
                 label: 'Transferencia',
                 icon: Building2,
-                color: 'text-purple-600',
+                color: 'text-primary',
                 isAllowed: isMethodAllowed('TRANSFER')
             },
             {
@@ -196,7 +196,7 @@ export function PaymentMethodCardSelector({
                 id: 'CREDIT_BALANCE',
                 label: 'Saldo a Favor',
                 icon: Wallet,
-                color: 'text-indigo-600',
+                color: 'text-primary',
                 isAllowed: isMethodAllowed('CREDIT_BALANCE')
             }
         ]
@@ -220,10 +220,10 @@ export function PaymentMethodCardSelector({
                     </div>
                 </div>
 
-                <div className={cn("bg-blue-500/5 rounded-xl border border-blue-500/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
+                <div className={cn("bg-primary/5 rounded-xl border border-blue-500/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{amountLabel}</Label>
-                        <p className={cn("font-bold text-blue-600", compactMode ? "text-lg" : "text-xl")}>
+                        <p className={cn("font-bold text-primary", compactMode ? "text-lg" : "text-xl")}>
                             {Number(paymentData.amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </p>
                     </div>
@@ -243,7 +243,7 @@ export function PaymentMethodCardSelector({
                             </Label>
                             <p className={cn(
                                 "font-bold",
-                                difference >= 0 ? "text-emerald-600" : "text-orange-600",
+                                difference >= 0 ? "text-emerald-600" : "text-amber-700",
                                 compactMode ? "text-lg" : "text-xl"
                             )}>
                                 {Math.abs(difference).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
@@ -294,7 +294,7 @@ export function PaymentMethodCardSelector({
                                         compactMode ? "p-3" : "p-6"
                                     )}>
                                         {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-white animate-in zoom-in duration-300 z-10 whitespace-nowrap">
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-white animate-in zoom-in duration-300 z-10 whitespace-nowrap">
                                                 {customerCreditBalance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                                             </div>
                                         )}
@@ -395,7 +395,7 @@ export function PaymentMethodCardSelector({
                     <div className="space-y-4">
                         <Label htmlFor="modal-amount">Monto</Label>
                         <div className="flex flex-col items-center gap-4">
-                            <div className="text-4xl font-black tracking-tight text-blue-600 bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm w-full text-center">
+                            <div className="text-4xl font-black tracking-tight text-primary bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm w-full text-center">
                                 ${Number(tempAmount || 0).toLocaleString('es-CL')}
                             </div>
 

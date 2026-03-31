@@ -109,7 +109,7 @@ export const DataCell = {
         return (
             <div className={cn("w-full bg-secondary/30 rounded-full h-1.5 overflow-hidden", className)}>
                 <div
-                    className={cn("h-full transition-all", percentage > 100 ? "bg-red-500" : "bg-primary")}
+                    className={cn("h-full transition-all", percentage > 100 ? "bg-destructive" : "bg-primary")}
                     style={{ width: `${percentage}%` }}
                 />
             </div>

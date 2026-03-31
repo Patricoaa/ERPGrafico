@@ -99,12 +99,12 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
       <div className="flex items-center justify-between p-4 border-b bg-blue-50/80">
         <div>
            <div className="flex items-center gap-2 mb-1">
-               <Sparkles className="h-4 w-4 text-blue-600" />
+               <Sparkles className="h-4 w-4 text-primary" />
                <h3 className="font-bold text-sm text-blue-900 leading-tight">Edición Masiva</h3>
            </div>
-           <p className="text-[11px] text-blue-700/80 font-medium">{selectedVariants.length} variantes seleccionadas</p>
+           <p className="text-[11px] text-primary/80 font-medium">{selectedVariants.length} variantes seleccionadas</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-blue-700/60 hover:text-blue-900 hover:bg-blue-100/50">
+        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-blue-900 hover:bg-blue-100/50">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -230,14 +230,14 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
       </div>
 
       <div className="p-4 border-t border-blue-100 bg-white/50 flex justify-end gap-2">
-         <Button variant="outline" size="sm" onClick={onCancel} className="text-xs border-blue-200 text-blue-700 hover:bg-blue-50">
+         <Button variant="outline" size="sm" onClick={onCancel} className="text-xs border-blue-200 text-primary hover:bg-blue-50">
             Cancelar
          </Button>
          <Button 
             type="button" 
             onClick={form.handleSubmit(onSubmit)} 
             size="sm" 
-            className="text-xs font-bold shadow-sm bg-blue-600 hover:bg-blue-700 text-white"
+            className="text-xs font-bold shadow-sm bg-primary hover:bg-primary text-white"
             disabled={loading}
          >
             {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}

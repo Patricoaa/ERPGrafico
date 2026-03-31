@@ -24,9 +24,9 @@ interface KanbanProps {
 }
 
 const STAGES = [
-    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', color: 'bg-slate-100', icon: Package },
+    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', color: 'bg-secondary text-secondary-foreground', icon: Package },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Materiales', color: 'bg-blue-50', icon: CheckCircle2 },
-    { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-purple-50', icon: FileText },
+    { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-primary/10', icon: FileText },
     { id: 'PRESS', label: 'Impresión', color: 'bg-orange-50', icon: Printer },
     { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-cyan-50', icon: Layers },
     { id: 'FINISHED', label: 'Finalizado', color: 'bg-green-50', icon: CheckCircle2 },
@@ -72,18 +72,18 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                                 OT-{order.number}
                                             </span>
                                             {order.outsourcing_status === 'partial' && (
-                                                <Badge variant="secondary" className="text-[11px] bg-blue-50 text-blue-700 border-blue-200 py-0 h-4">
+                                                <Badge variant="secondary" className="text-[11px] bg-blue-50 text-primary border-blue-200 py-0 h-4">
                                                     Parcial
                                                 </Badge>
                                             )}
                                             {order.outsourcing_status === 'full' && (
-                                                <Badge variant="secondary" className="text-[11px] bg-indigo-50 text-indigo-700 border-indigo-200 py-0 h-4 font-bold">
+                                                <Badge variant="secondary" className="text-[11px] bg-primary/10 text-primary border-primary/20 py-0 h-4 font-bold">
                                                     Tercerizado
                                                 </Badge>
                                             )}
                                         </div>
                                         {order.status === 'FINISHED' && (
-                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                            <CheckCircle2 className="h-4 w-4 text-emerald-700" />
                                         )}
 
                                         <div>
@@ -118,7 +118,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                 </Card>
                             ))}
                             {stageOrders.length === 0 && (
-                                <div className="h-24 border-2 border-dashed border-gray-200/50 rounded-lg flex items-center justify-center text-xs text-muted-foreground italic">
+                                <div className="h-24 border-2 border-dashed border/50 rounded-lg flex items-center justify-center text-xs text-muted-foreground italic">
                                     Sin órdenes
                                 </div>
                             )}

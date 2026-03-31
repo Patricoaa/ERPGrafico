@@ -182,8 +182,8 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                         {saving ? (
                             <>
-                                <CloudUpload className="h-3 w-3 animate-pulse text-blue-500" />
-                                <span className="text-blue-600">Guardando...</span>
+                                <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
+                                <span className="text-primary">Guardando...</span>
                             </>
                         ) : (
                             <>
@@ -389,7 +389,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                     <TabsContent value="previsional" className="space-y-6">
                         <div className="flex justify-between items-center px-1">
                             <div>
-                                <h3 className="text-lg font-medium text-blue-600 text-shadow">Instituciones Previsionales (AFP)</h3>
+                                <h3 className="text-lg font-medium text-primary text-shadow">Instituciones Previsionales (AFP)</h3>
                                 <p className="text-sm text-muted-foreground">Gestión de comisiones para cálculo individual</p>
                             </div>
                             <AFPDialog onSaved={fetchData} />

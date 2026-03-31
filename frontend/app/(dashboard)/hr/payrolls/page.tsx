@@ -171,7 +171,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" />,
             cell: ({ row }) => (
                 <div className="flex justify-end opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-blue-600 text-[11px]" />
+                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
                 </div>
             ),
         },
@@ -246,7 +246,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                className="h-7 w-7 text-primary hover:text-primary hover:bg-blue-50"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);

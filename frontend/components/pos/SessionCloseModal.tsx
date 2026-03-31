@@ -222,7 +222,7 @@ export function SessionCloseModal({
                             <div className="md:hidden mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900">
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>Efectivo Esperado:</span>
-                                    <span className="text-blue-600 dark:text-blue-400">{formatCurrency(session.expected_cash)}</span>
+                                    <span className="text-primary dark:text-blue-400">{formatCurrency(session.expected_cash)}</span>
                                 </div>
                             </div>
 
@@ -333,7 +333,7 @@ export function SessionCloseModal({
                                         {insufficientFunds && selectedAccount && (
                                             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                                    <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
                                                     <div className="text-sm text-red-700 dark:text-red-300">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">

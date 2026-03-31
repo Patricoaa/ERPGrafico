@@ -65,14 +65,14 @@ export function WizardRightSidebar({
                             <div className="space-y-3">
                                 {order?.prepress_archive && (
                                     <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-3 space-y-2">
-                                        <p className="font-bold text-[10px] uppercase text-blue-700 flex items-center gap-1.5">
+                                        <p className="font-bold text-[10px] uppercase text-primary flex items-center gap-1.5">
                                             <FileText className="h-3 w-3" />
                                             Archivo de Diseño
                                         </p>
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="w-full bg-white text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                                            className="w-full bg-white text-primary border-blue-200 hover:bg-blue-50 hover:text-blue-800"
                                             onClick={() => window.open(order.prepress_archive, '_blank')}
                                         >
                                             Ver Archivo
@@ -86,7 +86,7 @@ export function WizardRightSidebar({
                                     )}>
                                         <p className={cn(
                                             "font-bold text-[10px] uppercase flex items-center gap-1.5",
-                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "text-blue-700" : "text-muted-foreground"
+                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "text-primary" : "text-muted-foreground"
                                         )}>
                                             <FileText className="h-3 w-3" />
                                             {spec.label}

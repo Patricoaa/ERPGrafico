@@ -331,7 +331,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
+                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
                         onClick={onClose}
                     >
                         <X className="h-5 w-5" />
@@ -340,7 +340,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             )}
 
             {/* Scroll Area for Content */}
-            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-slate-50/30" : "")}>
+            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
                 <div className={cn(isSheet ? "max-w-4xl mx-auto pb-12" : "")}>
                     <PayrollCard 
                         payroll={payroll}
@@ -453,7 +453,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     return (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl bg-slate-100/50 backdrop-blur-sm">
+            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl bg-secondary text-secondary-foreground/50 backdrop-blur-sm">
                 <DialogHeader className="px-6 pt-6 pb-2">
                     <DialogTitle className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-xl text-primary">

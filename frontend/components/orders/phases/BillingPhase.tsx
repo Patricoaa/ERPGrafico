@@ -138,13 +138,13 @@ export function BillingPhase({
                                 ...((inv.status === 'DRAFT') ? [{
                                     icon: Trash2,
                                     title: 'Eliminar Borrador',
-                                    color: 'text-red-500 hover:bg-red-500/10',
+                                    color: 'text-destructive hover:bg-destructive/10',
                                     onClick: () => handleDeleteDraft(inv.id)
                                 }] : []),
                                 ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
                                     icon: X,
                                     title: 'Anular Documento',
-                                    color: 'text-orange-600 hover:bg-orange-600/10',
+                                    color: 'text-amber-700 hover:bg-orange-600/10',
                                     onClick: () => handleAnnulDocument(inv.id)
                                 }] : [])
                             ]
@@ -154,7 +154,7 @@ export function BillingPhase({
                         type: note.type_display || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
                         number: note.display_id || note.number,
                         icon: FileText,
-                        color: 'text-purple-600',
+                        color: 'text-primary',
                         id: note.id,
                         docType: 'invoice',
                         status: note.status,

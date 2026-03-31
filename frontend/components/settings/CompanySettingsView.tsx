@@ -206,7 +206,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                 <div className="flex items-center gap-3">
                     {saving && (
                         <div className="flex items-center gap-2 text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full border border-blue-100 italic text-[10px]">
-                            <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+                            <Loader2 className="h-3 w-3 animate-spin text-primary" />
                             <span>Guardando cambios...</span>
                         </div>
                     )}
@@ -296,7 +296,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                                 type="button" 
                                                                 variant="outline" 
                                                                 size="icon"
-                                                                className="h-9 w-9 text-blue-600 border-blue-200 hover:bg-blue-50 shadow-sm"
+                                                                className="h-9 w-9 text-primary border-blue-200 hover:bg-blue-50 shadow-sm"
                                                                 onClick={() => setIsEditContactOpen(true)}
                                                                 title="Editar ficha de contacto"
                                                             >

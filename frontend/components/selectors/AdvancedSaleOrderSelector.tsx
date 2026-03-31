@@ -193,7 +193,7 @@ export function AdvancedSaleOrderSelector({
                                                     onClick={(e) => openPreview(e, order.id)}
                                                     title="Previsualizar"
                                                 >
-                                                    <Eye className="h-4 w-4 text-blue-600" />
+                                                    <Eye className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 {selectedOrder?.id === order.id && (
                                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />

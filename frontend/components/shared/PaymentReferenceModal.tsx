@@ -115,7 +115,7 @@ export function PaymentReferenceModal({
                         <div className={cn("flex items-center gap-4 p-4", FORM_STYLES.card)}>
                             <div className="p-3 bg-white dark:bg-zinc-900 rounded-full shadow-sm">
                                 {selectedPayment.payment_method === 'TRANSFER' ? (
-                                    <Landmark className="h-6 w-6 text-blue-600" />
+                                    <Landmark className="h-6 w-6 text-primary" />
                                 ) : (
                                     <CreditCard className="h-6 w-6 text-emerald-600" />
                                 )}

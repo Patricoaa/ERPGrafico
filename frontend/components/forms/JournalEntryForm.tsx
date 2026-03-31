@@ -93,7 +93,7 @@ const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> })
 
     return (
         <div className="flex justify-end space-x-4 text-sm font-medium pt-2 border-t">
-            <div className={cn("flex flex-col items-end", isBalanced ? "text-green-600" : "text-red-500")}>
+            <div className={cn("flex flex-col items-end", isBalanced ? "text-emerald-700" : "text-destructive")}>
                 <span>Total Debe: {totalDebit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                 <span>Total Haber: {totalCredit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                 {!isBalanced && <span>Diferencia: {diff.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>}
@@ -456,7 +456,7 @@ export function JournalEntryForm({
                                                     size="icon"
                                                     onClick={() => remove(index)}
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -478,7 +478,7 @@ export function JournalEntryForm({
 
                         <FormMessage className="text-right" />
                         {form.formState.errors.items?.root && (
-                            <div className="text-red-500 text-sm text-right font-medium">
+                            <div className="text-destructive text-sm text-right font-medium">
                                 {form.formState.errors.items.root.message}
                             </div>
                         )}

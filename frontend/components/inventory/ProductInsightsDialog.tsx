@@ -201,7 +201,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                     </Card>
                                     <Card className="bg-blue-50/30 border-blue-100">
                                         <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Ingresos (Neto)</p>
+                                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Ingresos (Neto)</p>
                                             <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-blue-900 text-left" />
                                         </CardContent>
                                     </Card>
@@ -213,14 +213,14 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-indigo-50/30 border-indigo-100" : "bg-rose-50/30 border-rose-100"}>
+                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-indigo-100" : "bg-rose-50/30 border-rose-100"}>
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
                                             <div className="flex items-center gap-2">
                                                 <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-indigo-900' : 'text-rose-900'}`}>
                                                     {marginPercent.toFixed(1)}%
                                                 </p>
-                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-indigo-600" /> : <ArrowDownRight className="h-5 w-5 text-rose-600" />}
+                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-rose-600" />}
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -232,7 +232,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <TrendingUp className="h-4 w-4 text-primary" />
                                             Análisis de Precios Unitarios
                                         </h4>
-                                        <div className="rounded-xl border p-4 space-y-3 bg-slate-50/50">
+                                        <div className="rounded-xl border p-4 space-y-3 bg-muted/50">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-muted-foreground">Precio Promedio de Venta:</span>
                                                 <DataCell.Currency value={data.sales_analysis.avg_price} className="font-bold" />
@@ -244,7 +244,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <div className="h-px bg-border pt-2" />
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold">Ganancia por Unidad:</span>
-                                                <DataCell.Currency value={data.sales_analysis.avg_price - data.sales_analysis.avg_cost} className="font-black text-indigo-600" />
+                                                <DataCell.Currency value={data.sales_analysis.avg_price - data.sales_analysis.avg_cost} className="font-black text-primary" />
                                             </div>
                                         </div>
                                     </div>
@@ -254,7 +254,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <Factory className="h-4 w-4 text-primary" />
                                             Consumo en Producción
                                         </h4>
-                                        <div className="rounded-xl border p-4 bg-slate-50/50">
+                                        <div className="rounded-xl border p-4 bg-muted/50">
                                             {data.production_usage.length > 0 ? (
                                                 <div className="space-y-3">
                                                     <div className="flex justify-between items-center">
@@ -446,7 +446,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-indigo-600"
+                                                            className="h-8 w-8 text-primary"
                                                             onClick={() => setActiveWorkOrderId(usage.ot_id)}
                                                         >
                                                             <Eye className="h-4 w-4" />

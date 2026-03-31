@@ -45,28 +45,28 @@ export function AuditTimeline({
                     icon: <PlusCircle className="h-4 w-4 text-green-500" />,
                     label: "Creación",
                     variant: "outline" as const,
-                    color: "bg-green-100 text-green-700 border-green-200"
+                    color: "bg-emerald-100 text-emerald-700 border-green-200"
                 };
             case '~':
                 return {
-                    icon: <Edit className="h-4 w-4 text-blue-500" />,
+                    icon: <Edit className="h-4 w-4 text-primary" />,
                     label: "Edición",
                     variant: "outline" as const,
-                    color: "bg-blue-100 text-blue-700 border-blue-200"
+                    color: "bg-blue-100 text-primary border-blue-200"
                 };
             case '-':
                 return {
-                    icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                    icon: <Trash2 className="h-4 w-4 text-destructive" />,
                     label: "Eliminación",
                     variant: "outline" as const,
                     color: "bg-red-100 text-red-700 border-red-200"
                 };
             default:
                 return {
-                    icon: <History className="h-4 w-4 text-slate-500" />,
+                    icon: <History className="h-4 w-4 text-muted-foreground" />,
                     label: "Cambio",
                     variant: "outline" as const,
-                    color: "bg-slate-100 text-slate-700 border-slate-200"
+                    color: "bg-secondary text-secondary-foreground text-foreground border"
                 };
         }
     };
@@ -130,7 +130,7 @@ export function AuditTimeline({
                                         </div>
 
                                         {item.history_change_reason && (
-                                            <p className="text-sm text-slate-600 bg-slate-50 p-2 rounded italic">
+                                            <p className="text-sm text-muted-foreground bg-muted p-2 rounded italic">
                                                 &quot;{item.history_change_reason}&quot;
                                             </p>
                                         )}
@@ -148,16 +148,16 @@ export function AuditTimeline({
                                                 </Button>
 
                                                 {isExpanded && (
-                                                    <div className="mt-2 text-xs space-y-1 bg-slate-50/50 p-3 rounded-md border border-slate-100">
+                                                    <div className="mt-2 text-xs space-y-1 bg-muted/50 p-3 rounded-md border border-slate-100">
                                                         {diffs.map((d, i) => (
                                                             <div key={i} className="grid grid-cols-12 gap-2 border-b border-slate-100 pb-1 last:border-0">
-                                                                <span className="col-span-3 font-medium text-slate-500">{d.field}:</span>
+                                                                <span className="col-span-3 font-medium text-muted-foreground">{d.field}:</span>
                                                                 <div className="col-span-9 flex items-center gap-2 flex-wrap">
-                                                                    <span className="text-red-600 line-through decoration-red-300">
+                                                                    <span className="text-destructive line-through decoration-red-300">
                                                                         {String(d.old ?? "n/a")}
                                                                     </span>
                                                                     <span className="text-muted-foreground">→</span>
-                                                                    <span className="text-green-600 font-medium">
+                                                                    <span className="text-emerald-700 font-medium">
                                                                         {String(d.new ?? "n/a")}
                                                                     </span>
                                                                 </div>
