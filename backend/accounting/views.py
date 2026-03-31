@@ -136,7 +136,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 'debit': d,
                 'credit': c,
                 'balance': float(balance),
-                'partner': item.partner or '',
+                'partner': item.partner.name if item.partner else '',
                 'label': item.label or '',
                 'source_document': item.entry.get_source_document
             })

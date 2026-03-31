@@ -12,10 +12,11 @@ class ContactSerializer(serializers.ModelSerializer):
     credit_available = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     credit_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     credit_aging = serializers.DictField(read_only=True)
-    partner_account_detail = AccountSerializer(source='partner_account', read_only=True)
     partner_total_contributions = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_total_paid_in = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_pending_capital = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_total_withdrawals = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
@@ -26,8 +27,11 @@ class ContactSerializer(serializers.ModelSerializer):
             'is_default_customer', 'is_default_vendor',
             'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_days', 'credit_balance_used', 'credit_available', 'credit_aging', 'credit_balance',
             'credit_auto_blocked', 'credit_risk_level', 'credit_last_evaluated',
-            'is_partner', 'partner_equity_percentage', 'partner_since', 'partner_account', 'partner_account_detail', 'partner_balance',
+            'is_partner', 'partner_equity_percentage', 'partner_since',
+            'partner_contribution_account', 'partner_provisional_withdrawal_account', 'partner_earnings_account',
+            'partner_balance',
             'partner_total_contributions', 'partner_total_paid_in', 'partner_pending_capital',
+            'partner_provisional_withdrawals_balance', 'partner_total_withdrawals',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -40,12 +44,13 @@ class ContactListSerializer(serializers.ModelSerializer):
     credit_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_total_contributions = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
-        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital']
+        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital', 'partner_provisional_withdrawals_balance']
 
-from .partner_models import PartnerTransaction
+from .partner_models import PartnerTransaction, PartnerEquityStake, ProfitDistributionResolution, ProfitDistributionLine
 
 class PartnerTransactionSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source='partner.name', read_only=True)
@@ -60,7 +65,54 @@ class PartnerTransactionSerializer(serializers.ModelSerializer):
             'id', 'partner', 'partner_name', 'transaction_type', 'transaction_type_display',
             'amount', 'date', 'description', 
             'journal_entry_id', 'journal_entry_display',
-            'treasury_movement',
+            'treasury_movement', 'distribution_resolution',
             'created_by', 'created_by_name', 'created_at'
         ]
         read_only_fields = ['created_by', 'created_at']
+
+
+class PartnerEquityStakeSerializer(serializers.ModelSerializer):
+    partner_name = serializers.CharField(source='partner.name', read_only=True)
+
+    class Meta:
+        model = PartnerEquityStake
+        fields = [
+            'id', 'partner', 'partner_name', 'percentage',
+            'effective_from', 'effective_until', 'is_active',
+            'source_transaction', 'notes', 'created_at',
+        ]
+
+
+class ProfitDistributionLineSerializer(serializers.ModelSerializer):
+    partner_name = serializers.CharField(source='partner.name', read_only=True)
+    destination_display = serializers.CharField(source='get_destination_display', read_only=True)
+
+    class Meta:
+        model = ProfitDistributionLine
+        fields = [
+            'id', 'partner', 'partner_name',
+            'percentage_at_date', 'gross_amount',
+            'provisional_withdrawals_offset', 'net_amount',
+            'destination', 'destination_display',
+            'partner_transaction', 'treasury_movement',
+        ]
+
+
+class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
+    lines = ProfitDistributionLineSerializer(many=True, read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True, default='')
+    executed_by_name = serializers.CharField(source='executed_by.get_full_name', read_only=True, default='')
+
+    class Meta:
+        model = ProfitDistributionResolution
+        fields = [
+            'id', 'display_id', 'fiscal_year', 'resolution_date',
+            'net_result', 'is_profit', 'is_loss',
+            'status', 'status_display',
+            'approved_by', 'approved_by_name', 'approved_at',
+            'executed_by', 'executed_by_name', 'executed_at',
+            'journal_entry', 'acta_number', 'notes',
+            'lines', 'created_at', 'updated_at',
+        ]
+

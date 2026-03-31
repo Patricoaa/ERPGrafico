@@ -66,11 +66,42 @@ export const partnersApi = {
         return response.data
     },
 
-    /**
-     * Get all partner transactions (global ledger)
-     */
     getTransactions: async () => {
         const response = await api.get('/contacts/all_partner_transactions/')
+        return response.data
+    },
+
+    /**
+     * Profit Distributions
+     */
+    getProfitDistributions: async (year?: number) => {
+        const url = year ? `/contacts/profit-distributions/?fiscal_year=${year}` : '/contacts/profit-distributions/'
+        const response = await api.get(url)
+        return response.data
+    },
+
+    createProfitDistribution: async (data: { fiscal_year: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }) => {
+        const response = await api.post('/contacts/profit-distributions/', data)
+        return response.data
+    },
+
+    updateProfitDistributionLines: async (id: number, lines: { line_id: number, destination: string }[]) => {
+        const response = await api.patch(`/contacts/profit-distributions/${id}/update_destinations/`, { lines })
+        return response.data
+    },
+
+    approveProfitDistribution: async (id: number) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/approve/`)
+        return response.data
+    },
+
+    executeProfitDistribution: async (id: number) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/execute/`)
+        return response.data
+    },
+
+    massPaymentProfitDistribution: async (id: number, treasuryAccountId: number) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/mass_payment/`, { treasury_account_id: treasuryAccountId })
         return response.data
     }
 }

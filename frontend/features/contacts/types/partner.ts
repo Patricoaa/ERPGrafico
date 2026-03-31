@@ -32,8 +32,8 @@ export interface PartnerTransaction {
 }
 
 export interface PartnerTransactionPayload {
-    transaction_type: 'CAPITAL_CASH' | 'CAPITAL_INVENTORY' | 'WITHDRAWAL' | 'LOAN_IN' | 'LOAN_OUT';
-    amount: string;
+    transaction_type: 'CAPITAL_CASH' | 'CAPITAL_INVENTORY' | 'SUBSCRIPTION' | 'REDUCTION' | 'TRANSFER' | 'PROV_WITHDRAWAL' | 'DIVIDEND_PAYMENT' | 'REINVESTMENT' | 'LOSS_ABSORPTION' | 'WITHDRAWAL' | 'LOAN_IN' | 'LOAN_OUT';
+    amount: string | number;
     date: string;
     description: string;
     treasury_account_id?: number | null;
