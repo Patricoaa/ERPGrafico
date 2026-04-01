@@ -22,7 +22,7 @@ const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/N
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
 const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
-const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(m => m.WorkOrderForm))
+const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(m => m.WorkOrderForm))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
