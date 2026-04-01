@@ -9,6 +9,7 @@ import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
+import { FORM_STYLES } from '@/lib/styles'
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';
@@ -293,7 +294,7 @@ export function MovementWizard({
                                                 </div>
 
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                    <Label className={FORM_STYLES.label}>
                                                         {transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
                                                     </Label>
                                                     <TreasuryAccountSelector
@@ -364,7 +365,7 @@ export function MovementWizard({
                                                 </div>
                                                 <div className="space-y-4">
                                                     <div className="space-y-2">
-                                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Origen (Retira)</Label>
+                                                        <Label className={FORM_STYLES.label}>Origen (Retira)</Label>
                                                         <TreasuryAccountSelector
                                                             value={fromAccountId}
                                                             onChange={(val) => setFromAccountId(val || "")}
@@ -377,7 +378,7 @@ export function MovementWizard({
                                                         </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Destino (Deposita)</Label>
+                                                        <Label className={FORM_STYLES.label}>Destino (Deposita)</Label>
                                                         <TreasuryAccountSelector
                                                             value={toAccountId}
                                                             onChange={(val) => setToAccountId(val || "")}
@@ -406,7 +407,7 @@ export function MovementWizard({
                                                     <p className="text-sm text-muted-foreground">¿En qué cuenta se registra el {impact === 'IN' ? 'ingreso' : 'gasto'}?</p>
                                                 </div>
                                                 <div className="space-y-2 p-4 bg-muted/20 border rounded-xl">
-                                                    <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                    <Label className={FORM_STYLES.label}>
                                                         {impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
                                                     </Label>
                                                     <TreasuryAccountSelector
@@ -505,7 +506,7 @@ export function MovementWizard({
 
                                         {(isPartnerReason) && (
                                             <div className="space-y-2 bg-primary/5 p-4 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <Label className="text-xs font-bold uppercase text-primary/70 mb-1 block tracking-wider">Socio Responsable</Label>
+                                                <Label className={FORM_STYLES.label}>Socio Responsable</Label>
                                                 <AdvancedContactSelector
                                                     value={contactId ? contactId.toString() : null}
                                                     onChange={(val) => setContactId(val ? parseInt(val) : undefined)}

@@ -48,10 +48,10 @@ export function OrderHeaderDashboard({
 
     const getStepStatusColor = (status: string) => {
         switch (status) {
-            case 'success': return 'text-green-500 bg-green-500/10 border-green-500/20'
+            case 'success': return 'text-success bg-success/10 border-success/20'
             case 'active': return 'text-primary bg-primary/10 border-primary/20 animate-pulse'
             case 'neutral': return 'text-muted-foreground bg-muted/10 border-white/5'
-            case 'destructive': return 'text-destructive bg-destructive/10 border-red-500/20'
+            case 'destructive': return 'text-destructive bg-destructive/10 border-destructive/20'
             case 'not_applicable': return 'text-muted-foreground/30 bg-muted/5 border-transparent opacity-50'
             default: return 'text-muted-foreground'
         }
@@ -59,7 +59,7 @@ export function OrderHeaderDashboard({
 
     const getStepIconColor = (status: string) => {
         switch (status) {
-            case 'success': return 'text-green-500'
+            case 'success': return 'text-success'
             case 'active': return 'text-primary'
             case 'destructive': return 'text-destructive'
             default: return 'text-muted-foreground/50'
@@ -86,7 +86,7 @@ export function OrderHeaderDashboard({
                 <CardContent className="p-4 flex flex-col justify-between h-full">
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Estado Financiero</span>
-                        <span className={cn("text-[10px] font-bold", pendingAmount <= 0 ? "text-green-500" : "text-orange-500")}>
+                        <span className={cn("text-[10px] font-bold", pendingAmount <= 0 ? "text-success" : "text-warning")}>
                             {pendingAmount <= 0 ? "PAGADO" : "PENDIENTE"}
                         </span>
                     </div>
@@ -96,7 +96,7 @@ export function OrderHeaderDashboard({
                             <span>Pagado: {formatCurrency(paidAmount)}</span>
                             <span className="text-muted-foreground/50">{Math.round(paymentProgress)}%</span>
                         </div>
-                        <Progress value={paymentProgress} className={cn("h-1.5 bg-white/5", pendingAmount <= 0 && "bg-green-950 [&>*]:bg-green-500")} />
+                        <Progress value={paymentProgress} className={cn("h-1.5 bg-white/5", pendingAmount <= 0 && "bg-success/20 [&>*]:bg-success")} />
                     </div>
                 </CardContent>
             </Card>
@@ -126,7 +126,7 @@ export function OrderHeaderDashboard({
                                     <span className={cn(
                                         "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",
                                         isActive ? "text-primary" : "text-muted-foreground/70",
-                                        step.status === 'success' && "text-green-500/80"
+                                        step.status === 'success' && "text-success/80"
                                     )}>
                                         {step.label}
                                     </span>

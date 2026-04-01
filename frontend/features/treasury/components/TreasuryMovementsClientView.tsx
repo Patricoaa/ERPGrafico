@@ -15,10 +15,14 @@ import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
-const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
+const TransactionViewModal = lazy(() => 
+    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal }))
+)
 
 interface TreasuryMovement {
     id: number
@@ -111,23 +115,30 @@ export function TreasuryMovementsClientView() {
                 const type = m.movement_type
                 const isWriteOff = m.payment_method === 'WRITE_OFF'
 
+                let status = "info"
                 let label = m.movement_type_display
-                if (isWriteOff) label = "Castigo"
-                else if (type === 'INBOUND') label = "Depósito"
-                else if (type === 'OUTBOUND') label = "Retiro"
-                else if (type === 'TRANSFER') label = "Traspaso"
-                else if (type === 'ADJUSTMENT') label = "Ajuste"
 
-                let variant: "default" | "destructive" | "outline" | "secondary" = "outline"
-                if (isWriteOff) variant = "destructive"
-                else if (type === 'INBOUND') variant = "default"
-                else if (type === 'OUTBOUND') variant = "destructive"
-                else if (type === 'TRANSFER' || type === 'ADJUSTMENT') variant = "secondary"
+                if (isWriteOff) {
+                    status = "voided"
+                    label = "Castigo"
+                } else if (type === 'INBOUND') {
+                    status = "received"
+                    label = "Depósito"
+                } else if (type === 'OUTBOUND') {
+                    status = "sent"
+                    label = "Retiro"
+                } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                    status = "in_progress"
+                    label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
+                }
 
                 return (
-                    <Badge variant={variant} className={cn("text-[10px] uppercase font-bold tracking-tight px-2 py-0", isWriteOff && "bg-rose-600 hover:bg-rose-700")}>
-                        {label}
-                    </Badge>
+                    <StatusBadge 
+                        status={status} 
+                        label={label} 
+                        size="sm" 
+                        className="uppercase font-bold tracking-tight"
+                    />
                 )
             },
         },
@@ -307,7 +318,22 @@ export function TreasuryMovementsClientView() {
                 />
             </Suspense>
 
-            <DataTable
+            {movements.length === 0 && !loading ? (
+                <div className="bg-white rounded-xl border shadow-sm">
+                    <EmptyState
+                        icon={ArrowDown}
+                        title="No hay movimientos"
+                        description="Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual."
+                        action={
+                            <Button onClick={() => setOpenModal(true)} variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Registrar Movimiento
+                            </Button>
+                        }
+                    />
+                </div>
+            ) : (
+                <DataTable
                     columns={columns}
                     data={movements}
                     cardMode
@@ -328,6 +354,7 @@ export function TreasuryMovementsClientView() {
                         },
                     ]}
                 />
+            )}
 
             <Suspense fallback={null}>
                 <TransactionViewModal

@@ -83,10 +83,10 @@ export function TreasuryPhase({
             toast.success("Pago eliminado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
-        } catch (error: unknown) {
+        } catch (error: any) {
             const errorMessage = getErrorMessage(error) || ""
             // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
-            if (errorMessage.includes("publicado") || error.response?.status === 400) {
+            if (errorMessage.includes("publicado") || error?.response?.status === 400) {
                 // Close previous modal
                 setConfirmModal(prev => ({ ...prev, open: false }))
 
@@ -142,7 +142,7 @@ export function TreasuryPhase({
                             ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
                                 icon: Hash,
                                 title: 'Ingresar N° Transacción',
-                                color: 'text-orange-500 hover:bg-orange-500/10',
+                                color: 'text-warning hover:bg-warning/10',
                                 onClick: () => p.id && setTrForm({ open: true, id: p.id, initialValue: "" })
                             }] : []),
                             ...((p.status !== 'CANCELLED') ? [{
@@ -167,18 +167,18 @@ export function TreasuryPhase({
                 <div className="space-y-0.5 py-0.5">
                     <div className="flex items-center justify-between text-[10.5px] font-bold">
                         <span className="text-muted-foreground/60 uppercase tracking-tighter">Pagado</span>
-                        <span className="text-green-500/90">
+                        <span className="text-success/90">
                             {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
                         </span>
                     </div>
                     <div className="flex items-center justify-between text-[10.5px] font-bold">
                         <span className="text-muted-foreground/60 uppercase tracking-tighter">Pendiente</span>
-                        <span className={cn(parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-orange-500" : "text-muted-foreground/30")}>
+                        <span className={cn(parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-warning" : "text-muted-foreground/30")}>
                             {formatCurrency(activeDoc.pending_amount || 0)}
                         </span>
                     </div>
                     {hasPendingTransactions && (
-                        <div className="flex items-center gap-1 mt-0.5 text-[8.5px] text-orange-400/80 animate-pulse font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-1 mt-0.5 text-[8.5px] text-warning/80 animate-pulse font-black uppercase tracking-widest">
                             <AlertCircle className="size-2.5" />
                             Falta N° TRX
                         </div>

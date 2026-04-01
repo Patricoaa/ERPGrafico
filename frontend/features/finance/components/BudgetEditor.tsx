@@ -60,7 +60,7 @@ const BudgetAccountRow = React.memo(({
                     <div className="font-semibold text-sm truncate" title={`${account.code} - ${account.name}`}>
                         {account.code} - {account.name}
                     </div>
-                    <div className="text-[10px] text-muted-foreground uppercase">{account.account_type_display}</div>
+                    <div className={FORM_STYLES.label}>{account.account_type_display}</div>
                 </div>
 
                 <DropdownMenu>

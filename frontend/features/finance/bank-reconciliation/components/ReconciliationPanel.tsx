@@ -571,13 +571,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     if (unreconciledLines.length === 0) {
         return (
-            <Card className="bg-emerald-50 border-emerald-100 shadow-sm border-l-4 border-l-emerald-500">
+            <Card className="bg-success/5 border-success/10 shadow-sm border-l-4 border-l-success">
                 <CardContent className="pt-6">
                     <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                        <CheckCircle2 className="h-6 w-6 text-success" />
                         <div>
-                            <p className="font-bold text-emerald-900">¡Todo reconciliado!</p>
-                            <p className="text-sm text-emerald-700/80">Has completado el procesamiento de todas las líneas de esta cartola.</p>
+                            <p className="font-bold text-success">¡Todo reconciliado!</p>
+                            <p className="text-sm text-success/80">Has completado el procesamiento de todas las líneas de esta cartola.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -609,7 +609,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         onClick={handleAutoMatch}
                         disabled={autoMatching}
                         variant="secondary"
-                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
+                        className="h-10 px-6 font-semibold shadow-sm hover:translate-y-[-1px] transition-all bg-success/10 hover:bg-success/20 text-success border-success/20"
                     >
                         {autoMatching ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -649,7 +649,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
                                 const diff = lineTotal - payTotal
                                 return (
-                                    <p className={cn("text-lg font-black font-mono", Math.abs(diff) < 1 ? "text-emerald-500" : "text-amber-500")}>
+                                    <p className={cn("text-lg font-black font-mono", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
                                         {formatCurrency(Math.abs(diff))}
                                     </p>
                                 )
@@ -688,7 +688,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 text-[10px] font-black text-red-500 hover:text-red-600 hover:bg-red-50 px-2 shrink-0 animate-in fade-in slide-in-from-right-2"
+                                        className="h-8 text-[10px] font-black text-destructive hover:text-destructive/80 hover:bg-destructive/10 px-2 shrink-0 animate-in fade-in slide-in-from-right-2"
                                         onClick={(e) => { e.stopPropagation(); handleBulkExclude(); }}
                                         disabled={matching}
                                     >
@@ -726,7 +726,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         className={cn(
                                             "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20 border-l-2 border-transparent",
                                             isSelected && "bg-primary/[0.03] border-l-primary shadow-[inset_0_0_20px_rgba(0,0,0,0.02)]",
-                                            isSuggested && !isSelected && "bg-amber-50/50 border-l-amber-400"
+                                            isSuggested && !isSelected && "bg-warning/5 border-l-warning"
                                         )}
                                     >
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
@@ -747,7 +747,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
                                                     </span>
                                                     {isSuggested && (
-                                                        <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>
+                                                        <Badge className="bg-warning hover:bg-warning text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>
                                                     )}
                                                 </div>
                                                 <p className={cn(
@@ -767,7 +767,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
                                                         onClick={(e) => { e.stopPropagation(); handleExclude(line.id); }}
                                                         title="Excluir movimiento"
                                                     >
@@ -775,14 +775,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     </Button>
                                                     <div className={cn(
                                                         "text-[15px] font-black font-mono tracking-tight",
-                                                        isCredit ? "text-emerald-600" : "text-red-500"
+                                                        isCredit ? "text-success" : "text-destructive"
                                                     )}>
                                                         {formatCurrency(amount)}
                                                     </div>
                                                 </div>
                                                 <div className={cn(
                                                     "text-[9px] font-bold uppercase tracking-widest",
-                                                    isCredit ? "text-emerald-600/50" : "text-red-500/50"
+                                                    isCredit ? "text-success/50" : "text-destructive/50"
                                                 )}>
                                                     {isCredit ? "Abono" : "Cargo"}
                                                 </div>
@@ -838,8 +838,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         onClick={() => togglePaymentSelection(payment)}
                                         className={cn(
                                             "group relative px-5 py-4 cursor-pointer transition-all hover:bg-muted/20 border-l-2 border-transparent",
-                                            isSelected && "bg-blue-50/50 border-l-blue-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.01)]",
-                                            isSmartSuggestion && !isSelected && "bg-emerald-50/50 border-l-emerald-400"
+                                            isSelected && "bg-info/5 border-l-info shadow-[inset_0_0_20px_rgba(0,0,0,0.01)]",
+                                            isSmartSuggestion && !isSelected && "bg-success/5 border-l-success"
                                         )}
                                     >
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
@@ -847,7 +847,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 checked={isSelected}
                                                 onCheckedChange={() => togglePaymentSelection(payment)}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 h-5 w-5 rounded-md"
+                                                className="data-[state=checked]:bg-info data-[state=checked]:border-info h-5 w-5 rounded-md"
                                             />
                                         </div>
                                         <div className="flex items-start justify-between gap-4 pl-6">
@@ -855,16 +855,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className={cn(
                                                         "text-[10px] font-black px-1.5 py-0.5 rounded",
-                                                        payment.is_batch ? "text-amber-700 bg-amber-100" :
-                                                            (payment.display_id?.startsWith('DEP') || payment.movement_type === 'INBOUND') ? "text-emerald-700 bg-emerald-100" :
-                                                                (payment.display_id?.startsWith('RET') || payment.movement_type === 'OUTBOUND') ? "text-red-700 bg-red-100" :
-                                                                    "text-sky-700 bg-sky-100"
+                                                        payment.is_batch ? "text-warning bg-warning/10" :
+                                                            (payment.display_id?.startsWith('DEP') || payment.movement_type === 'INBOUND') ? "text-success bg-success/10" :
+                                                                (payment.display_id?.startsWith('RET') || payment.movement_type === 'OUTBOUND') ? "text-destructive bg-destructive/10" :
+                                                                    "text-info bg-info/10"
                                                     )}>
                                                         {payment.display_id || payment.code}
                                                     </span>
-                                                    {payment.is_batch && <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 font-bold border-amber-500 text-amber-600">LOTE</Badge>}
-                                                    {isAmountMatch && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
-                                                    {isBackendSuggest && <Badge className="bg-amber-500 hover:bg-amber-500 text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
+                                                    {payment.is_batch && <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 font-bold border-warning text-warning">LOTE</Badge>}
+                                                    {isAmountMatch && <Badge className="bg-success hover:bg-success text-[8px] h-4 py-0 px-1 font-bold">MONTO COINCIDE</Badge>}
+                                                    {isBackendSuggest && <Badge className="bg-warning hover:bg-warning text-[8px] h-4 py-0 px-1 font-bold">SUGERENCIA IA</Badge>}
                                                 </div>
                                                 <p className="text-[15px] font-black text-foreground/90 leading-tight mb-1 flex items-center gap-1.5">
                                                     {payment.partner_name || payment.contact_name || (payment.is_batch ? 'Lote Terminal' : 'Particular')}
@@ -873,14 +873,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 {/* Enriched Info */}
                                                 <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                                                     {payment.document_info && (
-                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full shadow-sm">
+                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-info bg-info/10 border border-info/20 px-2 py-0.5 rounded-full shadow-sm">
                                                             <Sparkles className="h-2.5 w-2.5 opacity-70" />
                                                             {payment.document_info.label}
                                                         </div>
                                                     )}
 
                                                     {payment.is_batch && payment.terminal_reference && (
-                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full shadow-sm">
+                                                        <div className="flex items-center gap-1 text-[10px] font-bold text-warning bg-warning/10 border border-warning/20 px-2 py-0.5 rounded-full shadow-sm">
                                                             Ref: {payment.terminal_reference}
                                                         </div>
                                                     )}
@@ -921,11 +921,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 title="Ajuste de Diferencia"
                 description="Existe un saldo pendiente por justificar en esta operación."
                 variant="transaction"
-                headerClassName="bg-amber-500 text-white border-none"
+                headerClassName="bg-warning text-white border-none"
                 footer={(
                     <div className="flex w-full gap-2 sm:gap-0">
                         <Button variant="ghost" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} className="font-bold text-muted-foreground flex-1">Cancelar</Button>
-                        <Button onClick={confirmDifferenceMatch} disabled={matching} className="bg-amber-600 hover:bg-amber-700 font-bold flex-[2]">
+                        <Button onClick={confirmDifferenceMatch} disabled={matching} className="bg-warning hover:bg-warning/80 font-bold flex-[2]">
                             {matching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Confirmar y Justificar
                         </Button>
@@ -935,14 +935,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <div className="p-6 space-y-6">
                     <div className="bg-muted/50 rounded-xl p-4 flex justify-between items-center border">
                         <span className="text-xs font-bold uppercase text-muted-foreground opacity-60">Diferencia Neta</span>
-                        <span className="text-xl font-black font-mono text-amber-600">{formatCurrency(diffDialog.amount)}</span>
+                        <span className="text-xl font-black font-mono text-warning">{formatCurrency(diffDialog.amount)}</span>
                     </div>
 
                     <div className="grid gap-4">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tipo de Ajuste Contable</Label>
                             <Select value={diffType} onValueChange={setDiffType}>
-                                <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-amber-500">
+                                <SelectTrigger className="h-12 bg-muted/20 border-border/50 focus:ring-warning">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -962,7 +962,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 placeholder="Explica brevemente el motivo de este ajuste..."
                                 value={diffNotes}
                                 onChange={e => setDiffNotes(e.target.value)}
-                                className="resize-none h-24 bg-muted/20 border-border/50 focus:ring-amber-500"
+                                className="resize-none h-24 bg-muted/20 border-border/50 focus:ring-warning"
                             />
                         </div>
                     </div>

@@ -99,7 +99,7 @@ export function ProductionPhase({
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',
-                                color: 'text-orange-500 hover:bg-orange-500/10',
+                                color: 'text-warning hover:bg-warning/10',
                                 onClick: () => handleAnnulWorkOrder(ot.id)
                             }] : [])
                     ]
