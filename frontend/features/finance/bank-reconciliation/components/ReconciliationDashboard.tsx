@@ -2,20 +2,21 @@
 
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
-import { DashboardKPIs } from "./dashboard/DashboardKPIs"
+import { useReconciliation } from "../hooks/useReconciliation"
+import { DashboardKPIs } from "./DashboardKPIs"
 import dynamic from "next/dynamic"
-import { DashboardPendingTable } from "./dashboard/DashboardPendingTable"
+import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 
-const DashboardTrendChart = dynamic(() => import("./dashboard/DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
+const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
     loading: () => <div className="col-span-4 h-[350px] animate-pulse bg-muted rounded-lg" />
 })
 
 export function ReconciliationDashboard() {
-    const [loading, setLoading] = useState(true)
+    const { fetchAccounts, fetchDashboardData, loading } = useReconciliation()
     const [stats, setStats] = useState<any>(null)
     const [trend, setTrend] = useState<any[]>([])
     const [pending, setPending] = useState<any[]>([])
@@ -23,40 +24,24 @@ export function ReconciliationDashboard() {
     const [selectedAccount, setSelectedAccount] = useState<string>("all")
 
     useEffect(() => {
-        fetchAccounts()
+        loadAccounts()
     }, [])
 
     useEffect(() => {
-        fetchDashboardData()
+        loadDashboard()
     }, [selectedAccount])
 
-    const fetchAccounts = async () => {
-        try {
-            const res = await api.get('/treasury/accounts/')
-            setAccounts(res.data)
-        } catch (error) {
-            console.error(error)
-        }
+    const loadAccounts = async () => {
+        const data = await fetchAccounts()
+        setAccounts(data)
     }
 
-    const fetchDashboardData = async () => {
-        setLoading(true)
-        try {
-            const params = selectedAccount !== 'all' ? { treasury_account: selectedAccount } : {}
-
-            const [kpiRes, trendRes, pendingRes] = await Promise.all([
-                api.get('/treasury/reconciliation-reports/dashboard/', { params }),
-                api.get('/treasury/reconciliation-reports/history/', { params }),
-                api.get('/treasury/reconciliation-reports/pending/', { params })
-            ])
-
-            setStats(kpiRes.data)
-            setTrend(trendRes.data)
-            setPending(pendingRes.data)
-        } catch (error) {
-            console.error("Error loading dashboard", error)
-        } finally {
-            setLoading(false)
+    const loadDashboard = async () => {
+        const data = await fetchDashboardData(selectedAccount)
+        if (data) {
+            setStats(data.stats)
+            setTrend(data.trend)
+            setPending(data.pending)
         }
     }
 

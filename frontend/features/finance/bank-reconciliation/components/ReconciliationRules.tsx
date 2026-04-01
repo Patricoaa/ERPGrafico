@@ -16,44 +16,19 @@ import { Plus, Trash2, Edit, Wand2, CheckCircle2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { SimulationResults } from "./rules/SimulationResults"
+import { useReconciliation } from "../hooks/useReconciliation"
+import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
+import { SimulationResults } from "./SimulationResults"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
-interface ReconciliationRule {
-    id: number
-    name: string
-    description: string
-    treasury_account: { id: number, name: string } | null
-    priority: number
-    is_active: boolean
-    auto_confirm: boolean
-    times_applied: number
-    success_rate: number
-    match_config: any
-}
+type RuleRow = ReconciliationRule & { account_name: string }
 
-interface Account {
-    id: number
-    name: string
-}
-
-interface ReconciliationRulesProps {
-    externalOpen?: boolean
-}
-
-
-
-// ── Flattened row type (treasury_account → account_name string) ─────────────
-type RuleRow = Omit<ReconciliationRule, "treasury_account"> & { account_name: string }
-
-export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) {
+export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }) {
     const router = useRouter()
+    const { fetchRules, fetchAccounts, saveRule, createDefaultRules, loading } = useReconciliation()
     const [rules, setRules] = useState<ReconciliationRule[]>([])
     const [accounts, setAccounts] = useState<Account[]>([])
-    const [loading, setLoading] = useState(true)
     const [openDialog, setOpenDialog] = useState(false)
     const [openSimulation, setOpenSimulation] = useState(false)
     const [editingRule, setEditingRule] = useState<Partial<ReconciliationRule>>({})
@@ -65,49 +40,34 @@ export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) 
         }
     }, [externalOpen])
 
-    useEffect(() => { fetchRules(); fetchAccounts() }, [])
+    useEffect(() => { loadData() }, [])
+
+    const loadData = async () => {
+        const [r, a] = await Promise.all([fetchRules(), fetchAccounts()])
+        setRules(r)
+        setAccounts(a)
+    }
 
     const handleDialogChange = (open: boolean) => {
         setOpenDialog(open)
         if (!open) router.replace('/treasury/reconciliation?tab=rules')
     }
 
-    const fetchRules = async () => {
-        try {
-            const res = await api.get('/treasury/reconciliation-rules/')
-            setRules(res.data)
-        } catch { toast.error('Error al cargar reglas') }
-        finally { setLoading(false) }
-    }
-
-    const fetchAccounts = async () => {
-        try { const res = await api.get('/treasury/accounts/'); setAccounts(res.data) }
-        catch { console.error('Error fetching accounts') }
-    }
-
     const handleSaveRule = async () => {
-        try {
-            const payload = { ...editingRule, treasury_account: editingRule.treasury_account?.id || null }
-            if (editingRule.id) {
-                await api.patch(`/treasury/reconciliation-rules/${editingRule.id}/`, payload)
-                toast.success('Regla actualizada')
-            } else {
-                await api.post('/treasury/reconciliation-rules/', payload)
-                toast.success('Regla creada')
-            }
-            fetchRules(); handleDialogChange(false)
-        } catch { toast.error('Error al guardar regla') }
+        const success = await saveRule(editingRule)
+        if (success) {
+            loadData()
+            handleDialogChange(false)
+        }
     }
 
-    const confirmDefaultRules = async (accountId: number) => {
-        try {
-            await api.post('/treasury/reconciliation-rules/create_defaults/', { treasury_account_id: accountId })
-            toast.success('Reglas predeterminadas creadas'); fetchRules()
-        } catch { toast.error('Error al crear reglas predeterminadas') }
+    const handleCreateDefaults = async (accountId: number) => {
+        const success = await createDefaultRules(accountId)
+        if (success) loadData()
     }
 
     // Flatten treasury_account.name for easy filtering/sorting
-    const tableData = useMemo<RuleRow[]>(() =>
+    const tableData = useMemo(() =>
         rules.map(r => ({ ...r, account_name: r.treasury_account?.name || 'Global' })),
         [rules]
     )
@@ -214,7 +174,7 @@ export function ReconciliationRules({ externalOpen }: ReconciliationRulesProps) 
             {/* Empty state when no rules configured */}
             {!loading && rules.length === 0 && (
                 <div className="text-center py-4">
-                    <Button variant="outline" onClick={() => confirmDefaultRules(accounts[0]?.id)}>
+                    <Button variant="outline" onClick={() => handleCreateDefaults(accounts[0]?.id)}>
                         <Wand2 className="mr-2 h-4 w-4" />
                         Generar Reglas Sugeridas
                     </Button>

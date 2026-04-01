@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { JournalEntryForm } from "@/components/forms/JournalEntryForm"
+import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"

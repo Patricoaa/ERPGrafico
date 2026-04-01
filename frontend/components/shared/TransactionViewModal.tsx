@@ -5,7 +5,8 @@ import { useReactToPrint } from "react-to-print"
 import { Loader2 } from "lucide-react"
 
 import { BaseModal } from "@/components/shared/BaseModal"
-import { PaymentForm } from "@/components/forms/PaymentForm"
+import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
+import { PaymentForm } from "@/features/finance/components/PaymentForm"
 import { toast } from "sonner"
 import api from "@/lib/api"
 

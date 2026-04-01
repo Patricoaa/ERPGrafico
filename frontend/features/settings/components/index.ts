@@ -10,3 +10,4 @@ export * from './SalesSettingsView';
 export * from './TerminalFormDialog';
 export * from './UsersSettingsView';
 export * from './partners';
+export * from './CustomFieldTemplateForm';

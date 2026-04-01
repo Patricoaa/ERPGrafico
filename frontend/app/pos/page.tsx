@@ -36,20 +36,19 @@ import {
 import { Check, Printer } from 'lucide-react'
 import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
-import { POSProvider, usePOS } from './contexts/POSContext'
+import { POSProvider, usePOS } from '@/features/pos/contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useProducts } from './hooks/useProducts'
-import { useCart } from './hooks/useCart'
-import { useStockValidation } from './hooks/useStockValidation'
-import { useDrafts } from './hooks/useDrafts'
-import { useDraftSync, type SyncDraft } from './hooks/useDraftSync'
+import { 
+    useProducts, 
+    useCart, 
+    useStockValidation, 
+    useDrafts, 
+    useDraftSync,
+    type SyncDraft 
+} from '@/features/pos/hooks'
 
-// UI Components
-import { SearchBar } from './components/SearchBar'
-import { CategoryFilter } from './components/CategoryFilter'
-import { ProductGrid } from './components/ProductGrid'
-import { Cart } from './components/Cart'
-import { POSCheckoutHeader } from './components/POSCheckoutHeader'
+// UI Components from Feature
+import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader } from '@/features/pos/components'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
@@ -439,7 +438,7 @@ function POSPageContent() {
                             {items.length > 0 && (
                                 <DropdownMenuItem
                                     onClick={() => setWithdrawDialogOpen(true)}
-                                    disabled={items.some(i => !i.track_inventory || (i.product_type !== 'STORABLE' && i.product_type !== 'MANUFACTURABLE'))}
+                                    disabled={items.some(i => !i.track_inventory)}
                                     className="font-bold text-amber-600 focus:text-amber-700"
                                 >
                                     <ShoppingCart className="mr-2 h-4 w-4" />

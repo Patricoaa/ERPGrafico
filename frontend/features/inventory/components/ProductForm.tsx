@@ -36,7 +36,7 @@ import { ProductVariantsTab } from "./product/ProductVariantsTab"
 import { Badge } from "@/components/ui/badge"
 
 // Import dialogs
-import { PricingRuleForm } from "./PricingRuleForm"
+import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 

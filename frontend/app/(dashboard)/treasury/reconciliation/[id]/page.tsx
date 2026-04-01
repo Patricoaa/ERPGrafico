@@ -29,7 +29,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
-import { ReconciliationPanel } from "@/features/treasury"
+import { ReconciliationPanel } from "@/features/finance/bank-reconciliation/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
