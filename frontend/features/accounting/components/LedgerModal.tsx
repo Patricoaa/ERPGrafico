@@ -16,7 +16,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 interface LedgerMovement {
     id: number

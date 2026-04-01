@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/select"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import {
     getGlobalHRSettings,
     updateGlobalHRSettings,
@@ -195,7 +195,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 </div>
             </PageHeader>
 
-            <ServerPageTabs
+            <PageTabs
                 tabs={[
                     { value: "global", label: "Globales", iconName: "settings", href: "/settings/hr?tab=global" },
                     { value: "concepts", label: "Conceptos", iconName: "list-checks", href: "/settings/hr?tab=concepts" },

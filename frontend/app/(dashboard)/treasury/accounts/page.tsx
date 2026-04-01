@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const TreasuryAccountsView = lazy(() =>
     import("@/features/treasury").then(module => ({

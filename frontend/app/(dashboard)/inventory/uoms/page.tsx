@@ -1,5 +1,5 @@
 import { Tabs } from "@/components/ui/tabs"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { UoMsView } from "@/features/inventory/components/UoMsView"
 
 interface PageProps {
@@ -18,7 +18,7 @@ export default async function UnifiedUoMPage({ searchParams }: PageProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <UoMsView activeTab={activeTab} />
             </Tabs>
         </div>

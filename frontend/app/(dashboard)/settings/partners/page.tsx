@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { Building2, PieChart, History, Settings } from "lucide-react"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useSearchParams } from "next/navigation"
 import { EquityCompositionTab } from "@/features/settings/components/partners/EquityCompositionTab"
@@ -24,7 +24,7 @@ export default function PartnersSettingsPage() {
                 icon={Building2}
             />
 
-            <ServerPageTabs
+            <PageTabs
                 tabs={[
                     {
                         value: "composition",

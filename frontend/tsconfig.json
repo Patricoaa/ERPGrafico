@@ -26,21 +26,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "~types": [
-        "./types"
-      ],
-      "~components": [
-        "./components"
-      ],
-      "~features": [
-        "./features"
-      ],
-      "~lib": [
-        "./lib"
-      ],
-      "~hooks": [
-        "./hooks"
       ]
     }
   },

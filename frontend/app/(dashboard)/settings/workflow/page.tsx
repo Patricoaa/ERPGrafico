@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { WorkflowSettings } from "@/features/workflow/components/WorkflowSettings"
 
 interface PageProps {

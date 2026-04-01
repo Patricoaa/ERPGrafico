@@ -11,7 +11,7 @@ import {
 import {
     Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus
 } from "lucide-react"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell } from "@/components/ui/data-table-cells"

@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const ContactsClientView = lazy(() =>
     import("@/features/contacts").then(m => ({ default: m.ContactsClientView }))

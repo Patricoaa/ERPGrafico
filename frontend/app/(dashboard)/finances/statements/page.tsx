@@ -1,5 +1,5 @@
 import { Tabs } from "@/components/ui/tabs"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { StatementsView } from "@/features/finances/components/StatementsView"
 
 interface PageProps {
@@ -19,7 +19,7 @@ export default async function StatementsPage({ searchParams }: PageProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <StatementsView activeTab={activeTab} />
             </Tabs>
         </div>

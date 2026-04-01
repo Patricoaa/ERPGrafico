@@ -33,7 +33,7 @@ import { Switch } from "@/components/ui/switch"
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
 } from "@/components/ui/tabs"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"

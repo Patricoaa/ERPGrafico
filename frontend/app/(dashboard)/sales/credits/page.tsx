@@ -1,11 +1,11 @@
 import { Metadata } from "next"
 import { Suspense, lazy } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Tabs } from "@/components/ui/tabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { BlacklistView } from "@/features/credits/BlacklistView"
+import { BlacklistView } from "@/features/credits/components/BlacklistView"
 
 const CreditPortfolioView = lazy(() =>
     import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
@@ -59,7 +59,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
 
 
 

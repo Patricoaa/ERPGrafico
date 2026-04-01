@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { ShoppingCart } from "lucide-react"

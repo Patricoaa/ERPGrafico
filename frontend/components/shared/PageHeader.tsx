@@ -1,7 +1,9 @@
 "use client"
 
 import React from "react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -19,8 +21,6 @@ interface PageHeaderProps {
  * Reusable Page Header component for consistent titles and descriptions.
  * Supports an optional action area on the right and actions next to the title.
  */
-import { motion } from "framer-motion"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
 export function PageHeader({ title, description, icon: Icon, iconName, titleActions, children, className }: PageHeaderProps) {
     return (

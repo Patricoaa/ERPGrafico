@@ -12,7 +12,7 @@ import {
     Plus,
     Package
 } from "lucide-react"
-import { IndustrialCard } from "@/components/ui/IndustrialCard"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {

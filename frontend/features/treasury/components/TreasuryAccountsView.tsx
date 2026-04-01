@@ -28,8 +28,8 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -229,7 +229,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     return (
         <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} />
+                <PageTabs tabs={tabs} activeValue={activeTab} />
 
                 <PageHeader
                     title={title}

@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 import ContactModal from "@/features/contacts/components/ContactModal"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Button } from "@/components/ui/button"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -225,7 +225,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                 </div>
             </PageHeader>
             
-            <ServerPageTabs
+            <PageTabs
                 tabs={[
                     { value: "general", label: "General", iconName: "building", href: "/settings/company?tab=general" },
                     { value: "branding", label: "Identidad Visual", iconName: "palette", href: "/settings/company?tab=branding" },

@@ -14,7 +14,7 @@ import {
     Info
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { IndustrialCard } from "@/components/ui/IndustrialCard"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 const partnerAccountingSchema = z.object({
     partner_capital_social_account: z.union([z.string(), z.number()]).nullable(),
