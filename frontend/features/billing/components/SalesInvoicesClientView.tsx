@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -33,10 +34,10 @@ export function SalesInvoicesClientView() {
         if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
         try {
             await annulInvoice({ id, force })
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             // Error handling for associated payments
-            const errorMessage = error.response?.data?.error || ""
+            const errorMessage = getErrorMessage(error) || ""
             if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
                 if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
                     handleAnnul(id, true)
@@ -71,9 +72,9 @@ export function SalesInvoicesClientView() {
             toast.success("Operación registrada correctamente")
             setPayingInv(null)
             refetch()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la operación")
+            showApiError(error, "Error al registrar la operación")
         }
     }
 

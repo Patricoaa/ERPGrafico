@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
 import type { AccountFilters, AccountPayload } from '../types'
@@ -24,7 +25,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             toast.success('Cuenta creada exitosamente')
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error || 'Error al crear la cuenta')
+            showApiError(error, 'Error al crear la cuenta')
         }
     })
 
@@ -36,7 +37,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             toast.success('Cuenta actualizada exitosamente')
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error || 'Error al actualizar la cuenta')
+            showApiError(error, 'Error al actualizar la cuenta')
         }
     })
 
@@ -47,7 +48,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             toast.success('Cuenta eliminada exitosamente')
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.error || 'Error al eliminar la cuenta')
+            showApiError(error, 'Error al eliminar la cuenta')
         }
     })
 

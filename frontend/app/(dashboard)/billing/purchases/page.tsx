@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -104,9 +105,9 @@ export default function PurchaseInvoicesPage() {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Documento eliminado correctamente")
             fetchDocuments()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting document:", error)
-            toast.error(error.response?.data?.error || "No se pudo eliminar el documento")
+            showApiError(error, "No se pudo eliminar el documento")
         }
     }
 
@@ -116,9 +117,9 @@ export default function PurchaseInvoicesPage() {
             await api.post(`/billing/invoices/${id}/annul/`, { force })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
-            const errorMessage = error.response?.data?.error || ""
+            const errorMessage = getErrorMessage(error) || ""
 
             if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
                 if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
@@ -160,9 +161,9 @@ export default function PurchaseInvoicesPage() {
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
             fetchDocuments()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la operación")
+            showApiError(error, "Error al registrar la operación")
         }
     }
 

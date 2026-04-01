@@ -103,12 +103,11 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             })
             setIsRestrictionsDialogOpen(false)
             setIsConfirmModalOpen(false)
-        } catch (error: any) {
-            console.error(`Error ${action} product:`, error)
-
-            if (error.response?.status === 400 && error.response?.data?.restrictions) {
+        } catch (error: unknown) {
+            const err = error as any;
+            if (err.response?.status === 400 && err.response?.data?.restrictions) {
                 setTargetProductName(targetProduct.name)
-                setRestrictions(error.response.data.restrictions)
+                setRestrictions(err.response.data.restrictions)
                 setIsRestrictionsDialogOpen(true)
                 setIsConfirmModalOpen(false) // Close the confirmation modal if we show restrictions instead
                 if (isConfirmed && isRestrictionsDialogOpen) toast.error("Aún existen dependencias por resolver.")

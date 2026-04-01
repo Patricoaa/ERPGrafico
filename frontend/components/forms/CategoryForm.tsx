@@ -263,7 +263,7 @@ export function CategoryForm({
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess(response.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving category:", error)
         } finally {
             setLoading(false)

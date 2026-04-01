@@ -1,8 +1,10 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { UserInitialData } from "@/types/forms"
 import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -33,7 +35,7 @@ const userSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>
 
 interface UserFormProps {
-    initialData?: any
+    initialData?: UserInitialData
     onSuccess?: () => void
     trigger?: React.ReactNode
 }
@@ -132,8 +134,8 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
             }
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
-            toast.error(error.response?.data?.detail || "Error al procesar usuario")
+        } catch (error: unknown) {
+            showApiError(error, "Error al procesar usuario")
         } finally {
             setLoading(false)
         }

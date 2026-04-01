@@ -1,5 +1,6 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -284,9 +285,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving work order:", error)
-            const errorMsg = error.response?.data?.error || error.response?.data?.detail || "Error al guardar la Orden de Trabajo"
+            const errorMsg = getErrorMessage(error) || "Error al guardar la Orden de Trabajo"
             toast.error(errorMsg)
         } finally {
             setLoading(false)

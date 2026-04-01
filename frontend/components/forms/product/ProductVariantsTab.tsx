@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/errors"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -144,9 +145,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             fetchVariants()
             setSelectedValues({})
             setIsSheetOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Error al generar variantes", {
-                description: error.response?.data?.error || "Error desconocido"
+                description: getErrorMessage(error) || "Error desconocido"
             })
         } finally {
             setIsGenerating(false)

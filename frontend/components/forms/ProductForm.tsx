@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { ProductInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -43,7 +44,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 interface ProductFormProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    initialData?: any
+    initialData?: ProductInitialData
     onSuccess: () => void
     lockedType?: string
     variantMode?: boolean
@@ -333,22 +334,28 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             });
 
             if (initialData) {
+                const getId = (val: any) => {
+                    if (val == null) return ""
+                    if (typeof val === "object" && "id" in val) return val.id.toString()
+                    return val.toString()
+                }
+
                 form.reset({
                     code: initialData.code || "",
                     internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
-                    category: initialData.category?.id?.toString() || initialData.category?.toString() || "",
+                    category: getId(initialData.category),
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: initialData.uom?.id?.toString() || initialData.uom?.toString() || "",
-                    sale_uom: initialData.sale_uom?.id?.toString() || initialData.sale_uom?.toString() || "",
-                    purchase_uom: initialData.purchase_uom?.id?.toString() || initialData.purchase_uom?.toString() || "",
+                    uom: getId(initialData.uom),
+                    sale_uom: getId(initialData.sale_uom),
+                    purchase_uom: getId(initialData.purchase_uom),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map((u: any) => u.id?.toString() || u.toString())
-                        : (initialData.uom ? [(initialData.uom.id || initialData.uom).toString()] : []), // Safeguard: Ensure at least base UoM is allowed
-                    receiving_warehouse: initialData.receiving_warehouse?.id?.toString() || initialData.receiving_warehouse?.toString() || "",
+                        ? initialData.allowed_sale_uoms.map((u: any) => getId(u))
+                        : (initialData.uom ? [getId(initialData.uom)] : []), // Safeguard: Ensure at least base UoM is allowed
+                    receiving_warehouse: getId(initialData.receiving_warehouse),
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -617,11 +624,11 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
             }
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving product", error)
+            const errorData = (error as any).response?.data
 
             let errorMessage = "No se pudo guardar el producto."
-            const errorData = error.response?.data
 
             if (errorData) {
                 if (typeof errorData === 'object') {

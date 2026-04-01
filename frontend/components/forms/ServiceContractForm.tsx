@@ -1,8 +1,10 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { ServiceContractInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -34,7 +36,7 @@ const formSchema = z.object({
 
 interface ServiceContractFormProps {
     onSuccess?: () => void
-    initialData?: any
+    initialData?: ServiceContractInitialData
 }
 
 export function ServiceContractForm({ onSuccess, initialData }: ServiceContractFormProps) {
@@ -118,9 +120,9 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
             } else {
                 router.push("/services/contracts")
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.response?.data?.error || "Error al guardar contrato")
+            showApiError(error, "Error al guardar contrato")
         }
     }
 

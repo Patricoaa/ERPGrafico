@@ -318,7 +318,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             }
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             const err = error as any
             console.error("Error saving terminal:", err.response?.data || err)
             toast.error("Error al guardar terminal")

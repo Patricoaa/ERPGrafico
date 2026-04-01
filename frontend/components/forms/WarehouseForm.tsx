@@ -1,8 +1,10 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -31,7 +33,7 @@ type WarehouseFormValues = z.infer<typeof warehouseSchema>
 
 interface WarehouseFormProps {
     onSuccess?: () => void
-    initialData?: any
+    initialData?: WarehouseInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
@@ -78,9 +80,9 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving warehouse:", error)
-            alert(error.response?.data?.detail || "Error al guardar el almacén")
+            showApiError(error, "Error al guardar el almacén")
         } finally {
             setLoading(false)
         }

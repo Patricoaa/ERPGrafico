@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -331,9 +332,9 @@ export function PurchaseCheckoutWizard({
             toast.success("Compra procesada correctamente")
             onComplete()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Checkout error:", error)
-            toast.error(error.response?.data?.error || "Error al procesar la compra")
+            showApiError(error, "Error al procesar la compra")
         } finally {
             setLoading(false)
         }

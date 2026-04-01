@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -420,7 +421,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             if (onSuccess) onSuccess()
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al cambiar de etapa")
+            showApiError(error, "Error al cambiar de etapa")
         } finally {
             setTransitioning(false)
         }
@@ -442,7 +443,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             await handleTransition('FINISHED')
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al rectificar y finalizar la OT")
+            showApiError(error, "Error al rectificar y finalizar la OT")
         } finally {
             setIsRectifying(false)
         }
@@ -532,7 +533,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             fetchOrder()
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al guardar material")
+            showApiError(error, "Error al guardar material")
         } finally {
             setAddingMaterial(false)
         }
@@ -580,7 +581,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             fetchOrder()
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al eliminar material")
+            showApiError(error, "Error al eliminar material")
         }
     }
 
@@ -598,7 +599,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             fetchOrder()
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al anular la orden")
+            showApiError(error, "Error al anular la orden")
         } finally {
             setIsAnnuling(false)
         }
@@ -619,7 +620,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             if (onSuccess) onSuccess()
         } catch (err) {
             const error: any = err
-            toast.error(error.response?.data?.error || "Error al eliminar la orden")
+            showApiError(error, "Error al eliminar la orden")
         } finally {
             setIsDeleting(false)
         }

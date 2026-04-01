@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
@@ -292,9 +293,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess(res?.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving sale order:", error)
-            toast.error(error.response?.data?.detail || "Error al guardar la Nota de Venta")
+            showApiError(error, "Error al guardar la Nota de Venta")
         } finally {
             setLoading(false)
         }

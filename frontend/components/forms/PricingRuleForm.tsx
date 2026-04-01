@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
+import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -55,7 +56,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface PricingRuleFormProps {
-    initialData?: any
+    initialData?: PricingRuleInitialData
     onSuccess?: () => void
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -160,7 +161,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
             }
             onSuccess?.()
             onOpenChange?.(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
             toast.error("Error al guardar la regla")
         }

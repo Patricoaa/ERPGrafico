@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -314,9 +315,9 @@ export function BOMFormDialog({
             setTimeout(() => {
                 onOpenChange(false)
             }, 100)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving BOM:", error)
-            toast.error("Error al guardar Lista de Materiales: " + (error.response?.data?.detail || error.message))
+            showApiError(error, "Error al guardar Lista de Materiales: ")
         } finally {
             setLoading(false)
         }

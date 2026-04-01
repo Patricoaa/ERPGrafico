@@ -1,7 +1,9 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm, useWatch, Control } from "react-hook-form"
+import { PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -49,7 +51,7 @@ type PaymentFormValues = z.infer<typeof paymentSchema>
 
 interface PaymentFormProps {
     onSuccess?: () => void
-    initialData?: any
+    initialData?: PaymentInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerText?: string
@@ -172,8 +174,8 @@ export function PaymentForm({
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar")
         } finally {
             setLoading(false)
         }

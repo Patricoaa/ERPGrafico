@@ -126,7 +126,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             
             if (onSuccess) onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Error handled by hook
         }
     }

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -133,9 +134,9 @@ export default function TaxDeclarationsPage() {
             toast.success("Pago de impuestos registrado correctamente")
             fetchPeriods()
             setIsPaymentOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar el pago")
+            showApiError(error, "Error al registrar el pago")
         }
     }
 

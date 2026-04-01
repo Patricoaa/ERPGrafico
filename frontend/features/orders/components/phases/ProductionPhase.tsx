@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
@@ -69,8 +70,8 @@ export function ProductionPhase({
                     toast.success("OT anulada correctamente")
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
-                } catch (error: any) {
-                    toast.error(error.response?.data?.error || "Error al anular OT")
+                } catch (error: unknown) {
+                    showApiError(error, "Error al anular OT")
                 }
             },
             description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?"

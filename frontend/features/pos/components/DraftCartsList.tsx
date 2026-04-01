@@ -115,7 +115,7 @@ export function DraftCartsList({
             const newDrafts = Array.isArray(data) ? data : []
             setDrafts(newDrafts)
             setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error al cargar borradores:", error)
             toast.error("Error al cargar los borradores")
         } finally {
@@ -187,7 +187,7 @@ export function DraftCartsList({
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error al eliminar borrador:", error)
             if (error.response?.status === 404) {
                 toast.info("El borrador ya no existía en el servidor")

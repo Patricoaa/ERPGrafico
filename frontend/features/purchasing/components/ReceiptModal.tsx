@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -199,9 +200,9 @@ export function ReceiptModal({
             toast.success(isRefund ? "Devolución registrada correctamente" : "Recepción registrada correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error receiving order:", error)
-            toast.error(error.response?.data?.error || (isRefund ? "Error al registrar la devolución" : "Error al registrar la recepción"))
+            showApiError(error, isRefund ? "Error al registrar la devolución" : "Error al registrar la recepción")
         } finally {
             setSubmitting(false)
         }

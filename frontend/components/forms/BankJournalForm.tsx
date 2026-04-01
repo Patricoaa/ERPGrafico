@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -94,9 +95,9 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving journal:", error)
-            alert(error.response?.data?.detail || "Error al guardar la caja/banco")
+            showApiError(error, "Error al guardar la caja/banco")
         } finally {
             setLoading(false)
         }

@@ -1,5 +1,6 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/errors"
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
@@ -295,8 +296,8 @@ function POSPageContent() {
             await fetchDrafts()
             forceSync()
             setPosMode('SHOPPING')
-        } catch (error: any) {
-            const msg = error.response?.data?.error || "Error al procesar el retiro"
+        } catch (error: unknown) {
+            const msg = getErrorMessage(error) || "Error al procesar el retiro"
             toast.error(msg)
         } finally {
             setIsWithdrawing(false)

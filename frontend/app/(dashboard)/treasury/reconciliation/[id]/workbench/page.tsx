@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -62,9 +63,9 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
             await api.post(`/treasury/statements/${statementId}/confirm/`)
             alert('✅ Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error confirming statement:', error)
-            alert(error.response?.data?.error || 'Error al confirmar cartola')
+            showApiError(error, 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
         }

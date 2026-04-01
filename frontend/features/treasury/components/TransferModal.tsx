@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -102,9 +103,9 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
             setToAccount("")
             setAmount("")
             setNotes("")
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.response?.data?.error || "Error al registrar el traspaso.")
+            showApiError(error, "Error al registrar el traspaso.")
         } finally {
             setSubmitting(false)
         }

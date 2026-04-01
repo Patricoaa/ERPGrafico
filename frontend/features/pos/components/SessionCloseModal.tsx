@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -183,8 +184,8 @@ export function SessionCloseModal({
             setJustifyReason("")
             setJustifyTargetId(null)
             setCashDestinationId(null)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al cerrar caja")
+        } catch (error: unknown) {
+            showApiError(error, "Error al cerrar caja")
         } finally {
             setSubmitting(false)
         }

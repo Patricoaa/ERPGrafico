@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import {
     Dialog,
@@ -121,7 +122,7 @@ export function NoteCheckoutWizard({
             // Initial Payment Amount default
             setPaymentData((p: any) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error initializing note wizard:", error)
             toast.error("Error al cargar datos de la factura original.")
             onOpenChange(false)
@@ -292,9 +293,9 @@ export function NoteCheckoutWizard({
             onSuccess?.()
             onOpenChange(false)
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Checkout error:", error)
-            toast.error(error.response?.data?.error || "Error al finalizar el proceso.")
+            showApiError(error, "Error al finalizar el proceso.")
         } finally {
             setLoading(false)
         }

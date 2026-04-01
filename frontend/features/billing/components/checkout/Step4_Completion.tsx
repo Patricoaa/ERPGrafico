@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lucide-react"
@@ -25,9 +26,9 @@ export function Step4_Completion({
             setLoading(true)
             const res = await api.post(`/billing/note-workflows/${workflow.id}/complete/`)
             onSuccess(res.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error completing workflow:", error)
-            toast.error(error.response?.data?.error || "Error al finalizar el proceso.")
+            showApiError(error, "Error al finalizar el proceso.")
         } finally {
             setLoading(false)
         }

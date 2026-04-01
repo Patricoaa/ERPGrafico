@@ -1,8 +1,10 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
 import { CalendarIcon, Plus, Trash2, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
@@ -73,7 +75,7 @@ type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
 interface JournalEntryFormProps {
     accounts?: any[]
     onSuccess?: () => void
-    initialData?: any
+    initialData?: JournalEntryInitialData
     triggerText?: string
     triggerVariant?: "default" | "circular"
     open?: boolean
@@ -213,9 +215,9 @@ export function JournalEntryForm({
 
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving entry:", error)
-            const detail = error.response?.data?.error || error.response?.data?.detail || "Error al guardar el asiento"
+            const detail = getErrorMessage(error) || "Error al guardar el asiento"
             // Check if validation array error
             if (typeof detail === 'object') {
                 toast.error("Error de validación: Revise los campos")

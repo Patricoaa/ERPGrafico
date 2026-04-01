@@ -27,6 +27,7 @@ export const productSchema = z.object({
     attribute_values: z.array(z.string()).default([]),
     variant_display_name: z.string().optional().or(z.literal("")),
     variant_updates: z.array(z.any()).default([]), // Tracks pending local updates to variants
+    variant_generation_selection: z.array(z.any()).optional(), // Temporary state for generating variants during creation
     mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),

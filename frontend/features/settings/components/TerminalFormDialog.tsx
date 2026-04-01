@@ -188,7 +188,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             }
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
             toast.error("Error al guardar terminal")
         } finally {

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -140,9 +141,9 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             toast.success("Logística procesada correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error processing logistics:", error)
-            toast.error(error.response?.data?.error || "Error al procesar logística")
+            showApiError(error, "Error al procesar logística")
         } finally {
             setSubmitting(false)
         }

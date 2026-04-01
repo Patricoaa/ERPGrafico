@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useEffect, useState, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
@@ -123,9 +124,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             await api.delete(`/purchasing/orders/${id}/`)
             toast.success("Orden de Compra eliminada correctamente.")
             fetchOrders()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting order:", error)
-            toast.error(error.response?.data?.error || "Error al eliminar la orden de compra.")
+            showApiError(error, "Error al eliminar la orden de compra.")
         }
     }
 
@@ -135,9 +136,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             await api.post(`/purchasing/orders/${id}/annul/`, { force })
             toast.success("Orden de Compra anulada correctamente.")
             fetchOrders()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error annulling order:", error)
-            const errorMessage = error.response?.data?.error || ""
+            const errorMessage = getErrorMessage(error) || ""
 
             if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
                 if (confirm("Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
@@ -179,9 +180,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             await api.delete(`/billing/invoices/${invoiceId}/`)
             toast.success("Documento eliminado correctamente")
             fetchOrders()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting invoice:", error)
-            toast.error(error.response?.data?.error || "Error al eliminar el documento")
+            showApiError(error, "Error al eliminar el documento")
         }
     }
 

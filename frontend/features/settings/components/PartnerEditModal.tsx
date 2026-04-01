@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -59,8 +60,8 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
             toast.success("Configuración de socio actualizada")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al actualizar")
+        } catch (error: unknown) {
+            showApiError(error, "Error al actualizar")
         } finally {
             setSubmitting(false)
         }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { getErrorMessage } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -160,7 +161,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             })
             setMapping(newMapping)
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Preview error:', error)
             setError("No se pudo generar la vista previa. Revisa el archivo.")
         } finally {
@@ -212,10 +213,10 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                 handleClose()
             }, 1500)
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error importing:', error)
             setError(
-                error.response?.data?.error ||
+                getErrorMessage(error) ||
                 'Error al importar la cartola.'
             )
         } finally {

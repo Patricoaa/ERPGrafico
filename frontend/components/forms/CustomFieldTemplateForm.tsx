@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState } from 'react'
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -87,8 +88,8 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
             onSuccess(response.data)
             form.reset()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Error al crear plantilla")
+        } catch (error: unknown) {
+            showApiError(error, "Error al crear plantilla")
         } finally {
             setLoading(false)
         }
