@@ -11,7 +11,6 @@ import { Trash2, Plus, Loader2, Calculator, Info, Package, X } from "lucide-reac
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { SearchBar } from "@/app/pos/components/SearchBar"
 import { CategoryFilter } from "@/app/pos/components/CategoryFilter"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
@@ -22,6 +21,7 @@ import {
     SheetDescription
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 
 interface Product {
@@ -72,14 +72,15 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { closeHub } = useHubPanel()
 
     const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("COST_CALCULATOR")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            closeHub()
         }
         if (!newOpen) handleClose()
         else onOpenChange(newOpen)
@@ -105,8 +106,8 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     const { data: categories = [], isLoading: loadingCategories } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
-            const res = await api.get('/inventory/categories/?page_size=9999')
-            return res.data.results || res.data
+            const data = await inventoryApi.getCategories()
+            return data
         },
         enabled: open,
         staleTime: 1000 * 60 * 60, // 1 hour cache

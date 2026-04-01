@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface WorkOrder {
     id: number
@@ -85,8 +87,7 @@ export default function WorkOrdersPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible.")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/orders/${id}/`)
             toast.success("OT eliminada correctamente.")
@@ -95,10 +96,11 @@ export default function WorkOrdersPage() {
             console.error("Error deleting order:", error)
             toast.error("Error al eliminar la OT.")
         }
-    }
+    })
 
-    const handleCancel = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const cancelConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.post(`/production/orders/${id}/transition/`, {
                 next_stage: 'CANCELLED'
@@ -109,7 +111,9 @@ export default function WorkOrdersPage() {
             console.error("Error canceling order:", error)
             toast.error("Error al anular la OT.")
         }
-    }
+    })
+
+    const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)
 
     const handleKanbanTransition = async (orderId: number, nextStage: string) => {
         // Instead of auto-transitioning, open the wizard to validate/confirm details
@@ -336,6 +340,24 @@ export default function WorkOrdersPage() {
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
                 />
             </div>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar OT"
+                description="¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={cancelConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
+                onConfirm={cancelConfirm.confirm}
+                title="Anular OT"
+                description="¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas."
+                variant="destructive"
+            />
         </div >
     )
 }

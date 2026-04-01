@@ -5,6 +5,7 @@ import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { ShoppingCart } from "lucide-react"
+import api from "@/lib/api"
 
 // Lazy load heavy components
 const SaleOrderForm = lazy(() => import("@/features/sales/components/forms/SaleOrderForm"))
@@ -112,6 +113,11 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                         onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
                         invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
                         invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={() => setCompletingFolio(null)}
                     />
                 </Suspense>

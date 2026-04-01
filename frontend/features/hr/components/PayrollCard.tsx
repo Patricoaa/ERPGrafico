@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { FORM_STYLES } from "@/lib/styles"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface PayrollCardProps {
     payroll: Payroll
@@ -31,8 +33,8 @@ interface PayrollCardProps {
     className?: string
 }
 
-function ItemRow({ item, type, isReadOnly, onEdit, onDelete }: {
-    item: PayrollItem, type: 'HABER' | 'DESCUENTO', isReadOnly: boolean, onEdit?: (i: PayrollItem) => void, onDelete?: (i: PayrollItem) => void
+function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
+    item: PayrollItem, type: 'HABER' | 'DESCUENTO', isReadOnly: boolean, onEdit?: (i: PayrollItem) => void, onDeleteRequest?: (i: PayrollItem) => void
 }) {
     return (
         <TableRow className="group border-none hover:bg-muted/50 transition-colors">
@@ -69,7 +71,7 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDelete }: {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50"
-                            onClick={() => { if (confirm("¿Eliminar?")) onDelete?.(item) }}
+                            onClick={() => onDeleteRequest?.(item)}
                         >
                             <Trash2 className="h-3 w-3" />
                         </Button>
@@ -137,8 +139,20 @@ export function PayrollCard({
         }))
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
+    const [itemToDelete, setItemToDelete] = React.useState<PayrollItem | null>(null)
+
     const totalPaid = unifiedPayments.reduce((acc, p) => acc + p.amount, 0)
     const pendingToPay = netSalary - totalPaid
+
+    const itemDeleteConfirm = useConfirmAction(async () => {
+        if (onDeleteItem && itemToDelete) onDeleteItem(itemToDelete)
+        setItemToDelete(null)
+    })
+
+    const handleItemDeleteRequest = (item: PayrollItem) => {
+        setItemToDelete(item)
+        itemDeleteConfirm.requestConfirm()
+    }
 
     return (
         <Card className={cn("max-w-4xl mx-auto shadow-2xl border-none overflow-hidden bg-white rounded-3xl", className)}>
@@ -262,7 +276,7 @@ export function PayrollCard({
                         <TableBody>
                             {/* HABERES SECTION */}
                             {haberes.map(item => (
-                                <ItemRow key={item.id} item={item} type="HABER" isReadOnly={isReadOnly} onEdit={onEditItem} onDelete={onDeleteItem} />
+                                <ItemRow key={item.id} item={item} type="HABER" isReadOnly={isReadOnly} onEdit={onEditItem} onDeleteRequest={handleItemDeleteRequest} />
                             ))}
 
                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-y">
@@ -275,10 +289,10 @@ export function PayrollCard({
 
                             {/* DESCUENTOS SECTION */}
                             {workerLegalDiscounts.map(item => (
-                                <ItemRow key={item.id} item={item} type="DESCUENTO" isReadOnly={isReadOnly} onEdit={onEditItem} onDelete={onDeleteItem} />
+                                <ItemRow key={item.id} item={item} type="DESCUENTO" isReadOnly={isReadOnly} onEdit={onEditItem} onDeleteRequest={handleItemDeleteRequest} />
                             ))}
                             {otherDiscounts.map(item => (
-                                <ItemRow key={item.id} item={item} type="DESCUENTO" isReadOnly={isReadOnly} onEdit={onEditItem} onDelete={onDeleteItem} />
+                                <ItemRow key={item.id} item={item} type="DESCUENTO" isReadOnly={isReadOnly} onEdit={onEditItem} onDeleteRequest={handleItemDeleteRequest} />
                             ))}
 
                             <TableRow className="bg-muted/80 hover:bg-muted/80 border-y border/60 transition-colors">
@@ -424,6 +438,20 @@ export function PayrollCard({
                 </div>
 
             </CardContent>
+
+            <ActionConfirmModal
+                open={itemDeleteConfirm.isOpen}
+                onOpenChange={(open) => { 
+                    if (!open) {
+                        itemDeleteConfirm.cancel()
+                        setItemToDelete(null)
+                    }
+                }}
+                onConfirm={itemDeleteConfirm.confirm}
+                title="Eliminar Línea"
+                description={`¿Eliminar línea: ${itemToDelete?.concept_detail?.name || 'Item'}?`}
+                variant="destructive"
+            />
         </Card>
     )
 }

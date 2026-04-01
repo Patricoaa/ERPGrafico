@@ -16,6 +16,8 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductAttribute {
     id: number
@@ -103,8 +105,7 @@ export function AttributeManager() {
         }
     }
 
-    const handleDeleteAttribute = async (id: number) => {
-        if (!confirm("¿Seguro que deseas eliminar este atributo y todos sus valores?")) return
+    const deleteAttrConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/attributes/${id}/`)
             toast.success("Atributo eliminado")
@@ -112,10 +113,11 @@ export function AttributeManager() {
         } catch (error) {
             toast.error("Error al eliminar")
         }
-    }
+    })
 
-    const handleDeleteValue = async (id: number) => {
-        if (!confirm("¿Seguro que deseas eliminar este valor?")) return
+    const handleDeleteAttribute = (id: number) => deleteAttrConfirm.requestConfirm(id)
+
+    const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/attribute-values/${id}/`)
             toast.success("Valor eliminado")
@@ -123,7 +125,9 @@ export function AttributeManager() {
         } catch (error) {
             toast.error("Error al eliminar valor")
         }
-    }
+    })
+
+    const handleDeleteValue = (id: number) => deleteValueConfirm.requestConfirm(id)
 
     const columns: ColumnDef<ProductAttribute>[] = [
         {
@@ -313,6 +317,24 @@ export function AttributeManager() {
                     </div>
                 </div>
             </BaseModal>
+
+            <ActionConfirmModal
+                open={deleteAttrConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteAttrConfirm.cancel() }}
+                onConfirm={deleteAttrConfirm.confirm}
+                title="Eliminar Atributo"
+                description="¿Seguro que deseas eliminar este atributo y todos sus valores?"
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={deleteValueConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteValueConfirm.cancel() }}
+                onConfirm={deleteValueConfirm.confirm}
+                title="Eliminar Valor de Atributo"
+                description="¿Seguro que deseas eliminar este valor?"
+                variant="destructive"
+            />
         </div>
     )
 }

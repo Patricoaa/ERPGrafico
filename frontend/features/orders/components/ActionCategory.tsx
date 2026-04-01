@@ -376,6 +376,11 @@ export const ActionCategory = forwardRef(({
                     onOpenChange={closeModal}
                     invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
                     invoiceType={resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
+                    onComplete={async (invoiceId, formData) => {
+                        await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        })
+                    }}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}

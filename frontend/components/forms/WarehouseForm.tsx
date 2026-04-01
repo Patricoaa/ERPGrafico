@@ -19,7 +19,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { List, Warehouse } from "lucide-react"
 
@@ -32,13 +31,14 @@ const warehouseSchema = z.object({
 type WarehouseFormValues = z.infer<typeof warehouseSchema>
 
 interface WarehouseFormProps {
+    auditSidebar?: React.ReactNode
     onSuccess?: () => void
     initialData?: WarehouseInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
 
-export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
+export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -182,10 +182,7 @@ export function WarehouseForm({ onSuccess, initialData, open: openProp, onOpenCh
 
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="warehouse"
-                        />
+                        {auditSidebar}
                     </div>
                 )}
             </div>

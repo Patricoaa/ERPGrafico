@@ -12,28 +12,30 @@ import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface PricingRule {
     id: number
     name: string
-    product: number | null
-    product_name: string | null
-    category: number | null
-    category_name: string | null
-    uom: number | null
-    uom_name: string | null
-    product_code?: string | null
+    product?: number
+    product_name?: string
+    category?: number
+    category_name?: string
+    uom?: number
+    uom_name?: string
+    product_code?: string
     product_internal_code?: string | null
-    operator: string
+    operator: "BT" | "GT" | "LT" | "EQ" | "GE" | "LE"
     operator_display: string
     min_quantity: string
-    max_quantity: string | null
+    max_quantity?: string
     rule_type: "FIXED" | "DISCOUNT_PERCENTAGE"
     rule_type_display: string
-    fixed_price: string | null
-    discount_percentage: string | null
-    start_date: string | null
-    end_date: string | null
+    fixed_price?: string
+    discount_percentage?: string
+    start_date?: string
+    end_date?: string
     priority: number
     active: boolean
 }
@@ -72,8 +74,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta regla?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/pricing-rules/${id}/`)
             toast.success("Regla eliminada correctamente.")
@@ -82,7 +83,9 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             console.error("Error deleting rule:", error)
             toast.error("Error al eliminar la regla.")
         }
-    }
+    })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     useEffect(() => {
         fetchRules()
@@ -259,6 +262,15 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                     useAdvancedFilter={true}
                 />
             </div>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Regla de Precios"
+                description="¿Está seguro de que desea eliminar esta regla?"
+                variant="destructive"
+            />
         </div>
     )
 }

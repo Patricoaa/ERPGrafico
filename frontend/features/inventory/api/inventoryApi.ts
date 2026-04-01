@@ -27,4 +27,12 @@ export const inventoryApi = {
         const { data } = await api.patch<Product>(`/inventory/products/${id}/`, payload)
         return data
     },
+
+    /**
+     * Fetch product categories
+     */
+    getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
+        const { data } = await api.get('/inventory/categories/', { params: { page_size: 9999 } })
+        return data.results || data
+    },
 }

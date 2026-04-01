@@ -33,7 +33,6 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Badge } from "@/components/ui/badge"
 
 // Import dialogs
@@ -42,6 +41,7 @@ import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductFormProps {
+    auditSidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
     initialData?: ProductInitialData
@@ -50,7 +50,7 @@ interface ProductFormProps {
     variantMode?: boolean
 }
 
-export function ProductForm({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
+export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const [uoms, setUoms] = useState<any[]>([])
@@ -862,10 +862,7 @@ export function ProductForm({ open, onOpenChange, initialData, onSuccess, locked
                 {/* Activity Sidebar */}
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="product"
-                        />
+                        {auditSidebar}
                     </div>
                 )}
             </div>

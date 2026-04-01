@@ -10,13 +10,9 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
-
-interface Group {
-    id: number
-    name: string
-}
+import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
+import { AppGroup as Group } from "@/types/entities"
 
 interface GroupSelectorProps {
     value?: string | null // Group name
@@ -26,72 +22,36 @@ interface GroupSelectorProps {
 }
 
 export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false }: GroupSelectorProps) {
+    const { groups, loading: searchLoading, fetchGroups } = useGroupSearch()
     const [open, setOpen] = useState(false)
-    const [groups, setGroups] = useState<Group[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
     // In this case, value is the NAME of the group, not ID, as per our plan to store name in assigned_group
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
 
-    // Fetch initial selected group (by name match)
-    // We fetch all or search by name to confirm validity? 
-    // For now, if value is present, we might assume it's valid or try to find it in the list.
-    // Ideally we should have an endpoint to get by name, but list is okay.
-
-    const fetchGroups = async (search = "") => {
-        setLoading(true)
-        try {
-            const params = new URLSearchParams()
-            if (search) params.append('search', search)
-
-            // Since we don't have search on the ViewSet (ReadOnlyModelViewSet default might not have search configured?),
-            // we should double check if we added SearchFilter to GroupViewSet.
-            // If not, we might get all groups. Groups are usually few, so getting all is fine.
-
-            const res = await api.get(`/core/groups/`)
-            // Standard ViewSet returns list or pagination. 
-            // If we didn't set pagination, it might be list.
-            const list = Array.isArray(res.data) ? res.data : (res.data.results || [])
-
-            let filtered = list
-            if (search) {
-                // Client side filtering if backend doesn't support it yet
-                const lower = search.toLowerCase()
-                filtered = list.filter((g: Group) => g.name.toLowerCase().includes(lower))
-            }
-
-            setGroups(filtered)
-
-            // Sync selected
-            if (value && !selectedGroup) {
-                const found = list.find((g: Group) => g.name === value)
-                if (found) setSelectedGroup(found)
-            }
-        } catch (error) {
-            console.error("Error fetching groups", error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
+    // Handle fetching and syncing selected group
     useEffect(() => {
         if (open) {
             fetchGroups(debouncedSearch)
         }
-    }, [debouncedSearch, open])
+    }, [debouncedSearch, open, fetchGroups])
 
-    // Also fetch on mount/value change to set label if possible?
     useEffect(() => {
         if (value && !selectedGroup) {
-            // Need to fetch at least once to get the object with ID if we wanted ID,
-            // but we have name. We need the object mainly for consistency in UI logic.
+            // Fetch once if we need to map name to object (e.g. initial render)
             fetchGroups()
         } else if (!value) {
             setSelectedGroup(null)
         }
     }, [value])
+
+    useEffect(() => {
+        if (value && groups.length > 0) {
+            const found = groups.find(g => g.name === value)
+            if (found) setSelectedGroup(found)
+        }
+    }, [value, groups])
 
     const handleSelect = (group: Group) => {
         setSelectedGroup(group)
@@ -149,7 +109,7 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                         />
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {loading ? (
+                        {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : groups.length === 0 ? (
                             <div className="p-4 text-sm text-center text-muted-foreground">

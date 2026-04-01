@@ -14,6 +14,8 @@ import { toast } from "sonner"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
@@ -54,12 +56,16 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
         }
     }
 
-    const handleDelete = async (terminal: Terminal) => {
+    const deleteConfirm = useConfirmAction<Terminal>(async (terminal) => {
         try {
             await deleteTerminal(terminal)
         } catch (error) {
             // Error already handled by hook
         }
+    })
+
+    const handleDelete = (terminal: Terminal) => {
+        deleteConfirm.requestConfirm(terminal)
     }
 
     return (
@@ -105,6 +111,15 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
                 }}
                 terminal={editingTerminal}
                 onSuccess={refetch}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Terminal"
+                description={`¿Está seguro de eliminar el terminal "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
+                variant="destructive"
             />
         </div>
     )

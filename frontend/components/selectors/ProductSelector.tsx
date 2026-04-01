@@ -19,8 +19,9 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
+import { Product } from "@/types/entities"
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -61,98 +62,85 @@ export function ProductSelector({
     shouldResolveVariants = true,
     simpleOnly = false
 }: ProductSelectorProps) {
+    const { products: fetchedProducts, singleProduct, loading: searchLoading, fetchProducts, fetchSingleProduct } = useProductSearch()
     const [open, setOpen] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
-    const [filteredProducts, setFilteredProducts] = useState<any[]>([])
-    const [loading, setLoading] = useState(false)
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedProduct, setSelectedProduct] = useState<any>(null)
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
     const [displayLimit, setDisplayLimit] = useState(20)
 
     // Variant Selection state
     const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false)
-    const [templateToResolve, setTemplateToResolve] = useState<any>(null)
+    const [templateToResolve, setTemplateToResolve] = useState<Product | null>(null)
 
     // Effect to fetch the selected product if it's missing but we have a value
     useEffect(() => {
-        const fetchSingleProduct = async () => {
-            if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
-                try {
-                    const res = await api.get(`/inventory/products/${value}/`)
-                    setSelectedProduct(res.data)
-                } catch (error) {
-                    console.error("Error fetching single product", error)
-                }
-            } else if (!value) {
-                setSelectedProduct(null)
-            }
+        if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
+            fetchSingleProduct(value.toString())
+        } else if (!value) {
+            setSelectedProduct(null)
         }
-        fetchSingleProduct()
-    }, [value])
+    }, [value, selectedProduct, fetchSingleProduct])
+
+    // Sync fetched single product to local state
+    useEffect(() => {
+        if (singleProduct && singleProduct.id.toString() === value?.toString()) {
+            setSelectedProduct(singleProduct)
+        }
+    }, [singleProduct, value])
 
     // Effect to fetch full list only when open or searching
     useEffect(() => {
         if (!open && !searchTerm) return
+        
+        fetchProducts({
+            search: searchTerm,
+            productType,
+            limit: 200, // Preload more to allow local filtering
+            context,
+            excludeVariantTemplates
+        })
+    }, [open, searchTerm, productType, context, excludeVariantTemplates, fetchProducts])
 
-        const fetchProducts = async () => {
-            setLoading(true)
-            try {
-                let url = `/inventory/products/?search=${encodeURIComponent(searchTerm)}&parent_template__isnull=true`
-                if (productType) {
-                    url += `&product_type=${productType}`
-                }
-
-                if (context === 'sale') {
-                    url += '&can_be_sold=true'
-                } else if (context === 'purchase') {
-                    url += '&can_be_purchased=true'
-                    // Exclude variant templates from purchase orders
-                    if (excludeVariantTemplates) {
-                        url += '&exclude_variant_templates=true'
-                    }
-                }
-
-                const res = await api.get(url)
-                let allProducts = res.data.results || res.data
-
-                if (allowedTypes && allowedTypes.length > 0) {
-                    allProducts = allProducts.filter((p: any) => allowedTypes.includes(p.product_type))
-                }
-
-                if (simpleOnly) {
-                    allProducts = allProducts.filter((p: any) => {
-                        return p.product_type === 'STORABLE' || 
-                               (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing && !p.mfg_auto_finalize);
-                    });
-                }
-
-                if (excludeIds && excludeIds.length > 0) {
-                    const excludedStrIds = excludeIds
-                        .filter(id => id !== null && id !== undefined)
-                        .map(id => id.toString())
-                    allProducts = allProducts.filter((p: any) => !excludedStrIds.includes(p.id.toString()))
-                }
-
-                // Apply custom filter
-                if (customFilter) {
-                    allProducts = allProducts.filter(customFilter)
-                }
-
-                setProducts(allProducts)
-                setFilteredProducts(allProducts)
-            } catch (error) {
-                console.error("Error fetching products", error)
-            } finally {
-                setLoading(false)
-            }
+    // Effect to apply local filters
+    useEffect(() => {
+        let allProducts = [...fetchedProducts]
+        
+        if (allowedTypes && allowedTypes.length > 0) {
+            allProducts = allProducts.filter(p => allowedTypes.includes(p.product_type))
         }
 
-        const timeoutId = setTimeout(() => {
-            fetchProducts()
-        }, 300)
+        if (simpleOnly) {
+            allProducts = allProducts.filter(p => {
+                return p.product_type === 'STORABLE' || 
+                       (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing && !p.mfg_auto_finalize);
+            });
+        }
 
-        return () => clearTimeout(timeoutId)
-    }, [open, searchTerm, productType, context, allowedTypes, excludeIds, customFilter, simpleOnly])
+        if (excludeIds && excludeIds.length > 0) {
+            const excludedStrIds = excludeIds
+                .filter(id => id !== null && id !== undefined)
+                .map(id => id.toString())
+            allProducts = allProducts.filter(p => !excludedStrIds.includes(p.id.toString()))
+        }
+
+        // Apply custom filter
+        if (customFilter) {
+            allProducts = allProducts.filter(customFilter)
+        }
+
+        setFilteredProducts(allProducts)
+    }, [fetchedProducts, allowedTypes, simpleOnly, excludeIds, customFilter])
+
+    // Load more entries when scrolling down
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget
+        if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+            if (displayLimit < filteredProducts.length) {
+                setDisplayLimit(prev => prev + 20)
+            }
+        }
+    }
 
     const getStockRestrictionReason = (product: any) => {
         if (!restrictStock) return null
@@ -196,10 +184,10 @@ export function ProductSelector({
             return
         }
 
-        setSelectedProduct(product)
-        onChange(product ? product.id.toString() : null)
-        if (onSelect) onSelect(product)
+        onSelect?.(product)
+        onChange(product.id.toString())
         setOpen(false)
+        setSearchTerm("")
     }
 
     const handleVariantSelect = (variant: any) => {
@@ -209,25 +197,6 @@ export function ProductSelector({
         setSelectedProduct(variant)
         onChange(variant ? variant.id.toString() : null)
         if (onSelect) onSelect(variant)
-    }
-
-    const searchProducts = (val: string) => {
-        setSearchTerm(val)
-        const lowerVal = val.toLowerCase()
-
-        setFilteredProducts(
-            products.filter(p =>
-                (p.code && p.code.toLowerCase().includes(lowerVal)) ||
-                (p.internal_code && p.internal_code.toLowerCase().includes(lowerVal)) ||
-                (p.name && p.name.toLowerCase().includes(lowerVal))
-            )
-        )
-        // Reset display limit when searching
-        setDisplayLimit(20)
-    }
-
-    const handleLoadMore = () => {
-        setDisplayLimit(prev => prev + 20)
     }
 
     return (
@@ -261,125 +230,128 @@ export function ProductSelector({
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <div className="p-2">
-                        <div className="flex items-center px-3 border rounded-md mb-2">
+                        <div className="flex items-center px-3 border rounded-md mb-2 relative">
                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                             <input
                                 className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                 placeholder="Buscar código o nombre..."
                                 value={searchTerm}
-                                onChange={(e) => searchProducts(e.target.value)}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
+                            {searchLoading && (
+                                <Loader2 className="h-4 w-4 animate-spin shrink-0 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            )}
                         </div>
-                        <div className="max-h-[400px] overflow-y-auto space-y-1" onScroll={(e) => {
-                            const target = e.currentTarget
-                            if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
-                                if (displayLimit < filteredProducts.length) {
-                                    handleLoadMore()
-                                }
-                            }
-                        }}>
-                            {loading ? (
-                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                            ) : filteredProducts.length === 0 ? (
-                                <div className="p-4 text-sm text-center">No se encontraron productos.</div>
-                            ) : (
-                                filteredProducts.slice(0, displayLimit).map((product) => {
-                                    return (
-                                        <div
-                                            key={product.id}
-                                            data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
+                    </div>
+
+                    <div 
+                        className="max-h-[300px] overflow-y-auto w-full min-w-full"
+                        onScroll={handleScroll}
+                    >
+                        {searchLoading && filteredProducts.length === 0 ? (
+                            <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                Buscando productos...
+                            </div>
+                        ) : filteredProducts.length === 0 ? (
+                            <div className="p-4 text-sm text-center">No se encontraron productos.</div>
+                        ) : (
+                            filteredProducts.slice(0, displayLimit).map((product) => {
+                                return (
+                                    <div
+                                        key={product.id}
+                                        data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
+                                        className={cn(
+                                            "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                                            selectedProduct?.id === product.id && "bg-accent"
+                                        )}
+                                        onClick={() => handleSelect(product)}
+                                    >
+                                        {isStockRestricted(product) ? (
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="absolute inset-0 z-10" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">{getStockRestrictionReason(product)}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ) : null}
+                                        <Check
                                             className={cn(
-                                                "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
-                                                selectedProduct?.id === product.id && "bg-accent"
+                                                "absolute left-2 top-3 h-4 w-4 opacity-0",
+                                                selectedProduct?.id === product.id && "opacity-100"
                                             )}
-                                            onClick={() => handleSelect(product)}
-                                        >
-                                            {isStockRestricted(product) ? (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <div className="absolute inset-0 z-10" />
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p className="text-xs">{getStockRestrictionReason(product)}</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            ) : null}
-                                            <Check
-                                                className={cn(
-                                                    "absolute left-2 top-3 h-4 w-4 opacity-0",
-                                                    selectedProduct?.id === product.id && "opacity-100"
-                                                )}
-                                            />
-                                            <div className="flex flex-col w-full ml-6">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-medium">
-                                                        {product.code} - {product.name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between mt-1 items-center">
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {/* Stock Badge - Show for both Storable and Manufacturable as they both track inventory usually */}
-                                                        {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
-                                                            <>
-                                                                <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                    (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-destructive"
-                                                                )}>
-                                                                    Stock: {product.current_stock || 0}
-                                                                </Badge>
-                                                                <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                    (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-destructive/10"
-                                                                )}>
-                                                                    Disp: {product.qty_available || 0}
-                                                                </Badge>
-                                                            </>
-                                                        )}
-
-                                                        {/* Manufacturing Badges */}
-                                                        {product.requires_advanced_manufacturing ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-primary bg-primary/10">
-                                                                Fab: Avanzada
-                                                            </Badge>
-                                                        ) : product.mfg_auto_finalize ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-amber-700 bg-orange-50">
-                                                                Fab: Express
-                                                            </Badge>
-                                                        ) : product.has_bom ? (
-                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-primary",
-                                                                (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-destructive bg-red-50"
+                                        />
+                                        <div className="flex flex-col w-full ml-6">
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium">
+                                                    {product.code} - {product.name}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between mt-1 items-center">
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {/* Stock Badge - Show for both Storable and Manufacturable as they both track inventory usually */}
+                                                    {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
+                                                        <>
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
+                                                                (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-destructive"
                                                             )}>
-                                                                Fab: {product.manufacturable_quantity ?? 'N/A'}
+                                                                Stock: {product.current_stock || 0}
                                                             </Badge>
-                                                        ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                            <Badge variant="outline" className="text-[9px] px-1 h-4 border text-muted-foreground bg-muted">
-                                                                Sin Receta
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
+                                                                (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-destructive/10"
+                                                            )}>
+                                                                Disp: {product.qty_available || 0}
                                                             </Badge>
-                                                        ) : null}
-                                                    </div>
+                                                        </>
+                                                    )}
 
-                                                    <span className="text-[10px] font-bold whitespace-nowrap ml-2">
-                                                        {product.is_dynamic_pricing ? (
-                                                            <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-600 bg-amber-50 px-1 py-0 h-4">Precio Dinámico</Badge>
-                                                        ) : (
-                                                            <>
-                                                                ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}
-                                                                <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
-                                                            </>
-                                                        )}
-                                                    </span>
+                                                    {/* Manufacturing Badges */}
+                                                    {product.requires_advanced_manufacturing ? (
+                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-primary bg-primary/10">
+                                                            Fab: Avanzada
+                                                        </Badge>
+                                                    ) : product.mfg_auto_finalize ? (
+                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-amber-700 bg-orange-50">
+                                                            Fab: Express
+                                                        </Badge>
+                                                    ) : product.has_bom ? (
+                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-primary",
+                                                            (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-destructive bg-red-50"
+                                                        )}>
+                                                            Fab: {product.manufacturable_quantity ?? 'N/A'}
+                                                        </Badge>
+                                                    ) : product.product_type === 'MANUFACTURABLE' ? (
+                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border text-muted-foreground bg-muted">
+                                                            Sin Receta
+                                                        </Badge>
+                                                    ) : null}
                                                 </div>
+
+                                                <span className="text-[10px] font-bold whitespace-nowrap ml-2">
+                                                    {product.is_dynamic_pricing ? (
+                                                        <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-600 bg-amber-50 px-1 py-0 h-4">Precio Dinámico</Badge>
+                                                    ) : (
+                                                        <>
+                                                            ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}
+                                                            <span className="text-[8px] text-muted-foreground ml-0.5">c/IVA</span>
+                                                        </>
+                                                    )}
+                                                </span>
                                             </div>
                                         </div>
-                                    )
-                                })
-                            )}
-                            {displayLimit < filteredProducts.length && (
-                                <div className="p-2 text-xs text-center text-muted-foreground border-t">
-                                    Mostrando {displayLimit} de {filteredProducts.length} productos. Scroll para ver más...
-                                </div>
-                            )}
-                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                        {displayLimit < filteredProducts.length && (
+                            <div className="p-2 text-xs text-center text-muted-foreground border-t">
+                                Mostrando {displayLimit} de {filteredProducts.length} productos. Scroll para ver más...
+                            </div>
+                        )}
                     </div>
                 </PopoverContent>
             </Popover>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
 import {
     Package, Truck,
     Plus,
@@ -161,6 +162,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const { user } = useAuth()
     const { openHub } = useHubPanel()
 
+    const finishConfirm = useConfirmAction<string>(async (stageId) => {
+        handleTransition(stageId)
+    })
+
     const pendingTasks = order?.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
     const canUserCompleteTask = (task: any) => {
         if (!user) return false
@@ -305,9 +310,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                             if (!isNextDisabled) {
                                 if (nextStage.id === 'FINISHED') {
-                                    if (confirm("¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar.")) {
-                                        handleTransition(nextStage.id)
-                                    }
+                                    finishConfirm.requestConfirm(nextStage.id)
                                 } else {
                                     handleTransition(nextStage.id)
                                 }
@@ -1672,6 +1675,15 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         </div>
                     </div>
                 }
+            />
+
+            <ActionConfirmModal
+                open={finishConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) finishConfirm.cancel() }}
+                onConfirm={finishConfirm.confirm}
+                title="Finalizar Producción"
+                description="¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar."
+                confirmText="Finalizar"
             />
         </>
     )

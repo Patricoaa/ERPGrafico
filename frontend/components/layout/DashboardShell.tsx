@@ -13,7 +13,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
-    () => import("@/components/layout/TaskInboxSidebar").then(m => ({ default: m.TaskInboxSidebar })),
+    () => import("@/features/workflow/components/TaskInboxSidebar").then(m => ({ default: m.TaskInboxSidebar })),
     { ssr: false }
 )
 

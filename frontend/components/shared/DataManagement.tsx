@@ -4,17 +4,21 @@ import React, { useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download, Upload, FileSpreadsheet } from 'lucide-react'
 import { toast } from 'sonner'
-import api from '@/lib/api'
 
 interface DataManagementProps {
-    endpoint: string
+    /** Callback to handle export. Parent is responsible for fetching data. */
+    onExport: () => Promise<void>
+    /** Callback to handle import. Receives the FormData with the file. */
+    onImport: (formData: FormData) => Promise<void>
     templateData: Record<string, unknown>[]
+    /** Called after a successful import */
     onImportSuccess: () => void
     exportFilename?: string
 }
 
 export const DataManagement: React.FC<DataManagementProps> = ({
-    endpoint,
+    onExport,
+    onImport,
     templateData,
     onImportSuccess,
     exportFilename = 'data-export.csv'
@@ -23,29 +27,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 
     const handleExport = async () => {
         try {
-            const res = await api.get(endpoint)
-            const data = res.data.results || res.data
-
-            if (!data || data.length === 0) {
-                toast.error("No hay datos para exportar")
-                return
-            }
-
-            const headers = Object.keys(data[0]).join(',')
-            const csv = data.map((row: Record<string, unknown>) =>
-                Object.values(row).map(val =>
-                    typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-                ).join(',')
-            ).join('\n')
-
-            const blob = new Blob([`${headers}\n${csv}`], { type: 'text/csv;charset=utf-8;' })
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.setAttribute('download', exportFilename)
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            toast.success("Datos exportados correctamente")
+            await onExport()
         } catch (error) {
             toast.error("Error al exportar datos")
         }
@@ -76,11 +58,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
         formData.append('file', file)
 
         try {
-            // We assume the backend has a generic /import/ action in the ViewSet
-            // For now, let's implement a placeholder or a direct post if the backend supports it
-            await api.post(`${endpoint}bulk_import/`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await onImport(formData)
             toast.success("Datos importados correctamente")
             onImportSuccess()
         } catch (error) {

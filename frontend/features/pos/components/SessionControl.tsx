@@ -31,6 +31,7 @@ import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
@@ -148,16 +149,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingBalance, terminals])
 
-    const handleRequestClose = () => {
-        const confirmed = window.confirm(
-            "⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE.\n\n" +
-            "Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción.\n\n" +
-            "¿Está seguro de que desea cerrar la caja?"
-        );
+    const closeSessionConfirm = useConfirmAction(async () => {
+        setCloseDialogOpen(true)
+    })
 
-        if (confirmed) {
-            setCloseDialogOpen(true)
-        }
+    const handleRequestClose = () => {
+        closeSessionConfirm.requestConfirm()
     }
 
     useImperativeHandle(ref, () => ({
@@ -214,8 +211,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     if (!(diff !== 0 && !openingJustifyReason)) {
                         handleOpenSession()
                     }
-                } else if (moveDialogOpen) {
-                    handleRegisterManualMovement()
                 }
                 // Note: closeDialogOpen removed - SessionCloseModal handles its own keyboard shortcuts
             }
@@ -913,7 +908,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     {moveDialogOpen && currentSession && (
                         <MovementWizard
                             context="pos"
-                            fixedAccountId={currentSession.treasury_account_id || undefined}
+                            fixedAccountId={currentSession.treasury_account || undefined}
                             fixedAccountName={currentSession.treasury_account_name}
                             maxOutboundAmount={currentSession.expected_cash}
                             onComplete={handleRegisterManualMovement}
@@ -922,6 +917,14 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     )}
                 </div>
             </BaseModal>
+            <ActionConfirmModal
+                open={closeSessionConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) closeSessionConfirm.cancel() }}
+                onConfirm={closeSessionConfirm.confirm}
+                title="Cerrar Caja (Irreversible)"
+                description="⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE. Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción. ¿Está seguro de que desea continuar?"
+                variant="destructive"
+            />
         </>
     )
 })

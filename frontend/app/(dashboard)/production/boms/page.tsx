@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface BOM {
     id: number
@@ -48,8 +50,7 @@ export default function BOMsPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta Lista de Materiales?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/boms/${id}/`)
             toast.success("Lista de Materiales eliminada correctamente")
@@ -57,7 +58,9 @@ export default function BOMsPage() {
         } catch (error) {
             toast.error("Error al eliminar Lista de Materiales")
         }
-    }
+    })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const handleEdit = async (id: number) => {
         try {
@@ -231,6 +234,15 @@ export default function BOMsPage() {
                 onSuccess={fetchBoms}
                 bomToEdit={editingBom}
                 product={editingBom?.product_id || editingBom?.product}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Lista de Materiales"
+                description="¿Está seguro de eliminar esta Lista de Materiales? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )

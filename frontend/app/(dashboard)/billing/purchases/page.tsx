@@ -24,6 +24,8 @@ import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface PurchaseDocument {
     id: number
@@ -98,9 +100,7 @@ export default function PurchaseInvoicesPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este documento?")) return
-
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Documento eliminado correctamente")
@@ -109,28 +109,39 @@ export default function PurchaseInvoicesPage() {
             console.error("Error deleting document:", error)
             showApiError(error, "No se pudo eliminar el documento")
         }
-    }
+    })
 
-    const handleAnnul = async (id: number, force: boolean = false) => {
-        if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force })
+            await api.post(`/billing/invoices/${id}/annul/`, { force: true })
+            toast.success("Documento anulado correctamente.")
+            fetchDocuments()
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || "Error al anular el documento.")
+        }
+    })
+
+    const annulConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await api.post(`/billing/invoices/${id}/annul/`, { force: false })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
 
-            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
-                if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
-                    handleAnnul(id, true)
-                    return
-                }
+            if (errorMessage.includes("Debe anular los pagos asociados")) {
+                forceAnnulConfirm.requestConfirm(id)
+                return
             }
 
             toast.error(errorMessage || "Error al anular el documento.")
         }
-    }
+    })
+
+    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
     const handlePayment = async (data: any) => {
         if (!payingDoc) return
@@ -543,11 +554,42 @@ export default function PurchaseInvoicesPage() {
                         onOpenChange={(open: boolean) => !open && setCompletingDoc(null)}
                         invoiceId={completingDoc.id}
                         invoiceType={completingDoc.dte_type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchDocuments}
                     />
                 )
             }
 
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Documento"
+                description="¿Está seguro de eliminar este documento? Esta acción no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={annulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
+                onConfirm={annulConfirm.confirm}
+                title="Anular Documento"
+                description="¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={forceAnnulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }}
+                onConfirm={forceAnnulConfirm.confirm}
+                title="Desvincular y Anular Pagos"
+                description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
+                variant="destructive"
+            />
         </div >
     )
 }
