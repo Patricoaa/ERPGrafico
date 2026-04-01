@@ -8,7 +8,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { TransactionNumberForm } from "@/components/forms/TransactionNumberForm"
+import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 

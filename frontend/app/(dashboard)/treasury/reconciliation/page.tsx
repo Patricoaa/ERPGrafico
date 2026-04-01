@@ -6,24 +6,8 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatementsList } from "./StatementsList"
+import { StatementsList, ReconciliationDashboard, ReconciliationRules } from "@/features/finance/bank-reconciliation/components"
 import Link from "next/link"
-
-const ReconciliationDashboard = dynamic(
-
-    () => import("./ReconciliationDashboard").then(mod => mod.ReconciliationDashboard),
-    {
-        loading: () => <Skeleton className="h-[500px] w-full rounded-xl" />
-    }
-)
-
-
-const ReconciliationRules = dynamic(
-    () => import("./ReconciliationRules").then(mod => mod.ReconciliationRules),
-    {
-        loading: () => <Skeleton className="h-[500px] w-full rounded-xl" />
-    }
-)
 
 
 export const metadata: Metadata = {

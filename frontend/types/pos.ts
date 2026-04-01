@@ -13,6 +13,7 @@ export interface Product {
     qty_available?: number
     manufacturable_quantity?: number | null
     product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION'
+    track_inventory?: boolean
     variants_count?: number
     has_variants?: boolean
     image?: string | null

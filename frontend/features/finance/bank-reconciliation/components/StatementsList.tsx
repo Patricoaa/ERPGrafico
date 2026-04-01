@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
-import api from "@/lib/api"
+import { useReconciliation } from "../hooks/useReconciliation"
+import type { BankStatement } from "../types"
 import { StatementImportDialog } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -12,30 +13,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 
-interface BankStatement {
-    id: number
-    display_id: string
-    treasury_account_name: string
-    statement_date: string
-    opening_balance: string
-    closing_balance: string
-    total_lines: number
-    reconciled_lines: number
-    reconciliation_progress: number
-    state: 'DRAFT' | 'CONFIRMED' | 'CANCELLED'
-    state_display: string
-    imported_by_name: string
-    imported_at: string
-}
-
-interface StatementsListProps {
-    externalOpen?: boolean
-}
-
-export function StatementsList({ externalOpen = false }: StatementsListProps) {
+export function StatementsList({ externalOpen = false }: { externalOpen?: boolean }) {
     const router = useRouter()
+    const { fetchStatements, loading } = useReconciliation()
     const [statements, setStatements] = useState<BankStatement[]>([])
-    const [loading, setLoading] = useState(true)
     const [importDialogOpen, setImportDialogOpen] = useState(false)
 
     // Open import dialog when triggered via URL (?modal=import)
@@ -46,23 +27,16 @@ export function StatementsList({ externalOpen = false }: StatementsListProps) {
     }, [externalOpen])
 
     useEffect(() => {
-        fetchStatements()
+        loadData()
     }, [])
 
-    const fetchStatements = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/treasury/statements/')
-            setStatements(response.data)
-        } catch (error) {
-            console.error('Error fetching statements:', error)
-        } finally {
-            setLoading(false)
-        }
+    const loadData = async () => {
+        const data = await fetchStatements()
+        setStatements(data)
     }
 
     const handleImportSuccess = () => {
-        fetchStatements()
+        loadData()
         setImportDialogOpen(false)
         // Clear modal param from URL
         router.replace('/treasury/reconciliation?tab=statements')

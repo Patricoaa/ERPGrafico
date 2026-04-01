@@ -8,7 +8,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
-import { GroupForm } from "@/components/forms/GroupForm"
+import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface GroupManagementProps {
