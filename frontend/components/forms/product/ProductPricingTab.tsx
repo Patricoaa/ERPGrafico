@@ -7,8 +7,9 @@ import { Info, Plus, Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { TabsContent } from "@/components/ui/tabs"
-
 import { formatCurrency } from "@/lib/currency"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductPricingTabProps {
     initialData?: any
@@ -18,6 +19,16 @@ interface ProductPricingTabProps {
 }
 
 export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog }: ProductPricingTabProps) {
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await api.delete(`/inventory/pricing-rules/${id}/`)
+            toast.success("Regla eliminada")
+            fetchPricingRules()
+        } catch (error) {
+            toast.error("Error al eliminar la regla")
+        }
+    })
+
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
@@ -128,17 +139,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                onClick={async () => {
-                                                                    if (confirm("¿Estás seguro de eliminar esta regla?")) {
-                                                                        try {
-                                                                            await api.delete(`/inventory/pricing-rules/${rule.id}/`)
-                                                                            toast.success("Regla eliminada")
-                                                                            fetchPricingRules()
-                                                                        } catch (error) {
-                                                                            toast.error("Error al eliminar la regla")
-                                                                        }
-                                                                    }
-                                                                }}
+                                                                onClick={() => deleteConfirm.requestConfirm(rule.id)}
                                                             >
                                                                 <Trash2 className="h-3 w-3" />
                                                             </Button>
@@ -154,6 +155,15 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                     </div>
                 )}
             </div>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Regla"
+                description="¿Estás seguro de eliminar esta regla?"
+                variant="destructive"
+            />
         </TabsContent>
     )
 }

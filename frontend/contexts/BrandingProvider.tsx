@@ -7,6 +7,7 @@ interface BrandingContextType {
     primaryColor: string
     secondaryColor: string
     logo: string | null
+    company?: any
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)
@@ -38,8 +39,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const value = useMemo(() => ({
         primaryColor,
         secondaryColor,
-        logo
-    }), [primaryColor, secondaryColor, logo])
+        logo,
+        company: settings
+    }), [primaryColor, secondaryColor, logo, settings])
 
     return (
         <BrandingContext.Provider value={value}>

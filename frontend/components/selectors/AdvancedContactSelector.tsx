@@ -11,20 +11,13 @@ import {
 } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
-import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { formatRUT } from "@/lib/utils/format"
-import ContactModal from "@/features/contacts/components/ContactModal"
+import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
+import { Contact } from "@/types/entities"
+import React, { Suspense } from "react"
 
-interface Contact {
-    id: number
-    name: string
-    tax_id: string
-    email?: string
-    phone?: string
-    contact_type?: 'PERSON' | 'COMPANY'
-    code?: string
-}
+const ContactModal = React.lazy(() => import("@/features/contacts/components/ContactModal"))
 
 interface AdvancedContactSelectorProps {
     value?: string | number | null
@@ -45,59 +38,41 @@ export function AdvancedContactSelector({
     disabled,
     isPartnerOnly
 }: AdvancedContactSelectorProps) {
+    const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
     const [open, setOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-
-    const [contacts, setContacts] = useState<Contact[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
-
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
 
     // Fetch initial selected contact if value exists
     useEffect(() => {
-        const fetchSelected = async () => {
-            if (value && !selectedContact) {
-                try {
-                    const res = await api.get(`/contacts/${value}/`)
-                    setSelectedContact(res.data)
-                } catch (e) {
-                    console.error("Failed to fetch selected contact", e)
-                }
-            } else if (!value) {
-                setSelectedContact(null)
-            }
+        if (value && !selectedContact && value.toString() !== singleContact?.id.toString()) {
+            fetchSingleContact(value.toString())
+        } else if (!value) {
+            setSelectedContact(null)
         }
-        fetchSelected()
-    }, [value])
+    }, [value, selectedContact, singleContact, fetchSingleContact])
+
+    // Sync fetched single contact to local state
+    useEffect(() => {
+        if (singleContact && singleContact.id.toString() === value?.toString()) {
+            setSelectedContact(singleContact)
+        }
+    }, [singleContact, value])
 
     // Fetch contacts on search
     useEffect(() => {
-        const fetchContacts = async () => {
-            setLoading(true)
-            try {
-                // Determine URL params
-                const params = new URLSearchParams()
-                if (debouncedSearch) params.append('search', debouncedSearch)
-                if (contactType) params.append('type', contactType)
-                if (isPartnerOnly) params.append('is_partner', 'true')
-
-                // If no search, maybe fetch top 10? Or standard list
-                const res = await api.get(`/contacts/?${params.toString()}`)
-                setContacts(res.data.results || res.data)
-            } catch (error) {
-                console.error("Error searching contacts", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        // Only search if open
         if (open) {
-            fetchContacts()
+            fetchContacts({
+                search: debouncedSearch,
+                contactType: contactType === 'BOTH' ? undefined : contactType as any,
+                isCustomer: contactType === 'CUSTOMER' ? true : undefined,
+                isVendor: contactType === 'SUPPLIER' ? true : undefined,
+                isPartnerOnly
+            })
         }
-    }, [debouncedSearch, open, contactType])
+    }, [debouncedSearch, open, contactType, isPartnerOnly, fetchContacts])
 
     const handleSelect = (contact: Contact) => {
         setSelectedContact(contact)
@@ -188,7 +163,7 @@ export function AdvancedContactSelector({
                         </TooltipProvider>
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {loading ? (
+                        {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : contacts.length === 0 ? (
                             <div className="p-4 text-sm text-center text-muted-foreground flex flex-col items-center gap-2">
@@ -237,12 +212,14 @@ export function AdvancedContactSelector({
         </Popover>
 
             {isCreateModalOpen && (
-                <ContactModal
-                    open={isCreateModalOpen}
-                    onOpenChange={setIsCreateModalOpen}
-                    onSuccess={handleCreateSuccess}
-                    contact={initialContactTemplate}
-                />
+                <Suspense fallback={<div />}>
+                    <ContactModal
+                        open={isCreateModalOpen}
+                        onOpenChange={setIsCreateModalOpen}
+                        onSuccess={handleCreateSuccess}
+                        contact={initialContactTemplate}
+                    />
+                </Suspense>
             )}
         </>
     )

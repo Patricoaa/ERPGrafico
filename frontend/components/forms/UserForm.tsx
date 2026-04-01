@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -35,12 +34,13 @@ const userSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>
 
 interface UserFormProps {
+    auditSidebar?: React.ReactNode
     initialData?: UserInitialData
     onSuccess?: () => void
     trigger?: React.ReactNode
 }
 
-export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
+export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: UserFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
@@ -423,7 +423,7 @@ export function UserForm({ initialData, onSuccess, trigger }: UserFormProps) {
                     {/* Sidebar Area */}
                     {initialData?.id && (
                         <div className="w-full lg:w-72 bg-muted/5 border-t lg:border-t-0 lg:border-l flex flex-col overflow-hidden hidden lg:flex">
-                            <ActivitySidebar entityId={initialData.id} entityType="user" />
+                            {auditSidebar}
                         </div>
                     )}
                 </div>

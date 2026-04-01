@@ -64,6 +64,8 @@ import type {
 } from "@/types/hr"
 import { Badge } from "@/components/ui/badge"
 import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 const globalSettingsSchema = z.object({
     uf_current_value: z.string(),
@@ -137,6 +139,26 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const conceptDeleteConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await deletePayrollConcept(id)
+            toast.success("Concepto eliminado")
+            fetchData()
+        } catch {
+            toast.error("Error al eliminar concepto")
+        }
+    })
+
+    const afpDeleteConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await deleteAFP(id)
+            toast.success("AFP eliminada")
+            fetchData()
+        } catch {
+            toast.error("Error al eliminar AFP")
+        }
+    })
 
     // Auto-save global settings
     const watchedGlobal = globalForm.watch()
@@ -366,12 +388,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                                         <ConceptDialog concept={c} onSaved={fetchData} />
                                                         {!c.is_system && (
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                                                                onClick={async () => {
-                                                                    if (confirm("¿Eliminar este concepto?")) {
-                                                                        await deletePayrollConcept(c.id)
-                                                                        fetchData()
-                                                                    }
-                                                                }}>
+                                                                onClick={() => conceptDeleteConfirm.requestConfirm(c.id)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -413,12 +430,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                             {afp.account ? "Asignada cuenta contable" : "Sin asignar"}
                                         </div>
                                         <Button variant="ghost" size="sm" className="mt-4 w-full text-destructive hover:bg-destructive/10"
-                                            onClick={async () => {
-                                                if (confirm("¿Eliminar AFP?")) {
-                                                    await deleteAFP(afp.id)
-                                                    fetchData()
-                                                }
-                                            }}>
+                                            onClick={() => afpDeleteConfirm.requestConfirm(afp.id)}>
                                             Eliminar Institución
                                         </Button>
                                     </CardContent>
@@ -428,6 +440,24 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            <ActionConfirmModal
+                open={conceptDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) conceptDeleteConfirm.cancel() }}
+                onConfirm={conceptDeleteConfirm.confirm}
+                title="Eliminar Concepto"
+                description="¿Está seguro de que desea eliminar este concepto de nómina? Esta acción no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={afpDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) afpDeleteConfirm.cancel() }}
+                onConfirm={afpDeleteConfirm.confirm}
+                title="Eliminar AFP"
+                description="¿Está seguro de que desea eliminar esta AFP? Se perderá el historial asociado."
+                variant="destructive"
+            />
         </div>
     )
 }

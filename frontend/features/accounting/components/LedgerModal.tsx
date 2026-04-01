@@ -11,6 +11,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -86,8 +88,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         }
     }, [open, fetchLedger, dateRange])
 
-    const handleDeleteEntry = async (entryId: number) => {
-        if (!confirm("¿Está seguro de eliminar este asiento contable? Esta acción revertirá todos los movimientos asociados.")) return
+    const deleteConfirm = useConfirmAction<number>(async (entryId) => {
         try {
             await api.delete(`/accounting/entries/${entryId}/`)
             toast.success("Asiento eliminado correctamente")
@@ -96,7 +97,9 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             console.error("Error deleting entry:", error)
             toast.error("Error al eliminar el asiento")
         }
-    }
+    })
+
+    const handleDeleteEntry = (entryId: number) => deleteConfirm.requestConfirm(entryId)
 
     const columns: ColumnDef<LedgerMovement>[] = [
         {
@@ -326,6 +329,15 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     id={viewingEntry.id}
                 />
             )}
+            
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Asiento Contable"
+                description="¿Está seguro de eliminar este asiento contable? Esta acción revertirá todos los movimientos asociados y no se puede deshacer."
+                variant="destructive"
+            />
         </>
     )
 }

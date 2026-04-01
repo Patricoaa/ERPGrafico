@@ -44,7 +44,6 @@ import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -73,6 +72,7 @@ const journalEntrySchema = z.object({
 type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
 
 interface JournalEntryFormProps {
+    auditSidebar?: React.ReactNode
     accounts?: any[]
     onSuccess?: () => void
     initialData?: JournalEntryInitialData
@@ -490,10 +490,7 @@ export function JournalEntryForm({
 
                     {initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            <ActivitySidebar
-                                entityId={initialData.id}
-                                entityType="journal_entry"
-                            />
+                            {auditSidebar}
                         </div>
                     )}
                 </div>

@@ -36,7 +36,6 @@ import {
 import { Check, Printer } from 'lucide-react'
 import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
-// Context and Hooks
 import { POSProvider, usePOS } from './contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useProducts } from './hooks/useProducts'

@@ -67,7 +67,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     })
 
     const deleteAccount = async (id: number) => {
-        if (!confirm('¿Está seguro de eliminar esta cuenta?')) {
+        if (false) {
             return
         }
         await deleteMutation.mutateAsync(id)

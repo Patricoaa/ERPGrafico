@@ -11,6 +11,8 @@ import api from "@/lib/api"
 import { ReconciliationPanel } from "@/features/treasury"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface BankStatement {
     id: number
@@ -55,9 +57,7 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
         await fetchStatement()
     }
 
-    const handleConfirmStatement = async () => {
-        if (!confirm('¿Confirmar cartola? Esto lo bloqueará y no podrá modificarse.')) return
-
+    const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${statementId}/confirm/`)
@@ -69,7 +69,9 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
         } finally {
             setConfirming(false)
         }
-    }
+    })
+
+    const handleConfirmStatement = () => confirmAction.requestConfirm()
 
     if (loading) {
         return (
@@ -192,6 +194,15 @@ export default function ReconciliationMatchPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
             )}
+            
+            <ActionConfirmModal
+                open={confirmAction.isOpen}
+                onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+                onConfirm={confirmAction.confirm}
+                title="Confirmar Cartola"
+                description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+                confirmText="Confirmar"
+            />
         </div>
     )
 }

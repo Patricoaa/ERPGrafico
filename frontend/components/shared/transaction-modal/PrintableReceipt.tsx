@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button"
 import { X, Printer } from "lucide-react"
 import { formatPlainDate, translateStatus, translateReceivingStatus, translatePaymentMethod, formatCurrency, cn } from "@/lib/utils"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { useCompanySettings } from "@/features/settings"
-import type { TransactionData, TransactionLine } from "../TransactionViewModal"
+import type { TransactionData, TransactionLine } from "@/types/transactions"
 
 const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
     if (!dateStr) return '-'
@@ -22,8 +21,7 @@ const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
 }
 
 export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: TransactionData, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
-    const { logo } = useBranding()
-    const { settings: company } = useCompanySettings()
+    const { logo, company } = useBranding()
     if (!data) return null
 
     const isSaleOrder = currentType === 'sale_order'
@@ -313,7 +311,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                         </tr>
                     </thead>
                     <tbody>
-                        {lines.map((line, idx: number) => renderTableRow(line, idx))}
+                        {lines.map((line: any, idx: number) => renderTableRow(line, idx))}
                     </tbody>
                 </table>
             </div>
@@ -332,8 +330,8 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
 
         if (currentType === 'journal_entry') {
             const lines = data.lines || data.items || []
-            const totalDebit = lines.reduce((acc: number, cur) => acc + Number(cur.debit), 0)
-            const totalCredit = lines.reduce((acc: number, cur) => acc + Number(cur.credit), 0)
+            const totalDebit = lines.reduce((acc: number, cur: any) => acc + Number(cur.debit), 0)
+            const totalCredit = lines.reduce((acc: number, cur: any) => acc + Number(cur.credit), 0)
 
             return (
                 <div className="border-t-2 border-black pt-2 space-y-1">
@@ -354,7 +352,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
 
         const totalValue = data.total || data.amount
         const lines = data.lines || data.items || []
-        const totalLineDiscounts = lines.reduce((acc: number, cur) => acc + parseFloat(String(cur.discount_amount || 0)), 0)
+        const totalLineDiscounts = lines.reduce((acc: number, cur: any) => acc + parseFloat(String(cur.discount_amount || 0)), 0)
 
         return (
             <div className="pt-2 space-y-1">
@@ -420,7 +418,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
             {data.related_documents?.payments && data.related_documents.payments.length > 0 && (
                 <div className="mt-2 border-t border-dashed border-black/20 pt-2">
                     <p className="text-[8px] font-black uppercase mb-1">Pagos Registrados:</p>
-                    {data.related_documents.payments.map((pay, idx) => (
+                    {data.related_documents.payments.map((pay: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center py-0.5">
                             <div className="flex flex-col">
                                 <div className="text-[9px] font-bold uppercase tracking-tight">
@@ -441,7 +439,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
             {isSaleOrder && (
                 (() => {
                     const lines = data.lines || data.items || []
-                    const hasPending = lines.some((line) => {
+                    const hasPending = lines.some((line: any) => {
                         const qty = Math.round(Number(line.quantity) || 0)
                         const delivered = Math.round(Number(line.delivered_quantity !== undefined
                             ? line.delivered_quantity

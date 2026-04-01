@@ -10,14 +10,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
-import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
-
-interface User {
-    id: number
-    username: string
-    email: string
-}
+import { useUserSearch } from "@/features/users/hooks/useUserSearch"
+import type { AppUser } from "@/types/entities"
 
 interface UserSelectorProps {
     value?: number | null
@@ -28,53 +23,35 @@ interface UserSelectorProps {
 
 export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario...", disabled = false }: UserSelectorProps) {
     const [open, setOpen] = useState(false)
-    const [users, setUsers] = useState<User[]>([])
-    const [loading, setLoading] = useState(false)
+    const { users, singleUser, loading: searchLoading, fetchUsers, fetchSingleUser } = useUserSearch()
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
-    const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const [selectedUser, setSelectedUser] = useState<AppUser | null>(null)
 
-    // Fetch initial selected user
+    // Fetch initial selected user if missing
     useEffect(() => {
-        const fetchSelected = async () => {
-            if (value && !selectedUser) {
-                try {
-                    const res = await api.get(`/core/users/${value}/`)
-                    setSelectedUser(res.data)
-                } catch (e) {
-                    console.error("Failed to fetch selected user", e)
-                }
-            } else if (!value) {
-                setSelectedUser(null)
-            }
+        if (value && !selectedUser && value.toString() !== singleUser?.id.toString()) {
+            fetchSingleUser(value.toString())
+        } else if (!value) {
+            setSelectedUser(null)
         }
-        fetchSelected()
-    }, [value])
+    }, [value, selectedUser, singleUser, fetchSingleUser])
+
+    // Sync fetched single user to local state
+    useEffect(() => {
+        if (singleUser && singleUser.id === value) {
+            setSelectedUser(singleUser)
+        }
+    }, [singleUser, value])
 
     // Fetch users on search
     useEffect(() => {
-        const fetchUsers = async () => {
-            setLoading(true)
-            try {
-                const params = new URLSearchParams()
-                if (debouncedSearch) params.append('search', debouncedSearch)
-
-                const res = await api.get(`/core/users/?${params.toString()}`)
-                const list = Array.isArray(res.data) ? res.data : (res.data.results || [])
-                setUsers(list)
-            } catch (error) {
-                console.error("Error searching users", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         if (open) {
-            fetchUsers()
+            fetchUsers(debouncedSearch)
         }
-    }, [debouncedSearch, open])
+    }, [debouncedSearch, open, fetchUsers])
 
-    const handleSelect = (user: User) => {
+    const handleSelect = (user: AppUser) => {
         setSelectedUser(user)
         onChange(user.id)
         setOpen(false)
@@ -120,7 +97,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                         />
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {loading ? (
+                        {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : users.length === 0 ? (
                             <div className="p-4 text-sm text-center text-muted-foreground">

@@ -14,6 +14,8 @@ import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { cn } from "@/lib/utils"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface UoMCategory {
     id: number
@@ -82,8 +84,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Eliminar categoría? Esto eliminará las unidades asociadas.")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/uom-categories/${id}/`)
             toast.success("Categoría eliminada")
@@ -91,7 +92,9 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
         } catch (error) {
             toast.error("Error al eliminar (puede estar en uso)")
         }
-    }
+    })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const columns: ColumnDef<UoMCategory>[] = [
         {
@@ -173,6 +176,15 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     )}
                 </div>
             </BaseModal>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Categoría"
+                description="¿Eliminar categoría? Esto eliminará las unidades asociadas y no se puede deshacer."
+                variant="destructive"
+            />
         </div>
     )
 }

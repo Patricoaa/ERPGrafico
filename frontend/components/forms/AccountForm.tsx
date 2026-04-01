@@ -33,7 +33,6 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -49,6 +48,7 @@ const accountSchema = z.object({
 type AccountFormValues = z.infer<typeof accountSchema>
 
 interface AccountFormProps {
+    auditSidebar?: React.ReactNode
     onSuccess?: () => void
     accounts?: any[]
     initialData?: any // Use any for initialData to avoid strict prop widening issues
@@ -463,10 +463,7 @@ export function AccountForm({
 
                     {initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            <ActivitySidebar
-                                entityId={initialData.id}
-                                entityType="account"
-                            />
+                            {auditSidebar}
                         </div>
                     )}
                 </div>

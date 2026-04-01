@@ -33,7 +33,6 @@ import { toast } from "sonner"
 import { Plus, Tags } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 // schemas and types remain the same
 const formSchema = z.object({
@@ -56,6 +55,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface PricingRuleFormProps {
+    auditSidebar?: React.ReactNode
     initialData?: PricingRuleInitialData
     onSuccess?: () => void
     open: boolean
@@ -64,7 +64,7 @@ interface PricingRuleFormProps {
     productName?: string
 }
 
-export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
+export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const [uoms, setUoms] = useState<any[]>([])
 
     const form = useForm<FormValues>({
@@ -524,10 +524,7 @@ export function PricingRuleForm({ initialData, onSuccess, open, onOpenChange, pr
 
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="pricing_rule"
-                        />
+                        {auditSidebar}
                     </div>
                 )}
             </div>

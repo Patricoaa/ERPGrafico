@@ -22,6 +22,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
@@ -30,22 +32,30 @@ export function SalesInvoicesClientView() {
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
 
-    const handleAnnul = async (id: number, force: boolean = false) => {
-        if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await annulInvoice({ id, force })
+            await annulInvoice({ id, force: true })
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || "Error al anular el documento.")
+        }
+    })
+
+    const annulConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await annulInvoice({ id, force: false })
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
-            // Error handling for associated payments
             const errorMessage = getErrorMessage(error) || ""
-            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
-                if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
-                    handleAnnul(id, true)
-                    return
-                }
+            if (errorMessage.includes("Debe anular los pagos asociados")) {
+                forceAnnulConfirm.requestConfirm(id)
+                return
             }
             toast.error(errorMessage || "Error al anular el documento.")
         }
+    })
+
+    const handleAnnul = (id: number) => {
+        annulConfirm.requestConfirm(id)
     }
 
     const handlePayment = async (data: any) => {
@@ -316,7 +326,23 @@ export function SalesInvoicesClientView() {
                 />
             )}
 
+            <ActionConfirmModal
+                open={annulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
+                onConfirm={annulConfirm.confirm}
+                title="Anular Documento"
+                description="¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer."
+                variant="destructive"
+            />
 
+            <ActionConfirmModal
+                open={forceAnnulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }}
+                onConfirm={forceAnnulConfirm.confirm}
+                title="Desvincular y Anular Pagos"
+                description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
+                variant="destructive"
+            />
         </div>
     )
 }

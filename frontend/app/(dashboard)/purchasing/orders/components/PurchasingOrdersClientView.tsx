@@ -27,6 +27,9 @@ import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrd
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { OrderCard } from "@/features/orders/components/OrderCard"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { formatPlainDate } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -118,8 +121,7 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta Orden de Compra?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/purchasing/orders/${id}/`)
             toast.success("Orden de Compra eliminada correctamente.")
@@ -128,28 +130,39 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             console.error("Error deleting order:", error)
             showApiError(error, "Error al eliminar la orden de compra.")
         }
-    }
+    })
 
-    const handleAnnul = async (id: number, force: boolean = false) => {
-        if (!force && !confirm("¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/purchasing/orders/${id}/annul/`, { force })
+            await api.post(`/purchasing/orders/${id}/annul/`, { force: true })
+            toast.success("Orden de Compra anulada correctamente.")
+            fetchOrders()
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || "Error al anular la orden de compra.")
+        }
+    })
+
+    const annulConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await api.post(`/purchasing/orders/${id}/annul/`, { force: false })
             toast.success("Orden de Compra anulada correctamente.")
             fetchOrders()
         } catch (error: unknown) {
             console.error("Error annulling order:", error)
             const errorMessage = getErrorMessage(error) || ""
 
-            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
-                if (confirm("Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
-                    handleAnnul(id, true)
-                    return
-                }
+            if (errorMessage.includes("Debe anular los pagos asociados")) {
+                forceAnnulConfirm.requestConfirm(id)
+                return
             }
 
             toast.error(errorMessage || "Error al anular la orden de compra.")
         }
-    }
+    })
+
+    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
     const handleEdit = async (order: PurchaseOrder) => {
         try {
@@ -584,6 +597,11 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchOrders}
                     />
                 )
@@ -613,10 +631,42 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchOrders}
                     />
                 )
             }
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Orden de Compra"
+                description="¿Está seguro de que desea eliminar esta Orden de Compra? Esta acción no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={annulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
+                onConfirm={annulConfirm.confirm}
+                title="Anular Documento"
+                description="¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y liberará reservas, y no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={forceAnnulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }}
+                onConfirm={forceAnnulConfirm.confirm}
+                title="Desvincular y Anular Pagos"
+                description="Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
+                variant="destructive"
+            />
         </div>
     )
 }

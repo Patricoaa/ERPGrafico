@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -63,8 +65,7 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
         }
     }, [externalOpen])
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este banco?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/banks/${id}/`)
             toast.success("Banco eliminado")
@@ -72,6 +73,10 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
         } catch (error) {
             toast.error("Error al eliminar banco")
         }
+    })
+
+    const handleDelete = (id: number) => {
+        deleteConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
@@ -155,6 +160,15 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
                     onExternalOpenChange?.(false)
                     fetchBanks()
                 }}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Banco"
+                description="¿Está seguro de eliminar este banco? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )
@@ -322,8 +336,7 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
         }
     }, [externalOpen])
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este método de pago?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/payment-methods/${id}/`)
             toast.success("Método eliminado")
@@ -331,6 +344,10 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
         } catch (error) {
             toast.error("Error al eliminar")
         }
+    })
+
+    const handleDelete = (id: number) => {
+        deleteConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
@@ -436,6 +453,15 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
                     onExternalOpenChange?.(false)
                     fetchMethods()
                 }}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Método de Pago"
+                description="¿Está seguro de eliminar este método de pago? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )

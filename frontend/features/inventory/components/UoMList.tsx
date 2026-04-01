@@ -23,6 +23,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface UoMCategory {
     id: number
@@ -103,8 +105,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Eliminar unidad de medida?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/uoms/${id}/`)
             toast.success("Eliminada correctamente")
@@ -112,7 +113,9 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         } catch (error) {
             toast.error("No se puede eliminar (puede estar en uso)")
         }
-    }
+    })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const columns: ColumnDef<UoM>[] = [
         {
@@ -378,6 +381,15 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                     )}
                 </div>
             </BaseModal>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Unidad de Medida"
+                description="¿Seguro que deseas eliminar esta unidad de medida?"
+                variant="destructive"
+            />
         </div>
     )
 }

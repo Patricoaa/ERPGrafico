@@ -58,9 +58,6 @@ export function useTerminals(): UseTerminalsReturn {
     }
 
     const deleteTerminal = async (terminal: Terminal) => {
-        if (!confirm(`¿Está seguro que desea eliminar el terminal "${terminal.name}"?`)) {
-            return
-        }
         await deleteMutation.mutateAsync(terminal)
     }
 

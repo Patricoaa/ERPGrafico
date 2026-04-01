@@ -13,14 +13,10 @@ import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { format } from "date-fns"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
+import { WorkOrder } from "@/types/entities"
 
-interface WorkOrder {
-    id: number
-    number: string
-    product_name: string
-    created_at: string
-    status: string
-}
+
 
 interface AdvancedWorkOrderSelectorProps {
     value?: string | number | null
@@ -35,12 +31,11 @@ export function AdvancedWorkOrderSelector({
     placeholder = "Vincular a Orden de Trabajo (Opcional)...",
     disabled = false
 }: AdvancedWorkOrderSelectorProps) {
+    const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)
     const [previewOpen, setPreviewOpen] = useState(false)
     const [previewId, setPreviewId] = useState<number | null>(null)
 
-    const [orders, setOrders] = useState<WorkOrder[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
@@ -48,45 +43,26 @@ export function AdvancedWorkOrderSelector({
 
     // Fetch initial selected order if value exists
     useEffect(() => {
-        const fetchSelected = async () => {
-            if (value && !selectedOrder && value !== "__none__" && value !== "none") {
-                try {
-                    const res = await api.get(`/production/orders/${value}/`)
-                    setSelectedOrder(res.data)
-                } catch (e) {
-                    console.error("Failed to fetch selected work order", e)
-                }
-            } else if (!value || value === "__none__" || value === "none") {
-                setSelectedOrder(null)
-            }
+        if (value && !selectedOrder && value !== "__none__" && value !== "none" && value.toString() !== singleOrder?.id.toString()) {
+            fetchSingleOrder(value.toString())
+        } else if (!value || value === "__none__" || value === "none") {
+            setSelectedOrder(null)
         }
-        fetchSelected()
-    }, [value])
+    }, [value, selectedOrder, singleOrder, fetchSingleOrder])
+
+    // Sync individual order
+    useEffect(() => {
+        if (singleOrder && singleOrder.id.toString() === value?.toString()) {
+            setSelectedOrder(singleOrder)
+        }
+    }, [singleOrder, value])
 
     // Fetch orders on search
     useEffect(() => {
-        const fetchOrders = async () => {
-            setLoading(true)
-            try {
-                const params = new URLSearchParams()
-                if (debouncedSearch) params.append('search', debouncedSearch)
-
-                // Only active OTs (not cancelled)
-                params.append('status_exclude', 'CANCELLED')
-
-                const res = await api.get(`/production/orders/?${params.toString()}`)
-                setOrders(res.data.results || res.data)
-            } catch (error) {
-                console.error("Error searching work orders", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         if (open) {
-            fetchOrders()
+            fetchOrders(debouncedSearch)
         }
-    }, [debouncedSearch, open])
+    }, [debouncedSearch, open, fetchOrders])
 
     const handleSelect = (order: WorkOrder) => {
         setSelectedOrder(order)
@@ -163,9 +139,9 @@ export function AdvancedWorkOrderSelector({
                             />
                         </div>
                         <div className="max-h-[300px] overflow-y-auto space-y-1">
-                            {loading ? (
-                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                            ) : orders.length === 0 ? (
+                        {searchLoading ? (
+                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                        ) : orders.length === 0 ? (
                                 <div className="p-4 text-sm text-center text-muted-foreground">
                                     {searchTerm ? "No se encontraron órdenes." : "Escriba para buscar..."}
                                 </div>

@@ -18,6 +18,8 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -48,6 +50,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     // Master-Detail State
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([])
     const [activeEditVariantId, setActiveEditVariantId] = useState<number | null>(null)
+    const [variantToDelete, setVariantToDelete] = useState<any | null>(null)
 
     useEffect(() => {
         fetchAttributes()
@@ -95,12 +98,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         })
     }
 
-    const handleDeleteVariant = async (variant: any, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!confirm(`¿Está seguro de eliminar la variante ${variant.variant_display_name || variant.name}?`)) {
-            return
-        }
-
+    const deleteConfirm = useConfirmAction(async () => {
+        if (!variantToDelete) return
+        const variant = variantToDelete
         try {
             await api.delete(`/inventory/products/${variant.id}/`)
             toast.success("Variante eliminada exitosamente")
@@ -110,7 +110,15 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         } catch (error) {
             console.error("Failed to delete variant", error)
             toast.error("Error al eliminar variante")
+        } finally {
+            setVariantToDelete(null)
         }
+    })
+
+    const handleDeleteVariant = (variant: any, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setVariantToDelete(variant)
+        deleteConfirm.requestConfirm()
     }
 
     const handleGenerateVariants = async () => {
@@ -497,6 +505,19 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 )}
             </div>
             
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { 
+                    if (!open) {
+                        deleteConfirm.cancel()
+                        setVariantToDelete(null)
+                    }
+                }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Variante"
+                description={`¿Está seguro de eliminar la variante ${variantToDelete?.variant_display_name || variantToDelete?.name || ''}?`}
+                variant="destructive"
+            />
         </TabsContent>
     )
 }

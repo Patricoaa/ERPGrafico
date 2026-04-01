@@ -39,6 +39,8 @@ import {
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),
@@ -136,8 +138,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
         }
     }
 
-    const handleDeletePayroll = async () => {
-        if (!confirm("¿Eliminar esta liquidación? Esta acción no se puede deshacer.")) return
+    const deleteConfirm = useConfirmAction(async () => {
         try {
             await deletePayroll(payrollId)
             toast.success("Liquidación eliminada")
@@ -147,7 +148,9 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
         } catch {
             toast.error("Error al eliminar liquidación")
         }
-    }
+    })
+
+    const handleDeletePayroll = () => deleteConfirm.requestConfirm()
 
     const handleDeleteItem = async (item: PayrollItem) => {
         try {
@@ -401,6 +404,15 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     onUpdate?.()
                 }}
                 onEditCleared={() => setEditingItem(null)}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Liquidación"
+                description="¿Eliminar esta liquidación? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )

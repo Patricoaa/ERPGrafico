@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 import {
@@ -170,6 +169,7 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
+    auditSidebar?: React.ReactNode
     onSuccess?: (category: any) => void
     initialData?: any
     open?: boolean
@@ -464,10 +464,7 @@ export function CategoryForm({
 
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="category"
-                        />
+                        {auditSidebar}
                     </div>
                 )}
             </div>

@@ -24,7 +24,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
@@ -39,13 +38,14 @@ const journalSchema = z.object({
 type JournalFormValues = z.infer<typeof journalSchema>
 
 interface BankJournalFormProps {
+    auditSidebar?: React.ReactNode
     onSuccess?: () => void
     initialData?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
 
-export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpenChange }: BankJournalFormProps) {
+export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: openProp, onOpenChange }: BankJournalFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -221,10 +221,7 @@ export function BankJournalForm({ onSuccess, initialData, open: openProp, onOpen
 
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="bank_journal"
-                        />
+                        {auditSidebar}
                     </div>
                 )}
             </div>

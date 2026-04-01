@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -18,6 +18,8 @@ import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import api from "@/lib/api"
 
 
 
@@ -25,14 +27,50 @@ const typeOrder = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']
 
 export function AccountsClientView() {
     const { accounts, refetch, deleteAccount } = useAccounts()
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta cuenta?")) return
+        setDeleteTarget(id)
+    }
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return
         try {
-            await deleteAccount(id)
+            await deleteAccount(deleteTarget)
         } catch (error) {
             console.error("Failed to delete account", error)
+        } finally {
+            setDeleteTarget(null)
         }
+    }
+
+    const handleExport = async () => {
+        const res = await api.get("/accounting/accounts/")
+        const data = res.data.results || res.data
+        if (!data || data.length === 0) {
+            toast.error("No hay datos para exportar")
+            return
+        }
+        const headers = Object.keys(data[0]).join(',')
+        const csv = data.map((row: Record<string, unknown>) =>
+            Object.values(row).map(val =>
+                typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
+            ).join(',')
+        ).join('\n')
+        const blob = new Blob([`${headers}\n${csv}`], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.setAttribute('download', 'plan-de-cuentas.csv')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        toast.success("Datos exportados correctamente")
+    }
+
+    const handleImport = async (formData: FormData) => {
+        await api.post("/accounting/accounts/bulk_import/", formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
     }
 
 
@@ -147,7 +185,8 @@ export function AccountsClientView() {
                 }
             >
                 <DataManagement
-                    endpoint="/accounting/accounts/"
+                    onExport={handleExport}
+                    onImport={handleImport}
                     onImportSuccess={refetch}
                     exportFilename="plan-de-cuentas.csv"
                     templateData={[
@@ -176,6 +215,15 @@ export function AccountsClientView() {
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={50}
+            />
+            <ActionConfirmModal
+                open={deleteTarget !== null}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+                title="Eliminar Cuenta"
+                variant="destructive"
+                onConfirm={confirmDelete}
+                confirmText="Eliminar"
+                description="¿Está seguro de eliminar esta cuenta? Esta acción no se puede deshacer."
             />
         </div>
     )
