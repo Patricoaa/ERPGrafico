@@ -40,7 +40,7 @@ import {
 } from 'recharts'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { OrderCommandCenter } from "@/features/orders/components/OrderCommandCenter"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { translateStatus } from "@/lib/utils"
 
@@ -88,8 +88,7 @@ interface SubscriptionHistory {
 export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }: SubscriptionHistoryModalProps) {
     const [data, setData] = useState<SubscriptionHistory | null>(null)
     const [loading, setLoading] = useState(false)
-    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
-    const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null)
+    const { openHub } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     useEffect(() => {
@@ -289,7 +288,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                                 variant="outline"
                                                                 size="sm"
                                                                 className="h-9 rounded-full gap-2 px-4 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                                                onClick={() => setSelectedOrderId(order.id)}
+                                                                onClick={() => openHub({
+                                                                    orderId: order.id,
+                                                                    type: 'purchase',
+                                                                    onActionSuccess: fetchHistory
+                                                                })}
                                                             >
                                                                 <LayoutDashboard className="h-4 w-4" />
                                                                 Gestionar
@@ -353,7 +356,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                                 variant="outline"
                                                                 size="sm"
                                                                 className="h-9 rounded-full gap-2 px-4 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                                                onClick={() => setSelectedNoteId(note.id)}
+                                                                onClick={() => openHub({
+                                                                    invoiceId: note.id,
+                                                                    type: 'purchase',
+                                                                    onActionSuccess: fetchHistory
+                                                                })}
                                                             >
                                                                 <LayoutDashboard className="h-4 w-4" />
                                                                 Gestionar
@@ -378,29 +385,6 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                 </div>
             </BaseModal>
 
-            <OrderCommandCenter
-                orderId={selectedOrderId}
-                type="purchase"
-                open={selectedOrderId !== null}
-                onOpenChange={(open) => {
-                    if (!open) setSelectedOrderId(null)
-                }}
-                onActionSuccess={() => {
-                    fetchHistory()
-                }}
-            />
-
-            <OrderCommandCenter
-                invoiceId={selectedNoteId}
-                type="purchase"
-                open={selectedNoteId !== null}
-                onOpenChange={(open) => {
-                    if (!open) setSelectedNoteId(null)
-                }}
-                onActionSuccess={() => {
-                    fetchHistory()
-                }}
-            />
         </>
     )
 }
