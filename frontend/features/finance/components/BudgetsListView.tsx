@@ -14,7 +14,8 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { BudgetEditor } from "@/features/finances/components/BudgetEditor"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 
 interface Budget {
     id: number
@@ -158,8 +159,23 @@ export function BudgetsListView() {
             />
 
             {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando presupuestos...</div>
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground text-sm animate-pulse">Cargando presupuestos...</p>
+                </div>
+            ) : budgets.length === 0 ? (
+                <div className="bg-white rounded-xl border shadow-sm">
+                    <EmptyState
+                        icon={Wallet}
+                        title="No hay presupuestos"
+                        description="Aún no has creado ningún presupuesto anual para monitorear la ejecución financiera."
+                        action={
+                            <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                Crear Primer Presupuesto
+                            </Button>
+                        }
+                    />
                 </div>
             ) : (
                 <DataTable

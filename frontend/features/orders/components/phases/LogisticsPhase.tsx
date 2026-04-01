@@ -104,7 +104,7 @@ export function LogisticsPhase({
                     ...((doc.status !== 'CANCELLED') ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
-                        color: 'text-orange-500 hover:bg-orange-500/10',
+                        color: 'text-warning hover:bg-warning/10',
                         onClick: () => handleAnnulLogistics(doc.id, doc.docType)
                     }] : [])
                 ]
@@ -125,7 +125,7 @@ export function LogisticsPhase({
                     ...((doc.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
                         icon: Ban,
                         title: isSale ? 'Anular Despacho' : 'Anular Recepción',
-                        color: 'text-orange-500 hover:bg-orange-500/10',
+                        color: 'text-warning hover:bg-warning/10',
                         onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
                     }] : [])
                 ]
@@ -205,7 +205,7 @@ export function LogisticsPhase({
                                 </div>
                                 <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
                                     <div
-                                        className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-green-500/30" : "bg-primary/30")}
+                                        className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-success/30" : "bg-primary/30")}
                                         style={{ width: `${showAnimations ? pct : 0}%` }}
                                         role="progressbar"
                                         aria-valuenow={pct}

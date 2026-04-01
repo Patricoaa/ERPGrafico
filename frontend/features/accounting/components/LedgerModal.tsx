@@ -265,25 +265,25 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                                     </p>
                                 </CardContent>
                             </Card>
-                            <Card className="bg-green-50/50 border-none shadow-none">
+                            <Card className="bg-success/5 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-emerald-700 uppercase">Cargos (Debe)</p>
-                                        <ArrowUpRight className="h-4 w-4 text-green-500" />
+                                        <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
+                                        <ArrowUpRight className="h-4 w-4 text-success" />
                                     </div>
-                                    <div className="text-xl font-bold mt-1 text-emerald-700">
+                                    <div className="text-xl font-bold mt-1 text-success">
                                         ${data.period_debit.toLocaleString()}
                                     </div>
-                                    <p className="text-[10px] text-emerald-700/70 mt-1">Total del periodo</p>
+                                    <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
                                 </CardContent>
                             </Card>
-                            <Card className="bg-red-50/50 border-none shadow-none">
+                            <Card className="bg-destructive/5 border-none shadow-none">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center justify-between">
                                         <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
                                         <ArrowDownRight className="h-4 w-4 text-destructive" />
                                     </div>
-                                    <div className="text-xl font-bold mt-1 text-red-700">
+                                    <div className="text-xl font-bold mt-1 text-destructive">
                                         ${data.period_credit.toLocaleString()}
                                     </div>
                                     <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>

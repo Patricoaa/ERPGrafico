@@ -32,6 +32,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { SearchX } from "lucide-react"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -222,9 +224,13 @@ export function DataTable<TData, TValue>({
                 <TableRow>
                     <TableCell
                         colSpan={columns.length}
-                        className="h-24 text-center text-muted-foreground"
+                        className="h-24 p-0"
                     >
-                        No se encontraron resultados.
+                        <EmptyState
+                            icon={SearchX}
+                            title="No se encontraron resultados"
+                            description="Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."
+                        />
                     </TableCell>
                 </TableRow>
             )
@@ -372,9 +378,13 @@ export function DataTable<TData, TValue>({
                                 <TableRow>
                                     <TableCell
                                         colSpan={columns.length}
-                                        className="h-24 text-center"
+                                        className="h-24 p-0"
                                     >
-                                        No se encontraron resultados.
+                                        <EmptyState
+                                            icon={SearchX}
+                                            title="No se encontraron resultados"
+                                            description="Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."
+                                        />
                                     </TableCell>
                                 </TableRow>
                             )}

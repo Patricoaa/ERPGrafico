@@ -4,6 +4,7 @@ export const FORM_STYLES = {
 
     // Inputs & Selects
     input: "h-10 rounded-xl border bg-background focus-visible:ring-primary transition-all duration-200",
+    textarea: "min-h-[100px] rounded-xl border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-3",
 
     // Cards & Containers (Legacy/Base)
     card: "rounded-2xl border border-dashed p-4 bg-card/50",

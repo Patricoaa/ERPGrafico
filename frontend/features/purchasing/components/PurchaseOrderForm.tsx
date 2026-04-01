@@ -351,7 +351,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                     <FormControl>
                                         <Textarea
                                             placeholder="Notas adicionales..."
-                                            className={cn("resize-none h-24 rounded-xl border-dashed bg-background focus-visible:ring-primary")}
+                                            className={FORM_STYLES.textarea}
                                             {...field}
                                         />
                                     </FormControl>

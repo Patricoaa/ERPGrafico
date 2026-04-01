@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { HistoricalRecord } from "@/types/audit";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
     History,
     User,
@@ -42,24 +43,24 @@ export function AuditTimeline({
         switch (type) {
             case '+':
                 return {
-                    icon: <PlusCircle className="h-4 w-4 text-green-500" />,
+                    icon: <PlusCircle className="h-4 w-4 text-success" />,
                     label: "Creación",
                     variant: "outline" as const,
-                    color: "bg-emerald-100 text-emerald-700 border-green-200"
+                    color: "bg-success/10 text-success border-success/20"
                 };
             case '~':
                 return {
-                    icon: <Edit className="h-4 w-4 text-primary" />,
+                    icon: <Edit className="h-4 w-4 text-info" />,
                     label: "Edición",
                     variant: "outline" as const,
-                    color: "bg-blue-100 text-primary border-blue-200"
+                    color: "bg-info/10 text-info border-info/20"
                 };
             case '-':
                 return {
                     icon: <Trash2 className="h-4 w-4 text-destructive" />,
                     label: "Eliminación",
                     variant: "outline" as const,
-                    color: "bg-red-100 text-red-700 border-red-200"
+                    color: "bg-destructive/10 text-destructive border-destructive/20"
                 };
             default:
                 return {
@@ -111,7 +112,13 @@ export function AuditTimeline({
                             return (
                                 <div key={item.history_id} className="relative">
                                     {/* Dot */}
-                                    <div className={`absolute -left-[31px] p-1 rounded-full bg-white border-2 ${info.color.includes('green') ? 'border-green-500' : info.color.includes('blue') ? 'border-blue-500' : 'border-red-500'}`}>
+                                    <div className={cn(
+                                        "absolute -left-[31px] p-1 rounded-full bg-background border-2",
+                                        item.history_type === '+' && "border-success",
+                                        item.history_type === '~' && "border-info",
+                                        item.history_type === '-' && "border-destructive",
+                                        !['+', '~', '-'].includes(item.history_type) && "border-muted"
+                                    )}>
                                         {info.icon}
                                     </div>
 
@@ -153,11 +160,11 @@ export function AuditTimeline({
                                                             <div key={i} className="grid grid-cols-12 gap-2 border-b border-slate-100 pb-1 last:border-0">
                                                                 <span className="col-span-3 font-medium text-muted-foreground">{d.field}:</span>
                                                                 <div className="col-span-9 flex items-center gap-2 flex-wrap">
-                                                                    <span className="text-destructive line-through decoration-red-300">
+                                                                    <span className="text-destructive line-through decoration-destructive/30">
                                                                         {String(d.old ?? "n/a")}
                                                                     </span>
                                                                     <span className="text-muted-foreground">→</span>
-                                                                    <span className="text-emerald-700 font-medium">
+                                                                    <span className="text-success font-medium">
                                                                         {String(d.new ?? "n/a")}
                                                                     </span>
                                                                 </div>

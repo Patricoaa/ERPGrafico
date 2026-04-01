@@ -23,6 +23,8 @@ interface PhaseCardProps {
     stageId?: string
     isComplete?: boolean
     posSessionId?: number | null
+    isTimeline?: boolean
+    onModalChange?: (isOpen: boolean) => void
 }
 
 export function PhaseCard({
@@ -40,21 +42,23 @@ export function PhaseCard({
     showDocProgress = false,
     stageId = '',
     isComplete = false,
-    posSessionId = null
+    posSessionId = null,
+    isTimeline = false,
+    onModalChange = () => { }
 }: PhaseCardProps) {
     const { triggerAction } = useHubPanel()
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
 
     const variantStyles: Record<string, string> = {
-        success: 'border-green-500/40 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]',
+        success: 'border-success/40 bg-success/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]',
         active: 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]',
         neutral: 'border-white/10 bg-white/5',
-        destructive: 'border-red-500/40 bg-destructive/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+        destructive: 'border-destructive/40 bg-destructive/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
     }
 
     const iconStyles: Record<string, string> = {
-        success: 'bg-green-500/20 text-green-400',
+        success: 'bg-success/20 text-success',
         active: 'bg-primary/20 text-primary',
         neutral: 'bg-white/10 text-muted-foreground',
         destructive: 'bg-destructive/20 text-destructive'
@@ -95,7 +99,7 @@ export function PhaseCard({
             
             {/* Background Gradient for Success */}
             {isSuccess && (
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-success/10 to-transparent pointer-events-none" />
             )}
 
             <div className={cn(
@@ -113,12 +117,12 @@ export function PhaseCard({
                         {/* Mini Status Badge */}
                         <div className={cn(
                             "absolute -top-2 -right-2 rounded-full bg-background border shadow-sm",
-                            isSuccess && "text-emerald-700 border-green-600/30",
+                            isSuccess && "text-success border-success/30",
                             isActive && "text-primary border-blue-600/30",
                             variant === 'destructive' && "text-destructive border-red-600/30",
                             variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
                         )}>
-                            {isSuccess && <CheckCircle2 className="size-3.5 bg-green-500/10 rounded-full" />}
+                            {isSuccess && <CheckCircle2 className="size-3.5 bg-success/10 rounded-full" />}
                             {isActive && <PlayCircle className="size-3.5 bg-primary/10 rounded-full" />}
                             {variant === 'destructive' && <XCircle className="size-3.5 bg-destructive/10 rounded-full" />}
                             {variant === 'neutral' && !isActive && !isSuccess && <MinusCircle className="size-3.5 bg-muted/10 rounded-full" />}
@@ -158,7 +162,7 @@ export function PhaseCard({
                                             className={cn(
                                                 "h-7 w-7 rounded-lg transition-all active:scale-90 border border-white/10 shadow-sm",
                                                 "bg-white/5 hover:bg-white/10",
-                                                (action.id.includes('note')) && "text-orange-500 bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/10 hover:border-orange-500/40",
+                                                (action.id.includes('note')) && "text-warning bg-warning/5 border-warning/20 hover:bg-warning/10 hover:border-warning/40",
                                                 action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
                                                 disabled && "pointer-events-none"
                                             )}
@@ -193,7 +197,7 @@ export function PhaseCard({
                                 "flex items-center justify-between bg-muted/5 border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc",
                                 "rounded-xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
                                 doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-muted0/5 cursor-not-allowed",
-                                doc.isWarning && "bg-orange-500/5 border-orange-500/20 hover:bg-orange-500/15"
+                                doc.isWarning && "bg-warning/5 border-warning/20 hover:bg-warning/15"
                             )}>
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <div className={cn(
