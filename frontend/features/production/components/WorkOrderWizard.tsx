@@ -69,7 +69,7 @@ import { WizardStickyFooter } from "./WizardStickyFooter"
 import { WizardRightSidebar } from "./WizardRightSidebar"
 import { RectificationStep } from "./steps/RectificationStep"
 
-const WorkOrderForm = dynamic(() => import("@/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
+const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
     loading: () => <div className="p-4 text-center">Cargando Formulario...</div>
 })
