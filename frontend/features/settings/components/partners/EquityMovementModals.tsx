@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 import { 
     Dialog, 
@@ -124,8 +125,8 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
             toast.success("Movimiento de capital registrado exitosamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar suscripción")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar suscripción")
         } finally {
             setLoading(false)
         }
@@ -338,8 +339,8 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
             toast.success("Transferencia de participación registrada exitosamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar transferencia")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar transferencia")
         } finally {
             setLoading(false)
         }
@@ -550,8 +551,8 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
             toast.success("Aporte efectivo registrado exitosamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar aporte")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar aporte")
         } finally {
             setLoading(false)
         }
@@ -692,8 +693,8 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
             toast.success("Retiro provisorio registrado exitosamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar retiro")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar retiro")
         } finally {
             setLoading(false)
         }

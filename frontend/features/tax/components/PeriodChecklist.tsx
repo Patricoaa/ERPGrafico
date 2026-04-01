@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import {
     Dialog,
@@ -58,8 +59,8 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             toast.success("Período cerrado correctamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al cerrar el período")
+        } catch (error: unknown) {
+            showApiError(error, "Error al cerrar el período")
         } finally {
             setIsLoading(false)
         }

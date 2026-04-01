@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
@@ -78,8 +79,8 @@ export function LogisticsPhase({
                     toast.success(`${label} anulado correctamente`)
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
-                } catch (error: any) {
-                    toast.error(error.response?.data?.error || `Error al anular ${label}`)
+                } catch (error: unknown) {
+                    showApiError(error, `Error al anular ${label}`)
                 }
             },
             description: `Esta acción reverterá los movimientos de inventario asociados. ¿Está seguro de anular este ${label.toLowerCase()}?`

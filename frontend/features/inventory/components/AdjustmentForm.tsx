@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -196,9 +197,9 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             form.reset()
             onSuccess?.()
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.response?.data?.error || "Error al crear ajuste")
+            showApiError(error, "Error al crear ajuste")
         } finally {
             setIsLoading(false)
         }

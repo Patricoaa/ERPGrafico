@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -343,8 +344,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             toast.success("Caja abierta correctamente")
             // Clear any stale shared session
             localStorage.removeItem('shared_pos_session_id')
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al abrir caja")
+        } catch (error: unknown) {
+            showApiError(error, "Error al abrir caja")
         } finally {
             setSubmitting(false)
         }
@@ -434,8 +435,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             onSessionChange?.(response.data.session)
             setMoveDialogOpen(false)
             toast.success(response.data.message)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar movimiento")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar movimiento")
         } finally {
             setSubmitting(false)
         }

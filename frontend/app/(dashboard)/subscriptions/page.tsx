@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -117,8 +118,8 @@ export default function SubscriptionsPage() {
             toast.success("Suscripción pausada")
             fetchSubscriptions()
             fetchStats()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al pausar suscripción")
+        } catch (error: unknown) {
+            showApiError(error, "Error al pausar suscripción")
         }
     }
 
@@ -135,11 +136,10 @@ export default function SubscriptionsPage() {
             fetchSubscriptions()
             setIsConfirmModalOpen(false)
             setIsRestrictionsDialogOpen(false)
-        } catch (error: any) {
-            console.error("Error archiving product:", error)
-
-            if (error.response?.status === 400 && error.response?.data?.restrictions) {
-                setRestrictions(error.response.data.restrictions)
+        } catch (error: unknown) {
+            const err = error as any;
+            if (err.response?.status === 400 && err.response?.data?.restrictions) {
+                setRestrictions(err.response.data.restrictions)
                 setIsRestrictionsDialogOpen(true)
                 setIsConfirmModalOpen(false)
                 if (isRestrictionsDialogOpen) {
@@ -170,9 +170,9 @@ export default function SubscriptionsPage() {
             toast.success(response.data.message || "Inspección ejecutada correctamente")
             fetchSubscriptions()
             fetchStats()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error triggering inspection:", error)
-            toast.error(error.response?.data?.error || "Error al ejecutar inspección")
+            showApiError(error, "Error al ejecutar inspección")
         }
     }
 
@@ -183,8 +183,8 @@ export default function SubscriptionsPage() {
             toast.success("Suscripción reactivada")
             fetchSubscriptions()
             fetchStats()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al reactivar suscripción")
+        } catch (error: unknown) {
+            showApiError(error, "Error al reactivar suscripción")
         }
     }
 
@@ -261,6 +261,7 @@ export default function SubscriptionsPage() {
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Currency value={row.getValue("amount")} /></div>,
         },
         {
+            id: "frequency",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
             ),

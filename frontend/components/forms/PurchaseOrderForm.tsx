@@ -1,8 +1,10 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { PurchaseOrderInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
@@ -58,7 +60,7 @@ type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>
 
 interface PurchaseOrderFormProps {
     onSuccess?: () => void
-    initialData?: any
+    initialData?: PurchaseOrderInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
@@ -177,9 +179,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving purchase order:", error)
-            toast.error(error.response?.data?.detail || "Error al guardar la Orden de Compra")
+            showApiError(error, "Error al guardar la Orden de Compra")
         } finally {
             setLoading(false)
         }

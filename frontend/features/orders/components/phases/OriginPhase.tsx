@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors"
 
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
@@ -44,8 +45,8 @@ export function OriginPhase({
             await api.post(type === 'purchase' ? `/purchasing/orders/${id}/annul/` : `/sales/orders/${id}/annul/`, { force: false })
             toast.success("Orden anulada correctamente")
             onActionSuccess?.()
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.error || "Error al anular orden"
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error) || "Error al anular orden"
             toast.error(errorMessage)
         }
     }

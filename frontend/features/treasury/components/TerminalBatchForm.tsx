@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
@@ -109,8 +110,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             await api.post('/treasury/terminal-batches/', payload)
             toast.success("Liquidación registrada exitosamente")
             onSuccess()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Error al registrar")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar")
         } finally {
             setLoading(false)
         }

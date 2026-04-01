@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
@@ -67,7 +68,7 @@ export function BillingPhase({
             toast.success("Borrador eliminado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting draft:", error)
             toast.error("No se pudo eliminar el borrador")
         }
@@ -79,8 +80,8 @@ export function BillingPhase({
             toast.success("Documento anulado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.error || "Error al anular documento"
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error) || "Error al anular documento"
             if (errorMessage.includes("pagos asociados") && !force) {
                 setConfirmModal({
                     open: true,

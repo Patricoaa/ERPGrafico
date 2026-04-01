@@ -190,7 +190,7 @@ export function useDraftSync({
                     pos_session_id: posSessionId,
                     session_key: browserSessionKey.current,
                 })
-            } catch (error: any) {
+            } catch (error: unknown) {
                 if (error.response?.status === 409) {
                     // Lock was lost
                     console.warn('[DraftSync] Lock lost for draft', activeLockDraftId)
@@ -242,7 +242,7 @@ export function useDraftSync({
             })
             setActiveLockDraftId(draftId)
             return { acquired: true }
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (error.response?.status === 423) {
                 const data = error.response.data
                 return {

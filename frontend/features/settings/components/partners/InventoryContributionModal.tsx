@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import {
     Package,
@@ -207,9 +208,9 @@ export function InventoryContributionModal({
             toast.success(moveType === 'IN' ? "Aporte en bienes registrado" : "Retiro en bienes registrado")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            toast.error(error.response?.data?.error || "Error al registrar movimiento")
+            showApiError(error, "Error al registrar movimiento")
         } finally {
             setIsLoading(false)
         }

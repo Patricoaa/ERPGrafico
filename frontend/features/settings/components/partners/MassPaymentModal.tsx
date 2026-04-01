@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { 
     Dialog, 
@@ -62,8 +63,8 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
             toast.success("Pago masivo registrado y contabilizado correctamente.")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar el pago")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar el pago")
         } finally {
             setLoading(false)
         }

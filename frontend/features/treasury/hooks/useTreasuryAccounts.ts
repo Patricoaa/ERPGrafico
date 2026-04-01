@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
@@ -35,7 +36,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al crear la cuenta')
+            showApiError(error, 'Error al crear la cuenta')
         }
     })
 
@@ -48,7 +49,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al actualizar la cuenta')
+            showApiError(error, 'Error al actualizar la cuenta')
         }
     })
 

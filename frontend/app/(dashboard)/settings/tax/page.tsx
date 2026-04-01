@@ -78,7 +78,7 @@ export default function TaxSettingsPage() {
                 })
 
                 form.reset(formattedSettings)
-            } catch (error: any) {
+            } catch (error: unknown) {
                 if (error.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }

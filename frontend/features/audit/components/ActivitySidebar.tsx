@@ -16,6 +16,7 @@ import {
     translateProductType, 
     translatePaymentMethod 
 } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/errors"
 
 interface ActivitySidebarProps {
     entityId: number | string
@@ -72,13 +73,8 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                 }
                 const res = await api.get(`${endpoint}/${entityId}/history/`)
                 setHistory(res.data)
-            } catch (err: unknown) {
-                console.error("Error fetching history:", err)
-                const error = err as { code?: string; response?: { data?: { detail?: string } } }
-                const message = error.code === 'ERR_NETWORK'
-                    ? "Error de conexión con el servidor"
-                    : (error.response?.data?.detail || "Error al cargar el historial")
-                setError(message)
+            } catch (error: unknown) {
+                setError(getErrorMessage(error))
             } finally {
                 setLoading(false)
             }

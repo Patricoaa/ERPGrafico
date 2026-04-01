@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -150,9 +151,9 @@ export function SaleNoteModal({
             toast.success("Nota registrada correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering note:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la nota")
+            showApiError(error, "Error al registrar la nota")
         } finally {
             setSubmitting(false)
         }

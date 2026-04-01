@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -83,9 +84,9 @@ export function DocumentRegistrationModal({
             toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering document:", error)
-            toast.error(error.response?.data?.error || "Error al registrar el documento")
+            showApiError(error, "Error al registrar el documento")
         } finally {
             setSubmitting(false)
         }

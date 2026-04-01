@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
@@ -82,8 +83,8 @@ export function TreasuryPhase({
             toast.success("Pago eliminado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
-        } catch (error: any) {
-            const errorMessage = error.response?.data?.error || ""
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error) || ""
             // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
             if (errorMessage.includes("publicado") || error.response?.status === 400) {
                 // Close previous modal

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { 
     Dialog, 
@@ -144,8 +145,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             setLineDestinations(dests)
             
             setStep(2)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al procesar distribución")
+        } catch (error: unknown) {
+            showApiError(error, "Error al procesar distribución")
         } finally {
             setLoading(false)
         }
@@ -161,7 +162,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             onSuccess()
             onOpenChange(false)
             resetFlow()
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error("Error al eliminar borrador")
         } finally {
             setLoading(false)
@@ -185,8 +186,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             
             await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
             setStep(3)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al actualizar destinos")
+        } catch (error: unknown) {
+            showApiError(error, "Error al actualizar destinos")
         } finally {
             setLoading(false)
         }
@@ -206,8 +207,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             onSuccess()
             onOpenChange(false)
             resetFlow()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al ejecutar la distribución")
+        } catch (error: unknown) {
+            showApiError(error, "Error al ejecutar la distribución")
         } finally {
             setLoading(false)
         }

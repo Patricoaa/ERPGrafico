@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 // useDrafts Hook
 // Manages draft carts (save/load/delete) with lock integration
 
@@ -126,10 +127,10 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             })
 
             return res.data
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving draft:", error)
             if (!silent) {
-                toast.error(error.response?.data?.error || "Error al guardar borrador")
+                showApiError(error, "Error al guardar borrador")
             }
         } finally {
             setIsSaving(false)
@@ -202,7 +203,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             setSelectedCustomerId(targetCustomerId)
 
             toast.success(`Borrador cargado: ${draft.name}`)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error loading draft:", error)
             if (error.response?.status === 404) {
                 toast.error("El borrador ya no existe en el servidor o no pertenece a esta sesión")

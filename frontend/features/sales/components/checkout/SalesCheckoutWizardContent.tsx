@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
@@ -509,9 +510,9 @@ export function SalesCheckoutWizardContent({
             const res = await api.post('/billing/invoices/pos_checkout/', formData)
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Checkout error:", error)
-            const rawError = error.response?.data?.error || "Error al procesar la venta"
+            const rawError = getErrorMessage(error) || "Error al procesar la venta"
             const errorMessage = Array.isArray(rawError) ? rawError[0] : String(rawError)
             
             if (errorMessage.includes("Intento de aumento de crédito") || 
@@ -579,9 +580,9 @@ export function SalesCheckoutWizardContent({
             const taskId = response.data.task_id
             setApprovalTaskId(taskId)
             pollApprovalStatus(taskId)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error requesting approval:", error)
-            toast.error(error.response?.data?.error || "Error al solicitar aprobación")
+            showApiError(error, "Error al solicitar aprobación")
             setIsWaitingApproval(false)
         }
     }

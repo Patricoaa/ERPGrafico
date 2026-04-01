@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import {
     Dialog,
@@ -87,8 +88,8 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             onSuccess()
             onOpenChange(false)
             setEntries([])
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al procesar la configuración inicial")
+        } catch (error: unknown) {
+            showApiError(error, "Error al procesar la configuración inicial")
         } finally {
             setLoading(false)
         }

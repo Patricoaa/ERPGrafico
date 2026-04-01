@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -374,9 +375,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Group Match Error', error)
-            alert(error.response?.data?.error || 'Error creando grupo')
+            showApiError(error, 'Error creando grupo')
         } finally {
             setMatching(false)
         }
@@ -485,9 +486,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             } else {
                 setSelectedLines([])
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error matching:', error)
-            alert(error.response?.data?.error || 'Error al realizar match')
+            showApiError(error, 'Error al realizar match')
         } finally {
             setMatching(false)
         }
@@ -543,9 +544,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             })
             alert(`✅ ${response.data.matched_count} de ${response.data.total_unreconciled} líneas matched automáticamente`)
             await fetchUnreconciledLines()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error auto-matching:', error)
-            alert(error.response?.data?.error || 'Error en auto-match')
+            showApiError(error, 'Error en auto-match')
         } finally {
             setAutoMatching(false)
             setActionDialog({ open: false, type: null })

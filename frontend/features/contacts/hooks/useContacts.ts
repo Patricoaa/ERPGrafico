@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import { useQueryClient, useMutation, useSuspenseQuery, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
@@ -37,7 +38,7 @@ export function useContactMutations() {
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al crear el contacto')
+            showApiError(error, 'Error al crear el contacto')
         }
     })
 
@@ -50,7 +51,7 @@ export function useContactMutations() {
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al actualizar el contacto')
+            showApiError(error, 'Error al actualizar el contacto')
         }
     })
 

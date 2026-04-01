@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -192,9 +193,9 @@ export const ActionCategory = forwardRef(({
             await api.post(`/billing/invoices/${invoice.id}/annul/`, { force })
             toast.success("Documento anulado correctamente")
             onActionSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error annulling document:", error)
-            const errorMessage = error.response?.data?.error || "Error al anular documento"
+            const errorMessage = getErrorMessage(error) || "Error al anular documento"
 
             if (errorMessage.includes("pagos asociados") && !force) {
                 setConfirmModal({
@@ -234,9 +235,9 @@ export const ActionCategory = forwardRef(({
             setTempInvoiceId(response.data.id)
             setActiveModal('complete-folio')
             onActionSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error regenerating document:", error)
-            toast.error(error.response?.data?.error || "Error al re-emitir documento")
+            showApiError(error, "Error al re-emitir documento")
         } finally {
             setIsProcessing(false)
         }
@@ -263,7 +264,7 @@ export const ActionCategory = forwardRef(({
                     toast.success("Borrador eliminado correctamente")
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error("Error deleting draft:", error)
                     toast.error("No se pudo eliminar el borrador")
                 } finally {
@@ -297,9 +298,9 @@ export const ActionCategory = forwardRef(({
             toast.success("Operación de tesorería registrada")
             closeModal()
             onActionSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar pago")
+            showApiError(error, "Error al registrar pago")
         } finally {
             setIsProcessing(false)
         }

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 import { 
     Dialog, 
@@ -77,8 +78,8 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
             toast.success("Socio añadido exitosamente")
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al añadir socio")
+        } catch (error: unknown) {
+            showApiError(error, "Error al añadir socio")
         } finally {
             setLoading(false)
         }
