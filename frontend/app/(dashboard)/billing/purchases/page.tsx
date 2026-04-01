@@ -15,8 +15,8 @@ import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { OrderCommandCenter } from "@/features/orders/components/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
@@ -67,8 +67,8 @@ export default function PurchaseInvoicesPage() {
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
-    // Action Panel state
-    const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
+    // Hub Panel
+    const { openHub } = useHubPanel()
 
     useEffect(() => {
         fetchDocuments()
@@ -285,9 +285,11 @@ export default function PurchaseInvoicesPage() {
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setSelectedHub({
+                                onClick={() => openHub({
                                     orderId: doc.purchase_order!,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null
+                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
+                                    type: 'purchase',
+                                    onActionSuccess: fetchDocuments
                                 })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3"
@@ -458,9 +460,11 @@ export default function PurchaseInvoicesPage() {
                                             item={doc}
                                             type="purchase_invoice"
                                             onClick={() => {
-                                                setSelectedHub({
+                                                openHub({
                                                     orderId: doc.purchase_order || null,
-                                                    invoiceId: doc.id
+                                                    invoiceId: doc.id,
+                                                    type: 'purchase',
+                                                    onActionSuccess: fetchDocuments
                                                 })
                                             }}
                                         />
@@ -543,14 +547,6 @@ export default function PurchaseInvoicesPage() {
                 )
             }
 
-            <OrderCommandCenter
-                orderId={selectedHub.orderId}
-                invoiceId={selectedHub.invoiceId}
-                type="purchase"
-                open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
-                onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
-                onActionSuccess={fetchDocuments}
-            />
         </div >
     )
 }
