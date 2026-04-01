@@ -1,27 +1,25 @@
 import React from "react"
-import { TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from "next/link"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TabConfig {
     value: string
     label: string
-    icon: LucideIcon
+    iconName: string
+    href: string
 }
 
 interface PageTabsProps {
     tabs: TabConfig[]
-    className?: string
+    activeValue: string
     maxWidth?: string
+    className?: string
 }
 
-/**
- * Reusable TabsList component for consistent page layouts.
- * Follows the design pattern of /inventory/products.
- */
-export function PageTabs({ tabs, className, maxWidth = "max-w-xl" }: PageTabsProps) {
-    if (!tabs || tabs.length === 0) return null
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
+export function PageTabs({ tabs, activeValue, maxWidth = "max-w-xl", className }: PageTabsProps) {
     const gridCols = {
         1: "grid-cols-1",
         2: "grid-cols-2",
@@ -29,29 +27,34 @@ export function PageTabs({ tabs, className, maxWidth = "max-w-xl" }: PageTabsPro
         4: "grid-cols-4",
         5: "grid-cols-5",
         6: "grid-cols-6",
-    }[tabs.length] || "grid-cols-3"
+    }[tabs.length] || "grid-cols-4"
 
     return (
         <div className={cn("flex justify-center", className)}>
-            <TabsList className={cn(
+            <div className={cn(
                 "grid w-full bg-muted/50 rounded-full h-12 p-1 border",
                 maxWidth,
                 gridCols
             )}>
                 {tabs.map((tab) => {
-                    const Icon = tab.icon
+                    const isActive = tab.value === activeValue
                     return (
-                        <TabsTrigger
+                        <Link
                             key={tab.value}
-                            value={tab.value}
-                            className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2"
+                            href={tab.href}
+                            className={cn(
+                                "flex items-center justify-center rounded-full transition-all gap-2 text-sm font-medium",
+                                isActive
+                                    ? "bg-background shadow-sm text-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
                         >
-                            <Icon className="h-4 w-4" />
+                            <DynamicIcon name={tab.iconName} className="h-4 w-4" />
                             <span className="max-sm:hidden">{tab.label}</span>
-                        </TabsTrigger>
+                        </Link>
                     )
                 })}
-            </TabsList>
+            </div>
         </div>
     )
 }

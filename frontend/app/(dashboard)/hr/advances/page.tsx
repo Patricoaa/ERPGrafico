@@ -34,7 +34,7 @@ import {
 import {
     Plus, Pencil, Trash2, Loader2, WalletCards, CheckCircle2, Clock, History
 } from "lucide-react"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"

@@ -25,5 +25,3 @@ export const LoadingFallback: React.FC<LoadingFallbackProps> = ({
         </div>
     )
 }
-
-export default LoadingFallback

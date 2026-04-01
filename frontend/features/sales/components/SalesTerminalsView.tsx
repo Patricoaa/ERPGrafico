@@ -6,9 +6,9 @@ import { TerminalManagement } from "@/features/treasury/components/TerminalManag
 import { TerminalBatchesManagement } from "@/features/treasury/components/TerminalBatchesManagement"
 import { Banknote, List, Receipt, Plus, Store } from "lucide-react"
 import { POSSessionsView } from "@/features/sales/components/POSSessionsView"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -80,7 +80,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <PageHeader
                     title={title}

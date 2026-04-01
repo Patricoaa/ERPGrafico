@@ -31,7 +31,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Button } from "@/components/ui/button"
 import { SalesSettings, SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
@@ -241,7 +241,7 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
                 </div>
             </PageHeader>
 
-            <ServerPageTabs
+            <PageTabs
                 tabs={[
                     { value: "config_pos", label: "Configuración POS", iconName: "settings", href: "/settings/sales?tab=config_pos" },
                     { value: "credit", label: "Crédito y Cartera", iconName: "wallet", href: "/settings/sales?tab=credit" },

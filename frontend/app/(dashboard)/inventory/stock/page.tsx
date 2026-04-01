@@ -4,7 +4,7 @@ import { WarehouseList } from "@/features/inventory/components/WarehouseList"
 import { MovementList } from "@/features/inventory/components/MovementList"
 import { StockReport } from "@/features/inventory/components/StockReport"
 import { Warehouse, History, FileBarChart } from "lucide-react"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -75,7 +75,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <PageHeader
                     title={title}

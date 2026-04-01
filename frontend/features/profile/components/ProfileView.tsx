@@ -11,7 +11,7 @@ import type { MyProfile } from "@/types/profile"
 import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
@@ -150,7 +150,7 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
 
                 <PageHeader title={title} description={description} />
 

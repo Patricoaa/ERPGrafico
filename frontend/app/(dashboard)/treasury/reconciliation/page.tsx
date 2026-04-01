@@ -1,7 +1,7 @@
 import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import dynamic from "next/dynamic"
@@ -76,7 +76,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <PageHeader
                     title={title}

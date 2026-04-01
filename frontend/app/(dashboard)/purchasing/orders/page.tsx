@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Tabs } from "@/components/ui/tabs"
 
 const PurchasingOrdersClientView = lazy(() =>
@@ -29,7 +29,7 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={viewMode} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={viewMode} maxWidth="max-w-md" />
+                <PageTabs tabs={tabs} activeValue={viewMode} maxWidth="max-w-md" />
                 <Suspense fallback={<LoadingFallback />}>
                     <PurchasingOrdersClientView viewMode={viewMode} />
                 </Suspense>

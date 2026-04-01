@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/ui/LoadingFallback"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 // Lazy load the heavy SalesTerminalsView component
 const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView"))

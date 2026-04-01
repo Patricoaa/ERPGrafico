@@ -13,7 +13,7 @@ import { Plus, Edit, Loader2, ChevronLeft, Users, UserPlus } from "lucide-react"
 import { UserForm } from "@/components/forms/UserForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 
 interface UsersSettingsViewProps {
@@ -176,7 +176,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
 
                 <PageHeader
                     title={title}

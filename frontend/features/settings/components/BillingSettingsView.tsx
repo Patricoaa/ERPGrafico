@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 
 const accountIdSchema = z.union([z.string(), z.number()]).nullable()
 
@@ -164,7 +164,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             </PageHeader>
 
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <Form {...form}>
                     <form className="space-y-6">

@@ -4,15 +4,15 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { UserSelector } from "../selectors/UserSelector"
-import { GroupSelector } from "../selectors/GroupSelector"
+import { UserSelector } from "@/components/selectors/UserSelector"
+import { GroupSelector } from "@/components/selectors/GroupSelector"
 import { Settings, Save, AlertCircle, CheckCircle2, User, Users, CloudUpload, Check } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { Input } from "@/components/ui/input"
 import { LucideIcon, CalendarClock, CreditCard, Lock, Bell, BellRing, UserCheck } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -437,7 +437,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
             </PageHeader>
 
             <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <TabsContent value="approvals">
                     {renderRuleRows(TASK_TYPES)}

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, ArrowRight, Receipt, FileBadge, Package, GitBranch } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { cn } from "@/lib/utils"
-import { MoneyDisplay } from "@/components/ui/MoneyDisplay"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { InvoiceHubStatus } from "@/features/billing/components/InvoiceHubStatus"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 

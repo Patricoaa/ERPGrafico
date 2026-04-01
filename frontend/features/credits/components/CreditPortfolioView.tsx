@@ -12,7 +12,7 @@ import {
     Target, BarChart3, PieChart, Activity, Gavel, HelpCircle, Plus
 } from "lucide-react"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import CreditAssignmentModal from "./components/CreditAssignmentModal"
+import CreditAssignmentModal from "./CreditAssignmentModal"
 import {
     Tooltip,
     TooltipContent,
