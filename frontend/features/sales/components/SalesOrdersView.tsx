@@ -9,6 +9,7 @@ import {
     LayoutDashboard, Monitor, ArrowRight, Calendar,
     ShoppingCart, Package, FileBadge
 } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -245,10 +246,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                 const rows = table.getRowModel().rows
                                 if (rows.length === 0) {
                                     return (
-                                        <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
-                                            <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                            <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
-                                        </div>
+                                        <EmptyState
+                                            context="search"
+                                            title={viewMode === 'orders' ? "No se encontraron órdenes" : "No se encontraron notas"}
+                                            description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
+                                        />
                                     )
                                 }
                                 return (

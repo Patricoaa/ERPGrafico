@@ -21,6 +21,7 @@ import { PricingUtils } from "@/lib/pricing"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 interface SaleNoteModalProps {
     open: boolean
@@ -231,7 +232,14 @@ export function SaleNoteModal({
                                 </tr>
                             ) : lines.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-4 text-center text-muted-foreground italic">No se encontraron productos en la orden</td>
+                                    <td colSpan={6} className="py-8">
+                                        <EmptyState
+                                            context="search"
+                                            variant="compact"
+                                            title="No hay productos"
+                                            description="No se encontraron líneas disponibles en el documento original."
+                                        />
+                                    </td>
                                 </tr>
                             ) : lines.map((line, idx) => (
                                 <tr key={line.id} className={line.note_quantity > 0 ? "bg-purple-50/30" : ""}>

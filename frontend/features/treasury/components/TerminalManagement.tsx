@@ -11,6 +11,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -81,14 +82,16 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
             </div>
 
             {terminals.length === 0 ? (
-                <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <p className="text-muted-foreground mb-4">No hay terminales configurados</p>
-                        <Button onClick={handleCreate} variant="outline">
-                            Crear primer terminal
+                <EmptyState
+                    icon={MonitorSmartphone}
+                    title="No hay terminales configurados"
+                    description="Administre los puntos de venta y sus métodos de pago autorizados desde aquí."
+                    action={
+                        <Button onClick={handleCreate}>
+                            <Plus className="mr-2 h-4 w-4" /> Crear primer terminal
                         </Button>
-                    </CardContent>
-                </Card>
+                    }
+                />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {terminals.map((terminal) => (

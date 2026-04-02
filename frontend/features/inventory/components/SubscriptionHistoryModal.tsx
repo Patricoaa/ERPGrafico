@@ -22,6 +22,7 @@ import {
     Receipt
 } from "lucide-react"
 import api from "@/lib/api"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -247,9 +248,12 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         </ResponsiveContainer>
                                     </div>
                                     {filteredPriceHistory.length === 0 && (
-                                        <div className="text-center py-10 bg-muted/20 rounded-2xl border border-dashed">
-                                            <p className="text-sm text-muted-foreground italic">No hay datos para el periodo seleccionado.</p>
-                                        </div>
+                                        <EmptyState
+                                            context="search"
+                                            variant="compact"
+                                            title="Sin datos"
+                                            description="No hay datos para el periodo seleccionado."
+                                        />
                                     )}
                                 </TabsContent>
 
@@ -302,8 +306,13 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 ))}
                                                 {data.orders.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-sm">
-                                                            No se encontraron órdenes de compra asociadas.
+                                                        <TableCell colSpan={5} className="py-12">
+                                                            <EmptyState
+                                                                context="search"
+                                                                variant="compact"
+                                                                title="Sin órdenes"
+                                                                description="No se encontraron órdenes de compra para esta suscripción."
+                                                            />
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
@@ -370,8 +379,13 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 ))}
                                                 {data.notes.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-sm border-dashed">
-                                                            No se encontraron notas de crédito o débito asociadas.
+                                                        <TableCell colSpan={6} className="py-12">
+                                                            <EmptyState
+                                                                context="search"
+                                                                variant="compact"
+                                                                title="Sin notas"
+                                                                description="No se encontraron notas asociadas a este producto."
+                                                            />
                                                         </TableCell>
                                                     </TableRow>
                                                 )}

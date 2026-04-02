@@ -26,16 +26,16 @@ export function DataTableColumnHeader<TData, TValue>({
             <Button
                 variant="ghost"
                 size="sm"
-                className="-ml-3 h-8 data-[state=open]:bg-accent"
+                className="-ml-3 h-8 data-[state=open]:bg-accent/50 hover:bg-primary/5 hover:text-primary transition-all rounded-[0.125rem]"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
-                <span>{title}</span>
+                <span className="text-[10px] uppercase font-bold font-heading tracking-wider">{title}</span>
                 {column.getIsSorted() === "desc" ? (
-                    <ArrowDown className="ml-2 h-4 w-4" />
+                    <ArrowDown className="ml-2 h-3.5 w-3.5 text-primary" />
                 ) : column.getIsSorted() === "asc" ? (
-                    <ArrowUp className="ml-2 h-4 w-4" />
+                    <ArrowUp className="ml-2 h-3.5 w-3.5 text-primary" />
                 ) : (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-30" />
                 )}
             </Button>
         </div>

@@ -1,17 +1,17 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { WarehouseForm } from "./WarehouseForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { cn } from "@/lib/utils"
 
 interface Warehouse {
     id: number
@@ -44,6 +44,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
     }
 
     const fetchWarehouses = async () => {
+        setLoading(true)
         try {
             const response = await api.get('/inventory/warehouses/')
             setWarehouses(response.data.results || response.data)
@@ -86,48 +87,85 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         }
     }, [externalOpen])
 
-    const columns: ColumnDef<Warehouse>[] = [
+    const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col py-1">
+                    <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{row.original.name}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Ubicación Física</span>
+                </div>
+            ),
         },
         {
             accessorKey: "code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
+            cell: ({ row }) => (
+                <span className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
+                    {row.original.code}
+                </span>
+            ),
+            size: 120,
         },
         {
             accessorKey: "address",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.original.address || "-"}</DataCell.Secondary>,
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] block">
+                    {row.original.address || "-"}
+                </span>
+            ),
         },
         {
             id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingWarehouse(row.original); setIsFormOpen(true) }}>
+                <div className="flex justify-end gap-1">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors" 
+                        onClick={() => { setEditingWarehouse(row.original); setIsFormOpen(true) }}
+                    >
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original)}>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" 
+                        onClick={() => handleDelete(row.original)}
+                    >
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
             ),
+            size: 80,
         },
-    ]
+    ], [])
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <DataTable
                 columns={columns}
                 data={warehouses}
                 cardMode
+                title="Gestión de Almacenes"
+                isLoading={loading}
                 useAdvancedFilter={true}
                 filterColumn="name"
-                searchPlaceholder="Buscar almacén..."
+                searchPlaceholder="Buscar almacén por nombre o código..."
                 globalFilterFields={["name", "code", "address"]}
+                toolbarAction={
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            onClick={() => { setEditingWarehouse(null); setIsFormOpen(true); }}
+                            className="h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-[0.25rem] shadow-lg shadow-primary/20 group"
+                        >
+                             <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" /> 
+                             Nuevo almacén
+                        </Button>
+                    </div>
+                }
             />
 
             <WarehouseForm
@@ -150,12 +188,16 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 title="Eliminar Almacén"
                 variant="destructive"
                 onConfirm={() => { if (warehouseToDelete) return handleDelete(warehouseToDelete, true) }}
-                confirmText="Eliminar"
+                confirmText="Eliminar permanentemente"
                 description={
-                    <p>
-                        ¿Está seguro de que desea eliminar el almacén <strong>{warehouseToDelete?.name}</strong>?
-                        Esta acción podría afectar los stocks registrados en esta ubicación.
-                    </p>
+                    <div className="space-y-3">
+                        <p className="text-sm font-medium">
+                            ¿Confirma la eliminación del almacén <span className="font-black text-foreground underline">{warehouseToDelete?.name}</span>?
+                        </p>
+                        <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
+                             <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
+                        </p>
+                    </div>
                 }
             />
         </div >

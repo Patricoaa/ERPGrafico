@@ -35,15 +35,15 @@ export function FacetedFilter({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 border-dashed rounded-xl bg-background/50 backdrop-blur-sm">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    {title}
+                <Button variant="outline" size="sm" className="h-9 border-dashed rounded-[0.25rem] bg-background/50 backdrop-blur-sm hover:bg-muted/50 border-border/60 transition-all">
+                    <PlusCircle className="mr-2 h-4 w-4 opacity-50" />
+                    <span className="font-heading uppercase tracking-wider text-[10px] font-bold">{title}</span>
                     {selectedSet.size > 0 && (
                         <>
                             <Separator orientation="vertical" className="mx-2 h-4" />
                             <Badge
                                 variant="secondary"
-                                className="rounded-sm px-1 font-normal lg:hidden"
+                                className="rounded-[0.125rem] px-1 font-bold text-[10px] lg:hidden bg-primary text-primary-foreground"
                             >
                                 {selectedSet.size}
                             </Badge>
@@ -51,7 +51,7 @@ export function FacetedFilter({
                                 {selectedSet.size > 2 ? (
                                     <Badge
                                         variant="secondary"
-                                        className="rounded-sm px-1 font-normal"
+                                        className="rounded-[0.125rem] px-1 font-bold text-[10px] bg-primary text-primary-foreground uppercase tracking-tighter"
                                     >
                                         {selectedSet.size} seleccionados
                                     </Badge>
@@ -62,7 +62,7 @@ export function FacetedFilter({
                                             <Badge
                                                 variant="secondary"
                                                 key={option.value}
-                                                className="rounded-sm px-1 font-normal"
+                                                className="rounded-[0.125rem] px-1 font-bold text-[10px] bg-primary/10 text-primary uppercase tracking-tighter"
                                             >
                                                 {option.label}
                                             </Badge>
@@ -73,7 +73,7 @@ export function FacetedFilter({
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 rounded-xl border-sidebar-border/30 overflow-hidden shadow-2xl" align="start">
+            <PopoverContent className="w-[200px] p-0 rounded-[0.25rem] border-border/80 overflow-hidden shadow-xl" align="start">
                 <div className="flex flex-col p-1">
                     {options.map((option) => {
                         const isSelected = selectedSet.has(option.value)
@@ -81,8 +81,8 @@ export function FacetedFilter({
                             <div
                                 key={option.value}
                                 className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                    isSelected ? "bg-accent/50" : ""
+                                    "relative flex cursor-pointer select-none items-center rounded-[0.125rem] px-2 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                    isSelected ? "bg-accent/50 text-primary" : "text-muted-foreground"
                                 )}
                                 onClick={() => {
                                     const newSelected = new Set(selectedValues)
@@ -96,29 +96,29 @@ export function FacetedFilter({
                             >
                                 <div
                                     className={cn(
-                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                        "mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-[0.125rem] border border-primary/50 transition-all",
                                         isSelected
-                                            ? "bg-primary text-primary-foreground"
+                                            ? "bg-primary text-primary-foreground border-primary"
                                             : "opacity-50 [&_svg]:invisible"
                                     )}
                                 >
-                                    <Check className={cn("h-4 w-4")} />
+                                    <Check className={cn("h-3 w-3")} />
                                 </div>
                                 {option.icon && (
-                                    <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <option.icon className="mr-2 h-3.5 w-3.5 opacity-70" />
                                 )}
-                                <span>{option.label}</span>
+                                <span className={cn(isSelected && "text-primary")}>{option.label}</span>
                             </div>
                         )
                     })}
                 </div>
                 {selectedSet.size > 0 && (
                     <>
-                        <Separator />
+                        <Separator className="opacity-50" />
                         <div className="p-1">
                             <Button
                                 variant="ghost"
-                                className="w-full justify-center text-xs"
+                                className="w-full justify-center text-[10px] font-bold uppercase tracking-widest h-8 hover:bg-destructive/10 hover:text-destructive rounded-[0.125rem]"
                                 onClick={() => onSelect([])}
                             >
                                 Limpiar filtros

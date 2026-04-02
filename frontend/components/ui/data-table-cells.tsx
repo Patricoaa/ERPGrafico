@@ -83,7 +83,7 @@ export const DataCell = {
     /** Currency formatted cell */
     Currency: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-right", className)} {...props}>
+            <div className={cn("text-right w-fit ml-auto", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} />
             </div>
         )

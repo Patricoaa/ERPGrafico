@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { TableRow, TableCell } from "@/components/ui/table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "./ProductForm"
@@ -11,8 +12,10 @@ import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { cn, translateProductType } from "@/lib/utils"
+import { cn, translateProductType, formatCurrency } from "@/lib/utils"
 import { PricingUtils } from "@/lib/pricing"
+import { Checkbox } from "@/components/ui/checkbox"
+import { LayoutGrid, List, Download, Trash2, Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsDialog } from "./ArchivingRestrictionsDialog"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -41,6 +44,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
+    const [view, setView] = useState("table")
 
     const router = useRouter()
     const pathname = usePathname()
@@ -131,11 +135,11 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     useEffect(() => {
         const action = searchParams.get('action')
         const idParam = searchParams.get('id')
-        
+
         if (action === 'edit' && idParam && products && products.length > 0) {
             const productId = parseInt(idParam)
             const targetProduct = products.find(p => p.id === productId)
-            
+
             if (targetProduct && (!isFormOpen || editingProduct?.id !== productId)) {
                 setEditingProduct(targetProduct)
                 setIsFormOpen(true)
@@ -151,6 +155,33 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
 
     const columns: ColumnDef<Product>[] = [
         {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                />
+            ),
+            cell: ({ row }) => {
+                const isChild = (row.original as any).is_child_variant;
+                if (isChild) return null;
+                return (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        className="translate-y-[2px]"
+                    />
+                )
+            },
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+            minSize: 40,
+        },
+        {
             accessorKey: "internal_code",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cód. Interno" />
@@ -160,6 +191,8 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     {row.getValue("internal_code")}
                 </Badge>
             ),
+            size: 100,
+            minSize: 80,
         },
         {
             accessorKey: "code",
@@ -171,6 +204,8 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     {row.getValue("code")}
                 </Badge>
             ),
+            size: 100,
+            minSize: 80,
         },
         {
             accessorKey: "name",
@@ -247,6 +282,8 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 }
                 return <DataCell.Currency value={row.getValue("sale_price")} className="text-muted-foreground font-bold" />
             },
+            size: 120,
+            minSize: 100,
         },
         {
             id: "tax",
@@ -257,6 +294,8 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 const tax = PricingUtils.calculateTax(Number(row.getValue("sale_price")))
                 return <DataCell.Currency value={tax} className="text-xs text-muted-foreground font-normal" />
             },
+            size: 110,
+            minSize: 90,
         },
         {
             id: "total",
@@ -270,11 +309,13 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 }
                 return <DataCell.Currency value={total} className="text-primary font-bold" />
             },
+            size: 130,
+            minSize: 110,
         },
         {
             id: "attributes",
             header: ({ column }) => (
-                <div className="text-center">Atributos</div>
+                <div className="text-center">Disponible para</div>
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
@@ -327,6 +368,24 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     globalFilterFields={["name", "code", "internal_code"]}
                     searchPlaceholder="Buscar por nombre, SKU o código..."
                     initialColumnVisibility={{ active: false }}
+                    viewOptions={[
+                        { label: "Lista", value: "table", icon: List },
+                        { label: "Grilla", value: "grid", icon: LayoutGrid },
+                    ]}
+                    currentView={view}
+                    onViewChange={setView}
+                    batchActions={
+                        <>
+                            <Button variant="ghost" size="sm" className="h-8 text-white hover:bg-white/10 gap-2">
+                                <Download className="h-3.5 w-3.5" />
+                                Exportar
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2">
+                                <ArchiveIcon className="h-3.5 w-3.5" />
+                                Archivar
+                            </Button>
+                        </>
+                    }
                     facetedFilters={[
                         {
                             column: "category_name",
@@ -366,7 +425,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         handleCloseModal() // Clean URL
                     }
                 }}
-                initialData={editingProduct}
+                initialData={editingProduct || undefined}
                 onSuccess={refetch}
             />
 
