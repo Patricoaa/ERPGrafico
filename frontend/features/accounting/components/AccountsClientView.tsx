@@ -180,6 +180,8 @@ export function AccountsClientView() {
             <PageHeader
                 title="Plan de Cuentas"
                 description="Administra la estructura de cuentas contables y su jerarquía."
+                variant="minimal"
+                iconName="list"
                 titleActions={
                     <AccountForm accounts={accounts} onSuccess={refetch} triggerVariant="circular" />
                 }

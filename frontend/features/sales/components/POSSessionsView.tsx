@@ -7,14 +7,12 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { FileText, Store, Lock } from "lucide-react"
+import { FileText, Lock } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { POSReport } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import { PageHeader } from "@/components/shared/PageHeader"
 
 interface POSSession {
     id: number
@@ -162,16 +160,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     ]
 
     return (
-        <div className={cn("flex-1 space-y-4", !hideHeader && "p-8 pt-6")}>
-            {!hideHeader && (
-                <PageHeader title="Sesiones Punto de Venta" description="Historial de aperturas y cierres de caja.">
-                    <Button onClick={() => window.open('/pos', '_blank')} className="bg-primary hover:bg-primary/90">
-                        <Store className="mr-2 h-4 w-4" />
-                        Ir al POS
-                    </Button>
-                </PageHeader>
-            )}
-
+        <div className="flex-1 space-y-4">
             {loading ? (
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

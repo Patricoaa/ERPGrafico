@@ -22,6 +22,8 @@ import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { LAYOUT_TOKENS } from "@/lib/styles";
 
 interface GlobalAuditLog {
     date: string;
@@ -224,20 +226,15 @@ export default function AuditHubPage() {
     ];
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Centro de Auditoría</h2>
-                    <p className="text-muted-foreground">
-                        Registro unificado de acciones y cambios en el sistema.
-                    </p>
-                </div>
-                <div className="bg-secondary text-secondary-foreground p-3 rounded-full">
-                    <History className="h-6 w-6 text-muted-foreground" />
-                </div>
-            </div>
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Centro de Auditoría"
+                description="Registro unificado de acciones y cambios en el sistema."
+                variant="minimal"
+                iconName="history"
+            />
 
-            <div className="mt-4">
+            <div className="pt-4">
                 {loading ? (
                     <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center flex flex-col items-center gap-4">
                         <Activity className="h-8 w-8 animate-spin text-primary" />

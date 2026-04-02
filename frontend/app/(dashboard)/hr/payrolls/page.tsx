@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import { FORM_STYLES } from "@/lib/styles"
 import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -54,9 +55,24 @@ type CreatePayrollValues = z.infer<typeof createPayrollSchema>
 
 export default function PayrollsPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    const [dialogOpen, setDialogOpen] = useState(false)
+    const isNewModalOpen = searchParams.get("modal") === "new"
+    const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
+
+    useEffect(() => {
+        setDialogOpen(isNewModalOpen)
+    }, [isNewModalOpen])
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open && isNewModalOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.push(`?${params.toString()}`, { scroll: false })
+        }
+        setDialogOpen(open)
+    }
 
     // State for payment dialogs
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
@@ -317,10 +333,12 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Liquidaciones"
                 description="Gestión de pagos de remuneraciones mensuales."
+                iconName="banknote"
+                variant="minimal"
                 titleActions={
                     <div className="flex items-center gap-2">
                         <PageHeaderButton
@@ -335,25 +353,24 @@ export default function PayrollsPage() {
                                     }
                                 }
                             }}
-                            icon={FileText}
+                            iconName="file-text"
                             variant="outline"
                             label="Generar Borradores"
                         />
-                        <CreatePayrollDialog
-                            open={dialogOpen}
-                            onOpenChange={setDialogOpen}
-                            onSaved={(id) => { setDialogOpen(false); openDetail(id) }}
-                            trigger={
-                                <PageHeaderButton
-                                    onClick={() => setDialogOpen(true)}
-                                    icon={Plus}
-                                    circular
-                                    title="Nueva Liquidación"
-                                />
-                            }
+                        <PageHeaderButton
+                            onClick={() => router.push("?modal=new", { scroll: false })}
+                            iconName="plus"
+                            circular
+                            title="Nueva Liquidación"
                         />
                     </div>
                 }
+            />
+
+            <CreatePayrollDialog
+                open={dialogOpen}
+                onOpenChange={handleOpenChange}
+                onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
             {loading ? (

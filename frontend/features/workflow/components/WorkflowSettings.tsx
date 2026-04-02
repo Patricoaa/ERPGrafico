@@ -13,11 +13,13 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Input } from "@/components/ui/input"
 import { LucideIcon, CalendarClock, CreditCard, Lock, Bell, BellRing, UserCheck } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const TASK_TYPES = [
     { id: 'OT_MATERIAL_APPROVAL', name: 'Aprobación de Stock', description: 'Validación de existencia de materiales.' },
@@ -176,14 +178,18 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     }
 
     if (loading) {
-        return <div className="p-8 text-center text-muted-foreground italic">Cargando configuración...</div>
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-[40px] w-full max-w-2xl" />
+                <div className="grid gap-4">
+                    {[1, 2, 3].map(i => (
+                        <Skeleton key={i} className="h-[80px] w-full rounded-xl" />
+                    ))}
+                </div>
+            </div>
+        )
     }
 
-    const tabs = [
-        { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow?tab=approvals" },
-        { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow?tab=tasks" },
-        { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow?tab=notif" },
-    ]
 
     const renderRuleRows = (taskTypes: any[]) => (
         <div className="grid gap-2">
@@ -416,28 +422,8 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     )
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
-            <PageHeader
-                title="Configuración de Workflow"
-                description="Defina los responsables por defecto para cada etapa y tarea automática del sistema."
-            >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                    {saving ? (
-                        <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                            <span className="text-primary">Actualizando...</span>
-                        </>
-                    ) : (
-                        <>
-                            <Check className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-600">Sincronizado</span>
-                        </>
-                    )}
-                </div>
-            </PageHeader>
-
+        <div className="space-y-4">
             <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
 
                 <TabsContent value="approvals">
                     {renderRuleRows(TASK_TYPES)}

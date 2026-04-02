@@ -14,7 +14,7 @@ import { BOMFormDialog } from "@/features/production/components/BOMFormDialog"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -192,21 +192,19 @@ export default function BOMsPage() {
             <PageHeader
                 title="Listas de Materiales"
                 description="Gestión de estructuras de productos y costos de fabricación."
+                variant="minimal"
+                iconName="layers"
                 titleActions={
-                    <Button
-                        size="icon"
-                        className="rounded-full h-8 w-8"
+                    <PageHeaderButton
                         onClick={() => { setEditingBom(null); setIsFormOpen(true); }}
+                        iconName="plus"
+                        circular
                         title="Nueva Lista"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    />
                 }
             />
 
-
-
-            <div className="">
+            <div className="pt-4">
                 <DataTable
                     columns={columns}
                     data={boms}

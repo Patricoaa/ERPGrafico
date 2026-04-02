@@ -8,21 +8,17 @@ import {
     recoverDebt 
 } from "@/lib/credits/api"
 import { CreditContact, CreditLedgerEntry } from "@/lib/credits/api"
-import ContactModal from "@/features/contacts/components/ContactModal"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, flexRender } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { 
     ChevronDown, 
     ChevronRight, 
     UserCheck, 
     DollarSign, 
-    RefreshCw, 
     AlertCircle,
-    Info,
     CheckCircle2,
     Clock,
     AlertTriangle
@@ -49,6 +45,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { TableCell, TableRow } from "@/components/ui/table"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const fmt = (v: any) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(v || 0))
 
@@ -62,12 +60,12 @@ const agingLabel: Record<string, string> = {
 }
 
 const agingBg: Record<string, string> = {
-    'written_off': 'bg-rose-100 text-rose-700 border-rose-200',
-    'current': 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    'overdue_30': 'bg-blue-50 text-blue-700 border-blue-100',
-    'overdue_60': 'bg-amber-50 text-amber-700 border-amber-100',
-    'overdue_90': 'bg-orange-50 text-orange-700 border-orange-100',
-    'overdue_90plus': 'bg-rose-50 text-rose-700 border-rose-100',
+    'written_off': 'bg-destructive/10 text-destructive border-destructive/20',
+    'current': 'bg-success/10 text-success border-success/20',
+    'overdue_30': 'bg-warning/10 text-warning border-warning/20',
+    'overdue_60': 'bg-orange-500/10 text-orange-700 border-orange-200',
+    'overdue_90': 'bg-destructive/10 text-destructive border-destructive/20',
+    'overdue_90plus': 'bg-destructive/20 text-destructive border-destructive/30',
 }
 
 function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () => void }) {
@@ -85,7 +83,6 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
         if (next && !ledger) {
             setLoadingLedger(true)
             try {
-                // For blacklist, we want to see written-off documents
                 const data = await getContactCreditLedger(contact.id, true)
                 setLedger(data)
             } catch (error) {
@@ -117,7 +114,6 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
             setShowRecoveryDialog(false)
             setRecoveryAmount("")
             onRefresh()
-            // reload ledger
             const data = await getContactCreditLedger(contact.id, true)
             setLedger(data)
         } catch (e: any) {
@@ -158,14 +154,14 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                 <div className="px-8 py-4 bg-background">
                                     <div className="mb-6 flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-2">
-                                            <AlertCircle className="h-4 w-4 text-rose-500" />
-                                            <span className="text-xs font-bold text-rose-700 uppercase tracking-tighter">Historial de Castigos y Deuda</span>
+                                            <AlertCircle className="h-4 w-4 text-destructive" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Historial de Castigos</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="h-8 gap-2 border-rose-200 text-rose-600 hover:bg-rose-50"
+                                                className="h-8 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     setShowRecoveryDialog(true)
@@ -177,7 +173,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="h-8 gap-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                                className="h-8 gap-2 border-success/20 text-success hover:bg-success/5"
                                                 disabled={unblocking}
                                                 onClick={(e) => {
                                                     e.stopPropagation()
@@ -192,7 +188,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
 
                                     {loadingLedger ? (
                                         <div className="space-y-2">
-                                            {[1, 2].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+                                            {[1, 2].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
                                         </div>
                                     ) : ledger && ledger.length > 0 ? (
                                         <div className="overflow-x-auto">
@@ -215,21 +211,15 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                                             </td>
                                                             <td className="py-2 pr-4 text-muted-foreground text-center">{entry.date}</td>
                                                             <td className="py-2 pr-4 text-center font-mono">{fmt(entry.effective_total)}</td>
-                                                            <td className="py-2 pr-4 text-center font-mono text-emerald-600">{fmt(entry.paid_amount)}</td>
+                                                            <td className="py-2 pr-4 text-center font-mono text-success font-medium">{fmt(entry.paid_amount)}</td>
                                                             <td className="py-2 pr-4 text-center font-mono font-bold">{fmt(entry.balance)}</td>
                                                             <td className="py-2 text-center">
-                                                                <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                                                    <div className="flex justify-center">
-                                                                        <span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex cursor-help", agingBg[entry.aging_bucket as string])}>
-                                                                            {(entry.aging_bucket as string) === 'written_off' ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                                                                            {agingLabel[entry.aging_bucket as string]}
-                                                                        </span>
-                                                                    </div>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent className="p-2 text-[10px]">
-                                                                    {(entry.aging_bucket as string) === 'written_off' ? "Deuda castigada como pérdida incobrable." : "Documento regularizado."}
-                                                                </TooltipContent>
-                                                                </Tooltip></TooltipProvider>
+                                                                <div className="flex justify-center">
+                                                                    <span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex", agingBg[entry.aging_bucket as string])}>
+                                                                        {(entry.aging_bucket as string) === 'written_off' ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                                                        {agingLabel[entry.aging_bucket as string]}
+                                                                    </span>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -243,9 +233,9 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                     <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle className="font-black">Registrar Recuperación de Deuda</AlertDialogTitle>
+                                                <AlertDialogTitle className="font-black">Recuperación de Deuda</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    Ingrese el monto que el cliente está pagando. Este ingreso se registrará como una recuperación de incobrables.
+                                                    Ingrese el monto recaudado para este cliente incobrable.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <div className="py-4">
@@ -260,7 +250,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
                                                 <AlertDialogAction
-                                                    className="bg-emerald-600 font-bold"
+                                                    className="bg-primary font-bold"
                                                     onClick={handleRecover}
                                                     disabled={!recoveryAmount}
                                                 >
@@ -282,7 +272,6 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
 export function BlacklistView() {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [selectedContact, setSelectedContact] = useState<CreditContact | null>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -306,15 +295,9 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="text-center font-semibold text-[13px]">
-                    <button
-                        className="hover:underline font-bold text-primary"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedContact(row.original)
-                        }}
-                    >
+                    <div className="font-bold text-foreground">
                         {row.original.name}
-                    </button>
+                    </div>
                     <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.original.tax_id}</div>
                 </div>
             ),
@@ -324,33 +307,33 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
             cell: ({ row }) => {
                 const val = Number(row.original.credit_balance_used)
-                return <div className="text-center font-mono font-bold text-[13px] text-rose-600">{fmt(val)}</div>
+                return <div className="text-center font-mono font-bold text-[13px] text-destructive">{fmt(val)}</div>
             },
         },
         {
             accessorKey: "credit_last_evaluated",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
-            cell: ({ row }) => <div className="text-center text-[11px] text-muted-foreground">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : '—'}</div>,
+            cell: ({ row }) => <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : "—"}</div>,
         }
     ]
 
-    if (loading) return (
-        <div className="rounded-2xl border bg-card/50 p-24 flex flex-col items-center justify-center gap-4 border-dashed">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground font-medium">Cargando lista negra...</p>
-        </div>
-    )
+    if (loading) return <LoadingFallback message="Cargando lista negra..." />
+
+    if (!data?.contacts || data.contacts.length === 0) {
+        return (
+            <EmptyState
+                context="search"
+                title="Lista Negra Vacía"
+                description="No hay clientes bloqueados o en historial de castigos actualmente."
+            />
+        )
+    }
 
     return (
         <div className="space-y-6">
-            <PageHeader 
-                title="Lista Negra"
-                description="Clientes con historial de impago o riesgo crediticio."
-                iconName="user-x"
-            />
             <DataTable
                 columns={columns}
-                data={data?.contacts || []}
+                data={data.contacts}
                 useAdvancedFilter
                 searchPlaceholder="Buscar por cliente o RUT..."
                 globalFilterFields={["name", "tax_id"]}
@@ -358,15 +341,15 @@ export function BlacklistView() {
                 renderCustomView={(table) => (
                     <div className="overflow-x-auto pb-4">
                         <table className="w-full text-left">
-                            <thead className="bg-transparent border-b border-border/50">
+                            <thead className="border-b border-border/50">
                                 {table.getHeaderGroups().map((headerGroup: any) => (
                                     <tr key={headerGroup.id}>
                                         {headerGroup.headers.map((header: any) => (
-                                            <th key={header.id} className="px-4 py-3 h-9 align-middle text-muted-foreground font-medium text-xs whitespace-nowrap">
+                                            <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
                                                 {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                             </th>
                                         ))}
-                                        <th className="px-3 py-3 w-12 text-center" />
+                                        <th className="px-3 py-3 w-12" />
                                     </tr>
                                 ))}
                             </thead>
@@ -374,27 +357,10 @@ export function BlacklistView() {
                                 {table.getRowModel().rows.map((row: any) => (
                                     <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
                                 ))}
-                                {table.getRowModel().rows.length === 0 && (
-                                    <tr>
-                                        <td colSpan={columns.length + 1} className="h-24 text-center text-muted-foreground">
-                                            No se encontraron clientes bloqueados.
-                                        </td>
-                                    </tr>
-                                )}
                             </tbody>
                         </table>
                     </div>
                 )}
-            />
-
-            <ContactModal
-                open={!!selectedContact}
-                onOpenChange={(open) => !open && setSelectedContact(null)}
-                contact={selectedContact}
-                onSuccess={() => {
-                    setSelectedContact(null)
-                    fetchData()
-                }}
             />
         </div>
     )

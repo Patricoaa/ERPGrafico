@@ -1,6 +1,8 @@
 import { Tabs } from "@/components/ui/tabs"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { StatementsView } from "@/features/finances/components/StatementsView"
+import { StatementsView } from "@/features/finance/components/StatementsView"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -17,7 +19,14 @@ export default async function StatementsPage({ searchParams }: PageProps) {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Estados Financieros"
+                description="Reportes oficiales de Balance, P&L y Flujo de Caja."
+                iconName="clipboard-list"
+                variant="minimal"
+            />
+            
             <Tabs value={activeTab} className="space-y-4">
                 <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <StatementsView activeTab={activeTab} />

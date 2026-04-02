@@ -16,6 +16,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { formatPlainDate } from "@/lib/utils"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface JournalEntry {
     id: number
@@ -146,7 +147,7 @@ export default function EntriesPage() {
                             <>
                                 <JournalEntryForm
                                     accounts={accounts}
-                                    initialData={entry}
+                                    initialData={entry as any}
                                     onSuccess={fetchEntries}
                                 />
                                 <Button
@@ -176,14 +177,18 @@ export default function EntriesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Asientos Contables"
                 description="Registro cronológico de todas las transacciones contables del sistema."
+                variant="minimal"
+                iconName="file-text"
                 titleActions={
                     <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
                 }
             />
+
+            <div className="pt-4">
 
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
@@ -221,6 +226,7 @@ export default function EntriesPage() {
                     id={viewingTransaction.id}
                 />
             )}
+            </div>
         </div>
     )
 }

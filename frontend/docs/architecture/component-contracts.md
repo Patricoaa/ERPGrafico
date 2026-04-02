@@ -14,6 +14,26 @@ Componente central para la representación de estados de entidades (pedidos, pag
   - Nunca usar colores Tailwind hardcoded.
   - Ver [Inventario de Estados de Negocio](BUSINESS_STATES.md) para los valores aceptados por `status`.
 
+### 7. PageHeader y PageLayout (`shared/PageHeader`, `shared/PageTabs`)
+
+Contrato visual para todas las vistas principales del sistema.
+
+**PageHeader Props:**
+- `title`: String principal.
+- `description`: Subtítulo explicativo.
+- `variant`: `default` | `minimal` (minimal quita padding inferior para integrarse con tabs).
+- `isLoading`: Muestra esqueletos de carga.
+- `titleActions`: Espacio para botones de acción al lado del título (ej: botón Plus circular).
+
+**PageTabs Props:**
+- `tabs`: Array de `{ label, value, iconName, href }`.
+- `activeValue`: El valor de la pestaña seleccionada.
+
+**Reglas de Diseño (Industrial Premium):**
+1. **Botones de Creación**: Deben ser circulares (`circular`), usar el icono `Plus` y tener fondo sólido `bg-primary` cuando se sitúan en `titleActions`.
+2. **Estilo de Pestañas**: Usar el estilo **Industrial Underline** (borde inferior de `2px` con color `primary` al estar activo). No usar píldoras redondeadas.
+3. **Contenedor**: Toda vista debe estar envuelta en `LAYOUT_TOKENS.view`.
+
 ## 2. EmptyState
 Visualización estándar para listados, búsquedas y estados vacíos en cualquier parte de la interfaz.
 

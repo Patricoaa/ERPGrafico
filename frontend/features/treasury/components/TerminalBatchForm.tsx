@@ -282,13 +282,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     </div>
 
                     <div className="grid gap-2 pt-2 border-t border-dashed border-gray-300">
-                        <Label className={cn(FORM_STYLES.label, "text-emerald-700 font-bold")}>Monto Neto a Depositar</Label>
+                        <Label className={cn(FORM_STYLES.label, "text-success font-bold")}>Monto Neto a Depositar</Label>
                         <Input
                             type="number"
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-emerald-600 border-emerald-200 bg-emerald-50 bg-muted cursor-not-allowed")}
+                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-success border-success/20 bg-success/5 cursor-not-allowed")}
                         />
                     </div>
                 </div>
@@ -421,7 +421,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                             Seleccionar Todas ({movements.length})
                         </Label>
                     </div>
-                    <div className="text-sm font-black text-emerald-600">
+                    <div className="text-sm font-black text-success">
                         Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
                     </div>
                 </div>

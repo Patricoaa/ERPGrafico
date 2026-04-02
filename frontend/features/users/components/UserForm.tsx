@@ -251,7 +251,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                         <FormItem className={cn("flex flex-row items-center justify-between rounded-xl p-4 bg-muted/5 border-none")}>
                                                             <div className="space-y-0.5">
                                                                 <FormLabel className={cn("flex items-center gap-2", FORM_STYLES.label)}>
-                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-emerald-500" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-success" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
                                                                     Estado del Acceso
                                                                 </FormLabel>
                                                                 <FormDescription className="text-[10px]">
@@ -262,7 +262,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                                 <Switch
                                                                     checked={field.value}
                                                                     onCheckedChange={field.onChange}
-                                                                    className="data-[state=checked]:bg-emerald-500"
+                                                                    className="data-[state=checked]:bg-success"
                                                                 />
                                                             </FormControl>
                                                         </FormItem>

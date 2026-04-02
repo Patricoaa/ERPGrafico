@@ -1,5 +1,4 @@
-"use client"
-
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -11,7 +10,6 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { useContacts, type Contact } from "@/features/contacts"
 
 // Lazy load heavy components
@@ -20,12 +18,39 @@ const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmM
 
 
 
-export function ContactsClientView() {
+interface ContactsClientViewProps {
+    isNewModalOpen?: boolean
+}
+
+export function ContactsClientView({ isNewModalOpen = false }: ContactsClientViewProps) {
     const { contacts, deleteContact } = useContacts()
     const [selectedContact, setSelectedContact] = useState<any>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [contactToDelete, setContactToDelete] = useState<any>(null)
+    const router = useRouter()
+    const searchParams = useSearchParams()
+
+    // Sync modal with props from URL
+    useEffect(() => {
+        if (isNewModalOpen) {
+            setSelectedContact(null)
+            setModalOpen(true)
+        }
+    }, [isNewModalOpen])
+
+    const handleCloseModal = (open: boolean) => {
+        setModalOpen(open)
+        if (!open) {
+            setSelectedContact(null)
+            // Clear URL params if it was a 'new' modal
+            if (searchParams.get("modal") === "new") {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`)
+            }
+        }
+    }
 
     const handleDelete = async (contact: any, isConfirmed = false) => {
         if (!contact) return
@@ -177,20 +202,7 @@ export function ContactsClientView() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Contactos"
-                description="Directorio centralizado de clientes, proveedores y colaboradores."
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => { setSelectedContact(null); setModalOpen(true); }}
-                        icon={Plus}
-                        circular
-                        title="Nuevo Contacto"
-                    />
-                }
-            />
-
+        <>
             <DataTable
                 columns={columns}
                 data={contacts}
@@ -215,11 +227,10 @@ export function ContactsClientView() {
             <Suspense fallback={null}>
                 <ContactModal
                     open={modalOpen}
-                    onOpenChange={(open: boolean) => setModalOpen(open)}
+                    onOpenChange={handleCloseModal}
                     contact={selectedContact}
                     onSuccess={() => {
-                        setModalOpen(false)
-                        setSelectedContact(null)
+                        handleCloseModal(false)
                         // Automatic invalidation handles refetch
                     }}
                 />
@@ -241,6 +252,6 @@ export function ContactsClientView() {
                     }
                 />
             </Suspense>
-        </div>
+        </>
     )
 }

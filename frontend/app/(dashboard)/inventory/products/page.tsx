@@ -68,24 +68,28 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+            <PageHeader
+                title={title}
+                description={description}
+                variant="minimal"
+                iconName="package"
+                titleActions={actionTitle ? (
+                    <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
+                        <PageHeaderButton
+                            iconName="plus"
+                            circular
+                            title={actionTitle}
+                        />
+                    </Link>
+                ) : null}
+            />
 
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={actionTitle ? (
-                        <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title={actionTitle}
-                            />
-                        </Link>
-                    ) : null}
-                />
+            <div className="pt-2">
+                <PageTabs tabs={tabs} activeValue={activeTab} />
+            </div>
 
-                <div className="pt-4">
+            <Tabs value={activeTab} className="space-y-4 pt-4">
+                <div className="pt-0">
                     <TabsContent value="products" className="mt-0 outline-none">
                         <ProductList
                             externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}

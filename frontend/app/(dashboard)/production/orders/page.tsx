@@ -9,15 +9,15 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, X } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, Columns, X, Factory } from "lucide-react"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { FacetedFilter } from "@/components/shared/FacetedFilter"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
@@ -59,7 +59,7 @@ export default function WorkOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban")
+    const [viewMode, setViewMode] = useState<string>("kanban")
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
     const filteredOrders = orders.filter(order => {
@@ -263,29 +263,17 @@ export default function WorkOrdersPage() {
     ), [loading, handleKanbanTransition])
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Ordenes de Trabajo (OT)"
                 description="Seguimiento y control de procesos productivos."
+                iconName="factory"
+                variant="minimal"
                 titleActions={
-                    <div className="flex items-center gap-4">
-                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
-                            <TabsList className="bg-muted/50 border-0 h-9 p-1">
-                                <TabsTrigger value="kanban" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <LayoutGrid className="h-3.5 w-3.5" />
-                                    <span>Tablero</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="list" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <List className="h-3.5 w-3.5" />
-                                    <span>Lista</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <WorkOrderForm
-                            onSuccess={fetchOrders}
-                            triggerVariant="circular"
-                        />
-                    </div>
+                    <WorkOrderForm
+                        onSuccess={fetchOrders}
+                        triggerVariant="circular"
+                    />
                 }
             />
 
@@ -320,11 +308,18 @@ export default function WorkOrdersPage() {
                 <DataTable
                     columns={columns}
                     data={orders}
-                    cardMode={viewMode === "list"}
+                    cardMode={viewMode === "list" || viewMode === "grid"}
                     filterColumn="description"
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
                     searchPlaceholder="Buscar por folio, descripción o cliente..."
+                    viewOptions={[
+                        { label: "Lista", value: "list", icon: List },
+                        { label: "Grilla", value: "grid", icon: LayoutGrid },
+                        { label: "Tablero", value: "kanban", icon: Columns },
+                    ]}
+                    currentView={viewMode}
+                    onViewChange={setViewMode}
                     facetedFilters={[
                         {
                             column: "status",

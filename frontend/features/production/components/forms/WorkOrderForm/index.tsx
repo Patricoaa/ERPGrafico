@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { PageHeaderButton } from "@/components/shared/PageHeader"
 
 import { cn, translateStatus } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -317,9 +318,13 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         <>
             {!initialData && (
                 triggerVariant === "circular" ? (
-                    <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setOpen(true)} title="Nueva OT">
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    <PageHeaderButton 
+                        circular 
+                        onClick={() => setOpen(true)} 
+                        title="Nueva OT"
+                        iconName="plus"
+                        variant="default"
+                    />
                 ) : (
                     <Button onClick={() => setOpen(true)}>Nueva Orden de Trabajo</Button>
                 )

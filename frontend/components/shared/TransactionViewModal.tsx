@@ -64,13 +64,15 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black [&>button[data-slot=dialog-close]]:hidden"
             >
                 {/* Standard hidden receipt for actual browser print command */}
-                <PrintableReceipt
-                    ref={contentRef}
-                    data={data}
-                    currentType={currentType}
-                    mainTitle="Comprobante"
-                    subTitle={String(data?.id || '')}
-                />
+                {data && (
+                    <PrintableReceipt
+                        ref={contentRef}
+                        data={data}
+                        currentType={currentType}
+                        mainTitle="Comprobante"
+                        subTitle={String(data?.id || '')}
+                    />
+                )}
 
                 <div className="flex flex-col h-[90vh] md:h-[85vh] max-h-[900px] bg-background print:hidden">
                     
@@ -128,7 +130,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                         initialData={{
                             payment_type: editingPayment.isReceivable ? "INBOUND" : "OUTBOUND",
                             amount: editingPayment.amount,
-                            invoice_id: editingPayment.transactionId,
+                            invoice_id: editingPayment.transactionId?.toString(),
                             reference: `Pago para ${editingPayment.transactionType} #${editingPayment.transactionId}`
                         }}
                         onSuccess={() => {
@@ -141,3 +143,5 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
         </>
     )
 }
+
+export default TransactionViewModal

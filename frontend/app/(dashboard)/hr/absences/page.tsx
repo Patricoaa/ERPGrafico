@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,6 +24,8 @@ import { Loader2, Plus, CalendarX2, Search, Pencil, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 
+import { LAYOUT_TOKENS } from "@/lib/styles"
+
 const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
     absence_type: z.enum(["AUSENTISMO", "LICENCIA", "PERMISO_SIN_GOCE", "AUSENCIA_HORAS"]),
@@ -35,11 +38,27 @@ const absenceSchema = z.object({
 type AbsenceFormValues = z.infer<typeof absenceSchema>
 
 export default function AbsencesPage() {
+    const router = useRouter()
+    const searchParams = useSearchParams()
     const [absences, setAbsences] = useState<Absence[]>([])
+    const [employees, setEmployees] = useState<Employee[]>([])
     const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState("")
-    const [dialogOpen, setDialogOpen] = useState(false)
+    
+    // Dialog state synchronized with URL or local edit
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
+    const dialogOpen = isNewModalOpen || !!editingAbsence
+
+    const setDialogOpen = (open: boolean) => {
+        if (!open) {
+            setEditingAbsence(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const fetchAbsences = useCallback(async () => {
         try {
@@ -52,7 +71,14 @@ export default function AbsencesPage() {
         }
     }, [])
 
-    useEffect(() => { fetchAbsences() }, [fetchAbsences])
+    const fetchAll = useCallback(async () => {
+        await Promise.all([
+            fetchAbsences(),
+            getEmployees().then(setEmployees)
+        ])
+    }, [fetchAbsences])
+
+    useEffect(() => { fetchAll() }, [fetchAll])
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Eliminar esta inasistencia?")) return
@@ -114,26 +140,27 @@ export default function AbsencesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Inasistencias"
-                description="Registro de ausentismos, licencias y permisos."
+                title="Inasistencias y Licencias"
+                description="Control de ausencias, licencias médicas y permisos."
+                iconName="calendar-off"
                 titleActions={
-                    <AbsenceDialog
-                        open={dialogOpen}
-                        onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingAbsence(null) }}
-                        absence={editingAbsence}
-                        onSaved={() => { setDialogOpen(false); setEditingAbsence(null); fetchAbsences() }}
-                        trigger={
-                            <PageHeaderButton
-                                onClick={() => { setEditingAbsence(null); setDialogOpen(true); }}
-                                icon={Plus}
-                                circular
-                                title="Registrar Inasistencia"
-                            />
-                        }
+                    <PageHeaderButton
+                        onClick={() => router.push("?modal=new", { scroll: false })}
+                        iconName="plus"
+                        circular
+                        title="Nueva Inasistencia"
                     />
                 }
+            />
+
+            <AbsenceDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                absence={editingAbsence}
+                employees={employees}
+                onSaved={() => { setDialogOpen(false); fetchAll() }}
             />
 
             {loading ? (
@@ -168,15 +195,15 @@ export default function AbsencesPage() {
     )
 }
 
-function AbsenceDialog({ open, onOpenChange, absence, onSaved, trigger }: {
+function AbsenceDialog({ open, onOpenChange, absence, employees, onSaved, trigger }: {
     open: boolean, 
     onOpenChange: (open: boolean) => void, 
     absence: Absence | null, 
+    employees: Employee[],
     onSaved: () => void, 
     trigger?: React.ReactNode 
 }) {
     const [saving, setSaving] = useState(false)
-    const [employees, setEmployees] = useState<Employee[]>([])
 
     const form = useForm<AbsenceFormValues>({
         resolver: zodResolver(absenceSchema),
@@ -190,11 +217,7 @@ function AbsenceDialog({ open, onOpenChange, absence, onSaved, trigger }: {
         }
     })
 
-    useEffect(() => {
-        if (open) {
-            getEmployees().then(setEmployees).catch(e => console.error(e))
-        }
-    }, [open])
+    // Employees are passed from parent now
 
     useEffect(() => {
         if (absence) {

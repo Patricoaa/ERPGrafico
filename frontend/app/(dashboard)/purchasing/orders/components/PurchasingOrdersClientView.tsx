@@ -66,9 +66,10 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
+    externalOpenCheckout?: boolean
 }
 
-export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientViewProps) {
+export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: PurchasingOrdersClientViewProps) {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [notes, setNotes] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -86,6 +87,12 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
+
+    useEffect(() => {
+        if (externalOpenCheckout) {
+            setCheckoutOpen(true)
+        }
+    }, [externalOpenCheckout])
 
     useEffect(() => {
         const openHubStr = searchParams.get('openHub')
@@ -439,32 +446,16 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
 
     return (
         <div className="space-y-6">
-            <PageHeader
-                title="Gestión de Compras"
-                description="Gestión integral de órdenes de compra, recepciones y facturas de proveedores"
-
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => setCheckoutOpen(true)}
-                        icon={Plus}
-                        circular
-                        title="Nueva Orden"
-                    />
-                }
-            >
-                <div className="flex items-center gap-2">
-                    {editingOrder && (
-                        <PurchaseOrderForm
-                            initialData={editingOrder}
-                            open={!!editingOrder}
-                            onOpenChange={(open) => {
-                                if (!open) setEditingOrder(null)
-                            }}
-                            onSuccess={fetchOrders}
-                        />
-                    )}
-                </div>
-            </PageHeader>
+            {editingOrder && (
+                <PurchaseOrderForm
+                    initialData={editingOrder}
+                    open={!!editingOrder}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingOrder(null)
+                    }}
+                    onSuccess={fetchOrders}
+                />
+            )}
 
             {loading ? (
                 <div className="flex items-center justify-center h-64">

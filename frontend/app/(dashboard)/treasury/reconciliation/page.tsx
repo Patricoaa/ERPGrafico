@@ -59,32 +59,34 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+            <PageHeader
+                title={title}
+                description={description}
+                iconName="landmark"
+                variant="minimal"
+                titleActions={
+                    activeTab === "statements" ? (
+                        <Link href="/treasury/reconciliation?tab=statements&modal=import">
+                            <PageHeaderButton
+                                iconName="upload"
+                                circular
+                            />
+                        </Link>
+                    ) : activeTab === "rules" ? (
+                        <Link href="/treasury/reconciliation?tab=rules&modal=new-rule">
+                            <PageHeaderButton
+                                iconName="plus"
+                                circular
+                            />
+                        </Link>
+                    ) : null
+                }
+            />
 
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={
-                        activeTab === "statements" ? (
-                            <Link href="/treasury/reconciliation?tab=statements&modal=import">
-                                <PageHeaderButton
-                                    iconName="upload"
-                                    circular
-                                />
-                            </Link>
-                        ) : activeTab === "rules" ? (
-                            <Link href="/treasury/reconciliation?tab=rules&modal=new-rule">
-                                <PageHeaderButton
-                                    iconName="plus"
-                                    circular
-                                />
-                            </Link>
-                        ) : null
-                    }
-                />
+            <PageTabs tabs={tabs} activeValue={activeTab} />
 
-                <div className="pt-4">
+            <div className="pt-4">
+                <Tabs value={activeTab} className="space-y-4">
                     <TabsContent value="statements" className="mt-0 outline-none">
                         <StatementsList externalOpen={modalOpen} />
                     </TabsContent>
@@ -94,9 +96,8 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                     <TabsContent value="rules" className="mt-0 outline-none">
                         <ReconciliationRules externalOpen={resolvedParams.modal === "new-rule"} />
                     </TabsContent>
-                </div>
-
-            </Tabs>
+                </Tabs>
+            </div>
         </div>
     )
 }

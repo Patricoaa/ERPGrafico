@@ -86,7 +86,10 @@ const afpSchema = z.object({
     account: z.string().nullable(),
 })
 
-export function HRSettingsView({ activeTab }: { activeTab: string }) {
+export function HRSettingsView({ activeTab, onSavingChange }: { 
+    activeTab: string,
+    onSavingChange?: (saving: boolean) => void
+}) {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
@@ -180,6 +183,10 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
         }
     }, [watchedGlobal, loading, isGlobalDirty, globalForm, onSaveGlobal])
 
+    useEffect(() => {
+        onSavingChange?.(saving)
+    }, [saving, onSavingChange])
+
     const conceptColumns: ColumnDef<PayrollConcept>[] = [
         {
             accessorKey: "name",
@@ -204,7 +211,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 return (
                     <Badge variant="outline" className={cn(
                         "text-[9px] font-black uppercase h-5 shadow-sm rounded-sm",
-                        isHaber ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                        isHaber ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
                     )}>
                         {row.getValue("category_display")}
                     </Badge>
@@ -255,38 +262,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 pb-12">
-            <PageHeader
-                title="Configuración de RRHH"
-                description="Gestione parámetros generales comerciales y contables aplicables al módulo de RRHH."
-                icon={Settings2}
-            >
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                        {saving ? (
-                            <>
-                                <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                                <span className="text-primary">Guardando...</span>
-                            </>
-                        ) : (
-                            <>
-                                <CloudCheck className="h-3 w-3 text-emerald-500" />
-                                <span className="text-emerald-600">Guardado</span>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </PageHeader>
-
-            <PageTabs
-                tabs={[
-                    { value: "global", label: "Globales", iconName: "settings", href: "/settings/hr?tab=global" },
-                    { value: "concepts", label: "Conceptos", iconName: "list-checks", href: "/settings/hr?tab=concepts" },
-                    { value: "previsional", label: "Previsión / AFP", iconName: "building", href: "/settings/hr?tab=previsional" },
-                ]}
-                activeValue={activeTab}
-                maxWidth="max-w-xl"
-            />
+        <div className="space-y-6">
 
             <div className="mt-6">
                 <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
@@ -724,7 +700,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
-                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 transition-all rounded-[0.25rem] shadow-sm">
+                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-[0.25rem] shadow-sm">
                         <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
                     </Button>
                 )}
@@ -776,7 +752,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                             )}
                         />
                         <DialogFooter className="mt-6 pt-4 border-t">
-                            <Button type="submit" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white">
+                            <Button type="submit" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
                                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Institución"}
                             </Button>
                         </DialogFooter>

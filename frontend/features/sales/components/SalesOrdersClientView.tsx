@@ -1,14 +1,10 @@
 "use client"
 
-import { useState, lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { SalesOrdersView } from "./SalesOrdersView"
-import { ShoppingCart } from "lucide-react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
+import { SalesOrdersView } from "./SalesOrdersView"
 
 // Lazy load heavy components
-const SaleOrderForm = lazy(() => import("@/features/sales/components/forms/SaleOrderForm"))
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 const DeliveryModal = lazy(() => import("./DeliveryModal"))
@@ -17,40 +13,31 @@ const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
+    isCreateModalOpen?: boolean
+    setCreateModalOpen?: (open: boolean) => void
 }
 
-export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) {
-    const [editingOrder, setEditingOrder] = useState<any | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
+export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<any | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<any | null>(null)
     const [addingNote, setAddingNote] = useState<any | null>(null)
     const [checkoutData, setCheckoutData] = useState<any | null>(null)
-    return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Notas de Venta"
-                description="Gestiona tus pedidos, facturación y estados de entrega de forma centralizada."
-            >
-                {editingOrder && (
-                    <Suspense fallback={null}>
-                        <SaleOrderForm
-                            initialData={editingOrder}
-                            open={isFormOpen && !!editingOrder}
-                            onOpenChange={(open: boolean) => {
-                                setIsFormOpen(open)
-                                if (!open) setEditingOrder(null)
-                            }}
-                            onSuccess={() => setIsFormOpen(false)}
-                        />
-                    </Suspense>
-                )}
-            </PageHeader>
 
+    // Handle creation trigger for Notes view if needed
+    useEffect(() => {
+        if (isCreateModalOpen && viewMode === 'notes') {
+            setAddingNote(true) // Open Note creation modal
+            if (setCreateModalOpen) setCreateModalOpen(false)
+        }
+    }, [isCreateModalOpen, viewMode, setCreateModalOpen])
+
+    return (
+        <>
             <SalesOrdersView viewMode={viewMode} />
 
+            {/* Modals & Forms */}
             {viewingTransaction && (
                 <Suspense fallback={null}>
                     <TransactionViewModal
@@ -128,16 +115,15 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                     <SaleNoteModal
                         open={!!addingNote}
                         onOpenChange={(open: boolean) => !open && setAddingNote(null)}
-                        orderId={addingNote.id}
-                        orderNumber={addingNote.number}
-                        invoiceId={addingNote.related_documents?.invoices?.[0]?.id}
+                        orderId={addingNote?.id}
+                        orderNumber={addingNote?.number}
+                        invoiceId={addingNote?.related_documents?.invoices?.[0]?.id}
                         onSuccess={() => setAddingNote(null)}
                     />
                 </Suspense>
             )}
-        </div>
+        </>
     )
 }
 
 export default SalesOrdersClientView
-

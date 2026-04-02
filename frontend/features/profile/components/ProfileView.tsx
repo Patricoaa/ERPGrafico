@@ -11,8 +11,6 @@ import type { MyProfile } from "@/types/profile"
 import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -63,12 +61,13 @@ type PinFormValues = z.infer<typeof pinSchema>
 
 interface ProfileViewProps {
     activeTab: string
+    initialProfile?: MyProfile
 }
 
-export function ProfileView({ activeTab }: ProfileViewProps) {
+export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
     const router = useRouter()
-    const [profile, setProfile] = useState<MyProfile | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [profile, setProfile] = useState<MyProfile | null>(initialProfile || null)
+    const [loading, setLoading] = useState(!initialProfile)
     const [selectedPayrolls, setSelectedPayrolls] = useState<number[]>([])
     const [downloadingAll, setDownloadingAll] = useState(false)
 
@@ -83,43 +82,14 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
         }
     }, [])
 
-    useEffect(() => { fetchProfile() }, [fetchProfile])
+    useEffect(() => { 
+        if (!initialProfile) {
+            fetchProfile() 
+        }
+    }, [fetchProfile, initialProfile])
 
-    const tabs = [
-        { value: "account", label: "Cuenta", iconName: "user-cog", href: "/profile?tab=account" },
-        { value: "personal", label: "Personal", iconName: "badge-check", href: "/profile?tab=personal" },
-    ]
-    
-    // Solo mostramos el tab de Socio si el contacto asociado al empleado o usuario es socio.
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
-    if (isPartner) {
-        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner" })
-    }
-
-    const getHeaderConfig = () => {
-        switch (activeTab) {
-            case "account":
-                return {
-                    title: "Mi Cuenta",
-                    description: "Gestione su información de usuario y credenciales de acceso al sistema.",
-                }
-            case "personal":
-                return {
-                    title: "Mi Ficha Personal",
-                    description: "Visualice su información como empleado, historial de liquidaciones y pagos.",
-                }
-            case "partner":
-                return {
-                    title: "Mi Capital",
-                    description: "Centro de control de participación societaria y estado de cuenta patrimonial.",
-                }
-            default:
-                return { title: "Mi Perfil", description: "" }
-        }
-    }
-
-    const { title, description } = getHeaderConfig()
 
     if (loading) {
         return (
@@ -149,35 +119,29 @@ export function ProfileView({ activeTab }: ProfileViewProps) {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
+        <Tabs value={activeTab} className="space-y-4">
+            <div className="pt-0">
+                <TabsContent value="account" className="mt-0 outline-none space-y-6">
+                    <AccountTab user={profile.user} />
+                </TabsContent>
 
-                <PageHeader title={title} description={description} />
-
-                <div className="pt-4">
-                    <TabsContent value="account" className="mt-0 outline-none space-y-6">
-                        <AccountTab user={profile.user} />
+                <TabsContent value="personal" className="mt-0 outline-none space-y-6">
+                    <PersonalTab
+                        profile={profile}
+                        selectedPayrolls={selectedPayrolls}
+                        onSelectedPayrollsChange={setSelectedPayrolls}
+                        onBulkDownload={handleBulkDownload}
+                        downloadingAll={downloadingAll}
+                    />
+                </TabsContent>
+                
+                {isPartner && contactDetail && (
+                    <TabsContent value="partner" className="mt-0 outline-none space-y-6">
+                        <PartnerProfileTab contactId={contactDetail.id} />
                     </TabsContent>
-
-                    <TabsContent value="personal" className="mt-0 outline-none space-y-6">
-                        <PersonalTab
-                            profile={profile}
-                            selectedPayrolls={selectedPayrolls}
-                            onSelectedPayrollsChange={setSelectedPayrolls}
-                            onBulkDownload={handleBulkDownload}
-                            downloadingAll={downloadingAll}
-                        />
-                    </TabsContent>
-                    
-                    {isPartner && contactDetail && (
-                        <TabsContent value="partner" className="mt-0 outline-none space-y-6">
-                            <PartnerProfileTab contactId={contactDetail.id} />
-                        </TabsContent>
-                    )}
-                </div>
-            </Tabs>
-        </div>
+                )}
+            </div>
+        </Tabs>
     )
 }
 

@@ -2,6 +2,7 @@ import React from "react"
 import Link from "next/link"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
 interface TabConfig {
     value: string
@@ -17,43 +18,50 @@ interface PageTabsProps {
     className?: string
 }
 
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
-
-export function PageTabs({ tabs, activeValue, maxWidth = "max-w-xl", className }: PageTabsProps) {
-    const gridCols = {
-        1: "grid-cols-1",
-        2: "grid-cols-2",
-        3: "grid-cols-3",
-        4: "grid-cols-4",
-        5: "grid-cols-5",
-        6: "grid-cols-6",
-    }[tabs.length] || "grid-cols-4"
-
+/**
+ * Reusable Page Navigation Tabs component with an Industrial Underline style.
+ * Maps navigation links to a standardized tab-like experience.
+ */
+export function PageTabs({ tabs, activeValue, maxWidth, className }: PageTabsProps) {
     return (
-        <div className={cn("flex justify-center", className)}>
-            <div className={cn(
-                "grid w-full bg-muted/50 rounded-full h-12 p-1 border",
-                maxWidth,
-                gridCols
-            )}>
-                {tabs.map((tab) => {
-                    const isActive = tab.value === activeValue
-                    return (
-                        <Link
-                            key={tab.value}
-                            href={tab.href}
-                            className={cn(
-                                "flex items-center justify-center rounded-full transition-all gap-2 text-sm font-medium",
-                                isActive
-                                    ? "bg-background shadow-sm text-foreground"
-                                    : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            <DynamicIcon name={tab.iconName} className="h-4 w-4" />
-                            <span className="max-sm:hidden">{tab.label}</span>
-                        </Link>
-                    )
-                })}
+        <div className={cn("w-full border-b border-border/40 bg-muted/5", className)}>
+            <div className={cn("px-4", maxWidth)}>
+                <nav className="flex justify-start -mb-[1px]">
+                    <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                        {tabs.map((tab) => {
+                            const isActive = tab.value === activeValue
+                            return (
+                                <Link
+                                    key={tab.value}
+                                    href={tab.href}
+                                    className={cn(
+                                        "flex items-center justify-center gap-2 px-6 py-4 transition-all duration-300 relative group",
+                                        "text-[10px] sm:text-[11px] font-black uppercase tracking-[0.05em]",
+                                        isActive
+                                            ? "text-primary bg-primary/5"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-muted/10",
+                                        "border-b-2",
+                                        isActive ? "border-primary" : "border-transparent hover:border-border/60"
+                                    )}
+                                >
+                                    <DynamicIcon 
+                                        name={tab.iconName} 
+                                        className={cn(
+                                            "h-4 w-4 transition-transform duration-300 group-hover:scale-110",
+                                            isActive ? "text-primary" : "text-muted-foreground"
+                                        )} 
+                                    />
+                                    <span className="max-sm:hidden">{tab.label}</span>
+                                    
+                                    {/* Subtle active glow indicator */}
+                                    {isActive && (
+                                        <div className="absolute inset-0 bg-primary/5 blur-sm -z-10 rounded-t-lg" />
+                                    )}
+                                </Link>
+                            )
+                        })}
+                    </div>
+                </nav>
             </div>
         </div>
     )

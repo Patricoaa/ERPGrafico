@@ -9,7 +9,6 @@ import { Plus, ArrowDown, Eye } from "lucide-react"
 import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -59,7 +58,11 @@ interface TreasuryMovement {
     } | null
 }
 
-export function TreasuryMovementsClientView() {
+interface TreasuryMovementsClientViewProps {
+    externalOpen?: boolean
+}
+
+export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
@@ -83,6 +86,12 @@ export function TreasuryMovementsClientView() {
     useEffect(() => {
         fetchMovements()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setOpenModal(true)
+        }
+    }, [externalOpen])
 
     const handleViewDetails = (id: number) => {
         setSelectedMovementId(id)
@@ -201,10 +210,6 @@ export function TreasuryMovementsClientView() {
                             <span 
                                 onClick={(e) => { 
                                     e.stopPropagation(); 
-                                    // Use the treasury account ID (m.from_account or m.to_account) 
-                                    // instead of the accounting account ID (data.id)
-                                    // because the TreasuryAccountModal expects the TreasuryAccount ID.
-                                    // Wait, I should check which ID I put in sourceData.id
                                     openTreasuryAccount(m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null)));
                                 }}
                                 className={cn("font-bold truncate max-w-[150px] cursor-pointer hover:text-primary hover:underline transition-colors", colorClass)}
@@ -296,20 +301,7 @@ export function TreasuryMovementsClientView() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Movimientos de Tesorería"
-                description="Registro histórico de ingresos, egresos y traslados de fondos."
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => setOpenModal(true)}
-                        icon={Plus}
-                        circular
-                        title="Nuevo Movimiento"
-                    />
-                }
-            />
-
+        <div className="space-y-6">
             <Suspense fallback={null}>
                 <CashMovementModal
                     open={openModal}
@@ -319,19 +311,17 @@ export function TreasuryMovementsClientView() {
             </Suspense>
 
             {movements.length === 0 && !loading ? (
-                <div className="bg-white rounded-xl border shadow-sm">
-                    <EmptyState
-                        icon={ArrowDown}
-                        title="No hay movimientos"
-                        description="Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual."
-                        action={
-                            <Button onClick={() => setOpenModal(true)} variant="outline">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Registrar Movimiento
-                            </Button>
-                        }
-                    />
-                </div>
+                <EmptyState
+                    context="finance"
+                    title="No hay movimientos"
+                    description="Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual."
+                    action={
+                        <Button onClick={() => setOpenModal(true)} variant="outline">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Registrar Movimiento
+                        </Button>
+                    }
+                />
             ) : (
                 <DataTable
                     columns={columns}
@@ -370,4 +360,3 @@ export function TreasuryMovementsClientView() {
 }
 
 export default TreasuryMovementsClientView
-

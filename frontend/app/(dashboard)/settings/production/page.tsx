@@ -1,9 +1,8 @@
-"use client"
-
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Settings } from "lucide-react"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export default function ProductionSettingsPage() {
     const [loading] = useState(false)
@@ -17,11 +16,11 @@ export default function ProductionSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-4xl mx-auto">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Configuración de Producción"
                 description="Configuración del módulo de producción."
-
+                iconName="settings"
             />
 
             <Card>

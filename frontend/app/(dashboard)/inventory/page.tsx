@@ -3,14 +3,18 @@ import { Package, Truck, BarChart } from "lucide-react"
 import Link from "next/link"
 import { PageHeader } from "@/components/shared/PageHeader"
 
+import { LAYOUT_TOKENS } from "@/lib/styles"
+
 export default function InventoryPage() {
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Inventario"
+                title="Módulo de Inventario"
                 description="Gestión centralizada de productos, existencias y almacenes."
+                variant="minimal"
+                iconName="package"
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
                 <Link href="/inventory/products">
                     <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-yellow-500">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

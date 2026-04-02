@@ -2,16 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getCreditPortfolio, getContactCreditLedger, getGlobalCreditHistory, writeOffDebt, writeOffSaleOrder, CreditContact, CreditPortfolioResponse, CreditLedgerEntry, CreditHistoryEntry } from "@/lib/credits/api"
+import { 
+    getCreditPortfolio, 
+    getContactCreditLedger, 
+    getGlobalCreditHistory, 
+    writeOffDebt, 
+    writeOffSaleOrder, 
+    CreditContact, 
+    CreditPortfolioResponse, 
+    CreditLedgerEntry, 
+    CreditHistoryEntry 
+} from "@/lib/credits/api"
 import { toast } from "sonner"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import {
-    AlertCircle, CreditCard, TrendingUp, Users, ChevronDown, ChevronRight,
-    AlertTriangle, CheckCircle2, Ban, RefreshCw, Clock, ShieldAlert,
-    Target, BarChart3, PieChart, Activity, Gavel, HelpCircle, Plus
+    AlertCircle, CreditCard, TrendingUp, ChevronDown, ChevronRight,
+    AlertTriangle, CheckCircle2, RefreshCw, Clock, ShieldAlert,
+    Target, Activity, Gavel, HelpCircle
 } from "lucide-react"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import {
     Tooltip,
@@ -25,9 +33,21 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
 import { flexRender } from "@tanstack/react-table"
 import { TableRow, TableCell } from "@/components/ui/table"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -43,19 +63,19 @@ const agingLabel: Record<string, string> = {
 }
 
 const agingColor: Record<string, string> = {
-    current: "text-emerald-500",
-    overdue_30: "text-amber-500",
+    current: "text-success",
+    overdue_30: "text-warning",
     overdue_60: "text-orange-500",
-    overdue_90: "text-rose-500",
-    overdue_90plus: "text-rose-700",
+    overdue_90: "text-destructive",
+    overdue_90plus: "text-destructive font-black underline",
 }
 
 const agingBg: Record<string, string> = {
-    current: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
-    overdue_30: "bg-amber-500/10 text-amber-700 border-amber-200",
+    current: "bg-success/10 text-success border-success/20",
+    overdue_30: "bg-warning/10 text-warning border-warning/20",
     overdue_60: "bg-orange-500/10 text-orange-700 border-orange-200",
-    overdue_90: "bg-rose-500/10 text-rose-700 border-rose-200",
-    overdue_90plus: "bg-rose-700/10 text-rose-900 border-rose-300",
+    overdue_90: "bg-destructive/10 text-destructive border-destructive/20",
+    overdue_90plus: "bg-destructive/20 text-destructive border-destructive/30",
 }
 
 const riskLabel: Record<string, string> = {
@@ -65,24 +85,17 @@ const riskLabel: Record<string, string> = {
     CRITICAL: "Riesgo Crítico",
 }
 
-const riskColor: Record<string, string> = {
-    LOW: "bg-emerald-500",
-    MEDIUM: "bg-amber-500",
-    HIGH: "bg-orange-500",
-    CRITICAL: "bg-rose-600",
-}
-
 const riskBg: Record<string, string> = {
-    LOW: "bg-emerald-50/50 text-emerald-700 border-emerald-100",
-    MEDIUM: "bg-amber-50/50 text-amber-700 border-amber-100",
-    HIGH: "bg-orange-50/50 text-orange-700 border-orange-100",
-    CRITICAL: "bg-rose-50/50 text-rose-700 border-rose-100",
+    LOW: "bg-success/10 text-success border-success/20",
+    MEDIUM: "bg-warning/10 text-warning border-warning/20",
+    HIGH: "bg-orange-500/10 text-orange-700 border-orange-200",
+    CRITICAL: "bg-destructive/10 text-destructive border-destructive/20",
 }
 
 const originBg: Record<string, string> = {
-    MANUAL: "bg-blue-500/10 text-blue-700 border-blue-200",
-    FALLBACK: "bg-amber-500/10 text-amber-700 border-amber-200",
-    CREDIT_PORTFOLIO: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    MANUAL: "bg-info/10 text-info border-info/20",
+    FALLBACK: "bg-warning/10 text-warning border-warning/20",
+    CREDIT_PORTFOLIO: "bg-success/10 text-success border-success/20",
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -107,7 +120,7 @@ function KpiCard({ label, value, sub, icon: Icon, color }: {
             </div>
             <div className="flex items-center justify-between relative z-10">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-                <div className={cn("p-2 rounded-xl", color)}>
+                <div className={cn("p-2 rounded-xl border", color)}>
                     <Icon className="h-4 w-4" />
                 </div>
             </div>
@@ -121,9 +134,10 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
     const total = Object.values(aging).reduce((a, b) => a + Number(b), 0)
     if (total === 0) return <span className="text-[11px] text-muted-foreground">Sin saldo</span>
     const keys = ["current", "overdue_30", "overdue_60", "overdue_90", "overdue_90plus"] as const
-    const colors = ["bg-emerald-400", "bg-amber-400", "bg-orange-400", "bg-rose-400", "bg-rose-700"]
+    // We use Tailwind classes that map to our semantic tokens where possible, or specific colors for levels
+    const colors = ["bg-success", "bg-warning", "bg-orange-400", "bg-destructive", "bg-destructive/80 font-black"]
     return (
-        <div className="flex h-2 w-full rounded-full overflow-hidden gap-px">
+        <div className="flex h-2 w-full rounded-full overflow-hidden gap-px bg-muted">
             {keys.map((k, i) => {
                 const pct = (Number(aging[k]) / total) * 100
                 return pct > 0 ? (
@@ -134,21 +148,6 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
     )
 }
 
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-
-function ContactRow({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) { }
-
-// Helper hook or component for expandable DataTable rows
 function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => void }) {
     const contact = row.original as CreditContact
     const [expanded, setExpanded] = useState(false)
@@ -262,7 +261,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                 <Button
                                                     variant="secondary"
                                                     size="sm"
-                                                    className="h-8 gap-2 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-rose-200"
+                                                    className="h-8 gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
                                                     disabled={writingOff}
                                                     onClick={(e) => {
                                                         e.stopPropagation()
@@ -279,7 +278,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                     <AlertDialog open={showWriteOffDialog} onOpenChange={setShowWriteOffDialog}>
                                         <AlertDialogContent className="max-w-md">
                                             <AlertDialogHeader>
-                                                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
+                                                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                                                     <ShieldAlert className="h-6 w-6" />
                                                 </div>
                                                 <AlertDialogTitle className="text-xl font-black">¿Confirmar Castigo de Deuda?</AlertDialogTitle>
@@ -290,18 +289,15 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                     <ul className="list-disc list-inside space-y-1 text-sm font-medium text-muted-foreground">
                                                         <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
                                                         <li>El cliente quedará bloqueado permanentemente.</li>
-                                                        <li>La clasificación de riesgo pasará a <span className="text-rose-600 font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                                                        <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
                                                         <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
                                                     </ul>
-                                                    <p className="text-xs text-muted-foreground pt-2 italic">
-                                                        Use esta opción únicamente cuando la deuda se considere incobrable tras agotar las instancias de cobro.
-                                                    </p>
                                                 </div>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter className="gap-2 mt-4">
                                                 <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
                                                 <AlertDialogAction
-                                                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                                                    className="bg-destructive hover:bg-destructive/90 text-white font-bold"
                                                     onClick={handleWriteOff}
                                                 >
                                                     Confirmar Castigo
@@ -312,7 +308,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
 
                                     {loadingLedger ? (
                                         <div className="space-y-2">
-                                            {[1, 2].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+                                            {[1, 2].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
                                         </div>
                                     ) : ledger && ledger.length > 0 ? (
                                         <div className="overflow-x-auto">
@@ -325,36 +321,8 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                         <th className="pb-2 pr-4 text-center">Total</th>
                                                         <th className="pb-2 pr-4 text-center">Pagado</th>
                                                         <th className="pb-2 pr-4 text-center">Saldo</th>
-                                                        <th className="pb-2 pr-4">
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <span>Origen</span>
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent className="p-2 text-[10px] max-w-[180px]">
-                                                                            Indica la fuente de la asignación de crédito para este documento específico.
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            </div>
-                                                        </th>
-                                                        <th className="pb-2 pr-4">
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <span>Estado</span>
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent className="p-2 text-[10px] max-w-[180px]">
-                                                                            Vigencia del documento basada en la fecha de vencimiento.
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            </div>
-                                                        </th>
+                                                        <th className="pb-2 pr-4 text-center">Origen</th>
+                                                        <th className="pb-2 pr-4 text-center">Estado</th>
                                                         {isDefault && <th className="pb-2 pr-2 text-center">Castigo</th>}
                                                     </tr>
                                                 </thead>
@@ -376,31 +344,28 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                             <td className="py-2 pr-4 text-muted-foreground text-center">
                                                                 {entry.due_date}
                                                                 {entry.days_overdue > 0 && (
-                                                                    <span className="ml-1 text-rose-500 font-bold">({entry.days_overdue}d)</span>
+                                                                    <span className="ml-1 text-destructive font-bold">({entry.days_overdue}d)</span>
                                                                 )}
                                                             </td>
                                                             <td className="py-2 pr-4 text-center font-mono">{fmt(entry.effective_total)}</td>
-                                                            <td className="py-2 pr-4 text-center font-mono text-emerald-600">{fmt(entry.paid_amount)}</td>
+                                                            <td className="py-2 pr-4 text-center font-mono text-success font-medium">{fmt(entry.paid_amount)}</td>
                                                             <td className="py-2 pr-4 text-center font-mono font-bold">{fmt(entry.balance)}</td>
                                                             <td className="py-2 pr-4 text-center">
-                                                                <TooltipProvider><Tooltip><TooltipTrigger asChild><div className="cursor-help flex justify-center">{entry.credit_assignment_origin_display ? (
-                                                                    <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
-                                                                        {entry.credit_assignment_origin_display}
-                                                                    </span>
-                                                                ) : <span className="text-muted-foreground/30">—</span>}</div></TooltipTrigger><TooltipContent className="p-2 text-[10px]">{entry.credit_assignment_origin === 'MANUAL' && "Asignado manualmente por un supervisor."}{entry.credit_assignment_origin === 'FALLBACK' && "Asignación temporal automática (Fallback)."}{entry.credit_assignment_origin === 'CREDIT_PORTFOLIO' && "Cupo oficial definido en la cartera de crédito."}{!entry.credit_assignment_origin && "Origen no especificado."}</TooltipContent></Tooltip></TooltipProvider>
+                                                                <div className="flex justify-center">
+                                                                    {entry.credit_assignment_origin_display ? (
+                                                                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
+                                                                            {entry.credit_assignment_origin_display}
+                                                                        </span>
+                                                                    ) : <span className="text-muted-foreground/30">—</span>}
+                                                                </div>
                                                             </td>
                                                             <td className="py-2 pr-4 text-center">
-                                                                <TooltipProvider><Tooltip><TooltipTrigger asChild><div className="flex justify-center"><span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex cursor-help", agingBg[entry.aging_bucket])}>
-                                                                    {entry.aging_bucket === 'current' ? <CheckCircle2 className="h-3.5 w-3.5" /> : (entry.days_overdue > 60 ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />)}
-                                                                    {agingLabel[entry.aging_bucket]}
-                                                                </span></div>
-                                                                </TooltipTrigger>
-                                                                    <TooltipContent className="p-2 text-[10px]">
-                                                                        {entry.aging_bucket === 'current' && "Documento vigente y pagado dentro de plazo."}
-                                                                        {entry.aging_bucket !== 'current' && `Documento con ${entry.days_overdue} días de atraso.`}
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                                </TooltipProvider>
+                                                                <div className="flex justify-center">
+                                                                    <span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex", agingBg[entry.aging_bucket])}>
+                                                                        {entry.aging_bucket === 'current' ? <CheckCircle2 className="h-3.5 w-3.5" /> : (entry.days_overdue > 60 ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />)}
+                                                                        {agingLabel[entry.aging_bucket]}
+                                                                    </span>
+                                                                </div>
                                                             </td>
                                                             {isDefault && (
                                                                 <td className="py-2 pr-2 text-center">
@@ -408,7 +373,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="sm"
-                                                                            className="h-6 px-2 text-[10px] text-rose-600 hover:bg-rose-50 gap-1"
+                                                                            className="h-6 px-2 text-[10px] text-destructive hover:bg-destructive/10 gap-1"
                                                                             disabled={writingOffDocId === entry.id}
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation()
@@ -429,16 +394,13 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                             </table>
                                         </div>
                                     ) : (
-                                        <p className="text-[12px] text-muted-foreground italic">Sin documentos pendientes.</p>
+                                        <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
                                     )}
 
-
-
-                                    {/* Per-document write-off confirmation dialog (default customer only) */}
                                     <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
                                         <AlertDialogContent className="max-w-md">
                                             <AlertDialogHeader>
-                                                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
+                                                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
                                                     <ShieldAlert className="h-6 w-6" />
                                                 </div>
                                                 <AlertDialogTitle className="text-xl font-black">¿Castigar Documento NV-{showWriteOffDocDialog?.number}?</AlertDialogTitle>
@@ -446,17 +408,12 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                     <AlertDialogDescription>
                                                         Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.
                                                     </AlertDialogDescription>
-                                                    <ul className="list-disc list-inside space-y-1 text-sm font-medium text-muted-foreground">
-                                                        <li>Se generará un asiento contable de pérdida.</li>
-                                                        <li>El documento quedará saldado contablemente.</li>
-                                                        <li>Esta acción es <strong>irreversible</strong>.</li>
-                                                    </ul>
                                                 </div>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter className="gap-2 mt-4">
                                                 <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
                                                 <AlertDialogAction
-                                                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                                                    className="bg-destructive hover:bg-destructive/90 text-white font-bold"
                                                     onClick={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
                                                 >
                                                     Confirmar Castigo
@@ -476,7 +433,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
 
 // ─── Column Definitions ──────────────────────────────────────────────────────
 
-const portfolioColumns: ColumnDef<CreditContact>[] = [
+const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<CreditContact>[] = (onEdit) => [
     {
         accessorKey: "name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
@@ -487,7 +444,7 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
                     <div className="text-center">
                         <div className="font-semibold text-[13px] leading-tight flex items-center justify-center gap-2">
                             {contact.name}
-                            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-orange-500" />}
+                            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning" />}
                         </div>
                         <div className="text-[10px] text-muted-foreground font-mono">{contact.display_id} · {contact.tax_id}</div>
                     </div>
@@ -497,44 +454,9 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
     },
     {
         accessorKey: "credit_risk_level",
-        header: ({ column }) => (
-            <div className="flex items-center justify-center gap-1">
-                <DataTableColumnHeader column={column} title="Riesgo" className="justify-center" />
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[250px] space-y-2 p-3">
-                            <p className="font-bold text-xs border-b pb-1">Niveles de Riesgo:</p>
-                            <div className="space-y-1.5">
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-emerald-600">Bajo:</span> Excelente historial, sin moras recientes.</p>
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-blue-600">Medio:</span> Comportamiento estable con atrasos esporádicos.</p>
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-orange-600">Alto:</span> Frecuentes atrasos o sobregiros de límite.</p>
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-rose-600">Crítico:</span> Deuda vencida prolongada o riesgo financiero inminente.</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
-        ),
-        accessorFn: (row) => riskLabel[row.credit_risk_level],
-        filterFn: (row, id, value: string[]) => {
-            if (!value || value.length === 0) return true
-            return value.includes(row.getValue(id))
-        },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Riesgo" className="justify-center" />,
         cell: ({ row }) => {
-            const contact = row.original
-            const hasOverdue = Number(contact.credit_aging.overdue_30) + Number(contact.credit_aging.overdue_60) + Number(contact.credit_aging.overdue_90) + Number(contact.credit_aging.overdue_90plus) > 0
-            const statusLabel = row.original.credit_blocked ? "Bloqueado" : row.original.credit_auto_blocked ? "Auto-Bloqueo" : hasOverdue ? "En mora" : Number(contact.credit_balance_used) > 0 ? "Activo" : "Al día"
-
-            let lvl = contact.credit_risk_level
-
-            // Safeguard: "Al día" clients should not show CRITICAL risk even if suggested by backend (stale levels)
-            if (statusLabel === "Al día" && lvl === 'CRITICAL') {
-                lvl = 'LOW'
-            }
-
+            const lvl = row.original.credit_risk_level
             return (
                 <div className={cn("flex flex-col items-center px-2 py-0.5 rounded-md border w-fit mx-auto", riskBg[lvl])}>
                     <span className="text-[10px] font-bold leading-tight whitespace-nowrap">{riskLabel[lvl]}</span>
@@ -544,51 +466,26 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
     },
     {
         accessorKey: "credit_limit",
-        header: ({ column }) => (
-            <div className="flex items-center justify-center gap-1">
-                <DataTableColumnHeader column={column} title="Límite" className="justify-center" />
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[200px] p-3">
-                            <div className="space-y-2">
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold">Límite Asignado:</span> Cupo máximo definido en la ficha comercial del cliente.</p>
-                                <p className="text-[10px] leading-relaxed"><span className="font-bold text-amber-600">Pre-aprobado (% venta):</span> Límite temporal autogenerado cuando existe deuda pero no hay cupo oficial asignado.</p>
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
-        ),
-        cell: ({ row, table }) => {
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Límite" className="justify-center" />,
+        cell: ({ row }) => {
             const contact = row.original
             const limit = Number(contact.credit_limit || 0)
             const balance = Number(contact.credit_balance_used)
-
-            // Fallback logic: if no limit but has debt (likely fallback authorized)
             const isFallback = limit === 0 && balance > 0
-
-            // Extract the setter from table meta (we'll add this later)
-            const onEdit = (table.options.meta as any)?.onEditLimit
 
             return (
                 <div
-                    className={cn(
-                        "text-center flex flex-col items-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors",
-                        onEdit ? "cursor-pointer" : "cursor-default"
-                    )}
-                    onClick={() => onEdit?.(contact)}
+                    className="text-center flex flex-col items-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); onEdit(contact); }}
                 >
                     <span className={cn(
                         "text-[12px] font-mono group-hover:underline",
-                        isFallback ? "text-amber-600 font-bold" : "text-muted-foreground",
+                        isFallback ? "text-warning font-bold" : "text-muted-foreground",
                         !isFallback && limit > 0 && "text-primary font-bold"
                     )}>
                         {isFallback ? fmt(balance) : (limit > 0 ? fmt(limit) : <span className="text-muted-foreground/40">—</span>)}
                     </span>
-                    {isFallback && <span className="text-[8px] font-black uppercase tracking-tighter text-amber-500 opacity-60">Pre-aprobado (% venta)</span>}
+                    {isFallback && <span className="text-[8px] font-black uppercase tracking-tighter text-warning/80">Pre-aprobado</span>}
                 </div>
             )
         },
@@ -596,14 +493,15 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
     {
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
-        cell: ({ row }) => {
-            const val = Number(row.original.credit_balance_used)
-            return <div className="text-center font-mono font-bold text-[13px]">{val > 0 ? fmt(val) : <span className="text-muted-foreground/40">—</span>}</div>
-        },
+        cell: ({ row }) => (
+            <div className="text-center font-mono font-bold text-[13px]">
+                {Number(row.original.credit_balance_used) > 0 ? fmt(row.original.credit_balance_used) : <span className="text-muted-foreground/40">—</span>}
+            </div>
+        ),
     },
     {
         id: "current",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda" className="justify-center text-emerald-600" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center text-success" />,
         cell: ({ row }) => {
             const val = Number(row.original.credit_aging.current)
             return <div className={cn("text-center text-[12px] font-mono", agingColor.current)}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
@@ -611,20 +509,16 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
     },
     {
         id: "overdue",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="En Mora" className="justify-center text-rose-600" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="En Mora" className="justify-center text-destructive" />,
         cell: ({ row }) => {
             const aging = row.original.credit_aging
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
-            return <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-rose-600 font-bold" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+            return <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-destructive font-black" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
         },
     },
     {
         id: "status",
-        header: ({ column }) => (
-            <div className="flex items-center justify-center gap-1">
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            </div>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
         accessorFn: (row) => {
             const hasOverdue = Number(row.credit_aging.overdue_30) + Number(row.credit_aging.overdue_60) + Number(row.credit_aging.overdue_90) + Number(row.credit_aging.overdue_90plus) > 0
             if (row.credit_blocked) return "Bloqueado"
@@ -633,30 +527,21 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
             if (Number(row.credit_balance_used) > 0) return "Activo"
             return "Al día"
         },
-        filterFn: (row, id, value: string[]) => {
-            if (!value || value.length === 0) return true
-            return value.includes(row.getValue(id))
-        },
         cell: ({ row }) => {
             const contact = row.original
             const totalDebt = Number(contact.credit_balance_used)
             const aging = contact.credit_aging
             const hasOverdue = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus) > 0
 
-            const statusBadge = contact.credit_blocked
-                ? { label: "Bloqueado", cls: "bg-rose-100 text-rose-700 border-rose-200" }
-                : contact.credit_auto_blocked
-                    ? { label: "Auto-Bloqueo", cls: "bg-orange-100 text-orange-700 border-orange-200" }
-                    : hasOverdue
-                        ? { label: "En mora", cls: "bg-amber-100 text-amber-700 border-amber-200" }
-                        : totalDebt > 0
-                            ? { label: "Activo", cls: "bg-blue-100 text-blue-700 border-blue-200" }
-                            : { label: "Al día", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" }
+            const status = contact.credit_blocked ? "destructive" : contact.credit_auto_blocked ? "warning" : hasOverdue ? "warning" : totalDebt > 0 ? "info" : "success";
+            const label = contact.credit_blocked ? "Bloqueado" : contact.credit_auto_blocked ? "Auto-Bloqueo" : hasOverdue ? "En mora" : totalDebt > 0 ? "Activo" : "Al día";
+
+            const cls = status === "destructive" ? agingBg.overdue_90 : status === "warning" ? agingBg.overdue_30 : status === "info" ? originBg.MANUAL : agingBg.current;
 
             return (
                 <div className="flex justify-center">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", statusBadge.cls)}>
-                        {statusBadge.label}
+                    <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md border", cls)}>
+                        {label}
                     </span>
                 </div>
             )
@@ -667,131 +552,54 @@ const portfolioColumns: ColumnDef<CreditContact>[] = [
 const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
     {
         accessorKey: "date",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha/Hora" className="justify-center" />,
-        cell: ({ row }) => {
-            const entry = row.original
-            return (
-                <div className="text-center">
-                    <div className="text-[13px] font-semibold">{new Date(entry.date).toLocaleDateString()}</div>
-                    <div className="text-[10px] text-muted-foreground font-mono">{new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-            )
-        }
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
+        cell: ({ row }) => (
+            <div className="text-center font-medium">{new Date(row.original.date).toLocaleDateString()}</div>
+        )
     },
     {
         accessorKey: "customer_name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-        cell: ({ row }) => {
-            const entry = row.original
-            return (
-                <div className="text-center">
-                    <div className="font-bold text-[13px] leading-tight text-foreground">{entry.customer_name}</div>
-                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{entry.display_id}</div>
-                </div>
-            )
-        }
+        cell: ({ row }) => (
+            <div className="text-center font-bold text-[13px]">{row.original.customer_name}</div>
+        )
     },
     {
         accessorKey: "number",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Nota Venta" className="justify-center" />,
         cell: ({ row }) => (
             <div className="flex justify-center">
-                <Badge variant="outline" className="font-mono text-[11px] bg-background">{row.getValue("number")}</Badge>
+                <Badge variant="outline" className="font-mono text-[11px]">NV-{row.original.number}</Badge>
             </div>
         )
     },
     {
         accessorKey: "effective_total",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Monto Original" className="justify-center" />,
-        cell: ({ row }) => <div className="text-center font-mono font-bold text-[13px]">{fmt(row.getValue("effective_total"))}</div>
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
+        cell: ({ row }) => <div className="text-center font-mono font-bold">{fmt(row.original.effective_total)}</div>
     },
     {
         accessorKey: "credit_assignment_origin",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Origen" className="justify-center" />,
-        filterFn: (row, id, value: string[]) => {
-            if (!value || value.length === 0) return true
-            return value.includes(row.getValue(id))
-        },
-        cell: ({ row }) => {
-            const entry = row.original
-            return (
-                <div className="flex justify-center">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border shadow-sm", originBg[entry.credit_assignment_origin] || "bg-muted text-muted-foreground")}>
-                        {entry.credit_assignment_origin_display}
-                    </span>
-                </div>
-            )
-        }
+        cell: ({ row }) => (
+            <div className="flex justify-center">
+                <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", originBg[row.original.credit_assignment_origin] || "bg-muted text-muted-foreground")}>
+                    {row.original.credit_assignment_origin_display}
+                </span>
+            </div>
+        )
     },
-    {
-        id: "approval",
-        header: () => <div className="text-center">Aprobación / Detalles</div>,
-        cell: ({ row }) => {
-            const entry = row.original
-            return entry.credit_approval_task_details ? (
-                <div className="space-y-1 bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10 w-fit mx-auto">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Aprobado por {entry.credit_approval_task_details.completed_by_name}
-                    </div>
-                    <div className="text-[10px] text-emerald-600/70 font-medium flex items-center gap-1 justify-center">
-                        <Clock className="h-2.5 w-2.5" />
-                        {entry.credit_approval_task_details.completed_at && new Date(entry.credit_approval_task_details.completed_at).toLocaleString()}
-                    </div>
-                </div>
-            ) : (
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground italic font-medium w-fit mx-auto justify-center">
-                    <Activity className="h-3.5 w-3.5 opacity-50" />
-                    Asignación Automática
-                </div>
-            )
-        }
-    }
 ]
-
-// ─── Credit History Table ──────────────────────────────────────────────────
-
-function CreditHistoryTable({ history, loading }: { history: CreditHistoryEntry[] | null, loading: boolean }) {
-    if (loading) return (
-        <div className="rounded-2xl border bg-card/50 p-24 flex flex-col items-center justify-center gap-4 border-dashed">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground font-medium">Cargando historial de creditos concedidos...</p>
-        </div>
-    )
-
-    if (!history || history.length === 0) return (
-        <div className="rounded-2xl border bg-card/50 p-24 text-center border-dashed">
-            <p className="text-muted-foreground italic font-medium">No se han registrado asignaciones de crédito aún.</p>
-        </div>
-    )
-
-    return (
-        <DataTable
-            columns={historyColumns}
-            data={history}
-            cardMode
-            useAdvancedFilter
-            showToolbarSort={false}
-            globalFilterFields={["customer_name", "display_id", "number"]}
-            searchPlaceholder="Buscar por cliente, rut o documento..."
-            facetedFilters={[
-                {
-                    column: "credit_assignment_origin",
-                    title: "Origen",
-                    options: [
-                        { label: "Manual", value: "MANUAL" },
-                        { label: "Fallback Automático", value: "FALLBACK" },
-                        { label: "Cartera de Crédito", value: "CREDIT_PORTFOLIO" },
-                    ]
-                }
-            ]}
-        />
-    )
-}
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 
-export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: 'portfolio' | 'history' }) {
+export function CreditPortfolioView({ 
+    activeTab = 'portfolio',
+    externalOpen = false
+}: { 
+    activeTab?: 'portfolio' | 'history',
+    externalOpen?: boolean
+}) {
     const [data, setData] = useState<CreditPortfolioResponse | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -799,29 +607,13 @@ export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: '
     const [history, setHistory] = useState<CreditHistoryEntry[] | null>(null)
     const [loadingHistory, setLoadingHistory] = useState(false)
 
-    // Assignment Modal State
     const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
     const [editingContact, setEditingContact] = useState<CreditContact | null>(null)
-
-    const handleAssign = () => {
-        setEditingContact(null)
-        setAssignmentModalOpen(true)
-    }
 
     const handleEditLimit = (contact: CreditContact) => {
         setEditingContact(contact)
         setAssignmentModalOpen(true)
     }
-
-    useEffect(() => {
-        if (activeTab === 'history' && !history) {
-            setLoadingHistory(true)
-            getGlobalCreditHistory()
-                .then(setHistory)
-                .catch(e => toast.error("Error cargando historial"))
-                .finally(() => setLoadingHistory(false))
-        }
-    }, [activeTab, history])
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -838,63 +630,50 @@ export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: '
 
     useEffect(() => { load() }, [load])
 
+    useEffect(() => {
+        if (activeTab === 'history' && !history) {
+            setLoadingHistory(true)
+            getGlobalCreditHistory()
+                .then(setHistory)
+                .catch(() => toast.error("Error cargando historial"))
+                .finally(() => setLoadingHistory(false))
+        }
+    }, [activeTab, history])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setEditingContact(null)
+            setAssignmentModalOpen(true)
+        }
+    }, [externalOpen])
+
+    if (loading) return <LoadingFallback message="Cargando cartera de créditos..." />
+
+    if (error) return (
+        <EmptyState
+            context="finance"
+            title="Error al cargar datos"
+            description={error}
+            actionText="Reintentar"
+            onAction={load}
+        />
+    )
+
     const s = data?.summary
     const totalDebt = Number(s?.total_debt || 0)
-    const utilizationRate = Number(s?.utilization_rate || 0)
     const potentialLoss = Number(s?.potential_loss || 0)
     const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
-
     const contacts = data?.contacts || []
 
-    // Consistency: Calculate Total Exposure and Utilization including Fallback Credit
     const computedTotalLimit = contacts.reduce((acc, c) => {
         const limit = Number(c.credit_limit || 0)
         const balance = Number(c.credit_balance_used || 0)
-        // If limit is 0, we consider the current debt as the "effective limit" for utilization purposes
         return acc + (limit > 0 ? limit : balance)
     }, 0)
     const computedUtilizationRate = computedTotalLimit > 0 ? (totalDebt / computedTotalLimit) * 100 : 0
 
-    if (loading) return (
-        <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-4">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
-            </div>
-            <Skeleton className="h-64 rounded-2xl" />
-        </div>
-    )
-
-    if (error) return (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <AlertCircle className="h-10 w-10 text-rose-500" />
-            <p className="text-muted-foreground font-medium">{error}</p>
-            <Button variant="outline" onClick={load} className="gap-2">
-                <RefreshCw className="h-4 w-4" /> Reintentar
-            </Button>
-        </div>
-    )
-
-    const headerConfig = activeTab === 'portfolio' ? {
-        title: "Cartera de Créditos",
-        description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.",
-        iconName: "credit-card"
-    } : {
-        title: "Historial de Asignaciones",
-        description: "Registro global de créditos asignados a clientes.",
-        iconName: "history"
-    }
-
     return (
         <div className="space-y-6">
-            <PageHeader
-                title={headerConfig.title}
-                description={headerConfig.description}
-                iconName={headerConfig.iconName}
-                titleActions={activeTab === 'portfolio' && (
-                    <PageHeaderButton icon={Plus} onClick={handleAssign} circular title="Asignar Crédito" />
-                )}
-            />
-
             <CreditAssignmentModal
                 open={assignmentModalOpen}
                 onOpenChange={setAssignmentModalOpen}
@@ -910,97 +689,96 @@ export function CreditPortfolioView({ activeTab = 'portfolio' }: { activeTab?: '
                             value={fmt(totalDebt)}
                             sub={`${s?.count_active || 0} clientes con deuda activa`}
                             icon={CreditCard}
-                            color="bg-primary/10 text-primary border-primary/10"
+                            color="bg-primary/5 text-primary border-primary/20"
                         />
                         <KpiCard
                             label="Exposición Total"
                             value={fmt(computedTotalLimit)}
-                            sub={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite total`}
+                            sub={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite`}
                             icon={Target}
-                            color="bg-violet-500/10 text-violet-600 border-violet-100"
+                            color="bg-info/5 text-info border-info/20"
                         />
                         <KpiCard
                             label="Pérdida Potencial"
                             value={fmt(potentialLoss)}
-                            sub={`${s?.risk_distribution?.CRITICAL || 0} clientes en riesgo crítico`}
+                            sub={`${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`}
                             icon={ShieldAlert}
-                            color={potentialLoss > 0 ? "bg-rose-500/10 text-rose-600 border-rose-100" : "bg-muted text-muted-foreground"}
+                            color={potentialLoss > 0 ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-muted text-muted-foreground border-border"}
                         />
                         <KpiCard
                             label="Tasa de Mora"
                             value={`${((totalOverdue / (totalDebt || 1)) * 100).toFixed(1)}%`}
-                            sub={`${s?.count_overdue || 0} clientes con vencimientos`}
+                            sub={`${s?.count_overdue || 0} vencimientos`}
                             icon={Activity}
-                            color={totalOverdue > 0 ? "bg-amber-500/10 text-amber-600 border-amber-100" : "bg-emerald-500/10 text-emerald-600 border-emerald-100"}
+                            color={totalOverdue > 0 ? "bg-warning/5 text-warning border-warning/20" : "bg-success/5 text-success border-success/20"}
                         />
                     </div>
 
-                    {/* Portfolio Table */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="mt-6"
-                    >
-                        <DataTable
-                            columns={portfolioColumns}
-                            data={contacts as CreditContact[]}
-                            cardMode
-                            useAdvancedFilter
-                            showToolbarSort={false}
-                            globalFilterFields={["name", "display_id", "tax_id"]}
-                            searchPlaceholder="Buscar cliente por nombre o rut..."
-                            facetedFilters={[
-                                {
-                                    column: "status",
-                                    title: "Estado",
-                                    options: [
-                                        { label: "Al día", value: "Al día" },
-                                        { label: "Activo", value: "Activo" },
-                                        { label: "En mora", value: "En mora" },
-                                        { label: "Bloqueado", value: "Bloqueado" },
-                                        { label: "Auto-Bloqueo", value: "Auto-Bloqueo" },
-                                    ]
-                                }
-                            ]}
-                            renderCustomView={(table) => (
-                                <div className="overflow-x-auto pb-4">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-transparent border-b border-border/50 hover:bg-transparent">
-                                            {table.getHeaderGroups().map((headerGroup: any) => (
-                                                <tr key={headerGroup.id}>
-                                                    {headerGroup.headers.map((header: any) => (
-                                                        <th key={header.id} className="px-4 py-3 h-9 align-middle text-muted-foreground font-medium text-xs whitespace-nowrap">
-                                                            {header.isPlaceholder
-                                                                ? null
-                                                                : flexRender(header.column.columnDef.header, header.getContext())}
-                                                        </th>
-                                                    ))}
-                                                    {/* Extra col for expand chevron */}
-                                                    <th className="px-3 py-3 w-12 text-center" />
-                                                </tr>
-                                            ))}
-                                        </thead>
-                                        <tbody className="divide-y divide-border/50">
-                                            {table.getRowModel().rows.map((row: any) => (
-                                                <ExpandableContactRow key={row.id} row={row} onRefresh={load} />
-                                            ))}
-                                            {table.getRowModel().rows.length === 0 && (
-                                                <tr>
-                                                    <td colSpan={portfolioColumns.length + 1} className="h-24 text-center text-muted-foreground">
-                                                        No se encontraron resultados.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        />
-                    </motion.div>
+                    <div className="mt-6">
+                        {contacts.length === 0 ? (
+                            <EmptyState
+                                context="finance"
+                                title="No hay clientes con crédito"
+                                description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
+                                actionText="Asignar Crédito"
+                                onAction={() => setAssignmentModalOpen(true)}
+                            />
+                        ) : (
+                            <DataTable
+                                columns={portfolioColumns(handleEditLimit)}
+                                data={contacts}
+                                cardMode
+                                useAdvancedFilter
+                                globalFilterFields={["name", "tax_id"]}
+                                searchPlaceholder="Buscar cliente..."
+                                renderCustomView={(table) => (
+                                    <div className="overflow-x-auto pb-4">
+                                        <table className="w-full text-left">
+                                            <thead className="border-b border-border/50">
+                                                {table.getHeaderGroups().map((headerGroup: any) => (
+                                                    <tr key={headerGroup.id}>
+                                                        {headerGroup.headers.map((header: any) => (
+                                                            <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                            </th>
+                                                        ))}
+                                                        <th className="px-3 py-3 w-12" />
+                                                    </tr>
+                                                ))}
+                                            </thead>
+                                            <tbody className="divide-y divide-border/50">
+                                                {table.getRowModel().rows.map((row: any) => (
+                                                    <ExpandableContactRow key={row.id} row={row} onRefresh={load} />
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            />
+                        )}
+                    </div>
                 </>
             ) : (
-                <CreditHistoryTable history={history} loading={loadingHistory} />
+                <div className="mt-2">
+                    {loadingHistory ? (
+                        <LoadingFallback message="Cargando historial..." />
+                    ) : !history || history.length === 0 ? (
+                        <EmptyState
+                            context="search"
+                            title="Sin historial"
+                            description="No se han registrado asignaciones de crédito en el periodo."
+                        />
+                    ) : (
+                        <DataTable
+                            columns={historyColumns}
+                            data={history}
+                            cardMode
+                            useAdvancedFilter
+                            globalFilterFields={["customer_name", "number"]}
+                            searchPlaceholder="Filtrar historial..."
+                        />
+                    )}
+                </div>
             )}
         </div>
     )

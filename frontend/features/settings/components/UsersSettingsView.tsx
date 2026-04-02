@@ -16,12 +16,14 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface UsersSettingsViewProps {
     activeTab: string
+    onActionsChange?: (actions: React.ReactNode) => void
 }
 
-export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
+export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsViewProps) {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<any[]>([])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
@@ -130,18 +132,11 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
         },
     ]
 
-    const tabs = [
-        { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
-        { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users?tab=groups" },
-    ]
-
-    const getHeaderConfig = () => {
-        switch (activeTab) {
-            case "users":
-                return {
-                    title: "Gestión de Usuarios",
-                    description: "Administre el acceso de los empleados y sus roles en el sistema.",
-                    actions: (
+    useEffect(() => {
+        const getHeaderActions = () => {
+            switch (activeTab) {
+                case "users":
+                    return (
                         <UserForm
                             onSuccess={fetchUsers}
                             trigger={
@@ -153,12 +148,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                             }
                         />
                     )
-                }
-            case "groups":
-                return {
-                    title: "Grupos y Equipos",
-                    description: "Organice a sus colaboradores por departamentos o funciones específicas.",
-                    actions: (
+                case "groups":
+                    return (
                         <PageHeaderButton
                             onClick={() => setIsGroupModalOpen(true)}
                             icon={Plus}
@@ -166,26 +157,17 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                             title="Nuevo Grupo"
                         />
                     )
-                }
-            default:
-                return { title: "Usuarios", description: "", actions: null }
+                default:
+                    return null
+            }
         }
-    }
 
-    const { title, description, actions } = getHeaderConfig()
+        onActionsChange?.(getHeaderActions())
+    }, [activeTab, isGroupModalOpen, onActionsChange])
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="pt-4">
             <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
-
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={actions}
-                />
-
-                <div className="pt-4">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4">
                         {loading ? (
                             <div className="flex h-[200px] items-center justify-center">
@@ -218,8 +200,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     <TabsContent value="groups" className="mt-0 outline-none">
                         <GroupManagement externalOpen={isGroupModalOpen} onExternalOpenChange={setIsGroupModalOpen} />
                     </TabsContent>
-                </div>
-            </Tabs>
+                </Tabs>
+            </div>
         </div>
     )
 }
