@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -36,6 +37,29 @@ export default function BOMsPage() {
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<any | null>(null)
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const isNewModalOpen = searchParams.get("modal") === "new"
+
+    // Modal state sync with URL
+    useEffect(() => {
+        if (isNewModalOpen) {
+            setIsFormOpen(true)
+            setEditingBom(null)
+        }
+    }, [isNewModalOpen])
+
+    const handleFormClose = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            setEditingBom(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const fetchBoms = async () => {
         setLoading(true)
@@ -188,21 +212,7 @@ export default function BOMsPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Listas de Materiales"
-                description="Gestión de estructuras de productos y costos de fabricación."
-                variant="minimal"
-                iconName="layers"
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => { setEditingBom(null); setIsFormOpen(true); }}
-                        iconName="plus"
-                        circular
-                        title="Nueva Lista"
-                    />
-                }
-            />
+        <div className="space-y-4">
 
             <div className="pt-4">
                 <DataTable
@@ -228,7 +238,7 @@ export default function BOMsPage() {
 
             <BOMFormDialog
                 open={isFormOpen}
-                onOpenChange={setIsFormOpen}
+                onOpenChange={handleFormClose}
                 onSuccess={fetchBoms}
                 bomToEdit={editingBom}
                 product={editingBom?.product_id || editingBom?.product}

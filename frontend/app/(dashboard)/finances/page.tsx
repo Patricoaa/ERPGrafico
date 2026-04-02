@@ -1,0 +1,81 @@
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+
+// Lazy load feature components
+const StatementsView = lazy(() => import("@/app/(dashboard)/finances/statements/page").then(m => ({ default: m.default })))
+const AnalysisView = lazy(() => import("@/app/(dashboard)/finances/analysis/page").then(m => ({ default: m.default })))
+const BudgetsView = lazy(() => import("@/app/(dashboard)/finances/budgets/page").then(m => ({ default: m.default })))
+
+export const metadata: Metadata = {
+    title: "Módulo de Finanzas | ERPGrafico",
+    description: "Análisis financiero, estados de resultados, balances y presupuestos.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; modal?: string; tab?: string }>
+}
+
+export default async function FinancesPage({ searchParams }: PageProps) {
+    const { view, tab } = await searchParams
+    const viewMode = (view as 'statements' | 'analysis' | 'budgets') || 'statements'
+
+    const tabs = [
+        { value: "statements", label: "Estados Financieros", iconName: "clipboard-list", href: "/finances?view=statements" },
+        { value: "analysis", label: "Análisis", iconName: "line-chart", href: "/finances?view=analysis" },
+        { value: "budgets", label: "Presupuestos", iconName: "target", href: "/finances?view=budgets" },
+    ]
+
+    const getHeaderConfig = () => {
+        switch (viewMode) {
+            case 'statements':
+                return { title: "Estados Financieros", description: "Reportes oficiales de Balance, P&L y Flujo de Caja.", icon: "clipboard-list", action: null }
+            case 'analysis':
+                return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", action: null }
+            case 'budgets':
+                return { 
+                    title: "Control Presupuestario", 
+                    description: "Gestión de metas presupuestarias y ejecución.", 
+                    icon: "target",
+                    action: (
+                        <PageHeaderButton
+                            href="/finances?view=budgets&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nuevo Presupuesto"
+                        />
+                    )
+                }
+            default:
+                return { title: "Finanzas", description: "", icon: "trending-up", action: null }
+        }
+    }
+
+    const { modal } = await searchParams
+    const config = getHeaderConfig()
+
+    return (
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title={config.title}
+                description={config.description}
+                iconName={config.icon as any}
+                variant="minimal"
+                titleActions={config.action}
+            />
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-2">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'statements' && <StatementsView searchParams={Promise.resolve({ tab })} />}
+                    {viewMode === 'analysis' && <AnalysisView searchParams={Promise.resolve({ tab })} />}
+                    {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} />}
+                </Suspense>
+            </div>
+        </div>
+    )
+}

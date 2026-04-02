@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -98,7 +98,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         }
     }, [externalOpen])
 
-    const columns: ColumnDef<PricingRule>[] = [
+    const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
@@ -214,7 +214,8 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                 </div>
             ),
         },
-    ]
+    ], [])
+
 
     return (
         <div className="space-y-4">

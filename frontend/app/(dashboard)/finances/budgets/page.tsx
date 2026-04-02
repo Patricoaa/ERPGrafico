@@ -2,16 +2,15 @@ import { BudgetsListView } from "@/features/finance/components/BudgetsListView"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
-export default function BudgetsPage() {
+interface BudgetsPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export default function BudgetsPage({ externalOpen, onExternalOpenChange }: BudgetsPageProps) {
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Presupuestos"
-                description="Control de metas presupuestarias y ejecución por centro de costos."
-                iconName="target"
-                variant="minimal"
-            />
-            <BudgetsListView />
+        <div className="pt-2">
+            <BudgetsListView externalOpen={externalOpen} onExternalOpenChange={onExternalOpenChange} />
         </div>
     )
 }

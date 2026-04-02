@@ -18,6 +18,7 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Trash2, Plus, Users, Calculator, Info } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface InitialCapitalModalProps {
@@ -144,8 +145,8 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                 <tbody className="divide-y">
                                     {entries.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
-                                                No hay socios agregados. Use el buscador superior.
+                                            <td colSpan={4} className="p-0">
+                                                <EmptyState context="users" variant="compact" description="No hay socios agregados. Use el buscador superior." />
                                             </td>
                                         </tr>
                                     ) : (

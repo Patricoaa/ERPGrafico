@@ -65,6 +65,35 @@ export default function PayrollsPage() {
         setDialogOpen(isNewModalOpen)
     }, [isNewModalOpen])
 
+    useEffect(() => {
+        const action = searchParams.get("action")
+        if (action === "generate_drafts") {
+            const executeAction = async () => {
+                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
+                    try {
+                        const { triggerDraftPayrolls } = await import("@/lib/hr/api")
+                        const res = await triggerDraftPayrolls()
+                        toast.success(res.detail)
+                        fetchPayrolls()
+                    } catch {
+                        toast.error("Error al iniciar tarea")
+                    } finally {
+                        // Limpiar la URL de la acción
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete("action")
+                        router.push(`?${params.toString()}`, { scroll: false })
+                    }
+                } else {
+                    // Limpiar la URL si el usuario cancela
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.delete("action")
+                    router.push(`?${params.toString()}`, { scroll: false })
+                }
+            }
+            executeAction()
+        }
+    }, [searchParams, router, fetchPayrolls])
+
     const handleOpenChange = (open: boolean) => {
         if (!open && isNewModalOpen) {
             const params = new URLSearchParams(searchParams.toString())
@@ -333,40 +362,7 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Liquidaciones"
-                description="Gestión de pagos de remuneraciones mensuales."
-                iconName="banknote"
-                variant="minimal"
-                titleActions={
-                    <div className="flex items-center gap-2">
-                        <PageHeaderButton
-                            onClick={async () => {
-                                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
-                                    try {
-                                        const res = await (await import("@/lib/hr/api")).triggerDraftPayrolls()
-                                        toast.success(res.detail)
-                                        fetchPayrolls()
-                                    } catch {
-                                        toast.error("Error al iniciar tarea")
-                                    }
-                                }
-                            }}
-                            iconName="file-text"
-                            variant="outline"
-                            label="Generar Borradores"
-                        />
-                        <PageHeaderButton
-                            onClick={() => router.push("?modal=new", { scroll: false })}
-                            iconName="plus"
-                            circular
-                            title="Nueva Liquidación"
-                        />
-                    </div>
-                }
-            />
-
+        <div className="space-y-4">
             <CreatePayrollDialog
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}

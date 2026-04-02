@@ -5,18 +5,19 @@ import dynamic from "next/dynamic"
 import { TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { DateRangeSelector } from "@/features/finances/components/DateRangeSelector"
+import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
-const RatiosView = dynamic(() => import("@/features/finances/components/RatiosView").then(mod => mod.RatiosView), {
+const RatiosView = dynamic(() => import("@/features/finance/components/RatiosView").then(mod => mod.RatiosView), {
     ssr: false,
     loading: () => <LoadingFallback message="Cargando análisis..." />
 })
 
-const BIAnalyticsView = dynamic(() => import("@/features/finances/components/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
+const BIAnalyticsView = dynamic(() => import("@/features/finance/components/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
     ssr: false,
     loading: () => <LoadingFallback message="Cargando BI..." />
 })
@@ -55,27 +56,21 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
     }
 
     return (
-        <>
-            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Análisis Financiero</h2>
-                    <p className="text-muted-foreground">Ratios financieros y Business Intelligence</p>
+        <div className={LAYOUT_TOKENS.view}>
+            <div className="flex flex-wrap items-center justify-end gap-4">
+                <div className="flex items-center space-x-2 border-l pl-4">
+                    <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
+                    <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center space-x-2 border-l pl-4">
-                        <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
-                        <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
-                    </div>
 
-                    <div className="flex items-center space-x-2">
-                        <DateRangeSelector date={date} onDateChange={setDate} />
-                        {showComparison && (
-                            <div className="flex items-center space-x-2 border-l pl-4">
-                                <span className="text-xs text-muted-foreground">vs</span>
-                                <DateRangeSelector date={compDate} onDateChange={setCompDate} />
-                            </div>
-                        )}
-                    </div>
+                <div className="flex items-center space-x-2">
+                    <DateRangeSelector date={date} onDateChange={setDate} />
+                    {showComparison && (
+                        <div className="flex items-center space-x-2 border-l pl-4">
+                            <span className="text-xs text-muted-foreground">vs</span>
+                            <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -92,6 +87,6 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                     )}
                 </TabsContent>
             </div>
-        </>
+        </div>
     )
 }

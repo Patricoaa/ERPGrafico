@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
-import { AppSidebar } from "@/components/layout/app-sidebar"
 import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
@@ -22,8 +21,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
 
     const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
-    const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
-    const [isSidebarVisible, setIsSidebarVisible] = useState(false)
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden } = useHubPanel()
@@ -37,17 +34,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         setActiveCategory(path)
     }, [pathname])
 
-    useEffect(() => {
-        let timeout: NodeJS.Timeout
-        if (hoveredCategory) {
-            setIsSidebarVisible(true)
-        } else {
-            timeout = setTimeout(() => {
-                setIsSidebarVisible(false)
-            }, 300)
-        }
-        return () => clearTimeout(timeout)
-    }, [hoveredCategory])
 
     // Mutually exclusive: close inbox when Hub opens
     useEffect(() => {
@@ -67,20 +53,19 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const categoryToUrl: Record<string, string> = {
         "dashboard": "/",
-        "accounting": "/accounting/accounts",
+        "accounting": "/accounting",
         "contacts": "/contacts",
-        "sales": "/sales/orders",
-        "billing": "/billing/sales",
-        "inventory": "/inventory/products",
-        "production": "/production/orders",
-        "treasury": "/treasury/movements",
-        "purchasing": "/purchasing/orders",
-        "finances": "/finances/statements",
-        "tax": "/tax/declarations",
-        "hr": "/hr/employees",
+        "sales": "/sales",
+        "billing": "/billing",
+        "inventory": "/inventory",
+        "production": "/production",
+        "treasury": "/treasury",
+        "purchasing": "/purchasing",
+        "finances": "/finances",
+        "tax": "/tax",
+        "hr": "/hr",
     }
 
-    const displayCategory = hoveredCategory || activeCategory
 
     return (
         <div className="flex h-screen bg-background overflow-hidden font-sans">
@@ -92,15 +77,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         router.push(categoryToUrl[cat])
                     }
                 }}
-                onHoverCategory={setHoveredCategory}
-            />
-
-            {/* Detailed Sidebar (Floating Glass Effect) */}
-            <AppSidebar
-                activeCategory={displayCategory}
-                isVisible={isSidebarVisible}
-                onMouseEnter={() => setHoveredCategory(displayCategory)}
-                onMouseLeave={() => setHoveredCategory(null)}
             />
 
             {/* Main Content Area */}

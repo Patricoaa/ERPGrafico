@@ -13,19 +13,12 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
     const activeTab = tab || "ratios"
 
     const tabs = [
-        { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
-        { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
+        { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances?view=analysis&tab=ratios" },
+        { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances?view=analysis&tab=bi" },
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Análisis Financiero"
-                description="Visualización de ratios, KPIs e inteligencia de negocio."
-                iconName="line-chart"
-                variant="minimal"
-            />
-            
+        <div className="pt-2">
             <Tabs value={activeTab} className="space-y-4">
                 <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <AnalysisView activeTab={activeTab} />

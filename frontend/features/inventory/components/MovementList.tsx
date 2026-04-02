@@ -186,7 +186,6 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 columns={columns}
                 data={moves}
                 cardMode
-                title="Movimientos de Stock"
                 isLoading={loading}
                 filterColumn="product_name"
                 searchPlaceholder="Filtrar por producto o almacén..."

@@ -66,6 +66,7 @@ const employeeSchema = z.object({
     dias_pactados: z.number().min(1).max(31),
     asignacion_familiar: z.enum(["A", "B", "C", "D"]),
     cargas_familiares: z.number().min(0),
+    concept_amounts: z.record(z.string(), z.string()).optional(),
 })
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>
@@ -201,20 +202,7 @@ export default function EmployeesPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Personal"
-                description="Gestión de empleados vinculados a contactos."
-                iconName="users-2"
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => router.push("?modal=new", { scroll: false })}
-                        iconName="plus"
-                        circular
-                        title="Nuevo Empleado"
-                    />
-                }
-            />
+        <div className="space-y-4">
 
             <EmployeeDialog
                 open={dialogOpen}
@@ -285,7 +273,7 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
             dias_pactados: 30,
             asignacion_familiar: "D",
             cargas_familiares: 0,
-            concept_amounts: {} as Record<number, string>,
+            concept_amounts: {},
         }
     })
 
@@ -307,37 +295,49 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
         if (employee) {
             form.reset({
                 contact: String(employee.contact),
-                position: employee.position,
-                department: employee.department,
-                start_date: employee.start_date || "",
-                base_salary: employee.base_salary,
+                position: employee.position || "",
+                department: employee.department || "",
+                start_date: (employee.start_date || "").split("T")[0] || "",
+                base_salary: String(employee.base_salary),
                 status: employee.status,
                 contract_type: employee.contract_type,
-                afp: employee.afp?.toString() || null,
-                salud_type: employee.salud_type as "FONASA" | "ISAPRE",
-                isapre_amount_uf: employee.isapre_amount_uf,
+                afp: employee.afp ? String(employee.afp) : null,
+                salud_type: employee.salud_type,
+                isapre_amount_uf: String(employee.isapre_amount_uf || "0"),
                 jornada_type: (employee.jornada_type as any) || "ORDINARIA_22",
-                jornada_hours: String((employee as any).jornada_hours || "44.0"),
-                trabajo_pesado: (employee as any).trabajo_pesado || false,
-                trabajo_agricola: (employee as any).trabajo_agricola || false,
-                gratificacion: (employee as any).gratificacion ?? true,
-                dias_pactados: (employee as any).dias_pactados ?? 30,
-                asignacion_familiar: (employee as any).asignacion_familiar || "D",
-                cargas_familiares: (employee as any).cargas_familiares || 0,
-                concept_amounts: (employee.concept_amounts || []).reduce((acc, curr) => {
-                    acc[curr.concept] = curr.amount
+                jornada_hours: String(employee.jornada_hours || "44.0"),
+                trabajo_pesado: !!employee.trabajo_pesado,
+                trabajo_agricola: !!employee.trabajo_agricola,
+                gratificacion: !!employee.gratificacion,
+                dias_pactados: employee.dias_pactados || 30,
+                asignacion_familiar: (employee.asignacion_familiar as any) || "D",
+                cargas_familiares: employee.cargas_familiares || 0,
+                concept_amounts: (employee.concept_amounts || []).reduce((acc: any, curr: any) => {
+                    acc[String(curr.concept)] = String(curr.amount)
                     return acc
-                }, {} as Record<number, string>)
+                }, {}) || {},
             })
         } else {
             form.reset({
-                contact: "", position: "", department: "", start_date: "",
-                base_salary: "0", status: "ACTIVE", contract_type: "INDEFINIDO",
-                afp: null, salud_type: "FONASA", isapre_amount_uf: "0",
-                jornada_type: "ORDINARIA_22", jornada_hours: "44.0", trabajo_pesado: false,
-                trabajo_agricola: false, gratificacion: true, dias_pactados: 30,
-                asignacion_familiar: "D", cargas_familiares: 0,
-                concept_amounts: {}
+                contact: "",
+                position: "",
+                department: "",
+                start_date: new Date().toISOString().split("T")[0],
+                base_salary: "0",
+                status: "ACTIVE",
+                contract_type: "INDEFINIDO",
+                afp: null,
+                salud_type: "FONASA",
+                isapre_amount_uf: "0",
+                jornada_type: "ORDINARIA_22",
+                jornada_hours: "44.0",
+                trabajo_pesado: false,
+                trabajo_agricola: false,
+                gratificacion: true,
+                dias_pactados: 30,
+                asignacion_familiar: "D",
+                cargas_familiares: 0,
+                concept_amounts: {},
             })
         }
     }, [employee, form, open])

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -153,7 +153,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         }
     }, [searchParams, products, isFormOpen, editingProduct, router, pathname])
 
-    const columns: ColumnDef<Product>[] = [
+    const columns = useMemo<ColumnDef<Product>[]>(() => [
         {
             id: "select",
             header: ({ table }) => (
@@ -356,7 +356,11 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 </div>
             ),
         },
-    ]
+    ], [expandedTemplates])
+
+    const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
+    const initialColumnVisibility = useMemo(() => ({ active: false }), [])
+
 
     return (
         <div className="space-y-4">
@@ -365,9 +369,9 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     columns={columns}
                     data={displayProducts}
                     cardMode
-                    globalFilterFields={["name", "code", "internal_code"]}
+                    globalFilterFields={globalFilterFields}
                     searchPlaceholder="Buscar por nombre, SKU o código..."
-                    initialColumnVisibility={{ active: false }}
+                    initialColumnVisibility={initialColumnVisibility}
                     viewOptions={[
                         { label: "Lista", value: "table", icon: List },
                         { label: "Grilla", value: "grid", icon: LayoutGrid },

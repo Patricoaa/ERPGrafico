@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -132,7 +132,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
     const handleDeleteValue = (id: number) => deleteValueConfirm.requestConfirm(id)
 
-    const columns: ColumnDef<ProductAttribute>[] = [
+    const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -202,7 +202,8 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 </div>
             ),
         },
-    ]
+    ], [])
+
 
     return (
         <div className="space-y-4">

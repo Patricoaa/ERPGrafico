@@ -123,131 +123,116 @@ export default function AccountingPeriodsPage() {
 
     if (loading) {
         return (
-            <div className={LAYOUT_TOKENS.view}>
-                <PageHeader
-                    title="Periodos Contables"
-                    description="Gestión de periodos contables mensuales"
-                    variant="minimal"
-                    iconName="calendar"
-                />
-                <div className="text-center py-12">Cargando...</div>
+            <div className="pt-8 text-center text-muted-foreground animate-pulse">
+                Cargando periodos contables...
             </div>
         );
     }
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Periodos Contables"
-                description="Gestión de periodos contables mensuales"
-                variant="minimal"
-                iconName="calendar"
-            />
-
-            <div className="pt-4">
-                <div className="grid gap-4">
-                    {periods.map((period) => {
-                        const isTarget = targetYear === period.year.toString() && targetMonth === period.month.toString();
-                        return (
-                            <Card 
-                                key={period.id}
-                                className={cn(
-                                    "transition-all duration-500",
-                                    isTarget ? "border-primary border-2 shadow-lg shadow-primary/20 bg-primary/5 ring-1 ring-primary/20" : ""
-                                )}
-                            >
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="w-5 h-5 text-muted-foreground" />
-                                        <div>
-                                            <CardTitle className="text-lg">
-                                                {period.month_display} {period.year}
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Periodo {period.year}-{String(period.month).padStart(2, '0')}
-                                            </CardDescription>
+        <div className="space-y-6 pt-4">
+            <div className="grid gap-4">
+                {periods.map((period) => {
+                    const isTarget = targetYear === period.year.toString() && targetMonth === period.month.toString();
+                    return (
+                        <Card 
+                            key={period.id}
+                            className={cn(
+                                "transition-all duration-500",
+                                isTarget ? "border-primary border-2 shadow-lg shadow-primary/20 bg-primary/5 ring-1 ring-primary/20" : ""
+                            )}
+                        >
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Calendar className="w-5 h-5 text-muted-foreground" />
+                                    <div>
+                                        <CardTitle className="text-lg">
+                                            {period.month_display} {period.year}
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Periodo {period.year}-{String(period.month).padStart(2, '0')}
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {getStatusBadge(period.status)}
+                                    {period.tax_period_id && (
+                                        <Badge variant="outline" className="text-xs">
+                                            Periodo Tributario: {period.tax_period_status}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <div className="text-sm text-muted-foreground">
+                                    {period.closed_at && (
+                                        <div className="flex items-center gap-2">
+                                            <Lock className="w-4 h-4" />
+                                            <span>
+                                                Cerrado el {formatPlainDate(period.closed_at)}
+                                                {period.closed_by_name && ` por ${period.closed_by_name}`}
+                                            </span>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {getStatusBadge(period.status)}
-                                        {period.tax_period_id && (
-                                            <Badge variant="outline" className="text-xs">
-                                                Periodo Tributario: {period.tax_period_status}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between">
-                                    <div className="text-sm text-muted-foreground">
-                                        {period.closed_at && (
-                                            <div className="flex items-center gap-2">
-                                                <Lock className="w-4 h-4" />
-                                                <span>
-                                                    Cerrado el {formatPlainDate(period.closed_at)}
-                                                    {period.closed_by_name && ` por ${period.closed_by_name}`}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {period.status === 'OPEN' && (
-                                            <div className="flex items-center gap-2 text-emerald-700">
-                                                <CheckCircle2 className="w-4 h-4" />
-                                                <span>Periodo abierto - Se pueden registrar asientos</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        {period.status === 'OPEN' && (
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => closePeriod(period.id)}
-                                                disabled={actionLoading === period.id}
-                                            >
-                                                <Lock className="w-4 h-4 mr-2" />
-                                                {actionLoading === period.id ? 'Cerrando...' : 'Cerrar Periodo'}
-                                            </Button>
-                                        )}
-                                        {period.status === 'CLOSED' && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => reopenPeriod(period.id)}
-                                                disabled={actionLoading === period.id}
-                                            >
-                                                <LockOpen className="w-4 h-4 mr-2" />
-                                                {actionLoading === period.id ? 'Reabriendo...' : 'Reabrir Periodo'}
-                                            </Button>
-                                        )}
-                                    </div>
+                                    )}
+                                    {period.status === 'OPEN' && (
+                                        <div className="flex items-center gap-2 text-emerald-700">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Periodo abierto - Se pueden registrar asientos</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {period.tax_period_id && period.tax_period_status === 'CLOSED' && (
-                                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
-                                        <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
-                                        <p className="text-sm text-amber-800">
-                                            El periodo tributario asociado está cerrado. No se puede reabrir el periodo contable sin reabrir primero el periodo tributario.
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    );
-                })}
+                                <div className="flex gap-2">
+                                    {period.status === 'OPEN' && (
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => closePeriod(period.id)}
+                                            disabled={actionLoading === period.id}
+                                        >
+                                            <Lock className="w-4 h-4 mr-2" />
+                                            {actionLoading === period.id ? 'Cerrando...' : 'Cerrar Periodo'}
+                                        </Button>
+                                    )}
+                                    {period.status === 'CLOSED' && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => reopenPeriod(period.id)}
+                                            disabled={actionLoading === period.id}
+                                        >
+                                            <LockOpen className="w-4 h-4 mr-2" />
+                                            {actionLoading === period.id ? 'Reabriendo...' : 'Reabrir Periodo'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
 
-                    {periods.length === 0 && (
-                        <Card>
-                            <CardContent className="py-12 text-center text-muted-foreground">
-                                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                                <p>No hay periodos contables registrados</p>
-                                <p className="text-sm mt-2">Los periodos se crean automáticamente al registrar asientos contables</p>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                            {period.tax_period_id && period.tax_period_status === 'CLOSED' && (
+                                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                                    <p className="text-sm text-amber-800">
+                                        El periodo tributario asociado está cerrado. No se puede reabrir el periodo contable sin reabrir primero el periodo tributario.
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            })}
+
+                {periods.length === 0 && (
+                    <Card>
+                        <CardContent className="py-12 text-center text-muted-foreground">
+                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>No hay periodos contables registrados</p>
+                            <p className="text-sm mt-2">Los periodos se crean automáticamente al registrar asientos contables</p>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     );

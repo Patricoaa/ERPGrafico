@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import api from '@/lib/api';
 import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } from 'lucide-react';
+import { LoadingFallback } from "@/components/shared/LoadingFallback";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
@@ -54,8 +56,8 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         loadData();
     }, [date]);
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Cargando analytics...</div>;
-    if (!data) return <div className="p-8 text-center text-muted-foreground">No hay datos disponibles</div>;
+    if (loading) return <LoadingFallback message="Cargando analytics..." />;
+    if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const { sales, inventory, performance } = data;
 

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import api from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -56,6 +57,16 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [currentUoM, setCurrentUoM] = useState<Partial<UoM>>({})
     const [isSaving, setIsSaving] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchData = async () => {
         setLoading(true)
@@ -117,7 +128,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const columns: ColumnDef<UoM>[] = [
+    const columns = useMemo<ColumnDef<UoM>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
@@ -161,7 +172,8 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 </div>
             ),
         },
-    ]
+    ], [])
+
 
     return (
         <div className="space-y-4">
@@ -190,7 +202,10 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 open={isUoMModalOpen}
                 onOpenChange={(open) => {
                     setIsUoMModalOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        onExternalOpenChange?.(false)
+                        handleCloseModal()
+                    }
                 }}
                 size={currentUoM.id ? "lg" : "md"}
                 title={

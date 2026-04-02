@@ -149,7 +149,6 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 columns={columns}
                 data={warehouses}
                 cardMode
-                title="Gestión de Almacenes"
                 isLoading={loading}
                 useAdvancedFilter={true}
                 filterColumn="name"
@@ -179,7 +178,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                         handleCloseModal()
                     }
                 }}
-                initialData={editingWarehouse}
+                initialData={editingWarehouse || undefined}
             />
 
             <ActionConfirmModal

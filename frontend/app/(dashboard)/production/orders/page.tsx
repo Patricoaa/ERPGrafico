@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -60,7 +61,30 @@ export default function WorkOrdersPage() {
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [viewMode, setViewMode] = useState<string>("kanban")
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
+
+    // Modal state sync with URL
+    useEffect(() => {
+        if (isNewModalOpen) {
+            setIsFormOpen(true)
+            setEditingOrder(null)
+        }
+    }, [isNewModalOpen])
+
+    const handleFormClose = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            setEditingOrder(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const filteredOrders = orders.filter(order => {
         // Date range filter
@@ -263,32 +287,17 @@ export default function WorkOrdersPage() {
     ), [loading, handleKanbanTransition])
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Ordenes de Trabajo (OT)"
-                description="Seguimiento y control de procesos productivos."
-                iconName="factory"
-                variant="minimal"
-                titleActions={
-                    <WorkOrderForm
-                        onSuccess={fetchOrders}
-                        triggerVariant="circular"
-                    />
-                }
-            />
+        <div className="space-y-4">
 
             {/* Hidden Forms */}
-            {editingOrder && (
+            {editingOrder || isFormOpen ? (
                 <WorkOrderForm
                     initialData={editingOrder}
-                    open={isFormOpen && !!editingOrder}
-                    onOpenChange={(open) => {
-                        setIsFormOpen(open)
-                        if (!open) setEditingOrder(null)
-                    }}
+                    open={isFormOpen}
+                    onOpenChange={handleFormClose}
                     onSuccess={fetchOrders}
                 />
-            )}
+            ) : null}
             {activeWizardId && (
                 <WorkOrderWizard
                     orderId={activeWizardId}

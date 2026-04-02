@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -38,7 +38,7 @@ export function StockReport() {
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
@@ -181,7 +181,10 @@ export function StockReport() {
             ),
             size: 80,
         },
-    ]
+    ], [/* dependencies - empty as they only use local states via closures which are captured inside the component */])
+
+    const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
+
 
     const handleExport = () => {
         toast.info("Exportando reporte consolidado...")
@@ -193,9 +196,8 @@ export function StockReport() {
                 columns={columns}
                 data={report}
                 cardMode
-                title="Reporte Global de Stock"
                 searchPlaceholder="Filtrar producto, SKU o código..."
-                globalFilterFields={["name", "code", "internal_code"]}
+                globalFilterFields={globalFilterFields}
                 toolbarAction={
                     <div className="flex items-center gap-2">
                         <Button 

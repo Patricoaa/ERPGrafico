@@ -86,8 +86,14 @@ export interface Employee {
   salud_type: SaludType
   salud_type_display: string
   isapre_amount_uf: string
-  jornada_type_display?: string
-  asignacion_familiar_display?: string
+  jornada_type?: string
+  jornada_hours?: string
+  trabajo_pesado?: boolean
+  trabajo_agricola?: boolean
+  gratificacion?: boolean
+  dias_pactados?: number
+  asignacion_familiar?: string
+  cargas_familiares?: number
   concept_amounts?: EmployeeConceptAmount[]
   created_at: string
   updated_at: string

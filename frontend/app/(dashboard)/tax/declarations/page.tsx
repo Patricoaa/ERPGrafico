@@ -2,10 +2,9 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
     Plus,
     FileText,
@@ -24,16 +23,22 @@ import { toast } from "sonner"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { PeriodChecklist } from "@/features/tax/components/PeriodChecklist"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTable } from "@/components/ui/data-table"
-import { ColumnDef, Row } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { cn, formatCurrency } from "@/lib/utils"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
-export default function TaxDeclarationsPage() {
+interface TaxDeclarationsPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export default function TaxDeclarationsPage({ externalOpen, onExternalOpenChange }: TaxDeclarationsPageProps) {
     const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
     const [periods, setPeriods] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
@@ -42,18 +47,30 @@ export default function TaxDeclarationsPage() {
     const [selectedPeriod, setSelectedPeriod] = useState<any>(null)
     const [selectedDeclaration, setSelectedDeclaration] = useState<any>(null)
 
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    const handleWizardOpenChange = (open: boolean) => {
+        setIsWizardOpen(open)
+        if (!open) {
+            onExternalOpenChange?.(false)
+            handleCloseModal()
+        }
+    }
+
     const fetchPeriods = async () => {
         setIsLoading(true)
         try {
-            // Fetch all periods (pagination handled by DataTable client-side for now as dataset is small)
             const response = await api.get("/tax/periods/?page_size=100")
             const fetchedPeriods = response.data.results || response.data
             setPeriods(fetchedPeriods)
             
-            // Check for query params to auto-open
             const year = searchParams.get('year')
             const month = searchParams.get('month')
-            const action = searchParams.get('action') // 'create' or 'pay'
+            const action = searchParams.get('action')
 
             if (year && month && fetchedPeriods.length > 0) {
                 const target = fetchedPeriods.find((p: any) => 
@@ -79,6 +96,12 @@ export default function TaxDeclarationsPage() {
         fetchPeriods()
     }, [])
 
+    useEffect(() => {
+        if (externalOpen) {
+            setIsWizardOpen(true)
+        }
+    }, [externalOpen])
+
     const handleOpenWizard = () => {
         setIsWizardOpen(true)
     }
@@ -89,7 +112,6 @@ export default function TaxDeclarationsPage() {
     }
 
     const handleOpenPayment = async (period: any) => {
-        // Use summary data if available, or fetch details if needed
         if (period.declaration_summary) {
             setSelectedDeclaration({
                 id: period.declaration_summary.id,
@@ -119,6 +141,8 @@ export default function TaxDeclarationsPage() {
             }
         }
     }
+
+    const { serverDate, dateString } = useServerDate()
 
     const handlePaymentConfirm = async (data: any) => {
         try {
@@ -154,8 +178,6 @@ export default function TaxDeclarationsPage() {
         }
     }
 
-    // Determine current logical period to show in dashboard
-    const { serverDate, dateString } = useServerDate()
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
         ? `${latestPeriod.month_display} ${latestPeriod.year}`.toUpperCase()
@@ -164,11 +186,7 @@ export default function TaxDeclarationsPage() {
             : format(new Date(), "MMMM yyyy", { locale: es }).toUpperCase())
 
     const isLatestClosed = latestPeriod?.status === "CLOSED"
-
-    // Calculate summaries from the latest period or most recent loaded data
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
-    // We don't have credit balance in summary yet, would need to add it to serializer or keep it simple
-    // For now assuming 0 or fetching separate if critical. User asked to sync "Impuesto Determinado".
 
     const columns: ColumnDef<any>[] = [
         {
@@ -190,15 +208,13 @@ export default function TaxDeclarationsPage() {
                     return rowA.original.year - rowB.original.year
                 }
                 return rowA.original.month - rowB.original.month
-            },
-            meta: { title: "Período" }
+            }
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => getStatusBadge(row.original.status),
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-            meta: { title: "Estado" }
+            filterFn: (row, id, value) => value.includes(row.getValue(id))
         },
         {
             id: "vat_to_pay",
@@ -207,8 +223,7 @@ export default function TaxDeclarationsPage() {
             cell: ({ row }) => {
                 const amount = row.getValue("vat_to_pay") as number
                 return <div className="font-mono">{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}</div>
-            },
-            meta: { title: "Impuesto" }
+            }
         },
         {
             accessorKey: "payment_status",
@@ -223,21 +238,15 @@ export default function TaxDeclarationsPage() {
                     return <Badge variant="outline" className="border-red-500 text-destructive bg-red-50">Pendiente</Badge>
                 }
                 return <span className="text-muted-foreground">-</span>
-            },
-            meta: { title: "Pago" }
+            }
         },
         {
             id: "actions",
             cell: ({ row }) => {
                 const period = row.original
                 const summary = period.declaration_summary
-
-                // Show button if a summary exists (to pay or view) OR if it's closed and needs a summary
-                const hasSummary = !!summary
                 const isFullyPaid = summary?.is_fully_paid
-                const showPaymentButton = hasSummary || (!summary && period.status === 'CLOSED')
-
-                // Checklist only available if OPEN
+                const showPaymentButton = !!summary || period.status === 'CLOSED'
                 const canOpenChecklist = period.status === 'OPEN'
 
                 return (
@@ -291,20 +300,7 @@ export default function TaxDeclarationsPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Declaraciones F29"
-                titleActions={
-                    <PageHeaderButton
-                        onClick={handleOpenWizard}
-                        iconName="plus"
-                        circular
-                        title="Nueva Declaración"
-                    />
-                }
-                iconName="file-text"
-            />
-
+        <div className="space-y-6 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
                     <CardHeader className="pb-2">
@@ -391,13 +387,8 @@ export default function TaxDeclarationsPage() {
                             {rows.map((row: any) => {
                                 const period = row.original
                                 const summary = period.declaration_summary
-
-                                // Logic: Show button if declaration exists OR if closed and needs one
-                                const hasSummary = !!summary
                                 const isFullyPaid = summary?.is_fully_paid
-                                const showPaymentButton = hasSummary || (!summary && period.status === 'CLOSED')
-
-                                // Checklist only available if OPEN
+                                const showPaymentButton = !!summary || period.status === 'CLOSED'
                                 const canOpenChecklist = period.status === 'OPEN'
 
                                 return (
@@ -496,11 +487,6 @@ export default function TaxDeclarationsPage() {
                                                         <ArrowRight className="h-5 w-5 text-primary" />
                                                     </Button>
                                                 )}
-                                                {!canOpenChecklist && (
-                                                    <div className="w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -511,10 +497,9 @@ export default function TaxDeclarationsPage() {
                 }}
             />
 
-
             <DeclarationWizard
                 isOpen={isWizardOpen}
-                onOpenChange={setIsWizardOpen}
+                onOpenChange={handleWizardOpenChange}
                 onSuccess={() => {
                     fetchPeriods()
                     setIsWizardOpen(false)

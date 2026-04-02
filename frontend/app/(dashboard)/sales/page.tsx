@@ -1,82 +1,163 @@
-"use client"
-
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingCart, Users, Play, ArrowUpRight } from "lucide-react"
-import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { motion } from "framer-motion"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import Link from "next/link"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Store, ShoppingCart, Banknote, PieChart } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-const container = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
+// Lazy load feature components
+const SalesOrdersClientView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView })))
+const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView").then(m => ({ default: m.default })))
+const CreditPortfolioView = lazy(() => import("@/features/credits").then(m => ({ default: m.CreditPortfolioView })))
+const BlacklistView = lazy(() => import("@/features/credits").then(m => ({ default: m.BlacklistView })))
+
+export const metadata: Metadata = {
+    title: "Módulo de Ventas | ERPGrafico",
+    description: "Gestión integral de pedidos, terminales, cobranza y puntos de venta.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; sub?: string; modal?: string }>
+}
+
+export default async function SalesPage({ searchParams }: PageProps) {
+    const { view, sub, modal } = await searchParams
+    const viewMode = (view as 'orders' | 'terminals' | 'credits') || 'orders'
+    const subView = sub || (viewMode === 'orders' ? 'orders' : viewMode === 'terminals' ? 'terminals' : 'portfolio')
+    const isModalOpen = !!modal
+
+    const tabs = [
+        { value: "orders", label: "Órdenes", iconName: "shopping-cart", href: "/sales?view=orders" },
+        { value: "terminals", label: "Terminales", iconName: "banknote", href: "/sales?view=terminals" },
+        { value: "credits", label: "Cartera", iconName: "pie-chart", href: "/sales?view=credits" },
+    ]
+
+    const getHeaderConfig = () => {
+        if (viewMode === 'orders') {
+            return {
+                title: subView === 'orders' ? "Notas de Venta" : "Notas de Crédito/Débito",
+                description: "Seguimiento de pedidos y documentos de ajuste.",
+                showAction: false
+            }
         }
+        if (viewMode === 'terminals') {
+            return {
+                title: "Terminales y Liquidaciones",
+                description: "Gestión de puntos de cobro y lotes transaccionales.",
+                actionTitle: subView === 'terminals' ? "Nuevo Terminal" : subView === 'batches' ? "Nueva Liquidación" : "",
+                actionHref: `/sales?view=terminals&sub=${subView}&modal=${subView === 'terminals' ? 'new-terminal' : 'new-batch'}`,
+                showAction: subView !== 'sessions'
+            }
+        }
+        if (viewMode === 'credits') {
+            return {
+                title: "Cartera de Crédito",
+                description: "Clasificación de deuda y gestión de cobranzas.",
+                actionTitle: "Asignar Crédito",
+                actionHref: "/sales?view=credits&sub=portfolio&modal=new",
+                showAction: subView === 'portfolio'
+            }
+        }
+        return { title: "Ventas", description: "", showAction: false }
     }
-}
 
-const item = {
-    hidden: { y: 20, opacity: 0 },
-    show: { y: 0, opacity: 1 }
-}
+    const config = getHeaderConfig()
 
-export default function SalesPage() {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Ventas"
-                description="Gestión integral de ingresos, puntos de venta y flujo de caja operativo."
-                iconName="shopping-cart"
-            />
-
-            <motion.div
-                variants={container}
-                initial="hidden"
-                animate="show"
-                className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                title={config.title}
+                description={config.description}
+                iconName={viewMode === 'orders' ? "shopping-cart" : viewMode === 'terminals' ? "banknote" : "pie-chart"}
+                variant="minimal"
+                configHref="/settings/sales"
+                titleActions={config.showAction && config.actionHref && (
+                    <Link href={config.actionHref}>
+                        <PageHeaderButton
+                            iconName="plus"
+                            circular
+                            title={config.actionTitle}
+                        />
+                    </Link>
+                )}
             >
-                <motion.div variants={item}>
-                    <Link href="/pos" target="_blank">
-                        <IndustrialCard variant="industrial" className="group transition-all cursor-pointer relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ArrowUpRight className="h-5 w-5 text-primary" />
-                            </div>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Punto de Venta (POS)</CardTitle>
-                                <div className="p-2 rounded-lg bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <ShoppingCart className="h-4 w-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-black font-heading mb-1">REALIZAR VENTA</div>
-                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Ingreso rápido de pedidos y facturación</p>
-                            </CardContent>
-                        </IndustrialCard>
-                    </Link>
-                </motion.div>
+                <Link href="/pos" target="_blank">
+                    <Button className="bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-bold uppercase tracking-wider text-[11px]">
+                        <Store className="mr-2 h-4 w-4" />
+                        Ir al POS
+                    </Button>
+                </Link>
+            </PageHeader>
 
-                {/* Additional placeholder cards to show grid */}
-                <motion.div variants={item}>
-                    <Link href="/sales/orders">
-                        <IndustrialCard variant="industrial" className="group transition-all cursor-pointer relative overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Notas de Venta</CardTitle>
-                                <div className="p-2 rounded-lg bg-muted/20 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <Play className="h-4 w-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-black font-heading mb-1">HISTORIAL</div>
-                                <p className="text-xs text-muted-foreground font-medium uppercase tracking-tight">Seguimiento de pedidos pendientes</p>
-                            </CardContent>
-                        </IndustrialCard>
-                    </Link>
-                </motion.div>
-            </motion.div>
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-4">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'orders' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "orders", label: "Notas de Venta", href: "/sales?view=orders&sub=orders" },
+                                    { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales?view=orders&sub=notes" },
+                                ]} 
+                                activeValue={subView} 
+                                variant="minimal"
+                            />
+                            <div className="pt-2">
+                                <SalesOrdersClientView 
+                                    viewMode={subView === 'orders' ? 'orders' : 'notes'} 
+                                    isCreateModalOpen={modal === 'new'}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {viewMode === 'terminals' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "terminals", label: "Terminales", href: "/sales?view=terminals&sub=terminals" },
+                                    { value: "batches", label: "Lotes", href: "/sales?view=terminals&sub=batches" },
+                                    { value: "sessions", label: "Sesiones", href: "/sales?view=terminals&sub=sessions" },
+                                ]} 
+                                activeValue={subView} 
+                                variant="minimal"
+                            />
+                            <div className="pt-2">
+                                <SalesTerminalsView activeTab={subView} modal={modal} />
+                            </div>
+                        </div>
+                    )}
+
+                    {viewMode === 'credits' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "portfolio", label: "Cartera", href: "/sales?view=credits&sub=portfolio" },
+                                    { value: "history", label: "Historial", href: "/sales?view=credits&sub=history" },
+                                    { value: "blacklist", label: "Lista Negra", href: "/sales?view=credits&sub=blacklist" },
+                                ]} 
+                                activeValue={subView} 
+                                variant="minimal"
+                            />
+                            <div className="pt-2">
+                                {subView === 'blacklist' ? (
+                                    <BlacklistView />
+                                ) : (
+                                    <CreditPortfolioView 
+                                        activeTab={subView as 'portfolio' | 'history'} 
+                                        externalOpen={modal === 'new'} 
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </Suspense>
+            </div>
         </div>
     )
 }
-

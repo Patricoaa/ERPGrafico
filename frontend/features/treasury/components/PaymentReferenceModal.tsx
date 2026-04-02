@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatPlainDate } from "@/lib/utils"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 export interface Payment {
     id: number
@@ -159,9 +160,7 @@ export function PaymentReferenceModal({
                 )}
 
                 {pendingPayments.length === 0 && (
-                    <div className="py-8 text-center text-muted-foreground italic text-sm">
-                        No hay pagos pendientes de registro para esta orden.
-                    </div>
+                    <EmptyState context="finance" variant="compact" description="No hay pagos pendientes de registro para esta orden" />
                 )}
             </div>
         </BaseModal>
