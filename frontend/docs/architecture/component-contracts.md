@@ -12,6 +12,7 @@ Componente central para la representación de estados de entidades (pedidos, pag
 - **Reglas**:
   - Debe mapear los estados a tokens semánticos: `success`, `warning`, `destructive`, `info`.
   - Nunca usar colores Tailwind hardcoded.
+  - Ver [Inventario de Estados de Negocio](BUSINESS_STATES.md) para los valores aceptados por `status`.
 
 ## 2. EmptyState
 Visualización estándar para listados y estados vacíos.
@@ -46,5 +47,24 @@ Conjunto de tokens de Tailwind para formularios unificados.
   - `textarea`: Min-h-100, transition focus.
   - `sectionHeader`: Industrial separator style.
 
----
-*Documento generado automáticamente como parte del Sprint 6 - Gobernanza y Estandarización.*
+## 5. CONTRATO DE HOOKS (Data Fetching)
+Todo hook de feature debe seguir este patrón:
+
+- **Naming**: `use[Entity][Action]` (ej. `useProductSearch`, `useOrderDetails`).
+- **Retorno Obligatorio**: 
+  - `data`: El resultado tipado (vía Zod).
+  - `isLoading`: Estado de carga inicial.
+  - `error`: Error formateado vía `showApiError`.
+- **Regla**: Prohibido usar `useQuery` directamente en componentes UI; siempre envolver en un hook de feature.
+
+## 6. CONTRATO DE FORMULARIOS
+- **Biblioteca**: `react-hook-form` + `zod`.
+- **Estructura**:
+  - Carpeta `[Feature]/components/forms/`.
+  - Archivo `schema.ts`: Definición única del Zod schema y el Type derivado.
+- **Props Estándar**:
+  - `initialData?: T`: Datos para modo edición.
+  - `onSuccess: (data: T) => void`: Callback tras guardado exitoso.
+  - `onCancel: () => void`: Cerrar modal o volver atrás.
+
+
