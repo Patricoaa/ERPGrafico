@@ -1,0 +1,34 @@
+# Gobernanza Maestra — ERPGrafico
+
+Este documento define la "Constitución" técnica del frontend del proyecto ERPGrafico. Cualquier nuevo desarrollo, refactorización o corrección de código debe acatar estas reglas fundamentales.
+
+## 1. Zero Any Policy (Tolerancia Cero a `any`)
+- **Está estrictamente prohibido** el uso del tipo `any` en todo nuevo código TypeScript.
+- Cuando la estructura de los datos que vienen del backend sea temporalmente incierta, utilizar `unknown` y aplicar *Type Guards* (o validadores como Zod).
+
+## 2. Decisiones de Arquitectura (ADRs)
+- Todo cambio que introduzca una nueva dependencia core, un nuevo patrón de diseño o una refactorización masiva debe documentarse formalmente como un ADR (Architecture Decision Record) en `docs/architecture/adr/`.
+- Ningún pull request, IA o desarrollador puede contradecir un ADR activo. Para cambiar de rumbo, debe redactarse un nuevo ADR que lo sustituya.
+
+## 3. Diseño y UI/UX (Protocolo `ui-ux-pro-max`)
+- El diseño visual del sistema está gobernado por nuestro Design System (generado por la skill `ui-ux-pro-max`).
+- Nunca inventar variantes visuales o usar utilidades de Tailwind genéricas (ej. `bg-red-500`) en componentes comunes. Deben mapearse a los *Tokens Semánticos* documentados en `color-tokens.md`.
+- No modificar el código fuente de componentes base de `/ui` (shadcn) directamente. Ampliarlos en `/shared`.
+
+## 4. Nomenclatura y Convenciones (Naming)
+- **Componentes React:** PascalCase (ej. `SaleOrderForm.tsx`).
+- **Hooks personalizados:** camelCase con prefijo "use" (ej. `useStockValidation.ts`).
+- **Tipos e Interfaces:** PascalCase puro sin prefijos "I" o sufijos "Type" (ej. `SaleOrder`, no `ISaleOrder`).
+- **Constantes de Configuración:** UPPER_SNAKE_CASE (ej. `FORM_STYLES`, `MAX_RETRIES`).
+
+## 5. Feature-Sliced Design (Arquitectura Modular)
+- El código en `app/` solo debe contener la lógica de renderización de la página y layout principal (Server Components recomendados).
+- La complejidad modular debe encapsularse en `src/features/[modulo]`.
+- Un feature no debe conocer ni importar archivos internos aislados de otro feature directamente, debiendo pasar por el "contrato público" o *barrel export* si fuera necesario, o bien promover el código a `/shared`.
+
+## 6. Integridad de Pull Requests y QA
+- No se aceptará en la rama principal código que no pase limpiamente `npm run type-check`.
+- Todos los estados en componentes compartidos y tablas de datos deben contemplar y documentar:
+  - Estado *Loading* (Skeletons/Spinners).
+  - Estado *Empty* (`EmptyState`).
+  - Estado de *Error* (Manejado globalmente a través de utilidades proxy hacia Toasts).

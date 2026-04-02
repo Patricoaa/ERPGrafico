@@ -2,148 +2,139 @@
 trigger: always_on
 ---
 
-# Contexto del proyecto — ERPGrafico Frontend
+ Instrucciones Persistentes — ERPGrafico Frontend
+> Versión 2.0 — Fuente de verdad: `globals.css` + documentos de arquitectura
 
-## Stack
-- Framework: Next.js 15 + TypeScript
-- UI: shadcn/ui + Tailwind CSS
-- Backend: Django REST API (dockerizado)
-- Estado: refactorización activa según roadmap en docs/refactoring-roadmap.md
+Copia este bloque completo en tu configuración de "System Instructions" o "User Rules".
 
-## Fuentes de verdad — LEER ANTES DE CUALQUIER TAREA
-
-Antes de ejecutar cualquier tarea que involucre decisiones de UI,
-componentes, colores, tipografía, espaciado o experiencia de usuario,
-debes consultar en este orden:
-
-1. `docs/design-system/MASTER.md`
-   Fuente principal generada por la skill ui-ux-pro-max.
-   Contiene paleta, tipografía, estilos y reglas UX para este proyecto.
-   Si no existe aún, detente e indica que debe generarse primero.
-
-2. `docs/design-system/pages/[modulo].md` (si existe)
-   Override específico del módulo en el que estás trabajando.
-   Sus reglas tienen prioridad sobre el MASTER.
-
-3. `docs/architecture/color-tokens.md`
-   Tokens semánticos definidos, valores en light/dark, casos de uso.
-
-4. `docs/architecture/component-contracts.md`
-   API pública de componentes shared: props permitidas y prohibidas.
-
-5. `docs/architecture/adr/`
-   Decisiones de arquitectura ya tomadas. Nunca contradijas un ADR
-   sin documentar un nuevo ADR que lo superseda.
-
-## Reglas permanentes de desarrollo
-
-### Componentes
-- Nunca modificar archivos en `components/ui/` directamente.
-  Si necesitas una variante, extiéndela en `components/shared/`.
-- Nunca exponer `className` como prop de layout en componentes shared.
-  Usa `variant` con valores explícitos.
-- Todo componente shared debe tener: estado loading, empty y error.
-- Usar siempre `components/shared/EmptyState` para estados vacíos.
-- Usar siempre `components/shared/StatusBadge` para estados de entidad.
-
-### Colores
-- Nunca usar colores hardcoded de Tailwind para semántica
-  (emerald, blue, amber, red) en componentes.
-- Usar siempre los tokens semánticos definidos en color-tokens.md:
-  text-success, text-warning, text-destructive, text-info, bg-background.
-
-### TypeScript
-- Nunca usar `any` en props de componentes nuevos o refactorizados.
-- `initialData` siempre tipado con interface derivada del Zod schema.
-- Errores en catch: usar `error instanceof Error ? error.message : String(error)`.
-
-### Imports
-- Nunca importar `@/lib/api` directamente en componentes UI.
-  Toda llamada a API va en un hook dentro del feature correspondiente.
-- Usar siempre el barrel export del módulo, no rutas relativas largas.
-
-## Protocolo de uso de la skill ui-ux-pro-max
-
-Cuando una tarea involucre decisiones visuales, sigue este protocolo:
-
-### PASO 1 — Consultar la skill ANTES de implementar
-## Protocolo de uso de la skill ui-ux-pro-max
-
-Cuando una tarea involucre decisiones visuales, sigue este protocolo:
-
-### PASO 1 — Verificar si ya existe la fuente de verdad
-
-Antes de ejecutar cualquier comando de la skill, verifica:
-
-#### Para design system general:
-- Si `docs/design-system/MASTER.md` existe → léelo y úsalo. NO regeneres.
-- Si NO existe → ejecuta:
-python skills/ui-ux-pro-max/scripts/search.py 
-"ERP enterprise admin dashboard business management SaaS" 
---design-system --persist -p "ERPGrafico" -f markdown
-
-
-
-#### Para consultas específicas (color, ux, typography):
-Estas SÍ se ejecutan siempre que necesites profundizar en un tema
-que el MASTER.md no cubre con suficiente detalle:
-python skills/ui-ux-pro-max/scripts/search.py 
-"[keyword]" --domain [color|ux|typography|chart]
-Guarda el output relevante en el ADR correspondiente —
-no como archivo separado, para evitar fuentes de verdad duplicadas.
-
-### Regla general
-El MASTER.md se genera UNA sola vez y se regenera únicamente si:
-- La skill tiene una actualización mayor
-- El tipo de producto cambia significativamente
-- Se toma una decisión explícita documentada en un ADR que lo justifique
-
-Nunca regeneres el MASTER.md como parte de una tarea rutinaria.
-### PASO 2 — Documentar la decisión
-Después de consultar la skill y antes de implementar, crea o actualiza
-el ADR correspondiente en `docs/architecture/adr/`.
-
-Formato del ADR:
----
-# ADR-[número]: [Título de la decisión]
-Fecha: YYYY-MM-DD
-Sprint: [número]
-Estado: Activo
-
-## Contexto
-[Por qué esta decisión era necesaria]
-
-## Fuente
-Skill ui-ux-pro-max — comando ejecutado:
-[comando exacto que se ejecutó]
-Output relevante: [extracto clave del output]
-
-## Decisión
-[Qué se decidió exactamente]
-
-## Implementación
-[Dónde se implementó: archivos, tokens, componentes]
-
-## Qué NO está permitido
-[Anti-patrones explícitos derivados de esta decisión]
-
-## Consecuencias
-[Qué implica esta decisión para el futuro]
 ---
 
-### PASO 3 — Implementar usando las fuentes de verdad
-Solo después de los pasos 1 y 2, ejecuta la implementación.
+## 🏛️ Gobernanza y Fuentes de Verdad
 
-### PASO 4 — Actualizar documentación afectada
-Si la implementación modifica o extiende algo documentado, actualiza:
-- `docs/architecture/color-tokens.md` si se agregaron tokens
-- `docs/architecture/component-contracts.md` si se modificó una API
-- `docs/design-system/MASTER.md` NUNCA se edita manualmente —
-  solo se regenera con la skill
+### 1. Documentación Maestra (Orden de Consulta Obligatorio)
 
-## Al terminar cada tarea
-Genera un resumen con:
-- Archivos modificados
-- Documentación creada o actualizada
-- Decisiones tomadas que requieren un nuevo ADR
-- Problemas encontrados que no estaban en el roadmap
+Antes de generar cualquier código, debes leer y respetar estos documentos en orden:
+
+1. `docs/architecture/GOVERNANCE.md` — La "Constitución": Zero Any, Naming, Modularidad, Feature-Sliced Design.
+2. `src/app/globals.css` — **Fuente de verdad visual absoluta.** Tipografía real (Onest + Syne), tokens de color oklch, border-radius industrial (`0.25rem`).
+3. `docs/design-system/color-tokens.md` — Mapa de tokens CSS → clases Tailwind → estados de negocio.
+4. `docs/architecture/component-contracts.md` — API pública de Shared Components, Hooks y Forms.
+5. `docs/architecture/BUSINESS_STATES.md` — Estados de negocio por módulo (fuente de verdad del backend).
+6. `docs/architecture/TESTING.md` — Estrategia de pruebas y cobertura mínima requerida.
+
+### 2. Jerarquía de Resolución de Conflictos
+
+Si dos documentos contradicen al respecto de un color, tipografía o token visual:
+**`globals.css` siempre gana.** No existe ningún documento con mayor autoridad visual que el CSS real del proyecto.
+
+---
+
+## ⚙️ Reglas de Desarrollo Críticas
+
+### Zero Any
+Prohibido usar `any` en TypeScript. Alternativas obligatorias:
+- Usar tipos fuertes derivados de Zod schemas.
+- Usar `unknown` + type guards cuando la estructura sea incierta.
+
+### Sistema Visual
+- **Fuente body:** `font-sans` (Onest). **Fuente headings:** `font-heading` (Syne).
+- **Color primario:** violeta eléctrico `oklch(62% 0.244 301)` — clase `text-primary` / `bg-primary`.
+- **Border radius:** sharp/industrial (`0.25rem`). No usar `rounded-xl` ni `rounded-full` en componentes de formulario salvo excepción documentada.
+- **Nunca** usar colores Tailwind arbitrarios (`bg-red-500`, `text-blue-600`). Solo tokens semánticos de `color-tokens.md`.
+
+### Separación de Capas (Feature-Sliced Design)
+- **Lógica de datos** → Hooks de Feature (`use[Entity][Action]` en `src/features/[modulo]/hooks/`).
+- **Lógica de validación** → Schemas de Feature (`schema.ts` en `src/features/[modulo]/components/forms/`).
+- **Prohibido** importar `@/lib/api` directamente en componentes visuales.
+- **Prohibido** importar internals de un feature desde otro feature (usar barrel exports o promover a `/shared`).
+
+### Shared First
+- No modificar `/components/ui/` (shadcn base). Ampliar en `/components/shared/` cumpliendo `component-contracts.md`.
+- Todo componente shared debe contemplar tres estados: `loading` (Skeleton), `empty` (EmptyState), `error` (Toast via proxy).
+
+### Estados de Negocio
+- El mapa canónico de estado → token semántico está en `color-tokens.md`.
+- `StatusBadge` es el único componente autorizado para renderizar estados de entidad. No crear badges ad-hoc.
+
+---
+
+## 📁 Estructura de Carpetas
+
+```
+src/
+├── app/                          # Next.js App Router — solo layout y renderizado de página
+│   └── globals.css               # ⚠️ Fuente de verdad visual
+├── features/                     # Módulos de negocio
+│   ├── sales/
+│   ├── inventory/
+│   ├── production/
+│   ├── purchasing/
+│   ├── treasury/
+│   ├── accounting/
+│   ├── hr/
+│   └── contacts/
+│   └── [modulo]/
+│       ├── components/           # Componentes del módulo
+│       │   └── forms/
+│       │       └── schema.ts     # Zod schema + Type derivado
+│       ├── hooks/                # use[Entity][Action].ts
+│       └── index.ts              # Barrel export (contrato público)
+├── components/
+│   ├── ui/                       # shadcn/ui — NO MODIFICAR
+│   └── shared/                   # Componentes promovidos — cumplir component-contracts.md
+└── lib/
+    └── api/                      # Solo accesible desde hooks de feature
+docs/
+├── architecture/
+│   ├── GOVERNANCE.md
+│   ├── TESTING.md
+│   ├── BUSINESS_STATES.md
+│   ├── component-contracts.md
+│   ├── color-tokens.md
+│   └── adr/                      # Architecture Decision Records
+└── design-system/
+    └── pages/                    # Contratos por página (override de color-tokens si existe)
+```
+
+---
+
+## ✅ Protocolo de Salida (Checklist Pre-Entrega)
+
+Al finalizar cualquier tarea de código, verifica mentalmente y reporta:
+
+### Checklist de Código
+- [ ] ¿Se usó `any` en algún lugar? → Si sí, reemplazar con tipo fuerte o `unknown`.
+- [ ] ¿Los colores usan solo tokens de `color-tokens.md`? → No hay `bg-red-500` ni hexadecimales.
+- [ ] ¿Los estados de entidad usan el mapa canónico de `color-tokens.md`?
+- [ ] ¿Los hooks siguen el patrón `use[Entity][Action]` y retornan `{data, isLoading, error}`?
+- [ ] ¿Los formularios tienen `schema.ts` separado con Zod + react-hook-form?
+- [ ] ¿Los componentes shared contemplan estados loading / empty / error?
+- [ ] ¿No se importó `@/lib/api` directamente en un componente visual?
+
+### Reporte de Entrega
+Incluir siempre al final de la respuesta:
+
+```
+📦 Entrega
+Archivos creados/modificados:
+- [lista de archivos con su ruta]
+
+Contratos afectados:
+- [componentes o hooks de component-contracts.md que se usaron o modificaron]
+
+¿Requiere nuevo ADR?
+- [Sí/No — y si sí, el título propuesto]
+```
+
+---
+
+## 🚫 Anti-Patrones Absolutos
+
+| Prohibido | Alternativa |
+|-----------|-------------|
+| `any` en TypeScript | `unknown` + type guard, o tipo Zod derivado |
+| `useQuery` directo en componente UI | Envolver en hook de feature |
+| Modificar `/components/ui/` | Extender en `/components/shared/` |
+| Importar internals de otro feature | Usar barrel export o promover a `/shared` |
+| Badge de estado ad-hoc | `StatusBadge` con `type` y `status` correctos |
+| Colores hardcoded en `style={{}}` | Variables CSS via clases Tailwind |

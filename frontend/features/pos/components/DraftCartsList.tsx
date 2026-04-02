@@ -33,7 +33,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import type { SyncDraft } from '@/app/pos/hooks/useDraftSync'
+import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
 interface DraftCart {
     id: number
