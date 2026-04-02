@@ -19,6 +19,7 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { Separator } from "@/components/ui/separator"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const treasurySchema = z.object({
     // Reconciliation accounts
@@ -132,10 +133,11 @@ export default function TreasurySettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-4xl mx-auto">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Configuración de Tesorería"
                 description="Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja."
+                iconName="settings"
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

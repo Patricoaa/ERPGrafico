@@ -17,6 +17,7 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const inventorySchema = z.object({
     // Inventory accounts by type
@@ -41,12 +42,14 @@ type InventoryFormValues = z.infer<typeof inventorySchema>
 
 interface InventorySettingsViewProps {
     activeTab: string
+    onSavingChange?: (saving: boolean) => void
 }
 
-export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab }) => {
+export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab, onSavingChange }) => {
     const { settings, saving, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
+        // ... (existing form config)
         resolver: zodResolver(inventorySchema),
         defaultValues: {
             storable_inventory_account: null,
@@ -62,6 +65,11 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             inventory_valuation_method: "AVERAGE",
         }
     })
+
+    // Update saving status to parent
+    useEffect(() => {
+        onSavingChange?.(saving)
+    }, [saving, onSavingChange])
 
     // Update form when settings are loaded
     useEffect(() => {
@@ -103,39 +111,9 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         }
     }, [watchedValues, isDirty, form, onSubmit])
 
-
-
-    const tabs = [
-        { value: "accounts", label: "Cuentas de Inventario", iconName: "package", href: "/settings/inventory?tab=accounts" },
-        { value: "adjustments", label: "Ajustes y Valoración", iconName: "trending-up", href: "/settings/inventory?tab=adjustments" },
-        { value: "cogs", label: "Costo de Ventas", iconName: "dollar-sign", href: "/settings/inventory?tab=cogs" },
-    ]
-
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
-            <PageHeader
-                title="Configuración de Inventario"
-                description="Gestione las cuentas de stock, ajustes y costo de ventas."
-
-            >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                    {saving ? (
-                        <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                            <span className="text-primary">Guardando cambios...</span>
-                        </>
-                    ) : (
-                        <>
-                            <Check className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-600">Cambios guardados</span>
-                        </>
-                    )}
-                </div>
-            </PageHeader>
-
+        <div className="pt-4">
             <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
-
                 <Form {...form}>
                     <form className="space-y-6">
                         <TabsContent value="accounts" className="space-y-6">

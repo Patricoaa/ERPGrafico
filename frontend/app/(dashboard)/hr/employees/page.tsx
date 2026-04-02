@@ -40,9 +40,12 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import {
     Loader2, Plus, UserCog, Search, Pencil, ShieldCheck,
-    CalendarCheck2, LayoutDashboard, Filter, Download, ArrowRight
+    CalendarCheck2, LayoutDashboard, Filter, Download, ArrowRight,
+    Users2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
 
 const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -69,11 +72,26 @@ type EmployeeFormValues = z.infer<typeof employeeSchema>
 
 export default function EmployeesPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [employees, setEmployees] = useState<Employee[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
-    const [dialogOpen, setDialogOpen] = useState(false)
+    
+    // Dialog state synchronized with URL or local edit
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+    const dialogOpen = isNewModalOpen || !!editingEmployee
+
+    const setDialogOpen = (open: boolean) => {
+        if (!open) {
+            setEditingEmployee(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const fetchEmployees = useCallback(async () => {
         try {
@@ -183,26 +201,26 @@ export default function EmployeesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Personal"
                 description="Gestión de empleados vinculados a contactos."
+                iconName="users-2"
                 titleActions={
-                    <EmployeeDialog
-                        open={dialogOpen}
-                        onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingEmployee(null) }}
-                        employee={editingEmployee}
-                        onSaved={() => { setDialogOpen(false); setEditingEmployee(null); fetchEmployees() }}
-                        trigger={
-                            <PageHeaderButton
-                                onClick={() => { setEditingEmployee(null); setDialogOpen(true); }}
-                                icon={Plus}
-                                circular
-                                title="Nuevo Empleado"
-                            />
-                        }
+                    <PageHeaderButton
+                        onClick={() => router.push("?modal=new", { scroll: false })}
+                        iconName="plus"
+                        circular
+                        title="Nuevo Empleado"
                     />
                 }
+            />
+
+            <EmployeeDialog
+                open={dialogOpen}
+                onOpenChange={setDialogOpen}
+                employee={editingEmployee}
+                onSaved={() => { setDialogOpen(false); fetchEmployees() }}
             />
 
             {loading ? (

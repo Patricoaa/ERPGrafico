@@ -30,6 +30,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, Row } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { cn, formatCurrency } from "@/lib/utils"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export default function TaxDeclarationsPage() {
     const searchParams = useSearchParams()
@@ -290,7 +291,7 @@ export default function TaxDeclarationsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Declaraciones F29"
                 titleActions={

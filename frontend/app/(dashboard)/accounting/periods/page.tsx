@@ -10,6 +10,7 @@ import { Lock, LockOpen, Calendar, AlertCircle, CheckCircle2, Clock } from 'luci
 import { toast } from 'sonner';
 import { formatPlainDate, cn } from '@/lib/utils';
 import api from '@/lib/api';
+import { LAYOUT_TOKENS } from '@/lib/styles';
 
 interface AccountingPeriod {
     id: number;
@@ -122,10 +123,12 @@ export default function AccountingPeriodsPage() {
 
     if (loading) {
         return (
-            <div className="space-y-6">
+            <div className={LAYOUT_TOKENS.view}>
                 <PageHeader
                     title="Periodos Contables"
                     description="Gestión de periodos contables mensuales"
+                    variant="minimal"
+                    iconName="calendar"
                 />
                 <div className="text-center py-12">Cargando...</div>
             </div>
@@ -133,13 +136,15 @@ export default function AccountingPeriodsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="space-y-6">
-                <PageHeader
-                    title="Periodos Contables"
-                    description="Gestión de periodos contables mensuales"
-                />
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Periodos Contables"
+                description="Gestión de periodos contables mensuales"
+                variant="minimal"
+                iconName="calendar"
+            />
 
+            <div className="pt-4">
                 <div className="grid gap-4">
                     {periods.map((period) => {
                         const isTarget = targetYear === period.year.toString() && targetMonth === period.month.toString();

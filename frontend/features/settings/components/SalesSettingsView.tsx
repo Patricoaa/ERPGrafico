@@ -150,10 +150,14 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
     )
 }
 
-export function SalesSettingsView({ activeTab }: { activeTab: string }) {
+export function SalesSettingsView({ activeTab, onSavingChange }: { 
+    activeTab: string,
+    onSavingChange?: (saving: boolean) => void
+}) {
     const { settings, saving, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
+        // ... (existing form config)
         resolver: zodResolver(salesSchema),
         defaultValues: {
             default_revenue_account: null,
@@ -173,6 +177,10 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
         }
     })
 
+    // Update saving status to parent
+    useEffect(() => {
+        onSavingChange?.(saving)
+    }, [saving, onSavingChange])
 
     useEffect(() => {
         if (settings) {
@@ -218,254 +226,212 @@ export function SalesSettingsView({ activeTab }: { activeTab: string }) {
     }, [watchedValues, isDirty, form, onSubmit])
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 pb-12">
-            <PageHeader
-                title="Configuración de Ventas"
-                description="Gestione los parámetros generales de ventas, cuentas contables y comportamiento del POS"
-                icon={Scale}
-            >
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                        {saving ? (
-                            <>
-                                <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                                <span className="text-primary">Guardando cambios...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Check className="h-3 w-3 text-emerald-500" />
-                                <span className="text-emerald-600">Cambios guardados</span>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </PageHeader>
+        <div className="max-w-6xl mx-auto space-y-6">
+            <Form {...(form as any)}>
+                <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
+                    <TabsContent value="income" className="space-y-6">
+                        {/* ... income content ... */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
+                                <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
+                                    <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
+                                    <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-            <PageTabs
-                tabs={[
-                    { value: "config_pos", label: "Configuración POS", iconName: "settings", href: "/settings/sales?tab=config_pos" },
-                    { value: "credit", label: "Crédito y Cartera", iconName: "wallet", href: "/settings/sales?tab=credit" },
-                    { value: "income", label: "Cuentas Ingresos", iconName: "trending-up", href: "/settings/sales?tab=income" },
-                    { value: "terminals", label: "Cuentas Terminal", iconName: "credit-card", href: "/settings/sales?tab=terminals" },
-                ]}
-                activeValue={activeTab}
-                maxWidth="max-w-4xl"
-            />
-
-            <div className="mt-6">
-                <Form {...(form as any)}>
-                    <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
-
-
-                        <TabsContent value="income" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
-                                    <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
-                                        <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="credit" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
-                                    <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-8">
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* POS Fallback Credit */}
-                                            <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
-                                                <div className="p-4 space-y-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="pos_default_credit_percentage"
-                                                        render={({ field }) => (
-                                                            <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Crédito Preaprobado POS (%)</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    % asignado por defecto si el cliente no tiene línea de crédito.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            min={0}
-                                                                            max={100}
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
-                                                            </div>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </Card>
-
-                                            {/* Auto-Blocking Selection */}
-                                            <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
-                                                <div className="p-4 space-y-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="credit_auto_block_days"
-                                                        render={({ field }) => (
-                                                            <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Días de Mora para Auto-Bloqueo</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    Días máximos permitidos antes de restringir el crédito automáticamente.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            value={field.value ?? ""}
-                                                                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            placeholder="Desact."
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
-                                                            </div>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </Card>
-                                        </div>
-
-                                        {/* Uncollectible Expense Account */}
+                    <TabsContent value="credit" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
+                                <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
                                             <div className="p-4 space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="default_uncollectible_expense_account"
-                                                    label="Cuenta Gasto Incobrables"
-                                                    accountType="EXPENSE"
+                                                <FormField
+                                                    control={form.control}
+                                                    name="pos_default_credit_percentage"
+                                                    render={({ field }) => (
+                                                        <div className="space-y-2">
+                                                            <FormLabel className="text-xs font-bold">Crédito Preaprobado POS (%)</FormLabel>
+                                                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                                                % asignado por defecto si el cliente no tiene línea de crédito.
+                                                            </p>
+                                                            <FormControl>
+                                                                <div className="relative max-w-[120px]">
+                                                                    <Input
+                                                                        type="number"
+                                                                        {...field}
+                                                                        className="pr-8 h-9 font-bold text-center"
+                                                                        min={0}
+                                                                        max={100}
+                                                                    />
+                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
+                                                                </div>
+                                                            </FormControl>
+                                                            <FormMessage className="text-[10px]" />
+                                                        </div>
+                                                    )}
                                                 />
-                                                <p className="text-[10px] text-muted-foreground leading-tight px-1">
-                                                    Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
-                                                </p>
+                                            </div>
+                                        </Card>
+
+                                        <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
+                                            <div className="p-4 space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="credit_auto_block_days"
+                                                    render={({ field }) => (
+                                                        <div className="space-y-2">
+                                                            <FormLabel className="text-xs font-bold">Días de Mora para Auto-Bloqueo</FormLabel>
+                                                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                                                Días máximos permitidos antes de restringir el crédito automáticamente.
+                                                            </p>
+                                                            <FormControl>
+                                                                <div className="relative max-w-[120px]">
+                                                                    <Input
+                                                                        type="number"
+                                                                        {...field}
+                                                                        value={field.value ?? ""}
+                                                                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                                        className="pr-8 h-9 font-bold text-center"
+                                                                        placeholder="Desact."
+                                                                    />
+                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
+                                                                </div>
+                                                            </FormControl>
+                                                            <FormMessage className="text-[10px]" />
+                                                        </div>
+                                                    )}
+                                                />
                                             </div>
                                         </Card>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
 
-                        <TabsContent value="config_pos" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
-                                    <CardDescription>Configure el comportamiento y permisos del punto de venta</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-8">
-                                    {/* Descuentos Section */}
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-2 text-sm font-bold text-primary px-1">
-                                            <Percent className="h-4 w-4" />
-                                            Configuración de Descuentos
+                                    <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
+                                        <div className="p-4 space-y-4">
+                                            <AccountField
+                                                form={form}
+                                                name="default_uncollectible_expense_account"
+                                                label="Cuenta Gasto Incobrables"
+                                                accountType="EXPENSE"
+                                            />
+                                            <p className="text-[10px] text-muted-foreground leading-tight px-1">
+                                                Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
+                                            </p>
                                         </div>
+                                    </Card>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Line Discounts */}
-                                            <Card className="bg-muted/10 border shadow-none overflow-hidden">
-                                                <div className="p-4 space-y-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="pos_enable_line_discounts"
-                                                        render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar en el carrito</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
-                                                        )}
-                                                    />
-
-                                                    {watchedValues.pos_enable_line_discounts && (
-                                                        <div className="pt-2 space-y-3 border-t border-dashed">
-                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
-                                                            <DiscountPermissionControl
-                                                                form={form}
-                                                                userField="pos_line_discount_user"
-                                                                groupField="pos_line_discount_group"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </Card>
-
-                                            {/* Global Discounts */}
-                                            <Card className="bg-muted/10 border shadow-none overflow-hidden">
-                                                <div className="p-4 space-y-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="pos_enable_total_discounts"
-                                                        render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar al total</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
-                                                        )}
-                                                    />
-
-                                                    {watchedValues.pos_enable_total_discounts && (
-                                                        <div className="pt-2 space-y-3 border-t border-dashed">
-                                                            <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
-                                                            <DiscountPermissionControl
-                                                                form={form}
-                                                                userField="pos_global_discount_user"
-                                                                groupField="pos_global_discount_group"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </Card>
-                                        </div>
+                    <TabsContent value="config_pos" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
+                                <CardDescription>Configure el comportamiento y permisos del punto de venta</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-primary px-1">
+                                        <Percent className="h-4 w-4" />
+                                        Configuración de Descuentos
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
 
-                        <TabsContent value="terminals" className="space-y-6">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
-                                    <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
-                                    <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </Form>
-            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <Card className="bg-muted/10 border shadow-none overflow-hidden">
+                                            <div className="p-4 space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="pos_enable_line_discounts"
+                                                    render={({ field }) => (
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground">Habilitar en el carrito</p>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </div>
+                                                    )}
+                                                />
+
+                                                {watchedValues.pos_enable_line_discounts && (
+                                                    <div className="pt-2 space-y-3 border-t border-dashed">
+                                                        <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                        <DiscountPermissionControl
+                                                            form={form}
+                                                            userField="pos_line_discount_user"
+                                                            groupField="pos_line_discount_group"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Card>
+
+                                        <Card className="bg-muted/10 border shadow-none overflow-hidden">
+                                            <div className="p-4 space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="pos_enable_total_discounts"
+                                                    render={({ field }) => (
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="space-y-0.5">
+                                                                <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
+                                                                <p className="text-[10px] text-muted-foreground">Habilitar al total</p>
+                                                            </div>
+                                                            <FormControl>
+                                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </div>
+                                                    )}
+                                                />
+
+                                                {watchedValues.pos_enable_total_discounts && (
+                                                    <div className="pt-2 space-y-3 border-t border-dashed">
+                                                        <div className="text-[10px] font-bold text-muted-foreground uppercase">Permiso para aplicar</div>
+                                                        <DiscountPermissionControl
+                                                            form={form}
+                                                            userField="pos_global_discount_user"
+                                                            groupField="pos_global_discount_group"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Card>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="terminals" className="space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
+                                <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
+                                <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </Form>
         </div>
     )
 }

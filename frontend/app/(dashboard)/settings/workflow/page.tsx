@@ -1,6 +1,9 @@
 import { Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { WorkflowSettings } from "@/features/workflow/components/WorkflowSettings"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -10,10 +13,31 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
     const { tab } = await searchParams
     const activeTab = tab || "approvals"
 
+    const tabs = [
+        { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow?tab=approvals" },
+        { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow?tab=tasks" },
+        { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow?tab=notif" },
+    ]
+
     return (
-        <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
-            <WorkflowSettings activeTab={activeTab} />
-        </Suspense>
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Configuración de Workflow"
+                description="Defina los responsables por defecto para cada etapa y tarea automática del sistema."
+                variant="minimal"
+                iconName="settings"
+            />
+            
+            <div className="pt-2">
+                <PageTabs tabs={tabs} activeValue={activeTab} />
+            </div>
+
+            <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
+                <div className="pt-4">
+                    <WorkflowSettings activeTab={activeTab} />
+                </div>
+            </Suspense>
+        </div>
     )
 }
 

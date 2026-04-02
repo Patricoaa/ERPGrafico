@@ -426,7 +426,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                             Stock: {prod.current_stock || 0}
                                                                                         </Badge>
                                                                                         <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
+                                                                                            (prod.qty_available || 0) > 0 ? "border-success text-success" : "border-warning text-warning"
                                                                                         )}>
                                                                                             Disp: {prod.qty_available || 0}
                                                                                         </Badge>
@@ -440,7 +440,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 )}
 
                                                                                 {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-emerald-500 text-emerald-600">
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-success text-success">
                                                                                         Disponible
                                                                                     </Badge>
                                                                                 )}

@@ -12,10 +12,10 @@ import {
     Loader2,
     CloudCheck,
     CloudUpload,
-    ShoppingCart
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const purchasingSchema = z.object({
     default_expense_account: z.string().nullable(),
@@ -52,7 +52,7 @@ export default function PurchasingSettingsPage() {
                 })
 
                 form.reset(formattedSettings)
-            } catch (error: unknown) {
+            } catch (error: any) {
                 if (error.response?.status !== 404) {
                     toast.error("Error al cargar configuración")
                 }
@@ -97,11 +97,11 @@ export default function PurchasingSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-4xl mx-auto">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Configuración de Compras"
                 description="Gestione las cuentas de gastos para diferentes tipos de compras."
-
+                iconName="settings"
             >
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
                     {saving ? (

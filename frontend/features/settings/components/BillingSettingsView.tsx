@@ -53,14 +53,14 @@ const billingSchema = z.object({
 
 type BillingFormValues = z.infer<typeof billingSchema>
 
-interface BillingSettingsViewProps {
-    activeTab: string
-}
-
-export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ activeTab }) => {
+export const BillingSettingsView: React.FC<{ 
+    activeTab: string,
+    onSavingChange?: (saving: boolean) => void 
+}> = ({ activeTab, onSavingChange }) => {
     const { settings, saving, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
+        // ... (existing form config)
         resolver: zodResolver(billingSchema),
         defaultValues: {
             default_vat_rate: 19.00,
@@ -83,6 +83,11 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
             allowed_dte_types_receive: [],
         }
     })
+
+    // Update saving status to parent
+    useEffect(() => {
+        onSavingChange?.(saving)
+    }, [saving, onSavingChange])
 
     const watchedValues = form.watch()
     const { isDirty, errors } = form.formState
@@ -123,7 +128,6 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
         }
     }, [settings, form])
 
-
     useEffect(() => {
         if (isDirty) {
             const timer = setTimeout(() => {
@@ -133,39 +137,9 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
         }
     }, [watchedValues, isDirty, form, onSubmit])
 
-
-
-    const tabs = [
-        { value: "accounts", label: "Cuentas por Cobrar/Pagar", iconName: "users", href: "/settings/billing?tab=accounts" },
-        { value: "tax", label: "Impuestos", iconName: "receipt", href: "/settings/billing?tab=tax" },
-        { value: "dtes", label: "Documentos Electrónicos", iconName: "file-text", href: "/settings/billing?tab=dtes" },
-    ]
-
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 max-w-6xl mx-auto">
-            <PageHeader
-                title="Configuración de Facturación"
-                description="Gestione las cuentas de clientes, proveedores y el cumplimiento tributario."
-
-            >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                    {saving ? (
-                        <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                            <span className="text-primary">Guardando cambios...</span>
-                        </>
-                    ) : (
-                        <>
-                            <Check className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-600">Cambios guardados</span>
-                        </>
-                    )}
-                </div>
-            </PageHeader>
-
+        <div className="max-w-6xl mx-auto space-y-6">
             <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
-
                 <Form {...form}>
                     <form className="space-y-6">
                         <TabsContent value="accounts" className="space-y-6">
@@ -238,7 +212,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                     <Card>
                                         <CardHeader>
                                             <div className="flex items-center gap-2">
-                                                <Receipt className="h-5 w-5 text-amber-500" />
+                                                <Receipt className="h-5 w-5 text-warning" />
                                                 <div>
                                                     <CardTitle className="text-lg">Impuesto al Valor Agregado (IVA)</CardTitle>
                                                     <CardDescription>Cuentas para el control mensual de IVA F29</CardDescription>
@@ -258,7 +232,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                                 <AccountField form={form} name="vat_carryforward_account" label="Remanente IVA" accountType="ASSET" />
                                             </div>
 
-                                            <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10 text-[11px] text-amber-700 flex items-start gap-2">
+                                            <div className="p-3 rounded-lg bg-warning/5 border border-warning/10 text-[11px] text-warning flex items-start gap-2">
                                                 <TrendingUp className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                 <span>Al cerrar un período mensual, los saldos de Crédito y Débito se netean contra las cuentas de IVA por Pagar o Remanente.</span>
                                             </div>
@@ -268,7 +242,7 @@ export const BillingSettingsView: React.FC<BillingSettingsViewProps> = ({ active
                                     <Card>
                                         <CardHeader>
                                             <div className="flex items-center gap-2">
-                                                <Coins className="h-5 w-5 text-emerald-500" />
+                                                <Coins className="h-5 w-5 text-success" />
                                                 <div>
                                                     <CardTitle className="text-lg">Otras Contribuciones y Ajustes</CardTitle>
                                                     <CardDescription>Retenciones, PPM y corrección monetaria</CardDescription>

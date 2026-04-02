@@ -422,7 +422,8 @@ export default function PurchaseInvoicesPage() {
             <PageHeader
                 title="Documentos Recibidos"
                 description="Gestión de facturas y boletas de compra"
-                icon={FileBadge}
+                variant="minimal"
+                iconName="file-badge"
             />
 
             {loading ? (

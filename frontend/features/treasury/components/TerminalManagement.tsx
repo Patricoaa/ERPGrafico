@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -70,24 +71,14 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm hidden">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight text-primary">Terminales POS</h2>
-                    <p className="text-sm text-muted-foreground">Administre los puntos de venta y sus métodos de pago autorizados.</p>
-                </div>
-                <Button onClick={handleCreate} size="lg" className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
-                    <Plus className="mr-2 h-5 w-5" /> Nuevo Terminal
-                </Button>
-            </div>
-
+        <div className="space-y-6">
             {terminals.length === 0 ? (
                 <EmptyState
-                    icon={MonitorSmartphone}
+                    context="finance"
                     title="No hay terminales configurados"
                     description="Administre los puntos de venta y sus métodos de pago autorizados desde aquí."
                     action={
-                        <Button onClick={handleCreate}>
+                        <Button onClick={handleCreate} className="h-9">
                             <Plus className="mr-2 h-4 w-4" /> Crear primer terminal
                         </Button>
                     }
@@ -151,18 +142,14 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             {terminal.name}
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono text-[10px] bg-muted">
+                            <Badge variant="outline" className="font-mono text-[10px] bg-muted border-muted-foreground/10">
                                 {terminal.code}
                             </Badge>
-                            {terminal.is_active ? (
-                                <Badge variant="default" className="text-[10px] bg-emerald-500 hover:bg-emerald-600">
-                                    Activo
-                                </Badge>
-                            ) : (
-                                <Badge variant="secondary" className="text-[10px]">
-                                    Inactivo
-                                </Badge>
-                            )}
+                            <StatusBadge 
+                                status={terminal.is_active ? "active" : "inactive"} 
+                                size="sm"
+                                className="uppercase font-bold tracking-tight"
+                            />
                         </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8 -mr-2">
@@ -182,9 +169,9 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <div className="flex flex-wrap gap-1.5">
                         {Object.entries(methodsByType).map(([type, count]) => (
                             <Badge key={type} variant="secondary" className="text-[10px] px-1.5 font-normal">
-                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-success" />}
-                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-info" />}
-                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-indigo-500" />}
+                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-emerald-600" />}
+                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-blue-600" />}
+                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-primary" />}
                                 {type} <span className="ml-1 text-muted-foreground">({count})</span>
                             </Badge>
                         ))}

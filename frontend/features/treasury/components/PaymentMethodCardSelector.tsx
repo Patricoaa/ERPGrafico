@@ -234,8 +234,8 @@ export function PaymentMethodCardSelector({
                         "rounded-xl border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
                         compactMode ? "p-3 h-20" : "p-4 h-24",
                         difference >= 0
-                            ? "bg-emerald-500/5 border-emerald-500/10"
-                            : "bg-orange-500/5 border-orange-500/10"
+                            ? "bg-success/5 border-success/10"
+                            : "border-border hover:border-primary/30"
                     )}>
                         <div>
                             <Label className="text-[10px] font-bold uppercase text-muted-foreground">

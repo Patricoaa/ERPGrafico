@@ -471,7 +471,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Button
                                 variant="outline"
-                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 group transition-all"
+                                className="h-20 flex flex-col items-center justify-center border-2 hover:border-success hover:bg-success/5 group"
                                 onClick={() => {
                                     // Filter active terminals (those generally available) against those ALREADY in a session (busy)
                                     const availableTerminals = terminals.filter(t => !availableSessions.some(s => s.terminal === t.id))
@@ -850,8 +850,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 {!hideSessionInfo && (
 
                     <>
-                        <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-emerald-500 text-emerald-600'}`}>
-                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-primary' : 'bg-emerald-500'} animate-pulse`} />
+                        <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-success text-success'}`}>
+                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-primary' : 'bg-success'} animate-pulse`} />
                             {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
                         </Badge>
 

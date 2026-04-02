@@ -369,22 +369,22 @@ export default function SubscriptionsPage() {
     ]
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Suscripciones y Recurrentes"
                 description="Gestión de servicios mensuales, contratos y facturación automática."
+                variant="minimal"
+                iconName="calendar-clock"
                 titleActions={
-                    <Button
-                        size="icon"
-                        className="rounded-full h-8 w-8"
+                    <PageHeaderButton
                         onClick={() => {
                             setEditingProduct(null)
                             setIsFormOpen(true)
                         }}
+                        iconName="plus"
+                        circular
                         title="Nueva Suscripción"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
+                    />
                 }
             >
                 <div className="flex items-center gap-2">

@@ -32,13 +32,10 @@ interface ProductAttributeValue {
 }
 
 interface AttributeManagerProps {
-    // Props are no longer needed for external control if PageHeader is inside, 
-    // but keeping them optional just in case or for future flexibility won't hurt, 
-    // although we are removing the externalOpen logic from page.tsx.
-    // For this refactor, we will remove them to clean up since the page no longer passes them.
+    externalOpen?: boolean
 }
 
-export function AttributeManager() {
+export function AttributeManager({ externalOpen }: AttributeManagerProps) {
     const [attributes, setAttributes] = useState<ProductAttribute[]>([])
     const [loading, setLoading] = useState(true)
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
@@ -50,6 +47,12 @@ export function AttributeManager() {
     useEffect(() => {
         fetchAttributes()
     }, [])
+
+    useEffect(() => {
+        if (externalOpen) {
+            setIsAttrModalOpen(true)
+        }
+    }, [externalOpen])
 
     const fetchAttributes = async () => {
         setLoading(true)
@@ -202,19 +205,7 @@ export function AttributeManager() {
     ]
 
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title="Atributos de Variantes"
-                description="Gestiona los atributos y valores para productos con variaciones."
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => setIsAttrModalOpen(true)}
-                        icon={Plus}
-                        circular
-                        title="Nuevo Atributo"
-                    />
-                }
-            />
+        <div className="space-y-4">
 
             {loading ? (
                 <div className="flex items-center justify-center h-64">

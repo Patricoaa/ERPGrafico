@@ -1,50 +1,50 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
+import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
-import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { Plus, Pencil, Trash2, Loader2, Landmark, CreditCard, List, MapPin, Shield, History } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { UserSelector } from "@/components/selectors/UserSelector"
+import { Landmark, Pencil, Trash2, MapPin, Shield } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { LAYOUT_TOKENS, FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-
 
 interface TreasuryAccountsViewProps {
     activeTab: string
+    externalOpen?: boolean
 }
 
-export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab }) => {
+export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen }) => {
     const { openTreasuryAccount } = useGlobalModalActions()
-    const { accounts, deleteAccount, refetch } = useTreasuryAccounts()
-    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
+    const { accounts, deleteAccount } = useTreasuryAccounts()
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
+
+    useEffect(() => {
+        if (externalOpen) {
+            handleExternalAction()
+        }
+    }, [externalOpen, activeTab])
+
+    const handleExternalAction = () => {
+        switch (activeTab) {
+            case "accounts":
+                handleAdd()
+                break
+            case "banks":
+                setIsBankModalOpen(true)
+                break
+            case "methods":
+                setIsMethodModalOpen(true)
+                break
+        }
+    }
 
     const handleDelete = async (id: number) => {
         try {
@@ -122,7 +122,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const balance = row.getValue("current_balance")
                 return (
                     <MoneyDisplay
-                        amount={balance}
+                        amount={balance as number}
                         currency={row.original.currency}
                     />
                 )
@@ -181,100 +181,44 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
     ]
 
-    const tabs = [
-        { value: "accounts", label: "Cuentas de tesorería", iconName: "list", href: "/treasury/accounts?tab=accounts" },
-        { value: "banks", label: "Bancos", iconName: "landmark", href: "/treasury/accounts?tab=banks" },
-        { value: "methods", label: "Métodos", iconName: "credit-card", href: "/treasury/accounts?tab=methods" },
-    ]
-
-    const getHeaderConfig = () => {
-        switch (activeTab) {
-            case "accounts":
-                return {
-                    title: "Cuentas de Tesorería",
-                    description: "Registre y configure sus cuentas bancarias y de efectivo.",
-                    actions: (
-                        <Button size="icon" className="rounded-full h-8 w-8" onClick={handleAdd} title="Nueva Cuenta">
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    )
-                }
-            case "banks":
-                return {
-                    title: "Gestión de Bancos",
-                    description: "Administre las entidades bancarias globales del sistema.",
-                    actions: (
-                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsBankModalOpen(true)} title="Nuevo Banco">
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    )
-                }
-            case "methods":
-                return {
-                    title: "Métodos de Pago",
-                    description: "Configure los medios de pago aceptados y sus cuentas vinculadas.",
-                    actions: (
-                        <Button size="icon" className="rounded-full h-8 w-8" onClick={() => setIsMethodModalOpen(true)} title="Nuevo Método">
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    )
-                }
-            default:
-                return { title: "Tesorería", description: "", actions: null }
-        }
-    }
-
-    const { title, description, actions } = getHeaderConfig()
-
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <Tabs value={activeTab} className="space-y-4">
-                <PageTabs tabs={tabs} activeValue={activeTab} />
-
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={actions}
+        <Tabs value={activeTab} className="space-y-4">
+            <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <DataTable
+                    columns={columns}
+                    data={accounts}
+                    cardMode
+                    searchPlaceholder="Buscar cuentas por nombre..."
+                    filterColumn="name"
+                    initialColumnVisibility={{
+                        account_type: false
+                    }}
+                    facetedFilters={[
+                        {
+                            column: "account_type",
+                            title: "Tipo de Cuenta",
+                            options: [
+                                { label: "Caja (Efectivo)", value: "CASH" },
+                                { label: "Cta. Corriente", value: "CHECKING" },
+                                { label: "T. Crédito", value: "CREDIT_CARD" },
+                                { label: "T. Débito", value: "DEBIT_CARD" },
+                                { label: "Chequera", value: "CHECKBOOK" },
+                            ]
+                        }
+                    ]}
+                    useAdvancedFilter={true}
                 />
+            </TabsContent>
 
-                <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <DataTable
-                        columns={columns}
-                        data={accounts}
-                        cardMode
-                        searchPlaceholder="Buscar cuentas por nombre..."
-                        filterColumn="name"
-                        initialColumnVisibility={{
-                            account_type: false
-                        }}
-                        facetedFilters={[
-                            {
-                                column: "account_type",
-                                title: "Tipo de Cuenta",
-                                options: [
-                                    { label: "Caja (Efectivo)", value: "CASH" },
-                                    { label: "Cta. Corriente", value: "CHECKING" },
-                                    { label: "T. Crédito", value: "CREDIT_CARD" },
-                                    { label: "T. Débito", value: "DEBIT_CARD" },
-                                    { label: "Chequera", value: "CHECKBOOK" },
-                                ]
-                            }
-                        ]}
-                        useAdvancedFilter={true}
-                    />
-                </TabsContent>
+            <TabsContent value="banks">
+                <BankManagement externalOpen={isBankModalOpen} onExternalOpenChange={setIsBankModalOpen} />
+            </TabsContent>
 
-                <TabsContent value="banks">
-                    <BankManagement externalOpen={isBankModalOpen} onExternalOpenChange={setIsBankModalOpen} />
-                </TabsContent>
-
-                <TabsContent value="methods">
-                    <PaymentMethodManagement externalOpen={isMethodModalOpen} onExternalOpenChange={setIsMethodModalOpen} />
-                </TabsContent>
-            </Tabs>
-        </div>
+            <TabsContent value="methods">
+                <PaymentMethodManagement externalOpen={isMethodModalOpen} onExternalOpenChange={setIsMethodModalOpen} />
+            </TabsContent>
+        </Tabs>
     )
 }
 
 export default TreasuryAccountsView
-

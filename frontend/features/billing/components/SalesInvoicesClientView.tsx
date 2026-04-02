@@ -232,7 +232,8 @@ export function SalesInvoicesClientView() {
             <PageHeader
                 title="Documentos Emitidos"
                 description="Gestión de facturas y boletas de venta"
-                icon={Receipt}
+                variant="minimal"
+                iconName="receipt"
             />
 
             <DataTable

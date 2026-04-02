@@ -1,5 +1,9 @@
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import Link from "next/link"
 
 const TreasuryAccountsView = lazy(() =>
     import("@/features/treasury").then(module => ({
@@ -8,17 +12,78 @@ const TreasuryAccountsView = lazy(() =>
 )
 
 interface PageProps {
-    searchParams: Promise<{ tab?: string }>
+    searchParams: Promise<{ tab?: string; modal?: string }>
 }
 
 export default async function AccountsPage({ searchParams }: PageProps) {
-    const { tab } = await searchParams
+    const { tab, modal } = await searchParams
     const activeTab = tab || "accounts"
+    const modalOpen = modal === "new"
+
+    const tabs = [
+        { value: "accounts", label: "Cuentas", iconName: "list", href: "/treasury/accounts?tab=accounts" },
+        { value: "banks", label: "Bancos", iconName: "landmark", href: "/treasury/accounts?tab=banks" },
+        { value: "methods", label: "Métodos", iconName: "credit-card", href: "/treasury/accounts?tab=methods" },
+    ]
+
+    const getHeaderConfig = () => {
+        switch (activeTab) {
+            case "accounts":
+                return {
+                    title: "Cuentas de Tesorería",
+                    description: "Registre y configure sus cuentas bancarias y de efectivo.",
+                    iconName: "landmark",
+                    actionHref: "/treasury/accounts?tab=accounts&modal=new"
+                }
+            case "banks":
+                return {
+                    title: "Gestión de Bancos",
+                    description: "Administre las entidades bancarias globales del sistema.",
+                    iconName: "building-2",
+                    actionHref: "/treasury/accounts?tab=banks&modal=new"
+                }
+            case "methods":
+                return {
+                    title: "Métodos de Pago",
+                    description: "Configure los medios de pago aceptados y sus cuentas vinculadas.",
+                    iconName: "credit-card",
+                    actionHref: "/treasury/accounts?tab=methods&modal=new"
+                }
+            default:
+                return { title: "Tesorería", description: "", iconName: "banknote", actionHref: null }
+        }
+    }
+
+    const { title, description, iconName, actionHref } = getHeaderConfig()
 
     return (
-        <Suspense fallback={<LoadingFallback message="Cargando cuentas..." />}>
-            <TreasuryAccountsView activeTab={activeTab} />
-        </Suspense>
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title={title}
+                description={description}
+                iconName={iconName}
+                variant="minimal"
+                titleActions={
+                    actionHref && (
+                        <Link href={actionHref}>
+                            <PageHeaderButton
+                                iconName="plus"
+                                circular
+                                title="Nuevo"
+                            />
+                        </Link>
+                    )
+                }
+            />
+
+            <PageTabs tabs={tabs} activeValue={activeTab} />
+
+            <div className="pt-4">
+                <Suspense fallback={<LoadingFallback message="Cargando..." />}>
+                    <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} />
+                </Suspense>
+            </div>
+        </div>
     )
 }
 

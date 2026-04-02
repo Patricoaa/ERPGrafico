@@ -40,7 +40,8 @@ import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+import { FORM_STYLES, LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
 
 const advanceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -52,14 +53,30 @@ const advanceSchema = z.object({
 type AdvanceFormValues = z.infer<typeof advanceSchema>
 
 export default function AdvancesPage() {
+    const searchParams = useSearchParams()
     const [advances, setAdvances] = useState<SalaryAdvance[]>([])
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    const [dialogOpen, setDialogOpen] = useState(false)
+    
+    // Dialog state synchronized with URL or local edit
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingAdvance, setEditingAdvance] = useState<SalaryAdvance | null>(null)
+    const dialogOpen = isNewModalOpen || !!editingAdvance
+
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<any>(null)
+
+    const setDialogOpen = (open: boolean) => {
+        if (!open) {
+            setEditingAdvance(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                window.history.replaceState(null, "", `?${params.toString()}`)
+            }
+        }
+    }
 
     const fetchAll = useCallback(async () => {
         try {
@@ -172,17 +189,17 @@ export default function AdvancesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            <div className="flex items-center justify-between">
-                <PageHeader
-                    title="Anticipos de Sueldo"
-                    description="Registro de anticipos entregados a trabajadores"
-                    icon={WalletCards}
-                />
-                <Button onClick={() => { setEditingAdvance(null); setDialogOpen(true) }} className="gap-2">
-                    <Plus className="h-4 w-4" /> Nuevo Anticipo
-                </Button>
-            </div>
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Anticipos de Sueldo"
+                description="Registro de anticipos entregados a trabajadores."
+                iconName="wallet"
+                titleActions={
+                    <Button onClick={() => window.history.replaceState(null, "", "?modal=new")} className="gap-2">
+                        <Plus className="h-4 w-4" /> Nuevo Anticipo
+                    </Button>
+                }
+            />
 
             <DataTable
                 columns={columns}

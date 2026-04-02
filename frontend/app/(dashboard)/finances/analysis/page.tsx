@@ -1,6 +1,8 @@
 import { Tabs } from "@/components/ui/tabs"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { AnalysisView } from "@/features/finances/components/AnalysisView"
+import { AnalysisView } from "@/features/finance/components/AnalysisView"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -16,7 +18,14 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Análisis Financiero"
+                description="Visualización de ratios, KPIs e inteligencia de negocio."
+                iconName="line-chart"
+                variant="minimal"
+            />
+            
             <Tabs value={activeTab} className="space-y-4">
                 <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <AnalysisView activeTab={activeTab} />

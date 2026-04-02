@@ -47,7 +47,7 @@ export function POSCheckoutHeader() {
                             <div className={cn(
                                 "h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-300 border-2",
                                 isActive ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110" : 
-                                isCompleted ? "bg-emerald-500/10 border-emerald-500 text-emerald-500" : 
+                                isCompleted ? "bg-success/10 border-success text-success" : 
                                 "bg-muted border-transparent text-muted-foreground opacity-40"
                             )}>
                                 {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-3.5 w-3.5" />}
@@ -69,7 +69,7 @@ export function POSCheckoutHeader() {
                             <div className="mx-0.5 sm:mx-1 mb-3">
                                 <ChevronRight className={cn(
                                     "h-3 w-3 transition-colors opacity-30",
-                                    isCompleted ? "text-emerald-500" : "text-muted-foreground"
+                                    isCompleted ? "text-success" : "text-muted-foreground"
                                 )} />
                             </div>
                         )}
