@@ -9,6 +9,9 @@ import { Tabs } from "@/components/ui/tabs"
 // Lazy load feature components
 const SalesInvoicesClientView = lazy(() => import("@/features/billing/components/SalesInvoicesClientView").then(m => ({ default: m.SalesInvoicesClientView })))
 const PurchaseInvoicesClientView = lazy(() => import("@/features/billing/components/PurchaseInvoicesClientView").then(m => ({ default: m.PurchaseInvoicesClientView })))
+const BillingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.BillingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Facturación | ERPGrafico",
@@ -16,11 +19,12 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string }>
+    searchParams: Promise<{ view?: string; tab?: string }>
 }
 
 export default async function BillingPage({ searchParams }: PageProps) {
-    const { view } = await searchParams
+    const { view, tab } = await searchParams
+    const configTab = tab || "accounts"
     const viewMode = (view as 'sales' | 'purchases') || 'sales'
 
     const tabs = [
@@ -35,7 +39,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
                 description="Control de documentos electrónicos, estados de pago y cumplimiento tributario."
                 iconName={viewMode === 'sales' ? "receipt" : "file-badge"}
                 variant="minimal"
-                configHref="/settings/billing"
+                configHref="?config=true"
             />
 
             <PageTabs tabs={tabs} activeValue={viewMode} />
@@ -46,6 +50,18 @@ export default async function BillingPage({ searchParams }: PageProps) {
                     {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="billing-settings"
+                title="Configuración de Facturación"
+                description="Gestione las cuentas contables, impuestos y parámetros de DTE."
+                tabLabel="Configuración"
+                fullWidth={600}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <BillingSettingsView activeTab={configTab} />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

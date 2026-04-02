@@ -8,6 +8,7 @@ import { ProductFormValues } from "./schema"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Search, ChevronsUpDown, Check } from "lucide-react"
@@ -243,9 +244,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                                     </div>
                                                 ))}
                                                 {allowedUoms.length === 0 && (
-                                                    <div className="p-4 text-sm text-center text-muted-foreground">
-                                                        No hay opciones
-                                                    </div>
+                                                    <EmptyState context="generic" variant="minimal" description="No hay opciones" />
                                                 )}
                                             </div>
                                         </div>

@@ -1,3 +1,5 @@
+"use client"
+
 import React from "react"
 import { ArrowLeft, Printer, X, Receipt, ShoppingBag, FileText, Hash, Package, Banknote, ClipboardList, History } from "lucide-react"
 import { Button } from "@/components/ui/button"

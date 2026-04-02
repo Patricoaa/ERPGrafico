@@ -11,6 +11,9 @@ const EmployeesView = lazy(() => import("@/app/(dashboard)/hr/employees/page").t
 const AbsencesView = lazy(() => import("@/app/(dashboard)/hr/absences/page").then(m => ({ default: m.default })))
 const AdvancesView = lazy(() => import("@/app/(dashboard)/hr/advances/page").then(m => ({ default: m.default })))
 const PayrollsView = lazy(() => import("@/app/(dashboard)/hr/payrolls/page").then(m => ({ default: m.default })))
+const HRSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.HRSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Recursos Humanos (RRHH) | ERPGrafico",
@@ -18,11 +21,12 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string }>
+    searchParams: Promise<{ view?: string; tab?: string }>
 }
 
 export default async function HRPage({ searchParams }: PageProps) {
-    const { view } = await searchParams
+    const { view, tab } = await searchParams
+    const configTab = tab || "global"
     const viewMode = (view as 'employees' | 'absences' | 'advances' | 'payrolls') || 'employees'
 
     const tabs = [
@@ -107,7 +111,7 @@ export default async function HRPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.icon as any}
                 variant="minimal"
-                configHref="/settings/hr"
+                configHref="?config=true"
                 titleActions={getTitleActions()}
             />
 
@@ -121,6 +125,18 @@ export default async function HRPage({ searchParams }: PageProps) {
                     {viewMode === 'payrolls' && <PayrollsView />}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="hr-settings"
+                title="Configuración de RRHH"
+                description="Gestione indicadores económicos, conceptos de nómina e instituciones previsionales."
+                tabLabel="Configuración"
+                fullWidth={800}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <HRSettingsView activeTab={configTab} />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

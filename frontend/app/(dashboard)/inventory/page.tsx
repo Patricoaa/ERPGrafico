@@ -16,6 +16,9 @@ const MovementList = lazy(() => import("@/features/inventory/components/Movement
 const WarehouseList = lazy(() => import("@/features/inventory/components/WarehouseList").then(m => ({ default: m.WarehouseList })))
 const UoMsView = lazy(() => import("@/features/inventory/components/UoMsView").then(m => ({ default: m.UoMsView })))
 const AttributeManager = lazy(() => import("@/features/inventory/components/AttributeManager").then(m => ({ default: m.AttributeManager })))
+const InventorySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.InventorySettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Inventario | ERPGrafico",
@@ -27,15 +30,45 @@ interface PageProps {
 }
 
 export default async function InventoryPage({ searchParams }: PageProps) {
-    const { view, sub, modal } = await searchParams
+    const { view, sub, modal, tab } = await searchParams
+    const configTab = tab || "accounts"
     const viewMode = (view as 'products' | 'stock' | 'uoms' | 'attributes') || 'products'
     const subView = sub || (viewMode === 'products' ? 'items' : viewMode === 'stock' ? 'report' : 'units')
     const isModalOpen = modal === 'new' || modal === 'adjustment'
 
     const tabs = [
-        { value: "products", label: "Productos", iconName: "package", href: "/inventory?view=products" },
-        { value: "stock", label: "Existencias", iconName: "warehouse", href: "/inventory?view=stock" },
-        { value: "uoms", label: "Unidades", iconName: "scale", href: "/inventory?view=uoms" },
+        { 
+            value: "products", 
+            label: "Productos", 
+            iconName: "package", 
+            href: "/inventory?view=products",
+            subTabs: [
+                { value: "items", label: "Catálogo", iconName: "package", href: "/inventory?view=products&sub=items" },
+                { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=products&sub=categories" },
+                { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory?view=products&sub=pricing-rules" },
+            ]
+        },
+        { 
+            value: "stock", 
+            label: "Existencias", 
+            iconName: "warehouse", 
+            href: "/inventory?view=stock",
+            subTabs: [
+                { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory?view=stock&sub=report" },
+                { value: "movements", label: "Movimientos", iconName: "arrow-left-right", href: "/inventory?view=stock&sub=movements" },
+                { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory?view=stock&sub=warehouses" },
+            ]
+        },
+        { 
+            value: "uoms", 
+            label: "Unidades", 
+            iconName: "scale", 
+            href: "/inventory?view=uoms",
+            subTabs: [
+                { value: "units", label: "Unidades", iconName: "scale", href: "/inventory?view=uoms&sub=units" },
+                { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=uoms&sub=categories" },
+            ]
+        },
         { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory?view=attributes" },
     ]
 
@@ -90,7 +123,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName="package"
                 variant="minimal"
-                configHref="/settings/inventory"
+                configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (
                     <Link href={config.actionHref}>
                         <PageHeaderButton
@@ -102,67 +135,50 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 )}
             />
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'products' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "items", label: "Catálogo", iconName: "package", href: "/inventory?view=products&sub=items" },
-                                    { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=products&sub=categories" },
-                                    { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory?view=products&sub=pricing-rules" },
-                                ]} 
-                                activeValue={subView} 
-                            />
-                            <div className="pt-2">
-                                {subView === 'items' && <ProductList externalOpen={modal === 'new'} />}
-                                {subView === 'categories' && <CategoryList externalOpen={modal === 'new'} />}
-                                {subView === 'pricing-rules' && <PricingRuleList externalOpen={modal === 'new'} />}
-                            </div>
+                        <div className="pt-2">
+                            {subView === 'items' && <ProductList externalOpen={modal === 'new'} />}
+                            {subView === 'categories' && <CategoryList externalOpen={modal === 'new'} />}
+                            {subView === 'pricing-rules' && <PricingRuleList externalOpen={modal === 'new'} />}
                         </div>
                     )}
 
                     {viewMode === 'stock' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory?view=stock&sub=report" },
-                                    { value: "movements", label: "Movimientos", iconName: "arrow-left-right", href: "/inventory?view=stock&sub=movements" },
-                                    { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory?view=stock&sub=warehouses" },
-                                ]} 
-                                activeValue={subView} 
-                            />
-                            <div className="pt-2">
-                                {subView === 'report' && <StockReport />}
-                                {subView === 'movements' && <MovementList externalOpen={modal === 'adjustment'} />}
-                                {subView === 'warehouses' && <WarehouseList externalOpen={modal === 'new'} />}
-                            </div>
+                        <div className="pt-2">
+                            {subView === 'report' && <StockReport />}
+                            {subView === 'movements' && <MovementList externalOpen={modal === 'adjustment'} />}
+                            {subView === 'warehouses' && <WarehouseList externalOpen={modal === 'new'} />}
                         </div>
                     )}
 
                     {viewMode === 'uoms' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "units", label: "Unidades", iconName: "scale", href: "/inventory?view=uoms&sub=units" },
-                                    { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=uoms&sub=categories" },
-                                ]} 
-                                activeValue={subView === 'categories' ? 'categories' : 'units'} 
+                        <div className="pt-2">
+                            <UoMsView 
+                                activeTab={subView === 'categories' ? 'categories' : 'units'} 
+                                externalOpen={modal === 'new'}
                             />
-                            <div className="pt-2">
-                                <UoMsView 
-                                    activeTab={subView === 'categories' ? 'categories' : 'units'} 
-                                    externalOpen={modal === 'new'}
-                                />
-                            </div>
                         </div>
                     )}
                     
                     {viewMode === 'attributes' && <AttributeManager externalOpen={modal === 'new'} />}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="inventory-settings"
+                title="Configuración de Inventario"
+                description="Gestione las cuentas de stock, ajustes y costo de ventas."
+                tabLabel="Configuración"
+                fullWidth={600}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <InventorySettingsView activeTab={configTab} />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

@@ -10,6 +10,7 @@ import { getActionBadgeCount } from "@/lib/actions/utils"
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
@@ -369,7 +370,7 @@ export const ActionCategory = forwardRef(({
             )}
 
             {/* Modals with Suspense to prevent layout unmount on first load */}
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 {activeModal === 'complete-folio' && (
                 <DocumentCompletionModal
                     open={true}

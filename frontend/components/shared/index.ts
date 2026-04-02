@@ -17,3 +17,5 @@ export * from './PageTabs';
 export * from './StatusBadge';
 export * from './TransactionViewModal';
 export * from './transaction-modal';
+export * from './ModuleSettingsSheet';
+export * from './SettingsSheetRouteWrapper';

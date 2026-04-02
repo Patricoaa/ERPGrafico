@@ -1,11 +1,13 @@
+"use client"
+
 import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Banknote, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, translatePaymentMethod, formatCurrency } from "@/lib/utils"
-import type { TransactionData } from "../TransactionViewModal"
+import type { TransactionData, TransactionType } from "@/types/transactions"
 
-export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: TransactionData, currentType: string, navigateTo: (type: string, id: number | string) => void, handleDeletePayment: (id: number) => void }) => {
+export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void, handleDeletePayment: (id: number) => void }) => {
     const payments = data?.serialized_payments || data?.payments_detail || [];
     if (payments.length === 0) return null;
 

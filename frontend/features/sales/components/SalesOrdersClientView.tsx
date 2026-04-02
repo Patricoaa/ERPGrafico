@@ -3,6 +3,7 @@
 import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
 import { SalesOrdersView } from "./SalesOrdersView"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
@@ -39,7 +40,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
 
             {/* Modals & Forms */}
             {viewingTransaction && (
-                <Suspense fallback={null}>
+                <Suspense fallback={<LoadingFallback />}>
                     <TransactionViewModal
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
@@ -51,7 +52,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
             )}
 
             {(payingOrder || checkoutData) && (
-                <Suspense fallback={null}>
+                <Suspense fallback={<LoadingFallback />}>
                     <SalesCheckoutWizard
                         open={!!payingOrder || !!checkoutData}
                         onOpenChange={(open: boolean) => {
@@ -83,7 +84,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
             )}
 
             {dispatchingOrder && (
-                <Suspense fallback={null}>
+                <Suspense fallback={<LoadingFallback />}>
                     <DeliveryModal
                         open={!!dispatchingOrder}
                         onOpenChange={(open: boolean) => !open && setDispatchingOrder(null)}
@@ -94,7 +95,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
             )}
 
             {completingFolio && (
-                <Suspense fallback={null}>
+                <Suspense fallback={<LoadingFallback />}>
                     <DocumentCompletionModal
                         open={!!completingFolio}
                         onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
@@ -111,7 +112,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
             )}
 
             {addingNote && (
-                <Suspense fallback={null}>
+                <Suspense fallback={<LoadingFallback />}>
                     <SaleNoteModal
                         open={!!addingNote}
                         onOpenChange={(open: boolean) => !open && setAddingNote(null)}

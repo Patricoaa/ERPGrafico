@@ -168,40 +168,39 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
     return (
         <div className="pt-4">
             <Tabs value={activeTab} className="space-y-4">
-                    <TabsContent value="users" className="mt-0 outline-none space-y-4">
-                        {loading ? (
-                            <div className="flex h-[200px] items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            </div>
-                        ) : (
-                            <DataTable
-                                columns={columns}
-                                data={users}
-                                cardMode
-                                globalFilterFields={["username", "email", "first_name", "last_name"]}
-                                searchPlaceholder="Buscar usuario por nombre, email o username..."
-                                useAdvancedFilter={true}
-                                facetedFilters={[
-                                    {
-                                        column: "role",
-                                        title: "Rol",
-                                        options: [
-                                            { label: "Admin", value: "ADMIN" },
-                                            { label: "Gerente", value: "MANAGER" },
-                                            { label: "Operador", value: "OPERATOR" },
-                                            { label: "Lectura", value: "READ_ONLY" },
-                                        ],
-                                    },
-                                ]}
-                            />
-                        )}
-                    </TabsContent>
+                <TabsContent value="users" className="mt-0 outline-none space-y-4">
+                    {loading ? (
+                        <div className="flex h-[200px] items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={users}
+                            cardMode
+                            globalFilterFields={["username", "email", "first_name", "last_name"]}
+                            searchPlaceholder="Buscar usuario por nombre, email o username..."
+                            useAdvancedFilter={true}
+                            facetedFilters={[
+                                {
+                                    column: "role",
+                                    title: "Rol",
+                                    options: [
+                                        { label: "Admin", value: "ADMIN" },
+                                        { label: "Gerente", value: "MANAGER" },
+                                        { label: "Operador", value: "OPERATOR" },
+                                        { label: "Lectura", value: "READ_ONLY" },
+                                    ],
+                                },
+                            ]}
+                        />
+                    )}
+                </TabsContent>
 
-                    <TabsContent value="groups" className="mt-0 outline-none">
-                        <GroupManagement externalOpen={isGroupModalOpen} onExternalOpenChange={setIsGroupModalOpen} />
-                    </TabsContent>
-                </Tabs>
-            </div>
+                <TabsContent value="groups" className="mt-0 outline-none">
+                    <GroupManagement externalOpen={isGroupModalOpen} onExternalOpenChange={setIsGroupModalOpen} />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

@@ -14,6 +14,9 @@ const TreasuryAccountsView = lazy(() => import("@/features/treasury").then(m => 
 const StatementsList = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.StatementsList })))
 const ReconciliationDashboard = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationDashboard })))
 const ReconciliationRules = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationRules })))
+const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Tesorería | ERPGrafico",
@@ -32,8 +35,28 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
 
     const tabs = [
         { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
-        { value: "accounts", label: "Cuentas y Caja", iconName: "landmark", href: "/treasury?view=accounts" },
-        { value: "reconciliation", label: "Conciliación", iconName: "history", href: "/treasury?view=reconciliation" },
+        { 
+            value: "accounts", 
+            label: "Cuentas y Caja", 
+            iconName: "landmark", 
+            href: "/treasury?view=accounts",
+            subTabs: [
+                { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
+                { value: "banks", label: "Bancos", href: "/treasury?view=accounts&sub=banks" },
+                { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
+            ]
+        },
+        { 
+            value: "reconciliation", 
+            label: "Conciliación", 
+            iconName: "history", 
+            href: "/treasury?view=reconciliation",
+            subTabs: [
+                { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
+                { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
+                { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury?view=reconciliation&sub=rules" },
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -80,7 +103,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={viewMode === 'movements' ? "banknote" : viewMode === 'accounts' ? "landmark" : "history"}
                 variant="minimal"
-                configHref="/settings/treasury"
+                configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (
                     <Link href={config.actionHref}>
                         <PageHeaderButton
@@ -92,7 +115,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 )}
             />
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback />}>
@@ -103,42 +126,32 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                     )}
 
                     {viewMode === 'accounts' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
-                                    { value: "banks", label: "Bancos", href: "/treasury?view=accounts&sub=banks" },
-                                    { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
-                                ]} 
-                                activeValue={subView} 
-                                variant="minimal"
-                            />
-                            <div className="pt-2">
-                                <TreasuryAccountsView activeTab={subView} externalOpen={modal === 'new'} />
-                            </div>
+                        <div className="pt-2">
+                            <TreasuryAccountsView activeTab={subView} externalOpen={modal === 'new'} />
                         </div>
                     )}
 
                     {viewMode === 'reconciliation' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
-                                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
-                                    { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury?view=reconciliation&sub=rules" },
-                                ]} 
-                                activeValue={subView} 
-                                variant="minimal"
-                            />
-                            <div className="pt-2">
-                                {subView === 'statements' && <StatementsList externalOpen={modal === 'import'} />}
-                                {subView === 'dashboard' && <ReconciliationDashboard />}
-                                {subView === 'rules' && <ReconciliationRules externalOpen={modal === 'new-rule'} />}
-                            </div>
+                        <div className="pt-2">
+                            {subView === 'statements' && <StatementsList externalOpen={modal === 'import'} />}
+                            {subView === 'dashboard' && <ReconciliationDashboard />}
+                            {subView === 'rules' && <ReconciliationRules externalOpen={modal === 'new-rule'} />}
                         </div>
                     )}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="treasury-settings"
+                title="Configuración de Tesorería"
+                description="Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja."
+                tabLabel="Configuración"
+                fullWidth={600}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <TreasurySettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

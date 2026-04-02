@@ -10,6 +10,9 @@ const AccountsView = lazy(() => import("@/app/(dashboard)/accounting/accounts/pa
 const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
 const PeriodsView = lazy(() => import("@/app/(dashboard)/accounting/periods/page").then(m => ({ default: m.default })))
 const TaxDeclarationsView = lazy(() => import("@/app/(dashboard)/tax/declarations/page").then(m => ({ default: m.default })))
+const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo Contable | ERPGrafico",
@@ -17,11 +20,12 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string; modal?: string }>
+    searchParams: Promise<{ view?: string; modal?: string; tab?: string }>
 }
 
 export default async function AccountingPage({ searchParams }: PageProps) {
-    const { view, modal } = await searchParams
+    const { view, modal, tab } = await searchParams
+    const configTab = tab || "global"
     const viewMode = (view as 'ledger' | 'entries' | 'periods' | 'tax') || 'ledger'
 
     const tabs = [
@@ -96,7 +100,7 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.icon as any}
                 variant="minimal"
-                configHref="/settings/accounting"
+                configHref="?config=true"
                 titleActions={config.action}
             />
 
@@ -110,6 +114,17 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                     {viewMode === 'tax' && <TaxDeclarationsView externalOpen={modal === 'new'} />}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="accounting-settings"
+                title="Configuración Contable"
+                description="Gestione la estructura del plan de cuentas, prefijos y reglas de negocio."
+                tabLabel="Configuración"
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <AccountingSettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

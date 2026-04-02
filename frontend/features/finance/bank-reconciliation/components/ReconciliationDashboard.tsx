@@ -9,10 +9,11 @@ import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
-    loading: () => <div className="col-span-4 h-[350px] animate-pulse bg-muted rounded-lg" />
+    loading: () => <LoadingFallback message="Cargando gráfico..." />
 })
 
 export function ReconciliationDashboard() {

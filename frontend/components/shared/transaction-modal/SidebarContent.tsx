@@ -1,6 +1,8 @@
+"use client"
+
 import React from "react"
 import { ExternalLink, User, MonitorSmartphone, Package, Calendar, CalendarClock, Receipt, Hash, Wallet, FileText, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Activity, Gavel } from "lucide-react"
-import type { TransactionData } from "../TransactionViewModal"
+import type { TransactionData } from "@/types/transactions"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useRouter } from "next/navigation"
 import { formatPlainDate, translateReceivingStatus, translatePaymentMethod } from "@/lib/utils"

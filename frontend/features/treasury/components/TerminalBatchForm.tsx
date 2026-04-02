@@ -177,9 +177,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                             </div>
                                         ))}
                                         {terminals.length === 0 && (
-                                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                                No hay terminales disponibles
-                                            </div>
+                                            <EmptyState context="generic" variant="minimal" description="No hay terminales disponibles" />
                                         )}
                                     </div>
                                 </div>

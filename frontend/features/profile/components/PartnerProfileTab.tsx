@@ -31,6 +31,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
@@ -275,7 +276,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}
