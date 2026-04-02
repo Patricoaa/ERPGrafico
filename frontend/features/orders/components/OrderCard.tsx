@@ -8,6 +8,7 @@ import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 interface OrderCardProps {
     item: any
@@ -75,9 +76,10 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     }
 
     return (
-        <div
+        <IndustrialCard
+            variant="list"
             className={cn(
-                "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-2xl cursor-pointer hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all",
+                "group flex flex-row items-center justify-between p-4 relative z-10",
                 className
             )}
             onClick={handleClick}
@@ -146,6 +148,6 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
 
                 <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />
             </div>
-        </div>
+        </IndustrialCard>
     )
 }

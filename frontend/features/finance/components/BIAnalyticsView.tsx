@@ -63,7 +63,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         <div className={LAYOUT_TOKENS.view}>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-info">
+                <IndustrialCard variant="industrial" className="border-l-4 border-l-info">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
                         <DollarSign className="h-4 w-4 text-primary" />
@@ -79,7 +79,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </IndustrialCard>
 
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-success">
+                <IndustrialCard variant="industrial" className="border-l-4 border-l-success">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
                         <ShoppingCart className="h-4 w-4 text-success" />
@@ -94,7 +94,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </IndustrialCard>
 
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-accent">
+                <IndustrialCard variant="industrial" className="border-l-4 border-l-accent">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
                         <Package className="h-4 w-4 text-accent" />
@@ -109,7 +109,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </IndustrialCard>
 
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-warning">
+                <IndustrialCard variant="industrial" className="border-l-4 border-l-warning">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Rotación Inventario</CardTitle>
                         <TrendingUp className="h-4 w-4 text-warning" />
@@ -124,7 +124,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
             </div>
 
             {/* Sales Trend */}
-            <IndustrialCard variant="industrial" className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-primary">
+            <IndustrialCard variant="industrial">
                 <CardHeader>
                     <CardTitle>Tendencia de Ventas</CardTitle>
                     <CardDescription>Evolución mensual de ventas</CardDescription>
@@ -154,7 +154,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
             {/* Two column layout for detailed insights */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Top Customers */}
-                <IndustrialCard variant="industrial" className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-blue-500">
+                <IndustrialCard variant="industrial">
                     <CardHeader>
                         <CardTitle>Top 5 Clientes</CardTitle>
                         <CardDescription>Por volumen de ventas</CardDescription>
@@ -173,7 +173,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 </IndustrialCard>
 
                 {/* Inventory Distribution */}
-                <IndustrialCard variant="industrial" className="shadow-xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-accent">
+                <IndustrialCard variant="industrial">
                     <CardHeader>
                         <CardTitle>Distribución de Inventario</CardTitle>
                         <CardDescription>Por categoría de producto</CardDescription>
@@ -205,7 +205,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
 
             {/* Performance Insights Section */}
             <div className="grid gap-6 md:grid-cols-3">
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow">
+                <IndustrialCard variant="industrial">
                     <CardHeader>
                         <CardTitle className="text-base">Análisis de Compras</CardTitle>
                     </CardHeader>
@@ -219,7 +219,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </IndustrialCard>
 
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow">
+                <IndustrialCard variant="industrial">
                     <CardHeader>
                         <CardTitle className="text-base">Eficiencia Producción</CardTitle>
                     </CardHeader>
@@ -237,7 +237,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </IndustrialCard>
 
-                <IndustrialCard variant="industrial" className="shadow-md hover:shadow-lg transition-shadow">
+                <IndustrialCard variant="industrial">
                     <CardHeader>
                         <CardTitle className="text-base">Cuentas por Cobrar</CardTitle>
                     </CardHeader>
