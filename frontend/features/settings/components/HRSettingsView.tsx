@@ -188,7 +188,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 <div className="flex items-center gap-2 py-1">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.getValue("name")}</span>
                     {row.original.is_system && (
-                        <Badge variant="secondary" className="text-[8px] font-black h-4 px-1 rounded-[0.125rem] bg-primary/10 text-primary border-primary/20">
+                        <Badge variant="secondary" className="text-[8px] font-black h-4 px-1 rounded-sm bg-primary/10 text-primary border-primary/20">
                             SYSTEM
                         </Badge>
                     )}
@@ -203,7 +203,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 const isHaber = category.includes('HABER')
                 return (
                     <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase h-5 shadow-sm rounded-[0.125rem]",
+                        "text-[9px] font-black uppercase h-5 shadow-sm rounded-sm",
                         isHaber ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                     )}>
                         {row.getValue("category_display")}
@@ -224,7 +224,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
             accessorKey: "account_code",
             header: "Cuenta Contable",
             cell: ({ row }) => (
-                <div className="font-mono text-[10px] text-primary/70 bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10 w-fit">
+                <div className="font-mono text-[10px] text-primary/70 bg-primary/5 px-2 py-0.5 rounded-sm border border-primary/10 w-fit">
                     {row.getValue("account_code")}
                 </div>
             )
@@ -236,7 +236,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                 <div className="flex justify-end gap-1 pr-2">
                     <ConceptDialog concept={row.original} onSaved={fetchData} />
                     {!row.original.is_system && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-[0.125rem]"
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-sm"
                             onClick={() => conceptDeleteConfirm.requestConfirm(row.original.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -308,7 +308,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Valor UF Actual ($)</FormLabel>
                                                     <FormControl>
-                                                        <Input {...field} type="number" step="0.01" className="h-9 font-mono rounded-[0.125rem]" />
+                                                        <Input {...field} type="number" step="0.01" className="h-10 font-mono rounded-sm" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -320,7 +320,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Sueldo Mínimo ($)</FormLabel>
                                                     <FormControl>
-                                                        <Input {...field} type="number" className="h-9 font-mono rounded-[0.125rem]" />
+                                                        <Input {...field} type="number" className="h-10 font-mono rounded-sm" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -332,7 +332,7 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                                 <FormItem>
                                                     <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Valor UTM Actual ($)</FormLabel>
                                                     <FormControl>
-                                                        <Input {...field} type="number" step="0.01" className="h-9 font-mono rounded-[0.125rem]" />
+                                                        <Input {...field} type="number" step="0.01" className="h-10 font-mono rounded-sm" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -440,10 +440,10 @@ export function HRSettingsView({ activeTab }: { activeTab: string }) {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-60">Pasivo de Pago</div>
-                                        <div className="text-[10px] truncate font-mono bg-primary/5 p-1.5 rounded-[0.125rem] border border-primary/10 inline-block max-w-full text-primary font-bold">
+                                        <div className="text-[10px] truncate font-mono bg-primary/5 p-1.5 rounded-sm border border-primary/10 inline-block max-w-full text-primary font-bold">
                                             {afp.account ? "CENTRALIZADA" : "SIN CUENTA"}
                                         </div>
-                                        <Button variant="ghost" size="sm" className="mt-4 w-full text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 rounded-[0.125rem]"
+                                        <Button variant="ghost" size="sm" className="mt-4 w-full text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 rounded-sm"
                                             onClick={() => afpDeleteConfirm.requestConfirm(afp.id)}>
                                             Eliminar Institución
                                         </Button>
@@ -524,7 +524,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {concept ? (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-[0.125rem]">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm">
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
@@ -548,7 +548,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Nombre Público</FormLabel>
-                                    <FormControl><Input {...field} className="h-9 rounded-[0.125rem]" /></FormControl>
+                                    <FormControl><Input {...field} className="h-9 rounded-sm" /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -561,7 +561,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                     <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Categoría Nómina</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger className="h-9 rounded-[0.125rem]">
+                                            <SelectTrigger className="h-9 rounded-sm">
                                                 <SelectValue placeholder="Seleccione categoría" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -611,7 +611,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                     <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Lógica de Cálculo</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
-                                            <SelectTrigger className="h-9 rounded-[0.125rem]">
+                                            <SelectTrigger className="h-9 rounded-sm">
                                                 <SelectValue placeholder="Seleccione lógica" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -639,7 +639,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                         </FormLabel>
                                         <FormControl>
                                             <div className="space-y-3">
-                                                <Input {...field} placeholder="BASE * 0.25" className="h-8 font-mono bg-background text-[11px] rounded-[0.125rem]" />
+                                                <Input {...field} placeholder="BASE * 0.25" className="h-8 font-mono bg-background text-[11px] rounded-sm" />
                                                 <FormulaBuilder
                                                     value={field.value || ""}
                                                     onChange={field.onChange}
@@ -662,7 +662,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                         <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">
                                             {form.watch("formula_type") === 'PERCENTAGE' ? "Factor Porcentual (%)" : "Monto Predeterminado ($)"}
                                         </FormLabel>
-                                        <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-[0.125rem]" /></FormControl>
+                                        <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-sm" /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -720,7 +720,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {afp ? (
-                    <Button variant="outline" size="icon" className="h-7 w-7 border-2 rounded-[0.125rem]">
+                    <Button variant="outline" size="icon" className="h-7 w-7 border-2 rounded-sm">
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
@@ -744,7 +744,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Nombre Legal</FormLabel>
-                                    <FormControl><Input {...field} placeholder="Ej: Habitat..." className="h-9 rounded-[0.125rem]" /></FormControl>
+                                    <FormControl><Input {...field} placeholder="Ej: Habitat..." className="h-9 rounded-sm" /></FormControl>
                                 </FormItem>
                             )}
                         />
@@ -754,7 +754,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Comisión Total (%)</FormLabel>
-                                    <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-[0.125rem]" /></FormControl>
+                                    <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-sm" /></FormControl>
                                     <p className="text-[9px] text-muted-foreground/60 italic font-medium uppercase tracking-tight">Incluya el 10% obligatorio + la comisión.</p>
                                 </FormItem>
                             )}

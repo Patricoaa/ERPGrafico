@@ -1,9 +1,49 @@
-# Color Tokens — ERPGrafico
+# Color Tokens & Design System — ERPGrafico
 
 > **Fuente de verdad:** `src/app/globals.css`
 > Este documento es el mapa oficial entre los tokens CSS del sistema y su uso semántico en componentes.
 > **Regla absoluta:** Nunca usar valores de color hardcoded (hex, rgb, oklch directo) en componentes.
 > Siempre usar las clases de Tailwind v4 que mapean a estas variables.
+
+---
+
+## Arquitectura Visual: Regla 60-30-10
+
+El sistema de color se rige por proporciones armónicas para garantizar un entorno industrial limpio y profesional:
+
+*   **60% - Dominante (Neutrales):** Fondo de página (`--background`), superficies de cards (`--card`) y textos principales (`--foreground`). Define la atmósfera del sistema.
+*   **30% - Secundario (Bordes y Superficies):** Bordes (`--border`), fondos de inputs (`--input`) y estados muted (`--muted`). Aporta estructura y profundidad.
+*   **10% - Acento y Marca (Acciones):** Violeta Eléctrico (`--primary`) y Safety Orange (`--accent`). Reservados exclusivamente para acciones críticas, estados activos y feedback directo.
+
+---
+
+## Sistema de Espaciado (8pt Grid)
+
+Todo el ERP se construye sobre una rejilla de **8px** (0.5rem). El ritmo vertical y horizontal es sagrado para la consistencia visual.
+
+| Token Tailwind | Valor CSS | Píxeles | Uso recomendado |
+|----------------|-----------|---------|-----------------|
+| `spacing-r-xs`   | `0.25rem` | 4px     | Micro-ajustes de iconos y textos |
+| `spacing-r-sm`   | `0.5rem`  | 8px     | Gaps internos de grupos, paddings pequeños |
+| `spacing-r-md`   | `1rem`    | 16px    | Gaps entre secciones, padding estándar de cards |
+| `spacing-r-lg`   | `1.5rem`  | 24px    | Márgenes entre grandes bloques |
+| `spacing-r-xl`   | `2rem`    | 32px    | Espaciado externo de contenedores maestros |
+
+**Regla:** El uso de valores arbitrarios (ej. `m-[7px]`) está estrictamente prohibido. Si un diseño requiere un ajuste, debe aproximarse al múltiplo de 4px o 8px más cercano.
+
+---
+
+## Jerarquía de Interacción (Ley de Fitts)
+
+Para garantizar la usabilidad en entornos industriales de alta velocidad, los objetivos táctiles y de clic siguen estándares mínimos:
+
+| Elemento | Altura Base | Token Tailwind | Justificación |
+|----------|-------------|----------------|---------------|
+| Botón / Input (Base) | **40px** | `h-10` | Estándar de interacción rápida |
+| Botón / Input (Compacto) | **36px** | `h-9` | Zonas de alta densidad |
+| Botón / Input (Grande) | **48px** | `h-12` | Acciones principales o modales destacados |
+
+**Regla:** Ningún elemento interactivo (excepto links y menús ultra-compactos) debe tener un área de clic menor a **40px** en su dimensión principal.
 
 ---
 
