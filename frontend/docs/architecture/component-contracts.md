@@ -26,25 +26,26 @@ Visualización estándar para listados y estados vacíos.
   - Debe usarse en todas las `DataTable` cuando no hay datos.
   - El diseño debe ser centrado con tipografía `muted-foreground`.
 
-## 3. BaseModal
-Contenedor unificado para diálogos del sistema.
+## 3. IndustrialCard & BaseModal
+Contenedores unificados que definen la jerarquía visual del sistema.
 
-- **Props**:
-  - `size`: 'sm' | 'md' | 'lg' | 'xl' | 'full'.
-  - `title`: ReactNode.
-  - `description`: ReactNode.
-  - `footer`: ReactNode.
-- **Reglas**:
-  - Debe usar `Dialog` de shadcn/ui.
-  - Aplicar `industrial` card styling por defecto.
+- **Variantes de IndustrialCard**:
+  - `industrial`: Card con stripe superior y **sombra profunda (shadow-2xl)**.
+  - `list`: Variante minimalista para listados, con **sombra 2xl solo en hover**.
+  - `standard`: Card con borde discontinuo para estados secundarios.
+- **Reglas Visuales**:
+  - **Radio de Borde**: Debe ser siempre **`rounded-2xl`** (1rem) para todos los contenedores y modales.
+  - **Sombras**: Utilizar sombras pronunciadas (`shadow-xl` o `shadow-2xl`) para elevar los contenedores sobre el fondo.
 
-## 4. FORM_STYLES
-Conjunto de tokens de Tailwind para formularios unificados.
+## 4. FORM_STYLES & Acciones
+Conjunto de tokens para elementos operativos que requieren precisión visual.
 
+- **Reglas Visuales**:
+  - **Radio de Borde**: Debe ser estrictamente **`rounded`** (0.25rem) para botones, inputs y selectores.
+  - **Tipografía**: Labels en uppercase con extra-tracking.
 - **Tokens**:
-  - `label`: Bolds, uppercase, extra-tracking.
-  - `input`: Rounded-XL, border-dashed, h-10.
-  - `textarea`: Min-h-100, transition focus.
+  - `input`: Rounded (0.25rem), border-solid, h-10.
+  - `button`: Rounded (0.25rem), transiciones suaves.
   - `sectionHeader`: Industrial separator style.
 
 ## 5. CONTRATO DE HOOKS (Data Fetching)

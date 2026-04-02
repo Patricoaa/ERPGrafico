@@ -40,7 +40,7 @@ export default function SalesPage() {
             >
                 <motion.div variants={item}>
                     <Link href="/pos" target="_blank">
-                        <IndustrialCard variant="industrial" className="group hover:border-primary/50 transition-all cursor-pointer border-t-primary relative overflow-hidden shadow-none hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
+                        <IndustrialCard variant="industrial" className="group transition-all cursor-pointer relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <ArrowUpRight className="h-5 w-5 text-primary" />
                             </div>
@@ -61,7 +61,7 @@ export default function SalesPage() {
                 {/* Additional placeholder cards to show grid */}
                 <motion.div variants={item}>
                     <Link href="/sales/orders">
-                        <IndustrialCard variant="industrial" className="group hover:border-primary/50 transition-all cursor-pointer border-t-slate-400 relative overflow-hidden shadow-none hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)]">
+                        <IndustrialCard variant="industrial" className="group transition-all cursor-pointer relative overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                                 <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Notas de Venta</CardTitle>
                                 <div className="p-2 rounded-lg bg-muted/20 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
