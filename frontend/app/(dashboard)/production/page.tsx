@@ -9,6 +9,9 @@ import { Tabs } from "@/components/ui/tabs"
 // Lazy load feature components
 const WorkOrdersView = lazy(() => import("@/app/(dashboard)/production/orders/page").then(m => ({ default: m.default })))
 const BOMsView = lazy(() => import("@/app/(dashboard)/production/boms/page").then(m => ({ default: m.default })))
+const ProductionSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.ProductionSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Producción | ERPGrafico",
@@ -20,7 +23,8 @@ interface PageProps {
 }
 
 export default async function ProductionPage({ searchParams }: PageProps) {
-    const { view } = await searchParams
+    const { view, tab } = await searchParams
+    const configTab = tab || "global"
     const viewMode = (view as 'orders' | 'boms') || 'orders'
 
     const tabs = [
@@ -72,7 +76,7 @@ export default async function ProductionPage({ searchParams }: PageProps) {
                 description={description}
                 iconName={icon as any}
                 variant="minimal"
-                configHref="/settings/production"
+                configHref="?config=true"
                 titleActions={action}
             />
 
@@ -84,6 +88,17 @@ export default async function ProductionPage({ searchParams }: PageProps) {
                     {viewMode === 'boms' && <BOMsView />}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="production-settings"
+                title="Configuración de Producción"
+                description="Parametrización de procesos y fichas de fabricación."
+                tabLabel="Configuración"
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <ProductionSettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

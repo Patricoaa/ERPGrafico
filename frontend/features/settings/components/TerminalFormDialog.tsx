@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { Loader2, Check, Search, ChevronsUpDown, MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 export interface Terminal {
@@ -319,7 +320,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                         </div>
                                         <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
                                             {treasuryAccounts.length === 0 ? (
-                                                <p className="text-xs text-center text-muted-foreground py-4">No hay cuentas configuradas</p>
+                                                <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
                                             ) : (
                                                 treasuryAccounts.map((account) => {
                                                     const isSelected = field.value.includes(account.id)

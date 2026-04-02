@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Trash2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/shared/EmptyState"
 import {
     Form,
     FormControl,
@@ -226,7 +227,7 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                                     </div>
                                 ))}
                                 {options.length === 0 && (
-                                    <p className="text-sm text-center text-muted-foreground py-2">No hay opciones añadidas</p>
+                                    <EmptyState context="generic" variant="minimal" description="No hay opciones añadidas" />
                                 )}
                             </div>
                         </div>

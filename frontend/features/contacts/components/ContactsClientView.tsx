@@ -11,6 +11,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 // Lazy load heavy components
 const ContactModal = lazy(() => import("./ContactModal"))
@@ -224,7 +225,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                 defaultPageSize={20}
             />
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <ContactModal
                     open={modalOpen}
                     onOpenChange={handleCloseModal}
@@ -236,7 +237,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                 />
             </Suspense>
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <ActionConfirmModal
                     open={isDeleteModalOpen}
                     onOpenChange={(open: boolean) => setIsDeleteModalOpen(open)}

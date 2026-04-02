@@ -24,8 +24,27 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     const viewMode = (view as 'statements' | 'analysis' | 'budgets') || 'statements'
 
     const tabs = [
-        { value: "statements", label: "Estados Financieros", iconName: "clipboard-list", href: "/finances?view=statements" },
-        { value: "analysis", label: "Análisis", iconName: "line-chart", href: "/finances?view=analysis" },
+        { 
+            value: "statements", 
+            label: "Estados Financieros", 
+            iconName: "clipboard-list", 
+            href: "/finances?view=statements",
+            subTabs: [
+                { value: "bs", label: "Balance", iconName: "file-text", href: "/finances?view=statements&tab=bs" },
+                { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances?view=statements&tab=pl" },
+                { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances?view=statements&tab=cf" },
+            ]
+        },
+        { 
+            value: "analysis", 
+            label: "Análisis", 
+            iconName: "line-chart", 
+            href: "/finances?view=analysis",
+            subTabs: [
+                { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances?view=analysis&tab=ratios" },
+                { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances?view=analysis&tab=bi" },
+            ]
+        },
         { value: "budgets", label: "Presupuestos", iconName: "target", href: "/finances?view=budgets" },
     ]
 
@@ -67,7 +86,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 titleActions={config.action}
             />
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={tab} />
 
             <div className="pt-2">
                 <Suspense fallback={<LoadingFallback />}>

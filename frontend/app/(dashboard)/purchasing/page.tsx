@@ -9,6 +9,9 @@ import Link from "next/link"
 const PurchasingOrdersClientView = lazy(() =>
     import("./orders/components/PurchasingOrdersClientView").then(m => ({ default: m.PurchasingOrdersClientView }))
 )
+const PurchasingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.PurchasingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Compras | ERPGrafico",
@@ -16,11 +19,12 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string; modal?: string }>
+    searchParams: Promise<{ view?: string; modal?: string; tab?: string }>
 }
 
 export default async function PurchasingPage({ searchParams }: PageProps) {
-    const { view, modal } = await searchParams
+    const { view, modal, tab } = await searchParams
+    const configTab = tab || "global"
     const viewMode = (view as 'orders' | 'notes') || 'orders'
     const modalOpen = modal === 'new'
 
@@ -39,7 +43,7 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
                 }
                 iconName="shopping-bag"
                 variant="minimal"
-                configHref="/settings/purchasing"
+                configHref="?config=true"
                 titleActions={
                     viewMode === 'orders' && (
                         <Link href="/purchasing?view=orders&modal=new">
@@ -60,6 +64,17 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
                     <PurchasingOrdersClientView viewMode={viewMode} externalOpenCheckout={modalOpen} />
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="purchasing-settings"
+                title="Configuración de Compras"
+                description="Gestione las cuentas de gastos para diferentes tipos de compras."
+                tabLabel="Configuración"
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <PurchasingSettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

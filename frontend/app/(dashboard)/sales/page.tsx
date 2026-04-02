@@ -14,6 +14,9 @@ const SalesOrdersClientView = lazy(() => import("@/features/sales").then(m => ({
 const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView").then(m => ({ default: m.default })))
 const CreditPortfolioView = lazy(() => import("@/features/credits").then(m => ({ default: m.CreditPortfolioView })))
 const BlacklistView = lazy(() => import("@/features/credits").then(m => ({ default: m.BlacklistView })))
+const SalesSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.SalesSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Ventas | ERPGrafico",
@@ -21,19 +24,49 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string; sub?: string; modal?: string }>
+    searchParams: Promise<{ view?: string; sub?: string; modal?: string; tab?: string }>
 }
 
 export default async function SalesPage({ searchParams }: PageProps) {
-    const { view, sub, modal } = await searchParams
+    const { view, sub, modal, tab } = await searchParams
+    const configTab = tab || "income"
     const viewMode = (view as 'orders' | 'terminals' | 'credits') || 'orders'
     const subView = sub || (viewMode === 'orders' ? 'orders' : viewMode === 'terminals' ? 'terminals' : 'portfolio')
     const isModalOpen = !!modal
 
     const tabs = [
-        { value: "orders", label: "Órdenes", iconName: "shopping-cart", href: "/sales?view=orders" },
-        { value: "terminals", label: "Terminales", iconName: "banknote", href: "/sales?view=terminals" },
-        { value: "credits", label: "Cartera", iconName: "pie-chart", href: "/sales?view=credits" },
+        { 
+            value: "orders", 
+            label: "Órdenes", 
+            iconName: "shopping-cart", 
+            href: "/sales?view=orders",
+            subTabs: [
+                { value: "orders", label: "Notas de Venta", href: "/sales?view=orders&sub=orders" },
+                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales?view=orders&sub=notes" },
+            ]
+        },
+        { 
+            value: "terminals", 
+            label: "Terminales", 
+            iconName: "banknote", 
+            href: "/sales?view=terminals",
+            subTabs: [
+                { value: "terminals", label: "Terminales", href: "/sales?view=terminals&sub=terminals" },
+                { value: "batches", label: "Lotes", href: "/sales?view=terminals&sub=batches" },
+                { value: "sessions", label: "Sesiones", href: "/sales?view=terminals&sub=sessions" },
+            ]
+        },
+        { 
+            value: "credits", 
+            label: "Cartera", 
+            iconName: "pie-chart", 
+            href: "/sales?view=credits",
+            subTabs: [
+                { value: "portfolio", label: "Cartera", href: "/sales?view=credits&sub=portfolio" },
+                { value: "history", label: "Historial", href: "/sales?view=credits&sub=history" },
+                { value: "blacklist", label: "Lista Negra", href: "/sales?view=credits&sub=blacklist" },
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -74,7 +107,7 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={viewMode === 'orders' ? "shopping-cart" : viewMode === 'terminals' ? "banknote" : "pie-chart"}
                 variant="minimal"
-                configHref="/settings/sales"
+                configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (
                     <Link href={config.actionHref}>
                         <PageHeaderButton
@@ -93,71 +126,51 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 </Link>
             </PageHeader>
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'orders' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "orders", label: "Notas de Venta", href: "/sales?view=orders&sub=orders" },
-                                    { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales?view=orders&sub=notes" },
-                                ]} 
-                                activeValue={subView} 
-                                variant="minimal"
+                        <div className="pt-2">
+                            <SalesOrdersClientView 
+                                viewMode={subView === 'orders' ? 'orders' : 'notes'} 
+                                isCreateModalOpen={modal === 'new'}
                             />
-                            <div className="pt-2">
-                                <SalesOrdersClientView 
-                                    viewMode={subView === 'orders' ? 'orders' : 'notes'} 
-                                    isCreateModalOpen={modal === 'new'}
-                                />
-                            </div>
                         </div>
                     )}
 
                     {viewMode === 'terminals' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "terminals", label: "Terminales", href: "/sales?view=terminals&sub=terminals" },
-                                    { value: "batches", label: "Lotes", href: "/sales?view=terminals&sub=batches" },
-                                    { value: "sessions", label: "Sesiones", href: "/sales?view=terminals&sub=sessions" },
-                                ]} 
-                                activeValue={subView} 
-                                variant="minimal"
-                            />
-                            <div className="pt-2">
-                                <SalesTerminalsView activeTab={subView} modal={modal} />
-                            </div>
+                        <div className="pt-2">
+                            <SalesTerminalsView activeTab={subView} modal={modal} />
                         </div>
                     )}
 
                     {viewMode === 'credits' && (
-                        <div className="space-y-4">
-                            <PageTabs 
-                                tabs={[
-                                    { value: "portfolio", label: "Cartera", href: "/sales?view=credits&sub=portfolio" },
-                                    { value: "history", label: "Historial", href: "/sales?view=credits&sub=history" },
-                                    { value: "blacklist", label: "Lista Negra", href: "/sales?view=credits&sub=blacklist" },
-                                ]} 
-                                activeValue={subView} 
-                                variant="minimal"
-                            />
-                            <div className="pt-2">
-                                {subView === 'blacklist' ? (
-                                    <BlacklistView />
-                                ) : (
-                                    <CreditPortfolioView 
-                                        activeTab={subView as 'portfolio' | 'history'} 
-                                        externalOpen={modal === 'new'} 
-                                    />
-                                )}
-                            </div>
+                        <div className="pt-2">
+                            {subView === 'blacklist' ? (
+                                <BlacklistView />
+                            ) : (
+                                <CreditPortfolioView 
+                                    activeTab={subView as 'portfolio' | 'history'} 
+                                    externalOpen={modal === 'new'} 
+                                />
+                            )}
                         </div>
                     )}
                 </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="sales-settings"
+                title="Configuración de Ventas"
+                description="Gestione los ingresos, políticas de crédito y parámetros del POS."
+                tabLabel="Configuración"
+                fullWidth={600}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <SalesSettingsView activeTab={configTab} />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

@@ -1,3 +1,5 @@
+"use client"
+
 import React, { Fragment } from "react"
 import { Plus } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"

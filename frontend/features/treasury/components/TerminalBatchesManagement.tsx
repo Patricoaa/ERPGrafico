@@ -15,6 +15,7 @@ import { useTerminalBatches } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import type { DateRange } from "react-day-picker"
 
 // Lazy load feature components
@@ -177,7 +178,7 @@ export function TerminalBatchesManagement({
                 onReset={() => setDateRange(undefined)}
             />
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <TerminalBatchDialog
                     open={openCreate}
                     onOpenChange={(open: boolean) => {
@@ -192,7 +193,7 @@ export function TerminalBatchesManagement({
                 />
             </Suspense>
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <MonthlyInvoiceDialog
                     open={openInvoice}
                     onOpenChange={(open: boolean) => {

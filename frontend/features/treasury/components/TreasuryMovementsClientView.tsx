@@ -16,6 +16,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -302,7 +303,7 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
 
     return (
         <div className="space-y-6">
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <CashMovementModal
                     open={openModal}
                     onOpenChange={(open: boolean) => setOpenModal(open)}
@@ -346,7 +347,7 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
                 />
             )}
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <TransactionViewModal
                     open={detailsOpen}
                     onOpenChange={setDetailsOpen}
