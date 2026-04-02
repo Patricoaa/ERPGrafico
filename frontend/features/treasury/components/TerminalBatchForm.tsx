@@ -20,6 +20,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -431,8 +432,12 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : movements.length === 0 ? (
-                        <div className="p-8 text-center text-muted-foreground italic">
-                            No se encontraron ventas pendientes para esta fecha.
+                        <div className="p-8">
+                            <EmptyState 
+                                context="search" 
+                                variant="compact" 
+                                description="No se encontraron ventas pendientes para esta fecha."
+                            />
                         </div>
                     ) : (
                         <ScrollArea className="h-full">

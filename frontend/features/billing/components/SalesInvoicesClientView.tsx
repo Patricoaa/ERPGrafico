@@ -12,6 +12,7 @@ import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical, Package } 
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -258,9 +259,12 @@ export function SalesInvoicesClientView() {
                     const rows = table.getRowModel().rows
                     if (rows.length === 0) {
                         return (
-                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
-                                <Receipt className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                <p className="text-muted-foreground font-medium">No se encontraron documentos</p>
+                            <div className="py-12">
+                                <EmptyState
+                                    context="search"
+                                    title="No hay documentos"
+                                    description="No se encontraron facturas o boletas emitidas."
+                                />
                             </div>
                         )
                     }

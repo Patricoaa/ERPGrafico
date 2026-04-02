@@ -32,6 +32,7 @@ import {
     FileDown, Download, Eye, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight
 } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -436,16 +437,11 @@ function PersonalTab({
     if (!employee) {
         return (
             <div className="max-w-3xl">
-                <Card className="border-dashed p-12 text-center space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-                        <User className="h-8 w-8 text-muted-foreground/30" />
-                    </div>
-                    <h3 className="text-sm font-bold text-muted-foreground">Sin Ficha de Empleado</h3>
-                    <p className="text-xs text-muted-foreground/60 max-w-sm mx-auto">
-                        Su cuenta de usuario no tiene un perfil de empleado asociado.
-                        Contacte al administrador si necesita vincular su ficha.
-                    </p>
-                </Card>
+                <EmptyState
+                    icon={User}
+                    title="Sin Ficha de Empleado"
+                    description="Su cuenta de usuario no tiene un perfil de empleado asociado. Contacte al administrador si necesita vincular su ficha."
+                />
             </div>
         )
     }
@@ -768,10 +764,12 @@ function PersonalTab({
                                             }}
                                         />
                                     ) : (
-                                        <div className="p-12 text-center space-y-2">
-                                            <FileText className="h-8 w-8 text-muted-foreground/20 mx-auto" />
-                                            <p className="text-xs text-muted-foreground">No tiene liquidaciones contabilizadas aún.</p>
-                                        </div>
+                                        <EmptyState
+                                            context="generic"
+                                            icon={FileText}
+                                            title="No tiene liquidaciones"
+                                            description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
+                                        />
                                     )}
                                 </div>
                             </AccordionContent>

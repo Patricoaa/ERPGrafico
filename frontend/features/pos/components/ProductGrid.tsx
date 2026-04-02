@@ -13,6 +13,7 @@ import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { Product, Category, StockLimits } from '@/types/pos'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
+import { EmptyState } from '@/components/shared/EmptyState'
 
 interface ProductGridProps {
     products: Product[]
@@ -33,8 +34,13 @@ function ProductGridComponent({
 
     if (products.length === 0) {
         return (
-            <div className="col-span-full text-center py-10 text-muted-foreground">
-                No se encontraron productos.
+            <div className="col-span-full py-12">
+                <EmptyState
+                    context="search"
+                    variant="compact"
+                    title="No se encontraron productos"
+                    description="Pruebe con otros filtros o términos de búsqueda."
+                />
             </div>
         )
     }

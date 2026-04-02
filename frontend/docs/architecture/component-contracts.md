@@ -15,16 +15,25 @@ Componente central para la representación de estados de entidades (pedidos, pag
   - Ver [Inventario de Estados de Negocio](BUSINESS_STATES.md) para los valores aceptados por `status`.
 
 ## 2. EmptyState
-Visualización estándar para listados y estados vacíos.
+Visualización estándar para listados, búsquedas y estados vacíos en cualquier parte de la interfaz.
 
 - **Props**:
-  - `icon`: LucideIcon.
-  - `title`: String.
-  - `description`: String.
-  - `action`: ReactNode (opcional).
+  - `icon`: LucideIcon (opcional, asignado automáticamente por `context`).
+  - `title`: String (opcional, tiene valor por defecto según `context`).
+  - `description`: String (opcional).
+  - `context`: 'search' | 'inventory' | 'finance' | 'users' | 'generic' (default 'generic').
+  - `variant`: 'full' | 'compact' | 'minimal' (default 'full').
+  - `entityName`: String (ej. "Orden #1234").
+  - `action`: ReactNode (Primario).
+  - `secondaryAction`: ReactNode (Secundario).
 - **Reglas**:
-  - Debe usarse en todas las `DataTable` cuando no hay datos.
-  - El diseño debe ser centrado con tipografía `muted-foreground`.
+  - **Uso Obligatorio**: Debe usarse en lugar de cualquier `div` o `p` con mensajes "No hay datos".
+  - **Contexto**:
+    - `search`: Usa `SearchX`. Título por defecto: "Sin resultados".
+    - `finance`: Usa `Receipt`. Título por defecto: "Sin movimientos financieros".
+    - `inventory`: Usa `Package`. Título por defecto: "Sin stock / productos".
+  - **Tipografía**: Títulos siempre en `font-heading` + `uppercase` + `extrabold`.
+  - **Variante Compact**: Usar dentro de modales pequeños o dropdowns, eliminando el padding excesivo y reduciendo el icono.
 
 ## 3. IndustrialCard & BaseModal
 Contenedores unificados que definen la jerarquía visual del sistema.

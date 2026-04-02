@@ -65,7 +65,8 @@ export function AccountForm({
     triggerText = "Nueva Cuenta",
     triggerVariant = "default",
     open: openProp,
-    onOpenChange
+    onOpenChange,
+    auditSidebar
 }: AccountFormProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen

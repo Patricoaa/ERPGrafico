@@ -58,23 +58,36 @@ export function ReconciliationDashboard() {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-end gap-2">
+        <div className="space-y-6">
+            {/* Level 1: Primary Actions */}
+            <div className="flex items-center justify-end px-1">
+                <Button 
+                    variant="outline" 
+                    onClick={handleExport}
+                    className="h-9 px-4 font-black uppercase tracking-widest text-[10px] border-border/60 hover:bg-muted/50 transition-all rounded-[0.25rem]"
+                >
+                    <Download className="mr-2 h-3.5 w-3.5" />
+                    Exportar reporte consolidado
+                </Button>
+            </div>
+
+            {/* Level 2: Filters & Account Selection */}
+            <div className="flex items-center justify-between gap-4 px-1 pb-2 border-b border-border/10">
+                <div className="flex flex-col gap-0.5">
+                    <h2 className="text-xl font-black tracking-tight text-foreground/80 uppercase">Dashboard de Tesorería</h2>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">Monitoreo de flujo y conciliación</p>
+                </div>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px] h-9 rounded-[0.25rem] border-border/40 font-bold uppercase text-[10px] tracking-wider">
                         <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todas las cuentas</SelectItem>
+                        <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
                         {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
+                            <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">{acc.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={handleExport}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar Reporte
-                </Button>
             </div>
 
             <DashboardKPIs data={stats} loading={loading} />

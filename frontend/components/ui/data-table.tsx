@@ -21,19 +21,14 @@ import {
     Table as ReactTable,
 } from "@tanstack/react-table"
 
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { SearchX } from "lucide-react"
+import { SearchX, CheckCircle2, ChevronRight, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -73,6 +68,12 @@ interface DataTableProps<TData, TValue> {
     hidePagination?: boolean
     toolbarClassName?: string
     noBorder?: boolean
+    batchActions?: React.ReactNode
+    viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
+    currentView?: string
+    onViewChange?: (view: string) => void
+    showColumnToggle?: boolean
+    renderFooter?: (table: ReactTable<TData>) => React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -124,6 +125,12 @@ export function DataTable<TData, TValue>({
     hidePagination = false,
     toolbarClassName,
     noBorder = false,
+    batchActions,
+    viewOptions,
+    currentView,
+    onViewChange,
+    showColumnToggle,
+    renderFooter,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [expanded, setExpanded] = React.useState<ExpandedState>({})
@@ -200,20 +207,28 @@ export function DataTable<TData, TValue>({
                         <TableRow
                             data-state={row.getIsSelected() && "selected"}
                             className={cn(
-                                "hover:bg-muted/20 transition-colors",
-                                onRowClick && "cursor-pointer"
+                                "group border-b border-border/40 hover:bg-muted/50 transition-all",
+                                onRowClick && "cursor-pointer",
+                                row.getIsSelected() && "bg-primary/5"
                             )}
                             onClick={() => onRowClick?.(row.original)}
                         >
                             {row.getVisibleCells().map((cell) => (
-                                <TableCell key={cell.id} className="py-3">
+                                <TableCell 
+                                    key={cell.id} 
+                                    className="py-4"
+                                    style={{ 
+                                        width: cell.column.getSize(),
+                                        minWidth: cell.column.columnDef.minSize
+                                    }}
+                                >
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </TableCell>
                             ))}
                         </TableRow>
                         {row.getIsExpanded() && renderSubComponent && (
                             <TableRow>
-                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 bg-muted/30">
                                     {renderSubComponent(row)}
                                 </TableCell>
                             </TableRow>
@@ -227,8 +242,7 @@ export function DataTable<TData, TValue>({
                         className="h-24 p-0"
                     >
                         <EmptyState
-                            icon={SearchX}
-                            title="No se encontraron resultados"
+                            context="search"
                             description="Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."
                         />
                     </TableCell>
@@ -236,11 +250,13 @@ export function DataTable<TData, TValue>({
             )
         )
 
+        const selectedRows = table.getSelectedRowModel().rows
+
         return (
-            <Card>
-                {/* Flat toolbar — no divider line, padding only */}
+            <div className="relative space-y-4">
+                {/* Toolbar Section (Outside) */}
                 {showToolbar && (
-                    <div className={toolbarClassName}>
+                    <div className={cn("px-1", toolbarClassName)}>
                         <DataTableToolbar
                             table={table}
                             filterColumn={filterColumn}
@@ -252,51 +268,87 @@ export function DataTable<TData, TValue>({
                             onReset={onReset}
                             rightAction={rightAction}
                             showToolbarSort={showToolbarSort}
+                            viewOptions={viewOptions}
+                            currentView={currentView}
+                            onViewChange={onViewChange}
+                            showColumnToggle={showColumnToggle}
+                            batchActions={batchActions && selectedRows.length > 0 ? (
+                                <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-[0.25rem] shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div className="flex items-center gap-2 pr-3 border-r border-white/20">
+                                        <div className="bg-primary p-0.5 rounded-full">
+                                            <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                                        </div>
+                                        <span className="text-[10px] font-black font-heading uppercase tracking-wider">{selectedRows.length} Seleccionados</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 grayscale hover:grayscale-0 transition-all">
+                                        {batchActions}
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            onClick={() => table.toggleAllRowsSelected(false)}
+                                            className="h-6 w-6 hover:bg-white/10 text-white/50 hover:text-white rounded-[0.125rem]"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : null}
                         />
                     </div>
                 )}
 
-                <CardContent className="px-4 pb-0">
-                    {renderCustomView ? (
-                        renderCustomView(table)
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow
-                                        key={headerGroup.id}
-                                        className="border-b border-border/50 hover:bg-transparent"
-                                    >
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead
-                                                key={header.id}
-                                                className="bg-transparent h-9 text-center"
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {tableBody}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
+                <IndustrialCard variant="industrial">
+                    <div className="px-1 overflow-x-auto">
+                        {renderCustomView ? (
+                            <div className="p-4">{renderCustomView(table)}</div>
+                        ) : (
+                            <Table>
+                                <TableHeader className="bg-transparent">
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow
+                                            key={headerGroup.id}
+                                            className="border-b-2 border-border/60 hover:bg-transparent"
+                                        >
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead
+                                                    key={header.id}
+                                                    className="h-12"
+                                                    style={{ 
+                                                        width: header.column.getSize(),
+                                                        minWidth: header.column.columnDef.minSize
+                                                    }}
+                                                >
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {tableBody}
+                                </TableBody>
+                                {renderFooter && (
+                                    <TableFooter className="bg-muted/50 border-t-2">
+                                        {renderFooter(table)}
+                                    </TableFooter>
+                                )}
+                            </Table>
+                        )}
+                    </div>
+                </IndustrialCard>
 
-                {/* Flat pagination — subtle top border, no card divider */}
+                {/* Pagination Section (Outside) */}
                 {!hidePagination && (
-                    <div className="px-4 py-2 mt-1 border-t border-border/30">
+                    <div className="px-1">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}
-            </Card>
+            </div>
         )
     }
 
@@ -316,6 +368,17 @@ export function DataTable<TData, TValue>({
                         onReset={onReset}
                         rightAction={rightAction}
                         showToolbarSort={showToolbarSort}
+                        viewOptions={viewOptions}
+                        currentView={currentView}
+                        onViewChange={onViewChange}
+                        showColumnToggle={showColumnToggle}
+                        batchActions={batchActions && selectedRows.length > 0 ? (
+                            <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-[0.25rem] shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
+                                <span>{selectedRows.length} Sel.</span>
+                                <div className="mx-1 h-3 w-px bg-white/20" />
+                                {batchActions}
+                            </div>
+                        ) : null}
                     />
                 </div>
             )}
@@ -389,6 +452,11 @@ export function DataTable<TData, TValue>({
                                 </TableRow>
                             )}
                         </TableBody>
+                        {renderFooter && (
+                            <TableFooter className="bg-muted/50 border-t-2 font-mono">
+                                {renderFooter(table)}
+                            </TableFooter>
+                        )}
                     </Table>
                 </div>
             )}
