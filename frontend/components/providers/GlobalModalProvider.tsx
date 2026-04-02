@@ -2,20 +2,21 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 
 const WorkOrderWizard = dynamic(() => import("@/features/production/components/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
     ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Gestor de OT...</div>
+    loading: () => <LoadingFallback message="Cargando Gestor de OT..." />
 })
 
 const ContactModal = dynamic(() => import("@/features/contacts/components/ContactModal"), {
     ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Ficha...</div>
+    loading: () => <LoadingFallback message="Cargando Ficha..." />
 })
 
 const TreasuryAccountModal = dynamic(() => import("@/features/treasury/components/TreasuryAccountModal").then(mod => mod.TreasuryAccountModal), {
     ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Cuenta...</div>
+    loading: () => <LoadingFallback message="Cargando Cuenta..." />
 })
 
 interface GlobalModalActionsContextType {

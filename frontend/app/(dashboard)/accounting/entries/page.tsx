@@ -13,10 +13,9 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { formatPlainDate } from "@/lib/utils"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 interface JournalEntry {
     id: number
@@ -33,11 +32,42 @@ interface JournalEntry {
     }[]
 }
 
-export default function EntriesPage() {
+interface EntriesPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export default function EntriesPage({ externalOpen, onExternalOpenChange }: EntriesPageProps) {
     const [entries, setEntries] = useState<JournalEntry[]>([])
     const [accounts, setAccounts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    // Synchronize external modal trigger
+    useEffect(() => {
+        if (externalOpen) {
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
+
+    const handleFormOpenChange = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            onExternalOpenChange?.(false)
+            handleCloseModal()
+        }
+    }
 
     const fetchEntries = async () => {
         setLoading(true)
@@ -177,55 +207,51 @@ export default function EntriesPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Asientos Contables"
-                description="Registro cronológico de todas las transacciones contables del sistema."
-                variant="minimal"
-                iconName="file-text"
-                titleActions={
-                    <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
-                }
-            />
+        <div className="space-y-4">
+            <div className="pt-2">
+                {loading ? (
+                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
+                        Cargando asientos...
+                    </div>
+                ) : (
+                    <div className="">
+                        <DataTable
+                            columns={columns}
+                            data={entries}
+                            cardMode
+                            filterColumn="description"
+                            searchPlaceholder="Buscar por descripción..."
+                            facetedFilters={[
+                                {
+                                    column: "state",
+                                    title: "Estado",
+                                    options: [
+                                        { label: "Borrador", value: "DRAFT" },
+                                        { label: "Publicado", value: "POSTED" },
+                                    ],
+                                },
+                            ]}
+                            useAdvancedFilter={true}
+                            defaultPageSize={20}
+                        />
+                    </div>
+                )}
 
-            <div className="pt-4">
-
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando asientos...
-                </div>
-            ) : (
-                <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={entries}
-                        cardMode
-                        filterColumn="description"
-                        searchPlaceholder="Buscar por descripción..."
-                        facetedFilters={[
-                            {
-                                column: "state",
-                                title: "Estado",
-                                options: [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                ],
-                            },
-                        ]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={20}
-                    />
-                </div>
-            )}
-
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
-                    id={viewingTransaction.id}
+                <JournalEntryForm 
+                    accounts={accounts} 
+                    onSuccess={fetchEntries} 
+                    open={isFormOpen}
+                    onOpenChange={handleFormOpenChange}
                 />
-            )}
+
+                {viewingTransaction && (
+                    <TransactionViewModal
+                        open={!!viewingTransaction}
+                        onOpenChange={(open) => !open && setViewingTransaction(null)}
+                        type={viewingTransaction.type}
+                        id={viewingTransaction.id}
+                    />
+                )}
             </div>
         </div>
     )

@@ -140,20 +140,7 @@ export default function AbsencesPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Inasistencias y Licencias"
-                description="Control de ausencias, licencias médicas y permisos."
-                iconName="calendar-off"
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => router.push("?modal=new", { scroll: false })}
-                        iconName="plus"
-                        circular
-                        title="Nueva Inasistencia"
-                    />
-                }
-            />
+        <div className="space-y-4">
 
             <AbsenceDialog
                 open={dialogOpen}

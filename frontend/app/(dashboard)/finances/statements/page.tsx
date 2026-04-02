@@ -13,20 +13,13 @@ export default async function StatementsPage({ searchParams }: PageProps) {
     const activeTab = tab || "bs"
 
     const tabs = [
-        { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
-        { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
-        { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
+        { value: "bs", label: "Balance", iconName: "file-text", href: "/finances?view=statements&tab=bs" },
+        { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances?view=statements&tab=pl" },
+        { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances?view=statements&tab=cf" },
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Estados Financieros"
-                description="Reportes oficiales de Balance, P&L y Flujo de Caja."
-                iconName="clipboard-list"
-                variant="minimal"
-            />
-            
+        <div className="pt-2">
             <Tabs value={activeTab} className="space-y-4">
                 <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-sm" />
                 <StatementsView activeTab={activeTab} />

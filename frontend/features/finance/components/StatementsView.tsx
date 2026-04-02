@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label"
 import { Download, FileText, BarChart2, TrendingUp } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FinancialStatementTable } from "@/features/finances/components/FinancialStatementTable"
-import { CashFlowTable } from "@/features/finances/components/CashFlowTable"
-import { DateRangeSelector } from "@/features/finances/components/DateRangeSelector"
+import { FinancialStatementTable } from "@/features/finance/components/FinancialStatementTable"
+import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
+import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'
@@ -196,26 +196,20 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Estados Financieros</h2>
-                    <p className="text-muted-foreground">Consulta el balance, resultados y flujos de tu empresa.</p>
+            <div className="flex flex-wrap items-center justify-end gap-4">
+                <div className="flex items-center space-x-2 border-l pl-4">
+                    <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
+                    <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center space-x-2 border-l pl-4">
-                        <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
-                        <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
-                    </div>
 
-                    <div className="flex items-center space-x-2">
-                        <DateRangeSelector date={date} onDateChange={setDate} />
-                        {showComparison && (
-                            <div className="flex items-center space-x-2 border-l pl-4">
-                                <span className="text-xs text-muted-foreground">vs</span>
-                                <DateRangeSelector date={compDate} onDateChange={setCompDate} />
-                            </div>
-                        )}
-                    </div>
+                <div className="flex items-center space-x-2">
+                    <DateRangeSelector date={date} onDateChange={setDate} />
+                    {showComparison && (
+                        <div className="flex items-center space-x-2 border-l pl-4">
+                            <span className="text-xs text-muted-foreground">vs</span>
+                            <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,43 +1,50 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Receipt, ShoppingCart, TrendingUp } from "lucide-react"
-import Link from "next/link"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Tabs } from "@/components/ui/tabs"
 
-export default function BillingPage() {
+// Lazy load feature components
+const SalesInvoicesClientView = lazy(() => import("@/features/billing/components/SalesInvoicesClientView").then(m => ({ default: m.SalesInvoicesClientView })))
+const PurchaseInvoicesClientView = lazy(() => import("@/features/billing/components/PurchaseInvoicesClientView").then(m => ({ default: m.PurchaseInvoicesClientView })))
+
+export const metadata: Metadata = {
+    title: "Módulo de Facturación | ERPGrafico",
+    description: "Gestión centralizada de documentos electrónicos emitidos y recibidos.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string }>
+}
+
+export default async function BillingPage({ searchParams }: PageProps) {
+    const { view } = await searchParams
+    const viewMode = (view as 'sales' | 'purchases') || 'sales'
+
+    const tabs = [
+        { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing?view=sales" },
+        { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing?view=purchases" },
+    ]
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Facturación"
-                description="Gestión integral de documentos electrónicos emitidos y recibidos."
+                title={viewMode === 'sales' ? "Facturación de Ventas" : "Facturación de Compras"}
+                description="Control de documentos electrónicos, estados de pago y cumplimiento tributario."
+                iconName={viewMode === 'sales' ? "receipt" : "file-badge"}
                 variant="minimal"
-                iconName="receipt"
+                configHref="/settings/billing"
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
-                <Link href="/billing/sales">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-emerald-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ventas (Emitidos)</CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Documentos</div>
-                            <p className="text-xs text-muted-foreground">Facturas, Boletas y Notas</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/billing/purchases">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-blue-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Compras (Recibidos)</CardTitle>
-                            <Receipt className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Proveedores</div>
-                            <p className="text-xs text-muted-foreground">Registro de facturas recibidas</p>
-                        </CardContent>
-                    </Card>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-2">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'sales' && <SalesInvoicesClientView />}
+                    {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
+                </Suspense>
             </div>
         </div>
     )

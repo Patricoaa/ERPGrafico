@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 export interface PaymentMethodValue {
     methodType: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
@@ -162,9 +163,7 @@ export function PaymentMethodSelector({
 
     if (availableTypes.length === 0) {
         return (
-            <div className="p-4 border border-dashed rounded-xl text-center text-muted-foreground text-sm">
-                No hay métodos de pago disponibles para esta operación.
-            </div>
+            <EmptyState context="finance" variant="compact" description="No hay métodos de pago disponibles para esta operación" />
         )
     }
 

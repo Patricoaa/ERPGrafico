@@ -17,6 +17,8 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 
+import { useSearchParams, usePathname } from "next/navigation"
+
 interface Budget {
     id: number
     name: string
@@ -25,8 +27,15 @@ interface Budget {
     description?: string
 }
 
-export function BudgetsListView() {
+interface BudgetsListViewProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsListViewProps) {
     const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
     const [budgets, setBudgets] = useState<Budget[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -38,6 +47,27 @@ export function BudgetsListView() {
         end_date: `${new Date().getFullYear()}-12-31`,
         description: ""
     })
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    // Synchronize external modal trigger
+    useEffect(() => {
+        if (externalOpen) {
+            setIsCreateOpen(true)
+        }
+    }, [externalOpen])
+
+    const handleCreateOpenChange = (open: boolean) => {
+        setIsCreateOpen(open)
+        if (!open) {
+            onExternalOpenChange?.(false)
+            handleCloseModal()
+        }
+    }
 
     // Edit Modal State
     const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -65,6 +95,7 @@ export function BudgetsListView() {
             await api.post("/accounting/budgets/", newBudget)
             toast.success("Presupuesto creado exitosamente")
             setIsCreateOpen(false)
+            handleCreateOpenChange(false) // Ensure clean closure
             loadBudgets()
             setNewBudget({ name: "", start_date: "", end_date: "", description: "" })
         } catch (err) {
@@ -145,19 +176,6 @@ export function BudgetsListView() {
 
     return (
         <div className="space-y-6">
-            <PageHeader
-                title="Presupuestos"
-                description="Gestiona y monitorea los presupuestos anuales y su ejecución."
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => setIsCreateOpen(true)}
-                        icon={Plus}
-                        circular
-                        title="Nuevo Presupuesto"
-                    />
-                }
-            />
-
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -191,7 +209,7 @@ export function BudgetsListView() {
             {/* Create Modal */}
             <BaseModal
                 open={isCreateOpen}
-                onOpenChange={setIsCreateOpen}
+                onOpenChange={handleCreateOpenChange}
                 size="md"
                 title="Crear Nuevo Presupuesto"
                 footer={

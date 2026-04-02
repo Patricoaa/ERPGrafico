@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -91,7 +91,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
     }, [externalOpen])
 
-    const columns: ColumnDef<Category>[] = [
+    const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
             id: "icon",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" />,
@@ -132,7 +132,8 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 </div>
             ),
         },
-    ]
+    ], [])
+
 
     return (
         <div className="space-y-4">
@@ -157,7 +158,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                         handleCloseModal()
                     }
                 }}
-                initialData={editingCategory}
+                initialData={editingCategory || undefined}
             />
 
             <ActionConfirmModal

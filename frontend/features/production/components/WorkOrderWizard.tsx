@@ -50,6 +50,8 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -73,7 +75,7 @@ import { RectificationStep } from "./steps/RectificationStep"
 
 const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
-    loading: () => <div className="p-4 text-center">Cargando Formulario...</div>
+    loading: () => <LoadingFallback message="Cargando formulario..." />
 })
 
 // File validation constants
@@ -768,7 +770,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         ))}
                                                                         {(!order?.materials || order.materials.filter((m: any) => !m.is_outsourced).length === 0) && (
                                                                             <tr>
-                                                                                <td colSpan={6} className="p-8 text-center text-muted-foreground italic">No hay materiales de stock asignados.</td>
+                                                                                <td colSpan={6} className="p-0">
+                                                                                    <EmptyState context="inventory" variant="compact" description="No hay materiales de stock asignados" />
+                                                                                </td>
                                                                             </tr>
                                                                         )}
                                                                     </tbody>

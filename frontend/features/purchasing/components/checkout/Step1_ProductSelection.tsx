@@ -17,6 +17,7 @@ import { UoMSelector } from "@/components/selectors/UoMSelector"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PricingUtils } from "@/lib/pricing"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 interface Step1_ProductSelectionProps {
     orderLines: any[]
@@ -292,8 +293,8 @@ export function Step1_ProductSelection({
                         ))}
                         {orderLines.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                                    No hay productos seleccionados.
+                                <TableCell colSpan={6} className="p-0">
+                                    <EmptyState context="inventory" variant="compact" description="No hay productos seleccionados" />
                                 </TableCell>
                             </TableRow>
                         )}

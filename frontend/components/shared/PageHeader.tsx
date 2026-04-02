@@ -7,6 +7,7 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { LucideIcon, Loader2, Check, CloudUpload, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import Link from "next/link"
 
 export type PageHeaderStatusType = 'synced' | 'saving' | 'error' | 'warning' | 'info'
 
@@ -40,6 +41,11 @@ interface PageHeaderProps {
     variant?: 'default' | 'minimal'
     /** Right-side action area for buttons and controls */
     children?: React.ReactNode
+    /** 
+     * Optional URL for a configuration page. 
+     * If provided, a settings gear icon will appear in titleActions.
+     */
+    configHref?: string
     /** Additional CSS classes for the container */
     className?: string
 }
@@ -57,6 +63,7 @@ export function PageHeader({
     isLoading,
     status,
     variant = 'default',
+    configHref,
     children, 
     className 
 }: PageHeaderProps) {
@@ -133,6 +140,7 @@ export function PageHeader({
                                 )}
                             </AnimatePresence>
 
+
                             {/* Title Actions Slot */}
                             {titleActions && !isLoading && (
                                 <motion.div
@@ -167,7 +175,7 @@ export function PageHeader({
             </div>
 
             {/* Right Side Actions Area */}
-            {children && (
+            {(children || configHref) && (
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -175,6 +183,21 @@ export function PageHeader({
                     className="flex items-center gap-2 relative z-10 shrink-0 self-center md:self-end"
                 >
                     {children}
+                    
+                    {configHref && !isLoading && (
+                        <div className="flex items-center ml-2 pl-2 border-l border-border/50">
+                            <Link href={configHref}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300"
+                                    title="Configuración de Módulo"
+                                >
+                                    <DynamicIcon name="settings" className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </motion.div>
             )}
         </div>
@@ -186,14 +209,15 @@ interface PageHeaderButtonProps extends React.ComponentProps<typeof Button> {
     iconName?: string
     label?: string
     circular?: boolean
+    href?: string
 }
 
 /**
  * A consistent button for the PageHeader.
  * Supports a "circular" variant for icon-only buttons.
  */
-export function PageHeaderButton({ icon: Icon, iconName, label, circular, className, ...props }: PageHeaderButtonProps) {
-    return (
+export function PageHeaderButton({ icon: Icon, iconName, label, circular, href, className, title, ...props }: PageHeaderButtonProps) {
+    const button = (
         <Button
             className={cn(
                 "transition-all duration-300",
@@ -202,6 +226,7 @@ export function PageHeaderButton({ icon: Icon, iconName, label, circular, classN
                     : "rounded-lg px-4",
                 className
             )}
+            title={title}
             {...props}
         >
             {iconName ? (
@@ -212,4 +237,14 @@ export function PageHeaderButton({ icon: Icon, iconName, label, circular, classN
             {label && <span>{label}</span>}
         </Button>
     )
+
+    if (href) {
+        return (
+            <Link href={href} scroll={false}>
+                {button}
+            </Link>
+        )
+    }
+
+    return button
 }

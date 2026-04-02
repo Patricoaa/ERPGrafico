@@ -1,5 +1,5 @@
 
-import { BudgetDetailView } from "@/features/finances/components/BudgetDetailView"
+import { BudgetDetailView } from "@/features/finance/components/BudgetDetailView"
 
 interface PageProps {
     params: Promise<{ id: string }>

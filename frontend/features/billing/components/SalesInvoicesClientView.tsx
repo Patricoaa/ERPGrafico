@@ -228,13 +228,7 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Documentos Emitidos"
-                description="Gestión de facturas y boletas de venta"
-                variant="minimal"
-                iconName="receipt"
-            />
+        <div className="space-y-4 px-1">
 
             <DataTable
                 columns={columns}

@@ -1,19 +1,18 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Search, Plus, Book, Trash2, Pencil } from "lucide-react"
+import { Trash2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { AccountForm } from "@/features/finance/components/AccountForm"
 import { DataManagement } from "@/components/shared/DataManagement"
 import { LedgerModal } from "@/features/accounting/components/LedgerModal"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -21,13 +20,29 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 
+interface AccountsClientViewProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
 
-
-const typeOrder = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE']
-
-export function AccountsClientView() {
+export function AccountsClientView({ externalOpen, onExternalOpenChange }: AccountsClientViewProps) {
     const { accounts, refetch, deleteAccount } = useAccounts()
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
+
+    // Synchronize external modal trigger
+    useEffect(() => {
+        if (externalOpen) {
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
+
+    const handleFormOpenChange = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open && onExternalOpenChange) {
+            onExternalOpenChange(false)
+        }
+    }
 
     const handleDelete = async (id: number) => {
         setDeleteTarget(id)
@@ -45,26 +60,30 @@ export function AccountsClientView() {
     }
 
     const handleExport = async () => {
-        const res = await api.get("/accounting/accounts/")
-        const data = res.data.results || res.data
-        if (!data || data.length === 0) {
-            toast.error("No hay datos para exportar")
-            return
+        try {
+            const res = await api.get("/accounting/accounts/")
+            const data = res.data.results || res.data
+            if (!data || data.length === 0) {
+                toast.error("No hay datos para exportar")
+                return
+            }
+            const headers = Object.keys(data[0]).join(',')
+            const csv = data.map((row: Record<string, unknown>) =>
+                Object.values(row).map(val =>
+                    typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
+                ).join(',')
+            ).join('\n')
+            const blob = new Blob([`${headers}\n${csv}`], { type: 'text/csv;charset=utf-8;' })
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.setAttribute('download', 'plan-de-cuentas.csv')
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            toast.success("Datos exportados correctamente")
+        } catch (error) {
+            toast.error("Error al exportar datos")
         }
-        const headers = Object.keys(data[0]).join(',')
-        const csv = data.map((row: Record<string, unknown>) =>
-            Object.values(row).map(val =>
-                typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-            ).join(',')
-        ).join('\n')
-        const blob = new Blob([`${headers}\n${csv}`], { type: 'text/csv;charset=utf-8;' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.setAttribute('download', 'plan-de-cuentas.csv')
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        toast.success("Datos exportados correctamente")
     }
 
     const handleImport = async (formData: FormData) => {
@@ -72,8 +91,6 @@ export function AccountsClientView() {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
     }
-
-
 
     const columns: ColumnDef<Account>[] = [
         {
@@ -105,7 +122,7 @@ export function AccountsClientView() {
             cell: ({ row }) => (
                 <div className="text-right">
                     <MoneyDisplay 
-                        amount={parseFloat(row.getValue("debit_total"))} 
+                        amount={parseFloat(row.getValue("debit_total") || "0")} 
                         showColor={false}
                         className="text-muted-foreground font-normal"
                     />
@@ -120,7 +137,7 @@ export function AccountsClientView() {
             cell: ({ row }) => (
                 <div className="text-right">
                     <MoneyDisplay 
-                        amount={parseFloat(row.getValue("credit_total"))} 
+                        amount={parseFloat(row.getValue("credit_total") || "0")} 
                         showColor={false}
                         className="text-muted-foreground font-normal"
                     />
@@ -135,7 +152,7 @@ export function AccountsClientView() {
             cell: ({ row }) => (
                 <div className="text-right">
                     <MoneyDisplay 
-                        amount={parseFloat(row.getValue("balance"))} 
+                        amount={parseFloat(row.getValue("balance") || "0")} 
                         className="font-bold"
                     />
                 </div>
@@ -176,26 +193,22 @@ export function AccountsClientView() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Plan de Cuentas"
-                description="Administra la estructura de cuentas contables y su jerarquía."
-                variant="minimal"
-                iconName="list"
-                titleActions={
-                    <AccountForm accounts={accounts} onSuccess={refetch} triggerVariant="circular" />
-                }
-            >
-                <DataManagement
-                    onExport={handleExport}
-                    onImport={handleImport}
-                    onImportSuccess={refetch}
-                    exportFilename="plan-de-cuentas.csv"
-                    templateData={[
-                        { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
-                    ]}
-                />
-            </PageHeader>
+        <div className="space-y-4">
+            <div className="flex justify-between items-center py-2 px-1">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Gestión de Datos</span>
+                    <DataManagement
+                        onExport={handleExport}
+                        onImport={handleImport}
+                        onImportSuccess={refetch}
+                        exportFilename="plan-de-cuentas.csv"
+                        templateData={[
+                            { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
+                        ]}
+                    />
+                </div>
+            </div>
+
             <DataTable
                 columns={columns}
                 data={accounts}
@@ -218,6 +231,14 @@ export function AccountsClientView() {
                 useAdvancedFilter={true}
                 defaultPageSize={50}
             />
+
+            <AccountForm 
+                accounts={accounts} 
+                onSuccess={refetch} 
+                open={isFormOpen}
+                onOpenChange={handleFormOpenChange}
+            />
+
             <ActionConfirmModal
                 open={deleteTarget !== null}
                 onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}

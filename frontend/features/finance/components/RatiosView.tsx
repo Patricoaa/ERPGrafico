@@ -22,6 +22,8 @@ import {
 import api from '@/lib/api';
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { LoadingFallback } from "@/components/shared/LoadingFallback";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
 
@@ -72,8 +74,8 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
         loadData();
     }, [date, showComparison, compDate]);
 
-    if (loading) return <div className="p-8 text-center animate-pulse">Cargando análisis financiero...</div>;
-    if (!data) return <div className="p-8 text-center text-muted-foreground">No hay datos disponibles</div>;
+    if (loading) return <LoadingFallback message="Cargando análisis financiero..." />;
+    if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const structureData = [
         { name: 'Pasivos', value: data.structure.total_liabilities },

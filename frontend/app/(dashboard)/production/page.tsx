@@ -1,46 +1,89 @@
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Printer, ClipboardList, PenTool } from "lucide-react"
-import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Tabs } from "@/components/ui/tabs"
 
-export default function ProductionPage() {
+// Lazy load feature components
+const WorkOrdersView = lazy(() => import("@/app/(dashboard)/production/orders/page").then(m => ({ default: m.default })))
+const BOMsView = lazy(() => import("@/app/(dashboard)/production/boms/page").then(m => ({ default: m.default })))
+
+export const metadata: Metadata = {
+    title: "Módulo de Producción | ERPGrafico",
+    description: "Gestión centralizada de órdenes de trabajo, planificación y listas de materiales.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string }>
+}
+
+export default async function ProductionPage({ searchParams }: PageProps) {
+    const { view } = await searchParams
+    const viewMode = (view as 'orders' | 'boms') || 'orders'
+
+    const tabs = [
+        { value: "orders", label: "Órdenes de Trabajo", iconName: "clipboard-list", href: "/production?view=orders" },
+        { value: "boms", label: "Lista de Materiales", iconName: "layers", href: "/production?view=boms" },
+    ]
+
+    const getHeaderConfig = () => {
+        switch (viewMode) {
+            case 'orders':
+                return {
+                    title: "Centro de Producción",
+                    description: "Gestión de procesos fabriles, órdenes de trabajo y seguimiento.",
+                    icon: "factory",
+                    action: (
+                        <PageHeaderButton
+                            href="/production?view=orders&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nueva OT"
+                        />
+                    )
+                }
+            case 'boms':
+                return {
+                    title: "Fichas Técnicas (BOM)",
+                    description: "Estructuras de productos, componentes y costos de fabricación.",
+                    icon: "layers",
+                    action: (
+                        <PageHeaderButton
+                            href="/production?view=boms&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nueva Lista"
+                        />
+                    )
+                }
+            default:
+                return { title: "Producción", description: "Módulo de gestión productiva.", icon: "factory", action: null }
+        }
+    }
+
+    const { title, description, icon, action } = getHeaderConfig()
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Producción"
-                description="Gestión de órdenes de trabajo, planificación y control de procesos productivos."
-                iconName="pen-tool"
+                title={title}
+                description={description}
+                iconName={icon as any}
+                variant="minimal"
+                configHref="/settings/production"
+                titleActions={action}
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/production/orders">
-                    <IndustrialCard variant="industrial" className="hover:bg-accent transition-colors cursor-pointer border-t-orange-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ordenes de Trabajo</CardTitle>
-                            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Gestión OTs</div>
-                            <p className="text-xs text-muted-foreground">Listado de trabajos</p>
-                        </CardContent>
-                    </IndustrialCard>
-                </Link>
-                {/* Placeholder for future features */}
-                <Link href="/production/orders">
-                    <IndustrialCard variant="industrial" className="hover:bg-accent transition-colors cursor-pointer opacity-50">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Planificación</CardTitle>
-                            <Printer className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Calendario</div>
-                            <p className="text-xs text-muted-foreground">Próximamente</p>
-                        </CardContent>
-                    </IndustrialCard>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-2">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'orders' && <WorkOrdersView />}
+                    {viewMode === 'boms' && <BOMsView />}
+                </Suspense>
             </div>
         </div>
     )
 }
-

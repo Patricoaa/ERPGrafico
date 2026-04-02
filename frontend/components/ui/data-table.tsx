@@ -148,11 +148,16 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(visibilityState)
     const [rowSelection, setRowSelection] = React.useState({})
 
+    // Sync column visibility when initialColumnVisibility prop changes
     React.useEffect(() => {
-        if (JSON.stringify(columnVisibility) !== JSON.stringify(initialColumnVisibility)) {
-            setColumnVisibility(initialColumnVisibility)
+        const currentString = JSON.stringify(columnVisibility)
+        const initialString = JSON.stringify(initialColumnVisibility)
+        
+        if (currentString !== initialString) {
+            setColumnVisibility(initialColumnVisibility || DEFAULT_COLUMN_VISIBILITY)
         }
-    }, [initialColumnVisibility])
+    }, [initialColumnVisibility, columnVisibility]) // Added columnVisibility to deps for safety, but with string check to prevent loops
+
 
     const prevRowSelection = React.useRef(rowSelection)
     React.useEffect(() => {

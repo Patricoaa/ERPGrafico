@@ -1,56 +1,167 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Truck, BarChart } from "lucide-react"
-import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
-
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import Link from "next/link"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 
-export default function InventoryPage() {
+// Lazy load feature components
+const ProductList = lazy(() => import("@/features/inventory/components/ProductList").then(m => ({ default: m.ProductList })))
+const CategoryList = lazy(() => import("@/features/inventory/components/CategoryList").then(m => ({ default: m.CategoryList })))
+const PricingRuleList = lazy(() => import("@/features/inventory/components/PricingRuleList").then(m => ({ default: m.PricingRuleList })))
+const StockReport = lazy(() => import("@/features/inventory/components/StockReport").then(m => ({ default: m.StockReport })))
+const MovementList = lazy(() => import("@/features/inventory/components/MovementList").then(m => ({ default: m.MovementList })))
+const WarehouseList = lazy(() => import("@/features/inventory/components/WarehouseList").then(m => ({ default: m.WarehouseList })))
+const UoMsView = lazy(() => import("@/features/inventory/components/UoMsView").then(m => ({ default: m.UoMsView })))
+const AttributeManager = lazy(() => import("@/features/inventory/components/AttributeManager").then(m => ({ default: m.AttributeManager })))
+
+export const metadata: Metadata = {
+    title: "Módulo de Inventario | ERPGrafico",
+    description: "Gestión centralizada de productos, existencias, almacenes y configuración.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; sub?: string; modal?: string }>
+}
+
+export default async function InventoryPage({ searchParams }: PageProps) {
+    const { view, sub, modal } = await searchParams
+    const viewMode = (view as 'products' | 'stock' | 'uoms' | 'attributes') || 'products'
+    const subView = sub || (viewMode === 'products' ? 'items' : viewMode === 'stock' ? 'report' : 'units')
+    const isModalOpen = modal === 'new' || modal === 'adjustment'
+
+    const tabs = [
+        { value: "products", label: "Productos", iconName: "package", href: "/inventory?view=products" },
+        { value: "stock", label: "Existencias", iconName: "warehouse", href: "/inventory?view=stock" },
+        { value: "uoms", label: "Unidades", iconName: "scale", href: "/inventory?view=uoms" },
+        { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory?view=attributes" },
+    ]
+
+    const getHeaderConfig = () => {
+        if (viewMode === 'products') {
+            const labels: Record<string, string> = { items: 'Productos', categories: 'Categorías', 'pricing-rules': 'Reglas' }
+            return {
+                title: "Gestión de Productos",
+                description: "Control de catálogo, categorías y precios.",
+                actionTitle: labels[subView] ? `Nuevo ${labels[subView]}` : "Nuevo",
+                actionHref: `/inventory?view=products&sub=${subView}&modal=new`,
+                showAction: true
+            }
+        }
+        if (viewMode === 'stock') {
+            return {
+                title: "Control de Existencias",
+                description: "Monitoreo de stock, movimientos y bodegas.",
+                actionTitle: subView === 'movements' ? "Nuevo Ajuste" : subView === 'warehouses' ? "Nuevo Almacén" : "",
+                actionHref: `/inventory?view=stock&sub=${subView}&modal=${subView === 'movements' ? 'adjustment' : 'new'}`,
+                showAction: subView !== 'report'
+            }
+        }
+        if (viewMode === 'uoms') {
+            const labels: Record<string, string> = { units: 'Unidad', categories: 'Categoría' }
+            return {
+                title: "Unidades de Medida",
+                description: "Gestión de unidades y conversiones.",
+                actionTitle: labels[subView] ? `Nueva ${labels[subView]}` : "Nuevo",
+                actionHref: `/inventory?view=uoms&sub=${subView}&modal=new`,
+                showAction: true
+            }
+        }
+        if (viewMode === 'attributes') {
+            return {
+                title: "Atributos de Variantes",
+                description: "Gestión de atributos para variaciones.",
+                actionTitle: "Nuevo Atributo",
+                actionHref: "/inventory?view=attributes&modal=new",
+                showAction: true
+            }
+        }
+        return { title: "Inventario", description: "", showAction: false }
+    }
+
+    const config = getHeaderConfig()
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Inventario"
-                description="Gestión centralizada de productos, existencias y almacenes."
-                variant="minimal"
+                title={config.title}
+                description={config.description}
                 iconName="package"
+                variant="minimal"
+                configHref="/settings/inventory"
+                titleActions={config.showAction && config.actionHref && (
+                    <Link href={config.actionHref}>
+                        <PageHeaderButton
+                            iconName="plus"
+                            circular
+                            title={config.actionTitle}
+                        />
+                    </Link>
+                )}
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
-                <Link href="/inventory/products">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-yellow-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Productos</CardTitle>
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Maestro</div>
-                            <p className="text-xs text-muted-foreground">Gestionar catálogo</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/inventory/stock">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Kardex</CardTitle>
-                            <BarChart className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Movimientos</div>
-                            <p className="text-xs text-muted-foreground">Entradas y salidas</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/inventory/stock">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Almacén</CardTitle>
-                            <Truck className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Ubicaciones</div>
-                            <p className="text-xs text-muted-foreground">Gestión física</p>
-                        </CardContent>
-                    </Card>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-4">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'products' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "items", label: "Catálogo", iconName: "package", href: "/inventory?view=products&sub=items" },
+                                    { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=products&sub=categories" },
+                                    { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory?view=products&sub=pricing-rules" },
+                                ]} 
+                                activeValue={subView} 
+                            />
+                            <div className="pt-2">
+                                {subView === 'items' && <ProductList externalOpen={modal === 'new'} />}
+                                {subView === 'categories' && <CategoryList externalOpen={modal === 'new'} />}
+                                {subView === 'pricing-rules' && <PricingRuleList externalOpen={modal === 'new'} />}
+                            </div>
+                        </div>
+                    )}
+
+                    {viewMode === 'stock' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory?view=stock&sub=report" },
+                                    { value: "movements", label: "Movimientos", iconName: "arrow-left-right", href: "/inventory?view=stock&sub=movements" },
+                                    { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory?view=stock&sub=warehouses" },
+                                ]} 
+                                activeValue={subView} 
+                            />
+                            <div className="pt-2">
+                                {subView === 'report' && <StockReport />}
+                                {subView === 'movements' && <MovementList externalOpen={modal === 'adjustment'} />}
+                                {subView === 'warehouses' && <WarehouseList externalOpen={modal === 'new'} />}
+                            </div>
+                        </div>
+                    )}
+
+                    {viewMode === 'uoms' && (
+                        <div className="space-y-4">
+                            <PageTabs 
+                                tabs={[
+                                    { value: "units", label: "Unidades", iconName: "scale", href: "/inventory?view=uoms&sub=units" },
+                                    { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=uoms&sub=categories" },
+                                ]} 
+                                activeValue={subView === 'categories' ? 'categories' : 'units'} 
+                            />
+                            <div className="pt-2">
+                                <UoMsView 
+                                    activeTab={subView === 'categories' ? 'categories' : 'units'} 
+                                    externalOpen={modal === 'new'}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    
+                    {viewMode === 'attributes' && <AttributeManager externalOpen={modal === 'new'} />}
+                </Suspense>
             </div>
         </div>
     )

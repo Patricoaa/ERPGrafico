@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 // --- STEP 1: General Information ---
 
@@ -255,10 +256,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 </table>
 
                 {lines.length === 0 && (
-                    <div className="p-12 text-center text-muted-foreground">
-                        <Package className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>No se encontraron líneas disponibles en la orden original.</p>
-                    </div>
+                    <EmptyState context="inventory" variant="compact" description="No se encontraron líneas disponibles en la orden original" />
                 )}
             </div>
 

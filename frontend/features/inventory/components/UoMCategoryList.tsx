@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import api from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -35,6 +36,16 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [currentCategory, setCurrentCategory] = useState<Partial<UoMCategory>>({})
     const [isSaving, setIsSaving] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
     const fetchCategories = async () => {
         setLoading(true)
@@ -96,7 +107,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const columns: ColumnDef<UoMCategory>[] = [
+    const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
@@ -116,7 +127,8 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                 </div>
             ),
         },
-    ]
+    ], [])
+
 
     return (
         <div className="space-y-4">
@@ -133,7 +145,10 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                 open={isModalOpen}
                 onOpenChange={(open) => {
                     setIsModalOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        onExternalOpenChange?.(false)
+                        handleCloseModal()
+                    }
                 }}
                 size={currentCategory.id ? "lg" : "md"}
                 title={
