@@ -141,7 +141,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
     const ReportHeader = ({ title, dateRange }: { title: string, dateRange?: DateRange }) => (
         <div className="flex flex-col items-center text-center space-y-1 mb-8 pb-6 border-b">
-            <h2 className="text-xl font-bold text-foreground dark:text-slate-100">{title}</h2>
+            <h2 className="text-xl font-bold text-foreground dark:text-foreground">{title}</h2>
             {dateRange?.from && dateRange?.to && (
                 <p className="text-sm text-muted-foreground font-medium">
                     Período: {format(dateRange.from, 'dd MMMM yyyy', { locale: es })} al {format(dateRange.to, 'dd MMMM yyyy', { locale: es })}
@@ -170,7 +170,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <div className="h-10 w-full flex text-[10px] font-bold text-white uppercase tracking-tighter">
                     <div
                         style={{ width: `${aP}%` }}
-                        className="bg-emerald-500 flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        className="bg-success flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
                         title={`Activos: ${fmt(a)}`}
                     >
                         Activos: {fmt(a)}
@@ -275,7 +275,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                 <TabsContent value="pl" className="mt-0 outline-none">
                     {activeTab === "pl" && (
-                        <IndustrialCard variant="industrial" className="shadow-xl border-t-emerald-500 overflow-hidden">
+                        <IndustrialCard variant="industrial" className="shadow-xl border-t-success overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Estado de Resultados</CardTitle>
@@ -337,7 +337,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                 <TabsContent value="cf" className="mt-0 outline-none">
                     {activeTab === "cf" && (
-                        <IndustrialCard variant="industrial" className="shadow-xl border-t-blue-500 overflow-hidden">
+                        <IndustrialCard variant="industrial" className="shadow-xl border-t-info overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-0">
                                 <div className="invisible h-10 w-10" />
                                 <CardTitle className="text-center w-full">Flujo de Efectivo</CardTitle>

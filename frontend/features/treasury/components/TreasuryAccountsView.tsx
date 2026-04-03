@@ -137,7 +137,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const val = row.original.location
                 if (!val) return <span className="text-muted-foreground">-</span>
                 return (
-                    <div className="flex items-center gap-1.5 text-xs text-stone-600">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3 text-warning" />
                         {val}
                     </div>
@@ -151,7 +151,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const acc = row.original
                 if (!acc.custodian_name) return <span className="text-muted-foreground">-</span>
                 return (
-                    <div className="flex items-center gap-1 text-sm text-stone-600">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Shield className="h-3 w-3 text-info" />
                         {acc.custodian_name}
                     </div>

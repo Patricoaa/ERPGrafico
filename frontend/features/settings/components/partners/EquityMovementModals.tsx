@@ -245,7 +245,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
             <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+                        <AlertDialogTitle className="flex items-center gap-2 text-warning">
                             <AlertTriangle className="h-5 w-5" />
                             Confirmar Reducción de Capital
                         </AlertDialogTitle>
@@ -258,7 +258,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={handleSubmit}
-                            className="bg-amber-600 hover:bg-amber-700"
+                            className="bg-warning hover:bg-warning/90"
                         >
                             Sí, Reducir Capital
                         </AlertDialogAction>
@@ -563,7 +563,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-emerald-500" />
+                        <TrendingUp className="h-5 w-5 text-success" />
                         Aporte de Capital Efectivo
                     </DialogTitle>
                     <DialogDescription>
@@ -585,7 +585,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
                         </Select>
                         {selectedPartner && (
                             <p className="text-[10px] text-muted-foreground font-medium">
-                                Capital Pendiente (por cobrar): <span className="font-mono font-bold text-emerald-600">{formatCurrency(pendingCapital)}</span>
+                                Capital Pendiente (por cobrar): <span className="font-mono font-bold text-success">{formatCurrency(pendingCapital)}</span>
                             </p>
                         )}
                     </div>
@@ -705,7 +705,7 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-rose-500" />
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
                         Registro de Retiro Provisorio
                     </DialogTitle>
                     <DialogDescription>
@@ -727,7 +727,7 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
                         </Select>
                         {selectedPartner && (
                             <p className="text-[10px] text-muted-foreground font-medium">
-                                Acumulado en Retiros Provisorios (Deuda del Socio): <span className="font-mono font-bold text-rose-600">{formatCurrency(withdrawalsBalance)}</span>
+                                Acumulado en Retiros Provisorios (Deuda del Socio): <span className="font-mono font-bold text-destructive">{formatCurrency(withdrawalsBalance)}</span>
                             </p>
                         )}
                     </div>

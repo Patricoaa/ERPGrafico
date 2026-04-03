@@ -75,7 +75,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Wallet className="h-5 w-5 text-emerald-500" />
+                        <Wallet className="h-5 w-5 text-success" />
                         Pago Masivo de Dividendos
                     </DialogTitle>
                     <DialogDescription>
@@ -84,9 +84,9 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                 </DialogHeader>
                 
                 <div className="py-4 space-y-4">
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex flex-col items-center justify-center">
-                        <span className="text-xs uppercase font-bold text-emerald-800 opacity-80">Total a Pagar ({pendingLines.length} socios)</span>
-                        <span className="text-3xl font-mono font-bold text-emerald-600 my-1">{formatCurrency(totalPending)}</span>
+                    <div className="bg-success/5 border border-success/20 rounded-lg p-4 flex flex-col items-center justify-center">
+                        <span className="text-xs uppercase font-bold text-success opacity-80">Total a Pagar ({pendingLines.length} socios)</span>
+                        <span className="text-3xl font-mono font-bold text-success my-1">{formatCurrency(totalPending)}</span>
                     </div>
 
                     <div className="grid gap-2">
@@ -111,7 +111,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading || totalPending <= 0} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Button onClick={handleSubmit} disabled={loading || totalPending <= 0} className="bg-success hover:bg-success/90">
                         {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         <Banknote className="h-4 w-4 mr-2" />
                         Confirmar Pago

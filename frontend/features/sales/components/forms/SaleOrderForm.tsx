@@ -421,12 +421,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 {prod.product_type === 'STORABLE' && (
                                                                                     <>
                                                                                         <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
+                                                                                            (prod.current_stock || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-destructive/20 text-destructive/60"
                                                                                         )}>
                                                                                             Stock: {prod.current_stock || 0}
                                                                                         </Badge>
                                                                                         <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-success text-success" : "border-warning text-warning"
+                                                                                            (prod.qty_available || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-warning/50 text-warning bg-warning/10"
                                                                                         )}>
                                                                                             Disp: {prod.qty_available || 0}
                                                                                         </Badge>
@@ -434,13 +434,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 )}
 
                                                                                 {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-blue-400 text-blue-600">
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-info/50 text-info bg-info/10">
                                                                                         Fab: {prod.manufacturable_quantity ?? 'N/A'}
                                                                                     </Badge>
                                                                                 )}
 
                                                                                 {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-success text-success">
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-success/50 text-success bg-success/10">
                                                                                         Disponible
                                                                                     </Badge>
                                                                                 )}
@@ -475,7 +475,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                                                                             // Highlight if at max
                                                                             const currentVal = parseFloat(field.value.toString()) || 0
-                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-amber-500 text-amber-600 bg-amber-50" : ""
+                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-warning text-warning bg-warning/10" : ""
                                                                         })()
                                                                     )}
                                                                     onChange={async (e) => {

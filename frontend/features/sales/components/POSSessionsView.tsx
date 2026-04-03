@@ -142,15 +142,15 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                         {session.status === 'OPEN' ? (
                             <>
                                 <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0">
-                                    <FileText className="h-4 w-4 text-blue-500" />
+                                    <FileText className="h-4 w-4 text-info" />
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600">
+                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
                                     <Lock className="h-4 w-4" />
                                 </Button>
                             </>
                         ) : (
                             <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0">
-                                <FileText className="h-4 w-4 text-emerald-500" />
+                                <FileText className="h-4 w-4 text-success" />
                             </Button>
                         )}
                     </div>

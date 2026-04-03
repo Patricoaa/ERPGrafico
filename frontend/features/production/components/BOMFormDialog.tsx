@@ -33,6 +33,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
+import type { BOM, BOMLine } from "../types"
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -57,7 +58,8 @@ const serviceLineSchema = z.object({
     supplier: z.string().min(1, "Proveedor requerido"),
     supplier_name: z.string().optional(),
     gross_price: z.coerce.number().min(1, "Monto bruto requerido"),
-    document_type: z.string().default("FACTURA")
+    document_type: z.string().default("FACTURA"),
+    notes: z.string().optional()
 })
 
 const bomSchema = z.object({
@@ -98,14 +100,15 @@ type BOMFormValues = {
         supplier_name?: string
         gross_price: number
         document_type: string
+        notes?: string
     }[]
 }
 
 interface BOMFormDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    product?: any
-    bomToEdit?: any
+    product?: any // Keeping as any for now since Product type is in inventory and very complex
+    bomToEdit?: BOM
     onSuccess: () => void
 }
 
@@ -245,7 +248,8 @@ export function BOMFormDialog({
                         supplier: l.supplier?.toString() || "",
                         supplier_name: l.supplier_name || "",
                         gross_price: l.unit_price ? parseFloat(l.unit_price) * 1.19 : 0,
-                        document_type: l.document_type || "FACTURA"
+                        document_type: l.document_type || "FACTURA",
+                        notes: l.notes || ""
                     }))
                 })
             } else {
@@ -281,7 +285,8 @@ export function BOMFormDialog({
                 component: parseInt(l.component),
                 quantity: l.quantity,
                 uom: l.uom ? parseInt(l.uom) : null,
-                is_outsourced: false
+                is_outsourced: false,
+                notes: l.notes
             }))
 
             const servicePayloadLines = data.service_lines.map(l => ({
@@ -291,7 +296,8 @@ export function BOMFormDialog({
                 is_outsourced: true,
                 supplier: parseInt(l.supplier),
                 unit_price: Math.round(l.gross_price / 1.19),
-                document_type: l.document_type
+                document_type: l.document_type,
+                notes: l.notes
             }))
 
             const payload = {
@@ -443,7 +449,7 @@ export function BOMFormDialog({
                                             </div>
                                         ) : (
                                             <div className="p-4 text-center space-y-2">
-                                                <AlertCircle className="h-5 w-5 text-amber-500 mx-auto" />
+                                                <AlertCircle className="h-5 w-5 text-warning mx-auto" />
                                                 <p className="text-[10px] text-muted-foreground italic">No se encontraron variantes disponibles para este producto.</p>
                                             </div>
                                         )}

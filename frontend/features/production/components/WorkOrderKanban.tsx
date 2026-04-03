@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
+import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import {
@@ -16,6 +15,8 @@ import {
     CheckCircle2,
     Ban
 } from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Badge } from "@/components/ui/badge"
 
 interface KanbanProps {
     orders: any[]
@@ -25,12 +26,12 @@ interface KanbanProps {
 
 const STAGES = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', color: 'bg-secondary text-secondary-foreground', icon: Package },
-    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Materiales', color: 'bg-blue-50', icon: CheckCircle2 },
+    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Materiales', color: 'bg-info/10', icon: CheckCircle2 },
     { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-primary/10', icon: FileText },
-    { id: 'PRESS', label: 'Impresión', color: 'bg-orange-50', icon: Printer },
-    { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-cyan-50', icon: Layers },
-    { id: 'FINISHED', label: 'Finalizado', color: 'bg-green-50', icon: CheckCircle2 },
-    { id: 'CANCELLED', label: 'Anulada', color: 'bg-slate-200/50', icon: Ban },
+    { id: 'PRESS', label: 'Impresión', color: 'bg-warning/10', icon: Printer },
+    { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-info/5', icon: Layers },
+    { id: 'FINISHED', label: 'Finalizado', color: 'bg-success/10', icon: CheckCircle2 },
+    { id: 'CANCELLED', label: 'Anulada', color: 'bg-muted/50', icon: Ban },
 ]
 
 export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps) {
@@ -63,27 +64,36 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                     onClick={() => onManage(order.id)}
                                     className={cn(
                                         "cursor-pointer hover:shadow-md transition-all border-none shadow-sm",
-                                        "active:scale-95 duration-100" // Add subtle click feedback
+                                        "active:scale-95 duration-100"
                                     )}
                                 >
                                     <CardContent className="p-3 space-y-3">
-                                        <div className="flex gap-2 items-center">
+                                        <div className="flex gap-2 items-center flex-wrap">
                                             <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                                                 OT-{order.number}
                                             </span>
                                             {order.outsourcing_status === 'partial' && (
-                                                <Badge variant="secondary" className="text-[11px] bg-blue-50 text-primary border-blue-200 py-0 h-4">
-                                                    Parcial
-                                                </Badge>
+                                                <StatusBadge 
+                                                    status="PARTIAL" 
+                                                    label="Parcial" 
+                                                    size="sm" 
+                                                    className="bg-info/10 text-info border-info/20"
+                                                />
                                             )}
                                             {order.outsourcing_status === 'full' && (
-                                                <Badge variant="secondary" className="text-[11px] bg-primary/10 text-primary border-primary/20 py-0 h-4 font-bold">
-                                                    Tercerizado
-                                                </Badge>
+                                                <StatusBadge 
+                                                    status="CONFIRMED" 
+                                                    label="Tercerizado" 
+                                                    size="sm" 
+                                                    className="bg-primary/5 text-primary border-primary/10"
+                                                />
                                             )}
                                         </div>
                                         {order.status === 'FINISHED' && (
-                                            <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                                            <div className="flex items-center gap-1.5 text-success font-bold text-[10px] uppercase">
+                                                <CheckCircle2 className="h-3 w-3" />
+                                                Completada
+                                            </div>
                                         )}
 
                                         <div>
@@ -104,7 +114,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                         </div>
 
                                         {order.materials?.length === 0 && order.current_stage === 'MATERIAL_ASSIGNMENT' && (
-                                            <div className="flex items-center text-[10px] text-amber-600 bg-amber-50 p-1.5 rounded border border-amber-100">
+                                            <div className="flex items-center text-[10px] text-warning bg-warning/10 p-1.5 rounded border border-warning/20">
                                                 <AlertCircle className="mr-1 h-3 w-3" />
                                                 Sin materiales asignados
                                             </div>
@@ -118,7 +128,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                 </Card>
                             ))}
                             {stageOrders.length === 0 && (
-                                <div className="h-24 border-2 border-dashed border/50 rounded-lg flex items-center justify-center text-xs text-muted-foreground italic">
+                                <div className="h-24 border-2 border-dashed border-muted/20 rounded-lg flex items-center justify-center text-xs text-muted-foreground italic">
                                     Sin órdenes
                                 </div>
                             )}

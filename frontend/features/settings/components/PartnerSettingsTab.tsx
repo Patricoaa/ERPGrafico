@@ -125,7 +125,7 @@ export function PartnerSettingsTab() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 rounded-lg gap-1 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                className="h-8 rounded-lg gap-1 border-success/30 text-success hover:bg-success/10 hover:text-success/90"
                                 onClick={() => {
                                     setSelectedPartner({ id: p.id, name: p.name })
                                     setFixedMoveType('CAPITAL_CONTRIBUTION')
@@ -138,7 +138,7 @@ export function PartnerSettingsTab() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 rounded-lg gap-1 border-rose-500/30 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                                className="h-8 rounded-lg gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive/90"
                                 onClick={() => {
                                     setSelectedPartner({ id: p.id, name: p.name })
                                     setFixedMoveType('PARTNER_WITHDRAWAL')
@@ -227,25 +227,25 @@ export function PartnerSettingsTab() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border border-emerald-500/20 bg-emerald-50/50">
+                <Card className="shadow-sm border border-success/20 bg-success/5">
                     <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 flex items-center gap-2">
+                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-success flex items-center gap-2">
                             <ArrowUpRight className="h-3.5 w-3.5" /> Total Aportes
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-emerald-700" value={summary?.total_contributions || 0} />
+                        <DataCell.Currency className="text-2xl font-bold text-success" value={summary?.total_contributions || 0} />
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border border-rose-500/20 bg-rose-50/50">
+                <Card className="shadow-sm border border-destructive/20 bg-destructive/5">
                     <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-rose-700 flex items-center gap-2">
+                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-destructive flex items-center gap-2">
                             <ArrowDownRight className="h-3.5 w-3.5" /> Total Retiros
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-rose-700" value={summary?.total_withdrawals || 0} />
+                        <DataCell.Currency className="text-2xl font-bold text-destructive" value={summary?.total_withdrawals || 0} />
                     </CardContent>
                 </Card>
 

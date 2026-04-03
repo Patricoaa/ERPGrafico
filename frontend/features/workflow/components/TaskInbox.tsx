@@ -220,15 +220,15 @@ export function TaskInbox() {
             >
                 {/* Row 1: Task Name | Avatar */}
                 <div className="flex items-center justify-between gap-3 mb-3">
-                    <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-2">
                         {task.task_type === 'CREDIT_POS_REQUEST' ? (
                             `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
                         ) : task.task_type?.startsWith('HUB_') ? (
                             <>
-                                {task.data?.stage === 'origin' && <TrendingUp className="h-4 w-4 text-slate-300" />}
-                                {task.data?.stage === 'logistics' && <Package className="h-4 w-4 text-slate-300" />}
-                                {task.data?.stage === 'billing' && <FileText className="h-4 w-4 text-slate-300" />}
-                                {task.data?.stage === 'treasury' && <Wallet className="h-4 w-4 text-slate-300" />}
+                                {task.data?.stage === 'origin' && <TrendingUp className="h-4 w-4 text-muted-foreground/70" />}
+                                {task.data?.stage === 'logistics' && <Package className="h-4 w-4 text-muted-foreground/70" />}
+                                {task.data?.stage === 'billing' && <FileText className="h-4 w-4 text-muted-foreground/70" />}
+                                {task.data?.stage === 'treasury' && <Wallet className="h-4 w-4 text-muted-foreground/70" />}
                                 <span className="uppercase">{HUB_STAGE_LABELS[task.data?.stage as keyof typeof HUB_STAGE_LABELS] || task.data?.stage}</span>:
                                 {task.data?.prefix || (task.data?.order_type === 'purchase' ? 'OC' : 'NV')}-{task.data?.order_number}
                             </>
@@ -250,26 +250,26 @@ export function TaskInbox() {
                             {task.data?.contact_name && (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
-                                    <span className="font-medium text-slate-200">{task.data.contact_name}</span>
+                                    <span className="font-medium text-foreground">{task.data.contact_name}</span>
                                 </div>
                             )}
                             {task.data?.stage === 'logistics' ? (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">Fecha {task.data?.order_type === 'purchase' ? 'Recepción' : 'Entrega'}:</span>
-                                    <span className="font-medium text-slate-200">
+                                    <span className="font-medium text-foreground">
                                         {task.data.delivery_date ? formatShortDate(task.data.delivery_date) : 'Pendiente'}
                                     </span>
                                 </div>
                             ) : task.data?.order_total ? (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">Total Orden:</span>
-                                    <span className="font-mono font-bold text-emerald-400">
+                                    <span className="font-mono font-bold text-success">
                                         ${Number(task.data.order_total).toLocaleString('es-CL')}
                                     </span>
                                 </div>
                             ) : null}
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
-                                <span className="font-bold text-warning/90">Acción Requerida:</span>
+                                <span className="font-bold text-warning">Acción Requerida:</span>
                                 <span className="font-medium text-warning text-right">
                                     {task.data?.stage === 'logistics' && (task.data?.is_invoice ? 'Registrar Devolución' : 'Registrar Despacho')}
                                     {task.data?.stage === 'billing' && (task.data?.action_name ? `Registrar ${task.data.action_name}` : (task.data?.is_invoice ? 'Registrar Nota' : 'Registrar Factura'))}
@@ -290,9 +290,9 @@ export function TaskInbox() {
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-slate-200 transition-colors">
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                         {isCompleted ? (
-                            <span className="flex items-center gap-1 text-green-400">
+                            <span className="flex items-center gap-1 text-success">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 <span>{task.status === 'REJECTED' ? 'Rechazada' : 'Completada'}</span>
                             </span>
@@ -303,7 +303,7 @@ export function TaskInbox() {
                             </span>
                         ) : (
                             <span className="flex items-center gap-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
                                 <span>Pendiente</span>
                             </span>
                         )}
@@ -337,18 +337,18 @@ export function TaskInbox() {
                             )}
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Línea de Crédito:</span>
-                                <span className="font-mono font-bold text-emerald-400">
+                                <span className="font-mono font-bold text-success">
                                     ${Number(task.data?.explicit_credit || task.data?.credit_available || 0).toLocaleString('es-CL')}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Crédito Pre-aprobado:</span>
-                                <span className="font-mono font-bold text-blue-400">
+                                <span className="font-mono font-bold text-info">
                                     ${Number(task.data?.pos_credit || 0).toLocaleString('es-CL')}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
-                                <span className="font-bold text-warning/90">Crédito pendiente de aprobación:</span>
+                                <span className="font-bold text-warning">Crédito pendiente de aprobación:</span>
                                 <span className="font-mono font-bold text-warning underline decoration-warning/30 underline-offset-2">
                                     ${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}
                                 </span>
@@ -422,7 +422,7 @@ export function TaskInbox() {
     return (
         <div className="space-y-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-slate-900/50 p-1 border border-slate-700/50 backdrop-blur-md rounded-xl">
+                <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 border border-border/50 backdrop-blur-md rounded-xl">
                     <TabsTrigger
                         value="approvals"
                         className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"

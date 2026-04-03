@@ -15,14 +15,16 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+import type { WorkOrder, WorkOrderTask, WorkOrderStage } from "../types"
+
 interface WizardStickyFooterProps {
     isViewingCurrentStage: boolean
     onClose: () => void
-    pendingTasks: any[]
+    pendingTasks: WorkOrderTask[]
     canApproveAll: boolean
     transitioning: boolean
-    order: any
-    stages: any[]
+    order: WorkOrder | null
+    stages: WorkOrderStage[]
     viewingStepIndex: number
     actualStepIndex: number
     onBackToCurrent: () => void
@@ -131,9 +133,9 @@ export function WizardStickyFooter({
 
                         <div className="flex items-center gap-2">
                             {pendingTasks.length > 0 && !canApproveAll && (
-                                <span className="text-xs text-amber-600 flex items-center gap-1.5">
+                                <span className="text-xs text-warning flex items-center gap-1.5 font-medium">
                                     <AlertTriangle className="h-3.5 w-3.5" />
-                                    Tareas de aprobación pendientes
+                                    Tareas pendientes de otros
                                 </span>
                             )}
 
@@ -152,7 +154,7 @@ export function WizardStickyFooter({
                                             })
                                             setShowAlert(true)
                                         }}
-                                        className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                                        className="gap-2 bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20"
                                         aria-label="Rectificar y Finalizar Producción"
                                     >
                                         {transitioning ? (
@@ -216,7 +218,7 @@ export function WizardStickyFooter({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            <AlertTriangle className="h-5 w-5 text-warning" />
                             {alertConfig?.title}
                         </AlertDialogTitle>
                         <AlertDialogDescription>

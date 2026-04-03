@@ -19,13 +19,15 @@ import {
     Scale
 } from "lucide-react"
 
+import type { WorkOrder, WorkOrderMaterial } from "../../types"
+
 interface MaterialAdjustment {
     material_id: number
     actual_quantity: number
 }
 
 interface RectificationStepProps {
-    order: any
+    order: WorkOrder | null
     onChange: (materialAdjustments: MaterialAdjustment[], producedQuantity: number | null) => void
 }
 
@@ -35,7 +37,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
     // Initialize actual quantities from planned quantities
     const [actualQuantities, setActualQuantities] = useState<Record<number, string>>(() => {
         const init: Record<number, string> = {}
-        materials.forEach((m: any) => {
+        materials.forEach((m: WorkOrderMaterial) => {
             init[m.id] = String(m.quantity_planned)
         })
         return init
@@ -117,9 +119,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
             {/* Impact alert when there are changes */}
             {hasMeaningfulChanges && (
-                <Alert className="border-amber-500/30 bg-amber-500/5">
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+                <Alert className="border-warning/30 bg-warning/5">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <AlertDescription className="text-sm text-warning font-medium">
                         Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
                     </AlertDescription>
                 </Alert>
@@ -157,7 +159,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                             key={material.id}
                                             className={cn(
                                                 "border-b border-border last:border-0 transition-colors",
-                                                hasChange ? "bg-amber-500/3" : "hover:bg-muted/20"
+                                                hasChange ? "bg-warning/5" : "hover:bg-muted/20"
                                             )}
                                         >
                                             <td className="px-4 py-3">
@@ -176,20 +178,20 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                                     onChange={e => handleQuantityChange(material.id, e.target.value)}
                                                     className={cn(
                                                         "w-28 text-right h-8 text-sm ml-auto",
-                                                        hasChange && "border-amber-500 focus-visible:ring-amber-500"
+                                                        hasChange && "border-warning focus-visible:ring-warning"
                                                     )}
                                                 />
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 {diff === null || diff === 0 ? (
                                                     <span className="flex items-center justify-end gap-1 text-muted-foreground">
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                                                        <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                                                         <span className="text-xs">Sin cambios</span>
                                                     </span>
                                                 ) : (
                                                     <span className={cn(
-                                                        "flex items-center justify-end gap-1 text-xs font-medium",
-                                                        isMore ? "text-orange-500" : "text-emerald-600"
+                                                        "flex items-center justify-end gap-1 text-xs font-semibold",
+                                                        isMore ? "text-warning" : "text-success"
                                                     )}>
                                                         {isMore
                                                             ? <TrendingUp className="h-3.5 w-3.5" />
@@ -272,9 +274,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     </div>
 
                     {parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) && actualProducedQty !== "" && (
-                        <Alert className="border-amber-500/30 bg-amber-500/5 py-2.5">
-                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                            <AlertDescription className="text-xs text-amber-700 dark:text-amber-400">
+                        <Alert className="border-warning/30 bg-warning/5 py-2.5">
+                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                            <AlertDescription className="text-xs text-warning font-medium">
                                 El cambio en la cantidad producida recalculará el <strong>Costo Promedio Ponderado (WAC)</strong> del producto terminado en inventario.
                             </AlertDescription>
                         </Alert>
@@ -284,7 +286,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
             {/* No changes summary */}
             {!hasMeaningfulChanges && stockMaterials.length > 0 && (
-                <div className="flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 dark:text-emerald-500">
+                <div className="flex items-center justify-center gap-2 py-3 text-sm text-success font-medium">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>Todo producido según lo planificado. Puede finalizar sin cambios.</span>
                 </div>

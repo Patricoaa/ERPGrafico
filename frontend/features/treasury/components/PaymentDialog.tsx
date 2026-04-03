@@ -148,7 +148,7 @@ export function PaymentDialog({
                 <div className="flex w-full gap-2">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">Cancelar</Button>
                     <Button
-                        className="flex-[2] bg-emerald-600 hover:bg-emerald-700 h-12 text-lg font-bold"
+                        className="flex-[2] bg-success hover:bg-success/90 h-12 text-lg font-bold"
                         onClick={() => onConfirm({
                             paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
                             amount: paymentData.amount,
@@ -203,7 +203,7 @@ export function PaymentDialog({
                                 </SelectContent>
                             </Select>
                             {existingInvoice && (
-                                <p className="text-[10px] text-amber-600 font-medium">
+                                <p className="text-[10px] text-warning font-medium">
                                     * Documento ya registrado anteriormente
                                 </p>
                             )}
@@ -267,7 +267,7 @@ export function PaymentDialog({
                                         <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                             <FileUp className="h-3 w-3" /> Documento Adjunto
                                         </Label>
-                                        <div className="flex items-center gap-2 text-xs text-primary font-medium p-2 bg-blue-50 rounded border border-blue-100">
+                                        <div className="flex items-center gap-2 text-xs text-primary font-medium p-2 bg-primary/5 rounded border border-primary/20">
                                             <Receipt className="h-4 w-4" />
                                             <span>Documento cargado</span>
                                             {existingInvoice.document_attachment && (

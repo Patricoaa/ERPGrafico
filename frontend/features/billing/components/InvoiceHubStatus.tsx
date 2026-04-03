@@ -1,7 +1,9 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
-import { cn, translateStatus } from "@/lib/utils"
+import React from "react"
+import { Package, Receipt, Banknote, FileText } from "lucide-react"
+import { translateStatus } from "@/lib/utils"
 import { getInvoiceHubStatuses } from "@/lib/order-status-utils"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 interface InvoiceHubStatusProps {
     invoice: any
@@ -10,39 +12,15 @@ interface InvoiceHubStatusProps {
 export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
     const statuses = getInvoiceHubStatuses(invoice)
 
-    // Helper for rendering badges - copied from OrderHubStatus for consistency
-    const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {
-        const colors: Record<string, string> = {
-            success: "text-emerald-700 bg-green-500/10 border-green-600/20",
-            active: "text-primary bg-primary/10 border-blue-600/20",
-            neutral: "text-muted-foreground bg-muted/50 border-muted-foreground/20",
-            destructive: "text-destructive bg-destructive/10 border-red-600/20",
-            not_applicable: "hidden" // Or use a fainter style
-        }
-
-        if (status === 'not_applicable') return null
-
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className={cn("flex items-center justify-center w-6 h-6 rounded-full border cursor-help", colors[status] || colors.neutral)}>
-                        <Icon className="h-3 w-3" />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{tooltip}</p>
-                </TooltipContent>
-            </Tooltip>
-        )
-    }
-
     return (
         <div className="flex items-center gap-1.5">
             <TooltipProvider delayDuration={0}>
                 {/* Origin */}
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={FileText}
-                    status={statuses.origin}
+                    status={statuses.origin || 'info'}
                     tooltip={(() => {
                         if (['NOTA_CREDITO', 'NOTA_DEBITO'].includes(invoice.dte_type)) {
                             const source = invoice.corrected_invoice?.display_id || invoice.corrected_invoice?.number || "Factura"
@@ -55,15 +33,19 @@ export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
 
                 {/* Logistics */}
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Package}
-                    status={statuses.logistics}
+                    status={statuses.logistics || 'info'}
                     tooltip={statuses.logistics === 'success' ? "Logística: Completada" : statuses.logistics === 'active' ? `Logística: ${statuses.logisticsProgress}%` : "Logística: Pendiente"}
                 />
 
                 {/* Billing */}
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Receipt}
-                    status={statuses.billing}
+                    status={statuses.billing || 'info'}
                     tooltip={(() => {
                         if (['NOTA_CREDITO', 'NOTA_DEBITO'].includes(invoice.dte_type) && invoice.number && invoice.number !== 'Draft') {
                             const prefix = invoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
@@ -76,8 +58,10 @@ export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
 
                 {/* Treasury */}
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Banknote}
-                    status={statuses.treasury}
+                    status={statuses.treasury || 'info'}
                     tooltip={statuses.treasury === 'success' ? "Pagado" : statuses.treasury === 'active' ? "Pago Parcial / Pendiente TR" : "Pendiente de Pago"}
                 />
             </TooltipProvider>

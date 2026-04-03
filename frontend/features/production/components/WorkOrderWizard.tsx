@@ -1,5 +1,6 @@
 "use client"
 
+
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -72,6 +73,13 @@ import { WizardHeader } from "./WizardHeader"
 import { WizardStickyFooter } from "./WizardStickyFooter"
 import { WizardRightSidebar } from "./WizardRightSidebar"
 import { RectificationStep } from "./steps/RectificationStep"
+import type { 
+    WorkOrder, 
+    WorkOrderMaterial, 
+    WorkOrderTask, 
+    WorkOrderStage 
+} from "../types"
+
 
 const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
@@ -111,7 +119,7 @@ interface WorkOrderWizardProps {
     targetStage?: string // New prop
 }
 
-const BASE_STAGES = [
+const BASE_STAGES: WorkOrderStage[] = [
     { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', icon: Package, alwaysShow: true },
     { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Stock', icon: CheckCircle2, alwaysShow: false },
     { id: 'OUTSOURCING_ASSIGNMENT', label: 'Asignación de Tercerizados', icon: Truck, alwaysShow: true },
@@ -124,7 +132,7 @@ const BASE_STAGES = [
 ]
 
 export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, targetStage }: WorkOrderWizardProps) {
-    const [order, setOrder] = useState<any>(null)
+    const [order, setOrder] = useState<WorkOrder | null>(null)
     const [loading, setLoading] = useState(true)
     const [transitioning, setTransitioning] = useState(false)
     const [viewingStepIndex, setViewingStepIndex] = useState(0)
@@ -339,13 +347,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [open, viewingStepIndex, isViewingCurrentStage, order, actualStepIndex, transitioning, pendingTasks, canApproveAll])
 
-    const handleTransition = async (nextStageId: string, data: any = {}) => {
+    const handleTransition = async (nextStageId: string, data: any = {}) => { 
+        const currentOrder = order;
+        if (!currentOrder) return;
+
         // Validation: Materials - Removed strict requirement as per user request
         // The wizard footer already warns if no materials are assigned.
 
         // Transition Analysis
         const nextIndex = STAGES.findIndex(s => s.id === nextStageId)
-        const currentIndex = STAGES.findIndex(s => s.id === order.current_stage)
+        const currentIndex = STAGES.findIndex(s => s.id === currentOrder.current_stage)
         const isMovingForward = nextIndex > currentIndex
 
         if (isMovingForward && pendingTasks.length > 0) {
@@ -357,17 +368,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             }
         }
 
-        if (order.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
+        if (currentOrder.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
             // Validation: Check for insufficient stock items (that are not outsourced)
-            const missingStock = order.materials?.filter((m: any) => !m.is_outsourced && !m.is_available) || []
+            const missingStock = currentOrder.materials?.filter((m: any) => !m.is_outsourced && !m.is_available) || []
             if (missingStock.length > 0) {
                 toast.error(`Stock insuficiente para ${missingStock.length} componentes. Reponga stock para continuar.`)
                 return
             }
         }
 
-        if (order.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
-            const pending = order.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
+        if (currentOrder.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
+            const pending = currentOrder.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
             if (pending.length > 0 && !showPOPreview) {
                 setOutsourcedPending(pending)
                 setShowPOPreview(true)
@@ -700,7 +711,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     <div className="flex items-center gap-2">
                                                         <s.icon className="h-4 w-4" />
                                                         <span>{s.label}</span>
-                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-emerald-700" />}
+                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
                                                     </div>
                                                 </SelectItem>
                                             )
@@ -1248,9 +1259,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 />
                                             ))}
 
-                                            <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
-                                                <LayoutDashboard className="h-5 w-5 text-amber-600 shrink-0" />
-                                                <div className="text-sm text-amber-800">
+                                            <div className="p-4 bg-warning/5 border border-warning/10 rounded-lg flex gap-3">
+                                                <LayoutDashboard className="h-5 w-5 text-warning shrink-0" />
+                                                <div className="text-sm text-warning font-medium">
                                                     <p className="font-bold">Verificación de Servicios Tercerizados</p>
                                                     <p className="text-xs">Valide que todos los servicios externos hayan sido recibidos correctamente en el sistema.</p>
                                                 </div>
@@ -1266,12 +1277,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-4">
                                                                 <div className={cn(
                                                                     "h-3 w-3 rounded-full animate-pulse",
-                                                                    isReceived ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-none" : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                                                                    isReceived ? "bg-success shadow-[0_0_8px_rgba(var(--success-rgb),0.6)] animate-none" : "bg-warning shadow-[0_0_8px_rgba(var(--warning-rgb),0.6)]"
                                                                 )} />
                                                                 <div className="space-y-0.5">
                                                                     <p className="text-sm font-bold">{m.component_name}</p>
                                                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
-                                                                        <span className={cn(isReceived ? "text-emerald-700" : "text-amber-600")}>{statusLabel}</span>
+                                                                        <span className={cn(isReceived ? "text-success" : "text-warning")}>{statusLabel}</span>
                                                                         <span>•</span>
                                                                         <span>{m.supplier_name}</span>
                                                                         <span>•</span>
@@ -1293,7 +1304,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         Abrir HUB de OC
                                                                     </Button>
                                                                 )}
-                                                                <Badge variant={isReceived ? "default" : "secondary"} className={cn(isReceived ? "bg-green-500" : "")}>
+                                                                <Badge variant={isReceived ? "default" : "secondary"} className={cn(isReceived ? "bg-success hover:bg-success/90" : "")}>
                                                                     {isReceived ? <Check className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
                                                                     {isReceived ? "OK" : "Pendiente"}
                                                                 </Badge>
@@ -1458,8 +1469,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     {STAGES[viewingStepIndex]?.id === 'FINISHED' && (
                                         <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
                                             <div className="relative">
-                                                <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full scale-150 animate-pulse" />
-                                                <div className="relative bg-green-500 p-6 rounded-full shadow-lg shadow-green-500/20">
+                                                <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                                                <div className="relative bg-success p-6 rounded-full shadow-lg shadow-success/20">
                                                     <CheckCircle2 className="h-16 w-16 text-white" />
                                                 </div>
                                             </div>
@@ -1471,7 +1482,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             </div>
                                             <div className="flex gap-3">
 
-                                                <Button onClick={() => order?.sale_order && openHub({ orderId: order.sale_order, type: 'sale' })} className="gap-2 font-semibold">
+                                                <Button onClick={() => order?.sale_order?.id && openHub({ orderId: order.sale_order.id, type: 'sale' })} className="gap-2 font-semibold">
                                                     <LayoutDashboard className="h-4 w-4" />
                                                     Ir al HUB de Venta
                                                 </Button>
@@ -1502,8 +1513,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 }
                             }}
                             isMaterialApprovalIncomplete={
-                                STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
-                                order?.materials?.some((m: any) => !m.is_available)
+                                !!(STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
+                                order?.materials?.some((m: any) => !m.is_available))
                             }
                             hasMaterials={orderHasMaterials}
                             isRectificationStep={STAGES[viewingStepIndex]?.id === 'RECTIFICATION'}
@@ -1617,7 +1628,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <p>
                             ¿Está seguro de que desea <strong>ANULAR</strong> la Orden de Trabajo OT-{order?.number}?
                         </p>
-                        <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex gap-3">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg text-warning text-xs flex gap-3 font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <div className="space-y-1">
                                 <p className="font-bold">Acción con impacto financiero:</p>
@@ -1668,7 +1679,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <p>
                             ¿Está seguro de que desea retroceder a la etapa <strong>{STAGES.find(s => s.id === pendingPrevStage)?.label}</strong>?
                         </p>
-                        <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-amber-800 text-xs flex gap-3">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg text-warning text-xs flex gap-3 font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <div className="space-y-1">
                                 <p className="font-bold">Aviso de Reinicio de Aprobaciones:</p>

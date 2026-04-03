@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
+import type { TrendItem } from "../types"
 
 interface DashboardTrendChartProps {
-    data: any[]
+    data: TrendItem[]
 }
 
 export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
@@ -48,7 +49,7 @@ export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
                                                     <span className="text-[0.70rem] uppercase text-muted-foreground">
                                                         Conciliadas
                                                     </span>
-                                                    <span className="font-bold text-emerald-700">
+                                                    <span className="font-bold text-success">
                                                         {payload[1].value}
                                                     </span>
                                                 </div>

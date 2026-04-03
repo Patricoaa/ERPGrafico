@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { Badge } from "@/components/ui/badge"
 import {
     LayoutDashboard,
     CheckCircle2,
@@ -14,12 +13,11 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { cn, formatPlainDate } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 export interface OrderHubPanelProps {
     orderId?: number | null
@@ -46,7 +44,6 @@ export function OrderHubPanel({
     const { setHubTemporarilyHidden } = useHubPanel()
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
     
-    
     const { openWorkOrder } = useGlobalModals()
 
     const openDetails = (docType: string, docId: number | string) => {
@@ -58,18 +55,18 @@ export function OrderHubPanel({
     }
 
     const globalStatus = useMemo(() => {
-        if (!activeDoc) return { label: 'Cargando', variant: 'neutral', icon: MinusCircle }
+        if (!activeDoc) return { label: 'Cargando', status: 'neutral', icon: MinusCircle }
         
-        const { noteStatuses, hubStatuses, billingIsComplete, totalOTs, totalOTProgress, logisticsProgress, payments } = hubData
+        const { noteStatuses, hubStatuses, billingIsComplete, totalOTs, totalOTProgress, logisticsProgress } = hubData
         
         const docToEvaluate = isNoteMode ? activeInvoice : activeDoc
-        if (docToEvaluate?.status === 'CANCELLED') return { label: 'Anulado', variant: 'destructive', icon: XCircle }
+        if (docToEvaluate?.status === 'CANCELLED') return { label: 'Anulado', status: 'cancelled', icon: XCircle }
 
         if (isNoteMode) {
-            if (noteStatuses.isComplete) return { label: 'Completado', variant: 'success', icon: CheckCircle2 }
+            if (noteStatuses.isComplete) return { label: 'Completado', status: 'success', icon: CheckCircle2 }
             const hasProgress = noteStatuses.logistics !== 'neutral' || noteStatuses.treasury !== 'neutral'
-            if (hasProgress) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
-            return { label: 'Borrador', variant: 'neutral', icon: MinusCircle }
+            if (hasProgress) return { label: 'En Progreso', status: 'active', icon: PlayCircle }
+            return { label: 'Borrador', status: 'neutral', icon: MinusCircle }
         }
 
         const stages = []
@@ -78,10 +75,10 @@ export function OrderHubPanel({
         stages.push(billingIsComplete)
         stages.push((activeDoc.status === 'PAID' || activeDoc.payment_status === 'PAID' || parseFloat(activeDoc.pending_amount || '0') <= 0) && !hubStatuses.hasPendingTransactions)
 
-        if (stages.every(s => s)) return { label: 'Completado', variant: 'success', icon: CheckCircle2 }
-        if (stages.some(s => s)) return { label: 'En Progreso', variant: 'active', icon: PlayCircle }
+        if (stages.every(s => s)) return { label: 'Completado', status: 'success', icon: CheckCircle2 }
+        if (stages.some(s => s)) return { label: 'En Progreso', status: 'active', icon: PlayCircle }
 
-        return { label: 'Pendiente', variant: 'neutral', icon: MinusCircle }
+        return { label: 'Pendiente', status: 'neutral', icon: MinusCircle }
     }, [hubData, isNoteMode, activeInvoice, activeDoc, type])
 
     if (!activeDoc) {
@@ -108,8 +105,6 @@ export function OrderHubPanel({
         )
     }
 
-    const StatusIcon = globalStatus.icon
-
     const prefix = isNoteMode 
         ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') 
         : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')
@@ -128,19 +123,11 @@ export function OrderHubPanel({
                                 <h2 className="text-lg font-bold tracking-tight text-foreground leading-none">
                                     {isNoteMode ? activeInvoice.dte_type_display : "HUB de Mando"}
                                 </h2>
-                                <Badge
-                                    variant='outline'
-                                    className={cn(
-                                        "rounded-sm border px-1.5 py-0.5 gap-1 font-bold uppercase tracking-tight text-[10px]",
-                                        globalStatus.variant === 'success' && "border-green-600/30 text-emerald-700 bg-green-500/5",
-                                        globalStatus.variant === 'active' && "border-blue-600/30 text-primary bg-primary/5",
-                                        globalStatus.variant === 'destructive' && "border-red-600/30 text-destructive bg-destructive/5",
-                                        globalStatus.variant === 'neutral' && "border-muted-foreground/30 text-muted-foreground bg-muted/5"
-                                    )}
-                                >
-                                    <StatusIcon className='size-2.5' />
-                                    {globalStatus.label}
-                                </Badge>
+                                <StatusBadge 
+                                    status={globalStatus.status} 
+                                    label={globalStatus.label}
+                                    className="scale-90 origin-left"
+                                />
                             </div>
                             <p className="text-xs font-medium text-muted-foreground mt-0.5">
                                 <span className="flex items-center gap-2">

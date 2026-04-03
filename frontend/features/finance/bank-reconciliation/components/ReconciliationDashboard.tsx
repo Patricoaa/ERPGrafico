@@ -6,10 +6,11 @@ import { useReconciliation } from "../hooks/useReconciliation"
 import { DashboardKPIs } from "./DashboardKPIs"
 import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import type { DashboardKPIData, TrendItem, DashboardPendingItem, TreasuryAccount } from "../types"
 
 const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
@@ -18,10 +19,10 @@ const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(m
 
 export function ReconciliationDashboard() {
     const { fetchAccounts, fetchDashboardData, loading } = useReconciliation()
-    const [stats, setStats] = useState<any>(null)
-    const [trend, setTrend] = useState<any[]>([])
-    const [pending, setPending] = useState<any[]>([])
-    const [accounts, setAccounts] = useState<any[]>([])
+    const [stats, setStats] = useState<DashboardKPIData | null>(null)
+    const [trend, setTrend] = useState<TrendItem[]>([])
+    const [pending, setPending] = useState<DashboardPendingItem[]>([])
+    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [selectedAccount, setSelectedAccount] = useState<string>("all")
 
     useEffect(() => {

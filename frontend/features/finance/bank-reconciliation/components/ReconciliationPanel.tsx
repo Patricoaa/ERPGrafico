@@ -24,6 +24,7 @@ import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -40,28 +41,46 @@ interface BankStatementLine {
     reconciliation_state_display: string
 }
 
+interface PaymentData {
+    id: number
+    display_id: string
+    amount: string
+    date: string
+    contact_name: string
+    payment_type: string
+}
+
+interface BatchData {
+    id: number
+    display_id: string
+    net_amount: string
+    sales_date: string
+    payment_method_name: string
+    supplier_name?: string
+}
+
 interface PaymentSuggestion {
-    payment_data?: {
-        id: number
-        display_id: string
-        amount: string
-        date: string
-        contact_name: string
-        payment_type: string
-    }
-    batch_data?: {
-        id: number
-        display_id: string
-        net_amount: string
-        sales_date: string
-        payment_method_name: string
-    }
+    payment_data?: PaymentData
+    batch_data?: BatchData
     is_batch?: boolean
     score: number
     reasons: string[]
     difference: string
     rule_id?: number
     auto_confirm?: boolean
+}
+
+// Unified interface for the table rows in the system side
+interface ReconciliationSystemItem {
+    id: number
+    amount: string
+    date: string
+    contact_name: string
+    display_id?: string
+    code?: string
+    is_batch?: boolean
+    identifier?: string
+    name?: string
 }
 
 interface LineSuggestion {
@@ -83,8 +102,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [unreconciledLines, setUnreconciledLines] = useState<BankStatementLine[]>([])
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
     
-    const [unreconciledPayments, setUnreconciledPayments] = useState<any[]>([])
-    const [selectedPayments, setSelectedPayments] = useState<any[]>([])
+    const [unreconciledPayments, setUnreconciledPayments] = useState<ReconciliationSystemItem[]>([])
+    const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
     
     const [suggestions, setSuggestions] = useState<PaymentSuggestion[]>([])
     const [loading, setLoading] = useState(true)
@@ -153,9 +172,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 })
             ])
 
-            const payments = paymentsRes.data.results || paymentsRes.data
-            const batches = (batchesRes.data.results || batchesRes.data).map((b: any) => ({
-                ...b,
+            const payments = (paymentsRes.data.results || paymentsRes.data) as ReconciliationSystemItem[]
+            const batches = ((batchesRes.data.results || batchesRes.data) as BatchData[]).map((b) => ({
                 id: b.id,
                 display_id: b.display_id,
                 amount: b.net_amount,
@@ -317,7 +335,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         try {
             setAutoMatching(true)
             const response = await api.post(`/treasury/statements/${statementId}/auto_match/`, { confidence_threshold: 90 })
-            alert(`✅ ${response.data.matched_count} de ${response.data.total_unreconciled} líneas matched automáticamente`)
+            toast.success(`Conciliación Finalizada`, {
+                description: `${response.data.matched_count} de ${response.data.total_unreconciled} líneas conciliadas automáticamente.`
+            })
             await fetchUnreconciledLines()
         } catch (error: unknown) {
             showApiError(error, 'Error en auto-match')
@@ -368,7 +388,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = lineSuggestions.some(s => s.line_data.id === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
-                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-amber-600")}>
+                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
                         {row.original.reference && (
@@ -376,8 +396,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-amber-500" />
-                                <span className="text-[8px] font-black uppercase tracking-tighter text-amber-600">Sugerencia IA</span>
+                                <Sparkles className="h-2.5 w-2.5 text-warning" />
+                                <span className="text-[8px] font-black uppercase tracking-tighter text-warning">Sugerencia IA</span>
                             </div>
                         )}
                     </div>
@@ -392,7 +412,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
                     <div className="flex flex-col items-end">
-                        <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-emerald-700" : "text-rose-700")}>
+                        <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
                         </span>
                         <span className="text-[8px] font-black uppercase tracking-widest opacity-40">
@@ -419,7 +439,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
     ], [lineSuggestions])
 
-    const paymentColumns = useMemo<ColumnDef<any>[]>(() => [
+    const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
         {
             id: "select",
             header: ({ table }) => (
@@ -461,16 +481,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = suggestions.some(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
-                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-amber-600")}>
+                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.contact_name}
                         </span>
                         {isBatch && (
-                            <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter bg-indigo-50 text-indigo-700">Lote Terminal</Badge>
+                            <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter bg-info/10 text-info">Lote Terminal</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-amber-500 shadow-sm" />
-                                <span className="text-[8px] font-black uppercase tracking-tighter text-amber-600">Sugerencia IA</span>
+                                <Sparkles className="h-2.5 w-2.5 text-warning shadow-sm" />
+                                <span className="text-[8px] font-black uppercase tracking-tighter text-warning">Sugerencia IA</span>
                             </div>
                         )}
                     </div>
@@ -523,7 +543,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                         disabled={autoMatching}
                         variant="outline"
-                        className="h-10 px-6 font-black uppercase tracking-widest bg-emerald-50/50 hover:bg-emerald-50 text-emerald-700 border-emerald-200/50 hover:border-emerald-300 transition-all shadow-sm group"
+                        className="h-10 px-6 font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 transition-all shadow-sm group"
                     >
                         {autoMatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4 group-hover:rotate-12 transition-transform" />}
                         Conciliación Automática
@@ -559,7 +579,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
                                 const diff = lineTotal - payTotal
                                 return (
-                                    <p className={cn("text-xl font-black font-mono", Math.abs(diff) < 1 ? "text-emerald-400" : "text-amber-400")}>
+                                    <p className={cn("text-xl font-black font-mono", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
                                         {formatCurrency(Math.abs(diff))}
                                     </p>
                                 )
@@ -589,7 +609,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     columns={bankColumns}
                     data={unreconciledLines}
                     cardMode
-                    title="Cartola Bancaria"
                     searchPlaceholder="Buscar en movimientos..."
                     globalFilterFields={["description", "reference"]}
                     onRowSelectionChange={handleLineSelectionChange}
@@ -602,7 +621,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     columns={paymentColumns}
                     data={unreconciledPayments}
                     cardMode
-                    title="Pagos / Lotes Sistema"
                     searchPlaceholder="Buscar en sistema..."
                     globalFilterFields={["contact_name", "display_id"]}
                     onRowSelectionChange={handlePaymentSelectionChange}

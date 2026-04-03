@@ -388,7 +388,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                                     <AccountField form={form} name="ppm_account" label="PPM (Pago Prov.)" accountType="ASSET" />
                                     <AccountField form={form} name="withholding_tax_account" label="Retenciones Honorarios" accountType="LIABILITY" />
                                 </div>
-                                <div className="p-3 rounded-sm bg-blue-500/5 border-2 border-blue-500/10 text-[10px] text-blue-700 font-bold uppercase flex items-center gap-2">
+                                <div className="p-3 rounded-sm bg-info/10 border-2 border-info/20 text-[10px] text-info font-bold uppercase flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4" />
                                     Cuentas reguladoras de cierre fiscal automático.
                                 </div>

@@ -261,13 +261,13 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             size={step === 'MAPPING' ? "full" : "lg"}
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-orange-500/10 text-orange-600 shadow-sm border border-orange-500/5">
+                    <div className="p-3 rounded-xl bg-warning/10 text-warning shadow-sm border border-warning/5">
                         <Upload className="h-6 w-6" />
                     </div>
                     <div className="space-y-1">
                         <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Importar Cartola</div>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-orange-500/20 text-orange-600/80">
+                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-warning/20 text-warning/80">
                                 {step === 'UPLOAD' ? 'Paso 1: Carga' : 'Paso 2: Mapeo'}
                             </Badge>
                             <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-widest opacity-70">
@@ -296,7 +296,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                 "rounded-xl px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
                                 step === 'UPLOAD' && isGenericFormat() 
                                     ? "bg-primary hover:bg-primary/90 shadow-primary/20" 
-                                    : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
+                                    : "bg-success hover:bg-success/90 shadow-success/20"
                             )}
                         >
                             {loading ? (
@@ -357,7 +357,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                     </SelectContent>
                                 </Select>
                                 {isGenericFormat() && (
-                                    <div className="flex items-center gap-2 text-[10px] text-blue-600 font-bold uppercase tracking-wider mt-2 opacity-80">
+                                    <div className="flex items-center gap-2 text-[10px] text-info font-bold uppercase tracking-wider mt-2 opacity-80">
                                         <RefreshCw className="w-3 h-3" />
                                         Modo flexible: Se requerirá mapeo manual
                                     </div>
@@ -434,8 +434,8 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                                                 <SelectItem value="ignore" className="text-[10px] font-bold uppercase tracking-wider">Ignorar Columna</SelectItem>
                                                                 <SelectItem value="date" className="text-[10px] font-bold uppercase tracking-wider">Fecha Movimiento</SelectItem>
                                                                 <SelectItem value="description" className="text-[10px] font-bold uppercase tracking-wider">Descripción / Glosa</SelectItem>
-                                                                <SelectItem value="debit" className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Cargos (Egresos)</SelectItem>
-                                                                <SelectItem value="credit" className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Abonos (Ingresos)</SelectItem>
+                                                                <SelectItem value="debit" className="text-[10px] font-bold uppercase tracking-wider text-destructive">Cargos (Egresos)</SelectItem>
+                                                                <SelectItem value="credit" className="text-[10px] font-bold uppercase tracking-wider text-success">Abonos (Ingresos)</SelectItem>
                                                                 <SelectItem value="balance" className="text-[10px] font-bold uppercase tracking-wider">Saldo</SelectItem>
                                                                 <SelectItem value="reference" className="text-[10px] font-bold uppercase tracking-wider font-mono">Referencia / Doc</SelectItem>
                                                                 <SelectItem value="transaction_id" className="text-[10px] font-bold uppercase tracking-wider font-mono">ID Ext. Transacción</SelectItem>
@@ -478,7 +478,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                                         className={cn(
                                             "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
                                             mapping[f] !== null 
-                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 shadow-sm shadow-emerald-500/5" 
+                                                ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5" 
                                                 : "bg-muted/50 border-border text-muted-foreground/40 line-through"
                                         )}
                                     >
@@ -492,9 +492,9 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                 {error && (
                     <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert variant="destructive" className="rounded-2xl border-rose-500/20 bg-rose-500/5">
-                            <AlertCircle className="h-4 w-4 text-rose-500" />
-                            <AlertDescription className="text-xs font-bold uppercase tracking-wider text-rose-600/80 leading-relaxed">
+                        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+                            <AlertCircle className="h-4 w-4 text-destructive" />
+                            <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
                                 {error}
                             </AlertDescription>
                         </Alert>
@@ -503,9 +503,9 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                 {success && (
                     <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert className="rounded-2xl border-emerald-500/20 bg-emerald-500/5">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                            <AlertDescription className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
+                        <Alert className="rounded-2xl border-success/20 bg-success/5">
+                            <CheckCircle2 className="h-4 w-4 text-success" />
+                            <AlertDescription className="text-xs font-black uppercase tracking-[0.2em] text-success">
                                 Importación Finalizada con Éxito
                             </AlertDescription>
                         </Alert>

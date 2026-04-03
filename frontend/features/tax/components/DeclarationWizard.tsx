@@ -26,20 +26,21 @@ import { Separator } from "@/components/ui/separator"
 import { useServerDate } from "@/hooks/useServerDate"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
+import { TaxPeriod, TaxCalculationData } from "../types"
 
 interface DeclarationWizardProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
     periodId?: number
     onSuccess: () => void
-    existingPeriods?: any[]
+    existingPeriods?: TaxPeriod[]
 }
 
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
     const { year, month, dateString, serverDate } = useServerDate()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
-    const [calcData, setCalcData] = useState<any>(null)
+    const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
     const [period, setPeriod] = useState({
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1
@@ -248,7 +249,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <Button 
                                 onClick={handleSave} 
                                 disabled={isLoading}
-                                className="rounded-xl px-10 h-11 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all font-black uppercase tracking-widest text-[10px] group"
+                                className="rounded-xl px-10 h-11 bg-success hover:bg-success/90 shadow-lg shadow-success/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
                                 {isLoading ? "Procesando..." : "Finalizar Declaración"}
                                 {!isLoading && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
@@ -372,8 +373,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold text-sm" />
                                         </div>
                                         <div className="flex justify-between items-center py-1 border-b border-border/30 border-dashed">
-                                            <span className="text-sm font-medium text-rose-500/80">Notas de Crédito (-)</span>
-                                            <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-bold text-sm text-rose-600" />
+                                            <span className="text-sm font-medium text-destructive/80">Notas de Crédito (-)</span>
+                                            <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-bold text-sm text-destructive" />
                                         </div>
                                     </div>
                                     
@@ -401,7 +402,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <div className="flex-1 h-px bg-border/60" />
                                 </div>
 
-                                <div className="space-y-4 bg-primary/10/10 p-6 rounded-3xl border border-transparent hover:border-primary/20/10 transition-all">
+                                <div className="space-y-4 bg-primary/5 p-6 rounded-3xl border border-transparent hover:border-primary/10 transition-all">
                                     <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-primary/50 px-1">
                                         <span>Conceptos de Compra</span>
                                         <span>Monto Neto</span>
@@ -416,8 +417,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold text-sm" />
                                         </div>
                                         <div className="flex justify-between items-center py-1 border-b border-indigo-100/30 border-dashed">
-                                            <span className="text-sm font-medium text-amber-600">Notas de Crédito (-)</span>
-                                            <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-bold text-sm text-amber-600" />
+                                            <span className="text-sm font-medium text-warning">Notas de Crédito (-)</span>
+                                            <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-bold text-sm text-warning" />
                                         </div>
                                     </div>
                                     
@@ -426,7 +427,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">Total Neto Compras</span>
                                             <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} className="text-lg font-black tracking-tight text-primary/80" />
                                         </div>
-                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/20/10 text-primary">
+                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/10 text-primary">
                                             <span className="text-xs font-black uppercase tracking-[0.1em] opacity-80">IVA Crédito ({manualFields.tax_rate}%)</span>
                                             <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black drop-shadow-sm" />
                                         </div>
@@ -450,7 +451,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <div className="space-y-10 col-span-full">
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1 h-px bg-border/60" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 flex items-center gap-2 px-3">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2 px-3">
                                             <HandCoins className="h-3.5 w-3.5" />
                                             Retenciones e Impuesto Único
                                         </span>
@@ -564,7 +565,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
                         </div>
 
-                        <div className="bg-amber-500/5 p-5 rounded-2xl border border-amber-500/10 flex gap-4 items-center text-[11px] text-amber-700/70 font-medium uppercase tracking-wider justify-center mx-auto max-w-2xl">
+                        <div className="bg-warning/5 p-5 rounded-2xl border border-warning/10 flex gap-4 items-center text-[11px] text-warning font-medium uppercase tracking-wider justify-center mx-auto max-w-2xl">
                             <Info className="h-4 w-4 flex-shrink-0 opacity-80" />
                             <span>Complete los campos manuales según la información adicional del período.</span>
                         </div>
@@ -574,7 +575,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 {step === 4 && (
                     <div className="space-y-10 max-w-4xl mx-auto min-h-[600px] animate-in fade-in zoom-in-95 duration-500">
                         <div className="text-center space-y-3">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 mb-2 border border-emerald-500/20 shadow-sm shadow-emerald-500/10">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success/10 text-success mb-2 border border-success/20 shadow-sm shadow-success/10">
                                 <CheckCircle2 className="h-8 w-8" />
                             </div>
                             <h3 className="text-2xl font-black tracking-tight uppercase text-foreground/80">Resumen de Declaración</h3>
@@ -605,9 +606,9 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <MoneyDisplay amount={manualFields.withholding_tax + manualFields.second_category_tax} showColor={false} className="font-bold" />
                                         </div>
                                         {vatRemanent > 0 && (
-                                            <div className="flex justify-between items-center text-sm bg-emerald-500/5 px-2 -mx-2 rounded-lg py-1">
-                                                <span className="text-emerald-700 font-bold">Nuevo Remanente a Favor</span>
-                                                <MoneyDisplay amount={vatRemanent} className="font-black text-emerald-600" />
+                                            <div className="flex justify-between items-center text-sm bg-success/5 px-2 -mx-2 rounded-lg py-1">
+                                                <span className="text-success font-bold">Nuevo Remanente a Favor</span>
+                                                <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
                                             </div>
                                         )}
                                     </div>
@@ -628,7 +629,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             className="text-5xl font-black tracking-tighter text-primary drop-shadow-sm transition-transform hover:scale-105" 
                                         />
                                         <div className="mt-4 flex items-center gap-2">
-                                            <Badge variant="outline" className="h-5 px-3 text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 border-emerald-500/20 text-emerald-600">
+                                            <Badge variant="outline" className="h-5 px-3 text-[9px] font-black uppercase tracking-wider bg-success/10 border-success/20 text-success">
                                                 Listo para Enviar
                                             </Badge>
                                         </div>

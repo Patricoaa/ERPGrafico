@@ -157,7 +157,7 @@ export function EquityCompositionTab() {
             accessorKey: "partner_total_paid_in",
             header: () => <div className="text-right whitespace-nowrap">C. Enterado</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-emerald-600">
+                <div className="text-right font-mono text-[11px] font-black text-success">
                     {formatCurrency(row.getValue("partner_total_paid_in"))}
                 </div>
             )
@@ -194,7 +194,7 @@ export function EquityCompositionTab() {
         },
         {
             accessorKey: "partner_earnings_balance",
-            header: () => <div className="text-right whitespace-nowrap text-emerald-600">Utilidades</div>,
+            header: () => <div className="text-right whitespace-nowrap text-success">Utilidades</div>,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_earnings_balance"))
                 return (
@@ -230,17 +230,17 @@ export function EquityCompositionTab() {
                             <DropdownMenuLabel className="text-[9px] tracking-widest text-muted-foreground/60 py-1">GESTIÓN PATRIMONIAL</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                                className="text-emerald-600 font-black p-3 hover:bg-emerald-50 focus:bg-emerald-50"
+                                className="text-success font-black p-3 hover:bg-success/10 focus:bg-success/10"
                                 onClick={() => setIsContributionOpen(true)}
                             >
-                                <Wallet className="h-3.5 w-3.5 mr-2 bg-emerald-100 rounded-full p-0.5" />
+                                <Wallet className="h-3.5 w-3.5 mr-2 bg-success/20 rounded-full p-0.5" />
                                 <span>Registrar Aporte</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                                className="text-rose-600 font-black p-3 hover:bg-rose-50 focus:bg-rose-50"
+                                className="text-destructive font-black p-3 hover:bg-destructive/10 focus:bg-destructive/10"
                                 onClick={() => setIsWithdrawalOpen(true)}
                             >
-                                <LogOut className="h-3.5 w-3.5 mr-2 bg-rose-100 rounded-full p-0.5" />
+                                <LogOut className="h-3.5 w-3.5 mr-2 bg-destructive/20 rounded-full p-0.5" />
                                 <span>Registrar Retiro</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -258,7 +258,7 @@ export function EquityCompositionTab() {
                     <CardHeader className="pb-1 p-4">
                         <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
                             Suscrito Total
-                            <TrendingUp className="h-3.5 w-3.5 text-blue-500 opacity-50" />
+                            <TrendingUp className="h-3.5 w-3.5 text-primary opacity-50" />
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
@@ -275,7 +275,7 @@ export function EquityCompositionTab() {
                     <CardHeader className="pb-1 p-4">
                         <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
                             Enterado (Pagado)
-                            <PieChart className="h-3.5 w-3.5 text-emerald-500 opacity-50" />
+                            <PieChart className="h-3.5 w-3.5 text-success opacity-50" />
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
@@ -303,7 +303,7 @@ export function EquityCompositionTab() {
                     <CardHeader className="pb-1 p-4">
                         <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
                             Capital por Cobrar
-                            <AlertCircle className="h-3.5 w-3.5 text-amber-500 opacity-50" />
+                            <AlertCircle className="h-3.5 w-3.5 text-warning opacity-50" />
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
