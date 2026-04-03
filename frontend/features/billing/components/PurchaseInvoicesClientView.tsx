@@ -189,7 +189,7 @@ export function PurchaseInvoicesClientView() {
                 const doc = row.original
                 return (
                     <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
@@ -252,7 +252,7 @@ export function PurchaseInvoicesClientView() {
                                 <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-amber-700 font-bold whitespace-nowrap">
+                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-warning/50 text-warning font-bold whitespace-nowrap">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                 </Badge>
                             )}
@@ -300,7 +300,7 @@ export function PurchaseInvoicesClientView() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-600"
+                                        className="text-warning"
                                         onClick={() => setCompletingDoc(doc)}
                                         title="Completar Folio"
                                     >
@@ -311,7 +311,7 @@ export function PurchaseInvoicesClientView() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-700"
+                                        className="text-warning"
                                         onClick={() => setReceivingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
                                     >
@@ -322,7 +322,7 @@ export function PurchaseInvoicesClientView() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-600"
+                                        className="text-warning"
                                         onClick={() => setNotingDoc(doc)}
                                         title="Registrar Nota Crédito/Débito"
                                     >
@@ -333,7 +333,7 @@ export function PurchaseInvoicesClientView() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-emerald-600"
+                                        className="text-success"
                                         onClick={() => setPayingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
                                     >
@@ -344,7 +344,7 @@ export function PurchaseInvoicesClientView() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-emerald-600"
+                                        className="text-success"
                                         onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
                                         title="Historial de Pagos"
                                     >

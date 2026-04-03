@@ -2,7 +2,6 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -26,6 +25,8 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { cn } from "@/lib/utils"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { TaxPeriod, TaxDeclaration } from "../types"
 
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
@@ -36,13 +37,13 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [periods, setPeriods] = useState<any[]>([])
+    const [periods, setPeriods] = useState<TaxPeriod[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [isChecklistOpen, setIsChecklistOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-    const [selectedPeriod, setSelectedPeriod] = useState<any>(null)
-    const [selectedDeclaration, setSelectedDeclaration] = useState<any>(null)
+    const [selectedPeriod, setSelectedPeriod] = useState<TaxPeriod | null>(null)
+    const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
 
     const handleCloseModal = () => {
         const params = new URLSearchParams(searchParams.toString())
@@ -70,7 +71,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             const action = searchParams.get('action')
 
             if (year && month && fetchedPeriods.length > 0) {
-                const target = fetchedPeriods.find((p: any) => 
+                const target = fetchedPeriods.find((p: TaxPeriod) => 
                     p.year.toString() === year && p.month.toString() === month
                 )
                 if (target) {
@@ -99,12 +100,12 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
         }
     }, [externalOpen])
 
-    const handleOpenChecklist = (period: any) => {
+    const handleOpenChecklist = (period: TaxPeriod) => {
         setSelectedPeriod(period)
         setIsChecklistOpen(true)
     }
 
-    const handleOpenPayment = async (period: any) => {
+    const handleOpenPayment = async (period: TaxPeriod) => {
         if (period.declaration_summary) {
             setSelectedDeclaration({
                 id: period.declaration_summary.id,
@@ -113,7 +114,18 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 is_fully_paid: period.declaration_summary.is_fully_paid,
                 payments: period.declaration_summary.payments || [],
                 folio_number: period.declaration_summary.folio_number,
-                tax_period_display: `${period.month_display} ${period.year}`
+                tax_period_display: `${period.month_display} ${period.year}`,
+                tax_period_year: period.year,
+                tax_period_month: period.month,
+                ppm_amount: 0,
+                withholding_tax: 0,
+                vat_credit_carryforward: 0,
+                vat_correction_amount: 0,
+                second_category_tax: 0,
+                loan_retention: 0,
+                ila_tax: 0,
+                vat_withholding: 0,
+                tax_rate: 0
             })
             setIsPaymentOpen(true)
         } else {
@@ -138,6 +150,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const { serverDate, dateString } = useServerDate()
 
     const handlePaymentConfirm = async (data: any) => {
+        if (!selectedDeclaration) return
         try {
             await api.post("/tax/payments/", {
                 declaration: selectedDeclaration.id,
@@ -158,19 +171,6 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
         }
     }
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "OPEN":
-                return <Badge variant="outline" className="bg-primary/10 text-primary border-blue-500/20">Abierto</Badge>
-            case "UNDER_REVIEW":
-                return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">En Revisión</Badge>
-            case "CLOSED":
-                return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Cerrado</Badge>
-            default:
-                return <Badge variant="secondary">{status}</Badge>
-        }
-    }
-
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
         ? `${latestPeriod.month_display} ${latestPeriod.year}`.toUpperCase()
@@ -181,7 +181,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const isLatestClosed = latestPeriod?.status === "CLOSED"
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<TaxPeriod>[] = [
         {
             accessorKey: "period_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
@@ -189,10 +189,10 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
                         <span className="text-[9px] font-bold text-primary/60">{row.original.year}</span>
-                        <span className="text-xs font-bold text-primary">{row.original.month_display.substring(0, 3)}</span>
+                        <span className="text-xs font-bold text-primary">{row.original.month_display?.substring(0, 3)}</span>
                     </div>
                     <div>
-                        <span className="font-medium">{row.original.month_display} {row.original.year}</span>
+                        <span className="font-medium">{row.original.month_display || ''} {row.original.year}</span>
                     </div>
                 </div>
             ),
@@ -206,7 +206,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => getStatusBadge(row.original.status),
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
             filterFn: (row, id, value) => value.includes(row.getValue(id))
         },
         {
@@ -225,10 +225,10 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 const summary = row.original.declaration_summary
                 if (!summary) return <span className="text-muted-foreground">-</span>
                 if (summary.is_fully_paid) {
-                    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50">Pagado</Badge>
+                    return <StatusBadge status="PAID" label="Pagado" size="sm" />
                 }
                 if (summary.vat_to_pay > 0 && row.original.status === 'CLOSED') {
-                    return <Badge variant="outline" className="border-red-500 text-destructive bg-red-50">Pendiente</Badge>
+                    return <StatusBadge status="VOIDED" label="Pendiente" size="sm" />
                 }
                 return <span className="text-muted-foreground">-</span>
             }
@@ -251,8 +251,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                 className={cn(
                                     "h-8 rounded-lg",
                                     isFullyPaid
-                                        ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                                        : "border-emerald-500/50 text-emerald-600 hover:bg-emerald-50"
+                                        ? "border-success/30 text-success bg-success/5 hover:bg-success/10"
+                                        : "border-success/50 text-success bg-success/5 hover:bg-success/10"
                                 )}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -304,12 +304,12 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                     </CardHeader>
                     <CardContent>
                         {isLatestClosed ? (
-                            <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+                            <div className="flex items-center gap-2 text-sm text-success font-medium">
                                 <CheckCircle2 className="h-4 w-4" />
                                 Período Cerrado
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 text-sm text-amber-600 font-medium">
+                            <div className="flex items-center gap-2 text-sm text-warning font-medium">
                                 <AlertCircle className="h-4 w-4" />
                                 Pendiente de declaración
                             </div>
@@ -400,20 +400,16 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                                     <h4 className="font-bold text-lg text-foreground">
                                                         {period.month_display} {period.year}
                                                     </h4>
-                                                    {getStatusBadge(period.status)}
+                                                    <StatusBadge status={period.status} />
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     {summary ? (
                                                         <>
                                                             {summary.is_fully_paid ? (
-                                                                <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50 text-[10px] h-5">
-                                                                    Pagado
-                                                                </Badge>
+                                                                <StatusBadge status="PAID" label="Pagado" size="sm" />
                                                             ) : (
                                                                 summary.vat_to_pay > 0 && period.status === 'CLOSED' && (
-                                                                    <Badge variant="outline" className="border-red-500 text-destructive bg-red-50 text-[10px] h-5">
-                                                                        Pago Pendiente
-                                                                    </Badge>
+                                                                    <StatusBadge status="VOIDED" label="Pago Pendiente" size="sm" />
                                                                 )
                                                             )}
                                                             <div className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground font-mono">
@@ -444,10 +440,10 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                                         variant="outline"
                                                         size="sm"
                                                         className={cn(
-                                                            "h-9 rounded-xl border-emerald-500/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-50",
+                                                            "h-9 rounded-xl border-success/30 text-success hover:bg-success/5",
                                                             isFullyPaid
-                                                                ? "border-emerald-200 text-emerald-600"
-                                                                : "border-emerald-500/50 text-emerald-600"
+                                                                ? "border-success/20 text-success"
+                                                                : "border-success/30 text-success"
                                                         )}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -500,12 +496,14 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 existingPeriods={periods}
             />
 
-            <PeriodChecklist
-                isOpen={isChecklistOpen}
-                onOpenChange={setIsChecklistOpen}
-                period={selectedPeriod}
-                onSuccess={fetchPeriods}
-            />
+            {selectedPeriod && (
+                <PeriodChecklist
+                    isOpen={isChecklistOpen}
+                    onOpenChange={setIsChecklistOpen}
+                    period={selectedPeriod}
+                    onSuccess={fetchPeriods}
+                />
+            )}
 
             {selectedDeclaration && (
                 <F29PaymentModal

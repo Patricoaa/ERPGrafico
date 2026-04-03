@@ -4,18 +4,19 @@ import React, { useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { formatPlainDate } from "@/lib/utils"
+import { cn, formatPlainDate, formatCurrency } from "@/lib/utils"
+import type { DashboardPendingItem } from "../types"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 
 interface DashboardPendingTableProps {
-    data: any[]
+    data: DashboardPendingItem[]
 }
 
 export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<DashboardPendingItem>[]>(() => [
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
@@ -57,9 +58,9 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
                 return (
                     <div className={cn(
                         "text-right font-mono font-black text-[12px]",
-                        isCredit ? "text-emerald-700" : "text-rose-700"
+                        isCredit ? "text-success" : "text-destructive"
                     )}>
-                        {isCredit ? '+' : '-'}${amount.toLocaleString()}
+                        {isCredit ? '+' : '-'}{formatCurrency(Math.abs(amount))}
                     </div>
                 )
             },
@@ -68,7 +69,7 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
             accessorKey: "is_overdue",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => row.original.is_overdue && (
-                <Badge variant="destructive" className="text-[9px] uppercase font-black px-1.5 h-4 tracking-tighter">
+                <Badge variant="destructive" className="text-[9px] uppercase font-black px-1.5 h-4 tracking-tighter shadow-sm shadow-destructive/20">
                     Crítico
                 </Badge>
             ),
@@ -92,7 +93,6 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
                 columns={columns}
                 data={data}
                 cardMode
-                title="Pendientes Críticos (>7 días)"
                 searchPlaceholder="Filtrar pendientes..."
                 globalFilterFields={["description", "account"]}
                 rightAction={
@@ -107,7 +107,3 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
     )
 }
 
-// Helper to avoid import issues
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ")
-}

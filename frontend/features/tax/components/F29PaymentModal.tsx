@@ -17,24 +17,12 @@ import { formatCurrency, cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { TaxDeclaration } from "../types"
 
 interface F29PaymentModalProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
-    declaration: {
-        id: number
-        vat_to_pay: number // Total determined tax
-        total_paid: number
-        is_fully_paid: boolean
-        folio_number?: string
-        tax_period_display: string
-        payments: Array<{
-            id: number
-            payment_date: string
-            amount: number
-            payment_method_display: string
-        }>
-    }
+    declaration: TaxDeclaration
     onConfirmPayment: (data: any) => Promise<void>
 }
 
@@ -56,7 +44,7 @@ export function F29PaymentModal({
                 onOpenChange={onOpenChange}
                 title={
                     <div className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-emerald-600" />
+                        <DollarSign className="h-5 w-5 text-success" />
                         <span>Pagos F29 - {declaration.tax_period_display}</span>
                     </div>
                 }
@@ -69,20 +57,20 @@ export function F29PaymentModal({
                             <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Impuesto Determinado</div>
                             <div className="text-xl font-bold font-mono">{formatCurrency(declaration.vat_to_pay)}</div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
-                            <div className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Total Pagado</div>
-                            <div className="text-xl font-bold text-emerald-700 font-mono">{formatCurrency(declaration.total_paid)}</div>
+                        <div className="p-4 rounded-2xl bg-success/5 border border-success/10">
+                            <div className="text-[10px] uppercase font-bold text-success tracking-wider mb-1">Total Pagado</div>
+                            <div className="text-xl font-bold text-success font-mono">{formatCurrency(declaration.total_paid)}</div>
                         </div>
                         <div className={cn(
                             "p-4 rounded-2xl border",
                             isFullyPaid
-                                ? "bg-emerald-500/10 border-emerald-500/20"
+                                ? "bg-success/10 border-success/20"
                                 : "bg-primary/5 border-primary/10"
                         )}>
                             <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Salgo Pendiente</div>
                             <div className={cn(
                                 "text-xl font-bold font-mono",
-                                isFullyPaid ? "text-emerald-700" : "text-primary"
+                                isFullyPaid ? "text-success" : "text-primary"
                             )}>
                                 {formatCurrency(Math.max(0, pendingAmount))}
                             </div>
@@ -91,7 +79,7 @@ export function F29PaymentModal({
 
                     {/* Status Alert */}
                     {isFullyPaid ? (
-                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-success/5 text-success border border-success/20">
                             <CheckCircle2 className="h-5 w-5" />
                             <p className="text-sm font-medium">Esta declaración ha sido pagada en su totalidad.</p>
                         </div>
@@ -103,7 +91,7 @@ export function F29PaymentModal({
                             </div>
                             <Button
                                 onClick={() => setIsRegisteringPayment(true)}
-                                className="bg-emerald-600 hover:bg-emerald-700"
+                                className="bg-success hover:bg-success/90"
                             >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Registrar Abono

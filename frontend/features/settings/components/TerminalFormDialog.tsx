@@ -353,8 +353,8 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                                             <div className="flex-1 flex items-center justify-between">
                                                                 <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
                                                                 <div className="flex gap-1.5">
-                                                                    {account.allows_cash && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-emerald-700 bg-emerald-50 border-emerald-200">Efectivo</Badge>}
-                                                                    {account.allows_card && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-primary bg-blue-50 border-blue-200">Tarjeta</Badge>}
+                                                                    {account.allows_cash && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-success bg-success/10 border-success/20">Efectivo</Badge>}
+                                                                    {account.allows_card && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-primary bg-primary/5 border-primary/10">Tarjeta</Badge>}
                                                                     {account.allows_transfer && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-primary bg-primary/10 border-primary/20">Transf</Badge>}
                                                                 </div>
                                                             </div>

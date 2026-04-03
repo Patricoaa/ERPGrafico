@@ -199,7 +199,7 @@ export function MovementWizard({
                                                 variant="outline"
                                                 className={cn(
                                                     "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                                    impact === "IN" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20" : "hover:border-emerald-500/50"
+                                                    impact === "IN" ? "border-success bg-success/10" : "hover:border-success/50"
                                                 )}
                                                 onClick={() => {
                                                     setImpact("IN")
@@ -207,7 +207,7 @@ export function MovementWizard({
                                                     setStep(2)
                                                 }}
                                             >
-                                                <div className={cn("p-3 rounded-xl bg-emerald-500/10 text-emerald-600", impact === "IN" && "bg-emerald-500 text-white")}>
+                                                <div className={cn("p-3 rounded-xl bg-success/10 text-success", impact === "IN" && "bg-success text-white")}>
                                                     <Banknote className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -220,7 +220,7 @@ export function MovementWizard({
                                                 variant="outline"
                                                 className={cn(
                                                     "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                                    impact === "OUT" ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "hover:border-amber-500/50"
+                                                    impact === "OUT" ? "border-warning bg-warning/10" : "hover:border-warning/50"
                                                 )}
                                                 onClick={() => {
                                                     setImpact("OUT")
@@ -228,7 +228,7 @@ export function MovementWizard({
                                                     setStep(2)
                                                 }}
                                             >
-                                                <div className={cn("p-3 rounded-xl bg-amber-500/10 text-amber-600", impact === "OUT" && "bg-amber-500 text-white")}>
+                                                <div className={cn("p-3 rounded-xl bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-white")}>
                                                     <LogOut className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -242,7 +242,7 @@ export function MovementWizard({
                                                     variant="outline"
                                                     className={cn(
                                                         "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                                        impact === "TRANSFER" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-500/50"
+                                                        impact === "TRANSFER" ? "border-info bg-info/10" : "hover:border-info/50"
                                                     )}
                                                     onClick={() => {
                                                         setImpact("TRANSFER")
@@ -250,7 +250,7 @@ export function MovementWizard({
                                                         setStep(2)
                                                     }}
                                                 >
-                                                    <div className={cn("p-3 rounded-xl bg-blue-500/10 text-blue-600", impact === "TRANSFER" && "bg-blue-500 text-white")}>
+                                                    <div className={cn("p-3 rounded-xl bg-info/10 text-info", impact === "TRANSFER" && "bg-info text-white")}>
                                                         <ArrowRightLeft className="h-6 w-6" />
                                                     </div>
                                                     <div className="flex flex-col">
@@ -277,18 +277,18 @@ export function MovementWizard({
                                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                                     <Button
                                                         variant="outline"
-                                                        className={cn("h-20 flex-col", transferDirection === 'OUT' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20")}
+                                                        className={cn("h-20 flex-col", transferDirection === 'OUT' && "border-info bg-info/10")}
                                                         onClick={() => setTransferDirection('OUT')}
                                                     >
-                                                        <LogOut className="h-4 w-4 mb-1 text-blue-500" />
+                                                        <LogOut className="h-4 w-4 mb-1 text-info" />
                                                         <span className="text-xs font-bold">Enviar/Retirar</span>
                                                     </Button>
                                                     <Button
                                                         variant="outline"
-                                                        className={cn("h-20 flex-col", transferDirection === 'IN' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20")}
+                                                        className={cn("h-20 flex-col", transferDirection === 'IN' && "border-info bg-info/10")}
                                                         onClick={() => setTransferDirection('IN')}
                                                     >
-                                                        <Banknote className="h-4 w-4 mb-1 text-blue-500" />
+                                                        <Banknote className="h-4 w-4 mb-1 text-info" />
                                                         <span className="text-xs font-bold">Recibir/Ingresar</span>
                                                     </Button>
                                                 </div>
@@ -481,9 +481,9 @@ export function MovementWizard({
                                             <h3 className="font-bold text-lg uppercase tracking-tight">Monto</h3>
                                             <Badge variant="outline" className={cn(
                                                 "capitalize font-bold border-2",
-                                                impact === "IN" ? "border-emerald-500 text-emerald-600 bg-emerald-50" :
-                                                    impact === "OUT" ? "border-amber-500 text-amber-600 bg-amber-50" :
-                                                        "border-blue-500 text-blue-600 bg-blue-50"
+                                                impact === "IN" ? "border-success/50 text-success bg-success/10" :
+                                                    impact === "OUT" ? "border-warning/50 text-warning bg-warning/10" :
+                                                        "border-info/50 text-info bg-info/10"
                                             )}>
                                                 {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}
                                             </Badge>
@@ -528,8 +528,8 @@ export function MovementWizard({
                                             if (amountNum > partnerCapitalInfo.subscribed && partnerCapitalInfo.subscribed > 0) {
                                                 // Exceeds total subscribed (very unusual)
                                                 return (
-                                                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                                                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                                    <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-xl text-xs text-warning">
+                                                        <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                                                         <div>
                                                             <span className="font-bold block">Aporte supera el capital suscrito total</span>
                                                             <span>El socio tiene suscrito {formatCurrency(partnerCapitalInfo.subscribed)}. Este aporte excede ese monto. Considere registrar primero un Aumento de Capital.</span>
@@ -539,8 +539,8 @@ export function MovementWizard({
                                             } else if (partnerCapitalInfo.pending <= 0) {
                                                 // Already fully paid
                                                 return (
-                                                    <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
-                                                        <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                                                    <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-xl text-xs text-info">
+                                                        <Info className="h-4 w-4 text-info shrink-0 mt-0.5" />
                                                         <div>
                                                             <span className="font-bold block">Capital ya enterado</span>
                                                             <span>Este socio ya tiene su suscripción completamente pagada ({formatCurrency(partnerCapitalInfo.subscribed)}). Este aporte generará un excedente en su cuenta particular.</span>
@@ -550,8 +550,8 @@ export function MovementWizard({
                                             } else if (amountNum > partnerCapitalInfo.pending) {
                                                 // Exceeds remaining pending
                                                 return (
-                                                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                                                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                                    <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-xl text-xs text-warning">
+                                                        <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
                                                         <div>
                                                             <span className="font-bold block">Aporte supera el capital pendiente</span>
                                                             <span>El socio tiene {formatCurrency(partnerCapitalInfo.pending)} pendiente de entero. Este aporte genera un excedente de {formatCurrency(amountNum - partnerCapitalInfo.pending)} en su cuenta particular.</span>
@@ -561,8 +561,8 @@ export function MovementWizard({
                                             } else {
                                                 // Within range — show a positive info
                                                 return (
-                                                    <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
-                                                        <Info className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                                    <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-xl text-xs text-success">
+                                                        <Info className="h-3.5 w-3.5 text-success shrink-0" />
                                                         <span>Pendiente de entero: <strong>{formatCurrency(partnerCapitalInfo.pending)}</strong></span>
                                                     </div>
                                                 )
@@ -598,7 +598,7 @@ export function MovementWizard({
                                                 <span className="text-muted-foreground font-medium">Operación:</span>
                                                 <Badge className={cn(
                                                     "font-black uppercase tracking-widest px-3",
-                                                    impact === "IN" ? "bg-emerald-500" : impact === "OUT" ? "bg-amber-500" : "bg-blue-500"
+                                                    impact === "IN" ? "bg-success" : impact === "OUT" ? "bg-warning" : "bg-info"
                                                 )}>
                                                     {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
                                                 </Badge>
@@ -644,7 +644,7 @@ export function MovementWizard({
                                         </div>
 
                                         {hasInsufficientFunds && (
-                                            <div className="p-3 bg-red-50 border-2 border-red-200 text-red-700 rounded-xl text-center text-sm font-bold">
+                                            <div className="p-3 bg-destructive/10 border-2 border-destructive/20 text-destructive rounded-xl text-center text-sm font-bold">
                                                 FONDOS INSUFICIENTES (Máx: {formatCurrency(maxOutboundAmount)})
                                             </div>
                                         )}

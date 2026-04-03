@@ -237,14 +237,14 @@ export function InventoryContributionModal({
                         <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
                             <TabsTrigger
                                 value="IN"
-                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowDownCircle className="mr-2 h-4 w-4" />
                                 Aporte
                             </TabsTrigger>
                             <TabsTrigger
                                 value="OUT"
-                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border data-[state=active]:border-rose-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowUpCircle className="mr-2 h-4 w-4" />
                                 Retiro
@@ -266,7 +266,7 @@ export function InventoryContributionModal({
                             Socio
                         </Label>
                         <Select value={partnerId} onValueChange={setPartnerId} disabled={!!preSelectedPartnerId}>
-                            <SelectTrigger className={cn(FORM_STYLES.input, "border-amber-200 bg-amber-50/30")}>
+                            <SelectTrigger className={cn(FORM_STYLES.input, "border-warning/20 bg-warning/5")}>
                                 <SelectValue placeholder="Seleccione un socio" />
                             </SelectTrigger>
                             <SelectContent>
@@ -356,7 +356,7 @@ export function InventoryContributionModal({
                         <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
                             <Label className={cn(FORM_STYLES.label, "flex justify-between")}>
                                 <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
-                                {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-amber-300 text-amber-700 bg-amber-50">Editable</Badge>}
+                                {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
                             </Label>
                             <Input
                                 type={isCostEditable ? "number" : "text"}
@@ -377,8 +377,8 @@ export function InventoryContributionModal({
                     </div>
 
                     {conversion && baseUoM && (
-                        <Alert className="bg-sky-50 dark:bg-sky-950/20 border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 py-2">
-                            <Info className="h-4 w-4 text-sky-600" />
+                        <Alert className="bg-info/5 border-info/20 text-info py-2">
+                            <Info className="h-4 w-4 text-info" />
                             <AlertDescription className="text-xs ml-2">
                                 Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.
                             </AlertDescription>
@@ -419,7 +419,7 @@ export function InventoryContributionModal({
                         disabled={isLoading}
                         className={cn(
                             "rounded-xl text-xs font-bold",
-                            moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700 text-primary-foreground' : 'bg-rose-600 hover:bg-rose-700 text-primary-foreground'
+                            moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
                         )}
                     >
                         {isLoading ? (

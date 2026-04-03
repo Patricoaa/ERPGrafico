@@ -396,8 +396,8 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
                 <div className="flex flex-col items-center gap-1">
                     <span className="text-xs text-muted-foreground text-center">{row.original.treasury_account_name}</span>
                     <div className="flex justify-center gap-1">
-                        {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-green-50 text-green-700 border-green-200">Ventas</Badge>}
-                        {row.original.allow_for_purchases && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-blue-50 text-blue-700 border-blue-200">Compras</Badge>}
+                        {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-success/10 text-success border-success/20">Ventas</Badge>}
+                        {row.original.allow_for_purchases && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-info/10 text-info border-info/20">Compras</Badge>}
                     </div>
                 </div>
             )

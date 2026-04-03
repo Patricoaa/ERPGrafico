@@ -168,7 +168,7 @@ export function PaymentMethodCardSelector({
                 id: 'CASH',
                 label: 'Efectivo',
                 icon: Banknote,
-                color: 'text-emerald-600',
+                color: 'text-success',
                 isAllowed: isMethodAllowed('CASH')
             },
             {
@@ -189,7 +189,7 @@ export function PaymentMethodCardSelector({
                 id: 'CHECK',
                 label: 'Cheque',
                 icon: ClipboardList,
-                color: 'text-amber-600',
+                color: 'text-warning',
                 isAllowed: isMethodAllowed('CHECK')
             },
             {
@@ -220,7 +220,7 @@ export function PaymentMethodCardSelector({
                     </div>
                 </div>
 
-                <div className={cn("bg-primary/5 rounded-xl border border-blue-500/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
+                <div className={cn("bg-primary/5 rounded-xl border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{amountLabel}</Label>
                         <p className={cn("font-bold text-primary", compactMode ? "text-lg" : "text-xl")}>
@@ -243,7 +243,7 @@ export function PaymentMethodCardSelector({
                             </Label>
                             <p className={cn(
                                 "font-bold",
-                                difference >= 0 ? "text-emerald-600" : "text-amber-700",
+                                difference >= 0 ? "text-success" : "text-warning",
                                 compactMode ? "text-lg" : "text-xl"
                             )}>
                                 {Math.abs(difference).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
@@ -308,7 +308,7 @@ export function PaymentMethodCardSelector({
                                             compactMode ? "text-xs" : "text-sm"
                                         )}>{m.label}</span>
                                         {!m.isAllowed && (
-                                            <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">No Disponible</span>
+                                            <span className="text-[10px] font-black text-destructive uppercase tracking-widest">No Disponible</span>
                                         )}
                                     </div>
                                 </div>
@@ -395,7 +395,7 @@ export function PaymentMethodCardSelector({
                     <div className="space-y-4">
                         <Label htmlFor="modal-amount">Monto</Label>
                         <div className="flex flex-col items-center gap-4">
-                            <div className="text-4xl font-black tracking-tight text-primary bg-blue-50 px-6 py-2 rounded-2xl border-2 border-blue-100 shadow-sm w-full text-center">
+                            <div className="text-4xl font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-2xl border-2 border-primary/10 shadow-sm w-full text-center">
                                 ${Number(tempAmount || 0).toLocaleString('es-CL')}
                             </div>
 

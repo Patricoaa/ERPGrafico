@@ -1,6 +1,6 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+import React from "react"
 import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2 } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { OrderHubStatus } from "./OrderHubStatus"
@@ -9,6 +9,7 @@ import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface OrderCardProps {
     item: any
@@ -103,9 +104,12 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                             {formatPlainDate(item.date)}
                         </span>
                         {isSale && item.pos_session && (
-                            <Badge variant="secondary" className="text-[10px] h-3.5 bg-primary/10 text-primary border-primary/20 px-1 py-0 leading-none">
-                                POS #{item.pos_session}
-                            </Badge>
+                            <StatusBadge 
+                                status="active" 
+                                label={`POS #${item.pos_session}`} 
+                                size="sm" 
+                                className="h-4 px-1 text-[9px] bg-primary/5 text-primary border-primary/10"
+                            />
                         )}
                         {item.warehouse_name && (
                             <span className="flex items-center gap-1">
@@ -125,9 +129,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                     ) : isPurchase ? (
                         <PurchaseOrderHubStatus order={item} />
                     ) : isWorkOrder ? (
-                        <Badge variant={item.status === 'FINISHED' ? 'success' : 'outline'} className="text-[10px]">
-                            {item.status}
-                        </Badge>
+                        <StatusBadge status={item.status} size="sm" />
                     ) : (
                         <OrderHubStatus order={item} />
                     )}

@@ -1,43 +1,17 @@
 "use client"
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import React from "react"
 import { FileText, Package, Receipt, Banknote } from "lucide-react"
-import { cn, translateStatus } from "@/lib/utils"
+import { translateStatus } from "@/lib/utils"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 interface PurchaseOrderHubStatusProps {
     order: any
 }
 
-// Helper for rendering badges - defined outside to avoid recreation during render
-const StatusBadge = ({ icon: Icon, status, tooltip }: { icon: any, status: string, tooltip: string }) => {
-    const colors: Record<string, string> = {
-        success: "text-emerald-700 bg-green-500/10 border-green-600/20",
-        active: "text-primary bg-primary/10 border-blue-600/20",
-        neutral: "text-muted-foreground bg-muted/50 border-muted-foreground/20",
-        destructive: "text-destructive bg-destructive/10 border-red-600/20",
-        not_applicable: "hidden"
-    }
-
-    if (status === 'not_applicable') return null
-
-    return (
-        <Tooltip>
-            <TooltipTrigger>
-                <div className={cn("flex items-center justify-center w-6 h-6 rounded-full border", colors[status])}>
-                    <Icon className="h-3 w-3" />
-                </div>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>{tooltip}</p>
-            </TooltipContent>
-        </Tooltip>
-    )
-}
-
 export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
     const statuses = getPurchaseHubStatuses(order)
-
     const originLabel = translateStatus(order.status)
 
     // Calculate reception progress for tooltip
@@ -54,31 +28,39 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
         receptionProgress = 100
     }
 
-    const pendingAmount = parseFloat(order.pending_amount)
-    const total = parseFloat(order.total)
+    const pendingAmount = parseFloat(order.pending_amount || 0)
+    const total = parseFloat(order.total || 0)
     const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
 
     return (
         <div className="flex items-center gap-1.5">
             <TooltipProvider delayDuration={0}>
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={FileText}
-                    status={statuses.origin}
+                    status={statuses.origin || 'info'}
                     tooltip={`Origen: ${originLabel}`}
                 />
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Receipt}
-                    status={statuses.billing}
+                    status={statuses.billing || 'info'}
                     tooltip={statuses.billing === 'success' ? "Facturado" : "Pendiente de Facturación"}
                 />
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Banknote}
-                    status={statuses.treasury}
+                    status={statuses.treasury || 'info'}
                     tooltip={`Tesorería: ${paidPct}% Pagado${statuses.hasPendingTransactions ? ' - falta N° de transacción' : ''}`}
                 />
                 <StatusBadge
+                    variant="hub"
+                    size="sm"
                     icon={Package}
-                    status={statuses.reception}
+                    status={statuses.reception || 'info'}
                     tooltip={`Recepción: ${receptionProgress}%`}
                 />
             </TooltipProvider>

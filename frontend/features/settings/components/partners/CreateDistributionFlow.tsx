@@ -295,9 +295,9 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-4 flex gap-3">
+                            <div className="bg-info/5 border border-info/20 p-4 rounded-lg mt-4 flex gap-3">
                                 <Calculator className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div className="text-xs text-blue-800">
+                                <div className="text-xs text-info leading-relaxed font-medium">
                                     Al continuar, el sistema buscará la <strong>participación exacta de cada socio a la fecha de resolución</strong> y pre-calculará la asignación descontando automáticamente los retiros provisorios realizados durante el año fiscal.
                                 </div>
                             </div>
@@ -307,7 +307,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     {/* STEP 2 */}
                     {step === 2 && draftResolution && (
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-emerald-50 text-emerald-900 p-3 rounded-lg border border-emerald-200">
+                            <div className="flex justify-between items-center bg-success/5 text-success p-3 rounded-lg border border-success/20">
                                 <div>
                                     <div className="text-xs font-bold uppercase opacity-80">Resultado a Repartir</div>
                                     <div className="text-xl font-mono font-bold">{formatCurrency(draftResolution.net_result)}</div>
@@ -325,7 +325,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                             <th className="px-3 py-2">Socio</th>
                                             <th className="px-3 py-2 text-right">Torta (%)</th>
                                             <th className="px-3 py-2 text-right">Asignación</th>
-                                            <th className="px-3 py-2 text-right text-rose-600">Menos Retirado</th>
+                                            <th className="px-3 py-2 text-right text-destructive">Menos Retirado</th>
                                             <th className="px-3 py-2 text-right">Neto a Destinar</th>
                                             <th className="px-3 py-2">Destino</th>
                                         </tr>
@@ -335,8 +335,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                             <tr key={line.id} className="hover:bg-muted/30">
                                                 <td className="px-3 py-2 font-medium">{line.partner_name}</td>
                                                 <td className="px-3 py-2 text-right font-bold">{line.percentage_at_date}%</td>
-                                                <td className="px-3 py-2 text-right font-mono text-emerald-600">{formatCurrency(line.gross_amount)}</td>
-                                                <td className="px-3 py-2 text-right font-mono text-rose-500">
+                                                <td className="px-3 py-2 text-right font-mono text-success">{formatCurrency(line.gross_amount)}</td>
+                                                <td className="px-3 py-2 text-right font-mono text-destructive">
                                                     {parseFloat(line.provisional_withdrawals_offset) > 0 ? `-${formatCurrency(line.provisional_withdrawals_offset)}` : '0'}
                                                 </td>
                                                 <td className="px-3 py-2 text-right font-mono font-bold text-primary">
@@ -379,7 +379,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     {step === 3 && (
                         <div className="space-y-6 py-4">
                             <div className="flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                                <div className="h-16 w-16 bg-success/10 text-success rounded-full flex items-center justify-center">
                                     <CheckCircle2 className="h-8 w-8" />
                                 </div>
                                 <div>
@@ -392,19 +392,19 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             
                             <ul className="text-sm space-y-3 bg-muted/40 p-4 rounded-lg border">
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
                                     <span>Cierre de la cuenta <strong>Utilidades del Ejercicio</strong>.</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
                                     <span>Liquidación contable de los retiros provisorios de los socios seleccionados.</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
                                     <span>Creación de pasivos en <strong>Dividendos por Pagar</strong> listos para ser emitidos desde la caja.</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
                                     <span>Actualización de participaciones si hubo <strong>Reinversión de Utilidades</strong>.</span>
                                 </li>
                             </ul>
@@ -418,7 +418,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 onClick={handleDeleteDraft}
                                 disabled={loading}
                             >
@@ -455,7 +455,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                         )}
 
                         {step === 3 && (
-                            <Button onClick={handleExecute} className="bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
+                            <Button onClick={handleExecute} className="bg-success hover:bg-success/90" disabled={loading}>
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
                                 Confirmar y Ejecutar Contabilidad
                             </Button>

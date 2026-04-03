@@ -62,9 +62,9 @@ export function PaymentMethodSelector({
                 id: 'CASH',
                 label: 'Efectivo',
                 icon: Banknote,
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50',
-                border: 'border-emerald-200',
+                color: 'text-success',
+                bg: 'bg-success/10',
+                border: 'border-success/20',
                 methods: methodsByType.CASH
             },
             {
@@ -72,8 +72,8 @@ export function PaymentMethodSelector({
                 label: 'Tarjeta',
                 icon: CreditCard,
                 color: 'text-primary',
-                bg: 'bg-blue-50',
-                border: 'border-blue-200',
+                bg: 'bg-info/10',
+                border: 'border-info/20',
                 methods: methodsByType.CARD
             },
             {
@@ -89,9 +89,9 @@ export function PaymentMethodSelector({
                 id: 'CHECK',
                 label: 'Cheque',
                 icon: ClipboardList,
-                color: 'text-amber-600',
-                bg: 'bg-amber-50',
-                border: 'border-amber-200',
+                color: 'text-warning',
+                bg: 'bg-warning/10',
+                border: 'border-warning/20',
                 methods: methodsByType.CHECK
             }
         ].filter(t => t.methods.length > 0)

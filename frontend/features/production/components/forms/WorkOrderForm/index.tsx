@@ -11,7 +11,6 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 
 import { cn, translateStatus } from "@/lib/utils"
@@ -22,6 +21,7 @@ import { toast } from "sonner"
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { WorkOrderMaterials } from "./WorkOrderMaterials"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface WorkOrderFormProps {
     onSuccess?: () => void
@@ -302,13 +302,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (!initialData) return null
         return (
             <div className="flex items-center gap-2">
-                <Badge variant={initialData.status === 'FINISHED' ? 'default' : initialData.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                    {translateStatus(initialData.status as string)}
-                </Badge>
+                <StatusBadge status={initialData.status} />
                 {initialData.current_stage && (
-                    <Badge variant="outline" className="border-primary/20 text-primary uppercase">
-                        {translateStatus(initialData.current_stage)}
-                    </Badge>
+                    <StatusBadge status={initialData.status} label={translateStatus(initialData.current_stage)} className="bg-primary/5 text-primary border-primary/10" />
                 )}
             </div>
         )

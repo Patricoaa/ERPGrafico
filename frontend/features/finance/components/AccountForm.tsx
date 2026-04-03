@@ -312,7 +312,7 @@ export function AccountForm({
                                             </SelectContent>
                                         </Select>
                                         {!!parentId && parentId !== "__none__" && parentId !== "none" && (
-                                            <p className="text-[10px] text-amber-600 font-medium mt-1">Heredado de la jerarquía del padre.</p>
+                                            <p className="text-[10px] text-warning font-medium mt-1">Heredado de la jerarquía del padre.</p>
                                         )}
                                     <FormMessage />
                                 </FormItem>
@@ -351,7 +351,7 @@ export function AccountForm({
                                     <FormItem className={cn(!isPLAccount && "opacity-50 pointer-events-none")}>
                                         <FormLabel className={FORM_STYLES.label + " flex justify-between"}>
                                             <span>Mapeo EERR</span>
-                                            {!isPLAccount && <span className="text-[10px] text-amber-600 font-normal">Solo Ingresos/Gastos</span>}
+                                            {!isPLAccount && <span className="text-[10px] text-warning font-normal">Solo Ingresos/Gastos</span>}
                                         </FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
@@ -359,7 +359,7 @@ export function AccountForm({
                                             disabled={!isPLAccount}
                                         >
                                             <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedIsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedIsCategory && "ring-1 ring-success/30 bg-success/10")}>
                                                     <SelectValue placeholder={inheritedIsCategory ? `Heredado (${inheritedIsCategory === 'REVENUE' ? 'Ingresos' : 'Ventas...'})` : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -374,7 +374,7 @@ export function AccountForm({
                                             </SelectContent>
                                         </Select>
                                         {!field.value && inheritedIsCategory && (
-                                            <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                            <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
                                         )}
                                         <FormMessage />
                                     </FormItem>
@@ -388,7 +388,7 @@ export function AccountForm({
                                         <FormLabel className={FORM_STYLES.label}>Mapeo Flujo Caja</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedCfCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedCfCategory && "ring-1 ring-success/30 bg-success/10")}>
                                                     <SelectValue placeholder={inheritedCfCategory ? "Heredado del padre" : "Sin mapeo"} />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -401,7 +401,7 @@ export function AccountForm({
                                             </SelectContent>
                                         </Select>
                                         {!field.value && inheritedCfCategory && (
-                                            <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                            <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
                                         )}
                                         <FormMessage />
                                     </FormItem>
@@ -417,7 +417,7 @@ export function AccountForm({
                                     <FormLabel className={FORM_STYLES.label}>Mapeo Balance (Ratios)</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ""}>
                                         <FormControl>
-                                            <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedBsCategory && "ring-1 ring-emerald-500/30 bg-emerald-50/10")}>
+                                            <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedBsCategory && "ring-1 ring-success/30 bg-success/10")}>
                                                 <SelectValue placeholder={inheritedBsCategory ? "Heredado del padre" : "Sin mapeo"} />
                                             </SelectTrigger>
                                         </FormControl>
@@ -431,7 +431,7 @@ export function AccountForm({
                                         </SelectContent>
                                     </Select>
                                     {!field.value && inheritedBsCategory && (
-                                        <p className="text-[10px] text-emerald-600 italic mt-1">Heredado del padre</p>
+                                        <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
                                     )}
                                     <FormMessage />
                                 </FormItem>
@@ -442,7 +442,7 @@ export function AccountForm({
                             control={form.control}
                             name="is_reconcilable"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-stone-50/50">
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/50">
                                     <div className="space-y-0.5">
                                         <FormLabel className={FORM_STYLES.label}>Conciliable</FormLabel>
                                         <p className="text-[10px] text-muted-foreground">

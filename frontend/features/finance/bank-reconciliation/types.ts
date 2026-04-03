@@ -16,6 +16,14 @@ export interface BankStatement {
     imported_at: string
 }
 
+export interface MatchConfig {
+    field: string
+    operator: 'EXACT' | 'CONTAINS' | 'REGEX' | 'FUZZY'
+    value: string
+    lookback_days?: number
+    amount_tolerance?: number
+}
+
 export interface ReconciliationRule {
     id: number
     name: string
@@ -26,7 +34,7 @@ export interface ReconciliationRule {
     auto_confirm: boolean
     times_applied: number
     success_rate: number
-    match_config: any
+    match_config: MatchConfig[]
 }
 
 export interface TreasuryAccount {
@@ -36,9 +44,54 @@ export interface TreasuryAccount {
     account_type?: string
 }
 
+export interface DashboardPendingItem {
+    id: number
+    date: string
+    account: string
+    description: string
+    amount: number
+    is_credit: boolean
+    days_pending: number
+    is_overdue: boolean
+    statement_id: number
+}
+
+export interface DashboardKPIData {
+    lines: {
+        total: number
+        reconciled: number
+        pending: number
+    }
+    reconciliation_rate: number
+    differences: {
+        count: number
+        total_amount: number
+        by_type: Record<string, { label: string; count: number }>
+    }
+    statements: {
+        total: number
+        confirmed: number
+        draft: number
+    }
+}
+
+export interface TrendItem {
+    month: string
+    total_lines: number
+    reconciled_lines: number
+}
+
+export interface RecentActivity {
+    id: number
+    type: 'MATCH' | 'IMPORT' | 'CONFIRM' | 'EXCLUDE'
+    description: string
+    timestamp: string
+    user_name: string
+}
+
 export interface ReconciliationDashboardStats {
     total_unreconciled_lines: number
     total_unreconciled_amount: number
     oldest_unreconciled_date: string | null
-    recent_activity: any[]
+    recent_activity: RecentActivity[]
 }

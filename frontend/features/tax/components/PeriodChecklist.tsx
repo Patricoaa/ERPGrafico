@@ -27,11 +27,12 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { TaxPeriod } from "../types"
 
 interface PeriodChecklistProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
-    period: any
+    period: TaxPeriod
     onSuccess: () => void
 }
 
@@ -73,7 +74,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             size="md"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
+                    <div className="p-3 rounded-2xl bg-warning/10 text-warning">
                         <ShieldCheck className="h-6 w-6" />
                     </div>
                     <div>
@@ -95,7 +96,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
                         className={cn(
                             "rounded-xl px-8 shadow-lg transition-all",
                             isAllChecked
-                                ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
+                                ? "bg-warning hover:bg-warning/90 shadow-warning/20"
                                 : "opacity-50"
                         )}
                     >
@@ -106,8 +107,8 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             }
         >
             <div className="py-2 space-y-6">
-                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 flex gap-4 items-start text-sm text-amber-800">
-                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-amber-500" />
+                <div className="bg-warning/5 p-4 rounded-2xl border border-warning/20 flex gap-4 items-start text-sm text-warning">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-warning" />
                     <p>
                         <span className="font-bold">¡Atención!</span> Cerrar un período bloqueará la edición de todos los documentos asociados (Ventas/Compras) para garantizar la consistencia contable y tributaria.
                     </p>
@@ -128,7 +129,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
                                 key={item.id}
                                 className={cn(
                                     "flex items-center space-x-3 p-3 rounded-xl transition-all border border-transparent",
-                                    checklist[item.id as keyof typeof checklist] ? "bg-emerald-50/50 border-emerald-100" : "hover:bg-muted/50"
+                                    checklist[item.id as keyof typeof checklist] ? "bg-success/5 border-success/20" : "hover:bg-muted/50"
                                 )}
                             >
                                 <Checkbox
@@ -143,13 +144,13 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
                                     htmlFor={item.id}
                                     className={cn(
                                         "flex-1 text-sm font-medium cursor-pointer transition-all",
-                                        checklist[item.id as keyof typeof checklist] ? "text-emerald-700" : "text-foreground"
+                                        checklist[item.id as keyof typeof checklist] ? "text-success" : "text-foreground"
                                     )}
                                 >
                                     {item.label}
                                 </label>
                                 {checklist[item.id as keyof typeof checklist] && (
-                                    <FileCheck className="h-4 w-4 text-emerald-500" />
+                                    <FileCheck className="h-4 w-4 text-success" />
                                 )}
                             </div>
                         ))}

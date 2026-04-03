@@ -134,7 +134,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
     }, {} as Record<string, number>)
 
     return (
-        <Card className={`transition-all hover:shadow-md ${!terminal.is_active ? "opacity-70 bg-muted/20" : "bg-white"}`}>
+        <Card className={`transition-all hover:shadow-md ${!terminal.is_active ? "opacity-70 bg-muted/20" : "bg-background"}`}>
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
@@ -142,7 +142,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             {terminal.name}
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono text-[10px] bg-muted border-muted-foreground/10">
+                            <Badge variant="outline" className="font-mono text-[10px] bg-muted/50 border-border">
                                 {terminal.code}
                             </Badge>
                             <StatusBadge 
@@ -169,8 +169,8 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <div className="flex flex-wrap gap-1.5">
                         {Object.entries(methodsByType).map(([type, count]) => (
                             <Badge key={type} variant="secondary" className="text-[10px] px-1.5 font-normal">
-                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-emerald-600" />}
-                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-blue-600" />}
+                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-success" />}
+                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-info" />}
                                 {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-primary" />}
                                 {type} <span className="ml-1 text-muted-foreground">({count})</span>
                             </Badge>
@@ -397,11 +397,11 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                     <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Nombre <span className="text-red-500">*</span></Label>
+                                <Label className={FORM_STYLES.label}>Nombre <span className="text-destructive">*</span></Label>
                                 <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required className={FORM_STYLES.input} />
                             </div>
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Código <span className="text-red-500">*</span></Label>
+                                <Label className={FORM_STYLES.label}>Código <span className="text-destructive">*</span></Label>
                                 <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className={cn(FORM_STYLES.input, "uppercase")} />
                             </div>
                             <div className="space-y-2">
@@ -417,7 +417,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                         <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
                                 <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
-                                <Badge variant="outline" className="text-[10px] bg-white">
+                                <Badge variant="outline" className="text-[10px] bg-background">
                                     {selectedMethodIds.length} seleccionados
                                 </Badge>
                             </div>
@@ -432,7 +432,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                             <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
                                                 {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
                                                 {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-indigo-500" />}
+                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-info" />}
                                                 {getTypeLabel(type)}
                                             </h4>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -446,7 +446,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                                                 flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
                                                                 ${isSelected
                                                                     ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                                                    : 'bg-white border-transparent hover:border-gray-200'
+                                                                    : 'bg-background border-transparent hover:border-border'
                                                                 }
                                                             `}
                                                         >

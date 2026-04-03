@@ -43,13 +43,13 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
     if (isPurchase) {
         Icon = Package
         iconBg = "bg-primary/5"
-        iconColor = "text-indigo-500/60"
+        iconColor = "text-info/60"
         iconBorder = "border-primary/20/10"
     } else if (isNote) {
         Icon = FileBadge
-        iconBg = "bg-amber-500/5"
-        iconColor = "text-amber-500/60"
-        iconBorder = "border-amber-500/10"
+        iconBg = "bg-warning/5"
+        iconColor = "text-warning/60"
+        iconBorder = "border-warning/10"
     }
 
     const typeCode = dteTypeLabel[item.dte_type] ?? 'DOC'
