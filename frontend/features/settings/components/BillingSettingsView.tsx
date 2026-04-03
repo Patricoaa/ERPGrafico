@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
+import React, { useEffect, useCallback, useState } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Loader2,
     Percent,
@@ -54,9 +54,10 @@ const billingSchema = z.object({
 type BillingFormValues = z.infer<typeof billingSchema>
 
 export const BillingSettingsView: React.FC<{ 
-    activeTab: string,
+    activeTab?: string,
     onSavingChange?: (saving: boolean) => void 
-}> = ({ activeTab, onSavingChange }) => {
+}> = ({ activeTab = "accounts", onSavingChange }) => {
+    const [currentTab, setCurrentTab] = useState(activeTab)
     const { settings, saving, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
@@ -139,14 +140,29 @@ export const BillingSettingsView: React.FC<{
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={activeTab} className="space-y-4">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                    <TabsTrigger value="accounts" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <Users className="h-3.5 w-3.5" />
+                        Cuentas
+                    </TabsTrigger>
+                    <TabsTrigger value="tax" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <Percent className="h-3.5 w-3.5" />
+                        Impuestos
+                    </TabsTrigger>
+                    <TabsTrigger value="dtes" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <FileText className="h-3.5 w-3.5" />
+                        Documentos
+                    </TabsTrigger>
+                </TabsList>
+
                 <Form {...form}>
-                    <form className="space-y-6">
-                        <TabsContent value="accounts" className="space-y-6">
+                    <form className="mt-6 space-y-6">
+                        <TabsContent value="accounts" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Cuentas por Cobrar</CardTitle>
+                                        <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
                                         <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
@@ -157,7 +173,7 @@ export const BillingSettingsView: React.FC<{
 
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">Cuentas por Pagar</CardTitle>
+                                        <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
                                         <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
@@ -168,7 +184,7 @@ export const BillingSettingsView: React.FC<{
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="tax" className="space-y-6">
+                        <TabsContent value="tax" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <Card className="md:col-span-1">
                                     <CardHeader>
@@ -202,7 +218,7 @@ export const BillingSettingsView: React.FC<{
                                                 </FormItem>
                                             )}
                                         />
-                                        <div className="p-3 rounded-lg bg-primary/5 border border-blue-500/10 text-[11px] text-primary">
+                                        <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 text-[11px] text-primary">
                                             Esta tasa se aplica automáticamente a todos los documentos de venta y compra sujetos a IVA.
                                         </div>
                                     </CardContent>
@@ -214,7 +230,7 @@ export const BillingSettingsView: React.FC<{
                                             <div className="flex items-center gap-2">
                                                 <Receipt className="h-5 w-5 text-warning" />
                                                 <div>
-                                                    <CardTitle className="text-lg">Impuesto al Valor Agregado (IVA)</CardTitle>
+                                                    <CardTitle className="text-lg text-primary">Impuesto al Valor Agregado (IVA)</CardTitle>
                                                     <CardDescription>Cuentas para el control mensual de IVA F29</CardDescription>
                                                 </div>
                                             </div>
@@ -244,7 +260,7 @@ export const BillingSettingsView: React.FC<{
                                             <div className="flex items-center gap-2">
                                                 <Coins className="h-5 w-5 text-success" />
                                                 <div>
-                                                    <CardTitle className="text-lg">Otras Contribuciones y Ajustes</CardTitle>
+                                                    <CardTitle className="text-lg text-primary">Otras Contribuciones e Impuestos</CardTitle>
                                                     <CardDescription>Retenciones, PPM y corrección monetaria</CardDescription>
                                                 </div>
                                             </div>
@@ -274,7 +290,7 @@ export const BillingSettingsView: React.FC<{
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="dtes" className="space-y-6">
+                        <TabsContent value="dtes" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <DTEConfigCard 
                                     form={form} 
@@ -296,6 +312,7 @@ export const BillingSettingsView: React.FC<{
         </div>
     )
 }
+
 
 export default BillingSettingsView
 

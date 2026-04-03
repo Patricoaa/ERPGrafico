@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
+import React, { useEffect, useCallback, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -8,11 +8,14 @@ import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Loader2,
     Check,
     CloudUpload,
+    Package,
+    ArrowLeftRight,
+    DollarSign,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -45,7 +48,8 @@ interface InventorySettingsViewProps {
     onSavingChange?: (saving: boolean) => void
 }
 
-export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab, onSavingChange }) => {
+export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab = "accounts", onSavingChange }) => {
+    const [currentTab, setCurrentTab] = useState(activeTab)
     const { settings, saving, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
@@ -112,14 +116,29 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
     }, [watchedValues, isDirty, form, onSubmit])
 
     return (
-        <div className="pt-4">
-            <Tabs value={activeTab} className="space-y-4">
+        <div className="max-w-6xl mx-auto space-y-6">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                    <TabsTrigger value="accounts" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <Package className="h-3.5 w-3.5" />
+                        Cuentas
+                    </TabsTrigger>
+                    <TabsTrigger value="adjustments" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <ArrowLeftRight className="h-3.5 w-3.5" />
+                        Ajustes
+                    </TabsTrigger>
+                    <TabsTrigger value="cogs" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Costo Ventas
+                    </TabsTrigger>
+                </TabsList>
+
                 <Form {...form}>
-                    <form className="space-y-6">
-                        <TabsContent value="accounts" className="space-y-6">
+                    <form className="mt-6 space-y-6">
+                        <TabsContent value="accounts" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Cuentas por Tipo de Producto</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas por Tipo de Producto</CardTitle>
                                     <CardDescription>Cuentas de inventario según el tipo de producto</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -131,7 +150,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Cuentas Puente</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas Puente</CardTitle>
                                     <CardDescription>Cuentas intermedias para movimientos de stock</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -143,10 +162,10 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="adjustments" className="space-y-6">
+                        <TabsContent value="adjustments" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Cuentas de Ajuste</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Cuentas de Ajuste</CardTitle>
                                     <CardDescription>Cuentas para diferencias de inventario</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -160,7 +179,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Método de Valoración</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Método de Valoración</CardTitle>
                                     <CardDescription>Determine cómo el sistema calcula el costo de sus existencias</CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -169,10 +188,10 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                         name="inventory_valuation_method"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Método de Valoración</FormLabel>
+                                                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Valoración</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-10">
                                                             <SelectValue placeholder="Seleccione método" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -188,10 +207,10 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="cogs" className="space-y-6">
+                        <TabsContent value="cogs" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Costo de Ventas (COGS)</CardTitle>
+                                    <CardTitle className="text-lg text-primary">Costo de Ventas (COGS)</CardTitle>
                                     <CardDescription>Cuentas de gasto para el costo de productos vendidos</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -206,6 +225,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         </div>
     )
 }
+
 
 export default InventorySettingsView
 
