@@ -46,16 +46,26 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsWizardOpen(false)
+        setIsChecklistOpen(false)
+        setIsPaymentOpen(false)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            params.delete("year")
+            params.delete("month")
+            params.delete("action")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const handleWizardOpenChange = (open: boolean) => {
-        setIsWizardOpen(open)
         if (!open) {
-            onExternalOpenChange?.(false)
             handleCloseModal()
+        } else {
+            setIsWizardOpen(true)
         }
     }
 
@@ -487,7 +497,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             />
 
             <DeclarationWizard
-                isOpen={isWizardOpen}
+                isOpen={isWizardOpen || !!externalOpen}
                 onOpenChange={handleWizardOpenChange}
                 onSuccess={() => {
                     fetchPeriods()
@@ -499,7 +509,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             {selectedPeriod && (
                 <PeriodChecklist
                     isOpen={isChecklistOpen}
-                    onOpenChange={setIsChecklistOpen}
+                    onOpenChange={(open) => !open && handleCloseModal()}
                     period={selectedPeriod}
                     onSuccess={fetchPeriods}
                 />
@@ -508,7 +518,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             {selectedDeclaration && (
                 <F29PaymentModal
                     isOpen={isPaymentOpen}
-                    onOpenChange={setIsPaymentOpen}
+                    onOpenChange={(open) => !open && handleCloseModal()}
                     declaration={selectedDeclaration}
                     onConfirmPayment={handlePaymentConfirm}
                 />

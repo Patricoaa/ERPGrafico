@@ -36,12 +36,12 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Compras"
+                title={viewMode === 'orders' ? "Órdenes de Compra" : "Notas de Crédito y Débito"}
                 description={viewMode === 'orders' 
                     ? "Gestión integral de órdenes de compra y recepciones" 
                     : "Gestión de notas de crédito y débito de proveedores"
                 }
-                iconName="shopping-bag"
+                iconName={viewMode === 'orders' ? "shopping-cart" : "file-text"}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={

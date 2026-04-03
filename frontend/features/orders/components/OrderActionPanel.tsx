@@ -107,7 +107,6 @@ export function OrderActionPanel({
     const paymentProgress = getPaymentProgress()
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
             <CollapsibleSheet
                 sheetId={`ACTION_PANEL_${orderId}`}
                 open={open}
@@ -262,6 +261,5 @@ export function OrderActionPanel({
                 </ScrollArea>
                 </div>
             </CollapsibleSheet>
-        </Sheet>
     )
 }

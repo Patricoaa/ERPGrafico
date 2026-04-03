@@ -892,16 +892,15 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
     )
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
-            <CollapsibleSheet
-                sheetId="PRODUCT_DETAIL"
-                open={open}
-                onOpenChange={handleOpenChangeProxy}
-                tabLabel="FICHA PRODUCTO"
-                tabIcon={Package}
-                fullWidth={fullWidth}
-                className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw]"
-            >
+        <CollapsibleSheet
+            sheetId="PRODUCT_DETAIL"
+            open={open}
+            onOpenChange={handleOpenChangeProxy}
+            tabLabel="FICHA PRODUCTO"
+            tabIcon={Package}
+            fullWidth={fullWidth}
+            className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw]"
+        >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
@@ -959,7 +958,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </Button>
                 </div>
-            </CollapsibleSheet>
-        </Sheet>
+        </CollapsibleSheet>
     )
 }

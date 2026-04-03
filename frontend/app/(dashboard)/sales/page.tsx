@@ -72,30 +72,67 @@ export default async function SalesPage({ searchParams }: PageProps) {
     const getHeaderConfig = () => {
         if (viewMode === 'orders') {
             return {
-                title: subView === 'orders' ? "Notas de Venta" : "Notas de Crédito/Débito",
-                description: "Seguimiento de pedidos y documentos de ajuste.",
+                title: subView === 'orders' ? "Notas de Venta" : "Notas de Crédito y Débito",
+                description: subView === 'orders' ? "Seguimiento de pedidos, estados de fabricación y logística de entregas." : "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.",
+                iconName: "shopping-cart" as const,
                 showAction: false
             }
         }
         if (viewMode === 'terminals') {
-            return {
-                title: "Terminales y Liquidaciones",
-                description: "Gestión de puntos de cobro y lotes transaccionales.",
-                actionTitle: subView === 'terminals' ? "Nuevo Terminal" : subView === 'batches' ? "Nueva Liquidación" : "",
-                actionHref: `/sales?view=terminals&sub=${subView}&modal=${subView === 'terminals' ? 'new-terminal' : 'new-batch'}`,
-                showAction: subView !== 'sessions'
+            if (subView === 'terminals') {
+                return {
+                    title: "Terminales POS",
+                    description: "Administre los puntos de venta y sus métodos de pago autorizados.",
+                    iconName: "banknote" as const,
+                    actionTitle: "Nuevo Terminal",
+                    actionHref: "/sales?view=terminals&sub=terminals&modal=new-terminal",
+                    showAction: true
+                }
+            } else if (subView === 'batches') {
+                return {
+                    title: "Lotes de Liquidación",
+                    description: "Registre liquidaciones y comisiones de terminales de cobro.",
+                    iconName: "banknote" as const,
+                    actionTitle: "Registrar Liquidación",
+                    actionHref: "/sales?view=terminals&sub=batches&modal=new-batch",
+                    showAction: true
+                }
+            } else {
+                return {
+                    title: "Historial de Sesiones",
+                    description: "Registro cronológico de aperturas y cierres de terminales POS.",
+                    iconName: "banknote" as const,
+                    showAction: false
+                }
             }
         }
         if (viewMode === 'credits') {
-            return {
-                title: "Cartera de Crédito",
-                description: "Clasificación de deuda y gestión de cobranzas.",
-                actionTitle: "Asignar Crédito",
-                actionHref: "/sales?view=credits&sub=portfolio&modal=new",
-                showAction: subView === 'portfolio'
+            if (subView === 'history') {
+                return {
+                    title: "Historial de Asignaciones",
+                    description: "Registro global de créditos asignados a clientes.",
+                    iconName: "pie-chart" as const,
+                    showAction: false
+                }
+            } else if (subView === 'blacklist') {
+                return {
+                    title: "Lista Negra",
+                    description: "Clientes con historial de impago o riesgo crediticio.",
+                    iconName: "pie-chart" as const,
+                    showAction: false
+                }
+            } else {
+                return {
+                    title: "Cartera de Créditos",
+                    description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.",
+                    iconName: "pie-chart" as const,
+                    actionTitle: "Asignar Crédito",
+                    actionHref: "/sales?view=credits&sub=portfolio&modal=new",
+                    showAction: true
+                }
             }
         }
-        return { title: "Ventas", description: "", showAction: false }
+        return { title: "Ventas", description: "", iconName: "shopping-cart" as const, showAction: false }
     }
 
     const config = getHeaderConfig()
@@ -105,7 +142,7 @@ export default async function SalesPage({ searchParams }: PageProps) {
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={viewMode === 'orders' ? "shopping-cart" : viewMode === 'terminals' ? "banknote" : "pie-chart"}
+                iconName={config.iconName}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (

@@ -1,0 +1,1000 @@
+--- treasury/components/MasterDataManagement.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns = [
+        {
+            accessorKey: "name",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex items-center justify-center gap-2">
+                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-center">{row.original.name}</span>
+                </div>
+            )
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex justify-center">
+                    <Badge variant="outline" className="font-mono text-[10px]">{row.original.code || 'N/A'}</Badge>
+                </div>
+
+--- treasury/components/TerminalBatchesManagement.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: false
+Action Context:
+    }, [externalOpenInvoice])
+
+    const columns = [
+        {
+            accessorKey: "sales_date",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex items-center justify-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-center">
+                        {format(new Date(row.original.sales_date), "dd/MM/yyyy")}
+                    </span>
+                </div>
+            )
+        },
+        {
+            accessorKey: "payment_method_name",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Terminal" className="justify-center" />,
+            cell: ({ row }: any) => (
+                <div className="flex flex-col items-center">
+
+--- treasury/components/TreasuryMovementsClientView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<TreasuryMovement>[] = [
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => {
+                const m = row.original
+                return <DataCell.DocumentId type={m.payment_method === 'WRITE_OFF' ? 'WRITE_OFF' : m.movement_type} number={m.id} />
+            },
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-medium text-xs">{formatPlainDate(row.getValue("date"))}</span>
+                </div>
+            ),
+        },
+
+--- treasury/components/TreasuryAccountsView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<TreasuryAccount>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Nombre | Tipo" />
+            ),
+            cell: ({ row }: { row: any }) => {
+                const acc = row.original
+                const labels: Record<string, string> = {
+                    'CHECKING': 'Cta. Corriente',
+                    'CREDIT_CARD': 'T. Crédito',
+                    'DEBIT_CARD': 'T. Débito',
+                    'CHECKBOOK': 'Chequera',
+                    'CASH': 'Efectivo',
+                }
+                return (
+                    <div className="flex flex-col items-center text-center">
+                        <span className="font-bold text-primary">{acc.name}</span>
+                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
+
+--- tax/components/TaxDeclarationsView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
+
+    const columns: ColumnDef<TaxPeriod>[] = [
+        {
+            accessorKey: "period_display",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
+                        <span className="text-[9px] font-bold text-primary/60">{row.original.year}</span>
+                        <span className="text-xs font-bold text-primary">{row.original.month_display?.substring(0, 3)}</span>
+                    </div>
+                    <div>
+                        <span className="font-medium">{row.original.month_display || ''} {row.original.year}</span>
+                    </div>
+                </div>
+            ),
+            sortingFn: (rowA, rowB, columnId) => {
+                if (rowA.original.year !== rowB.original.year) {
+                    return rowA.original.year - rowB.original.year
+
+--- settings/components/GroupManagement.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre del Grupo" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2 font-medium text-xs">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    {row.getValue("name")}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "user_count",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Miembros" />
+            ),
+            cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
+
+--- settings/components/PartnerSettingsTab.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="Socio" />,
+            cell: ({ row }) => <DataCell.Text className="font-bold">{row.getValue("name")}</DataCell.Text>,
+        },
+        {
+            accessorKey: "tax_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="RUT" />,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("tax_id")}</DataCell.Code>,
+        },
+        {
+            accessorKey: "partner_equity_percentage",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Participación" />,
+            cell: ({ row }) => (
+                <div className="text-center font-bold text-primary">
+                    {row.original.partner_equity_percentage ? `${row.original.partner_equity_percentage}%` : '—'}
+                </div>
+
+--- profile/components/ProfileView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Folio" />,
+            cell: ({ row }) => <DataCell.Code className="text-center font-bold">{row.getValue("display_id")}</DataCell.Code>,
+        },
+        {
+            accessorKey: "period_label",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Período" />,
+            cell: ({ row }) => <DataCell.Text className="text-center text-sm">{row.getValue("period_label")}</DataCell.Text>,
+        },
+        {
+            accessorKey: "total_haberes",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_haberes")} className="text-emerald-600 font-bold" />,
+        },
+        {
+            accessorKey: "total_descuentos",
+
+--- profile/components/PartnerProfileTab.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<PartnerTransaction>[] = [
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.getValue("date")} className="text-center" />
+                </div>
+            ),
+        },
+        {
+            accessorKey: "transaction_type",
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Operación" />,
+            cell: ({ row }) => {
+                const tx = row.original;
+                const type = tx.transaction_type;
+                let variant: 'success' | 'warning' | 'info' | 'secondary' = 'secondary';
+                
+
+--- settings/components/UsersSettingsView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "username",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Usuario" />
+            ),
+            cell: ({ row }) => <div className="font-medium">{row.getValue("username")}</div>,
+        },
+        {
+            accessorKey: "email",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Email" />
+            ),
+        },
+        {
+            id: "fullName",
+            header: "Nombre Completo",
+            cell: ({ row }) => (
+                <div>{`${row.original.first_name || ''} ${row.original.last_name || ''}`}</div>
+
+--- settings/components/partners/ProfitDistributionsTab.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+        }
+    ], [searchParams, router])
+
+    return (
+        <div className="space-y-6">
+            <DataTable
+                columns={columns}
+                data={distributions}
+                isLoading={loading}
+                cardMode={true}
+                searchPlaceholder="Buscar por año o resolución..."
+                filterColumn="fiscal_year"
+            />
+
+            {/* Modal Flows */}
+            {isFlowOpen && (
+                <CreateDistributionFlow 
+                    open={isFlowOpen} 
+                    onOpenChange={closeFlow}
+                    onSuccess={fetchDistributions}
+
+--- settings/components/partners/EquityCompositionTab.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+                    </CardContent>
+                </IndustrialCard>
+            </div>
+
+            {/* Main Content with DataTable */}
+            <DataTable 
+                columns={columns}
+                data={partners}
+                isLoading={loading}
+                cardMode={true}
+                toolbarAction={
+                    <div className="flex gap-2">
+                        {!hasPartners ? (
+                            <Button 
+                                onClick={() => setIsInitialSetupOpen(true)}
+                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-[0.25rem] shadow-sm"
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-2" />
+                                Configuración Inicial
+                            </Button>
+
+--- settings/components/partners/PartnerLedgerTab.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+        }
+    ]
+
+    return (
+        <div className="space-y-4">
+            <DataTable 
+                columns={columns}
+                data={txsWithBalance}
+                isLoading={loading}
+                cardMode={true}
+                searchPlaceholder="Buscar por descripción..."
+                filterColumn="description"
+                facetedFilters={[
+                    {
+                        column: "partner_name",
+                        title: "Socio",
+                        options: partners.map(p => ({ label: p.name, value: p.name }))
+                    },
+                    {
+                        column: "transaction_type",
+
+--- sales/components/SalesOrdersView.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: false
+Action Context:
+    })
+
+    const columns: ColumnDef<SaleOrder>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => <DataCell.DocumentId type="SALE_ORDER" number={row.getValue("number")} />,
+            meta: { title: "Folio" },
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+            meta: { title: "Fecha" },
+        },
+        {
+            accessorKey: "customer_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("customer_name")}</DataCell.Text>,
+            meta: { title: "Cliente" },
+
+--- sales/components/POSSessionsView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<POSSession>[] = [
+        {
+            accessorKey: "id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
+            cell: ({ row }) => <DataCell.Code className="font-bold">SES-{row.original.id}</DataCell.Code>,
+        },
+        {
+            accessorKey: "user_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" />,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>,
+        },
+        {
+            accessorKey: "opened_at",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" />,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("opened_at")} showTime />,
+        },
+        {
+            accessorKey: "closed_at",
+
+--- settings/components/HRSettingsView.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+                    </Form>
+                </TabsContent>
+
+                {/* --- Tab: Conceptos --- */}
+                <TabsContent value="concepts" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                    <DataTable 
+                        columns={conceptColumns}
+                        data={concepts}
+                        filterColumn="name"
+                        searchPlaceholder="Buscar concepto..."
+                        isLoading={loading}
+                        cardMode={true}
+                        toolbarAction={<ConceptDialog onSaved={fetchData} />}
+                    />
+                </TabsContent>
+
+                {/* --- Tab: Previsión --- */}
+                <TabsContent value="previsional" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                    <div className="flex justify-between items-center px-1">
+                        <div>
+
+--- production/components/BOMManager.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+                    </Button>
+                </div>
+            )}
+
+            <div className="p-0">
+                <DataTable 
+                    columns={columns}
+                    data={boms}
+                    isLoading={loading}
+                    cardMode={true}
+                    toolbarAction={!product?.has_variants && (
+                        <Button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleCreate()
+                            }}
+                            className="h-8 px-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-[0.125rem]"
+                        >
+                            <Plus className="h-3.5 w-3.5 mr-2" />
+
+--- inventory/components/CategoryList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }, [externalOpen])
+
+    const columns = useMemo<ColumnDef<Category>[]>(() => [
+        {
+            id: "icon",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" />,
+            cell: ({ row }) => {
+                const iconName = row.original.icon
+                if (!iconName) return null
+                return (
+                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/50">
+                        {(() => {
+                            const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
+                            return <Icon className="h-4 w-4 text-muted-foreground" />
+                        })()}
+                    </div>
+                )
+            },
+        },
+        {
+
+--- inventory/components/PricingRuleList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }, [externalOpen])
+
+    const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            id: "applies_to",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Aplica a" />,
+            cell: ({ row }) => {
+                const rule = row.original
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        {rule.product_name ? (
+                            <>
+                                <span className="font-medium text-xs leading-tight">{rule.product_name}</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {rule.product_internal_code && (
+
+--- inventory/components/MovementList.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+    }, [externalOpen])
+
+    const columns = useMemo<ColumnDef<StockMove>[]>(() => [
+        {
+            id: "folio",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-mono font-black text-[12px] text-primary tracking-tighter">MOV-{row.original.id}</span>
+                    <span className="text-[9px] font-black uppercase text-muted-foreground opacity-50 tracking-widest">
+                        {formatPlainDate(row.original.date)}
+                    </span>
+                </div>
+            ),
+            size: 100,
+        },
+        {
+            accessorKey: "product_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            cell: ({ row }) => (
+
+--- inventory/components/ProductList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+            minSize: 40,
+        },
+        {
+            accessorKey: "internal_code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cód. Interno" />
+            ),
+            cell: ({ row }) => (
+                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                    {row.getValue("internal_code")}
+                </Badge>
+            ),
+            size: 100,
+            minSize: 80,
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="SKU" />
+            ),
+
+--- inventory/components/StockReport.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+    }
+
+    const columns = useMemo<ColumnDef<any>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="flex flex-col gap-1 py-1">
+                        <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{item.name}</span>
+                        <div className="flex gap-2 items-center">
+                            {item.internal_code && (
+                                <span className="font-mono text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
+                                    {item.internal_code}
+                                </span>
+                            )}
+                            {item.code && item.code !== item.internal_code && (
+                                <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60">
+                                    {item.code}
+
+--- inventory/components/SubscriptionsView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<Subscription>[] = [
+        {
+            id: "product",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
+            ),
+            accessorFn: (row) => row.product_name,
+            cell: ({ row }) => {
+                const sub = row.original;
+                return (
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <span className="font-medium text-xs leading-tight text-center">{sub.product_name}</span>
+                        <div className="flex flex-wrap justify-center gap-1">
+                            {sub.product_internal_code && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                    {sub.product_internal_code}
+                                </Badge>
+                            )}
+                            {sub.product_code && sub.product_code !== sub.product_internal_code && (
+
+--- inventory/components/WarehouseList.tsx ---
+Has toolbarAction: true
+Has Button in toolbar: true
+Action Context:
+    }, [externalOpen])
+
+    const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col py-1">
+                    <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{row.original.name}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Ubicación Física</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
+            cell: ({ row }) => (
+                <span className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
+                    {row.original.code}
+                </span>
+
+--- inventory/components/UoMList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const columns = useMemo<ColumnDef<UoM>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
+            cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
+        },
+        {
+            accessorKey: "uom_type",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            cell: ({ row }) => {
+                const type = row.getValue("uom_type")
+                return (
+                    <div>
+
+--- inventory/components/UoMCategoryList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+        },
+        {
+            id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentCategory(row.original); setIsModalOpen(true) }}>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original.id)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+
+--- finance/components/BudgetsListView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<Budget>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <Link
+                        href={`/finances/budgets/${row.original.id}`}
+                        className="font-medium hover:underline text-primary flex items-center gap-2"
+                    >
+                        <Wallet className="h-4 w-4" />
+                        {row.getValue("name")}
+                    </Link>
+                    {row.original.description && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                            {row.original.description}
+                        </span>
+
+--- inventory/components/AttributeManager.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-center justify-center gap-2 font-medium">
+                    <Tag className="h-4 w-4 text-primary" />
+                    <span className="text-center">{row.getValue("name")}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "values",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Valores" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+
+--- finance/bank-reconciliation/components/DashboardPendingTable.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
+    const columns = useMemo<ColumnDef<DashboardPendingItem>[]>(() => [
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-mono font-bold text-[11px] tracking-tight">
+                        {formatPlainDate(row.getValue("date"))}
+                    </span>
+                    <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest opacity-60">
+                        {row.original.days_pending} días
+                    </span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "account",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
+
+--- finance/bank-reconciliation/components/ReconciliationPanel.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+                )
+            },
+        },
+        {
+            id: "amount",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
+            cell: ({ row }) => {
+                const amount = Math.abs(parseFloat(row.original.credit) - parseFloat(row.original.debit))
+                const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
+                return (
+                    <div className="flex flex-col items-end">
+                        <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
+                            {formatCurrency(amount)}
+                        </span>
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">
+                            {isCredit ? "Abono" : "Cargo"}
+                        </span>
+                    </div>
+                )
+            },
+
+--- finance/bank-reconciliation/components/ReconciliationRules.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }, [tableData])
+
+    const columns = useMemo<ColumnDef<RuleRow>[]>(() => [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col items-center">
+                    <span className="font-medium text-sm">{row.original.name}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[280px] text-center">
+                        {row.original.description}
+                    </span>
+                </div>
+            ),
+            enableGlobalFilter: true,
+        },
+        {
+            accessorKey: "account_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
+            cell: ({ row }) => <Badge variant="outline">{row.getValue("account_name")}</Badge>,
+
+--- contacts/components/ContactModal.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+                    )}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+            </div>
+            <div className="flex-1 overflow-hidden p-0">
+                <DataTable
+                    columns={columns}
+                    data={filteredData}
+                    defaultPageSize={10}
+                    globalFilterFields={["display_id", "number"]}
+                    showToolbarSort={true}
+                    renderCustomView={(table) => (
+                        <div className="grid gap-3 pt-2">
+                            {table.getRowModel().rows.map((row: any) => (
+                                <OrderCard
+                                    key={row.original.id}
+                                    item={row.original}
+                                    type={type}
+                                    onActionClick={() => {
+                                        if (type === 'work_order') {
+
+--- contacts/components/ContactsClientView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<Contact>[] = [
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
+            cell: ({ row }) => <DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => {
+                const contact = row.original
+                return (
+                    <div className="flex items-center gap-2">
+                        <DataCell.Text>{contact.name}</DataCell.Text>
+                        <div className="flex gap-1">
+                            {contact.is_default_customer && (
+                                <TooltipProvider>
+                                    <Tooltip>
+
+--- credits/components/BlacklistView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }, [fetchData])
+
+    const columns: ColumnDef<CreditContact>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="text-center font-semibold text-[13px]">
+                    <div className="font-bold text-foreground">
+                        {row.original.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.original.tax_id}</div>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "credit_balance_used",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
+            cell: ({ row }) => {
+                const val = Number(row.original.credit_balance_used)
+
+--- finance/bank-reconciliation/components/StatementsList.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<BankStatement>[] = [
+        {
+            accessorKey: "display_id",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="ID" />
+            ),
+            cell: ({ row }) => <DataCell.Code className="font-bold">{row.getValue("display_id")}</DataCell.Code>,
+        },
+        {
+            accessorKey: "treasury_account_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cuenta" />
+            ),
+            cell: ({ row }) => <DataCell.Text>{row.getValue("treasury_account_name")}</DataCell.Text>,
+        },
+        {
+            accessorKey: "statement_date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+
+--- credits/components/CreditPortfolioView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+// ─── Column Definitions ──────────────────────────────────────────────────────
+
+const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<CreditContact>[] = (onEdit) => [
+    {
+        accessorKey: "name",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
+        cell: ({ row }) => {
+            const contact = row.original
+            return (
+                <div className="flex items-center justify-center gap-3">
+                    <div className="text-center">
+                        <div className="font-semibold text-[13px] leading-tight flex items-center justify-center gap-2">
+                            {contact.name}
+                            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning" />}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono">{contact.display_id} · {contact.tax_id}</div>
+                    </div>
+                </div>
+            )
+        },
+
+--- billing/components/PurchaseInvoicesClientView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<PurchaseDocument>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />,
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            cell: ({ row }) => <span>{formatPlainDate(row.getValue("date"))}</span>,
+        },
+        {
+            accessorKey: "dte_type",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            cell: ({ row }) => {
+                const doc = row.original
+                return (
+                    <div className="flex items-center gap-2" title={doc.dte_type_display}>
+
+--- billing/components/SalesInvoicesClientView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+    }
+
+    const columns: ColumnDef<Invoice>[] = [
+        {
+            accessorKey: "number",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.original.number} />,
+        },
+        { accessorKey: "date", header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" /> },
+        { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
+        { accessorKey: "partner_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" /> },
+        {
+            accessorKey: "total",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <MoneyDisplay amount={Number(row.getValue("total"))} showColor={false} />
+                </div>
+            ),
+        },
+
+--- accounting/components/AccountsClientView.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<Account>[] = [
+        {
+            accessorKey: "code",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Código" />
+            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.code}</DataCell.Code>,
+        },
+        {
+            accessorKey: "name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+            cell: ({ row }) => <DataCell.Text>{row.original.name}</DataCell.Text>,
+        },
+        {
+            accessorKey: "account_type",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" />
+
+--- accounting/components/LedgerModal.tsx ---
+Has toolbarAction: false
+Has Button in toolbar: false
+Action Context:
+
+    const columns: ColumnDef<LedgerMovement>[] = [
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" />
+            ),
+            cell: ({ row }) => {
+                const mov = row.original
+                const glosa = mov.label || mov.description
+                return (
+                    <div className="max-w-[400px] text-xs leading-relaxed" title={glosa}>
+                        {glosa}
+

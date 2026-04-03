@@ -22,7 +22,6 @@ import {
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -302,50 +301,48 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <IndustrialCard variant="industrial">
-                    <div className="px-1 overflow-x-auto">
-                        {renderCustomView ? (
-                            <div className="p-4">{renderCustomView(table)}</div>
-                        ) : (
-                            <Table>
-                                <TableHeader className="bg-transparent">
-                                    {table.getHeaderGroups().map((headerGroup) => (
-                                        <TableRow
-                                            key={headerGroup.id}
-                                            className="border-b-2 border-border/60 hover:bg-transparent"
-                                        >
-                                            {headerGroup.headers.map((header) => (
-                                                <TableHead
-                                                    key={header.id}
-                                                    className="h-12"
-                                                    style={{ 
-                                                        width: header.column.getSize(),
-                                                        minWidth: header.column.columnDef.minSize
-                                                    }}
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableHeader>
-                                <TableBody>
-                                    {tableBody}
-                                </TableBody>
-                                {renderFooter && (
-                                    <TableFooter className="bg-muted/50 border-t-2">
-                                        {renderFooter(table)}
-                                    </TableFooter>
-                                )}
-                            </Table>
-                        )}
-                    </div>
-                </IndustrialCard>
+                <div className="overflow-x-auto">
+                    {renderCustomView ? (
+                        <div className="py-4">{renderCustomView(table)}</div>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-transparent">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <TableRow
+                                        key={headerGroup.id}
+                                        className="border-b-2 border-border/60 hover:bg-transparent"
+                                    >
+                                        {headerGroup.headers.map((header) => (
+                                            <TableHead
+                                                key={header.id}
+                                                className="h-12"
+                                                style={{ 
+                                                    width: header.column.getSize(),
+                                                    minWidth: header.column.columnDef.minSize
+                                                }}
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </TableHead>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {tableBody}
+                            </TableBody>
+                            {renderFooter && (
+                                <TableFooter className="bg-muted/50 border-t-2">
+                                    {renderFooter(table)}
+                                </TableFooter>
+                            )}
+                        </Table>
+                    )}
+                </div>
 
                 {/* Pagination Section (Outside) */}
                 {!hidePagination && (

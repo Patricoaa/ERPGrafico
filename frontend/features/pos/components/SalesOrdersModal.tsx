@@ -56,7 +56,6 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
     const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChange} modal={false}>
             <CollapsibleSheet
                 sheetId="POS_SALES"
                 open={open}
@@ -136,6 +135,5 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     </ScrollAreaUI>
                 </div>
             </CollapsibleSheet>
-        </Sheet>
     )
 }

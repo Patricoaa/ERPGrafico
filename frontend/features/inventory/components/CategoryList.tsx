@@ -43,9 +43,15 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsFormOpen(false)
+        setEditingCategory(null)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchCategories = async () => {
@@ -83,13 +89,6 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     useEffect(() => {
         fetchCategories()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setEditingCategory(null)
-            setIsFormOpen(true)
-        }
-    }, [externalOpen])
 
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
@@ -149,13 +148,12 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
 
             <CategoryForm
                 onSuccess={fetchCategories}
-                open={isFormOpen}
+                open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsFormOpen(open)
                     if (!open) {
-                        setEditingCategory(null)
-                        onExternalOpenChange?.(false)
                         handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
                     }
                 }}
                 initialData={editingCategory || undefined}

@@ -131,7 +131,7 @@ export default async function HRPage({ searchParams }: PageProps) {
                 title="Configuración de RRHH"
                 description="Gestione indicadores económicos, conceptos de nómina e instituciones previsionales."
                 tabLabel="Configuración"
-                fullWidth={800}
+                fullWidth={1200}
             >
                 <Suspense fallback={<LoadingFallback />}>
                     <HRSettingsView activeTab={configTab} />

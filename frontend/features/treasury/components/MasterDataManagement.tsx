@@ -34,10 +34,10 @@ interface Bank {
 
 interface BankManagementProps {
     externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
+    onOpenChange?: (open: boolean) => void
 }
 
-export function BankManagement({ externalOpen, onExternalOpenChange }: BankManagementProps) {
+export function BankManagement({ externalOpen, onOpenChange }: BankManagementProps) {
     const [banks, setBanks] = useState<Bank[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -58,12 +58,6 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
     useEffect(() => {
         fetchBanks()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            openCreate()
-        }
-    }, [externalOpen])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -149,15 +143,20 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
             />
 
             <BankDialog
-                open={dialogOpen}
+                open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        setSelectedBank(null)
+                        onOpenChange?.(false)
+                    } else {
+                        setDialogOpen(true)
+                    }
                 }}
                 bank={selectedBank}
                 onSuccess={() => {
                     setDialogOpen(false)
-                    onExternalOpenChange?.(false)
+                    onOpenChange?.(false)
                     fetchBanks()
                 }}
             />
@@ -305,10 +304,10 @@ interface PaymentMethod {
 
 interface PaymentMethodManagementProps {
     externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
+    onOpenChange?: (open: boolean) => void
 }
 
-export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: PaymentMethodManagementProps) {
+export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentMethodManagementProps) {
     const [methods, setMethods] = useState<PaymentMethod[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -329,12 +328,6 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
     useEffect(() => {
         fetchMethods()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            openCreate()
-        }
-    }, [externalOpen])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -442,15 +435,20 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
             />
 
             <PaymentMethodDialog
-                open={dialogOpen}
+                open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        setSelectedMethod(null)
+                        onOpenChange?.(false)
+                    } else {
+                        setDialogOpen(true)
+                    }
                 }}
                 method={selectedMethod}
                 onSuccess={() => {
                     setDialogOpen(false)
-                    onExternalOpenChange?.(false)
+                    onOpenChange?.(false)
                     fetchMethods()
                 }}
             />

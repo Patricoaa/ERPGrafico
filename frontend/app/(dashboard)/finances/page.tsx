@@ -51,9 +51,23 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     const getHeaderConfig = () => {
         switch (viewMode) {
             case 'statements':
-                return { title: "Estados Financieros", description: "Reportes oficiales de Balance, P&L y Flujo de Caja.", icon: "clipboard-list", action: null }
+                if (tab === 'bs') {
+                    return { title: "Balance General", description: "Estado de situación financiera resumido.", icon: "file-text", action: null }
+                } else if (tab === 'pl') {
+                    return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", icon: "bar-chart-2", action: null }
+                } else if (tab === 'cf') {
+                    return { title: "Flujo de Caja", description: "Análisis de entradas y salidas de efectivo.", icon: "trending-up", action: null }
+                } else {
+                    return { title: "Estados Financieros", description: "Reportes oficiales de Balance, P&L y Flujo de Caja.", icon: "clipboard-list", action: null }
+                }
             case 'analysis':
-                return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", action: null }
+                if (tab === 'bi') {
+                    return { title: "Business Intelligence", description: "Análisis visual de métricas de rentabilidad y evolución.", icon: "activity", action: null }
+                } else if (tab === 'ratios') {
+                    return { title: "Ratios Financieros", description: "Métricas de liquidez, solvencia y rentabilidad.", icon: "pie-chart", action: null }
+                } else {
+                    return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", action: null }
+                }
             case 'budgets':
                 return { 
                     title: "Control Presupuestario", 

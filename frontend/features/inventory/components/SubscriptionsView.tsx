@@ -2,6 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -73,7 +74,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
     const [loading, setLoading] = useState(true)
 
     // Form & Actions state
-    const [isFormOpen, setIsFormOpen] = useState(externalOpen)
+    const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingProduct, setEditingProduct] = useState<any>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
@@ -84,6 +85,21 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
     const [isRestrictionsDialogOpen, setIsRestrictionsDialogOpen] = useState(false)
     const [isRetrying, setIsRetrying] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        setIsFormOpen(false)
+        setEditingProduct(null)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
+    }
 
     const fetchSubscriptions = async () => {
         try {
@@ -432,10 +448,13 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             </div>
 
             <ProductForm
-                open={isFormOpen}
+                open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsFormOpen(open)
-                    if (!open) setEditingProduct(null)
+                    if (!open) {
+                        handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
+                    }
                 }}
                 initialData={editingProduct}
                 onSuccess={() => {

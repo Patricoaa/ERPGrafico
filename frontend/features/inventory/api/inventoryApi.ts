@@ -10,7 +10,11 @@ export const inventoryApi = {
      */
     getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
         const params = new URLSearchParams()
-        if (filters?.active !== undefined) params.append('is_active', String(filters.active))
+        if (filters?.active !== undefined) {
+            const val = filters.active === 'all' ? '' : String(filters.active)
+            params.append('active', val)
+            params.append('is_active', val)
+        }
         if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))

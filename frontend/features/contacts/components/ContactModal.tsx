@@ -79,14 +79,15 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { closeHub } = useHubPanel()
 
     const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            closeHub()
         }
         onOpenChange(newOpen)
     }
@@ -243,14 +244,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
             <CollapsibleSheet
                 sheetId="CONTACT_DETAIL"
                 open={open}
                 onOpenChange={handleOpenChangeProxy}
                 tabLabel="FICHA CONTACTO"
                 tabIcon={User}
-                fullWidth={fullWidth}
+                fullWidth={600}
                 className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
@@ -554,7 +554,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     }
                 />
             </CollapsibleSheet>
-        </Sheet>
     )
 }
 

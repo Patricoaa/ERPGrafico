@@ -204,7 +204,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
                 sheetId="COST_CALCULATOR"
                 open={open}
@@ -468,6 +467,5 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                     </div>
                 </div>
             </CollapsibleSheet>
-        </Sheet>
     )
 }

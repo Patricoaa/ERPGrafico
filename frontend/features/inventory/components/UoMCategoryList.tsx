@@ -42,9 +42,15 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsModalOpen(false)
+        setCurrentCategory({})
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchCategories = async () => {
@@ -63,13 +69,6 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
     useEffect(() => {
         fetchCategories()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setCurrentCategory({})
-            setIsModalOpen(true)
-        }
-    }, [externalOpen])
 
     const handleSave = async () => {
         if (!currentCategory.name) {
@@ -142,12 +141,12 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             />
 
             <BaseModal
-                open={isModalOpen}
+                open={isModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsModalOpen(open)
                     if (!open) {
-                        onExternalOpenChange?.(false)
                         handleCloseModal()
+                    } else {
+                        setIsModalOpen(true)
                     }
                 }}
                 size={currentCategory.id ? "lg" : "md"}

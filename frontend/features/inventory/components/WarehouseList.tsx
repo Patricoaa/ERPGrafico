@@ -38,9 +38,15 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsFormOpen(false)
+        setEditingWarehouse(null)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchWarehouses = async () => {
@@ -79,13 +85,6 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
     useEffect(() => {
         fetchWarehouses()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setEditingWarehouse(null)
-            setIsFormOpen(true)
-        }
-    }, [externalOpen])
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
@@ -154,28 +153,16 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 filterColumn="name"
                 searchPlaceholder="Buscar almacén por nombre o código..."
                 globalFilterFields={["name", "code", "address"]}
-                toolbarAction={
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            onClick={() => { setEditingWarehouse(null); setIsFormOpen(true); }}
-                            className="h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-[0.25rem] shadow-lg shadow-primary/20 group"
-                        >
-                             <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" /> 
-                             Nuevo almacén
-                        </Button>
-                    </div>
-                }
             />
 
             <WarehouseForm
                 onSuccess={fetchWarehouses}
-                open={isFormOpen}
+                open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsFormOpen(open)
                     if (!open) {
-                        setEditingWarehouse(null)
-                        onExternalOpenChange?.(false)
                         handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
                     }
                 }}
                 initialData={editingWarehouse || undefined}

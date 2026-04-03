@@ -65,6 +65,19 @@ export default function PayrollsPage() {
         setDialogOpen(isNewModalOpen)
     }, [isNewModalOpen])
 
+    const fetchPayrolls = useCallback(async () => {
+        try {
+            const data = await getPayrolls()
+            setPayrolls(data)
+        } catch {
+            toast.error("Error al cargar liquidaciones")
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
+
     useEffect(() => {
         const action = searchParams.get("action")
         if (action === "generate_drafts") {
@@ -115,19 +128,6 @@ export default function PayrollsPage() {
         setActivePayrollId(id)
         setDetailSheetOpen(true)
     }
-
-    const fetchPayrolls = useCallback(async () => {
-        try {
-            const data = await getPayrolls()
-            setPayrolls(data)
-        } catch {
-            toast.error("Error al cargar liquidaciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
 
     const handleConfirmPayment = async (data: any) => {
         if (!selectedPayroll || !paymentMode) return

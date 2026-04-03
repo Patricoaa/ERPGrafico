@@ -36,7 +36,9 @@ export default async function BillingPage({ searchParams }: PageProps) {
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title={viewMode === 'sales' ? "Facturación de Ventas" : "Facturación de Compras"}
-                description="Control de documentos electrónicos, estados de pago y cumplimiento tributario."
+                description={viewMode === 'sales' 
+                    ? "Gestión de boletas, facturas y notas de venta emitidas a clientes." 
+                    : "Recepción y cuadratura de facturas y notas de crédito de proveedores."}
                 iconName={viewMode === 'sales' ? "receipt" : "file-badge"}
                 variant="minimal"
                 configHref="?config=true"

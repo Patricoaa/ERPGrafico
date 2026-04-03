@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -18,15 +18,10 @@ import { cn, formatCurrency } from "@/lib/utils"
 export function StockReport() {
     const [report, setReport] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
 
-    useEffect(() => {
-        fetchReport()
-    }, [])
-
-    const fetchReport = async () => {
+    const fetchReport = React.useCallback(async () => {
         setLoading(true)
         try {
             const res = await api.get('/inventory/products/stock_report/')
@@ -36,7 +31,21 @@ export function StockReport() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        let isMounted = true
+        
+        const load = async () => {
+            if (isMounted) await fetchReport()
+        }
+        
+        load()
+        
+        return () => {
+            isMounted = false
+        }
+    }, [fetchReport])
 
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
@@ -181,7 +190,7 @@ export function StockReport() {
             ),
             size: 80,
         },
-    ], [/* dependencies - empty as they only use local states via closures which are captured inside the component */])
+    ], [setAdjustingProduct, setInsightsProduct])
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
 

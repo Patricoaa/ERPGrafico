@@ -64,6 +64,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
             return {
                 title: "Movimientos de Tesorería",
                 description: "Registro histórico de ingresos, egresos y traslados de fondos.",
+                iconName: "banknote" as const,
                 actionTitle: "Nuevo Movimiento",
                 actionHref: "/treasury?view=movements&modal=new",
                 actionIcon: "plus",
@@ -71,27 +72,69 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
             }
         }
         if (viewMode === 'accounts') {
-            const labels: Record<string, string> = { accounts: 'Cuenta', banks: 'Banco', methods: 'Método' }
-            return {
-                title: "Gestión de Cuentas",
-                description: "Administre sus cuentas bancarias, entidades y métodos de pago.",
-                actionTitle: `Nuevo ${labels[subView] || "Registro"}`,
-                actionHref: `/treasury?view=accounts&sub=${subView}&modal=new`,
-                actionIcon: "plus",
-                showAction: true
+            if (subView === 'banks') {
+                return {
+                    title: "Gestión de Bancos",
+                    description: "Administre las entidades bancarias globales del sistema.",
+                    iconName: "landmark" as const,
+                    actionTitle: "Nuevo Banco",
+                    actionHref: "/treasury?view=accounts&sub=banks&modal=new",
+                    actionIcon: "plus",
+                    showAction: true
+                }
+            } else if (subView === 'methods') {
+                return {
+                    title: "Métodos de Pago",
+                    description: "Configure los medios de pago aceptados y sus cuentas vinculadas.",
+                    iconName: "landmark" as const,
+                    actionTitle: "Nuevo Método",
+                    actionHref: "/treasury?view=accounts&sub=methods&modal=new",
+                    actionIcon: "plus",
+                    showAction: true
+                }
+            } else {
+                return {
+                    title: "Cuentas de Tesorería",
+                    description: "Registre y configure sus cuentas bancarias y de efectivo.",
+                    iconName: "landmark" as const,
+                    actionTitle: "Nueva Cuenta",
+                    actionHref: "/treasury?view=accounts&sub=accounts&modal=new",
+                    actionIcon: "plus",
+                    showAction: true
+                }
             }
         }
         if (viewMode === 'reconciliation') {
-            return {
-                title: "Conciliación Bancaria",
-                description: "Gestión de cartolas y cuadratura de movimientos bancarios.",
-                actionTitle: subView === 'statements' ? "Importar Cartola" : subView === 'rules' ? "Nueva Regla" : "",
-                actionHref: `/treasury?view=reconciliation&sub=${subView}&modal=${subView === 'statements' ? 'import' : 'new-rule'}`,
-                actionIcon: subView === 'statements' ? "upload" : "plus",
-                showAction: subView !== 'dashboard'
+            if (subView === 'dashboard') {
+                return {
+                    title: "Dashboard de Conciliación",
+                    description: "Métricas y resumen de la cuadratura contable y bancaria.",
+                    iconName: "bar-chart-3" as const,
+                    showAction: false
+                }
+            } else if (subView === 'rules') {
+                return {
+                    title: "Reglas de Conciliación",
+                    description: "Configure reglas para la asignación automática de movimientos.",
+                    iconName: "wand-2" as const,
+                    actionTitle: "Nueva Regla",
+                    actionHref: "/treasury?view=reconciliation&sub=rules&modal=new-rule",
+                    actionIcon: "plus",
+                    showAction: true
+                }
+            } else {
+                return {
+                    title: "Cartolas Bancarias",
+                    description: "Importación y gestión de cartolas para conciliación.",
+                    iconName: "file-text" as const,
+                    actionTitle: "Importar Cartola",
+                    actionHref: "/treasury?view=reconciliation&sub=statements&modal=import",
+                    actionIcon: "upload",
+                    showAction: true
+                }
             }
         }
-        return { title: "Tesorería", description: "", showAction: false }
+        return { title: "Tesorería", description: "", iconName: "banknote" as const, showAction: false }
     }
 
     const config = getHeaderConfig()
@@ -101,7 +144,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={viewMode === 'movements' ? "banknote" : viewMode === 'accounts' ? "landmark" : "history"}
+                iconName={config.iconName}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (

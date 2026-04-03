@@ -34,6 +34,11 @@ export function CollapsibleSheet({
     hideOverlay = true
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     useEffect(() => {
         if (open) {
@@ -49,21 +54,28 @@ export function CollapsibleSheet({
     const stackIndex = getSheetIndex(sheetId)
     
     // PERF-07: DOM Pruning Engine
-    // Detaches the subtree from CSS layout calculations without unmounting React instances (preserves hook form states)
-    const [isHidden, setIsHidden] = useState(isCollapsed || !open)
+    // Detaches the subtree from CSS layout calculations without unmounting React instances immediately.
+    const [isHidden, setIsHidden] = useState(!open && !isCollapsed)
+    // Deferred unmount to let 500ms CSS exit transition finish before Radix destroys the DOM Node
+    const [shouldMount, setShouldMount] = useState(open || isCollapsed)
 
     useEffect(() => {
-        let timeout: NodeJS.Timeout
-        if (!open) {
-            timeout = setTimeout(() => setIsHidden(true), 500) // Allow slide-out
-        } else if (isCollapsed) {
-            // Apply display:none after the 500ms slide-out transition ends
-            timeout = setTimeout(() => setIsHidden(true), 500)
-        } else {
-            // Remove display:none immediately to allow slide-in transition
+        let hideTimeout: NodeJS.Timeout
+        let unmountTimeout: NodeJS.Timeout
+
+        if (open || isCollapsed) {
+            setShouldMount(true)
             setIsHidden(false)
+        } else {
+            // Give 500ms for slide-out before removing from CSS tree and completely unmounting
+            hideTimeout = setTimeout(() => setIsHidden(true), 500)
+            unmountTimeout = setTimeout(() => setShouldMount(false), 500)
         }
-        return () => clearTimeout(timeout)
+
+        return () => {
+            clearTimeout(hideTimeout)
+            clearTimeout(unmountTimeout)
+        }
     }, [isCollapsed, open])
     
     // Vertical stacking for tabs when multiple sheets are hidden
@@ -71,12 +83,17 @@ export function CollapsibleSheet({
     // Reduced spacing to allow for up to 5-6 tabs without overflowing
     const verticalOffset = stackIndex === -1 ? "50%" : `${15 + (stackIndex * 18)}%`
 
+    // Prevention of initial flash on mount and full pruning
+    if (!isMounted || !shouldMount) return null
+
     return (
         <Sheet open={true} modal={false}>
             <SheetContent
             side={side}
             className={cn(
                 "p-0 flex flex-col border-l shadow-2xl overflow-visible transition-all duration-500 ease-in-out",
+                // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
+                "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
                 className
             )}
@@ -90,7 +107,9 @@ export function CollapsibleSheet({
                 willChange: 'transform',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 maxWidth: fullWidth,
-                width: fullWidth
+                width: fullWidth,
+                // Ensure immediate positioning on mount if closed
+                transition: (!open && !isCollapsed) ? 'none' : undefined
             }}
         >
             {/* Vertical Tab (Solapa) - Only visible when collapsed AND open */}

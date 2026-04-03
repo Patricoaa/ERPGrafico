@@ -54,6 +54,8 @@ export interface ProductFilters {
     parent_template__isnull?: boolean
     search?: string
     category?: number
+    page_size?: number
+    fields?: string
 }
 
 export interface ProductUpdatePayload {

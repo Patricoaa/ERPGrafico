@@ -88,20 +88,19 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent 
                                             align="start" 
-                                            className="w-48 rounded-sm border-border/40 shadow-xl shadow-black/5 bg-background/95 backdrop-blur-sm p-1 ml-4 mt-1"
+                                            className="w-48 rounded-sm border-border/40 shadow-xl shadow-black/5 bg-background/95 backdrop-blur-sm p-1 mt-1"
                                         >
                                             {tab.subTabs!.map((sub) => {
                                                 const isSubActive = isActive && sub.value === subActiveValue
                                                 return (
                                                     <DropdownMenuItem 
-                                                        asChild 
-                                                        key={sub.value} 
+                                                        key={`${tab.value}-${sub.value}`} 
                                                         className={cn(
-                                                            "cursor-pointer my-0.5 rounded-[0.2rem] transition-colors duration-200 focus:bg-primary/5",
+                                                            "cursor-pointer my-0.5 rounded-[0.2rem] transition-colors duration-200 focus:bg-primary/5 p-0",
                                                             isSubActive ? "bg-primary/10" : ""
                                                         )}
                                                     >
-                                                        <Link href={sub.href} className="flex items-center gap-2.5 py-1.5 px-2 w-full">
+                                                        <Link href={sub.href} className="flex items-center gap-2.5 py-1.5 px-2 w-full h-full">
                                                             {sub.iconName ? (
                                                                 <DynamicIcon 
                                                                     name={sub.iconName} 
@@ -111,7 +110,6 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                                     )} 
                                                                 />
                                                             ) : (
-                                                                // Placeholder if no icon to maintain alignment
                                                                 <div className="w-3.5 h-3.5" />
                                                             )}
                                                             <span className={cn(
