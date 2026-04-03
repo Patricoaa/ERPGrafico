@@ -129,79 +129,105 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
     }
 
     return (
-        <Form {...form}>
-            <form className="space-y-6">
-                {/* --- Reconciliation --- */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <ArrowLeftRight className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-lg">Cuentas de Conciliación Bancaria</CardTitle>
-                        </div>
-                        <CardDescription>Cuentas para justificar diferencias en conciliación</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <AccountField form={form} name="bank_commission_account" label="Comisiones Bancarias" accountType="EXPENSE" />
-                            <AccountField form={form} name="interest_income_account" label="Intereses Ganados" accountType="INCOME" />
-                            <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio" accountType="" />
-                            <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo" accountType="EXPENSE" />
-                            <AccountField form={form} name="error_adjustment_account" label="Ajuste por Error" accountType="EXPENSE" />
-                            <AccountField form={form} name="miscellaneous_adjustment_account" label="Ajustes Varios" accountType="EXPENSE" />
-                        </div>
-                    </CardContent>
-                </Card>
+        <div className="max-w-6xl mx-auto space-y-6">
+            <Form {...form}>
+                <form className="space-y-6">
+                    <Tabs defaultValue="conciliation" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                            <TabsTrigger value="conciliation" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                                <ArrowLeftRight className="h-3.5 w-3.5" />
+                                Conciliación
+                            </TabsTrigger>
+                            <TabsTrigger value="audit" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                                <Banknote className="h-3.5 w-3.5" />
+                                Arqueo
+                            </TabsTrigger>
+                            <TabsTrigger value="movements" className="text-[10px] uppercase font-black tracking-widest gap-2">
+                                <Settings2 className="h-3.5 w-3.5" />
+                                Movimientos
+                            </TabsTrigger>
+                        </TabsList>
 
-                {/* --- POS Session Differences --- */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <Banknote className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-lg">Diferencias de Cierre de Caja (Arqueo)</CardTitle>
-                        </div>
-                        <CardDescription>Cuentas para el ajuste automático al cierre de sesión POS</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ganancia)" accountType="INCOME" />
-                            <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Pérdida)" accountType="EXPENSE" />
-                        </div>
-                    </CardContent>
-                </Card>
+                        {/* --- Tab: Reconciliation --- */}
+                        <TabsContent value="conciliation" className="m-0 p-0 border-0 outline-none mt-6">
+                            <Card className="rounded-[0.25rem] border-2">
+                                <CardHeader className="pb-4">
+                                    <div className="flex items-center gap-2">
+                                        <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
+                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Conciliación Bancaria</CardTitle>
+                                    </div>
+                                    <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Identificadores para ajustes automáticos en conciliación por lotes</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <AccountField form={form} name="bank_commission_account" label="Gasto Comisiones Bancarias" accountType="EXPENSE" />
+                                        <AccountField form={form} name="interest_income_account" label="Ingreso por Intereses" accountType="INCOME" />
+                                        <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio (M.E)" accountType="" />
+                                        <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo / Centavos" accountType="EXPENSE" />
+                                        <AccountField form={form} name="error_adjustment_account" label="Ajustes por Errores Operativos" accountType="EXPENSE" />
+                                        <AccountField form={form} name="miscellaneous_adjustment_account" label="Otros Ajustes de Tesorería" accountType="EXPENSE" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                {/* --- POS Manual Movements --- */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <Settings2 className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-lg">Cuentas para Movimientos Manuales</CardTitle>
-                        </div>
-                        <CardDescription>Cuentas usadas en depósitos, retiros y ajustes manuales</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground mb-4">Ingresos / Depósitos</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <AccountField form={form} name="pos_tip_account" label="Propinas" accountType="INCOME" />
-                                <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos (Varios)" accountType="INCOME" />
-                                <AccountField form={form} name="pos_counting_error_account" label="Error de Conteo (Sobrante)" accountType="INCOME" />
-                                <AccountField form={form} name="pos_system_error_account" label="Error de Sistema (Ajuste)" accountType="EXPENSE" />
-                            </div>
-                        </div>
-                        <Separator />
-                        <div>
-                            <p className="text-xs font-semibold uppercase text-muted-foreground mb-4">Egresos / Retiros</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <AccountField form={form} name="pos_theft_account" label="Robo / Pérdida" accountType="EXPENSE" />
-                                <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo" accountType="EXPENSE" />
-                                <AccountField form={form} name="pos_cashback_error_account" label="Vuelto Incorrecto" accountType="EXPENSE" />
-                                <AccountField form={form} name="pos_other_outflow_account" label="Otros Egresos (Varios)" accountType="EXPENSE" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </form>
-        </Form>
+                        {/* --- Tab: Audit (Arqueo) --- */}
+                        <TabsContent value="audit" className="m-0 p-0 border-0 outline-none mt-6">
+                            <Card className="rounded-[0.25rem] border-2">
+                                <CardHeader className="pb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Banknote className="h-4 w-4 text-primary opacity-50" />
+                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Diferencias de Cierre de Caja (Arqueo)</CardTitle>
+                                    </div>
+                                    <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Control de discrepancias entre saldo teórico y físico en POS</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ganancia)" accountType="INCOME" />
+                                        <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Pérdida)" accountType="EXPENSE" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* --- Tab: Movements --- */}
+                        <TabsContent value="movements" className="m-0 p-0 border-0 outline-none mt-6">
+                            <Card className="rounded-[0.25rem] border-2">
+                                <CardHeader className="pb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Settings2 className="h-4 w-4 text-primary opacity-50" />
+                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas para Movimientos Manuales</CardTitle>
+                                    </div>
+                                    <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Configuración de ingresos y egresos ad-hoc del módulo POS</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Depósitos y Entradas de Efectivo</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                            <AccountField form={form} name="pos_tip_account" label="Recaudación Propinas" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Operativos" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_counting_error_account" label="Ajuste Error de Conteo (Sobrante)" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Retiros y Salidas de Efectivo</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                            <AccountField form={form} name="pos_theft_account" label="Pérdidas / Merma de Efectivo" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo de Pago" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_cashback_error_account" label="Faltante por Vuelto Incorrecto" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_other_outflow_account" label="Egresos Varios de Caja" accountType="EXPENSE" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </form>
+            </Form>
+        </div>
+
     )
 }
 

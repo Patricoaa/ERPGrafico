@@ -90,9 +90,9 @@ export function EquityCompositionTab() {
         return (
             <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full rounded-[0.25rem]" />)}
+                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full rounded" />)}
                 </div>
-                <Skeleton className="h-[400px] w-full rounded-[0.25rem]" />
+                <Skeleton className="h-[400px] w-full rounded" />
             </div>
         )
     }
@@ -109,15 +109,15 @@ export function EquityCompositionTab() {
                     <span className="text-[9px] font-mono opacity-50">{row.original.tax_id}</span>
                     
                     {row.original.partner_excess_capital > 0 && (
-                        <div className="mt-1.5 p-1.5 bg-amber-100/50 border border-amber-200/50 rounded-[0.125rem] flex items-center justify-between gap-2 overflow-hidden ring-1 ring-amber-500/10">
-                            <div className="flex items-center gap-1.5 text-[8px] text-amber-800 font-black uppercase tracking-tighter">
+                        <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center justify-between gap-2 overflow-hidden ring-1 ring-warning/10">
+                            <div className="flex items-center gap-1.5 text-[8px] text-warning font-black uppercase tracking-tighter">
                                 <AlertCircle className="h-2.5 w-2.5 shrink-0" />
                                 Exceso: +{formatCurrency(row.original.partner_excess_capital)}
                             </div>
                             <Button 
                                 variant="link" 
                                 size="sm" 
-                                className="h-3 p-0 text-[8px] font-black text-amber-900 hover:text-amber-600 underline uppercase tracking-widest leading-none"
+                                className="h-3 p-0 text-[8px] font-black text-warning hover:text-warning/80 underline uppercase tracking-widest leading-none"
                                 onClick={() => {
                                     setSubModalParams({
                                         partnerId: row.original.id.toString(),
@@ -138,7 +138,7 @@ export function EquityCompositionTab() {
             header: () => <div className="text-right">Part. %</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Badge variant="outline" className="font-mono text-[10px] h-5 rounded-[0.125rem] border-primary/20 bg-primary/5 text-primary font-black">
+                    <Badge variant="outline" className="font-mono text-[10px] h-5 rounded-sm border-primary/20 bg-primary/5 text-primary font-black">
                         {row.getValue("partner_equity_percentage")}%
                     </Badge>
                 </div>
@@ -170,7 +170,7 @@ export function EquityCompositionTab() {
                 return (
                     <div className={cn(
                         "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-amber-600' : 'text-muted-foreground/30'
+                        val > 0 ? 'text-warning' : 'text-muted-foreground/30'
                     )}>
                         {formatCurrency(val)}
                     </div>
@@ -185,7 +185,7 @@ export function EquityCompositionTab() {
                 return (
                     <div className={cn(
                         "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-rose-600' : 'text-muted-foreground/30'
+                        val > 0 ? 'text-destructive' : 'text-muted-foreground/30'
                     )}>
                         {val > 0 ? `(${formatCurrency(val)})` : '-'}
                     </div>
@@ -200,7 +200,7 @@ export function EquityCompositionTab() {
                 return (
                     <div className={cn(
                         "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-emerald-600' : 'text-muted-foreground/30'
+                        val > 0 ? 'text-success' : 'text-muted-foreground/30'
                     )}>
                         {val > 0 ? formatCurrency(val) : '-'}
                     </div>
@@ -222,7 +222,7 @@ export function EquityCompositionTab() {
                 <div className="flex justify-center">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-[0.125rem]">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm">
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -279,19 +279,19 @@ export function EquityCompositionTab() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black text-emerald-600 font-heading tracking-tighter">
+                        <div className="text-xl font-black text-success font-heading tracking-tighter">
                             {formatCurrency(summary?.total_paid_in || 0)}
                         </div>
                         <div className="flex items-center justify-between mt-1">
                             <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-tighter opacity-60">Efectivamente pagado</span>
-                            <span className="text-[9px] font-mono font-black text-emerald-600 bg-emerald-50 px-1 rounded">
+                            <span className="text-[9px] font-mono font-black text-success bg-success/10 px-1 rounded">
                                 {summary?.total_capital > 0 ? Math.round((summary.total_paid_in / summary.total_capital) * 100) : 0}%
                             </span>
                         </div>
                         {summary?.total_capital > 0 && (
                             <div className="mt-2 w-full h-1 bg-muted rounded-full overflow-hidden">
                                 <div 
-                                    className="h-full bg-emerald-500 rounded-full transition-all duration-1000" 
+                                    className="h-full bg-success rounded-full transition-all duration-1000" 
                                     style={{ width: `${Math.min(100, Math.round((summary.total_paid_in / summary.total_capital) * 100))}%` }}
                                 />
                             </div>
@@ -307,7 +307,7 @@ export function EquityCompositionTab() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black font-heading tracking-tighter text-amber-600">
+                        <div className="text-xl font-black font-heading tracking-tighter text-warning">
                             {formatCurrency(summary?.total_pending || 0)}
                         </div>
                         <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-tighter opacity-60">
@@ -355,7 +355,7 @@ export function EquityCompositionTab() {
                                 <Button 
                                     variant="outline"
                                     onClick={() => setIsAddPartnerOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary transition-all rounded-[0.25rem]"
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary transition-all rounded"
                                 >
                                     <UserPlus className="h-3.5 w-3.5 mr-2" />
                                     Añadir Socio
@@ -371,7 +371,7 @@ export function EquityCompositionTab() {
                                 <Button 
                                     variant="outline"
                                     onClick={() => setIsTransferOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-blue-200/50 hover:bg-blue-50 text-blue-700 transition-all rounded-[0.25rem]"
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-info/20 hover:bg-info/5 text-info transition-all rounded"
                                 >
                                     <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
                                     Transferencia
@@ -383,7 +383,7 @@ export function EquityCompositionTab() {
             />
 
             {/* Info Message */}
-            <div className="bg-primary/5 border-2 border-primary/10 rounded-[0.25rem] p-4 flex gap-3 items-start animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-primary/5 border-2 border-primary/10 rounded p-4 flex gap-3 items-start animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="text-[11px] text-primary/80 leading-relaxed font-medium">
                     <p className="font-black text-[12px] mb-1 text-primary">Nota sobre la Composición Societaria:</p>

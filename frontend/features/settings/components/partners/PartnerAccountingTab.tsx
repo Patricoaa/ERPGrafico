@@ -26,8 +26,17 @@ const partnerAccountingSchema = z.object({
 
 type PartnerAccountingValues = z.infer<typeof partnerAccountingSchema>
 
-export function PartnerAccountingTab() {
+interface PartnerAccountingTabProps {
+    onSavingChange?: (saving: boolean) => void
+}
+
+export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabProps) {
     const { settings, saving, updateSettings } = usePartnerSettings()
+
+    // Notify parent of saving state
+    useEffect(() => {
+        onSavingChange?.(saving)
+    }, [saving, onSavingChange])
 
     const form = useForm<PartnerAccountingValues>({
         resolver: zodResolver(partnerAccountingSchema),
@@ -76,29 +85,7 @@ export function PartnerAccountingTab() {
     }, [watchedValues, isDirty, form, onSubmit])
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex items-center justify-between pb-2 border-b">
-                <div className="space-y-0.5">
-                    <h3 className="text-lg font-bold tracking-tight">Arquitectura Contable de Socios</h3>
-                    <p className="text-xs text-muted-foreground italic">
-                        Configure las cuentas maestras para el Modelo Híbrido de Capital.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border text-[10px] font-medium transition-all duration-300">
-                    {saving ? (
-                        <>
-                            <CloudUpload className="h-3 w-3 animate-pulse text-primary" />
-                            <span className="text-primary">Sincronizando...</span>
-                        </>
-                    ) : (
-                        <>
-                            <Check className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-600">Configuración validada</span>
-                        </>
-                    )}
-                </div>
-            </div>
-
+        <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 1. Patrimonio Row */}
                 <IndustrialCard variant="industrial" className="md:col-span-2">
@@ -233,14 +220,14 @@ export function PartnerAccountingTab() {
             </div>
             
             {/* Health Check Alert */}
-            <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/50 flex flex-col gap-3">
+            <div className="p-4 rounded border-2 border-success/20 bg-success/5 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs font-bold uppercase text-emerald-800">Verificador de Integridad Societaria</span>
+                    <Check className="h-4 w-4 text-success" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-success">Verificador de Integridad Societaria</span>
                 </div>
-                <p className="text-[11px] text-emerald-700 leading-relaxed">
+                <p className="text-[11px] text-success leading-relaxed font-medium">
                     El sistema ha validado que el modelo de datos de socios es coherente. Todas las suscripciones de capital se mapearán automáticamente a las cuentas individuales bajo el nodo maestro seleccionado. 
-                    <strong className="ml-1">Nota:</strong> Si cambia una cuenta maestra, el sistema no moverá los saldos históricos automáticamente; deberá realizar un traspaso manual vía Diario.
+                    <strong className="ml-1 text-success/80">Nota:</strong> Si cambia una cuenta maestra, el sistema no moverá los saldos históricos automáticamente; deberá realizar un traspaso manual vía Diario.
                 </p>
             </div>
         </div>

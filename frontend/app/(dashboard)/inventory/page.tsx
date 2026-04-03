@@ -16,6 +16,7 @@ const MovementList = lazy(() => import("@/features/inventory/components/Movement
 const WarehouseList = lazy(() => import("@/features/inventory/components/WarehouseList").then(m => ({ default: m.WarehouseList })))
 const UoMsView = lazy(() => import("@/features/inventory/components/UoMsView").then(m => ({ default: m.UoMsView })))
 const AttributeManager = lazy(() => import("@/features/inventory/components/AttributeManager").then(m => ({ default: m.AttributeManager })))
+const SubscriptionsView = lazy(() => import("@/features/inventory/components/SubscriptionsView").then(m => ({ default: m.SubscriptionsView })))
 const InventorySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.InventorySettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { Settings2 } from "lucide-react"
@@ -46,6 +47,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 { value: "items", label: "Catálogo", iconName: "package", href: "/inventory?view=products&sub=items" },
                 { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory?view=products&sub=categories" },
                 { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory?view=products&sub=pricing-rules" },
+                { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: "/inventory?view=products&sub=subscriptions" },
             ]
         },
         { 
@@ -74,10 +76,10 @@ export default async function InventoryPage({ searchParams }: PageProps) {
 
     const getHeaderConfig = () => {
         if (viewMode === 'products') {
-            const labels: Record<string, string> = { items: 'Productos', categories: 'Categorías', 'pricing-rules': 'Reglas' }
+            const labels: Record<string, string> = { items: 'Productos', categories: 'Categorías', 'pricing-rules': 'Reglas', 'subscriptions': 'Suscripción' }
             return {
-                title: "Gestión de Productos",
-                description: "Control de catálogo, categorías y precios.",
+                title: subView === 'subscriptions' ? "Suscripciones y Recurrentes" : "Gestión de Productos",
+                description: subView === 'subscriptions' ? "Gestión de servicios mensuales, contratos y facturación automática." : "Control de catálogo, categorías y precios.",
                 actionTitle: labels[subView] ? `Nuevo ${labels[subView]}` : "Nuevo",
                 actionHref: `/inventory?view=products&sub=${subView}&modal=new`,
                 showAction: true
@@ -144,6 +146,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                             {subView === 'items' && <ProductList externalOpen={modal === 'new'} />}
                             {subView === 'categories' && <CategoryList externalOpen={modal === 'new'} />}
                             {subView === 'pricing-rules' && <PricingRuleList externalOpen={modal === 'new'} />}
+                            {subView === 'subscriptions' && <SubscriptionsView hideHeader externalOpen={modal === 'new'} />}
                         </div>
                     )}
 

@@ -2,21 +2,15 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
     ColumnDef,
 } from "@tanstack/react-table"
 import {
-    Calendar,
-    DollarSign,
     Pause,
     Play,
-    X,
-    TrendingUp,
     AlertCircle,
-    Plus,
     Pencil,
     Archive,
     RefreshCw,
@@ -24,7 +18,6 @@ import {
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
@@ -32,12 +25,14 @@ import { ArchivingRestrictionsDialog } from "@/features/inventory/components/Arc
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Restriction } from "@/features/inventory/types"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { cn } from "@/lib/utils"
 
 interface Subscription {
     id: number
-    product: number // Added product ID from serializer
+    product: number
     product_name: string
     product_code: string
     product_internal_code?: string
@@ -67,14 +62,19 @@ interface Stats {
     upcoming_renewals_30_days: number
 }
 
-export default function SubscriptionsPage() {
+interface SubscriptionsViewProps {
+    hideHeader?: boolean
+    externalOpen?: boolean
+}
+
+export function SubscriptionsView({ hideHeader = false, externalOpen = false }: SubscriptionsViewProps) {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
 
     // Form & Actions state
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingProduct, setEditingProduct] = useState<any>(null) // We'll fetch full product data
+    const [isFormOpen, setIsFormOpen] = useState(externalOpen)
+    const [editingProduct, setEditingProduct] = useState<any>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
@@ -176,7 +176,6 @@ export default function SubscriptionsPage() {
         }
     }
 
-    // Original pause/resume handlers... (kept as is, just commenting for context)
     const handleResume = async (id: number) => {
         try {
             await api.post(`/inventory/subscriptions/${id}/resume/`)
@@ -185,20 +184,6 @@ export default function SubscriptionsPage() {
             fetchStats()
         } catch (error: unknown) {
             showApiError(error, "Error al reactivar suscripción")
-        }
-    }
-
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "ACTIVE":
-                return "bg-green-500"
-            case "PAUSED":
-                return "bg-yellow-500"
-            case "CANCELLED":
-                return "bg-destructive"
-            default:
-                return "bg-muted0"
         }
     }
 
@@ -369,42 +354,56 @@ export default function SubscriptionsPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Suscripciones y Recurrentes"
-                description="Gestión de servicios mensuales, contratos y facturación automática."
-                variant="minimal"
-                iconName="calendar-clock"
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => {
-                            setEditingProduct(null)
-                            setIsFormOpen(true)
-                        }}
-                        iconName="plus"
-                        circular
-                        title="Nueva Suscripción"
-                    />
-                }
-            >
-                <div className="flex items-center gap-2">
-
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 rounded-full"
-                        onClick={handleTriggerInspection}
-                    >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Ejecutar Inspección
-                    </Button>
-                </div>
-            </PageHeader>
+        <div className={cn(LAYOUT_TOKENS.view, hideHeader && "pt-0")}>
+            {!hideHeader && (
+                <PageHeader
+                    title="Suscripciones y Recurrentes"
+                    description="Gestión de servicios mensuales, contratos y facturación automática."
+                    variant="minimal"
+                    iconName="calendar-clock"
+                    titleActions={
+                        <PageHeaderButton
+                            onClick={() => {
+                                setEditingProduct(null)
+                                setIsFormOpen(true)
+                            }}
+                            iconName="plus"
+                            circular
+                            title="Nueva Suscripción"
+                        />
+                    }
+                >
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 rounded-full"
+                            onClick={handleTriggerInspection}
+                        >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Ejecutar Inspección
+                        </Button>
+                    </div>
+                </PageHeader>
+            )}
 
             <div className="space-y-4">
+                {hideHeader && (
+                    <div className="flex justify-end mb-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 rounded-full"
+                            onClick={handleTriggerInspection}
+                        >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Ejecutar Inspección
+                        </Button>
+                    </div>
+                )}
                 {loading ? (
-                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                        Cargando...
+                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
+                        Cargando suscripciones...
                     </div>
                 ) : (
                     <div className="">
@@ -457,7 +456,7 @@ export default function SubscriptionsPage() {
                         <p>
                             ¿Está seguro de que desea archivar el producto <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
-                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3 text-amber-800">
+                        <div className="bg-amber-100/10 border border-amber-500/20 p-3 rounded-lg flex gap-3 text-amber-500">
                             <AlertCircle className="h-5 w-5 shrink-0" />
                             <div className="text-xs">
                                 <p className="font-bold mb-1">Impacto en Suscripciones</p>
@@ -485,4 +484,3 @@ export default function SubscriptionsPage() {
         </div>
     )
 }
-

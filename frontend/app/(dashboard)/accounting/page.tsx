@@ -9,7 +9,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 const AccountsView = lazy(() => import("@/app/(dashboard)/accounting/accounts/page").then(m => ({ default: m.default })))
 const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
 const PeriodsView = lazy(() => import("@/app/(dashboard)/accounting/periods/page").then(m => ({ default: m.default })))
-const TaxDeclarationsView = lazy(() => import("@/app/(dashboard)/tax/declarations/page").then(m => ({ default: m.default })))
+const TaxDeclarationsView = lazy(() => import("@/features/tax/components/TaxDeclarationsView").then(m => ({ default: m.TaxDeclarationsView })))
 const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { Settings2 } from "lucide-react"

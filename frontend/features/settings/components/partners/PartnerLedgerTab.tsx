@@ -88,16 +88,16 @@ export function PartnerLedgerTab() {
     ].includes(type)
 
     const getTransactionIcon = (type: string) => {
-        if (isInflow(type)) return <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
-        if (isOutflow(type)) return <ArrowDownLeft className="h-3.5 w-3.5 text-rose-500" />
+        if (isInflow(type)) return <ArrowUpRight className="h-3.5 w-3.5 text-success" />
+        if (isOutflow(type)) return <ArrowDownLeft className="h-3.5 w-3.5 text-destructive" />
         return <History className="h-3.5 w-3.5 text-muted-foreground" />
     }
 
     const getTransactionColor = (type: string) => {
-        if (type === 'SUBSCRIPTION') return 'bg-blue-100/50 text-blue-700 border-blue-200/50'
-        if (type.includes('TRANSFER')) return 'bg-amber-100/50 text-amber-700 border-amber-200/50'
-        if (isInflow(type)) return 'bg-emerald-100/50 text-emerald-700 border-emerald-200/50'
-        if (isOutflow(type)) return 'bg-rose-100/50 text-rose-700 border-rose-200/50'
+        if (type === 'SUBSCRIPTION') return 'bg-info/10 text-info border-info/20'
+        if (type.includes('TRANSFER')) return 'bg-warning/10 text-warning border-warning/20'
+        if (isInflow(type)) return 'bg-success/10 text-success border-success/20'
+        if (isOutflow(type)) return 'bg-destructive/10 text-destructive border-destructive/20'
         return 'bg-muted/50 text-muted-foreground border-transparent'
     }
 
@@ -154,7 +154,7 @@ export function PartnerLedgerTab() {
             cell: ({ row }) => {
                 const val = row.getValue("journal_entry_display")
                 return val ? (
-                    <Button variant="ghost" className="h-6 px-2 text-[9px] font-mono hover:bg-primary/5 hover:text-primary transition-all rounded-[0.125rem]">
+                    <Button variant="ghost" className="h-6 px-2 text-[9px] font-mono hover:bg-primary/5 hover:text-primary transition-all rounded-sm">
                         {val as string}
                     </Button>
                 ) : <span className="text-muted-foreground/30 px-2">-</span>
@@ -169,7 +169,7 @@ export function PartnerLedgerTab() {
                 return (
                     <div className="flex items-center justify-end gap-1 font-mono text-[11px] font-black pr-4">
                         {getTransactionIcon(type)}
-                        <span className={isOutflow(type) ? 'text-rose-600' : 'text-emerald-600'}>
+                        <span className={isOutflow(type) ? 'text-destructive' : 'text-success'}>
                             {isOutflow(type) ? '-' : '+'}{formatCurrency(amount)}
                         </span>
                     </div>
@@ -212,7 +212,7 @@ export function PartnerLedgerTab() {
                     <div className="flex gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded-[0.25rem]">
+                                <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded">
                                     <Wallet className="h-3.5 w-3.5 mr-2" />
                                     Operación Caja
                                 </Button>
@@ -220,25 +220,25 @@ export function PartnerLedgerTab() {
                             <DropdownMenuContent align="end" className="w-56 font-mono text-[10px] border-2">
                                 <DropdownMenuLabel className="text-[9px] tracking-[0.2em] text-muted-foreground/60 px-3 py-2">TESORERÍA INDUSTRIAL</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setIsContributionOpen(true)} className="gap-3 cursor-pointer font-black text-emerald-600 focus:text-emerald-700 p-3 hover:bg-emerald-50/50">
-                                    <ArrowUpRight className="h-4 w-4 bg-emerald-100 rounded-full p-0.5" />
+                                <DropdownMenuItem onClick={() => setIsContributionOpen(true)} className="gap-3 cursor-pointer font-black text-success focus:text-success/80 p-3 hover:bg-success/5">
+                                    <ArrowUpRight className="h-4 w-4 bg-success/10 rounded-full p-0.5" />
                                     <div className="flex flex-col">
                                         <span>Registrar Aporte</span>
-                                        <span className="text-[8px] font-medium text-emerald-500/70">INGRESO DE EFECTIVO</span>
+                                        <span className="text-[8px] font-medium text-success/70">INGRESO DE EFECTIVO</span>
                                     </div>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)} className="gap-3 cursor-pointer font-black text-rose-600 focus:text-rose-700 p-3 hover:bg-rose-50/50">
-                                    <ArrowDownLeft className="h-4 w-4 bg-rose-100 rounded-full p-0.5" />
+                                <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)} className="gap-3 cursor-pointer font-black text-destructive focus:text-destructive/80 p-3 hover:bg-destructive/5">
+                                    <ArrowDownLeft className="h-4 w-4 bg-destructive/10 rounded-full p-0.5" />
                                     <div className="flex flex-col">
                                         <span>Registrar Retiro</span>
-                                        <span className="text-[8px] font-medium text-rose-500/70">EGRESO DE EFECTIVO</span>
+                                        <span className="text-[8px] font-medium text-destructive/70">EGRESO DE EFECTIVO</span>
                                     </div>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <Button
                             variant="outline"
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-amber-200/50 hover:bg-amber-50 text-amber-700 transition-all rounded-[0.25rem]"
+                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-warning/20 hover:bg-warning/5 text-warning transition-all rounded"
                             onClick={() => setIsInventoryOpen(true)}
                         >
                             <Package className="h-3.5 w-3.5 mr-2" />
@@ -269,15 +269,15 @@ export function PartnerLedgerTab() {
                             </TableCell>
                             <TableCell className="text-right">
                                 <div className="flex flex-col gap-0.5 text-[9px] font-black uppercase text-muted-foreground/60 pr-2">
-                                    <span className="text-emerald-600/70">Entradas (+)</span>
-                                    <span className="text-rose-600/70">Salidas (-)</span>
+                                    <span className="text-success/70">Entradas (+)</span>
+                                    <span className="text-destructive/70">Salidas (-)</span>
                                     <span className="text-primary border-t border-primary/10 pt-1 mt-1 uppercase">Saldo Neto</span>
                                 </div>
                             </TableCell>
                             <TableCell className="text-right font-mono text-[11px] pr-4">
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-emerald-600 font-bold">+{formatCurrency(totals.inflows)}</span>
-                                    <span className="text-rose-600 font-bold">-{formatCurrency(totals.outflows)}</span>
+                                    <span className="text-success font-bold">+{formatCurrency(totals.inflows)}</span>
+                                    <span className="text-destructive font-bold">-{formatCurrency(totals.outflows)}</span>
                                     <span className="text-primary border-t border-primary/10 pt-1 mt-1 font-black text-xs leading-none">
                                         {formatCurrency(totals.inflows - totals.outflows)}
                                     </span>
@@ -286,7 +286,7 @@ export function PartnerLedgerTab() {
                             <TableCell className="text-right pr-6 py-4">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mb-1.5 opacity-60">Running Balance</span>
-                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded-[0.25rem] text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
+                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
                                         {rows.length > 0 ? formatCurrency(rows[0].original.balance_after) : '$0'}
                                     </div>
                                 </div>

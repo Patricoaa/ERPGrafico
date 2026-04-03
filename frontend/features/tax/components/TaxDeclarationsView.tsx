@@ -6,9 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
-    Plus,
-    FileText,
-    Calendar,
     CheckCircle2,
     AlertCircle,
     ArrowRight,
@@ -30,12 +27,12 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { cn } from "@/lib/utils"
 
-interface TaxDeclarationsPageProps {
+interface TaxDeclarationsViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
 }
 
-export default function TaxDeclarationsPage({ externalOpen, onExternalOpenChange }: TaxDeclarationsPageProps) {
+export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxDeclarationsViewProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -101,10 +98,6 @@ export default function TaxDeclarationsPage({ externalOpen, onExternalOpenChange
             setIsWizardOpen(true)
         }
     }, [externalOpen])
-
-    const handleOpenWizard = () => {
-        setIsWizardOpen(true)
-    }
 
     const handleOpenChecklist = (period: any) => {
         setSelectedPeriod(period)
@@ -378,7 +371,7 @@ export default function TaxDeclarationsPage({ externalOpen, onExternalOpenChange
                         return (
                             <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
                                 <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
+                                <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
                             </div>
                         )
                     }

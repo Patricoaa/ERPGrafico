@@ -130,7 +130,7 @@ export function TaskInbox() {
             const year = task.data?.year || ''
             const month = task.data?.month || ''
             const action = task.task_type === 'F29_PAY' ? 'pay' : 'create'
-            window.location.href = `/tax/declarations?year=${year}&month=${month}&action=${action}`
+            window.location.href = `/accounting?view=tax&year=${year}&month=${month}&action=${action}`
         } else if (task.task_type === 'PERIOD_CLOSE') {
             const year = task.data?.year || ''
             const month = task.data?.month || ''

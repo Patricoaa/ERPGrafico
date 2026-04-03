@@ -1,29 +1,36 @@
 "use client"
 
-import React from "react"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import React, { useEffect } from "react"
 import { EquityCompositionTab } from "./partners/EquityCompositionTab"
 import { PartnerLedgerTab } from "./partners/PartnerLedgerTab"
-import { PartnerAccountingTab } from "./partners/PartnerAccountingTab"
 import { ProfitDistributionsTab } from "./partners/ProfitDistributionsTab"
 
-export function PartnersSettingsView({ activeTab = "composition" }: { activeTab?: string }) {
+interface PartnersSettingsViewProps {
+    activeTab?: string
+    onSavingChange?: (saving: boolean) => void
+}
+
+export function PartnersSettingsView({ activeTab = "composition", onSavingChange }: PartnersSettingsViewProps) {
+    // We could use this to track saving state if needed, 
+    // for now we'll just pass it down if any sub-tab needs it.
+    useEffect(() => {
+        // Reset saving state when switching tabs if desired
+        onSavingChange?.(false)
+    }, [activeTab, onSavingChange])
+
     return (
         <div className="space-y-6">
-            <Tabs value={activeTab} className="w-full">
-                <TabsContent value="composition">
-                    <EquityCompositionTab />
-                </TabsContent>
-                <TabsContent value="ledger">
-                    <PartnerLedgerTab />
-                </TabsContent>
-                <TabsContent value="distributions">
-                    <ProfitDistributionsTab />
-                </TabsContent>
-                <TabsContent value="config">
-                    <PartnerAccountingTab />
-                </TabsContent>
-            </Tabs>
+            {activeTab === "composition" && (
+                <EquityCompositionTab />
+            )}
+            
+            {activeTab === "ledger" && (
+                <PartnerLedgerTab />
+            )}
+            
+            {activeTab === "distributions" && (
+                <ProfitDistributionsTab />
+            )}
         </div>
     )
 }
