@@ -21,6 +21,14 @@ export interface WorkOrderMaterial {
     document_type?: string
 }
 
+export interface ProductionAttachment {
+    id: number
+    original_filename: string
+    file: string
+    uploaded_at: string
+    uploaded_by_name?: string
+}
+
 export interface WorkOrderTask {
     id: string
     task_type: string
@@ -28,7 +36,7 @@ export interface WorkOrderTask {
     assigned_to?: number
     assigned_group?: string
     assigned_group_name?: string
-    data?: any
+    data?: Record<string, unknown>
 }
 
 export interface WorkOrderStage {
@@ -36,6 +44,13 @@ export interface WorkOrderStage {
     label: string
     icon: LucideIcon
     alwaysShow: boolean
+}
+
+export interface ProductionComment {
+    id: string | number
+    user: string
+    text: string
+    timestamp: string
 }
 
 export interface WorkOrder {
@@ -50,10 +65,39 @@ export interface WorkOrder {
     requires_press: boolean
     requires_postpress: boolean
     is_manual: boolean
+    description?: string
+    sale_customer_name?: string
+    sale_order_date?: string
+    due_date?: string
+    outsourcing_status?: "none" | "partial" | "full"
     warehouse_name?: string
     materials?: WorkOrderMaterial[]
     workflow_tasks?: WorkOrderTask[]
-    stage_data?: any
+    stage_data?: { 
+        product_description?: string
+        internal_notes?: string
+        contact_id?: string | number
+        contact_name?: string
+        contact_tax_id?: string
+        phases?: {
+            prepress?: boolean
+            press?: boolean
+            postpress?: boolean
+        }
+        prepress_specs?: string
+        press_specs?: string
+        postpress_specs?: string
+        design_needed?: boolean
+        folio_enabled?: boolean
+        folio_start?: string
+        print_type?: string
+        design_attachments?: string[]
+        quantity?: number | string
+        uom_id?: string | number
+        uom_name?: string
+        comments?: ProductionComment[]
+        [key: string]: unknown
+    }
     product?: {
         id: string | number
         name: string
@@ -73,8 +117,8 @@ export interface WorkOrder {
         id: number
         number: string
     }
-    checkout_files?: any[]
-    attachments?: any[]
+    checkout_files?: ProductionAttachment[]
+    attachments?: ProductionAttachment[]
 }
 
 export interface BOMLine {
@@ -104,25 +148,35 @@ export interface BOM {
     lines: BOMLine[]
 }
 
+export interface UoM {
+    id: number
+    name: string
+    category: number
+    ratio: number
+    uom_type?: string
+}
+
 export interface ProductMinimal {
     id: number | string
     name: string
     code?: string
-    uom?: {
-        id: number
-        name: string
-    }
+    internal_code?: string
+    variant_display_name?: string
+    product_type?: string
+    uom?: UoM | number | string
+    uom_name?: string
+    uom_category?: number
+    cost_price?: number | string
     has_variants?: boolean
     track_inventory?: boolean
+    attribute_values_data?: {
+        id: number
+        attribute: string
+        value: string
+    }[]
 }
 
 export interface ProductVariantMinimal extends ProductMinimal {
     parent_template?: number | string
     technical_description?: string
-}
-
-export interface UoM {
-    id: number
-    name: string
-    category?: number
 }

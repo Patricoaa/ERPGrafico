@@ -52,6 +52,11 @@ const formSchema = z.object({
     active: z.boolean(),
 })
 
+interface UoM {
+    id: number
+    name: string
+}
+
 type FormValues = z.infer<typeof formSchema>
 
 interface PricingRuleFormProps {
@@ -65,7 +70,7 @@ interface PricingRuleFormProps {
 }
 
 export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
-    const [uoms, setUoms] = useState<any[]>([])
+    const [uoms, setUoms] = useState<UoM[]>([])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -93,6 +98,13 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
         if (open) {
             // Reset form when dialog opens
             if (initialData) {
+                const getProductId = (p: any): number | null => {
+                    if (typeof p === 'number') return p
+                    if (typeof p === 'string') return parseInt(p) || null
+                    if (p && typeof p === 'object') return p.id || null
+                    return null
+                }
+
                 form.reset({
                     name: initialData.name || "",
                     rule_type: initialData.rule_type || "FIXED",
@@ -104,8 +116,8 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                     discount_percentage: initialData.discount_percentage ? String(initialData.discount_percentage) : null,
                     priority: initialData.priority ?? 0,
                     active: initialData.active ?? true,
-                    product: initialData.product || productId || null,
-                    uom: initialData.uom || null,
+                    product: getProductId(initialData.product) || productId || null,
+                    uom: getProductId(initialData.uom) || null,
                     start_date: initialData.start_date || null,
                     end_date: initialData.end_date || null,
                 })

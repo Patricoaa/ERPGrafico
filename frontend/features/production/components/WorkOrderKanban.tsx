@@ -18,8 +18,10 @@ import {
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Badge } from "@/components/ui/badge"
 
+import { WorkOrder } from "../types"
+
 interface KanbanProps {
-    orders: any[]
+    orders: WorkOrder[]
     onTransition: (orderId: number, nextStage: string) => void
     onManage: (orderId: number) => void
 }
@@ -45,7 +47,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                     <div
                         key={stage.id}
                         className={cn(
-                            "flex-shrink-0 w-80 rounded-xl flex flex-col border shadow-sm",
+                            "flex-shrink-0 w-80 rounded-[0.25rem] flex flex-col border shadow-sm",
                             stage.color
                         )}
                     >
@@ -63,13 +65,13 @@ export function WorkOrderKanban({ orders, onTransition, onManage }: KanbanProps)
                                     key={order.id}
                                     onClick={() => onManage(order.id)}
                                     className={cn(
-                                        "cursor-pointer hover:shadow-md transition-all border-none shadow-sm",
+                                        "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-[0.25rem]",
                                         "active:scale-95 duration-100"
                                     )}
                                 >
                                     <CardContent className="p-3 space-y-3">
                                         <div className="flex gap-2 items-center flex-wrap">
-                                            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-[0.25rem]">
                                                 OT-{order.number}
                                             </span>
                                             {order.outsourcing_status === 'partial' && (

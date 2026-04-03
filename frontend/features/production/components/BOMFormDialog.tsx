@@ -33,7 +33,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
-import type { BOM, BOMLine } from "../types"
+import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -107,7 +107,7 @@ type BOMFormValues = {
 interface BOMFormDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    product?: any // Keeping as any for now since Product type is in inventory and very complex
+    product?: ProductMinimal
     bomToEdit?: BOM
     onSuccess: () => void
 }
@@ -120,10 +120,10 @@ export function BOMFormDialog({
     onSuccess
 }: BOMFormDialogProps) {
     const [loading, setLoading] = useState(false)
-    const [selectedProduct, setSelectedProduct] = useState<any>(initialProduct)
-    const [selectedVariant, setSelectedVariant] = useState<any>(null)
-    const [variants, setVariants] = useState<any[]>([])
-    const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, any[]>>({})
+    const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
+    const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
+    const [variants, setVariants] = useState<ProductMinimal[]>([])
+    const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, ProductMinimal[]>>({})
 
     const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
         if (!productId) return
@@ -136,10 +136,10 @@ export function BOMFormDialog({
         }
     }
     const [loadingVariants, setLoadingVariants] = useState(false)
-    const [uoms, setUoms] = useState<any[]>([])
+    const [uoms, setUoms] = useState<UoM[]>([])
 
     useEffect(() => {
-        setSelectedProduct(initialProduct)
+        setSelectedProduct(initialProduct ?? null)
         setSelectedVariant(null)
         setVariants([])
     }, [initialProduct])
@@ -176,9 +176,9 @@ export function BOMFormDialog({
                     setVariants(loadedVariants)
 
                     if (bomToEdit && bomToEdit.product) {
-                        const activeVariant = loadedVariants.find((v: any) => v.id.toString() === bomToEdit.product.toString())
+                        const activeVariant = loadedVariants.find((v: ProductMinimal) => v.id.toString() === bomToEdit.product?.toString())
                         if (activeVariant) {
-                            setSelectedVariant(activeVariant)
+                            setSelectedVariant(activeVariant ?? null)
                         }
                     }
                 }
@@ -194,7 +194,9 @@ export function BOMFormDialog({
     }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema) as any,
+        resolver: zodResolver(bomSchema) as unknown as {
+          (values: any, context: any, options: any): any;
+        }, // FIXME: Still using any in the internal function type, but the cast is better than a bare 'as any'
         defaultValues: {
             name: "",
             active: true,
@@ -220,15 +222,15 @@ export function BOMFormDialog({
         if (open) {
             if (bomToEdit) {
                 const allLines = bomToEdit.lines || []
-                const stockLines = allLines.filter((l: any) => !l.is_outsourced)
-                const outsourcedLines = allLines.filter((l: any) => l.is_outsourced)
+                const stockLines = allLines.filter((l: { is_outsourced?: boolean }) => !l.is_outsourced)
+                const outsourcedLines = allLines.filter((l: { is_outsourced?: boolean }) => l.is_outsourced)
 
                 form.reset({
                     name: bomToEdit.name,
                     active: bomToEdit.active,
                     yield_quantity: bomToEdit.yield_quantity || 1,
                     yield_uom: bomToEdit.yield_uom?.toString() || "",
-                    lines: stockLines.map((l: any) => ({
+                    lines: stockLines.map((l: { id: string | number; name: string }) => ({
                         component: l.component.toString(),
                         component_code: l.component_code,
                         component_name: l.component_name,
@@ -239,7 +241,7 @@ export function BOMFormDialog({
                         component_uom_category: l.uom_category, // Assuming backend provides this
                         notes: l.notes || ""
                     })),
-                    service_lines: outsourcedLines.map((l: any) => ({
+                    service_lines: outsourcedLines.map((l: { id: string | number; name: string }) => ({
                         component: l.component.toString(),
                         component_name: l.component_name,
                         quantity: l.quantity,
@@ -367,7 +369,7 @@ export function BOMFormDialog({
                         form="bom-form"
                         type="submit"
                         disabled={form.formState.isSubmitting}
-                        className="rounded-xl text-xs font-bold"
+                        className="rounded-[0.25rem] text-xs font-bold"
                     >
                         {form.formState.isSubmitting ? (
                             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -387,7 +389,7 @@ export function BOMFormDialog({
                                 Producto a fabricar
                             </Label>
                             <ProductSelector
-                                value={selectedProduct?.id || selectedProduct}
+                                value={selectedProduct?.id}
                                 onSelect={(p) => setSelectedProduct(p)}
                                 onChange={(val) => {
                                     if (!val) setSelectedProduct(null)
@@ -407,7 +409,7 @@ export function BOMFormDialog({
                                     value={selectedVariant?.id?.toString() || ""}
                                     onValueChange={(val) => {
                                         const v = variants.find(varnt => varnt.id.toString() === val)
-                                        setSelectedVariant(v)
+                                        setSelectedVariant(v || null)
                                     }}
                                     disabled={!!bomToEdit}
                                 >
@@ -432,11 +434,11 @@ export function BOMFormDialog({
                                                             
                                                             {v.attribute_values_data && v.attribute_values_data.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                    {v.attribute_values_data.map((attr: any) => (
+                                                                    {(v as ProductMinimal).attribute_values_data?.map((attr: { id: string | number; value: string }) => (
                                                                         <Badge 
                                                                             key={attr.id} 
                                                                             variant="secondary" 
-                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none"
+                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none rounded-[0.125rem]"
                                                                         >
                                                                             {attr.value}
                                                                         </Badge>
@@ -460,7 +462,7 @@ export function BOMFormDialog({
                     </div>
                 </div>
             ) : (
-                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-xl">
+                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-[0.25rem]">
                    <div className="flex items-center gap-3">
                        <Box className="h-5 w-5 text-muted-foreground" />
                        <div className="flex flex-col">
@@ -660,9 +662,9 @@ export function BOMFormDialog({
                                                                                 onChange={(val) => propField.onChange(val)}
                                                                                 placeholder="Buscar componente..."
                                                                                 allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                                customFilter={(p: any) => 
-                                                                                    p.product_type === 'STORABLE' || 
-                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing)
+                                                                                customFilter={(p: ProductMinimal) => 
+                                                                                    !!(p.product_type === 'STORABLE' || 
+                                                                                    (p.product_type === 'MANUFACTURABLE' && !((p as unknown) as { requires_advanced_manufacturing?: boolean }).requires_advanced_manufacturingfacturing))
                                                                                 }
                                                                                 excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                                 shouldResolveVariants={false}
@@ -685,13 +687,16 @@ export function BOMFormDialog({
                                                                                 value={form.watch(`lines.${index}.component`)}
                                                                                 onValueChange={(val) => {
                                                                                     form.setValue(`lines.${index}.component`, val)
-                                                                                    const v = lineVars.find((vr: any) => vr.id.toString() === val)
+                                                                                    const v = lineVars.find((vr: { id: string | number }) => vr.id.toString() === val)
                                                                                     if (v) {
                                                                                         form.setValue(`lines.${index}.component_name`, v.variant_display_name || v.name)
                                                                                         form.setValue(`lines.${index}.component_code`, v.internal_code || v.code)
                                                                                         form.setValue(`lines.${index}.component_cost`, Number(v.cost_price || 0))
                                                                                         if (v.uom_category) form.setValue(`lines.${index}.component_uom_category`, v.uom_category)
-                                                                                        if (v.uom) form.setValue(`lines.${index}.uom`, v.uom.toString())
+                                                                                        if (v.uom) {
+                                                              const uomId = typeof v.uom === 'object' ? (v.uom as UoM).id.toString() : v.uom.toString()
+                                                              form.setValue(`lines.${index}.uom`, uomId)
+                                                          }
                                                                                     }
                                                                                 }}
                                                                             >
@@ -743,7 +748,7 @@ export function BOMFormDialog({
                                                                                 value={field.value || ""}
                                                                                 onChange={(val) => {
                                                                                     field.onChange(val);
-                                                                                    const selectedUom = uoms.find((u: any) => u.id.toString() === val);
+                                                                                    const selectedUom = uoms.find((u: { id: string | number }) => u.id.toString() === val);
 
                                                                                     if (selectedUom) {
                                                                                         form.setValue(`lines.${index}.uom_name`, selectedUom.name);
@@ -885,7 +890,7 @@ export function BOMFormDialog({
                                                                                 onChange={(val) => propField.onChange(val)}
                                                                                 placeholder="Buscar servicio..."
                                                                                 shouldResolveVariants={false}
-                                                                                customFilter={(p: any) => p.product_type === 'SERVICE' && p.can_be_purchased}
+                                                                                customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             />
                                                                             {(() => {
                                                                                 const compId = form.watch(`service_lines.${index}.component`)
@@ -898,7 +903,7 @@ export function BOMFormDialog({
                                                                                                 value={form.watch(`service_lines.${index}.component`)}
                                                                                                 onValueChange={(val) => {
                                                                                                     form.setValue(`service_lines.${index}.component`, val)
-                                                                                                    const v = lineVars.find((vr: any) => vr.id.toString() === val)
+                                                                                                    const v = lineVars.find((vr: ProductMinimal) => vr.id.toString() === val)
                                                                                                     if (v && v.uom) {
                                                                                                         form.setValue(`service_lines.${index}.uom`, v.uom.toString())
                                                                                                     }

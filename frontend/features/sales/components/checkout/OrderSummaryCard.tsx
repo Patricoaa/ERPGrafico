@@ -6,12 +6,15 @@ import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 
+import { SaleOrderLine } from "../../types"
+import { Partner } from "@/features/contacts/types"
+
 interface OrderSummaryCardProps {
-    orderLines: any[]
+    orderLines: SaleOrderLine[]
     total: number
     totalDiscountAmount?: number
     dteType?: string
-    customer?: any
+    customer?: Partner
 }
 
 export function OrderSummaryCard({
@@ -43,8 +46,8 @@ export function OrderSummaryCard({
                             {orderLines.map((line, idx) => (
                                 <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                     <div className="space-y-1.5 flex-1 min-w-0">
-                                        <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.product_name || line.name || line.description}>
-                                            {line.product_name || line.name || line.description}
+                                        <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.product_name || line.description}>
+                                            {line.product_name || line.description}
                                         </p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             {line.internal_code && (
@@ -63,7 +66,7 @@ export function OrderSummaryCard({
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </Badge>
                                             {line.product_type === 'MANUFACTURABLE' && (
-                                                <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none text-[8px] py-0 h-4 font-black uppercase">
+                                                <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-none text-[8px] py-0 h-4 font-black uppercase">
                                                     Fab
                                                 </Badge>
                                             )}
@@ -115,7 +118,7 @@ export function OrderSummaryCard({
                         <Separator className="my-2 opacity-30" />
                         <div className="flex justify-between items-center pt-1">
                             <span className="text-xs font-bold text-muted-foreground">Crédito Disponible</span>
-                            <span className={`font-mono font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-emerald-600'}`}>
+                            <span className={`font-mono font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-success'}`}>
                                 {formatCurrency(Number(customer?.credit_available || 0))}
                             </span>
                         </div>

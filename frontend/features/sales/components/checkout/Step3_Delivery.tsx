@@ -1,7 +1,7 @@
 "use client"
 
-function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom: any, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<{id: number, name: string}[]>([])
 
     useEffect(() => {
         const fetchAllowed = async () => {
@@ -58,10 +58,12 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
+import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
+
 interface Step3_DeliveryProps {
-    deliveryData: any
-    setDeliveryData: (data: any) => void
-    orderLines: any[]
+    deliveryData: CheckoutDeliveryData
+    setDeliveryData: (data: CheckoutDeliveryData | ((prev: CheckoutDeliveryData) => CheckoutDeliveryData)) => void
+    orderLines: SaleOrderLine[]
 }
 
 export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: Step3_DeliveryProps) {
@@ -120,7 +122,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isOnlyService) {
         return (
             <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
-                <div className="p-4 rounded-full bg-emerald-100 text-emerald-600">
+                <div className="p-4 rounded-full bg-success/10 text-success">
                     <Info className="h-10 w-10" />
                 </div>
                 <div className="space-y-1">
@@ -146,8 +148,8 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label className="text-sm font-semibold"></Label>
 
                 {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800">
-                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-xl text-destructive-foreground">
+                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider">Producción Requerida</p>
                             <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
@@ -160,8 +162,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <RadioGroup
                     value={deliveryData.type}
                     onValueChange={(val) => {
-                        setDeliveryData((prev: any) => {
-                            if (val === 'PARTIAL') {
+                        setDeliveryData((prev: CheckoutDeliveryData) => {
+                            const newType = val as "IMMEDIATE" | "SCHEDULED" | "PARTIAL";
+                            if (newType === 'PARTIAL') {
                                 const partialQuantities = orderLines
                                     .filter(line => {
                                         const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
@@ -173,14 +176,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                             isSimpleManufacturableWithAvailability;
                                     })
                                     .map(line => ({
-                                        lineId: line.id,
-                                        productId: line.product,
-                                        dispatchedQty: line.qty || line.quantity,
-                                        uom: line.uom
+                                        lineId: line.id!,
+                                        productId: Number(line.product)!,
+                                        dispatchedQty: line.qty || line.quantity || 0,
+                                        uom: line.uom!
                                     }));
-                                return { ...prev, type: val, partialQuantities };
+                                return { ...prev, type: newType, partialQuantities };
                             }
-                            return { ...prev, type: val };
+                            return { ...prev, type: newType };
                         });
                     }}
                     className="grid gap-3"
@@ -282,7 +285,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                                 </Badge>
                                                             )}
                                                             {!isEligible && (
-                                                                <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">Requiere Producción</span>
+                                                                <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Requiere Producción</span>
                                                             )}
                                                         </div>
                                                     </div>
@@ -300,13 +303,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            setDeliveryData((prev: any) => {
+                                                            setDeliveryData((prev: CheckoutDeliveryData) => {
                                                                 const pqs = [...(prev.partialQuantities || [])];
                                                                 const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                                                 if (existingIdx >= 0) {
                                                                     pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
                                                                 } else {
-                                                                    pqs.push({ lineId: line.id, productId: line.product, dispatchedQty: val, uom: line.uom });
+                                                                    pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: val, uom: line.uom! });
                                                                 }
                                                                 return { ...prev, partialQuantities: pqs };
                                                             });
@@ -319,13 +322,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                         line={line}
                                                         currentUom={(deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.uom || line.uom}
                                                         onUomChange={(uomId) => {
-                                                            setDeliveryData((prev: any) => {
+                                                            setDeliveryData((prev: CheckoutDeliveryData) => {
                                                                 const pqs = [...(prev.partialQuantities || [])];
                                                                 const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                                                 if (existingIdx >= 0) {
                                                                     pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
                                                                 } else {
-                                                                    pqs.push({ lineId: line.id, productId: line.product, dispatchedQty: 1, uom: uomId });
+                                                                    pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: 1, uom: uomId });
                                                                 }
                                                                 return { ...prev, partialQuantities: pqs };
                                                             });

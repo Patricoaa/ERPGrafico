@@ -23,19 +23,21 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 
+import { BOM, ProductMinimal } from "../types"
+
 interface BOMManagerProps {
-    product: any
+    product: ProductMinimal | null
     variantMode?: boolean
-    onBomsChange?: (boms: any[]) => void
+    onBomsChange?: (boms: BOM[]) => void
 }
 
 export function BOMManager({ product, variantMode = false, onBomsChange }: BOMManagerProps) {
-    const [boms, setBoms] = useState<any[]>([])
+    const [boms, setBoms] = useState<BOM[]>([])
     const [loading, setLoading] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<any>(null)
+    const [editingBom, setEditingBom] = useState<BOM | undefined>(undefined)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [bomToDelete, setBomToDelete] = useState<any>(null)
+    const [bomToDelete, setBomToDelete] = useState<BOM | undefined>(undefined)
 
     // Variant support
     const [variants, setVariants] = useState<any[]>([])
@@ -45,10 +47,10 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         if (!product?.id) return
         setLoading(true)
         try {
-            const params: any = {}
+            const params: Record<string, string | number> = {}
             if (selectedVariantId && selectedVariantId !== "all") {
                 params.product_id = selectedVariantId
-            } else {
+            } else if (product?.id) {
                 params.parent_id = product.id
             }
             
@@ -85,17 +87,17 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     }, [product, selectedVariantId])
 
     const handleCreate = () => {
-        setEditingBom(null)
+        setEditingBom(undefined)
         setDialogOpen(true)
     }
 
-    const handleEdit = (bom: any) => {
+    const handleEdit = (bom: BOM) => {
         setEditingBom(bom)
         setDialogOpen(true)
     }
 
-    const handleClone = (bom: any) => {
-        const cloned = {
+    const handleClone = (bom: BOM) => {
+        const cloned: BOM = {
             ...bom,
             id: undefined,
             name: `${bom.name} (Copia)`,
@@ -104,7 +106,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         setDialogOpen(true)
     }
 
-    const handleDelete = async (bom: any, isConfirmed = false) => {
+    const handleDelete = async (bom: BOM | null, isConfirmed = false) => {
         if (!bom) return
 
         if (!isConfirmed) {
@@ -124,7 +126,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         }
     }
 
-    const handleToggleActive = async (bom: any) => {
+    const handleToggleActive = async (bom: BOM) => {
         if (bom.active) return
         try {
             await api.patch(`/production/boms/${bom.id}/`, { active: true })
@@ -199,13 +201,13 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     {row.original.active ? (
-                        <Badge className="h-5 px-2 bg-emerald-600 text-white font-black text-[9px] uppercase tracking-widest rounded-[0.125rem] shadow-sm">
+                        <Badge className="h-5 px-2 bg-success text-white font-black text-[9px] uppercase tracking-widest rounded-[0.125rem] shadow-sm">
                             <Check className="h-2.5 w-2.5 mr-1" /> ACTIVA
                         </Badge>
                     ) : (
                         <Badge
                             variant="outline"
-                            className="h-5 px-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 cursor-pointer hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all rounded-[0.125rem]"
+                            className="h-5 px-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 cursor-pointer hover:bg-success/10 hover:text-success hover:border-success/20 transition-all rounded-[0.125rem]"
                             onClick={() => handleToggleActive(row.original)}
                             title="Haz clic para activar como receta principal"
                         >
@@ -243,7 +245,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         variant="ghost"
                         size="icon"
                         title="Clonar Receta"
-                        className="h-7 w-7 text-emerald-600 hover:bg-emerald-50 rounded-[0.125rem]"
+                        className="h-7 w-7 text-success hover:bg-success/10 rounded-[0.125rem]"
                         onClick={() => handleClone(row.original)}
                     >
                         <Copy className="h-3.5 w-3.5" />
@@ -409,7 +411,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         <p className="text-sm font-bold uppercase tracking-tight">
                             ¿Está seguro de que desea eliminar la receta <strong>{bomToDelete?.name}</strong>?
                         </p>
-                        <p className="text-[11px] font-medium text-muted-foreground bg-rose-50 p-3 border-l-4 border-rose-600">
+                        <p className="text-[11px] font-medium text-muted-foreground bg-destructive/5 p-3 border-l-4 border-destructive">
                             Esta acción no se puede deshacer y el producto perderá esta definición técnica de fabricación.
                         </p>
                     </div>
