@@ -4,6 +4,7 @@ import {
     Sheet,
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { FileText } from "lucide-react"
 import { useState } from "react"
@@ -21,28 +22,27 @@ interface PayrollDetailSheetProps {
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 
 export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, viewMode = 'admin', employee }: PayrollDetailSheetProps) {
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { closeHub } = useHubPanel()
 
     const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("PAYROLL_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            closeHub()
         }
         onOpenChange(newOpen)
     }
 
-    const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy} modal={false}>
             <CollapsibleSheet
-                sheetId="PAYROLL_DETAIL"
+                sheetId={`PAYROLL_DETAIL_${payrollId}`}
                 open={open}
-                onOpenChange={handleOpenChangeProxy}
-                tabLabel="LIQUIDACIÓN"
+                onOpenChange={onOpenChange}
+                tabLabel="Detalle Pago"
                 tabIcon={FileText}
-                fullWidth={fullWidth}
+                fullWidth={650}
                 className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw]"
             >
                 {payrollId && (
@@ -56,6 +56,5 @@ export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, vi
                     />
                 )}
             </CollapsibleSheet>
-        </Sheet>
     )
 }

@@ -15,6 +15,8 @@ import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+
 interface TreasuryAccountsViewProps {
     activeTab: string
     externalOpen?: boolean
@@ -25,16 +27,28 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const { accounts, deleteAccount } = useTreasuryAccounts()
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
+    const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
 
-    useEffect(() => {
-        if (externalOpen) {
-            handleExternalAction()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        setIsBankModalOpen(false)
+        setIsMethodModalOpen(false)
+        setIsLocalAccountModalOpen(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
-    }, [externalOpen, activeTab])
+    }
 
     const handleExternalAction = () => {
         switch (activeTab) {
             case "accounts":
+                setIsLocalAccountModalOpen(true)
                 handleAdd()
                 break
             case "banks":
@@ -45,6 +59,12 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 break
         }
     }
+
+    useEffect(() => {
+        if (externalOpen) {
+            handleExternalAction()
+        }
+    }, [externalOpen])
 
     const handleDelete = async (id: number) => {
         try {
@@ -211,11 +231,29 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             </TabsContent>
 
             <TabsContent value="banks">
-                <BankManagement externalOpen={isBankModalOpen} onExternalOpenChange={setIsBankModalOpen} />
+                <BankManagement 
+                    externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)} 
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            handleCloseModal()
+                        } else {
+                            setIsBankModalOpen(true)
+                        }
+                    }} 
+                />
             </TabsContent>
 
             <TabsContent value="methods">
-                <PaymentMethodManagement externalOpen={isMethodModalOpen} onExternalOpenChange={setIsMethodModalOpen} />
+                <PaymentMethodManagement 
+                    externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)} 
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            handleCloseModal()
+                        } else {
+                            setIsMethodModalOpen(true)
+                        }
+                    }} 
+                />
             </TabsContent>
         </Tabs>
     )

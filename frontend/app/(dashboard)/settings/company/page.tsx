@@ -21,25 +21,36 @@ const CompanySettingsView = lazy(() =>
     }))
 )
 
-export default function CompanySettingsPage() {
-    const searchParams = useSearchParams()
-    const activeTab = searchParams.get("tab") || "general"
-    const [saving, setSaving] = useState(false)
+export default async function CompanySettingsPage({ searchParams }: PageProps) {
+    const params = await searchParams
+    const activeTab = params.tab || "general"
+
+    const getHeaderConfig = () => {
+        if (activeTab === 'branding') {
+            return {
+                title: "Identidad Visual",
+                description: "Logotipos, colores corporativos y apariencia de documentos.",
+                iconName: "palette" as any
+            }
+        }
+        return {
+            title: "Configuración de Empresa",
+            description: "Gestione la identidad y parámetros globales de su organización.",
+            iconName: "building" as any
+        }
+    }
+
+    const config = getHeaderConfig()
 
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Configuración de Empresa"
-                description="Gestione la identidad y parámetros globales de su organización"
-                iconName="building"
-                status={
-                    saving 
-                        ? { label: "Guardando cambios...", type: "saving" } 
-                        : { label: "Cambios guardados", type: "synced" }
-                }
+                title={config.title}
+                description={config.description}
+                iconName={config.iconName}
             />
             
-            <div className="pt-2">
+            <div className="pt-4">
                 <PageTabs
                     tabs={[
                         { value: "general", label: "General", iconName: "building", href: "/settings/company?tab=general" },
@@ -49,12 +60,9 @@ export default function CompanySettingsPage() {
                 />
             </div>
 
-            <div className="mt-6">
+            <div className="mt-4">
                 <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
-                    <CompanySettingsView 
-                        activeTab={activeTab} 
-                        onSavingChange={setSaving}
-                    />
+                    <CompanySettingsView activeTab={activeTab} />
                 </Suspense>
             </div>
         </div>

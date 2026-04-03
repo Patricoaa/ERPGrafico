@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { AccountForm } from "@/features/finance/components/AccountForm"
-import { DataManagement } from "@/components/shared/DataManagement"
 import { LedgerModal } from "@/features/accounting/components/LedgerModal"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
@@ -19,6 +18,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -30,17 +30,18 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
-    // Synchronize external modal trigger
-    useEffect(() => {
-        if (externalOpen) {
-            setIsFormOpen(true)
-        }
-    }, [externalOpen])
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
 
-    const handleFormOpenChange = (open: boolean) => {
-        setIsFormOpen(open)
-        if (!open && onExternalOpenChange) {
-            onExternalOpenChange(false)
+    const handleCloseModal = () => {
+        setIsFormOpen(false)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
 
@@ -59,38 +60,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         }
     }
 
-    const handleExport = async () => {
-        try {
-            const res = await api.get("/accounting/accounts/")
-            const data = res.data.results || res.data
-            if (!data || data.length === 0) {
-                toast.error("No hay datos para exportar")
-                return
-            }
-            const headers = Object.keys(data[0]).join(',')
-            const csv = data.map((row: Record<string, unknown>) =>
-                Object.values(row).map(val =>
-                    typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-                ).join(',')
-            ).join('\n')
-            const blob = new Blob([`${headers}\n${csv}`], { type: 'text/csv;charset=utf-8;' })
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.setAttribute('download', 'plan-de-cuentas.csv')
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            toast.success("Datos exportados correctamente")
-        } catch (error) {
-            toast.error("Error al exportar datos")
-        }
-    }
-
-    const handleImport = async (formData: FormData) => {
-        await api.post("/accounting/accounts/bulk_import/", formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-    }
 
     const columns: ColumnDef<Account>[] = [
         {
@@ -194,20 +163,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center py-2 px-1">
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Gestión de Datos</span>
-                    <DataManagement
-                        onExport={handleExport}
-                        onImport={handleImport}
-                        onImportSuccess={refetch}
-                        exportFilename="plan-de-cuentas.csv"
-                        templateData={[
-                            { code: '1.1.01', name: 'Nombre de Cuenta', account_type: 'ASSET' }
-                        ]}
-                    />
-                </div>
-            </div>
 
             <DataTable
                 columns={columns}
@@ -235,8 +190,14 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             <AccountForm 
                 accounts={accounts} 
                 onSuccess={refetch} 
-                open={isFormOpen}
-                onOpenChange={handleFormOpenChange}
+                open={isFormOpen || !!externalOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
+                    }
+                }}
             />
 
             <ActionConfirmModal

@@ -31,7 +31,7 @@ interface ProductListProps {
 
 export function ProductList({ externalOpen, onExternalOpenChange }: ProductListProps) {
     const { products, refetch, updateProduct } = useProducts({
-        filters: { active: 'all', parent_template__isnull: true }
+        filters: { active: 'all', parent_template__isnull: true, page_size: 1000 }
     })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -51,12 +51,18 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsFormOpen(false)
+        setEditingProduct(null)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            params.delete("action")
+            params.delete("id")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
-
-
 
     const toggleExpand = (templateId: number) => {
         setExpandedTemplates(prev => {
@@ -126,13 +132,6 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     // Initial fetch handled by Suspense
 
     useEffect(() => {
-        if (externalOpen) {
-            setEditingProduct(null)
-            setIsFormOpen(true)
-        }
-    }, [externalOpen])
-
-    useEffect(() => {
         const action = searchParams.get('action')
         const idParam = searchParams.get('id')
 
@@ -148,7 +147,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 const newParams = new URLSearchParams(searchParams.toString())
                 newParams.delete('action')
                 newParams.delete('id')
-                router.replace(`${pathname}?${newParams.toString()}`)
+                router.replace(`${pathname}?${newParams.toString()}`, { scroll: false })
             }
         }
     }, [searchParams, products, isFormOpen, editingProduct, router, pathname])
@@ -359,7 +358,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     ], [expandedTemplates])
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
-    const initialColumnVisibility = useMemo(() => ({ active: false }), [])
+    const initialColumnVisibility = useMemo(() => ({ }), [])
 
 
     return (
@@ -420,13 +419,12 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             </div>
 
             <ProductForm
-                open={isFormOpen}
+                open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsFormOpen(open)
                     if (!open) {
-                        setEditingProduct(null)
-                        onExternalOpenChange?.(false)
-                        handleCloseModal() // Clean URL
+                        handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
                     }
                 }}
                 initialData={editingProduct || undefined}

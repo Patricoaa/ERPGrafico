@@ -9,7 +9,11 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 export default function SettingsPage() {
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title="Configuración del Sistema" iconName="settings" />
+            <PageHeader 
+                title="Configuración del Sistema" 
+                description="Panel de administración y parámetros globales." 
+                iconName="settings" 
+            />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Link href="/settings/company">

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard } from "lucide-react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -44,15 +45,24 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
     const [newAttrName, setNewAttrName] = useState("")
     const [newValueName, setNewValueName] = useState("")
 
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        setIsAttrModalOpen(false)
+        setSelectedAttribute(null)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
+    }
+
     useEffect(() => {
         fetchAttributes()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setIsAttrModalOpen(true)
-        }
-    }, [externalOpen])
 
     const fetchAttributes = async () => {
         setLoading(true)
@@ -226,8 +236,14 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
             {/* Modal para Atributo */}
             <BaseModal
-                open={isAttrModalOpen}
-                onOpenChange={setIsAttrModalOpen}
+                open={isAttrModalOpen || !!externalOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        handleCloseModal()
+                    } else {
+                        setIsAttrModalOpen(true)
+                    }
+                }}
                 title={
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">

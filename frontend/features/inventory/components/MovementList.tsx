@@ -48,9 +48,14 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setShowAdjustmentModal(false)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchMoves = async () => {
@@ -68,12 +73,6 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
     useEffect(() => {
         fetchMoves()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setShowAdjustmentModal(true)
-        }
-    }, [externalOpen])
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
         {
@@ -189,17 +188,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 isLoading={loading}
                 filterColumn="product_name"
                 searchPlaceholder="Filtrar por producto o almacén..."
-                toolbarAction={
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            onClick={() => setShowAdjustmentModal(true)}
-                            className="h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] rounded-[0.25rem] shadow-lg shadow-primary/20 group"
-                        >
-                             <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" /> 
-                             Nuevo ajuste de stock
-                        </Button>
-                    </div>
-                }
+                useAdvancedFilter={true}
                 facetedFilters={[
                     {
                         column: "move_type",
@@ -211,7 +200,6 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                         ],
                     },
                 ]}
-                useAdvancedFilter={true}
             />
 
             {viewingTransaction && (
@@ -225,12 +213,12 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             )}
 
             <BaseModal
-                open={showAdjustmentModal}
+                open={showAdjustmentModal || !!externalOpen}
                 onOpenChange={(open) => {
-                    setShowAdjustmentModal(open)
                     if (!open) {
-                        onExternalOpenChange?.(false)
                         handleCloseModal()
+                    } else {
+                        setShowAdjustmentModal(true)
                     }
                 }}
                 size="lg"

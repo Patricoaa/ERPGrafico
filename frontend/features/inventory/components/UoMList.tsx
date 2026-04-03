@@ -63,9 +63,15 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsUoMModalOpen(false)
+        setCurrentUoM({})
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchData = async () => {
@@ -88,13 +94,6 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
     useEffect(() => {
         fetchData()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setCurrentUoM({ active: true, ratio: "1.00000", rounding: "0.01000", uom_type: "REFERENCE" })
-            setIsUoMModalOpen(true)
-        }
-    }, [externalOpen])
 
     const handleSaveUoM = async () => {
         setIsSaving(true)
@@ -199,12 +198,12 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             />
 
             <BaseModal
-                open={isUoMModalOpen}
+                open={isUoMModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
-                    setIsUoMModalOpen(open)
                     if (!open) {
-                        onExternalOpenChange?.(false)
                         handleCloseModal()
+                    } else {
+                        setIsUoMModalOpen(true)
                     }
                 }}
                 size={currentUoM.id ? "lg" : "md"}

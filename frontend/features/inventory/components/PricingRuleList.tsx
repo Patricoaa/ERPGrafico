@@ -56,9 +56,15 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
     const searchParams = useSearchParams()
 
     const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+        setIsFormOpen(false)
+        setEditingRule(null)
+        onExternalOpenChange?.(false)
+        
+        if (externalOpen || searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
     const fetchRules = async () => {
@@ -90,13 +96,6 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
     useEffect(() => {
         fetchRules()
     }, [])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setEditingRule(null)
-            setIsFormOpen(true)
-        }
-    }, [externalOpen])
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
@@ -220,28 +219,17 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
     return (
         <div className="space-y-4">
             <PricingRuleForm
+                initialData={editingRule || undefined}
                 onSuccess={fetchRules}
-                open={isFormOpen && !editingRule}
+                open={isFormOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
-                    setIsFormOpen(open)
-                    if (!open) setEditingRule(null)
+                    if (!open) {
+                        handleCloseModal()
+                    } else {
+                        setIsFormOpen(true)
+                    }
                 }}
             />
-            {editingRule && (
-                <PricingRuleForm
-                    initialData={editingRule}
-                    open={isFormOpen && !!editingRule}
-                    onOpenChange={(open: boolean) => {
-                        setIsFormOpen(open)
-                        if (!open) {
-                            setEditingRule(null)
-                            onExternalOpenChange?.(false)
-                            handleCloseModal()
-                        }
-                    }}
-                    onSuccess={fetchRules}
-                />
-            )}
 
             <div className="">
                 <DataTable

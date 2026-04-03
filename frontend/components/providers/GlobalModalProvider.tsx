@@ -44,18 +44,18 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const [woId, setWoId] = useState<number | null>(null)
     const [contactId, setContactId] = useState<number | null>(null)
     const [tempContact, setTempContact] = useState<any>(null)
-    const [treasuryAccountId, setTreasuryAccountId] = useState<number | null>(null)
+    const [treasuryAccount, setTreasuryAccount] = useState<{isOpen: boolean, id: number | null}>({ isOpen: false, id: null })
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, forced: boolean}[]>([])
 
     const openWorkOrder = useCallback((id: number) => {
         setContactId(null)
-        setTreasuryAccountId(null)
+        setTreasuryAccount({ isOpen: false, id: null })
         setWoId(id)
     }, [])
 
     const openContact = useCallback((id: number, contact?: any) => {
         setWoId(null)
-        setTreasuryAccountId(null)
+        setTreasuryAccount({ isOpen: false, id: null })
         setContactId(id)
         setTempContact(contact || null)
     }, [])
@@ -63,7 +63,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const openTreasuryAccount = useCallback((id: number | null) => {
         setWoId(null)
         setContactId(null)
-        setTreasuryAccountId(id)
+        setTreasuryAccount({ isOpen: true, id })
     }, [])
 
     const handleContactSuccess = useCallback(() => {
@@ -124,11 +124,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }), [openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
-        isSubModalActive: !!(woId || contactId || treasuryAccountId),
+        isSubModalActive: !!(woId || contactId || treasuryAccount.isOpen),
         getSheetOffset,
         getSheetIndex,
         isSheetCollapsed
-    }), [woId, contactId, treasuryAccountId, getSheetOffset, getSheetIndex, isSheetCollapsed])
+    }), [woId, contactId, treasuryAccount.isOpen, getSheetOffset, getSheetIndex, isSheetCollapsed])
 
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
@@ -149,11 +149,11 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                     onSuccess={handleContactSuccess}
                 />
             )}
-            {treasuryAccountId !== null && (
+            {treasuryAccount.isOpen && (
                 <TreasuryAccountModal
-                    open={treasuryAccountId !== null}
-                    onOpenChange={(open) => !open && setTreasuryAccountId(null)}
-                    accountId={treasuryAccountId}
+                    open={treasuryAccount.isOpen}
+                    onOpenChange={(open) => !open && setTreasuryAccount({ isOpen: false, id: null })}
+                    accountId={treasuryAccount.id}
                 />
             )}
         </GlobalModalStateContext.Provider>

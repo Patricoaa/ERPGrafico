@@ -38,7 +38,7 @@ export default async function ProductionPage({ searchParams }: PageProps) {
                 return {
                     title: "Centro de Producción",
                     description: "Gestión de procesos fabriles, órdenes de trabajo y seguimiento.",
-                    icon: "factory",
+                    icon: "clipboard-list",
                     action: (
                         <PageHeaderButton
                             href="/production?view=orders&modal=new"
