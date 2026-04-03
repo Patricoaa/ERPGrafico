@@ -77,7 +77,9 @@ import type {
     WorkOrder, 
     WorkOrderMaterial, 
     WorkOrderTask, 
-    WorkOrderStage 
+    WorkOrderStage,
+    ProductMinimal,
+    UoM
 } from "../types"
 
 
@@ -140,11 +142,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [newMaterialProduct, setNewMaterialProduct] = useState<string | null>(null)
     const [newMaterialQty, setNewMaterialQty] = useState("1")
     const [newMaterialUoM, setNewMaterialUoM] = useState<string>("")
-    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
-    const [newMaterialVariants, setNewMaterialVariants] = useState<any[]>([])
+    const [selectedProductObj, setSelectedProductObj] = useState<ProductMinimal | null>(null)
+    const [newMaterialVariants, setNewMaterialVariants] = useState<ProductMinimal[]>([])
     const [loadingVariants, setLoadingVariants] = useState(false)
     const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
-    const [uoms, setUoMs] = useState<any[]>([]) // Store all UoMs
+    const [uoms, setUoMs] = useState<UoM[]>([]) // Store all UoMs
     const [addingMaterial, setAddingMaterial] = useState(false)
     const [designUrl, setDesignUrl] = useState("")
     const [designFile, setDesignFile] = useState<File | null>(null)
@@ -160,7 +162,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const [showPOPreview, setShowPOPreview] = useState(false)
     const [isAnnuling, setIsAnnuling] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
-    const [outsourcedPending, setOutsourcedPending] = useState<any[]>([])
+    const [outsourcedPending, setOutsourcedPending] = useState<WorkOrderMaterial[]>([])
     const [isAnnulModalOpen, setIsAnnulModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isBackwardModalOpen, setIsBackwardModalOpen] = useState(false)
@@ -176,8 +178,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         handleTransition(stageId)
     })
 
-    const pendingTasks = order?.workflow_tasks?.filter((t: any) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
-    const canUserCompleteTask = (task: any) => {
+    const pendingTasks = order?.workflow_tasks?.filter((t: WorkOrderTask) => t.status === 'PENDING' || t.status === 'IN_PROGRESS') || []
+    const canUserCompleteTask = (task: WorkOrderTask) => {
         if (!user) return false
         if (user.is_superuser) return true
 
@@ -185,8 +187,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         if (task.assigned_to === user.id) return true
 
         // Group assignment
-        if ((user as any)?.groups) {
-            return (user as any).groups.some((g: any) => {
+        const userGroups = (user as { groups?: (string | number)[] })?.groups as (string | number)[] | undefined;
+        if (userGroups) {
+            return userGroups.some((g: string | number) => {
                 const groupName = typeof g === 'string' ? g.toLowerCase() : String(g).toLowerCase()
 
                 return (
@@ -204,19 +207,19 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
     const canApproveAll = pendingTasks.every(canUserCompleteTask)
 
-    const getFilteredStages = (orderData: any) => {
+    const getFilteredStages = (orderData: WorkOrder) => {
         if (!orderData) return BASE_STAGES.filter(s => s.alwaysShow)
 
         return BASE_STAGES.filter(stage => {
             if (stage.id === 'MATERIAL_APPROVAL') {
-                const hasStockMaterials = (orderData.materials || []).some((m: any) => !m.is_outsourced)
+                const hasStockMaterials = (orderData.materials || []).some((m: WorkOrderMaterial) => !m.is_outsourced)
                 return hasStockMaterials || orderData.current_stage === 'MATERIAL_APPROVAL'
             }
             if (stage.alwaysShow) return true
             if (stage.id === 'PREPRESS') return orderData.current_stage === 'PREPRESS' || orderData.requires_prepress
             if (stage.id === 'PRESS') return orderData.current_stage === 'PRESS' || orderData.requires_press
             if (stage.id === 'POSTPRESS') return orderData.current_stage === 'POSTPRESS' || orderData.requires_postpress
-            if (stage.id === 'OUTSOURCING_VERIFICATION') return orderData.current_stage === 'OUTSOURCING_VERIFICATION' || (orderData.materials || []).some((m: any) => m.is_outsourced)
+            if (stage.id === 'OUTSOURCING_VERIFICATION') return orderData.current_stage === 'OUTSOURCING_VERIFICATION' || (orderData.materials || []).some((m: WorkOrderMaterial) => m.is_outsourced)
             // RECTIFICATION: show if OT has at least 1 material OR it's already in this stage
             if (stage.id === 'RECTIFICATION') {
                 return orderData.current_stage === 'RECTIFICATION' ||
@@ -279,7 +282,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         try {
             await api.patch(`/production/orders/${orderId}/`, { stage_data: updatedStageData })
-            setOrder((prev: any) => ({ ...prev, stage_data: updatedStageData }))
+            setOrder((prev: WorkOrder | null) => ({ ...prev, stage_data: updatedStageData }))
             toast.success("Comentario registrado")
         } catch (error) {
             toast.error("Error al registrar comentario")
@@ -309,12 +312,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         const nextStage = STAGES[viewingStepIndex + 1]
                         if (nextStage) {
                             const isMaterialApprovalIncomplete = STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
-                                order?.materials?.some((m: any) => !m.is_available)
+                                order?.materials?.some((m: WorkOrderMaterial) => !m.is_available)
 
                             // Can approve all logic:
                             // We only block if there are tasks assigned to SOMEONE ELSE that are pending.
                             // If tasks are assigned to ME (or my group), I can proceed (implicit approval).
-                            const pendingForOthers = pendingTasks.some((t: any) => !canUserCompleteTask(t))
+                            const pendingForOthers = pendingTasks.some((t: WorkOrderTask) => !canUserCompleteTask(t))
 
                             const isNextDisabled = transitioning || isMaterialApprovalIncomplete || pendingForOthers
 
@@ -347,7 +350,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [open, viewingStepIndex, isViewingCurrentStage, order, actualStepIndex, transitioning, pendingTasks, canApproveAll])
 
-    const handleTransition = async (nextStageId: string, data: any = {}) => { 
+    const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => { 
         const currentOrder = order;
         if (!currentOrder) return;
 
@@ -361,7 +364,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         if (isMovingForward && pendingTasks.length > 0) {
             // Check if there are tasks I CANNOT approve
-            const unapprovableTasks = pendingTasks.filter((t: any) => !canUserCompleteTask(t))
+            const unapprovableTasks = pendingTasks.filter((t: WorkOrderTask) => !canUserCompleteTask(t))
             if (unapprovableTasks.length > 0) {
                 toast.error("Existen tareas de aprobación pendientes asignadas a otros usuarios.")
                 return
@@ -370,7 +373,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         if (currentOrder.current_stage === 'MATERIAL_APPROVAL' && isMovingForward) {
             // Validation: Check for insufficient stock items (that are not outsourced)
-            const missingStock = currentOrder.materials?.filter((m: any) => !m.is_outsourced && !m.is_available) || []
+            const missingStock = currentOrder.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced && !m.is_available) || []
             if (missingStock.length > 0) {
                 toast.error(`Stock insuficiente para ${missingStock.length} componentes. Reponga stock para continuar.`)
                 return
@@ -378,7 +381,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         }
 
         if (currentOrder.current_stage === 'OUTSOURCING_ASSIGNMENT' && isMovingForward) {
-            const pending = currentOrder.materials?.filter((m: any) => m.is_outsourced && !m.purchase_order_number) || []
+            const pending = currentOrder.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced && !m.purchase_order_number) || []
             if (pending.length > 0 && !showPOPreview) {
                 setOutsourcedPending(pending)
                 setShowPOPreview(true)
@@ -391,9 +394,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             // IMPLICIT APPROVAL:
             // If moving forward, complete all assigned pending tasks first
             if (isMovingForward) {
-                const tasksToApprove = pendingTasks.filter((t: any) => canUserCompleteTask(t))
+                const tasksToApprove = pendingTasks.filter((t: WorkOrderTask) => canUserCompleteTask(t))
                 if (tasksToApprove.length > 0) {
-                    await Promise.all(tasksToApprove.map((task: any) => {
+                    await Promise.all(tasksToApprove.map((task: WorkOrderTask) => {
                         const notes = taskNotes[task.id]
                         const file = taskFiles[task.id]
                         return completeTask(task.id, notes, file ? [file] : undefined)
@@ -436,7 +439,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             fetchOrder()
             if (onSuccess) onSuccess()
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al cambiar de etapa")
         } finally {
             setTransitioning(false)
@@ -458,7 +461,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             // Step 2: Transition to FINISHED
             await handleTransition('FINISHED')
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al rectificar y finalizar la OT")
         } finally {
             setIsRectifying(false)
@@ -548,7 +551,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             resetMaterialForm()
             fetchOrder()
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al guardar material")
         } finally {
             setAddingMaterial(false)
@@ -568,7 +571,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         setSelectedDocumentType("FACTURA")
     }
 
-    const handleEditMaterial = (material: any) => {
+    const handleEditMaterial = (material: WorkOrderMaterial) => {
         setEditingMaterialId(material.id)
         setNewMaterialProduct(material.component.toString()) // Assuming component is ID
         setNewMaterialQty(material.quantity_planned)
@@ -596,7 +599,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             toast.success("Material eliminado")
             fetchOrder()
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al eliminar material")
         }
     }
@@ -614,7 +617,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             setIsAnnulModalOpen(false)
             fetchOrder()
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al anular la orden")
         } finally {
             setIsAnnuling(false)
@@ -635,7 +638,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             onOpenChange(false) // Close wizard
             if (onSuccess) onSuccess()
         } catch (err) {
-            const error: any = err
+            const error = err as { message?: string }
             showApiError(error, "Error al eliminar la orden")
         } finally {
             setIsDeleting(false)
@@ -648,7 +651,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const productName = order?.product_name || order?.sale_line?.product?.name || "Producto"
 
     const materials = order?.materials || []
-    const orderHasMaterials = !!materials.some((m: any) => !m.is_outsourced)
+    const orderHasMaterials = !!materials.some((m: WorkOrderMaterial) => !m.is_outsourced)
 
     return (
         <>
@@ -664,7 +667,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         order={order}
                         currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
-                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as any })}
+                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as "WORK_ORDER" | "PURCHASE_ORDER" })}
                         onAnnul={() => handleAnnulOrder()}
                         onDelete={() => setIsDeleteModalOpen(true)}
                         isAnnuling={isAnnuling}
@@ -735,8 +738,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-4">
 
                                                 <MaterialAssignmentTabs
-                                                    stockCount={order?.materials?.filter((m: any) => !m.is_outsourced).length || 0}
-                                                    outsourcedCount={order?.materials?.filter((m: any) => m.is_outsourced).length || 0}
+                                                    stockCount={order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).length || 0}
+                                                    outsourcedCount={order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).length || 0}
                                                     showOutsourcedTab={false}
                                                     stockContent={
                                                         <div className="space-y-6">
@@ -753,7 +756,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
-                                                                        {order?.materials?.filter((m: any) => !m.is_outsourced).map((m: any) => (
+                                                                        {order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                                             <tr key={m.id} className="border-t">
                                                                                 <td className="p-2">
                                                                                     <p className="font-medium">{m.component_name}</p>
@@ -779,7 +782,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </td>
                                                                             </tr>
                                                                         ))}
-                                                                        {(!order?.materials || order.materials.filter((m: any) => !m.is_outsourced).length === 0) && (
+                                                                        {(!order?.materials || order.materials.filter((m: WorkOrderMaterial) => !m.is_outsourced).length === 0) && (
                                                                             <tr>
                                                                                 <td colSpan={6} className="p-0">
                                                                                     <EmptyState context="inventory" variant="compact" description="No hay materiales de stock asignados" />
@@ -884,7 +887,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     outsourcedContent={
                                                         <div className="space-y-6">
                                                             <div className="grid gap-3">
-                                                                {order?.materials?.filter((m: any) => m.is_outsourced).map((m: any) => (
+                                                                {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                                     <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                                         <div className="flex items-center gap-3">
                                                                             <div className="bg-primary/10 p-2 rounded-full">
@@ -927,7 +930,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         </div>
                                                                     </div>
                                                                 ))}
-                                                                {(!order?.materials || order.materials.filter((m: any) => m.is_outsourced).length === 0) && (
+                                                                {(!order?.materials || order.materials.filter((m: WorkOrderMaterial) => m.is_outsourced).length === 0) && (
                                                                     <div className="p-8 text-center text-muted-foreground italic border rounded-lg border-dashed">
                                                                         No hay servicios tercerizados asignados.
                                                                     </div>
@@ -1028,7 +1031,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     {STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && (
                                         <div className="space-y-6">
 
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_MATERIAL_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_MATERIAL_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1042,7 +1045,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-4">
                                                 <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
                                                 <div className="grid gap-4">
-                                                    {order?.materials?.filter((m: any) => !m.is_outsourced).map((m: any) => (
+                                                    {order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                         <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
                                                             <div className="space-y-1">
                                                                 <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
@@ -1064,7 +1067,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             </div>
                                                         </div>
                                                     ))}
-                                                    {order?.materials?.filter((m: any) => !m.is_outsourced).length === 0 && (
+                                                    {order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).length === 0 && (
                                                         <div className="text-center py-4 text-muted-foreground text-sm italic border rounded-lg border-dashed">
                                                             Sin materiales de stock requeridos.
                                                         </div>
@@ -1101,7 +1104,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-4">
                                                 {/* List of current outsourced services */}
                                                 <div className="grid gap-3">
-                                                    {order?.materials?.filter((m: any) => m.is_outsourced).map((m: any) => (
+                                                    {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                         <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-primary/10 p-2 rounded-full">
@@ -1248,7 +1251,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
                                         <div className="space-y-6">
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_OUTSOURCING_VERIFICATION').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1268,7 +1271,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             </div>
 
                                             <div className="grid gap-4">
-                                                {order?.materials?.filter((m: any) => m.is_outsourced).map((m: any) => {
+                                                {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => {
                                                     const isReceived = m.purchase_order_receiving_status === 'RECEIVED'
                                                     const statusLabel = isReceived ? 'Recibido' : (m.purchase_order_receiving_status === 'PARTIAL' ? 'Parcial' : 'Pendiente')
 
@@ -1331,7 +1334,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 Archivos del Checkout (Compra)
                                                             </Label>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                                {order.checkout_files.map((att: any) => (
+                                                                {order.checkout_files.map((att: ProductionAttachment) => (
                                                                     <div key={att.id} className="flex items-center gap-2 p-2 bg-blue-50/50 rounded border border-blue-100/50 text-xs hover:border-blue-200 transition-colors">
                                                                         <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                         <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>{att.original_filename}</div>
@@ -1360,8 +1363,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             </Label>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {order.attachments
-                                                                    .filter((a: any) => a.original_filename !== stageData.approval_attachment)
-                                                                    .map((att: any) => (
+                                                                    .filter((a: ProductionAttachment) => a.original_filename !== stageData.approval_attachment)
+                                                                    .map((att: ProductionAttachment) => (
                                                                         <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
                                                                             <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                             <div className="flex-1 truncate font-medium" title={att.original_filename}>{att.original_filename}</div>
@@ -1383,7 +1386,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 </div>
                                             </div>
 
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1399,7 +1402,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     {STAGES[viewingStepIndex]?.id === 'PRESS' && (
                                         <div className="space-y-6">
 
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_PRESS_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1414,7 +1417,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'POSTPRESS' && (
                                         <div className="space-y-6">
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1429,7 +1432,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_VERIFICATION' && (
                                         <div className="space-y-6">
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_OUTSOURCING_VERIFICATION_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1445,7 +1448,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     {STAGES[viewingStepIndex]?.id === 'RECTIFICATION' && (
                                         <div className="space-y-6">
                                             {/* Rectification approval task (if any) */}
-                                            {order?.workflow_tasks?.filter((t: any) => t.task_type === 'OT_RECTIFICATION_APPROVAL').map((task: any) => (
+                                            {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_RECTIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
                                                     task={task}
@@ -1514,7 +1517,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             }}
                             isMaterialApprovalIncomplete={
                                 !!(STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
-                                order?.materials?.some((m: any) => !m.is_available))
+                                order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
                             }
                             hasMaterials={orderHasMaterials}
                             isRectificationStep={STAGES[viewingStepIndex]?.id === 'RECTIFICATION'}

@@ -68,6 +68,7 @@ export interface WorkOrderInitialData {
         quantity?: number | string
         uom_id?: string | number
         uom_name?: string
+        comments?: any[]
     }
 }
 

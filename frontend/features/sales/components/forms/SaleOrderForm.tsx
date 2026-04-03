@@ -44,6 +44,15 @@ import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { PricingUtils } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 import { useStockValidation } from "@/hooks/useStockValidation"
+import { SaleOrder, SaleOrderLine, SaleOrderPayload } from "../../types"
+import { Product } from "@/features/inventory/types"
+
+interface UoM {
+    id: number
+    name: string
+    category: number
+    ratio: number
+}
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -67,9 +76,9 @@ const saleOrderSchema = z.object({
 type SaleOrderFormValues = z.infer<typeof saleOrderSchema>
 
 interface SaleOrderFormProps {
-    onSuccess?: (order?: any) => void
-    onConfirmCheckout?: (data: any) => void
-    initialData?: any
+    onSuccess?: (order?: SaleOrder) => void
+    onConfirmCheckout?: (data: SaleOrderPayload) => void
+    initialData?: SaleOrder | Partial<SaleOrder>
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerVariant?: "default" | "circular"
@@ -111,15 +120,15 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
-    const [uoms, setUoMs] = useState<any[]>([])
+    const [products, setProducts] = useState<Product[]>([])
+    const [uoms, setUoMs] = useState<UoM[]>([])
     const { checkAvailability, validateLine, getStockMessage } = useStockValidation()
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
-            lines: initialData.lines.map((l: any) => ({
+            lines: initialData?.lines?.map((l: any) => ({
                 id: l.id,
                 product: l.product?.toString() || "",
                 description: l.description,
@@ -130,7 +139,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 tax_rate: parseFloat(l.tax_rate) || 19,
                 custom_specs: l.custom_specs || {},
                 manufacturing_data: l.manufacturing_data || null,
-            }))
+            })) || []
         } : {
             payment_method: "CREDIT",
             notes: "",
@@ -157,10 +166,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
         }
     }
 
-    const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
+    const fetchEffectivePrice = async (product: Product, qty: number, selectedUomId?: number) => {
         if (!product || !product.id) return { net: 0, gross: 0 }
         try {
-            const params: any = { quantity: qty }
+            const params: Record<string, string | number> = { quantity: qty }
             if (selectedUomId) params.uom_id = selectedUomId
 
             const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
@@ -184,7 +193,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    lines: initialData.lines.map((l: any) => ({
+                    lines: initialData?.lines?.map((l: any) => ({
                         id: l.id,
                         product: l.product?.toString() || "",
                         description: l.description,
@@ -195,7 +204,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         tax_rate: parseFloat(l.tax_rate) || 19,
                         custom_specs: l.custom_specs || {},
                         manufacturing_data: l.manufacturing_data || null,
-                    }))
+                    })) || []
                 })
             } else {
                 form.reset({
@@ -275,7 +284,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     mfg_auto_finalize: product?.mfg_auto_finalize,
                 };
             });
-            onConfirmCheckout({ ...data, lines: enrichedLines });
+            onConfirmCheckout({ 
+                ...data, 
+                lines: enrichedLines,
+                customer: (initialData as any)?.customer || null,
+                date: new Date().toISOString()
+            });
             setOpen(false)
             return
         }
@@ -549,9 +563,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                         field.onChange(val)
                                                                         const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
                                                                         const uomId = parseInt(val)
-                                                                        const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
-                                                                        form.setValue(`lines.${index}.unit_price`, net)
-                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                        if (selectedProduct) {
+                                                                            const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                            form.setValue(`lines.${index}.unit_price`, net)
+                                                                            form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                        }
                                                                     }}
                                                                     uoms={uoms}
                                                                     showConversionHint={true}

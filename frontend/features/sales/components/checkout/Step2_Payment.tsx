@@ -4,9 +4,11 @@ import { Wallet } from "lucide-react"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useEffect } from "react"
 
+import { CheckoutPaymentData } from "../../types"
+
 interface Step2_PaymentProps {
-    paymentData: any
-    setPaymentData: (data: any) => void
+    paymentData: CheckoutPaymentData
+    setPaymentData: (data: CheckoutPaymentData) => void
     total: number
     terminalId?: number
     customerCreditBalance?: number
