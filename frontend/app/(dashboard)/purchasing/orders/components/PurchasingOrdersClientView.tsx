@@ -86,7 +86,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
-    const { openHub } = useHubPanel()
+    const { openHub, closeHub, hubConfig } = useHubPanel()
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
@@ -543,13 +543,20 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                                 <div className="grid gap-3 pt-2">
                                     {rows.map((row: any) => {
                                         const item = row.original
+                                        const isSelected = viewMode === 'orders' 
+                                            ? hubConfig?.orderId === item.id 
+                                            : hubConfig?.invoiceId === item.id
+
                                         return (
                                             <OrderCard
                                                 key={item.id}
                                                 item={item}
+                                                isSelected={isSelected}
                                                 type={viewMode === 'orders' ? 'purchase' : 'note'}
                                                 onClick={() => {
-                                                    if (viewMode === 'orders') {
+                                                    if (isSelected) {
+                                                        closeHub()
+                                                    } else if (viewMode === 'orders') {
                                                         openHub({ orderId: item.id, type: 'purchase', onActionSuccess: fetchOrders })
                                                     } else {
                                                         openHub({ orderId: null, invoiceId: item.id, type: 'purchase', onActionSuccess: fetchNotes })

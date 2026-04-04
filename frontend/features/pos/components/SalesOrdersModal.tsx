@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, FileText, Loader2, X } from "lucide-react"
+import { ShoppingCart, FileText, Loader2, ArrowLeft } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,17 @@ interface SalesOrdersModalProps {
 
 export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrdersModalProps) {
     const [viewMode, setViewMode] = useState<'orders' | 'notes'>('orders')
+    const [shouldRenderContent, setShouldRenderContent] = useState(open)
+
+    useEffect(() => {
+        if (open) {
+            setShouldRenderContent(true)
+        } else {
+            const timer = setTimeout(() => setShouldRenderContent(false), 500)
+            return () => clearTimeout(timer)
+        }
+    }, [open])
+
     const windowWidth = useWindowWidth(150, open)
 
     const { isSheetCollapsed } = useGlobalModals()
@@ -38,22 +49,27 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
         }
     }, [open, isSheetCollapsed, closeHub])
 
-    // Temporarily hide this sheet if the Order Hub is opened (e.g. from within a document here)
-    useEffect(() => {
-        if (isHubOpen && open) {
-            setWasOpenBeforeHub(true)
-            onOpenChange(false)
-        } else if (!isHubOpen && wasOpenBeforeHub) {
-            setWasOpenBeforeHub(false)
-            onOpenChange(true)
-        }
-    }, [isHubOpen]) // intentionally omitting open/onOpenChange to avoid loops
-
     const handleOpenChange = (newOpen: boolean) => {
+        if (!newOpen && isHubOpen) {
+            closeHub()
+        }
         onOpenChange(newOpen)
     }
 
-    const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
+
+
+    const isDesktop = windowWidth >= 768;
+    const isTablet = windowWidth >= 640;
+    // We adjust the HUB width mathematically to match what GlobalHubPanel takes
+    const hubWidth = isDesktop ? 380 : (isTablet ? 350 : windowWidth);
+
+    const activePush = isHubOpen && !isSheetCollapsed("POS_SALES");
+    const pushOffset = activePush ? hubWidth : 0;
+    
+    // Volvemos al ancho completo a la izquierda
+    const baseSheetWidth = windowWidth; 
+    const targetWidth = baseSheetWidth - pushOffset;
+    const fullWidth = Math.max(targetWidth, 0); // No min width constraint so it can shrink cleanly on mobile
 
     return (
             <CollapsibleSheet
@@ -63,11 +79,15 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                 tabLabel={viewMode === 'orders' ? 'NOTAS VENTAS' : 'NOTAS C/D'}
                 tabIcon={viewMode === 'orders' ? ShoppingCart : FileText}
                 fullWidth={fullWidth}
-                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw]"
+                pushOffset={pushOffset}
+                className={cn(
+                    "max-w-[100vw] sm:max-w-none sm:w-auto",
+                    activePush ? "!shadow-[-15px_0_30px_rgba(0,0,0,0.08)] !border-r-0 !ring-0" : "shadow-2xl"
+                )}
             >
-                <div className="flex flex-col h-full bg-background">
-                    <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
-                        <div className="flex items-center justify-between w-full pr-12 text-left">
+                <div className="flex flex-col h-full bg-transparent backdrop-blur-md">
+                    <SheetHeader className="p-6 pb-4 border-b bg-transparent sticky top-0 z-50">
+                        <div className="flex items-center justify-between w-full pl-12 text-left">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
                                     {viewMode === 'orders' ? <ShoppingCart className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
@@ -101,21 +121,21 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                         </div>
                     </SheetHeader>
 
-                    {/* Custom Close Button for Sheet (Top Right Corner) */}
-                    <div className="absolute top-4 right-4 z-[60]">
+                    {/* Custom Navigation Button for Sheet (Top Left Corner) */}
+                    <div className="absolute top-4 left-4 z-[60]">
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                            onClick={() => onOpenChange(false)}
+                            className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-primary transition-all" 
+                            onClick={() => handleOpenChange(false)}
                         >
-                            <X className="h-5 w-5" />
+                            <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </div>
 
                     <ScrollAreaUI className="flex-1 px-6">
                         <div className="py-6">
-                            {open && (
+                            {shouldRenderContent && (
                                 <Suspense fallback={
                                     <div className="flex h-full w-full items-center justify-center p-20">
                                         <div className="flex flex-col items-center gap-4">

@@ -83,20 +83,9 @@ export function OrderHubPanel({
 
     if (!activeDoc) {
         return (
-            <div className="flex flex-col h-full bg-background">
-                <div className="flex items-center justify-between p-3 border-b">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5">
-                            <LayoutDashboard className="h-5 w-5" />
-                        </div>
-                        <h2 className="text-sm font-heading font-extrabold uppercase text-muted-foreground tracking-widest">HUB de Mando</h2>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded" onClick={onClose}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div className="flex-1 flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <div className="flex flex-col h-full bg-transparent">
+                <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground p-6 rounded-2xl bg-background/50 backdrop-blur-sm border shadow-sm">
                         <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                         <span className="text-sm font-medium">Cargando datos...</span>
                     </div>
@@ -110,51 +99,7 @@ export function OrderHubPanel({
         : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')
 
     return (
-        <div className="flex flex-col h-full bg-background">
-            {/* Header */}
-            <div className="p-3 pb-1 border-b bg-background shrink-0">
-                <div className="flex items-center justify-between w-full text-left">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
-                            <LayoutDashboard className="h-5 w-5" />
-                        </div>
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-lg font-heading font-extrabold uppercase tracking-tight text-foreground leading-none">
-                                    {isNoteMode ? activeInvoice.dte_type_display : "HUB de Mando"}
-                                </h2>
-                                <StatusBadge 
-                                    status={globalStatus.status} 
-                                    label={globalStatus.label}
-                                    className="scale-90 origin-left"
-                                />
-                            </div>
-                            <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                                <span className="flex items-center gap-2">
-                                    <span className="font-bold text-foreground">
-                                        {prefix}-{activeDoc.number || activeDoc.id}
-                                    </span>
-                                    <span className="opacity-40">|</span>
-                                    {formatPlainDate(activeDoc.created_at || activeDoc.date)}
-                                    <span className="opacity-40">|</span>
-                                    <span className="text-foreground">
-                                        {isNoteMode ? (activeDoc.contact_name || activeDoc.contact?.name) : (type === 'purchase' ? activeDoc.supplier_name : activeDoc.customer_name)}
-                                    </span>
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all shrink-0" 
-                        onClick={onClose}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
-            </div>
-            
+        <div className="flex flex-col h-full bg-transparent">
             {/* Content wrapped in ScrollArea */}
             <ScrollArea className="flex-1 w-full" type="always">
                 <div className="p-3 pt-1">

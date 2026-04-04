@@ -70,7 +70,7 @@ export function PurchaseInvoicesClientView() {
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
-    const { openHub } = useHubPanel()
+    const { openHub, closeHub, hubConfig } = useHubPanel()
 
     useEffect(() => {
         fetchDocuments()
@@ -401,14 +401,26 @@ export function PurchaseInvoicesClientView() {
                         }
                         return (
                             <div className="grid gap-3 pt-2">
-                                {rows.map((row: any) => (
-                                    <InvoiceCard
-                                        key={row.original.id}
-                                        item={row.original}
-                                        type="purchase_invoice"
-                                        onClick={() => openHub({ orderId: row.original.purchase_order || null, invoiceId: row.original.id, type: 'purchase', onActionSuccess: fetchDocuments })}
-                                    />
-                                ))}
+                                {rows.map((row: any) => {
+                                    const inv = row.original
+                                    const isSelected = hubConfig?.invoiceId === inv.id
+                                    
+                                    return (
+                                        <InvoiceCard
+                                            key={inv.id}
+                                            item={inv}
+                                            type="purchase_invoice"
+                                            isSelected={isSelected}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    closeHub()
+                                                } else {
+                                                    openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
+                                                }
+                                            }}
+                                        />
+                                    )
+                                })}
                             </div>
                         )
                     }}
