@@ -24,7 +24,7 @@ export interface WizardState {
 
 interface POSContextValue {
     // Session
-    currentSession: POSSession | null
+    currentSession: POSSession | null | undefined
     setCurrentSession: (session: POSSession | null) => void
 
     // Products
@@ -83,8 +83,8 @@ interface POSContextValue {
 const POSContext = createContext<POSContextValue | undefined>(undefined)
 
 export function POSProvider({ children }: { children: ReactNode }) {
-    // Session State
-    const [currentSession, setCurrentSession] = useState<POSSession | null>(null)
+    // Session State - starts as undefined to indicate "not yet checked"
+    const [currentSession, setCurrentSession] = useState<POSSession | null | undefined>(undefined)
 
     // Product Data
     const [products, setProducts] = useState<Product[]>([])
@@ -156,7 +156,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     const [componentCache, setComponentCache] = useState<ComponentCache>({})
 
     // UI State
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true)
 
     // Cache updaters
     const updateBomCache = useCallback((productId: number, bom: BOM) => {

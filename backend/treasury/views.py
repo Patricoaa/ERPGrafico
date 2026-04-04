@@ -744,8 +744,10 @@ class ReconciliationReportsViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
-        """Reconciliation dashboard metrics"""
+        """Reconciliation dashboard metrics — cached 90s"""
         try:
+            from core.cache import cache_report
+            
             account_id = request.query_params.get('treasury_account')
             
             date_from_str = request.query_params.get('date_from')
@@ -754,10 +756,19 @@ class ReconciliationReportsViewSet(viewsets.ViewSet):
             date_from = date.fromisoformat(date_from_str) if date_from_str else None
             date_to = date.fromisoformat(date_to_str) if date_to_str else None
             
-            data = ReportsService.get_reconciliation_dashboard(
-                treasury_account_id=account_id,
-                date_from=date_from,
-                date_to=date_to
+            def _generate():
+                return ReportsService.get_reconciliation_dashboard(
+                    treasury_account_id=account_id,
+                    date_from=date_from,
+                    date_to=date_to
+                )
+
+            data = cache_report(
+                module='treasury',
+                endpoint='recon_dashboard',
+                params={'account': account_id, 'from': date_from_str, 'to': date_to_str},
+                timeout=90,
+                generator=_generate,
             )
             return Response(data)
         except Exception as e:
@@ -875,7 +886,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if fund_source_id:
                 try:
                     from accounting.models import AccountingSettings
-                    settings = AccountingSettings.objects.first()
+                    settings = AccountingSettings.get_solo()
                     fund_source = TreasuryAccount.objects.get(id=fund_source_id)
                     
                     # book_balance = fund_source.account.balance # This might be inaccurate if multiple sessions use it
@@ -1230,7 +1241,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if amount <= 0:
                 return Response({'error': 'El monto debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
             
-            settings = AccountingSettings.objects.first()
+            settings = AccountingSettings.get_solo()
             if not settings:
                 return Response({'error': 'Configuración contable no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
             

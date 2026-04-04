@@ -26,7 +26,7 @@ def evaluate_credit_portfolio(self):
     from contacts.models import Contact, RiskLevel
     from accounting.models import AccountingSettings
     
-    settings = AccountingSettings.objects.first()
+    settings = AccountingSettings.get_solo()
     auto_block_days_threshold = settings.credit_auto_block_days if settings else 60
 
     # We evaluate contacts that either have credit enabled or have outstanding balance

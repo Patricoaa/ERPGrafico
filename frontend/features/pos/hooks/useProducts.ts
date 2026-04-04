@@ -31,15 +31,14 @@ export function useProducts() {
     const [limits, setLimits] = useState<StockLimits>({})
 
     // 1. Fetch Products with React Query (Shared Cache)
-    const { data: products = EMPTY_ARRAY } = useQuery({
+    const { data: products = EMPTY_ARRAY, isLoading: loadingProducts } = useQuery({
         queryKey: ['products', { active: true, can_be_sold: true }],
         queryFn: () => inventoryApi.getProducts({ 
             active: true, 
             can_be_sold: true,
-            // Optimized fields for POS
             fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite'
         }),
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 5, 
     })
 
     // Sync global state if needed (though we should ideally use React Query data directly)
@@ -48,7 +47,7 @@ export function useProducts() {
     }, [products, setGlobalProducts])
 
     // 2. Fetch Categories
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [], isLoading: loadingCategories } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
             const res = await api.get('/inventory/categories/?page_size=9999')
@@ -58,7 +57,7 @@ export function useProducts() {
     })
 
     // 3. Fetch UoMs
-    const { data: uoms = [] } = useQuery({
+    const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
             const res = await api.get('/inventory/uoms/?page_size=9999')
@@ -66,6 +65,15 @@ export function useProducts() {
         },
         staleTime: 1000 * 60 * 60,
     })
+
+    // Coordinate global loading state
+    useEffect(() => {
+        if (!loadingProducts && !loadingCategories && !loadingUoms) {
+            // Add a small delay to ensure smooth transition transition and wait for caches
+            const timer = setTimeout(() => setLoading(false), 300)
+            return () => clearTimeout(timer)
+        }
+    }, [loadingProducts, loadingCategories, loadingUoms, setLoading])
 
     // Setup caches when products load (only for products that already have BOM data if any)
     useEffect(() => {

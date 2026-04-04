@@ -807,7 +807,7 @@ class PartnerService:
 
     @staticmethod
     def _get_settings() -> AccountingSettings:
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("No se encontró configuración contable.")
         return settings

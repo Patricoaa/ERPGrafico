@@ -15,3 +15,4 @@ export * from './POSShell';
 export * from './ProductGrid';
 export * from './ProductGridSkeleton';
 export * from './SearchBar';
+export * from './skeletons/POSLayoutSkeleton';

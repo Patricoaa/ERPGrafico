@@ -34,15 +34,23 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openHub } = useHubPanel()
+    const { openHub, closeHub, hubConfig } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
-    const { orders } = useSalesOrders({
+    const { orders, refetch: refetchOrders } = useSalesOrders({
         filters: {
             pos_session: posSessionId || undefined
         }
     })
-    const { data: notes, isLoading: loadingNotes } = useSalesNotes()
+    const { data: notes, isLoading: loadingNotes, refetch: refetchNotes } = useSalesNotes()
+
+    const handleActionSuccess = () => {
+        // Refetch both to ensure cards background update
+        refetchOrders()
+        refetchNotes()
+        // Call the parent success (e.g. closing modal or custom logic)
+        if (onActionSuccess) onActionSuccess()
+    }
 
     const filteredOrders = orders.filter(order => {
         if (!dateRange || !dateRange.from) return true
@@ -253,17 +261,24 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                 <div className="grid gap-3 pt-2">
                                     {rows.map((row: any) => {
                                         const item = row.original
+                                        const isSelected = viewMode === 'orders' 
+                                            ? hubConfig?.orderId === item.id 
+                                            : hubConfig?.invoiceId === item.id
+                                            
                                         return (
                                             <OrderCard
                                                 key={item.id}
                                                 item={item}
+                                                isSelected={isSelected}
                                                 type={viewMode === 'orders' ? 'sale' : 'note'}
                                                 hideStatus={hideStatusInCards}
                                                 onClick={() => {
-                                                    if (viewMode === 'orders') {
-                                                        openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                    if (isSelected) {
+                                                        closeHub()
+                                                    } else if (viewMode === 'orders') {
+                                                        openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                     } else {
-                                                        openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                        openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                     }
                                                 }}
                                             />
@@ -273,6 +288,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             )
                         }}
                     />
+
                 </Tabs>
             </div>
         </div>

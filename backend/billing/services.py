@@ -59,7 +59,7 @@ class BillingService:
         
         # Calculate POS Fallback Credit
         from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.objects.first()
+        acc_settings = AccountingSettings.get_solo()
         # Ensure we use a safe division and handle None/0
         fb_val = acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')
         fallback_percentage = Decimal(str(fb_val)) / Decimal('100.0')
@@ -81,7 +81,7 @@ class BillingService:
 
         # Calculate POS Fallback Credit
         from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.objects.first()
+        acc_settings = AccountingSettings.get_solo()
         fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')) / Decimal('100.0')
         pos_credit = total * fallback_percentage
 
@@ -253,7 +253,7 @@ class BillingService:
         )
 
         # 2. Accounting Entry via Mapper
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         description, reference, items = AccountingMapper.get_entries_for_sale_invoice(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -360,7 +360,7 @@ class BillingService:
         )
 
         # 2. Accounting Entry via Mapper (includes tax capitalization logic for Boletas)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         description, reference, items = AccountingMapper.get_entries_for_purchase_bill(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -453,8 +453,23 @@ class BillingService:
         return invoice
 
     @staticmethod
+    def pos_checkout(*args, **kwargs):
+        """
+        Wrapper that secures the transaction against 'double-clicks' via DistributedLock.
+        """
+        user = kwargs.get('user')
+        from core.cache import acquire_locks
+        
+        lock_resources = []
+        if getattr(user, 'id', None):
+            lock_resources.append(f"pos_user_{user.id}")
+            
+        with acquire_locks(lock_resources, timeout=15):
+            return BillingService._pos_checkout_internal(*args, **kwargs)
+
+    @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
+    def _pos_checkout_internal(order_data, dte_type, payment_method, transaction_number=None, 
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
@@ -585,7 +600,7 @@ class BillingService:
 
             # Fallback Logic: check if we can bypass credit_enabled check
             from accounting.models import AccountingSettings
-            acc_settings = AccountingSettings.objects.first()
+            acc_settings = AccountingSettings.get_solo()
             fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else 0) / Decimal('100.0')
             allowed_fallback = order.total * fallback_percentage
             

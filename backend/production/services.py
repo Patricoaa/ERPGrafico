@@ -905,7 +905,7 @@ class WorkOrderService:
                 from accounting.models import AccountingSettings, JournalEntry
                 from accounting.services import JournalEntryService
                 
-                settings = AccountingSettings.objects.first()
+                settings = AccountingSettings.get_solo()
                 if not settings:
                     raise ValidationError("Debe configurar la contabilidad primero.")
                 

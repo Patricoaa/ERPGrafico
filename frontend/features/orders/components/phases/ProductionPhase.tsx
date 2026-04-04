@@ -17,6 +17,10 @@ interface ProductionPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     showAnimations: boolean
+    // Accordion props
+    collapsible?: boolean
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function ProductionPhase({
@@ -25,7 +29,10 @@ export function ProductionPhase({
     userPermissions,
     onActionSuccess,
     openDetails,
-    showAnimations
+    showAnimations,
+    collapsible,
+    isOpen,
+    onOpenChange,
 }: ProductionPhaseProps) {
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
@@ -113,6 +120,9 @@ export function ProductionPhase({
                 showDocProgress={true}
                 stageId="production"
                 isComplete={totalOTProgress === 100 && totalOTs > 0}
+                collapsible={collapsible}
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
             >
                 {totalOTs > 0 ? (
                     <div className="space-y-1 px-1">

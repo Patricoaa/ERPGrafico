@@ -252,7 +252,7 @@
   }
 
   body[data-hub-open="true"] {
-    --hub-width: 500px;
+    --hub-width: 380px;
   }
 
   /* 
@@ -325,9 +325,17 @@
    */
   [data-slot="sheet-content"].right-0,
   [data-slot="sheet-overlay"] {
-    margin-right: calc(var(--inbox-width) + var(--hub-width));
-    /* Add margin-right to the transitions handled by animation, overriding inline tailwind classes */
-    transition: margin-right 300ms var(--ease-premium) !important;
+    /* Repulsion System: Maintain full-width sheet background but shift content via padding */
+    --push-offset: calc(var(--inbox-width, 0px) + var(--hub-width, 0px));
+    margin-right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important; /* Force full screen coverage */
+    padding-right: var(--push-offset) !important;
+    
+    /* Synchronize transitions for premium side-by-side feel */
+    transition: 
+      padding-right 500ms var(--ease-premium),
+      transform 500ms var(--ease-premium) !important;
   }
 
   [data-slot="sheet-content"].left-0[data-state="open"] { animation-name: sheet-slide-in-left !important; }

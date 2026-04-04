@@ -242,111 +242,120 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         Returns a cartera view: all contacts with active credit or outstanding balance.
         Includes per-contact aging breakdown and aggregate summary KPIs.
+        Cached in Redis for 120s — invalidated by payment/credit events.
         """
-        from decimal import Decimal
+        from core.cache import cache_report
+        from core.api.throttles import HeavyReportThrottle
+        
+        throttle = HeavyReportThrottle()
+        if not throttle.allow_request(request, self):
+            from rest_framework.exceptions import Throttled
+            raise Throttled(detail="Demasiadas solicitudes al reporte de crédito. Intente en un momento.")
 
-        # Fetch contacts based on blacklist filter
         is_blacklist = request.query_params.get('blacklist', 'false') == 'true'
         
-        if is_blacklist:
-            contacts = Contact.objects.filter(credit_blocked=True).distinct()
-        else:
-            # Fetch contacts that have credit enabled OR have any credit balance used (sale orders)
-            contacts = Contact.objects.filter(
-                models.Q(credit_enabled=True) | 
-                models.Q(credit_limit__isnull=False) |
-                models.Q(sale_orders__isnull=False)
-            ).filter(credit_blocked=False).distinct()
+        def _generate():
+            from decimal import Decimal
 
-        from .serializers import ContactSerializer
-        contact_list = []
-        
-        summary = {
-            'total_debt': Decimal('0'),
-            'total_exposure': Decimal('0'),
-            'potential_loss': Decimal('0'),
-            'current': Decimal('0'),
-            'overdue_30': Decimal('0'),
-            'overdue_60': Decimal('0'),
-            'overdue_90': Decimal('0'),
-            'overdue_90plus': Decimal('0'),
-            'count_with_credit': 0,
-            'count_debtors': 0,
-            'count_overdue': 0,
-            'risk_distribution': {
-                'LOW': 0,
-                'MEDIUM': 0,
-                'HIGH': 0,
-                'CRITICAL': 0,
-            }
-        }
-
-        for contact in contacts:
-            balance_used = contact.credit_balance_used
-            aging = contact.credit_aging
-            
             if is_blacklist:
-                # For blacklisted clients, the active balance is 0 because the debt was castigada,
-                # but we still want to show the castigado amount as the risk amount minus any recoveries.
-                from django.db.models import Sum
-                write_offs = contact.treasury_movements.filter(
-                    payment_method='WRITE_OFF', 
-                    is_pending_registration=False
-                ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-                recoveries = contact.treasury_movements.filter(
-                    reference='RECUPERACION',
-                    is_pending_registration=False
-                ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-                balance_used = write_offs - recoveries
+                contacts = Contact.objects.filter(credit_blocked=True).distinct()
+            else:
+                contacts = Contact.objects.filter(
+                    models.Q(credit_enabled=True) | 
+                    models.Q(credit_limit__isnull=False) |
+                    models.Q(sale_orders__isnull=False)
+                ).filter(credit_blocked=False).distinct()
+
+            from .serializers import ContactSerializer
+            contact_list = []
             
-            # Include contacts that have credit configured OR have an actual balance OR are blacklisted
-            if balance_used > 0 or contact.credit_enabled or contact.credit_limit or is_blacklist:
-                summary['count_with_credit'] += 1
-                
-                # Analytics
-                if contact.credit_limit:
-                    summary['total_exposure'] += contact.credit_limit
-                
-                # Risk level tracking
-                risk_level = contact.credit_risk_level
-                summary['risk_distribution'][risk_level] += 1
-                
-                if risk_level == 'CRITICAL':
-                    summary['potential_loss'] += balance_used
+            summary = {
+                'total_debt': Decimal('0'),
+                'total_exposure': Decimal('0'),
+                'potential_loss': Decimal('0'),
+                'current': Decimal('0'),
+                'overdue_30': Decimal('0'),
+                'overdue_60': Decimal('0'),
+                'overdue_90': Decimal('0'),
+                'overdue_90plus': Decimal('0'),
+                'count_with_credit': 0,
+                'count_debtors': 0,
+                'count_overdue': 0,
+                'risk_distribution': {
+                    'LOW': 0,
+                    'MEDIUM': 0,
+                    'HIGH': 0,
+                    'CRITICAL': 0,
+                }
+            }
 
-                if balance_used > 0:
-                    summary['count_debtors'] += 1
-                    summary['total_debt'] += balance_used
-                    summary['current'] += aging['current']
-                    summary['overdue_30'] += aging['overdue_30']
-                    summary['overdue_60'] += aging['overdue_60']
-                    summary['overdue_90'] += aging['overdue_90']
-                    summary['overdue_90plus'] += aging['overdue_90plus']
-
-                    overdue = aging['overdue_30'] + aging['overdue_60'] + aging['overdue_90'] + aging['overdue_90plus']
-                    # In blacklist, `overdue` will be 0 because it's paid, but that's fine.
-                    if overdue > 0:
-                        summary['count_overdue'] += 1
-
-                data = ContactSerializer(contact).data
+            for contact in contacts:
+                balance_used = contact.credit_balance_used
+                aging = contact.credit_aging
+                
                 if is_blacklist:
-                    data['credit_balance_used'] = str(balance_used)
-                contact_list.append(data)
+                    from django.db.models import Sum
+                    write_offs = contact.treasury_movements.filter(
+                        payment_method='WRITE_OFF', 
+                        is_pending_registration=False
+                    ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+                    recoveries = contact.treasury_movements.filter(
+                        reference='RECUPERACION',
+                        is_pending_registration=False
+                    ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+                    balance_used = write_offs - recoveries
+                
+                if balance_used > 0 or contact.credit_enabled or contact.credit_limit or is_blacklist:
+                    summary['count_with_credit'] += 1
+                    
+                    if contact.credit_limit:
+                        summary['total_exposure'] += contact.credit_limit
+                    
+                    risk_level = contact.credit_risk_level
+                    summary['risk_distribution'][risk_level] += 1
+                    
+                    if risk_level == 'CRITICAL':
+                        summary['potential_loss'] += balance_used
 
-        # Utilization Rate
-        summary['utilization_rate'] = '0.00'
-        if summary['total_exposure'] > 0:
-            rate = (summary['total_debt'] / summary['total_exposure']) * 100
-            summary['utilization_rate'] = f"{rate:.2f}"
+                    if balance_used > 0:
+                        summary['count_debtors'] += 1
+                        summary['total_debt'] += balance_used
+                        summary['current'] += aging['current']
+                        summary['overdue_30'] += aging['overdue_30']
+                        summary['overdue_60'] += aging['overdue_60']
+                        summary['overdue_90'] += aging['overdue_90']
+                        summary['overdue_90plus'] += aging['overdue_90plus']
 
-        # Convert Decimals to strings for JSON serialization
-        for key in ['total_debt', 'total_exposure', 'potential_loss', 'current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus']:
-            summary[key] = str(summary[key])
+                        overdue = aging['overdue_30'] + aging['overdue_60'] + aging['overdue_90'] + aging['overdue_90plus']
+                        if overdue > 0:
+                            summary['count_overdue'] += 1
 
-        return Response({
-            'contacts': contact_list,
-            'summary': summary,
-        })
+                    data = ContactSerializer(contact).data
+                    if is_blacklist:
+                        data['credit_balance_used'] = str(balance_used)
+                    contact_list.append(data)
+
+            summary['utilization_rate'] = '0.00'
+            if summary['total_exposure'] > 0:
+                rate = (summary['total_debt'] / summary['total_exposure']) * 100
+                summary['utilization_rate'] = f"{rate:.2f}"
+
+            for key in ['total_debt', 'total_exposure', 'potential_loss', 'current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus']:
+                summary[key] = str(summary[key])
+
+            return {
+                'contacts': contact_list,
+                'summary': summary,
+            }
+
+        data = cache_report(
+            module='contacts',
+            endpoint='credit_portfolio',
+            params={'blacklist': str(is_blacklist)},
+            timeout=120,
+            generator=_generate,
+        )
+        return Response(data)
     @action(detail=True, methods=['post'])
     def write_off_debt(self, request, pk=None):
         """
@@ -377,7 +386,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if total_balance <= 0:
             return Response({"error": "El contacto no tiene deuda activa para castigar."}, status=400)
             
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings or not settings.default_uncollectible_expense_account:
             return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada en Contabilidad."}, status=400)
             
@@ -503,7 +512,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": "Debe especificar el monto recuperado."}, status=400)
             
         amount = Decimal(amount_str)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         # We need a recovery account. If not set, use uncollectible expense as negative (reversal)
         # or a generic other income account.

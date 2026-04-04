@@ -17,7 +17,7 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import api from '@/lib/api';
+import api, { pollTask } from '@/lib/api';
 import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } from 'lucide-react';
 import { LoadingFallback } from "@/components/shared/LoadingFallback";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -41,16 +41,17 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const params: any = {};
+                const params: any = { is_async: true };
                 if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
                 if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
 
-                const res = await api.get('/finances/api/bi-analytics/', { params });
-                setData(res.data);
+                const res = await api.get('finances/api/bi-analytics/', { params });
+                const finalData = res.data.task_id ? await pollTask(res.data.task_id) : res.data;
+                setData(finalData);
             } catch (err) {
                 console.error(err);
             } finally {
-                setData(false);
+                setLoading(false);
             }
         };
         loadData();

@@ -558,7 +558,7 @@ class NoteCheckoutService:
                 f"No se puede registrar documento en etapa {workflow.get_current_stage_display()}"
             )
         
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
         
@@ -919,8 +919,25 @@ class NoteCheckoutService:
         return workflow
 
     @staticmethod
+    def process_full_checkout(*args, **kwargs):
+        """
+        ATOMIC CHECKOUT: Handle strict transaction for Note creation.
+        Replaces the staged workflow with a single commit-at-end process.
+        Wrapper that secures the transaction against 'double-clicks' via DistributedLock.
+        """
+        created_by = kwargs.get('created_by')
+        from core.cache import acquire_locks
+        
+        lock_resources = []
+        if getattr(created_by, 'id', None):
+            lock_resources.append(f"note_user_{created_by.id}")
+            
+        with acquire_locks(lock_resources, timeout=15):
+            return NoteCheckoutService._process_full_checkout_internal(*args, **kwargs)
+
+    @staticmethod
     @transaction.atomic
-    def process_full_checkout(
+    def _process_full_checkout_internal(
         original_invoice_id: int,
         note_type: str,
         selected_items: List[Dict],
@@ -932,8 +949,7 @@ class NoteCheckoutService:
         created_by=None
     ) -> NoteWorkflow:
         """
-        ATOMIC CHECKOUT: Handle strict transaction for Note creation.
-        Replaces the staged workflow with a single commit-at-end process.
+        Internal: Handles the actual checkout transaction.
         """
         # 1. Validate Original Invoice
         try:
@@ -1201,7 +1217,7 @@ class NoteCheckoutService:
         
         # Create Accounting Entry
         # Pass moved_quantities so COGS is reversed only for what moved
-        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.objects.first(), moved_quantities=moved_quantities)
+        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.get_solo(), moved_quantities=moved_quantities)
         
         if not val_is_pending:
             from accounting.services import JournalEntryService

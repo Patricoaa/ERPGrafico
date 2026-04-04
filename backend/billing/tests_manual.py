@@ -31,7 +31,7 @@ def test_boleta_vat_capitalization():
     )
     
     # Ensure settings exist
-    settings = AccountingSettings.objects.first()
+    settings = AccountingSettings.get_solo()
     if not settings:
         print("Error: AccountingSettings not found")
         return

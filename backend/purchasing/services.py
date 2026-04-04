@@ -278,7 +278,7 @@ class PurchasingService:
         
         total_amount = Decimal('0.00')
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         for line in receipt.lines.all():
             # 1. Create Stock Move (OUT) - quantity is already negative in receipt line
@@ -388,7 +388,7 @@ class PurchasingService:
         from accounting.services import JournalEntryService, AccountingMapper
         from datetime import datetime
 
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("No se encontró configuración contable.")
 
@@ -582,7 +582,7 @@ class PurchasingService:
         from inventory.models import StockMove
         from billing.services import BillingService
         
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
              raise ValidationError("No se encontró configuración contable.")
         
@@ -970,10 +970,25 @@ class PurchasingService:
         return order
 
     @staticmethod
+    def purchase_checkout(*args, **kwargs):
+        """
+        Wrapper that secures the transaction against 'double-clicks' via DistributedLock.
+        """
+        user = kwargs.get('user')
+        from core.cache import acquire_locks
+        
+        lock_resources = []
+        if getattr(user, 'id', None):
+            lock_resources.append(f"purch_user_{user.id}")
+            
+        with acquire_locks(lock_resources, timeout=15):
+            return PurchasingService._purchase_checkout_internal(*args, **kwargs)
+
+    @staticmethod
     @transaction.atomic
-    def purchase_checkout(order_data, dte_type, document_number='', document_date=None, document_attachment=None,
+    def _purchase_checkout_internal(order_data, dte_type, document_number='', document_date=None, document_attachment=None,
                          payment_method='CREDIT', amount=None, treasury_account_id=None, transaction_number=None,
-                         payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None):
+                         payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None, user=None):
         """
         Complete Purchase checkout: Create Order -> Register Bill -> Payment -> Receipt.
         

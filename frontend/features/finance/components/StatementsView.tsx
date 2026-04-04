@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Download, FileText, BarChart2, TrendingUp } from "lucide-react"
-import api from "@/lib/api"
+import api, { pollTask } from "@/lib/api"
 import { toast } from "sonner"
 import { FinancialStatementTable } from "@/features/finance/components/FinancialStatementTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
@@ -65,6 +65,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             const params: any = {
                 start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : undefined,
                 end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : undefined,
+                is_async: true
             }
 
             if (showComparison && compDate?.from && compDate?.to) {
@@ -72,15 +73,21 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 params.comp_end_date = format(compDate.to, 'yyyy-MM-dd')
             }
 
+            const [bsRes, plRes, cfRes] = await Promise.all([
+                api.get('finances/api/balance-sheet/', { params }),
+                api.get('finances/api/income-statement/', { params }),
+                api.get('finances/api/cash-flow/', { params })
+            ])
+            
             const [bs, pl, cf] = await Promise.all([
-                api.get('/finances/api/balance-sheet/', { params }),
-                api.get('/finances/api/income-statement/', { params }),
-                api.get('/finances/api/cash-flow/', { params })
+                bsRes.data.task_id ? pollTask(bsRes.data.task_id) : Promise.resolve(bsRes.data),
+                plRes.data.task_id ? pollTask(plRes.data.task_id) : Promise.resolve(plRes.data),
+                cfRes.data.task_id ? pollTask(cfRes.data.task_id) : Promise.resolve(cfRes.data),
             ])
 
-            setBsData(bs.data)
-            setPlData(pl.data)
-            setCfData(cf.data)
+            setBsData(bs)
+            setPlData(pl)
+            setCfData(cf)
         } catch (error) {
             console.error("Error loading finances", error)
         } finally {
@@ -102,8 +109,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         }
         try {
             let url = ''
-            if (type === 'balance-sheet') url = '/finances/balance-sheet/'
-            if (type === 'income-statement') url = '/finances/income-statement/'
+            if (type === 'balance-sheet') url = 'finances/balance-sheet/'
+            if (type === 'income-statement') url = 'finances/income-statement/'
 
             if (url) {
                 const response = await api.get(url, { responseType: 'blob' })
