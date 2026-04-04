@@ -453,8 +453,23 @@ class BillingService:
         return invoice
 
     @staticmethod
+    def pos_checkout(*args, **kwargs):
+        """
+        Wrapper that secures the transaction against 'double-clicks' via DistributedLock.
+        """
+        user = kwargs.get('user')
+        from core.cache import acquire_locks
+        
+        lock_resources = []
+        if getattr(user, 'id', None):
+            lock_resources.append(f"pos_user_{user.id}")
+            
+        with acquire_locks(lock_resources, timeout=15):
+            return BillingService._pos_checkout_internal(*args, **kwargs)
+
+    @staticmethod
     @transaction.atomic
-    def pos_checkout(order_data, dte_type, payment_method, transaction_number=None, 
+    def _pos_checkout_internal(order_data, dte_type, payment_method, transaction_number=None, 
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None, 
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',

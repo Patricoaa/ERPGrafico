@@ -22,70 +22,76 @@ class SalesService:
         if order.status != SaleOrder.Status.DRAFT:
             return order
 
-        # 1. Validate Stock Availability (Strict Reservation)
-        from inventory.services import UoMService
-        from sales.models import SalesSettings
-        settings = SalesSettings.get_solo()
+        # Acquire strict product locks to prevent concurrent double-spends
+        product_ids = [line.product_id for line in order.lines.all() if line.product_id]
+        lock_resources = [f"stock_prod_{pid}" for pid in set(product_ids)]
         
-        if settings and settings.restrict_stock_sales:
-            for line in order.lines.all():
-                product = line.product
-                if product and product.track_inventory:
-                    # Convert requested qty to Product UoM
-                    qty_needed = UoMService.convert_quantity(
-                        line.quantity,
-                        from_uom=line.uom,
-                        to_uom=product.uom
-                    )
-                    
-                    # Check availability
-                    if product.qty_available < qty_needed:
-                        raise ValidationError(
-                            f"Stock insuficiente para '{product.name}'. "
-                            f"Solicitado: {qty_needed} {product.uom.name}, "
-                            f"Disponible: {product.qty_available} {product.uom.name}"
+        from core.cache import acquire_locks
+        with acquire_locks(lock_resources, timeout=10):
+            # 1. Validate Stock Availability (Strict Reservation)
+            from inventory.services import UoMService
+            from sales.models import SalesSettings
+            settings = SalesSettings.get_solo()
+            
+            if settings and settings.restrict_stock_sales:
+                for line in order.lines.all():
+                    product = line.product
+                    if product and product.track_inventory:
+                        # Convert requested qty to Product UoM
+                        qty_needed = UoMService.convert_quantity(
+                            line.quantity,
+                            from_uom=line.uom,
+                            to_uom=product.uom
                         )
+                        
+                        # Check availability
+                        if product.qty_available < qty_needed:
+                            raise ValidationError(
+                                f"Stock insuficiente para '{product.name}'. "
+                                f"Solicitado: {qty_needed} {product.uom.name}, "
+                                f"Disponible: {product.qty_available} {product.uom.name}"
+                            )
 
-        # 2. Update Order Status
-        order.status = SaleOrder.Status.CONFIRMED
-        order.save()
+            # 2. Update Order Status
+            order.status = SaleOrder.Status.CONFIRMED
+            order.save()
 
-        # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
-        # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
-        from production.services import WorkOrderService
-        from inventory.models import Product
-        
-        for i, line in enumerate(order.lines.all()):
-            if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
-                # IMPORTANT: Only create OT if requires advanced manufacturing
-                # Express products: OT will be created during delivery confirmation
-                if line.product.requires_advanced_manufacturing:
-                    # Check if an OT already exists for this line to avoid duplicates
-                    if not line.work_orders.exists():
-                        print(f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}")
-                        try:
-                            # Extract files for this specific line if provided
-                            current_line_files = line_files.get(i) if line_files else None
-                            ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
-                            if ot:
-                                print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
-                            else:
-                                print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
-                        except Exception as e:
-                            print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
+            # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
+            # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
+            from production.services import WorkOrderService
+            from inventory.models import Product
+            
+            for i, line in enumerate(order.lines.all()):
+                if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
+                    # IMPORTANT: Only create OT if requires advanced manufacturing
+                    # Express products: OT will be created during delivery confirmation
+                    if line.product.requires_advanced_manufacturing:
+                        # Check if an OT already exists for this line to avoid duplicates
+                        if not line.work_orders.exists():
+                            print(f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}")
+                            try:
+                                # Extract files for this specific line if provided
+                                current_line_files = line_files.get(i) if line_files else None
+                                ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
+                                if ot:
+                                    print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
+                                else:
+                                    print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
+                            except Exception as e:
+                                print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
+                        else:
+                            print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
                     else:
-                        print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
-                else:
-                    print(f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch")
+                        print(f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch")
 
-        # NOTE: Accounting entry moved to BillingService.create_sale_invoice
-        
-        # Create HUB stage tasks for the inbox
-        # HUB Tasks Sync
-        from workflow.services import WorkflowService
-        WorkflowService.sync_hub_tasks(order)
-        
-        return order
+            # NOTE: Accounting entry moved to BillingService.create_sale_invoice
+            
+            # Create HUB stage tasks for the inbox
+            # HUB Tasks Sync
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+            
+            return order
 
     @staticmethod
     @transaction.atomic

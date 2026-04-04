@@ -43,12 +43,16 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
     }, [serverYear, serverMonth, dateString])
 
     useEffect(() => {
+        let isMounted = true
         if (open) {
             // Load suppliers (providers)
             api.get("/contacts/?is_supplier=true&has_terminal_payment_method=true").then(res => {
-                setSuppliers(res.data)
-            }).catch(() => toast.error("Error al cargar proveedores"))
+                if (isMounted) setSuppliers(res.data)
+            }).catch(() => {
+                if (isMounted) toast.error("Error al cargar proveedores")
+            })
         }
+        return () => { isMounted = false }
     }, [open])
 
     const handleSubmit = async () => {

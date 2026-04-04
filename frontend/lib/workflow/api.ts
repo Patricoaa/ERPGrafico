@@ -44,7 +44,7 @@ export interface TaskAssignmentRule {
 
 // Tasks
 export const getTasks = async (params: any = {}) => {
-    const response = await api.get('/workflow/tasks/', { params })
+    const response = await api.get('workflow/tasks/', { params })
     return response.data
 }
 
@@ -54,7 +54,7 @@ export const completeTask = async (id: number, notes?: string, attachments?: Fil
     if (attachments) {
         attachments.forEach(file => formData.append('attachments', file))
     }
-    const response = await api.post(`/workflow/tasks/${id}/complete/`, formData, {
+    const response = await api.post(`workflow/tasks/${id}/complete/`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }
@@ -64,37 +64,37 @@ export const completeTask = async (id: number, notes?: string, attachments?: Fil
 
 // Notifications
 export const getNotifications = async () => {
-    const response = await api.get('/workflow/notifications/')
+    const response = await api.get('workflow/notifications/')
     return response.data
 }
 
 export const getUnreadNotificationCount = async () => {
-    const response = await api.get('/workflow/notifications/unread_count/')
+    const response = await api.get('workflow/notifications/unread_count/')
     return response.data.count
 }
 
 export const markNotificationRead = async (id: number) => {
-    const response = await api.post(`/workflow/notifications/${id}/mark_read/`)
+    const response = await api.post(`workflow/notifications/${id}/mark_read/`)
     return response.data
 }
 
 export const markAllNotificationsRead = async () => {
-    const response = await api.post(`/workflow/notifications/mark_all_read/`)
+    const response = await api.post(`workflow/notifications/mark_all_read/`)
     return response.data
 }
 
 // Rules (Admin)
 export const getAssignmentRules = async () => {
-    const response = await api.get('/workflow/assignment-rules/')
+    const response = await api.get('workflow/assignment-rules/')
     return response.data
 }
 
 export const updateAssignmentRule = async (id: number, data: any) => {
-    const response = await api.patch(`/workflow/assignment-rules/${id}/`, data)
+    const response = await api.patch(`workflow/assignment-rules/${id}/`, data)
     return response.data
 }
 
 export const createAssignmentRule = async (data: any) => {
-    const response = await api.post(`/workflow/assignment-rules/`, data)
+    const response = await api.post(`workflow/assignment-rules/`, data)
     return response.data
 }

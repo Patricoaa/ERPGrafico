@@ -283,6 +283,17 @@ class TreasuryMovement(models.Model):
             return self.from_account
         return None
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        invalidate_report_cache('contacts')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        invalidate_report_cache('contacts')
+        super().delete(*args, **kwargs)
 
 class TreasuryAccountManager(models.Manager):
     """Custom manager with query helpers for filtering by payment methods."""
@@ -802,6 +813,16 @@ class BankStatementLine(models.Model):
             models.Index(fields=['statement', 'reconciliation_status']),
             models.Index(fields=['transaction_id']),
         ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        super().delete(*args, **kwargs)
     
     def __str__(self):
         return f"{self.statement.display_id} - Línea {self.line_number}"
