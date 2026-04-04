@@ -219,5 +219,3 @@ def acquire_locks(resources, timeout=30):
     finally:
         for res in acquired:
             DistributedLock.release(res)
-
-

@@ -12,6 +12,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
+        // Automatically strip leading slash from URL to prevent it from replacing baseURL's path
+        if (config.url && config.url.startsWith('/')) {
+            config.url = config.url.substring(1);
+        }
+
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
