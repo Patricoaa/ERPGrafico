@@ -86,12 +86,12 @@ export function OrderHubPanel({
             <div className="flex flex-col h-full bg-background">
                 <div className="flex items-center justify-between p-3 border-b">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                        <div className="p-2 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5">
                             <LayoutDashboard className="h-5 w-5" />
                         </div>
-                        <span className="text-sm font-bold text-muted-foreground">HUB de Mando</span>
+                        <h2 className="text-sm font-heading font-extrabold uppercase text-muted-foreground tracking-widest">HUB de Mando</h2>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onClose}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded" onClick={onClose}>
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
@@ -115,12 +115,12 @@ export function OrderHubPanel({
             <div className="p-3 pb-1 border-b bg-background shrink-0">
                 <div className="flex items-center justify-between w-full text-left">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                        <div className="p-2 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
                             <LayoutDashboard className="h-5 w-5" />
                         </div>
                         <div className="flex flex-col">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-lg font-bold tracking-tight text-foreground leading-none">
+                                <h2 className="text-lg font-heading font-extrabold uppercase tracking-tight text-foreground leading-none">
                                     {isNoteMode ? activeInvoice.dte_type_display : "HUB de Mando"}
                                 </h2>
                                 <StatusBadge 
@@ -147,7 +147,7 @@ export function OrderHubPanel({
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all shrink-0" 
+                        className="h-9 w-9 rounded bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all shrink-0" 
                         onClick={onClose}
                     >
                         <X className="h-5 w-5" />

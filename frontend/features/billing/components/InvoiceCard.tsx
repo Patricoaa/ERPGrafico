@@ -15,6 +15,7 @@ interface InvoiceCardProps {
     item: any
     type: InvoiceType
     onClick?: () => void
+    onActionSuccess?: () => void
     className?: string
 }
 
@@ -28,7 +29,7 @@ const dteTypeLabel: Record<string, string> = {
     PURCHASE_INV: 'FAC',
 }
 
-export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps) {
+export function InvoiceCard({ item, type, onClick, onActionSuccess, className }: InvoiceCardProps) {
     const { openHub } = useHubPanel()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
@@ -111,9 +112,9 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                             onClick={(e) => {
                                 e.stopPropagation()
                                 if (item.corrected_invoice) {
-                                    openHub({ orderId: null, invoiceId: item.corrected_invoice.id, type: 'sale' })
+                                    openHub({ orderId: null, invoiceId: item.corrected_invoice.id, type: 'sale', onActionSuccess })
                                 } else if (item.sale_order || item.purchase_order) {
-                                    openHub({ orderId: item.sale_order || item.purchase_order, type: item.sale_order ? 'sale' : 'purchase' })
+                                    openHub({ orderId: item.sale_order || item.purchase_order, type: item.sale_order ? 'sale' : 'purchase', onActionSuccess })
                                 }
                             }}
                         >
@@ -132,7 +133,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                     className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20/30 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase' })
+                                        openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase', onActionSuccess })
                                     }}
                                 >
                                     <GitBranch className="size-3" />

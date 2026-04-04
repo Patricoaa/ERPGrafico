@@ -259,7 +259,6 @@ services:
       - frontend_net
       - backend_net
     depends_on:
-      - frontend
       - backend
     deploy:
       resources:
