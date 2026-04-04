@@ -151,18 +151,49 @@ def income_statement_view(request):
 
 # --- New API Views (JSON) ---
 
+from celery.result import AsyncResult
+from .tasks import generate_report_task
+
+@api_view(['GET'])
+def get_report_status_data(request, task_id):
+    """
+    Check the status of an asynchronous report generation task.
+    """
+    task = AsyncResult(task_id)
+    if task.state == 'PENDING':
+        return Response({'status': 'PENDING'})
+    elif task.state == 'SUCCESS':
+        return Response({'status': 'SUCCESS', 'data': task.result})
+    elif task.state == 'FAILURE':
+        return Response({'status': 'FAILURE', 'error': str(task.info)}, status=500)
+    else:
+        return Response({'status': task.state})
+
 @api_view(['GET'])
 def get_balance_sheet_data(request):
     """
     Returns the Balance Sheet data as JSON.
     Query Params: end_date (YYYY-MM-DD), start_date (YYYY-MM-DD)
+    Cached in Redis for 90s.
     """
+    from core.cache import cache_report
     end_date = request.query_params.get('end_date', timezone.now().date())
     # Allow legacy 'date' param too
     if request.query_params.get('date'):
         end_date = request.query_params.get('date')
         
     start_date = request.query_params.get('start_date') # can be None
+    
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='balance_sheet',
+            end_date=str(end_date) if end_date else None,
+            start_date=str(start_date) if start_date else None,
+            comp_end_date=request.query_params.get('comp_end_date'),
+            comp_start_date=request.query_params.get('comp_start_date')
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
     
     comp_end = request.query_params.get('comp_end_date')
     comp_start = request.query_params.get('comp_start_date')
@@ -180,8 +211,13 @@ def get_balance_sheet_data(request):
     start_date_obj = to_date(start_date)
     comp_end_obj = to_date(comp_end)
     comp_start_obj = to_date(comp_start)
-
-    data = FinanceService.get_balance_sheet(end_date_obj, start_date_obj, comp_end_obj, comp_start_obj)
+    data = cache_report(
+        module='finances',
+        endpoint='balance_sheet',
+        params={'start': start_date, 'end': str(end_date), 'comp_start': comp_start, 'comp_end': comp_end},
+        timeout=90,
+        generator=lambda: FinanceService.get_balance_sheet(end_date_obj, start_date_obj, comp_end_obj, comp_start_obj),
+    )
     return Response(data)
 
 @api_view(['GET'])
@@ -197,6 +233,17 @@ def get_income_statement_data(request):
     comp_end = request.query_params.get('comp_end_date')
     comp_start = request.query_params.get('comp_start_date')
 
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='income_statement',
+            end_date=str(end_date),
+            start_date=str(start_date),
+            comp_end_date=comp_end,
+            comp_start_date=comp_start
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
+
     def to_date(d):
         if not d: return None
         if isinstance(d, date): return d
@@ -206,11 +253,18 @@ def get_income_statement_data(request):
         except:
             return None
 
-    data = FinanceService.get_income_statement(
-        to_date(start_date), 
-        to_date(end_date), 
-        to_date(comp_start), 
-        to_date(comp_end)
+    from core.cache import cache_report
+    data = cache_report(
+        module='finances',
+        endpoint='income_statement',
+        params={'start': str(start_date), 'end': str(end_date), 'comp_start': comp_start, 'comp_end': comp_end},
+        timeout=90,
+        generator=lambda: FinanceService.get_income_statement(
+            to_date(start_date), 
+            to_date(end_date), 
+            to_date(comp_start), 
+            to_date(comp_end)
+        ),
     )
     return Response(data)
 
@@ -228,7 +282,25 @@ def get_cash_flow_data(request):
     comp_start = request.query_params.get('comp_start_date')
     comp_end = request.query_params.get('comp_end_date')
     
-    data = FinanceService.get_cash_flow(start_date, end_date, comp_start, comp_end)
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='cash_flow',
+            end_date=str(end_date),
+            start_date=str(start_date),
+            comp_end_date=comp_end,
+            comp_start_date=comp_start
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
+    
+    from core.cache import cache_report
+    data = cache_report(
+        module='finances',
+        endpoint='cash_flow',
+        params={'start': str(start_date), 'end': str(end_date), 'comp_start': comp_start, 'comp_end': comp_end},
+        timeout=90,
+        generator=lambda: FinanceService.get_cash_flow(start_date, end_date, comp_start, comp_end),
+    )
     return Response(data)
 
 @api_view(['GET'])
@@ -242,6 +314,15 @@ def get_financial_analysis_data(request):
     
     start_date = request.query_params.get('start_date')
 
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='financial_analysis',
+            end_date=str(end_date) if end_date else None,
+            start_date=str(start_date) if start_date else None
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
+
     def to_date(d):
         if not d: return None
         if isinstance(d, date): return d
@@ -254,29 +335,30 @@ def get_financial_analysis_data(request):
     end_date_obj = to_date(end_date)
     start_date_obj = to_date(start_date)
 
-    # We reuse basic finances logic to get totals
+    from core.cache import cache_report
+    data = cache_report(
+        module='finances',
+        endpoint='analysis',
+        params={'start': start_date, 'end': str(end_date)},
+        timeout=90,
+        generator=lambda: _compute_analysis(end_date_obj, start_date_obj),
+    )
+    return Response(data)
+
+def _compute_analysis(end_date_obj, start_date_obj):
     bs = FinanceService.get_balance_sheet(end_date_obj, start_date_obj)
     
     total_assets = bs['total_assets']
     total_liabilities = bs['total_liabilities']
     total_equity = bs['total_equity']
     
-    # Calculate Ratios
-    # 1. Financing Structure
-    # Debt Ratio = Liabilities / Assets
     debt_ratio = (total_liabilities / total_assets) if total_assets else 0
-    # Equity Ratio = Equity / Assets
     equity_ratio = (total_equity / total_assets) if total_assets else 0
-    # Debt to Equity = Liabilities / Equity
     debt_to_equity = (total_liabilities / total_equity) if total_equity else 0
     
-    # Liquidity (Current Ratio) = Current Assets / Current Liabilities
-    # We use the new bs_category mapping for dynamic calculation
     from accounting.models import BSCategory, Account
     
     def get_category_total(cat, e_date):
-        # Find all leaf accounts that resolve to this category
-        # Using loop since effective_bs_category is a property with inheritance
         total = 0
         leaf_accs = Account.objects.filter(children__isnull=True)
         for acc in leaf_accs:
@@ -288,12 +370,9 @@ def get_financial_analysis_data(request):
     current_liabilities = get_category_total(BSCategory.CURRENT_LIABILITY, end_date_obj)
     
     current_ratio = (current_assets / current_liabilities) if current_liabilities else 0
-    
-    # Solvency (Solvency Ratio) = Total Assets / Total Liabilities (Inverse of Debt Ratio somewhat, or (NI + Dep) / Liab)
-    # Let's use simple Assets / Liabilities
     solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
 
-    return Response({
+    return {
         'structure': {
             'total_assets': total_assets,
             'total_liabilities': total_liabilities,
@@ -310,7 +389,7 @@ def get_financial_analysis_data(request):
         'solvency': {
             'solvency_ratio': solvency_ratio
         }
-    })
+    }
 
 @api_view(['GET'])
 def get_bi_analytics_data(request):
@@ -319,6 +398,15 @@ def get_bi_analytics_data(request):
     """
     start_date = request.query_params.get('start_date')
     end_date = request.query_params.get('end_date')
+    
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='bi_analytics',
+            start_date=str(start_date) if start_date else None,
+            end_date=str(end_date) if end_date else None
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
     
     def to_date(d):
         if not d: return None
@@ -329,5 +417,12 @@ def get_bi_analytics_data(request):
         except:
             return None
 
-    data = FinanceService.get_bi_analytics(to_date(start_date), to_date(end_date))
+    from core.cache import cache_report
+    data = cache_report(
+        module='finances',
+        endpoint='bi_analytics',
+        params={'start': start_date, 'end': end_date},
+        timeout=120,
+        generator=lambda: FinanceService.get_bi_analytics(to_date(start_date), to_date(end_date)),
+    )
     return Response(data)

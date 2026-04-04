@@ -980,6 +980,16 @@ class StockMove(models.Model):
     def display_id(self):
         return f"MOV-{str(self.id).zfill(5)}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('inventory')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('inventory')
+        super().delete(*args, **kwargs)
+
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):
         FIXED = 'FIXED', _('Precio Fijo (Unitario)')

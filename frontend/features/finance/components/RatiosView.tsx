@@ -19,7 +19,7 @@ import {
     BarChart,
     Bar
 } from 'recharts';
-import api from '@/lib/api';
+import api, { pollTask } from '@/lib/api';
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { LoadingFallback } from "@/components/shared/LoadingFallback";
@@ -42,7 +42,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
         const loadData = async () => {
             setLoading(true);
             try {
-                const params: any = {};
+                const params: any = { is_async: true };
                 if (date?.to) {
                     params.end_date = format(date.to, 'yyyy-MM-dd');
                 }
@@ -50,20 +50,22 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     params.start_date = format(date.from, 'yyyy-MM-dd');
                 }
 
-                const res = await api.get('/finances/api/analysis/', { params });
-                setData(res.data);
+                const res = await api.get('finances/api/analysis/', { params });
+                const finalData = res.data.task_id ? await pollTask(res.data.task_id) : res.data;
+                setData(finalData);
 
                 // Load comparison data if enabled
                 if (showComparison && compDate?.to) {
-                    const compParams: any = {};
+                    const compParams: any = { is_async: true };
                     if (compDate.to) {
                         compParams.end_date = format(compDate.to, 'yyyy-MM-dd');
                     }
                     if (compDate.from) {
                         compParams.start_date = format(compDate.from, 'yyyy-MM-dd');
                     }
-                    const compRes = await api.get('/finances/api/analysis/', { params: compParams });
-                    setCompData(compRes.data);
+                    const compRes = await api.get('finances/api/analysis/', { params: compParams });
+                    const finalCompData = compRes.data.task_id ? await pollTask(compRes.data.task_id) : compRes.data;
+                    setCompData(finalCompData);
                 }
             } catch (err) {
                 console.error(err);

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -58,7 +58,7 @@ export function TerminalBatchesManagement({
         }
     }, [externalOpenInvoice])
 
-    const columns: ColumnDef<any>[] = [
+    const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -147,12 +147,12 @@ export function TerminalBatchesManagement({
         },
         {
             id: "actions",
-            cell: ({ row }: any) => (
+            cell: () => (
                 <div className="flex justify-center gap-2">
                 </div>
             )
         }
-    ]
+    ], [])
 
     return (
         <div className="space-y-4">
