@@ -50,6 +50,17 @@ class GlobalHRSettings(models.Model):
     def __str__(self):
         return "Configuración Global RRHH"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate Redis cache
+        from core.cache import invalidate_singleton, CACHE_KEY_HR_SETTINGS
+        invalidate_singleton(CACHE_KEY_HR_SETTINGS)
+
+    @classmethod
+    def get_solo(cls):
+        from core.cache import cached_singleton, CACHE_KEY_HR_SETTINGS
+        return cached_singleton(cls, CACHE_KEY_HR_SETTINGS)
+
 
 class AFP(models.Model):
     """

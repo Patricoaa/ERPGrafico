@@ -21,7 +21,7 @@ export async function wrapApiCall<T>(promise: Promise<any>): Promise<Result<T, A
     try {
         const response = await promise;
         return Ok(response.data as T);
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error.response?.data?.error) {
             return Err(error.response.data.error as ApiError);
         }

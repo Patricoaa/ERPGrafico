@@ -1,76 +1,132 @@
 "use client"
 
-import React, { useState } from "react"
-import { Building2, PieChart, History, Settings } from "lucide-react"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { useSearchParams } from "next/navigation"
-import { EquityCompositionTab } from "@/components/settings/partners/EquityCompositionTab"
-import { PartnerLedgerTab } from "@/components/settings/partners/PartnerLedgerTab"
-import { PartnerAccountingTab } from "@/components/settings/partners/PartnerAccountingTab"
-import { ProfitDistributionsTab } from "@/components/settings/partners/ProfitDistributionsTab"
+import { lazy, Suspense, useState, useMemo } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { PartnerAccountingTab } from "@/features/settings/components/partners/PartnerAccountingTab"
+import Link from "next/link"
+import { Plus } from "lucide-react"
+
+// Lazy load the PartnersSettingsView component
+const PartnersSettingsView = lazy(() =>
+    import("@/features/settings").then(module => ({
+        default: module.PartnersSettingsView
+    }))
+)
 
 export default function PartnersSettingsPage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "composition"
+    const [saving, setSaving] = useState(false)
+    const [configSaving, setConfigSaving] = useState(false)
+
+    const tabs = [
+// ...
+        { 
+            value: "composition", 
+            label: "Composición", 
+            iconName: "users", 
+            href: "/settings/partners?tab=composition" 
+        },
+        { 
+            value: "ledger", 
+            label: "Libro Auxiliar", 
+            iconName: "book-open", 
+            href: "/settings/partners?tab=ledger" 
+        },
+        { 
+            value: "distributions", 
+            label: "Utilidades", 
+            iconName: "pie-chart", 
+            href: "/settings/partners?tab=distributions" 
+        }
+    ]
+
+    const headerConfig = useMemo(() => {
+        switch (activeTab) {
+            case "composition":
+                return {
+                    title: "Composición Societaria",
+                    description: "Gestión de capital suscrito y pagado por los socios.",
+                    iconName: "users" as const,
+                    showAction: false
+                }
+            case "ledger":
+                return {
+                    title: "Libro Auxiliar de Socios",
+                    description: "Historial detallado de aportes, retiros y movimientos de capital.",
+                    iconName: "book-open" as const,
+                    showAction: false
+                }
+            case "distributions":
+                return {
+                    title: "Distribución de Utilidades",
+                    description: "Gestión de actas, resolución de dividendos y reinversiones.",
+                    iconName: "pie-chart" as const,
+                    showAction: true,
+                    actionTitle: "Nueva Distribución",
+                    actionHref: "/settings/partners?tab=distributions&modal=new-distribution"
+                }
+            default:
+                return {
+                    title: "Socios y Capital",
+                    description: "Gestión societaria y patrimonial.",
+                    iconName: "building-2" as const,
+                    showAction: false
+                }
+        }
+    }, [activeTab])
 
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Socios y Capital"
-                description="Gestión de composición societaria, aportes y retiros"
-                icon={Building2}
+                title={headerConfig.title}
+                description={headerConfig.description}
+                iconName={headerConfig.iconName}
+                variant="minimal"
+                configHref="?config=true"
+                status={
+                    saving 
+                        ? { label: "Guardando cambios...", type: "saving" } 
+                        : { label: "Cambios guardados", type: "synced" }
+                }
+                titleActions={headerConfig.showAction && headerConfig.actionHref && (
+                    <Link href={headerConfig.actionHref}>
+                        <PageHeaderButton
+                            iconName="plus"
+                            circular
+                            title={headerConfig.actionTitle}
+                        />
+                    </Link>
+                )}
             />
 
-            <ServerPageTabs
-                tabs={[
-                    {
-                        value: "composition",
-                        label: "Composición Societaria",
-                        iconName: "pie-chart",
-                        href: "/settings/partners?tab=composition"
-                    },
-                    {
-                        value: "ledger",
-                        label: "Movimientos de Capital",
-                        iconName: "history",
-                        href: "/settings/partners?tab=ledger"
-                    },
-                    {
-                        value: "distributions",
-                        label: "Distribución de Utilidades",
-                        iconName: "pie-chart",
-                        href: "/settings/partners?tab=distributions"
-                    },
-                    {
-                        value: "config",
-                        label: "Configuración",
-                        iconName: "settings",
-                        href: "/settings/partners?tab=config"
-                    },
-                ]}
-                activeValue={activeTab}
-                maxWidth="max-w-4xl"
-            />
+            <PageTabs tabs={tabs} activeValue={activeTab} />
 
-            <div className="mt-6">
-                <Tabs value={activeTab} className="w-full">
-                    <TabsContent value="composition">
-                        <EquityCompositionTab />
-                    </TabsContent>
-                    <TabsContent value="ledger">
-                        <PartnerLedgerTab />
-                    </TabsContent>
-                    <TabsContent value="distributions">
-                        <ProfitDistributionsTab />
-                    </TabsContent>
-                    <TabsContent value="config">
-                        <PartnerAccountingTab />
-                    </TabsContent>
-                </Tabs>
+            <div className="pt-4">
+                <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>
+                    <PartnersSettingsView 
+                        activeTab={activeTab} 
+                        onSavingChange={setSaving}
+                    />
+                </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="partner-accounting-settings"
+                title="Arquitectura Contable de Socios"
+                description="Configure las cuentas maestras para el Modelo Híbrido de Capital."
+                tabLabel="Configuración"
+                savingStatus={configSaving ? "saving" : "synced"}
+            >
+                <div className="p-1">
+                    <PartnerAccountingTab onSavingChange={setConfigSaving} />
+                </div>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

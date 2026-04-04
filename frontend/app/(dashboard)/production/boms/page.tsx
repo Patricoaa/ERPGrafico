@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -10,12 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
 import api from "@/lib/api"
-import { BOMFormDialog } from "@/components/production/BOMFormDialog"
+import { BOMFormDialog } from "@/features/production/components/BOMFormDialog"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface BOM {
     id: number
@@ -34,6 +37,29 @@ export default function BOMsPage() {
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<any | null>(null)
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const isNewModalOpen = searchParams.get("modal") === "new"
+
+    // Modal state sync with URL
+    useEffect(() => {
+        if (isNewModalOpen) {
+            setIsFormOpen(true)
+            setEditingBom(null)
+        }
+    }, [isNewModalOpen])
+
+    const handleFormClose = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            setEditingBom(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const fetchBoms = async () => {
         setLoading(true)
@@ -48,8 +74,7 @@ export default function BOMsPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar esta Lista de Materiales?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/boms/${id}/`)
             toast.success("Lista de Materiales eliminada correctamente")
@@ -57,7 +82,9 @@ export default function BOMsPage() {
         } catch (error) {
             toast.error("Error al eliminar Lista de Materiales")
         }
-    }
+    })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const handleEdit = async (id: number) => {
         try {
@@ -185,28 +212,13 @@ export default function BOMsPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Listas de Materiales"
-                description="Gestión de estructuras de productos y costos de fabricación."
-                titleActions={
-                    <Button
-                        size="icon"
-                        className="rounded-full h-8 w-8"
-                        onClick={() => { setEditingBom(null); setIsFormOpen(true); }}
-                        title="Nueva Lista"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </Button>
-                }
-            />
+        <div className="space-y-4">
 
-
-
-            <div className="">
+            <div className="pt-4">
                 <DataTable
                     columns={columns}
                     data={boms}
+                    isLoading={loading}
                     cardMode
                     defaultPageSize={20}
                     filterColumn="product_name"
@@ -227,10 +239,19 @@ export default function BOMsPage() {
 
             <BOMFormDialog
                 open={isFormOpen}
-                onOpenChange={setIsFormOpen}
+                onOpenChange={handleFormClose}
                 onSuccess={fetchBoms}
                 bomToEdit={editingBom}
                 product={editingBom?.product_id || editingBom?.product}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Lista de Materiales"
+                description="¿Está seguro de eliminar esta Lista de Materiales? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )

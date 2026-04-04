@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -28,7 +29,9 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
-import { ReconciliationPanel } from "@/features/treasury"
+import { ReconciliationPanel } from "@/features/finance/bank-reconciliation/components"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface BankStatementLine {
     id: number
@@ -110,21 +113,21 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }
     }
 
-    const handleConfirmStatement = async () => {
-        if (!confirm('¿Confirmar cartola? Esto lo bloqueará y no podrá modificarse.')) return
-
+    const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${id}/confirm/`)
             alert('✅ Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error confirming statement:', error)
-            alert(error.response?.data?.error || 'Error al confirmar cartola')
+            showApiError(error, 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
         }
-    }
+    })
+
+    const handleConfirmStatement = () => confirmAction.requestConfirm()
 
     const columns: ColumnDef<BankStatementLine>[] = [
         {
@@ -162,7 +165,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
-                return val > 0 ? <DataCell.Currency value={val} className="text-red-600 font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+                return val > 0 ? <DataCell.Currency value={val} className="text-destructive font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
             },
         },
         {
@@ -247,7 +250,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-red-600"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                 onClick={() => setUnmatchDialog({ open: true, lineId: row.original.id })}
                                 title="Deshacer reconciliación"
                             >
@@ -276,7 +279,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             <div className="flex-1 p-8 pt-6">
                 <Card className="max-w-md mx-auto mt-12">
                     <CardHeader>
-                        <CardTitle className="text-red-600 flex items-center gap-2">
+                        <CardTitle className="text-destructive flex items-center gap-2">
                             <AlertCircle className="h-5 w-5" />
                             Error
                         </CardTitle>
@@ -372,6 +375,15 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </div>
                     </div>
                 )}
+                
+                <ActionConfirmModal
+                    open={confirmAction.isOpen}
+                    onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+                    onConfirm={confirmAction.confirm}
+                    title="Confirmar Cartola"
+                    description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+                    confirmText="Confirmar"
+                />
             </div>
         )
     }
@@ -422,7 +434,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
-                        <Banknote className="h-3.5 w-3.5 text-blue-500" />
+                        <Banknote className="h-3.5 w-3.5 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
@@ -444,7 +456,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <div className="text-xl font-bold font-mono">
                             {formatCurrency(statement.closing_balance)}
                         </div>
-                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
                             {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                             {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                         </p>
@@ -454,10 +466,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
-                        <TrendingDown className="h-3.5 w-3.5 text-red-400" />
+                        <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold font-mono text-red-600/80">
+                        <div className="text-xl font-bold font-mono text-destructive/80">
                             {formatCurrency(totalDebits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -548,10 +560,19 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleUnmatch} className="bg-red-600 hover:bg-red-700">Confirmar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleUnmatch} className="bg-destructive hover:bg-red-700">Confirmar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <ActionConfirmModal
+                open={confirmAction.isOpen}
+                onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+                onConfirm={confirmAction.confirm}
+                title="Confirmar Cartola"
+                description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+                confirmText="Confirmar"
+            />
         </div>
     )
 }

@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { getEmployees, createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/lib/hr/api"
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -36,13 +37,16 @@ import {
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import {
     Loader2, Plus, UserCog, Search, Pencil, ShieldCheck,
-    CalendarCheck2, LayoutDashboard, Filter, Download, ArrowRight
+    CalendarCheck2, LayoutDashboard, Filter, Download, ArrowRight,
+    Users2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
 
 const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -63,17 +67,33 @@ const employeeSchema = z.object({
     dias_pactados: z.number().min(1).max(31),
     asignacion_familiar: z.enum(["A", "B", "C", "D"]),
     cargas_familiares: z.number().min(0),
+    concept_amounts: z.record(z.string(), z.string()).optional(),
 })
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>
 
 export default function EmployeesPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [employees, setEmployees] = useState<Employee[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
-    const [dialogOpen, setDialogOpen] = useState(false)
+    
+    // Dialog state synchronized with URL or local edit
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+    const dialogOpen = isNewModalOpen || !!editingEmployee
+
+    const setDialogOpen = (open: boolean) => {
+        if (!open) {
+            setEditingEmployee(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const fetchEmployees = useCallback(async () => {
         try {
@@ -183,32 +203,9 @@ export default function EmployeesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Personal"
-                description="Gestión de empleados vinculados a contactos."
-                titleActions={
-                    <EmployeeDialog
-                        open={dialogOpen}
-                        onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingEmployee(null) }}
-                        employee={editingEmployee}
-                        onSaved={() => { setDialogOpen(false); setEditingEmployee(null); fetchEmployees() }}
-                        trigger={
-                            <PageHeaderButton
-                                onClick={() => { setEditingEmployee(null); setDialogOpen(true); }}
-                                icon={Plus}
-                                circular
-                                title="Nuevo Empleado"
-                            />
-                        }
-                    />
-                }
-            />
-
+        <div className="space-y-4">
             {loading ? (
-                <div className="flex items-center justify-center h-48">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <TableSkeleton columns={6} rows={10} />
             ) : (
                 <DataTable
                     columns={columns}
@@ -267,7 +264,7 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
             dias_pactados: 30,
             asignacion_familiar: "D",
             cargas_familiares: 0,
-            concept_amounts: {} as Record<number, string>,
+            concept_amounts: {},
         }
     })
 
@@ -289,37 +286,49 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
         if (employee) {
             form.reset({
                 contact: String(employee.contact),
-                position: employee.position,
-                department: employee.department,
-                start_date: employee.start_date || "",
-                base_salary: employee.base_salary,
+                position: employee.position || "",
+                department: employee.department || "",
+                start_date: (employee.start_date || "").split("T")[0] || "",
+                base_salary: String(employee.base_salary),
                 status: employee.status,
                 contract_type: employee.contract_type,
-                afp: employee.afp?.toString() || null,
-                salud_type: employee.salud_type as "FONASA" | "ISAPRE",
-                isapre_amount_uf: employee.isapre_amount_uf,
+                afp: employee.afp ? String(employee.afp) : null,
+                salud_type: employee.salud_type,
+                isapre_amount_uf: String(employee.isapre_amount_uf || "0"),
                 jornada_type: (employee.jornada_type as any) || "ORDINARIA_22",
-                jornada_hours: String((employee as any).jornada_hours || "44.0"),
-                trabajo_pesado: (employee as any).trabajo_pesado || false,
-                trabajo_agricola: (employee as any).trabajo_agricola || false,
-                gratificacion: (employee as any).gratificacion ?? true,
-                dias_pactados: (employee as any).dias_pactados ?? 30,
-                asignacion_familiar: (employee as any).asignacion_familiar || "D",
-                cargas_familiares: (employee as any).cargas_familiares || 0,
-                concept_amounts: (employee.concept_amounts || []).reduce((acc, curr) => {
-                    acc[curr.concept] = curr.amount
+                jornada_hours: String(employee.jornada_hours || "44.0"),
+                trabajo_pesado: !!employee.trabajo_pesado,
+                trabajo_agricola: !!employee.trabajo_agricola,
+                gratificacion: !!employee.gratificacion,
+                dias_pactados: employee.dias_pactados || 30,
+                asignacion_familiar: (employee.asignacion_familiar as any) || "D",
+                cargas_familiares: employee.cargas_familiares || 0,
+                concept_amounts: (employee.concept_amounts || []).reduce((acc: any, curr: any) => {
+                    acc[String(curr.concept)] = String(curr.amount)
                     return acc
-                }, {} as Record<number, string>)
+                }, {}) || {},
             })
         } else {
             form.reset({
-                contact: "", position: "", department: "", start_date: "",
-                base_salary: "0", status: "ACTIVE", contract_type: "INDEFINIDO",
-                afp: null, salud_type: "FONASA", isapre_amount_uf: "0",
-                jornada_type: "ORDINARIA_22", jornada_hours: "44.0", trabajo_pesado: false,
-                trabajo_agricola: false, gratificacion: true, dias_pactados: 30,
-                asignacion_familiar: "D", cargas_familiares: 0,
-                concept_amounts: {}
+                contact: "",
+                position: "",
+                department: "",
+                start_date: new Date().toISOString().split("T")[0],
+                base_salary: "0",
+                status: "ACTIVE",
+                contract_type: "INDEFINIDO",
+                afp: null,
+                salud_type: "FONASA",
+                isapre_amount_uf: "0",
+                jornada_type: "ORDINARIA_22",
+                jornada_hours: "44.0",
+                trabajo_pesado: false,
+                trabajo_agricola: false,
+                gratificacion: true,
+                dias_pactados: 30,
+                asignacion_familiar: "D",
+                cargas_familiares: 0,
+                concept_amounts: {},
             })
         }
     }, [employee, form, open])
@@ -730,3 +739,4 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
         </Dialog>
     )
 }
+

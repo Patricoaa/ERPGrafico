@@ -12,8 +12,8 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import api from "@/lib/api"
-import { useAccountingAccounts } from "@/hooks/useAccountingAccounts"
+import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
+import { Account } from "@/types/entities"
 
 interface AccountSelectorProps {
     value?: string | number | null
@@ -27,13 +27,17 @@ interface AccountSelectorProps {
 export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
-    const { accounts: allAccounts, loading: accountsLoading } = useAccountingAccounts(!showAll)
+    const { accounts: allAccounts, loading: accountsLoading, fetchAccounts } = useAccountSearch()
     const [searchTerm, setSearchTerm] = useState("")
+
+    useEffect(() => {
+        fetchAccounts("", !showAll)
+    }, [fetchAccounts, showAll])
 
     // 1. Filter base accounts (leaf vs parent)
     const selectableAccounts = useMemo(() => {
         if (!allAccounts) return []
-        return allAccounts.filter((a: any) => {
+        return allAccounts.filter((a: Account) => {
             const isReconcilableMatch = isReconcilable !== undefined ? a.is_reconcilable === isReconcilable : true;
 
             if (showAll) {
@@ -48,7 +52,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     // 2. Filter by type if provided
     const typedAccounts = useMemo(() => {
         if (!accountType) return selectableAccounts
-        return selectableAccounts.filter((a: any) => {
+        return selectableAccounts.filter((a: Account) => {
             if (Array.isArray(accountType)) return accountType.includes(a.account_type)
             return a.account_type === accountType
         })
@@ -67,10 +71,10 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     // 4. Find selected account
     const selectedAccount = useMemo(() => {
         if (!value || !allAccounts) return null
-        return allAccounts.find((a: any) => a.id.toString() === value.toString()) || null
+        return allAccounts.find((a: Account) => a.id.toString() === value.toString()) || null
     }, [allAccounts, value])
 
-    const handleSelect = (account: any) => {
+    const handleSelect = (account: Account | null) => {
         onChange(account ? account.id.toString() : null)
         setOpen(false)
         setModalOpen(false)

@@ -13,14 +13,10 @@ import api from "@/lib/api"
 import { useDebounce } from "@/hooks/use-debounce"
 import { format } from "date-fns"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
+import { WorkOrder } from "@/types/entities"
 
-interface WorkOrder {
-    id: number
-    number: string
-    product_name: string
-    created_at: string
-    status: string
-}
+
 
 interface AdvancedWorkOrderSelectorProps {
     value?: string | number | null
@@ -35,12 +31,11 @@ export function AdvancedWorkOrderSelector({
     placeholder = "Vincular a Orden de Trabajo (Opcional)...",
     disabled = false
 }: AdvancedWorkOrderSelectorProps) {
+    const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)
     const [previewOpen, setPreviewOpen] = useState(false)
     const [previewId, setPreviewId] = useState<number | null>(null)
 
-    const [orders, setOrders] = useState<WorkOrder[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
@@ -48,45 +43,26 @@ export function AdvancedWorkOrderSelector({
 
     // Fetch initial selected order if value exists
     useEffect(() => {
-        const fetchSelected = async () => {
-            if (value && !selectedOrder && value !== "__none__" && value !== "none") {
-                try {
-                    const res = await api.get(`/production/orders/${value}/`)
-                    setSelectedOrder(res.data)
-                } catch (e) {
-                    console.error("Failed to fetch selected work order", e)
-                }
-            } else if (!value || value === "__none__" || value === "none") {
-                setSelectedOrder(null)
-            }
+        if (value && !selectedOrder && value !== "__none__" && value !== "none" && value.toString() !== singleOrder?.id.toString()) {
+            fetchSingleOrder(value.toString())
+        } else if (!value || value === "__none__" || value === "none") {
+            setSelectedOrder(null)
         }
-        fetchSelected()
-    }, [value])
+    }, [value, selectedOrder, singleOrder, fetchSingleOrder])
+
+    // Sync individual order
+    useEffect(() => {
+        if (singleOrder && singleOrder.id.toString() === value?.toString()) {
+            setSelectedOrder(singleOrder)
+        }
+    }, [singleOrder, value])
 
     // Fetch orders on search
     useEffect(() => {
-        const fetchOrders = async () => {
-            setLoading(true)
-            try {
-                const params = new URLSearchParams()
-                if (debouncedSearch) params.append('search', debouncedSearch)
-
-                // Only active OTs (not cancelled)
-                params.append('status_exclude', 'CANCELLED')
-
-                const res = await api.get(`/production/orders/?${params.toString()}`)
-                setOrders(res.data.results || res.data)
-            } catch (error) {
-                console.error("Error searching work orders", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         if (open) {
-            fetchOrders()
+            fetchOrders(debouncedSearch)
         }
-    }, [debouncedSearch, open])
+    }, [debouncedSearch, open, fetchOrders])
 
     const handleSelect = (order: WorkOrder) => {
         setSelectedOrder(order)
@@ -118,17 +94,17 @@ export function AdvancedWorkOrderSelector({
                         disabled={disabled}
                         className={cn(
                             "w-full justify-between h-auto py-2 px-3 bg-background border-dashed hover:border-indigo-400 transition-colors",
-                            selectedOrder && "border-indigo-200 bg-indigo-50/30",
+                            selectedOrder && "border-primary/20 bg-primary/10/30",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
                         {selectedOrder ? (
                             <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
                                     <ClipboardList className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start truncate leading-tight">
-                                    <span className="font-medium text-sm truncate w-full text-indigo-700">OT-{selectedOrder.number}</span>
+                                    <span className="font-medium text-sm truncate w-full text-primary">OT-{selectedOrder.number}</span>
                                     <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
                                         {selectedOrder.product_name}
                                     </span>
@@ -140,7 +116,7 @@ export function AdvancedWorkOrderSelector({
                         <div className="flex items-center gap-2">
                             {selectedOrder && (
                                 <div
-                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors"
+                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-red-100 hover:text-destructive transition-colors"
                                     onClick={clearSelection}
                                 >
                                     <X className="h-3 w-3" />
@@ -163,9 +139,9 @@ export function AdvancedWorkOrderSelector({
                             />
                         </div>
                         <div className="max-h-[300px] overflow-y-auto space-y-1">
-                            {loading ? (
-                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                            ) : orders.length === 0 ? (
+                        {searchLoading ? (
+                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                        ) : orders.length === 0 ? (
                                 <div className="p-4 text-sm text-center text-muted-foreground">
                                     {searchTerm ? "No se encontraron órdenes." : "Escriba para buscar..."}
                                 </div>
@@ -181,7 +157,7 @@ export function AdvancedWorkOrderSelector({
                                     >
                                         <div className="flex items-center gap-3 w-full overflow-hidden">
                                             <div className="flex-shrink-0 p-2 bg-muted rounded-md group-hover:bg-background transition-colors">
-                                                <Package className="h-4 w-4 text-indigo-600" />
+                                                <Package className="h-4 w-4 text-primary" />
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
@@ -203,7 +179,7 @@ export function AdvancedWorkOrderSelector({
                                                     onClick={(e) => openPreview(e, order.id)}
                                                     title="Previsualizar"
                                                 >
-                                                    <Eye className="h-4 w-4 text-blue-600" />
+                                                    <Eye className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 {selectedOrder?.id === order.id && (
                                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />

@@ -288,6 +288,17 @@ class SalesSettings(models.Model):
 
     def __str__(self):
         return "Configuración de Ventas"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Invalidate Redis cache
+        from core.cache import invalidate_singleton, CACHE_KEY_SALES_SETTINGS
+        invalidate_singleton(CACHE_KEY_SALES_SETTINGS)
+
+    @classmethod
+    def get_solo(cls):
+        from core.cache import cached_singleton, CACHE_KEY_SALES_SETTINGS
+        return cached_singleton(cls, CACHE_KEY_SALES_SETTINGS)
 # Append to sales/models.py - SaleDelivery and SaleDeliveryLine models
 
 class SaleDelivery(models.Model, TotalsCalculationMixin):

@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getPayrolls, createPayroll, getEmployees, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll, Employee } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
@@ -31,9 +32,10 @@ import {
 import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import { FORM_STYLES } from "@/lib/styles"
-import { PayrollDetailSheet } from "@/components/hr/payrolls/PayrollDetailSheet"
+import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -54,22 +56,15 @@ type CreatePayrollValues = z.infer<typeof createPayrollSchema>
 
 export default function PayrollsPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    const [dialogOpen, setDialogOpen] = useState(false)
+    const isNewModalOpen = searchParams.get("modal") === "new"
+    const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
 
-    // State for payment dialogs
-    const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
-    const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
-
-    // State for Detail Sheet
-    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
-    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
-
-    const openDetail = (id: number) => {
-        setActivePayrollId(id)
-        setDetailSheetOpen(true)
-    }
+    useEffect(() => {
+        setDialogOpen(isNewModalOpen)
+    }, [isNewModalOpen])
 
     const fetchPayrolls = useCallback(async () => {
         try {
@@ -83,6 +78,57 @@ export default function PayrollsPage() {
     }, [])
 
     useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
+
+    useEffect(() => {
+        const action = searchParams.get("action")
+        if (action === "generate_drafts") {
+            const executeAction = async () => {
+                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
+                    try {
+                        const { triggerDraftPayrolls } = await import("@/lib/hr/api")
+                        const res = await triggerDraftPayrolls()
+                        toast.success(res.detail)
+                        fetchPayrolls()
+                    } catch {
+                        toast.error("Error al iniciar tarea")
+                    } finally {
+                        // Limpiar la URL de la acción
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete("action")
+                        router.push(`?${params.toString()}`, { scroll: false })
+                    }
+                } else {
+                    // Limpiar la URL si el usuario cancela
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.delete("action")
+                    router.push(`?${params.toString()}`, { scroll: false })
+                }
+            }
+            executeAction()
+        }
+    }, [searchParams, router, fetchPayrolls])
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open && isNewModalOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.push(`?${params.toString()}`, { scroll: false })
+        }
+        setDialogOpen(open)
+    }
+
+    // State for payment dialogs
+    const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
+    const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
+
+    // State for Detail Sheet
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
+
+    const openDetail = (id: number) => {
+        setActivePayrollId(id)
+        setDetailSheetOpen(true)
+    }
 
     const handleConfirmPayment = async (data: any) => {
         if (!selectedPayroll || !paymentMode) return
@@ -171,7 +217,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" />,
             cell: ({ row }) => (
                 <div className="flex justify-end opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-blue-600 text-[11px]" />
+                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
                 </div>
             ),
         },
@@ -246,7 +292,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                className="h-7 w-7 text-primary hover:text-primary hover:bg-blue-50"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -317,49 +363,15 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Liquidaciones"
-                description="Gestión de pagos de remuneraciones mensuales."
-                titleActions={
-                    <div className="flex items-center gap-2">
-                        <PageHeaderButton
-                            onClick={async () => {
-                                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
-                                    try {
-                                        const res = await (await import("@/lib/hr/api")).triggerDraftPayrolls()
-                                        toast.success(res.detail)
-                                        fetchPayrolls()
-                                    } catch {
-                                        toast.error("Error al iniciar tarea")
-                                    }
-                                }
-                            }}
-                            icon={FileText}
-                            variant="outline"
-                            label="Generar Borradores"
-                        />
-                        <CreatePayrollDialog
-                            open={dialogOpen}
-                            onOpenChange={setDialogOpen}
-                            onSaved={(id) => { setDialogOpen(false); openDetail(id) }}
-                            trigger={
-                                <PageHeaderButton
-                                    onClick={() => setDialogOpen(true)}
-                                    icon={Plus}
-                                    circular
-                                    title="Nueva Liquidación"
-                                />
-                            }
-                        />
-                    </div>
-                }
+        <div className="space-y-4">
+            <CreatePayrollDialog
+                open={dialogOpen}
+                onOpenChange={handleOpenChange}
+                onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
             {loading ? (
-                <div className="flex items-center justify-center h-48">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <TableSkeleton columns={10} rows={12} />
             ) : (
                 <>
                 <DataTable
@@ -569,3 +581,4 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
         </Dialog>
     )
 }
+

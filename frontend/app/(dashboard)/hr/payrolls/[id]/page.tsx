@@ -1,7 +1,7 @@
 "use client"
 
 import React, { use } from "react"
-import { PayrollDetailContent } from "@/components/hr/payrolls/PayrollDetailContent"
+import { PayrollDetailContent } from "@/features/hr/components/payrolls/PayrollDetailContent"
 
 interface Props {
     params: Promise<{ id: string }>

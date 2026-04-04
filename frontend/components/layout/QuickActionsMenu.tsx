@@ -26,7 +26,7 @@ const actions = [
         title: "Inicio",
         icon: Home,
         url: "/",
-        color: "text-blue-500",
+        color: "text-primary",
         permission: null,
     },
     {
@@ -141,12 +141,12 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
-                                <Inbox className={cn("h-5 w-5 transition-colors", !isInboxOpen && "group-hover:text-blue-500")} />
+                                <Inbox className={cn("h-5 w-5 transition-colors", !isInboxOpen && "group-hover:text-primary")} />
                                 {isInboxOpen && (
                                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
                                 )}
                                 {pendingCount > 0 && !isInboxOpen && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
                                         {pendingCount > 99 ? '99+' : pendingCount}
                                     </span>
                                 )}

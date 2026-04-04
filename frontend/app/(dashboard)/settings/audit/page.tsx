@@ -22,6 +22,8 @@ import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { LAYOUT_TOKENS } from "@/lib/styles";
 
 interface GlobalAuditLog {
     date: string;
@@ -101,7 +103,7 @@ export default function AuditHubPage() {
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="bg-slate-50 font-normal">
+                <DataCell.Badge variant="outline" className="bg-muted font-normal">
                     {row.original.user_name || "Sistema"}
                 </DataCell.Badge>
             )
@@ -224,88 +226,95 @@ export default function AuditHubPage() {
     ];
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Centro de Auditoría</h2>
-                    <p className="text-muted-foreground">
-                        Registro unificado de acciones y cambios en el sistema.
-                    </p>
-                </div>
-                <div className="bg-slate-100 p-3 rounded-full">
-                    <History className="h-6 w-6 text-slate-500" />
-                </div>
-            </div>
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title="Centro de Auditoría"
+                description="Registro unificado de acciones y cambios en el sistema."
+                variant="minimal"
+                iconName="history"
+            />
 
-            <div className="mt-4">
-                {loading ? (
-                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center flex flex-col items-center gap-4">
-                        <Activity className="h-8 w-8 animate-spin text-primary" />
-                        <span>Cargando bitácora de actividades...</span>
-                    </div>
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={logs}
-                        cardMode
-                        globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
-                        searchPlaceholder="Buscar en la bitácora..."
-                        useAdvancedFilter={true}
-                        facetedFilters={facetedFilters}
-                        hiddenColumns={["source"]}
-                        defaultPageSize={50}
-                    />
-                )}
+            <div className="pt-4">
+                <DataTable
+                    columns={columns}
+                    data={logs}
+                    isLoading={loading}
+                    cardMode
+                    globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
+                    searchPlaceholder="Buscar en la bitácora..."
+                    useAdvancedFilter={true}
+                    facetedFilters={facetedFilters}
+                    hiddenColumns={["source"]}
+                    defaultPageSize={50}
+                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
-                <Card className="bg-green-50/30 border-green-100 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-green-100/50 rounded-full">
-                            <LogIn className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">Logins (Sesión)</p>
-                            <p className="text-2xl font-bold text-green-900">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                {loading ? (
+                    <>
+                        {[1, 2, 3, 4].map((i) => (
+                            <Card key={i} className="shadow-sm">
+                                <CardContent className="p-4 flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                                    <div className="space-y-2">
+                                        <div className="h-2 w-16 bg-muted animate-pulse" />
+                                        <div className="h-6 w-10 bg-muted animate-pulse" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        <Card className="bg-green-50/30 border-green-100 shadow-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-emerald-100/50 rounded-full">
+                                    <LogIn className="h-5 w-5 text-emerald-700" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-2xl font-bold text-green-900">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                <Card className="bg-blue-50/30 border-blue-100 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-blue-100/50 rounded-full">
-                            <Activity className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tight">Cambios Datos</p>
-                            <p className="text-2xl font-bold text-blue-900">{logs.filter(l => l.source === 'history').length}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Card className="bg-blue-50/30 border-blue-100 shadow-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-blue-100/50 rounded-full">
+                                    <Activity className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
+                                    <p className="text-2xl font-bold text-blue-900">{logs.filter(l => l.source === 'history').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                <Card className="bg-indigo-50/30 border-indigo-100 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-indigo-100/50 rounded-full">
-                            <Settings className="h-5 w-5 text-indigo-600" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-tight">Configuración</p>
-                            <p className="text-2xl font-bold text-indigo-900">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Card className="bg-primary/10/30 border-indigo-100 shadow-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-primary/10/50 rounded-full">
+                                    <Settings className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Configuración</p>
+                                    <p className="text-2xl font-bold text-indigo-900">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                <Card className="bg-red-50/30 border-red-100 shadow-sm">
-                    <CardContent className="p-4 flex items-center gap-4">
-                        <div className="p-2 bg-red-100/50 rounded-full">
-                            <ShieldAlert className="h-5 w-5 text-red-600" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-red-600 font-bold uppercase tracking-tight">Incidentes</p>
-                            <p className="text-2xl font-bold text-red-900">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Card className="bg-red-50/30 border-red-100 shadow-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-red-100/50 rounded-full">
+                                    <ShieldAlert className="h-5 w-5 text-destructive" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-destructive font-bold uppercase tracking-tight">Incidentes</p>
+                                    <p className="text-2xl font-bold text-red-900">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -1,53 +1,130 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calculator, FileText, Plus, List } from "lucide-react"
-import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
-export default function AccountingPage() {
+// Lazy load feature components
+const AccountsView = lazy(() => import("@/app/(dashboard)/accounting/accounts/page").then(m => ({ default: m.default })))
+const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
+const PeriodsView = lazy(() => import("@/app/(dashboard)/accounting/periods/page").then(m => ({ default: m.default })))
+const TaxDeclarationsView = lazy(() => import("@/features/tax/components/TaxDeclarationsView").then(m => ({ default: m.TaxDeclarationsView })))
+const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
+
+export const metadata: Metadata = {
+    title: "Módulo Contable | ERPGrafico",
+    description: "Gestión centralizada del plan de cuentas, asientos, periodos y cumplimiento tributario.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; modal?: string; tab?: string }>
+}
+
+export default async function AccountingPage({ searchParams }: PageProps) {
+    const { view, modal, tab } = await searchParams
+    const configTab = tab || "global"
+    const viewMode = (view as 'ledger' | 'entries' | 'periods' | 'tax') || 'ledger'
+
+    const tabs = [
+        { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting?view=ledger" },
+        { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting?view=entries" },
+        { value: "periods", label: "Periodos", iconName: "calendar", href: "/accounting?view=periods" },
+        { value: "tax", label: "Impuestos (F29)", iconName: "calculator", href: "/accounting?view=tax" },
+    ]
+
+    const getHeaderConfig = () => {
+        switch (viewMode) {
+            case 'ledger':
+                return {
+                    title: "Plan de Cuentas",
+                    description: "Estructura contable y clasificación de cuentas.",
+                    icon: "list-tree",
+                    action: (
+                        <PageHeaderButton
+                            href="/accounting?view=ledger&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nueva Cuenta"
+                        />
+                    )
+                }
+            case 'entries':
+                return {
+                    title: "Asientos Contables",
+                    description: "Libro diario y registro cronológico de transacciones.",
+                    icon: "file-text",
+                    action: (
+                        <PageHeaderButton
+                            href="/accounting?view=entries&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nuevo Asiento"
+                        />
+                    )
+                }
+            case 'periods':
+                return {
+                    title: "Gestión de Periodos",
+                    description: "Control de cierres mensuales y apertura de ejercicios.",
+                    icon: "calendar",
+                    action: null
+                }
+            case 'tax':
+                return {
+                    title: "Cumplimiento Tributario",
+                    description: "Declaraciones F29 y gestión de periodos fiscales.",
+                    icon: "calculator",
+                    action: (
+                        <PageHeaderButton
+                            href="/accounting?view=tax&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nueva Declaración"
+                        />
+                    )
+                }
+            default:
+                return { title: "Contabilidad", description: "", icon: "calculator", action: null }
+        }
+    }
+
+    const config = getHeaderConfig()
+
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo Contable"
-                description="Administra el plan de cuentas, asientos contables y reportes financieros."
+                title={config.title}
+                description={config.description}
+                iconName={config.icon as any}
+                variant="minimal"
+                configHref="?config=true"
+                titleActions={config.action}
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/accounting/accounts">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Plan de Cuentas</CardTitle>
-                            <List className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Cuentas</div>
-                            <p className="text-xs text-muted-foreground">Administrar estructura contable</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/accounting/entries">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Asiento Contable</CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Asientos</div>
-                            <p className="text-xs text-muted-foreground">Ver movimientos y auditoría</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/accounting/periods">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Periodos Contables</CardTitle>
-                            <Calculator className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Periodos</div>
-                            <p className="text-xs text-muted-foreground">Gestionar cierres mensuales</p>
-                        </CardContent>
-                    </Card>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-2">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'ledger' && <AccountsView externalOpen={modal === 'new'} />}
+                    {viewMode === 'entries' && <EntriesView externalOpen={modal === 'new'} />}
+                    {viewMode === 'periods' && <PeriodsView />}
+                    {viewMode === 'tax' && <TaxDeclarationsView externalOpen={modal === 'new'} />}
+                </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="accounting-settings"
+                title="Configuración Contable"
+                description="Gestione la estructura del plan de cuentas, prefijos y reglas de negocio."
+                tabLabel="Configuración"
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <AccountingSettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

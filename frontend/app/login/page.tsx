@@ -105,7 +105,7 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            {error && <p className="text-sm text-red-500">{error}</p>}
+                            {error && <p className="text-sm text-destructive">{error}</p>}
                             <Button type="submit" className="w-full">Ingresar</Button>
                         </form>
                     </Form>

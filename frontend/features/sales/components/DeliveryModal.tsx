@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -262,9 +263,9 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             toast.success("Despacho registrado correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error dispatching order:", error)
-            toast.error(error.response?.data?.error || "Error al registrar el despacho")
+            showApiError(error, "Error al registrar el despacho")
         } finally {
             setSubmitting(false)
         }

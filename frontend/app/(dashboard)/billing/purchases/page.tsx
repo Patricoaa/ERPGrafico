@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -10,19 +11,21 @@ import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
-import { ReceiptModal } from "@/components/purchasing/ReceiptModal"
-import { PurchaseNoteModal } from "@/components/purchasing/PurchaseNoteModal"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
+import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { OrderCommandCenter } from "@/components/orders/OrderCommandCenter"
 import { DataTable } from "@/components/ui/data-table"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { InvoiceCard } from "@/components/billing/InvoiceCard"
+import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface PurchaseDocument {
     id: number
@@ -67,8 +70,8 @@ export default function PurchaseInvoicesPage() {
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
-    // Action Panel state
-    const [selectedHub, setSelectedHub] = useState<{ orderId: number | null, invoiceId?: number | null }>({ orderId: null })
+    // Hub Panel
+    const { openHub } = useHubPanel()
 
     useEffect(() => {
         fetchDocuments()
@@ -97,39 +100,48 @@ export default function PurchaseInvoicesPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este documento?")) return
-
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Documento eliminado correctamente")
             fetchDocuments()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting document:", error)
-            toast.error(error.response?.data?.error || "No se pudo eliminar el documento")
+            showApiError(error, "No se pudo eliminar el documento")
         }
-    }
+    })
 
-    const handleAnnul = async (id: number, force: boolean = false) => {
-        if (!force && !confirm("¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force })
+            await api.post(`/billing/invoices/${id}/annul/`, { force: true })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
-        } catch (error: any) {
-            console.error("Error annulling invoice:", error)
-            const errorMessage = error.response?.data?.error || ""
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || "Error al anular el documento.")
+        }
+    })
 
-            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
-                if (confirm("Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
-                    handleAnnul(id, true)
-                    return
-                }
+    const annulConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await api.post(`/billing/invoices/${id}/annul/`, { force: false })
+            toast.success("Documento anulado correctamente.")
+            fetchDocuments()
+        } catch (error: unknown) {
+            console.error("Error annulling invoice:", error)
+            const errorMessage = getErrorMessage(error) || ""
+
+            if (errorMessage.includes("Debe anular los pagos asociados")) {
+                forceAnnulConfirm.requestConfirm(id)
+                return
             }
 
             toast.error(errorMessage || "Error al anular el documento.")
         }
-    }
+    })
+
+    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
     const handlePayment = async (data: any) => {
         if (!payingDoc) return
@@ -160,9 +172,9 @@ export default function PurchaseInvoicesPage() {
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
             fetchDocuments()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering payment:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la operación")
+            showApiError(error, "Error al registrar la operación")
         }
     }
 
@@ -194,7 +206,7 @@ export default function PurchaseInvoicesPage() {
                 const doc = row.original
                 return (
                     <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-blue-500' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-slate-600'}`} />
+                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-muted-foreground'}`} />
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
@@ -262,7 +274,7 @@ export default function PurchaseInvoicesPage() {
                                 <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-orange-600 font-bold whitespace-nowrap">
+                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-amber-700 font-bold whitespace-nowrap">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                 </Badge>
                             )}
@@ -285,9 +297,11 @@ export default function PurchaseInvoicesPage() {
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setSelectedHub({
+                                onClick={() => openHub({
                                     orderId: doc.purchase_order!,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null
+                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
+                                    type: 'purchase',
+                                    onActionSuccess: fetchDocuments
                                 })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3"
@@ -326,7 +340,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-orange-600"
+                                        className="text-amber-700"
                                         onClick={() => setReceivingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
                                     >
@@ -408,7 +422,8 @@ export default function PurchaseInvoicesPage() {
             <PageHeader
                 title="Documentos Recibidos"
                 description="Gestión de facturas y boletas de compra"
-                icon={FileBadge}
+                variant="minimal"
+                iconName="file-badge"
             />
 
             {loading ? (
@@ -458,9 +473,11 @@ export default function PurchaseInvoicesPage() {
                                             item={doc}
                                             type="purchase_invoice"
                                             onClick={() => {
-                                                setSelectedHub({
+                                                openHub({
                                                     orderId: doc.purchase_order || null,
-                                                    invoiceId: doc.id
+                                                    invoiceId: doc.id,
+                                                    type: 'purchase',
+                                                    onActionSuccess: fetchDocuments
                                                 })
                                             }}
                                         />
@@ -538,19 +555,44 @@ export default function PurchaseInvoicesPage() {
                         onOpenChange={(open: boolean) => !open && setCompletingDoc(null)}
                         invoiceId={completingDoc.id}
                         invoiceType={completingDoc.dte_type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchDocuments}
                     />
                 )
             }
 
-            <OrderCommandCenter
-                orderId={selectedHub.orderId}
-                invoiceId={selectedHub.invoiceId}
-                type="purchase"
-                open={selectedHub.orderId !== null || !!selectedHub.invoiceId}
-                onOpenChange={(open) => !open && setSelectedHub({ orderId: null })}
-                onActionSuccess={fetchDocuments}
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Documento"
+                description="¿Está seguro de eliminar este documento? Esta acción no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={annulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
+                onConfirm={annulConfirm.confirm}
+                title="Anular Documento"
+                description="¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={forceAnnulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }}
+                onConfirm={forceAnnulConfirm.confirm}
+                title="Desvincular y Anular Pagos"
+                description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
+                variant="destructive"
             />
         </div >
     )
 }
+
+

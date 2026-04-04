@@ -42,14 +42,14 @@ export const DataCell = {
     ),
 
     /** Clickable link, often used for document codes (e.g. NV-123) */
-    Link: ({ children, href, onClick, className, external, ...props }: BaseCellProps & { href?: string, onClick?: () => void, external?: boolean }) => {
+    Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
                 <Link
                     href={href}
                     target={external ? "_blank" : undefined}
                     className={cn("font-medium text-primary hover:underline hover:text-primary/80 flex items-center gap-1 w-fit", className)}
-                    {...props as any}
+                    {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
                 >
                     {children}
                     {external && <ExternalLink className="h-3 w-3" />}
@@ -60,7 +60,7 @@ export const DataCell = {
             <button
                 onClick={onClick}
                 className={cn("font-medium text-primary hover:underline hover:text-primary/80 text-left w-fit", className)}
-                {...props as any}
+                {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
             >
                 {children}
             </button>
@@ -83,7 +83,7 @@ export const DataCell = {
     /** Currency formatted cell */
     Currency: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-right", className)} {...props}>
+            <div className={cn("text-right w-fit ml-auto", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} />
             </div>
         )
@@ -109,7 +109,7 @@ export const DataCell = {
         return (
             <div className={cn("w-full bg-secondary/30 rounded-full h-1.5 overflow-hidden", className)}>
                 <div
-                    className={cn("h-full transition-all", percentage > 100 ? "bg-red-500" : "bg-primary")}
+                    className={cn("h-full transition-all", percentage > 100 ? "bg-destructive" : "bg-primary")}
                     style={{ width: `${percentage}%` }}
                 />
             </div>
@@ -138,7 +138,7 @@ export const DataCell = {
     Status: ({ status, map, variant = "outline", className }: { status: string, map?: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "indigo">, variant?: "default" | "outline" | "secondary", className?: string }) => {
         const intent = map ? map[status] || "secondary" : "secondary"
         return (
-            <Badge variant={intent as any} className={cn("whitespace-nowrap", className)}>
+            <Badge variant={intent as "default" | "secondary" | "destructive" | "outline"} className={cn("whitespace-nowrap", className)}>
                 {translateStatus(status)}
             </Badge>
         )
@@ -146,7 +146,7 @@ export const DataCell = {
 
     /** Generic Badge wrapper */
     Badge: ({ children, variant = "secondary", className, ...props }: { children: ReactNode, variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "indigo", className?: string } & HTMLAttributes<HTMLDivElement>) => (
-        <Badge variant={variant as any} className={className} {...props}>
+        <Badge variant={variant as "default" | "secondary" | "destructive" | "outline"} className={className} {...props}>
             {children}
         </Badge>
     ),

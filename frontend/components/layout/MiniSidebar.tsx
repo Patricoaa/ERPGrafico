@@ -33,7 +33,6 @@ import { useBranding } from "@/contexts/BrandingProvider"
 interface MiniSidebarProps {
     activeCategory: string | null
     onCategoryChange: (category: string) => void
-    onHoverCategory?: (category: string | null) => void
 }
 
 const mainItems = [
@@ -49,7 +48,7 @@ const mainItems = [
     { id: "hr", icon: UserCog, label: "RRHH", permission: "hr.view_dashboard_hr" },
 ]
 
-export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory }: MiniSidebarProps) {
+export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarProps) {
     const router = useRouter()
     const { logout, user } = useAuth()
     const { logo } = useBranding()
@@ -111,7 +110,6 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
     return (
         <aside
             className="w-[65px] flex flex-col items-center py-4 gap-2 bg-sidebar border-r border-sidebar-border h-screen sticky top-0 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
-            onMouseLeave={() => onHoverCategory?.(null)}
         >
             {/* Logo */}
             <motion.div
@@ -144,7 +142,6 @@ export function MiniSidebar({ activeCategory, onCategoryChange, onHoverCategory 
                                         whileHover={{ scale: 1.1, x: 5 }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => onCategoryChange(item.id)}
-                                        onMouseEnter={() => onHoverCategory?.(item.id)}
                                         className={cn(
                                             "p-3.5 rounded-[12px] transition-all duration-300 group relative flex items-center justify-center",
                                             activeCategory === item.id

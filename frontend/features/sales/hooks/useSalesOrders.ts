@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import { useQueryClient, useMutation, useSuspenseQuery, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
@@ -25,7 +26,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al crear la nota de venta')
+            showApiError(error, 'Error al crear la nota de venta')
         }
     })
 
@@ -37,7 +38,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al actualizar la nota de venta')
+            showApiError(error, 'Error al actualizar la nota de venta')
         }
     })
 

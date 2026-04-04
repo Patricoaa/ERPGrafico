@@ -89,18 +89,27 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
 
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     uom_category = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
     
     def get_uom_category(self, obj):
         if not obj.uom:
             return None
         return obj.uom.category_id
 
+    def get_image_thumbnail(self, obj):
+        if obj.image and hasattr(obj, 'image_thumbnail'):
+            try:
+                return self.context['request'].build_absolute_uri(obj.image_thumbnail.url) if self.context.get('request') else obj.image_thumbnail.url
+            except Exception:
+                return None
+        return None
+
     class Meta:
         model = Product
         fields = [
             'id', 'internal_code', 'name', 'variant_display_name', 
             'sale_price', 'cost_price', 'is_favorite', 'attribute_values', 'attribute_values_data',
-            'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category'
+            'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category', 'image', 'image_thumbnail'
         ]
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -147,6 +156,25 @@ class ProductSerializer(serializers.ModelSerializer):
     available_uoms = serializers.SerializerMethodField()
     variant_generation_selection = serializers.JSONField(write_only=True, required=False)
     
+    image_thumbnail = serializers.SerializerMethodField()
+    image_catalog = serializers.SerializerMethodField()
+    
+    def get_image_thumbnail(self, obj):
+        if obj.image and hasattr(obj, 'image_thumbnail'):
+            try:
+                return self.context['request'].build_absolute_uri(obj.image_thumbnail.url) if self.context.get('request') else obj.image_thumbnail.url
+            except Exception:
+                return None
+        return None
+
+    def get_image_catalog(self, obj):
+        if obj.image and hasattr(obj, 'image_catalog'):
+            try:
+                return self.context['request'].build_absolute_uri(obj.image_catalog.url) if self.context.get('request') else obj.image_catalog.url
+            except Exception:
+                return None
+        return None
+    
     def get_boms(self, obj):
         from production.serializers import BillOfMaterialsSerializer
         return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
@@ -154,7 +182,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'internal_code', 'code', 'name', 'category', 'product_type', 'image',
+            'id', 'internal_code', 'code', 'name', 'category', 'product_type', 'image', 'image_thumbnail', 'image_catalog',
             'has_bom', 'requires_advanced_manufacturing',
             'mfg_auto_finalize', 'mfg_enable_prepress', 'mfg_enable_press',
             'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs',

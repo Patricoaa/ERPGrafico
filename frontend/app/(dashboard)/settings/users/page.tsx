@@ -1,12 +1,73 @@
-import { UsersSettingsView } from "@/components/settings/UsersSettingsView"
+"use client"
 
-interface PageProps {
-    searchParams: Promise<{ tab?: string }>
-}
+import { lazy, Suspense, useState } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Plus, Users, UserPlus } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 
-export default async function UsersSettingsPage({ searchParams }: PageProps) {
-    const { tab } = await searchParams
-    const activeTab = tab || "users"
+// Lazy load the UsersSettingsView component
+const UsersSettingsView = lazy(() =>
+    import("@/features/settings/components/UsersSettingsView").then(module => ({
+        default: module.UsersSettingsView
+    }))
+)
 
-    return <UsersSettingsView activeTab={activeTab} />
+export default function UsersSettingsPage() {
+    const searchParams = useSearchParams()
+    const activeTab = searchParams.get("tab") || "users"
+    const [headerActions, setHeaderActions] = useState<React.ReactNode>(null)
+
+    const tabs = [
+        { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
+        { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users?tab=groups" },
+    ]
+
+    const getHeaderConfig = () => {
+        switch (activeTab) {
+            case "users":
+                return {
+                    title: "Gestión de Usuarios",
+                    description: "Administre el acceso de los empleados y sus roles en el sistema.",
+                    iconName: "users" as const
+                }
+            case "groups":
+                return {
+                    title: "Grupos y Equipos",
+                    description: "Organice a sus colaboradores por departamentos o funciones específicas.",
+                    iconName: "user-plus" as const
+                }
+            default:
+                return { title: "Usuarios", description: "", iconName: "users" as const }
+        }
+    }
+
+    const { title, description, iconName } = getHeaderConfig()
+
+    return (
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title={title}
+                description={description}
+                variant="minimal"
+                iconName={iconName}
+                titleActions={headerActions}
+            />
+            
+            <div className="pt-2">
+                <PageTabs tabs={tabs} activeValue={activeTab} />
+            </div>
+
+            <div className="mt-6">
+                <Suspense fallback={<LoadingFallback message="Cargando configuración de usuarios..." />}>
+                    <UsersSettingsView 
+                        activeTab={activeTab} 
+                        onActionsChange={setHeaderActions} 
+                    />
+                </Suspense>
+            </div>
+        </div>
+    )
 }

@@ -3,33 +3,48 @@
 
 
 :root {
+  /* 
+   * DESIGN SYSTEM TOKENS - ERPGrafico "Industrial Premium"
+   * Using OKLCH for consistent perceptual lightness and chroma.
+   * Strategy: 60-30-10 (Background/Neutrals - Secondary/Borders - Primary/Accent)
+   */
+
+  /* 60% - DOMINANT (Neutrals & Backgrounds) */
   --background: oklch(0.99 0.005 240);
-  /* Cleaner white-blue */
   --foreground: oklch(0.12 0.02 240);
-  /* Deep industrial gray */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.12 0.02 240);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.12 0.02 240);
-  --primary: oklch(62.074% 0.24412 301.865);
-  /* Electric Violet */
-  --primary-foreground: oklch(0.99 0.01 310);
-  --secondary: oklch(0.90 0.03 240);
-  /* Light Gray-Blue */
-  --secondary-foreground: oklch(0.20 0.04 240);
   --muted: oklch(0.95 0.01 240);
   --muted-foreground: oklch(0.40 0.02 240);
-  --accent: oklch(70.65% 0.04925 234.791);
-  /* Safety Orange Accent */
-  --accent-foreground: oklch(0.12 0.02 240);
-  --destructive: oklch(56.648% 0.03628 154.841);
-  --destructive-foreground: oklch(0.99 0.01 25);
+
+  /* 30% - SECONDARY (Borders, Surfaces, Secondary Actions) */
+  --secondary: oklch(0.90 0.03 240);
+  --secondary-foreground: oklch(0.20 0.04 240);
   --border: oklch(0.12 0.02 240 / 0.15);
-  /* Precision borders */
   --input: oklch(0.12 0.02 240 / 0.1);
-  --ring: oklch(0.65 0.25 310 / 0.4);
+
+  /* 10% - ACCENT & PRIMARY (Critical Actions & Highlights) */
+  --primary: oklch(62.074% 0.24412 301.865);
+  --primary-foreground: oklch(0.99 0.01 310);
+  --accent: oklch(70.65% 0.04925 234.791);
+  --accent-foreground: oklch(0.12 0.02 240);
+
+  /* SYSTEM STATES */
+  --destructive: oklch(46.933% 0.18444 22.356);
+  --destructive-foreground: oklch(0.99 0.01 25);
+  --success: oklch(0.65 0.20 145);
+  --success-foreground: oklch(0.99 0.01 145);
+  --warning: oklch(0.75 0.20 85);
+  --warning-foreground: oklch(0.99 0.01 85);
+  --info: oklch(0.65 0.20 240);
+  --info-foreground: oklch(0.99 0.01 240);
+
+  /* GEOMETRY & TYPOGRAPHY */
   --radius: 0.25rem;
-  /* Sharp, industrial corners */
+  /* Sharp Industrial look */
+  --ring: oklch(0.65 0.25 310 / 0.4);
 
   --sidebar: oklch(0.10 0.02 240);
   --sidebar-foreground: oklch(0.90 0.02 240);
@@ -39,13 +54,6 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 0.1);
   --sidebar-ring: var(--primary);
-
-  --success: oklch(0.65 0.20 145);
-  --success-foreground: oklch(0.99 0.01 145);
-  --warning: oklch(0.75 0.20 85);
-  --warning-foreground: oklch(0.99 0.01 85);
-  --info: oklch(0.65 0.20 240);
-  --info-foreground: oklch(0.99 0.01 240);
 
   --font-sans: var(--font-onest), system-ui, sans-serif;
   --font-heading: var(--font-syne), system-ui, sans-serif;
@@ -123,6 +131,34 @@
 
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 
+   * RHYTHM & SPACING 
+   * Extending Tailwind scale (Prefixed with 'r-' to avoid collision with standard keywords)
+   */
+  --spacing-r-xs: 0.25rem;
+  /* 4px */
+  --spacing-r-sm: 0.5rem;
+  /* 8px */
+  --spacing-r-md: 1rem;
+  /* 16px */
+  --spacing-r-lg: 1.5rem;
+  /* 24px */
+  --spacing-r-xl: 2rem;
+  /* 32px */
+
+  /* SHIMMER ANIMATION */
+  --animate-shimmer: shimmer 2s infinite linear;
+  @keyframes shimmer {
+    0% {
+      background-position: -40rem 0;
+    }
+    100% {
+      background-position: 40rem 0;
+    }
+  }
 }
 
 @layer base {
@@ -134,8 +170,40 @@
     @apply bg-background text-foreground font-sans;
     overflow-x: hidden;
     max-width: 100vw;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+    /* Subtle Industrial Noise & Gradient */
+    background-image:
+      radial-gradient(at 0% 0%, oklch(0.98 0.01 240 / 0.15) 0px, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
     background-attachment: fixed;
+  }
+
+  /* REUSABLE SKELETON SHIMMER */
+  .skeleton {
+    @apply relative overflow-hidden bg-muted/40 rounded-md;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Interaction Guards (Ley de Fitts) 
+     Target: 40px height for primary interactive elements.
+     Excludes: small variants (h-9, h-8, h-7) to maintain density in toolbars/tabs.
+  */
+  button:not(.size-icon):not(.variant-link):not(.h-9):not(.h-8):not(.h-7):not([role="switch"]):not([role="radio"]):not([role="checkbox"]):not([role="menuitem"]),
+  input:not([type="checkbox"]):not([type="radio"]):not(.h-9):not(.h-8):not(.h-7),
+  select:not(.h-9):not(.h-8):not(.h-7) {
+    min-height: 2.5rem;
+    /* 40px base target */
+  }
+
+  [data-slot="badge"] button {
+    min-height: 1rem;
   }
 
   h1,
@@ -147,6 +215,20 @@
     @apply font-heading font-extrabold tracking-tighter uppercase;
   }
 
+  /* Precision Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
+  }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -154,5 +236,124 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /*
+   * GLOBAL REPULSION SYSTEM
+   * Captures the widths of global panels (Inbox, Hub) and stores them for reactive layouts.
+   */
+  body {
+    --inbox-width: 0px;
+    --hub-width: 0px;
+  }
+
+  body[data-inbox-open="true"] {
+    --inbox-width: clamp(320px, 25vw, 450px);
+  }
+
+  body[data-hub-open="true"] {
+    --hub-width: 500px;
+  }
+
+  /* 
+   * PREMIUM ANIMATIONS - SHEET OVERRIDES
+   * Dedicated hardware-accelerated keyframes. 
+   * We replace tailwindcss-animate to ensure Radix Presence picks up the animation-duration correctly 
+   * and doesn't instantly unmount the element.
+   */
+  @keyframes sheet-slide-in-right {
+    from { transform: translate3d(100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-right {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(100%, 0, 0); }
+  }
+  @keyframes sheet-slide-in-left {
+    from { transform: translate3d(-100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-left {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-100%, 0, 0); }
+  }
+  @keyframes sheet-slide-in-top {
+    from { transform: translate3d(0, -100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-top {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, -100%, 0); }
+  }
+  @keyframes sheet-slide-in-bottom {
+    from { transform: translate3d(0, 100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-bottom {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, 100%, 0); }
+  }
+
+  @keyframes sheet-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sheet-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  [data-slot="sheet-content"] {
+    animation-duration: 400ms !important;
+    animation-timing-function: var(--ease-premium) !important;
+    animation-fill-mode: both !important;
+    will-change: transform;
+    /* Clean up conflicting tailwind transition */
+    transition: none !important;
+  }
+
+  [data-slot="sheet-content"][data-state="closed"] {
+    animation-duration: 300ms !important;
+  }
+
+  [data-slot="sheet-content"].right-0[data-state="open"] { animation-name: sheet-slide-in-right !important; }
+  [data-slot="sheet-content"].right-0[data-state="closed"] { animation-name: sheet-slide-out-right !important; }
+
+  /* 
+   * DYNAMIC REPULSION FOR FLOATING LAYERS 
+   * Applies the combined displacement of active side panels to the Sheets to avoid intersection.
+   */
+  [data-slot="sheet-content"].right-0,
+  [data-slot="sheet-overlay"] {
+    margin-right: calc(var(--inbox-width) + var(--hub-width));
+    /* Add margin-right to the transitions handled by animation, overriding inline tailwind classes */
+    transition: margin-right 300ms var(--ease-premium) !important;
+  }
+
+  [data-slot="sheet-content"].left-0[data-state="open"] { animation-name: sheet-slide-in-left !important; }
+  [data-slot="sheet-content"].left-0[data-state="closed"] { animation-name: sheet-slide-out-left !important; }
+
+  [data-slot="sheet-content"].top-0[data-state="open"] { animation-name: sheet-slide-in-top !important; }
+  [data-slot="sheet-content"].top-0[data-state="closed"] { animation-name: sheet-slide-out-top !important; }
+
+  [data-slot="sheet-content"].bottom-0[data-state="open"] { animation-name: sheet-slide-in-bottom !important; }
+  [data-slot="sheet-content"].bottom-0[data-state="closed"] { animation-name: sheet-slide-out-bottom !important; }
+
+
+  /* Overlay */
+  [data-slot="sheet-overlay"] {
+    animation-duration: 400ms !important;
+    animation-timing-function: var(--ease-premium) !important;
+    animation-fill-mode: both !important;
+    will-change: opacity;
+  }
+  
+  [data-slot="sheet-overlay"][data-state="open"] {
+    animation-name: sheet-fade-in !important;
+  }
+
+  [data-slot="sheet-overlay"][data-state="closed"] {
+    animation-duration: 300ms !important;
+    animation-name: sheet-fade-out !important;
   }
 }

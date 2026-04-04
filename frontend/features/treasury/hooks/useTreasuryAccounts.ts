@@ -1,4 +1,5 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { showApiError } from "@/lib/errors"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { TreasuryAccount } from '../types'
@@ -13,6 +14,7 @@ interface UseTreasuryAccountsReturn {
     deleteAccount: (id: number) => Promise<void>
     isCreating: boolean
     isUpdating: boolean
+    isLoading: boolean
 }
 
 /**
@@ -21,7 +23,7 @@ interface UseTreasuryAccountsReturn {
 export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
 
-    const { data: accounts, refetch } = useSuspenseQuery({
+    const { data: accounts = [], refetch, isLoading } = useQuery({
         queryKey: ACCOUNTS_QUERY_KEY,
         queryFn: treasuryApi.getAccounts,
     })
@@ -35,7 +37,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al crear la cuenta')
+            showApiError(error, 'Error al crear la cuenta')
         }
     })
 
@@ -48,7 +50,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al actualizar la cuenta')
+            showApiError(error, 'Error al actualizar la cuenta')
         }
     })
 
@@ -66,9 +68,6 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     })
 
     const deleteAccount = async (id: number) => {
-        if (!confirm('¿Está seguro de eliminar esta cuenta?')) {
-            return
-        }
         await deleteMutation.mutateAsync(id)
     }
 
@@ -79,6 +78,7 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
         updateAccount: updateMutation.mutateAsync,
         deleteAccount,
         isCreating: createMutation.isPending,
-        isUpdating: updateMutation.isPending
+        isUpdating: updateMutation.isPending,
+        isLoading
     }
 }

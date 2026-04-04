@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -109,8 +111,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             await api.post('/treasury/terminal-batches/', payload)
             toast.success("Liquidación registrada exitosamente")
             onSuccess()
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Error al registrar")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar")
         } finally {
             setLoading(false)
         }
@@ -175,9 +177,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                             </div>
                                         ))}
                                         {terminals.length === 0 && (
-                                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                                No hay terminales disponibles
-                                            </div>
+                                            <EmptyState context="generic" variant="minimal" description="No hay terminales disponibles" />
                                         )}
                                     </div>
                                 </div>
@@ -280,13 +280,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     </div>
 
                     <div className="grid gap-2 pt-2 border-t border-dashed border-gray-300">
-                        <Label className={cn(FORM_STYLES.label, "text-emerald-700 font-bold")}>Monto Neto a Depositar</Label>
+                        <Label className={cn(FORM_STYLES.label, "text-success font-bold")}>Monto Neto a Depositar</Label>
                         <Input
                             type="number"
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-emerald-600 border-emerald-200 bg-emerald-50 bg-muted cursor-not-allowed")}
+                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-success border-success/20 bg-success/5 cursor-not-allowed")}
                         />
                     </div>
                 </div>
@@ -419,7 +419,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                             Seleccionar Todas ({movements.length})
                         </Label>
                     </div>
-                    <div className="text-sm font-black text-emerald-600">
+                    <div className="text-sm font-black text-success">
                         Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
                     </div>
                 </div>
@@ -430,8 +430,12 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : movements.length === 0 ? (
-                        <div className="p-8 text-center text-muted-foreground italic">
-                            No se encontraron ventas pendientes para esta fecha.
+                        <div className="p-8">
+                            <EmptyState 
+                                context="search" 
+                                variant="compact" 
+                                description="No se encontraron ventas pendientes para esta fecha."
+                            />
                         </div>
                     ) : (
                         <ScrollArea className="h-full">

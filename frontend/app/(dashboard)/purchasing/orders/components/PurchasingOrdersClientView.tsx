@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useEffect, useState, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
@@ -9,26 +10,32 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus, ArrowRight, Calendar, Search, Filter } from "lucide-react"
 import api from "@/lib/api"
-import { PurchaseOrderForm } from "@/components/forms/PurchaseOrderForm"
+import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { DocumentRegistrationModal } from "@/components/purchasing/DocumentRegistrationModal"
+import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { PurchaseCheckoutWizard } from "@/components/purchasing/PurchaseCheckoutWizard"
+import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { PurchaseOrderHubStatus } from "@/components/orders/PurchaseOrderHubStatus"
+import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
-import { NoteHubStatus } from "@/components/orders/NoteHubStatus"
-import { OrderCard } from "@/components/orders/OrderCard"
+import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
+import { OrderCard } from "@/features/orders/components/OrderCard"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { formatPlainDate } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { EmptyState } from "@/components/shared/EmptyState"
+import Link from "next/link"
 
 interface PurchaseOrder {
     id: number
@@ -62,9 +69,10 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
+    externalOpenCheckout?: boolean
 }
 
-export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientViewProps) {
+export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: PurchasingOrdersClientViewProps) {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [notes, setNotes] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -82,6 +90,12 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
+
+    useEffect(() => {
+        if (externalOpenCheckout) {
+            setCheckoutOpen(true)
+        }
+    }, [externalOpenCheckout])
 
     useEffect(() => {
         const openHubStr = searchParams.get('openHub')
@@ -117,38 +131,48 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta Orden de Compra?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/purchasing/orders/${id}/`)
             toast.success("Orden de Compra eliminada correctamente.")
             fetchOrders()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting order:", error)
-            toast.error(error.response?.data?.error || "Error al eliminar la orden de compra.")
+            showApiError(error, "Error al eliminar la orden de compra.")
         }
-    }
+    })
 
-    const handleAnnul = async (id: number, force: boolean = false) => {
-        if (!force && !confirm("¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y no se puede deshacer.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/purchasing/orders/${id}/annul/`, { force })
+            await api.post(`/purchasing/orders/${id}/annul/`, { force: true })
             toast.success("Orden de Compra anulada correctamente.")
             fetchOrders()
-        } catch (error: any) {
-            console.error("Error annulling order:", error)
-            const errorMessage = error.response?.data?.error || ""
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || "Error al anular la orden de compra.")
+        }
+    })
 
-            if (errorMessage.includes("Debe anular los pagos asociados") && !force) {
-                if (confirm("Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?")) {
-                    handleAnnul(id, true)
-                    return
-                }
+    const annulConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await api.post(`/purchasing/orders/${id}/annul/`, { force: false })
+            toast.success("Orden de Compra anulada correctamente.")
+            fetchOrders()
+        } catch (error: unknown) {
+            console.error("Error annulling order:", error)
+            const errorMessage = getErrorMessage(error) || ""
+
+            if (errorMessage.includes("Debe anular los pagos asociados")) {
+                forceAnnulConfirm.requestConfirm(id)
+                return
             }
 
             toast.error(errorMessage || "Error al anular la orden de compra.")
         }
-    }
+    })
+
+    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
     const handleEdit = async (order: PurchaseOrder) => {
         try {
@@ -179,9 +203,9 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
             await api.delete(`/billing/invoices/${invoiceId}/`)
             toast.success("Documento eliminado correctamente")
             fetchOrders()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error deleting invoice:", error)
-            toast.error(error.response?.data?.error || "Error al eliminar el documento")
+            showApiError(error, "Error al eliminar el documento")
         }
     }
 
@@ -425,37 +449,19 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
 
     return (
         <div className="space-y-6">
-            <PageHeader
-                title="Gestión de Compras"
-                description="Gestión integral de órdenes de compra, recepciones y facturas de proveedores"
-
-                titleActions={
-                    <PageHeaderButton
-                        onClick={() => setCheckoutOpen(true)}
-                        icon={Plus}
-                        circular
-                        title="Nueva Orden"
-                    />
-                }
-            >
-                <div className="flex items-center gap-2">
-                    {editingOrder && (
-                        <PurchaseOrderForm
-                            initialData={editingOrder}
-                            open={!!editingOrder}
-                            onOpenChange={(open) => {
-                                if (!open) setEditingOrder(null)
-                            }}
-                            onSuccess={fetchOrders}
-                        />
-                    )}
-                </div>
-            </PageHeader>
+            {editingOrder && (
+                <PurchaseOrderForm
+                    initialData={editingOrder}
+                    open={!!editingOrder}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingOrder(null)
+                    }}
+                    onSuccess={fetchOrders}
+                />
+            )}
 
             {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando datos...</div>
-                </div>
+                <LoadingFallback variant="list" className="pt-2" />
             ) : (
                 <Tabs value={viewMode} className="w-full">
                     <DataTable
@@ -521,10 +527,16 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                             const rows = table.getRowModel().rows
                             if (rows.length === 0) {
                                 return (
-                                    <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
-                                        <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                        <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
-                                    </div>
+                                    <EmptyState
+                                        context="inventory"
+                                        title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
+                                        description={viewMode === 'orders'
+                                            ? "No se han encontrado órdenes de compra en este periodo."
+                                            : "No hay notas de crédito ni débito asociadas a tus compras."
+                                        }
+
+                                        className="py-24"
+                                    />
                                 )
                             }
                             return (
@@ -583,6 +595,11 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchOrders}
                     />
                 )
@@ -612,10 +629,42 @@ export function PurchasingOrdersClientView({ viewMode }: PurchasingOrdersClientV
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
+                        onComplete={async (invoiceId, formData) => {
+                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                        }}
                         onSuccess={fetchOrders}
                     />
                 )
             }
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Orden de Compra"
+                description="¿Está seguro de que desea eliminar esta Orden de Compra? Esta acción no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={annulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
+                onConfirm={annulConfirm.confirm}
+                title="Anular Documento"
+                description="¿Está seguro de que desea ANULAR esta Orden de Compra? Esta acción generará reversos contables y liberará reservas, y no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={forceAnnulConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }}
+                onConfirm={forceAnnulConfirm.confirm}
+                title="Desvincular y Anular Pagos"
+                description="Este documento (o sus facturas) tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
+                variant="destructive"
+            />
         </div>
     )
 }

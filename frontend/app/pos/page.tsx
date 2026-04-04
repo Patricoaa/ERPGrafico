@@ -1,5 +1,6 @@
 "use client"
 
+import { getErrorMessage } from "@/lib/errors"
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
@@ -35,44 +36,42 @@ import {
 import { Check, Printer } from 'lucide-react'
 import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
-// Context and Hooks
-import { POSProvider, usePOS } from './contexts/POSContext'
+import { POSProvider, usePOS } from '@/features/pos/contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useProducts } from './hooks/useProducts'
-import { useCart } from './hooks/useCart'
-import { useStockValidation } from './hooks/useStockValidation'
-import { useDrafts } from './hooks/useDrafts'
-import { useDraftSync, type SyncDraft } from './hooks/useDraftSync'
+import { 
+    useProducts, 
+    useCart, 
+    useStockValidation, 
+    useDrafts, 
+    useDraftSync,
+    type SyncDraft 
+} from '@/features/pos/hooks'
 
-// UI Components
-import { SearchBar } from './components/SearchBar'
-import { CategoryFilter } from './components/CategoryFilter'
-import { ProductGrid } from './components/ProductGrid'
-import { Cart } from './components/Cart'
-import { POSCheckoutHeader } from './components/POSCheckoutHeader'
+// UI Components from Feature
+import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader } from '@/features/pos/components'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
-import { SessionControl, SessionControlHandle } from '@/components/pos/SessionControl'
-import { ScannerFeedback, ScannerFeedbackHandle } from '@/components/pos/ScannerFeedback'
+import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
+import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/lib/pricing'
-import { SalesOrdersModal } from '@/components/pos/SalesOrdersModal'
+import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
-    () => import('@/components/pos/POSVariantSelectorModal').then(mod => ({ default: mod.POSVariantSelectorModal })),
+    () => import('@/features/pos/components/POSVariantSelectorModal').then(mod => ({ default: mod.POSVariantSelectorModal })),
     { ssr: false }
 )
 
 const DraftCartsList = dynamic(
-    () => import('@/components/pos/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
+    () => import('@/features/pos/components/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
     { ssr: false }
 )
 
 const NumpadModal = dynamic(
-    () => import('@/components/pos/NumpadModal').then(mod => ({ default: mod.NumpadModal })),
+    () => import('@/features/pos/components/NumpadModal').then(mod => ({ default: mod.NumpadModal })),
     { ssr: false }
 )
 
@@ -295,8 +294,8 @@ function POSPageContent() {
             await fetchDrafts()
             forceSync()
             setPosMode('SHOPPING')
-        } catch (error: any) {
-            const msg = error.response?.data?.error || "Error al procesar el retiro"
+        } catch (error: unknown) {
+            const msg = getErrorMessage(error) || "Error al procesar el retiro"
             toast.error(msg)
         } finally {
             setIsWithdrawing(false)
@@ -439,7 +438,7 @@ function POSPageContent() {
                             {items.length > 0 && (
                                 <DropdownMenuItem
                                     onClick={() => setWithdrawDialogOpen(true)}
-                                    disabled={items.some(i => !i.track_inventory || (i.product_type !== 'STORABLE' && i.product_type !== 'MANUFACTURABLE'))}
+                                    disabled={items.some(i => !i.track_inventory)}
                                     className="font-bold text-amber-600 focus:text-amber-700"
                                 >
                                     <ShoppingCart className="mr-2 h-4 w-4" />

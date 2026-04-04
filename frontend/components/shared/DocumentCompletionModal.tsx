@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileEdit, Loader2, Upload, CheckCircle2 } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
 
 interface DocumentCompletionModalProps {
@@ -15,6 +14,8 @@ interface DocumentCompletionModalProps {
     onOpenChange: (open: boolean) => void
     invoiceId: number
     invoiceType: string
+    /** Callback to execute the completion. Receives a FormData with number, date, and optional document_attachment. */
+    onComplete: (invoiceId: number, formData: FormData) => Promise<void>
     onSuccess?: () => void
 }
 
@@ -23,6 +24,7 @@ export function DocumentCompletionModal({
     onOpenChange,
     invoiceId,
     invoiceType,
+    onComplete,
     onSuccess
 }: DocumentCompletionModalProps) {
     const { dateString } = useServerDate()
@@ -57,16 +59,15 @@ export function DocumentCompletionModal({
                 formData.append('document_attachment', attachment)
             }
 
-            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await onComplete(invoiceId, formData)
 
             toast.success("Documento finalizado correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error finalizing document:", error)
-            toast.error(error.response?.data?.error || "Error al finalizar el documento")
+            const apiError = error as { response?: { data?: { error?: string } } }
+            toast.error(apiError.response?.data?.error || "Error al finalizar el documento")
         } finally {
             setSubmitting(false)
         }

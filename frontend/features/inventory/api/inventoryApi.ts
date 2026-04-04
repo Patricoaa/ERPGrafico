@@ -10,7 +10,12 @@ export const inventoryApi = {
      */
     getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
         const params = new URLSearchParams()
-        if (filters?.active !== undefined) params.append('is_active', String(filters.active))
+        if (filters?.active !== undefined) {
+            // Send 'all' literally so the backend enters the correct branch.
+            // An empty string '' would fall through to the default (active=True only).
+            const val = filters.active === 'all' ? 'all' : String(filters.active)
+            params.append('active', val)
+        }
         if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
@@ -26,5 +31,13 @@ export const inventoryApi = {
     updateProduct: async (id: number, payload: ProductUpdatePayload): Promise<Product> => {
         const { data } = await api.patch<Product>(`/inventory/products/${id}/`, payload)
         return data
+    },
+
+    /**
+     * Fetch product categories
+     */
+    getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
+        const { data } = await api.get('/inventory/categories/', { params: { page_size: 9999 } })
+        return data.results || data
     },
 }

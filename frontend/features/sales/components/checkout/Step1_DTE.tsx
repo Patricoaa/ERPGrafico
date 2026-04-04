@@ -14,9 +14,11 @@ import { settingsApi } from "@/features/settings/api/settingsApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
+import { CheckoutDTEData } from "../../types"
+
 interface Step1_DTEProps {
-    dteData: any
-    setDteData: (data: any) => void
+    dteData: CheckoutDTEData
+    setDteData: (data: CheckoutDTEData) => void
     isPurchase?: boolean
     isDefaultCustomer?: boolean
 }
@@ -67,8 +69,8 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
     const dteOptions = [
         { id: 'BOLETA', label: 'Boleta Electrónica', code: '39', icon: Receipt },
         { id: 'FACTURA', label: 'Factura Electrónica', code: '33', icon: FileText },
-        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-amber-600' },
-        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-amber-600' },
+        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-warning' },
+        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-warning' },
     ]
 
     const filteredOptions = useMemo(() => {
@@ -92,8 +94,8 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
             </div>
 
             {isDefaultCustomer && (
-                <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-3">
-                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                <Alert className="bg-warning/5 border-warning/20 text-warning-foreground py-3">
+                    <AlertCircle className="h-4 w-4 text-warning" />
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de <strong>Boleta Electrónica</strong>.
                     </AlertDescription>
@@ -156,7 +158,7 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                                     )}
                                     {validationResult && !isValidating && (
                                         validationResult.is_unique ? (
-                                            <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-emerald-600" />
+                                            <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-success" />
                                         ) : (
                                             <AlertCircle className="absolute right-3 top-2.5 h-4 w-4 text-destructive" />
                                         )
@@ -199,15 +201,15 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
             )}
 
             {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex items-start gap-2 p-3 bg-warning/5 text-warning-foreground rounded-lg text-xs leading-tight border border-warning/20">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>
             )}
 
             {dteData.type === 'BOLETA' && !isPurchase && (
-                <div className="flex items-start gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-xs leading-tight">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex items-start gap-2 p-3 bg-info/5 text-info-foreground rounded-lg text-xs leading-tight border border-info/20">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-info" />
                     <p>El sistema asignará el siguiente folio disponible automáticamente al finalizar la venta.</p>
                 </div>
             )}

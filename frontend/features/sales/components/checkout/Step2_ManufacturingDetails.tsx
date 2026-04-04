@@ -10,9 +10,11 @@ import {
 import { AlertCircle, Paintbrush, Edit, CheckCircle2 } from "lucide-react"
 import { AdvancedManufacturingDialog } from "../forms/AdvancedManufacturingDialog"
 
+import { SaleOrderLine } from "../../types"
+
 interface Step2_ManufacturingDetailsProps {
-    orderLines: any[]
-    setOrderLines: (lines: any[]) => void
+    orderLines: SaleOrderLine[]
+    setOrderLines: (lines: SaleOrderLine[]) => void
 }
 
 export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_ManufacturingDetailsProps) {
@@ -73,7 +75,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                 <TableRow key={item.originalIndex}>
                                     <TableCell className="font-medium">
                                         <div className="flex flex-col gap-1 py-1">
-                                            <span className="font-medium text-xs leading-tight">{item.name || item.product_name || item.description}</span>
+                                            <span className="font-medium text-xs leading-tight">{item.product_name || item.description}</span>
                                             <div className="flex flex-wrap gap-1">
                                                 {item.internal_code && (
                                                     <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
@@ -91,12 +93,12 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                     <TableCell>{item.qty || item.quantity}</TableCell>
                                     <TableCell>
                                         {hasConfig ? (
-                                            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full w-fit">
+                                            <div className="flex items-center gap-1.5 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full w-fit">
                                                 <CheckCircle2 className="h-3 w-3" />
                                                 Configurado
                                             </div>
                                         ) : (
-                                            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full w-fit">
+                                            <div className="flex items-center gap-1.5 text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full w-fit">
                                                 <AlertCircle className="h-3 w-3" />
                                                 Pendiente
                                             </div>
@@ -125,9 +127,10 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                     onOpenChange={(open) => !open && setEditingLineIndex(null)}
                     product={{
                         ...editingLine,
+                        id: editingLine.id!,
                         // Ensure required flags are present for the dialog logic
-                        requires_advanced_manufacturing: true, // If we are here, it is true or implied
-                        mfg_enable_prepress: editingLine.mfg_enable_prepress ?? true, // Default to enabled if not set, or let dialog handle defaults
+                        requires_advanced_manufacturing: true,
+                        mfg_enable_prepress: editingLine.mfg_enable_prepress ?? true,
                         mfg_enable_press: editingLine.mfg_enable_press ?? true,
                         mfg_enable_postpress: editingLine.mfg_enable_postpress ?? true
                     }}
