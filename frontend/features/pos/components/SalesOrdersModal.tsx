@@ -78,12 +78,17 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                 onOpenChange={handleOpenChange}
                 tabLabel={viewMode === 'orders' ? 'NOTAS VENTAS' : 'NOTAS C/D'}
                 tabIcon={viewMode === 'orders' ? ShoppingCart : FileText}
+<<<<<<< Updated upstream
                 fullWidth={fullWidth}
                 pushOffset={pushOffset}
                 className={cn(
                     "max-w-[100vw] sm:max-w-none sm:w-auto",
                     activePush ? "!shadow-[-15px_0_30px_rgba(0,0,0,0.08)] !border-r-0 !ring-0" : "shadow-2xl"
                 )}
+=======
+                size="full"
+                className="max-w-full w-full"
+>>>>>>> Stashed changes
             >
                 <div className="flex flex-col h-full bg-transparent backdrop-blur-md">
                     <SheetHeader className="p-6 pb-4 border-b bg-transparent sticky top-0 z-50">

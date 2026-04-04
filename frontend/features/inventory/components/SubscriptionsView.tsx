@@ -16,7 +16,6 @@ import {
     AlertCircle,
     Pencil,
     Archive,
-    RefreshCw,
     History
 } from "lucide-react"
 import api from "@/lib/api"
@@ -198,17 +197,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         }
     }, [])
 
-    const handleTriggerInspection = async () => {
-        try {
-            const response = await api.post('/inventory/subscriptions/trigger_inspection/')
-            toast.success(response.data.message || "Inspección ejecutada correctamente")
-            fetchSubscriptions()
-            fetchStats()
-        } catch (error: unknown) {
-            console.error("Error triggering inspection:", error)
-            showApiError(error, "Error al ejecutar inspección")
-        }
-    }
+
 
     const handleResume = useCallback(async (id: number) => {
         try {
@@ -481,34 +470,12 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         />
                     }
                 >
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 rounded-full"
-                            onClick={handleTriggerInspection}
-                        >
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Ejecutar Inspección
-                        </Button>
-                    </div>
+
                 </PageHeader>
             )}
 
             <div className="space-y-4">
-                {hideHeader && (
-                    <div className="flex justify-end mb-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 rounded-full"
-                            onClick={handleTriggerInspection}
-                        >
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Ejecutar Inspección
-                        </Button>
-                    </div>
-                )}
+
                 {loading ? (
                     <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
                         Cargando suscripciones...
