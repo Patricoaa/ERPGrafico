@@ -272,7 +272,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'number']
 
     def validate(self, attrs):
-        settings = SalesSettings.objects.first()
+        settings = SalesSettings.get_solo()
         if settings and settings.restrict_stock_sales:
             for line in attrs.get('lines', []):
                 product = line.get('product')

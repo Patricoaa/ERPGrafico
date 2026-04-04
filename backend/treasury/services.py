@@ -243,7 +243,7 @@ class TreasuryService:
 
     @staticmethod
     def _create_accounting_entry(movement):
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings: return
         
         date = movement.date
@@ -345,7 +345,7 @@ class TreasuryService:
 
              if not target_acc and movement.payroll:
                   from hr.models import GlobalHRSettings
-                  hr_settings = GlobalHRSettings.objects.first()
+                  hr_settings = GlobalHRSettings.get_solo()
                   if hr_settings:
                        if movement.payroll_payment_type == 'SALARY':
                             target_acc = hr_settings.account_remuneraciones_por_pagar
@@ -508,7 +508,7 @@ class TerminalBatchService:
         )
         
         # Get Bridge Accounts
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         comm_bridge = settings.terminal_commission_bridge_account if settings else None
         iva_bridge = settings.terminal_iva_bridge_account if settings else None
         

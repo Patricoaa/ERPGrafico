@@ -54,7 +54,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def _get_accounting_settings_data(self):
         """Read account fields from AccountingSettings and return them as a plain dict."""
         from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.objects.first()
+        acc_settings = AccountingSettings.get_solo()
         if not acc_settings:
             return {field: None for field in self.ACCOUNTING_SETTINGS_FIELDS}
 
@@ -106,7 +106,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def current(self, request):
-        obj = SalesSettings.objects.first()
+        obj = SalesSettings.get_solo()
         if not obj:
             obj = SalesSettings.objects.create()
 
@@ -449,7 +449,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if balance <= 0:
             return Response({"error": "Esta orden no tiene saldo pendiente para castigar."}, status=400)
 
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings or not settings.default_uncollectible_expense_account:
             return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada."}, status=400)
 

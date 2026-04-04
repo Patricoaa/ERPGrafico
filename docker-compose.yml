@@ -73,10 +73,11 @@ services:
         limits:
           memory: 512M
 
-  # ── Redis (Broker + Result Backend) ──────────────────────
+  # ── Redis (Broker + Cache + Rate Limiting) ─────────────────
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
@@ -89,7 +90,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
 
   # ── MinIO (S3 Object Storage Local) ─────────────────────
   minio:
@@ -258,7 +259,6 @@ services:
       - frontend_net
       - backend_net
     depends_on:
-      - frontend
       - backend
     deploy:
       resources:

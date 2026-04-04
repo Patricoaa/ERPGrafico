@@ -170,49 +170,60 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     def stock_report(self, request):
         """
         Returns a summary of stock per product.
+        Cached in Redis for 60s — invalidated by StockMove signal.
         """
-        from django.db.models import Sum, Q
+        from core.cache import cache_report
+        from core.api.throttles import HeavyReportThrottle
         
-        products = Product.objects.filter(
-            Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
-            Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True) |
-            Q(product_type=Product.Type.MANUFACTURABLE, requires_advanced_manufacturing=False, mfg_auto_finalize=False)
-        ).select_related('category')
-        report = []
-        
-        for p in products:
-            # Current stock is sum of all moves
-            stock_qty = p.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0
-            
-            # Movements
-            moves_in = p.stock_moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
-            # moves_out should be positive for display, but moves have negative quantity
-            moves_out = abs(p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
-            
-            # Cost and valuation logic (requested by business rule)
-            # If stock is 0, cost should be 0 in the report.
-            unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
-            total_value = float(stock_qty * Decimal(str(unit_cost)))
+        # Apply heavy report throttle manually
+        throttle = HeavyReportThrottle()
+        if not throttle.allow_request(request, self):
+            from rest_framework.exceptions import Throttled
+            raise Throttled(detail="Demasiadas solicitudes al reporte de stock. Intente en un momento.")
 
-            report.append({
-                'id': p.id,
-                'code': p.code,
-                'internal_code': p.internal_code,
-                'name': p.name,
-                'category_name': p.category.name,
-                'uom_id': p.uom.id if p.uom else None,
-                'uom_category_id': p.uom.category_id if p.uom else None,
-                'uom_name': p.uom.name if p.uom else '',
-                'stock_qty': float(stock_qty),
-                'unit_cost': unit_cost,
-                'total_value': total_value,
-                'moves_in': float(moves_in),
-                'moves_out': float(moves_out),
-                'qty_reserved': float(p.qty_reserved),
-                'qty_available': float(p.qty_available)
-            })
+        def _generate():
+            from django.db.models import Sum, Q
+        
+            products = Product.objects.filter(
+                Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
+                Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True) |
+                Q(product_type=Product.Type.MANUFACTURABLE, requires_advanced_manufacturing=False, mfg_auto_finalize=False)
+            ).select_related('category')
+            report = []
             
-        return Response(report)
+            for p in products:
+                stock_qty = p.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0
+                moves_in = p.stock_moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
+                moves_out = abs(p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
+                unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
+                total_value = float(stock_qty * Decimal(str(unit_cost)))
+
+                report.append({
+                    'id': p.id,
+                    'code': p.code,
+                    'internal_code': p.internal_code,
+                    'name': p.name,
+                    'category_name': p.category.name,
+                    'uom_id': p.uom.id if p.uom else None,
+                    'uom_category_id': p.uom.category_id if p.uom else None,
+                    'uom_name': p.uom.name if p.uom else '',
+                    'stock_qty': float(stock_qty),
+                    'unit_cost': unit_cost,
+                    'total_value': total_value,
+                    'moves_in': float(moves_in),
+                    'moves_out': float(moves_out),
+                    'qty_reserved': float(p.qty_reserved),
+                    'qty_available': float(p.qty_available)
+                })
+            return report
+
+        data = cache_report(
+            module='inventory',
+            endpoint='stock_report',
+            timeout=60,
+            generator=_generate,
+        )
+        return Response(data)
 
     @action(detail=True, methods=['get'])
     def insights(self, request, pk=None):

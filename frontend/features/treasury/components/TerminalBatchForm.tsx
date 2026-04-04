@@ -57,15 +57,17 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     // Load terminals
     useEffect(() => {
+        let isMounted = true
         const fetchTerminals = async () => {
             try {
                 const res = await api.get('/treasury/payment-methods/?method_type=CARD_TERMINAL')
-                setTerminals(res.data)
+                if (isMounted) setTerminals(res.data)
             } catch (error) {
-                toast.error("Error al cargar terminales")
+                if (isMounted) toast.error("Error al cargar terminales")
             }
         }
         fetchTerminals()
+        return () => { isMounted = false }
     }, [])
 
     // Real-time validation
@@ -331,6 +333,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        let isMounted = true
         if (open && paymentMethodId && date) {
             setLoading(true)
             const dateStr = format(date, "yyyy-MM-dd")
@@ -342,6 +345,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                     terminal_batch__isnull: 'True'
                 }
             }).then((res: any) => {
+                if (!isMounted) return
                 const data = res.data.results || res.data
 
                 // Sort: Prioritize selected date, then by date descending
@@ -365,8 +369,11 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                     })
                 }
                 setSelectedIds(next)
-            }).finally(() => setLoading(false))
+            }).finally(() => {
+                if (isMounted) setLoading(false)
+            })
         }
+        return () => { isMounted = false }
     }, [open, paymentMethodId, date])
 
     const toggleAll = () => {

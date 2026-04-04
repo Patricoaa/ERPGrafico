@@ -21,7 +21,7 @@ export const inventoryApi = {
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 
-        const { data } = await api.get<{ results: Product[] }>('/inventory/products/', { params })
+        const { data } = await api.get<{ results: Product[] }>('inventory/products/', { params })
         return data.results || data
     },
 
@@ -29,7 +29,7 @@ export const inventoryApi = {
      * Update a product (partial update)
      */
     updateProduct: async (id: number, payload: ProductUpdatePayload): Promise<Product> => {
-        const { data } = await api.patch<Product>(`/inventory/products/${id}/`, payload)
+        const { data } = await api.patch<Product>(`inventory/products/${id}/`, payload)
         return data
     },
 
@@ -37,7 +37,7 @@ export const inventoryApi = {
      * Fetch product categories
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
-        const { data } = await api.get('/inventory/categories/', { params: { page_size: 9999 } })
+        const { data } = await api.get('inventory/categories/', { params: { page_size: 9999 } })
         return data.results || data
     },
 }

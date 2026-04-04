@@ -24,6 +24,10 @@ interface LogisticsPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     showAnimations: boolean
+    // Accordion props
+    collapsible?: boolean
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function LogisticsPhase({
@@ -38,7 +42,10 @@ export function LogisticsPhase({
     onActionSuccess,
     openDetails,
     showAnimations,
-    isTimeline = false
+    isTimeline = false,
+    collapsible,
+    isOpen,
+    onOpenChange,
 }: LogisticsPhaseProps) {
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
@@ -182,6 +189,9 @@ export function LogisticsPhase({
                 isComplete={logisticsProgress >= 100}
                 isTimeline={isTimeline}
                 onModalChange={onModalChange}
+                collapsible={collapsible}
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
             >
                 <div className="space-y-1 py-0.5">
                     {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => {

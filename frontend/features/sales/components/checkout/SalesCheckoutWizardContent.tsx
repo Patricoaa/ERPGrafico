@@ -703,7 +703,7 @@ export function SalesCheckoutWizardContent({
                                                 size="sm"
                                                 variant="outline"
                                                 className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-[10px] gap-1 font-medium bg-white/50"
-                                                onClick={() => openHub({ orderId: debt.id, type: 'sale' })}
+                                                onClick={() => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
                                             >
                                                 <span className="font-mono">NV-{debt.number}</span>
                                                 <span className="opacity-60">${Number(debt.balance).toLocaleString('es-CL')}</span>

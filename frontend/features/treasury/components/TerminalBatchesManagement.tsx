@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -45,20 +45,25 @@ export function TerminalBatchesManagement({
         from: subDays(new Date(), 30),
         to: new Date()
     })
+    const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
-        if (externalOpenBatch) {
+        setIsMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (isMounted && externalOpenBatch) {
             setOpenCreate(true)
         }
-    }, [externalOpenBatch])
+    }, [isMounted, externalOpenBatch])
 
     useEffect(() => {
-        if (externalOpenInvoice) {
+        if (isMounted && externalOpenInvoice) {
             setOpenInvoice(true)
         }
-    }, [externalOpenInvoice])
+    }, [isMounted, externalOpenInvoice])
 
-    const columns: ColumnDef<any>[] = [
+    const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -147,19 +152,19 @@ export function TerminalBatchesManagement({
         },
         {
             id: "actions",
-            cell: ({ row }: any) => (
+            cell: () => (
                 <div className="flex justify-center gap-2">
                 </div>
             )
         }
-    ]
+    ], [])
 
     return (
         <div className="space-y-4">
             <DataTable
                 columns={columns}
                 data={batches}
-                isLoading={isLoading}
+                isLoading={!isMounted || isLoading}
                 cardMode
                 useAdvancedFilter={true}
                 facetedFilters={[

@@ -99,7 +99,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 className={cn(
                     "flex-1 flex flex-col min-w-0 relative transition-all duration-500 ease-in-out",
                     isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]",
-                    isHubEffectivelyOpen && "mr-[500px]"
+                    isHubEffectivelyOpen && "mr-[380px]"
                 )}
             >
                 <main className="flex-1 overflow-y-auto pb-24">

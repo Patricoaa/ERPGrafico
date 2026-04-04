@@ -20,6 +20,10 @@ interface BillingPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    // Accordion props
+    collapsible?: boolean
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function BillingPhase({
@@ -31,7 +35,10 @@ export function BillingPhase({
     userPermissions,
     onActionSuccess,
     openDetails,
-    posSessionId = null
+    posSessionId = null,
+    collapsible,
+    isOpen,
+    onOpenChange,
 }: BillingPhaseProps) {
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
@@ -180,6 +187,9 @@ export function BillingPhase({
                 stageId="billing"
                 isComplete={billingIsComplete}
                 posSessionId={posSessionId}
+                collapsible={collapsible}
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
             />
 
             <ActionConfirmModal

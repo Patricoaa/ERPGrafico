@@ -78,7 +78,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const [loadingLedger, setLoadingLedger] = useState(false)
 
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
+    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(contact?.id)
     const { isSheetCollapsed } = useGlobalModals()
     const { closeHub } = useHubPanel()
 
@@ -162,18 +162,28 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         }
     }, [open, contact?.id, contact?.name])
 
+    const fetchLedger = () => {
+        if (!contact?.id) return
+        setLoadingLedger(true)
+        api.get(`/contacts/${contact.id}/credit_ledger/`)
+            .then(res => setLedgerData(res.data))
+            .catch(err => {
+                console.error("Error fetching credit ledger:", err)
+                toast.error("Error al cargar el historial crediticio")
+            })
+            .finally(() => setLoadingLedger(false))
+    }
+
     useEffect(() => {
         if (open && contact?.id && activeTab === "credit") {
-            setLoadingLedger(true)
-            api.get(`/contacts/${contact.id}/credit_ledger/`)
-                .then(res => setLedgerData(res.data))
-                .catch(err => {
-                    console.error("Error fetching credit ledger:", err)
-                    toast.error("Error al cargar el historial crediticio")
-                })
-                .finally(() => setLoadingLedger(false))
+            fetchLedger()
         }
     }, [open, contact?.id, activeTab])
+
+    const handleActionSuccess = () => {
+        refetchInsights()
+        fetchLedger()
+    }
 
     useEffect(() => {
         if (!open) {
@@ -490,6 +500,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             type="sale"
                                             title="Historial de Ventas (NV)"
                                             icon={ShoppingCart}
+                                            onActionSuccess={handleActionSuccess}
                                         />
                                     </TabsContent>
 
@@ -499,6 +510,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             type="purchase"
                                             title="Historial de Compras (OC)"
                                             icon={Package}
+                                            onActionSuccess={handleActionSuccess}
                                         />
                                     </TabsContent>
 
@@ -508,7 +520,11 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             type="work_order"
                                             title="Historial de Órdenes de Trabajo"
                                             icon={Wand2}
+                                            onActionSuccess={handleActionSuccess}
                                         />
+                                    </TabsContent>
+                                    <TabsContent value="credit" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
                                     </TabsContent>
                                 </div>
 
@@ -560,11 +576,11 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 interface InsightsTableProps {
     data: any[]
     type: 'sale' | 'purchase' | 'work_order'
-    title: string
     icon: any
+    onActionSuccess?: () => void
 }
 
-function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
+function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
     const { openWorkOrder } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
@@ -835,7 +851,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
                                         if (type === 'work_order') {
                                             openWorkOrder(row.original.id)
                                         } else {
-                                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+                                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
                                         }
                                     }}
                                 />
@@ -848,7 +864,7 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     )
 }
 
-function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean }) {
+function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
     if (loading) {
@@ -914,7 +930,7 @@ function CreditLedgerTable({ data, loading }: { data: any[], loading: boolean })
                                     key={row.original.id}
                                     item={row.original}
                                     type="ledger"
-                                    onActionClick={() => openHub({ orderId: row.original.id, type: 'sale' })}
+                                    onActionClick={() => openHub({ orderId: row.original.id, type: 'sale', onActionSuccess })}
                                 />
                             ))}
                         </div>

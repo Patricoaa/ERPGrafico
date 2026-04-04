@@ -17,10 +17,11 @@ interface OrderCardProps {
     onClick?: () => void
     onActionClick?: () => void
     hideStatus?: boolean
+    isSelected?: boolean
     className?: string
 }
 
-export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, className }: OrderCardProps) {
+export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, className }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
     const isPurchase = type === 'purchase' || (isNote && (item.purchase_order || item.purchase_order_id || item.supplier_name))
@@ -68,6 +69,13 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     const itemName = item.customer_name || item.supplier_name || item.partner_name || item.name || '---'
     const displayTotal = isLedger ? (item.balance || item.pending_amount || 0) : (item.total || item.effective_total || 0)
 
+    // --- Enrichment Data ---
+    const lines = item.lines || item.items || []
+
+    const total = parseFloat(item.total || 0)
+    const pending = parseFloat(item.pending_amount || 0)
+    const hasPending = !isLedger && !isWorkOrder && total > 0 && pending > 0
+
     const handleClick = () => {
         if (onActionClick) {
             onActionClick()
@@ -76,80 +84,126 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+        }
+    }
+
     return (
         <IndustrialCard
             variant="list"
+            role="button"
+            tabIndex={0}
+            data-order-card="true"
+            aria-selected={isSelected}
+            data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-row items-center justify-between p-4 relative z-10",
+                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all",
+                isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
         >
-            <div className="flex items-center gap-4 min-w-[30%]">
-                <div className={cn("w-12 h-12 rounded-xl flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105", iconBg, iconColor, iconBorder)}>
-                    <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {itemNumber}
-                        </span>
-                        <h4 className="font-bold text-foreground line-clamp-1 max-w-[150px]">
-                            {itemName}
-                        </h4>
+            {/* ROW 1: Header — Icon + ID + Name + Hub Status + Total + Arrow */}
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-4 min-w-[30%]">
+                    <div className={cn("w-12 h-12 rounded flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
+                        <Icon className="h-5 w-5" />
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatPlainDate(item.date)}
-                        </span>
-                        {isSale && item.pos_session && (
-                            <StatusBadge 
-                                status="active" 
-                                label={`POS #${item.pos_session}`} 
-                                size="sm" 
-                                className="h-4 px-1 text-[9px] bg-primary/5 text-primary border-primary/10"
-                            />
-                        )}
-                        {item.warehouse_name && (
-                            <span className="flex items-center gap-1">
-                                <Package className="h-3 w-3" />
-                                {item.warehouse_name}
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
+                                {itemName}
+                            </h4>
+                        </div>
+                        <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground">
+                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {itemNumber}
                             </span>
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 opacity-70" />
+                                {formatPlainDate(item.date)}
+                            </span>
+                            {isSale && item.pos_session && (
+                                <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                    <Monitor className="h-3 w-3" />
+                                    #{item.pos_session}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* CENTERED MINI STATES */}
+                {!hideStatus && (
+                    <div className="flex-1 flex justify-center px-4">
+                        {isNote ? (
+                            <NoteHubStatus note={item} />
+                        ) : isPurchase ? (
+                            <PurchaseOrderHubStatus order={item} />
+                        ) : isWorkOrder ? (
+                            <StatusBadge status={item.status} size="sm" />
+                        ) : (
+                            <OrderHubStatus order={item} />
                         )}
                     </div>
+                )}
+
+                <div className="flex items-center gap-5">
+                    <div className="flex flex-col items-end min-w-[100px]">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                            Total
+                        </span>
+                        <MoneyDisplay
+                            amount={displayTotal}
+                            showColor={!isLedger}
+                            className={cn("text-base font-heading font-bold tracking-tight", isLedger && "text-destructive dark:text-destructive")}
+                        />
+                    </div>
+
+                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
             </div>
 
-            {/* CENTERED MINI STATES */}
-            {!hideStatus && (
-                <div className="flex-1 flex justify-center px-4">
-                    {isNote ? (
-                        <NoteHubStatus note={item} />
-                    ) : isPurchase ? (
-                        <PurchaseOrderHubStatus order={item} />
-                    ) : isWorkOrder ? (
-                        <StatusBadge status={item.status} size="sm" />
-                    ) : (
-                        <OrderHubStatus order={item} />
+            {/* ROW 2: Product Lines — Full list, multiline */}
+            {(lines.length > 0 || hasPending) && !isWorkOrder && (
+                <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
+                        {lines.map((line: any, idx: number) => (
+                            <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
+                                <span className="font-semibold text-foreground/70">
+                                    {Math.round(parseFloat(line.quantity || 0))}
+                                </span>
+                                <span className="text-muted-foreground/50">×</span>
+                                <span className="truncate max-w-[200px]">
+                                    {line.product_name || line.description || 'Producto'}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+
+                    {hasPending && (
+                        <div className="flex items-center gap-5 shrink-0 pl-4">
+                            <div className="flex flex-col items-end min-w-[100px]">
+                                <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
+                                    Pdte
+                                </span>
+                                <MoneyDisplay
+                                    amount={pending}
+                                    showColor={false}
+                                    className="text-sm font-heading font-bold tracking-tight text-warning"
+                                />
+                            </div>
+                            <div className="w-5" /> {/* Empty spacer to align with arrow in row 1 */}
+                        </div>
                     )}
                 </div>
             )}
 
-            <div className="flex items-center gap-6">
-                <div className="text-right min-w-[100px]">
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                        Total
-                    </div>
-                    <MoneyDisplay 
-                        amount={displayTotal} 
-                        showColor={!isLedger} 
-                        className={cn("text-sm", isLedger && "text-destructive dark:text-destructive")}
-                    />
-                </div>
 
-                <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />
-            </div>
         </IndustrialCard>
     )
 }

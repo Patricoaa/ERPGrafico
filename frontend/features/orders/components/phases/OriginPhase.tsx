@@ -20,6 +20,10 @@ interface OriginPhaseProps {
     openDetails: (docType: string, id: number | string) => void
     onEdit?: (orderId: number) => void
     userPermissions: string[]
+    // Accordion props
+    collapsible?: boolean
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function OriginPhase({
@@ -28,6 +32,9 @@ export function OriginPhase({
     noteStatuses,
     order,
     activeDoc,
+    collapsible,
+    isOpen,
+    onOpenChange,
     type,
     onActionSuccess,
     openDetails,
@@ -132,6 +139,9 @@ export function OriginPhase({
             order={activeDoc}
             userPermissions={userPermissions}
             onActionSuccess={onActionSuccess}
+            collapsible={collapsible}
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
         >
             <div className="flex flex-col gap-1">
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (

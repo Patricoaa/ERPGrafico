@@ -288,7 +288,7 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def current(self, request):
-        obj = CompanySettings.objects.first()
+        obj = CompanySettings.get_solo()
         if not obj:
             if request.method == 'GET':
                  return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)

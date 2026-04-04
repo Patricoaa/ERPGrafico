@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || '';
+const baseURL = rawBaseURL.endsWith('/') ? rawBaseURL : `${rawBaseURL}/`;
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -9,6 +12,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
+        // Automatically strip leading slash from URL to prevent it from replacing baseURL's path
+        if (config.url && config.url.startsWith('/')) {
+            config.url = config.url.substring(1);
+        }
+
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -32,7 +40,8 @@ api.interceptors.response.use(
             
             if (refreshToken) {
                 try {
-                    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`, {
+                    // Use standard baseURL for refresh
+                    const response = await axios.post(`${baseURL}token/refresh/`, {
                         refresh: refreshToken
                     });
                     if (response.status === 200) {
@@ -55,5 +64,26 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+export async function pollTask(taskId: string, endpoint: string = 'finances/api/report-status/', interval: number = 2000): Promise<any> {
+    return new Promise((resolve, reject) => {
+        const checkStatus = async () => {
+            try {
+                const response = await api.get(`${endpoint}${taskId}/`);
+                if (response.data.status === 'SUCCESS') {
+                    resolve(response.data.data);
+                } else if (response.data.status === 'FAILURE') {
+                    reject(new Error(response.data.error || 'Task failed'));
+                } else {
+                    // PENDING or other state, continue polling
+                    setTimeout(checkStatus, interval);
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+        setTimeout(checkStatus, interval);
+    });
+}
 
 export default api;

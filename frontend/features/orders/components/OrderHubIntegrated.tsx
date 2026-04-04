@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useMemo, useState, useEffect } from "react"
+import { useRef, useMemo, useState, useEffect, useCallback } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { OriginPhase } from "./phases/OriginPhase"
@@ -12,6 +12,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { ActionCategory } from "./ActionCategory"
 import { cn } from "@/lib/utils"
+import { getHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderHubIntegratedProps {
     data: any
@@ -49,10 +50,8 @@ export function OrderHubIntegrated({
     } = data
 
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
-    
 
-
-    // Determine which phases are visible to draw the connectors correctly
+    // Determine which phases are visible
     const visiblePhases = useMemo(() => {
         const phases = []
         phases.push('origin')
@@ -63,9 +62,48 @@ export function OrderHubIntegrated({
         return phases
     }, [showProduction, showLogistics])
 
-    // Memoize the engine category only if NOT headless (meaning we are the engine)
-    // Actually, in the new architecture, the engine is in the parent, so we don't need this locally anymore.
-    // We'll keep the registry for visibility logic in phases.
+    // --- Accordion State ---
+    // Compute which phases should be open (all non-success phases)
+    const initialOpenPhases = useMemo(() => {
+        if (!activeDoc) return new Set<string>(['origin'])
+
+        const openSet = new Set<string>()
+
+        if (isNoteMode) {
+            if (noteStatuses.origin !== 'success') openSet.add('origin')
+            if (noteStatuses.billing !== 'success') openSet.add('billing')
+            if (noteStatuses.treasury !== 'success') openSet.add('treasury')
+            if (noteStatuses.logistics !== 'success') openSet.add('logistics')
+        } else {
+            const hubStatuses = getHubStatuses(activeDoc)
+            if (hubStatuses.origin !== 'success') openSet.add('origin')
+            if (hubStatuses.billing !== 'success') openSet.add('billing')
+            if (hubStatuses.treasury !== 'success') openSet.add('treasury')
+            if (showProduction && hubStatuses.production !== 'success' && hubStatuses.production !== 'not_applicable') openSet.add('production')
+            if (showLogistics && hubStatuses.logistics !== 'success' && hubStatuses.logistics !== 'not_applicable') openSet.add('logistics')
+        }
+
+        return openSet
+    }, [activeDoc?.id]) // Only recalculate when the document changes, not on every render
+
+    const [openPhases, setOpenPhases] = useState<Set<string>>(initialOpenPhases)
+
+    // Reset when document changes
+    useEffect(() => {
+        setOpenPhases(initialOpenPhases)
+    }, [initialOpenPhases])
+
+    const togglePhase = useCallback((phaseId: string) => (isOpen: boolean) => {
+        setOpenPhases(prev => {
+            const next = new Set(prev)
+            if (isOpen) {
+                next.add(phaseId)
+            } else {
+                next.delete(phaseId)
+            }
+            return next
+        })
+    }, [])
 
     if (!activeDoc) return null
 
@@ -93,6 +131,9 @@ export function OrderHubIntegrated({
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 onEdit={onEdit}
+                                collapsible={true}
+                                isOpen={openPhases.has('origin')}
+                                onOpenChange={togglePhase('origin')}
                             />
                         </PhaseWrapper>
 
@@ -108,6 +149,9 @@ export function OrderHubIntegrated({
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 posSessionId={posSessionId}
+                                collapsible={true}
+                                isOpen={openPhases.has('billing')}
+                                onOpenChange={togglePhase('billing')}
                             />
                         </PhaseWrapper>
 
@@ -122,6 +166,9 @@ export function OrderHubIntegrated({
                                 onActionSuccess={onActionSuccess}
                                 openDetails={openDetails}
                                 posSessionId={posSessionId}
+                                collapsible={true}
+                                isOpen={openPhases.has('treasury')}
+                                onOpenChange={togglePhase('treasury')}
                             />
                         </PhaseWrapper>
 
@@ -135,6 +182,9 @@ export function OrderHubIntegrated({
                                     onActionSuccess={onActionSuccess}
                                     openDetails={openDetails}
                                     showAnimations={showAnimations}
+                                    collapsible={true}
+                                    isOpen={openPhases.has('production')}
+                                    onOpenChange={togglePhase('production')}
                                 />
                             </PhaseWrapper>
                         )}
@@ -153,6 +203,9 @@ export function OrderHubIntegrated({
                                     openDetails={openDetails}
                                     showAnimations={showAnimations}
                                     logisticsProgress={data.logisticsProgress}
+                                    collapsible={true}
+                                    isOpen={openPhases.has('logistics')}
+                                    onOpenChange={togglePhase('logistics')}
                                 />
                             </PhaseWrapper>
                         )}

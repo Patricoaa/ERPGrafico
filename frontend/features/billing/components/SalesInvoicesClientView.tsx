@@ -28,7 +28,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
-    const { openHub } = useHubPanel()
+    const { openHub, closeHub, hubConfig } = useHubPanel()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
@@ -267,18 +267,24 @@ export function SalesInvoicesClientView() {
                         <div className="grid gap-3 pt-2">
                             {rows.map((row: any) => {
                                 const inv = row.original as Invoice
+                                const isSelected = hubConfig?.invoiceId === inv.id
                                 return (
                                     <InvoiceCard
                                         key={inv.id}
                                         item={inv}
                                         type="sale_invoice"
+                                        isSelected={isSelected}
                                         onClick={() => {
-                                            openHub({
-                                                orderId: inv.sale_order || null,
-                                                invoiceId: inv.id,
-                                                type: 'sale',
-                                                onActionSuccess: refetch
-                                            })
+                                            if (isSelected) {
+                                                closeHub()
+                                            } else {
+                                                openHub({
+                                                    orderId: inv.sale_order || null,
+                                                    invoiceId: inv.id,
+                                                    type: 'sale',
+                                                    onActionSuccess: refetch
+                                                })
+                                            }
                                         }}
                                     />
                                 )

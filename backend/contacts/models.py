@@ -133,7 +133,7 @@ class Contact(models.Model):
         # Partner Multi-Account Auto-Creation
         if self.is_partner:
             from accounting.models import AccountingSettings, Account
-            settings = AccountingSettings.objects.first()
+            settings = AccountingSettings.get_solo()
             if settings:
                 # Map: (contact field, settings parent field, prefix)
                 account_specs = [

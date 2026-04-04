@@ -623,7 +623,7 @@ class Product(models.Model):
             return self.category.asset_account
         
         # 2. Type-based account from settings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
         
@@ -659,7 +659,7 @@ class Product(models.Model):
             return self.category.income_account
             
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
             
@@ -686,7 +686,7 @@ class Product(models.Model):
             return self.category.expense_account
             
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
             
@@ -979,6 +979,16 @@ class StockMove(models.Model):
     @property
     def display_id(self):
         return f"MOV-{str(self.id).zfill(5)}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('inventory')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('inventory')
+        super().delete(*args, **kwargs)
 
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):

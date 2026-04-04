@@ -129,7 +129,7 @@ class Account(models.Model):
                 })
         # Max hierarchy depth validation
         from .models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if settings:
             depth = self.get_depth()
             if depth > settings.hierarchy_levels:
@@ -316,6 +316,13 @@ class JournalEntry(models.Model):
             else:
                 self.number = '000001'
         super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('finances')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('finances')
+        super().delete(*args, **kwargs)
 
     @property
     def get_source_documents(self):
@@ -444,6 +451,16 @@ class JournalItem(models.Model):
         if self.account and not self.account.is_selectable:
             raise ValidationError(_("La cuenta %(account)s tiene subcuentas y no es seleccionable para asientos contables."),
                                 params={'account': self.account},)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('finances')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('finances')
+        super().delete(*args, **kwargs)
 
 class InventoryValuationMethod(models.TextChoices):
     AVERAGE = 'AVERAGE', _('Promedio Ponderado')

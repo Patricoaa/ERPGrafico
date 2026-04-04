@@ -164,8 +164,16 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     
     def save(self, *args, **kwargs):
         if not self.number:
+            from core.services import SequenceService
             self.number = SequenceService.get_next_number(SaleOrder)
         super().save(*args, **kwargs)
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('contacts')
+
+    def delete(self, *args, **kwargs):
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('contacts')
+        super().delete(*args, **kwargs)
 
 class SaleLine(models.Model):
     order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='lines')

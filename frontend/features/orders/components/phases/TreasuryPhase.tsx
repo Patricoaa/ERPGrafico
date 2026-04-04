@@ -21,6 +21,10 @@ interface TreasuryPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    // Accordion props
+    collapsible?: boolean
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function TreasuryPhase({
@@ -31,7 +35,10 @@ export function TreasuryPhase({
     userPermissions,
     onActionSuccess,
     openDetails,
-    posSessionId
+    posSessionId,
+    collapsible,
+    isOpen,
+    onOpenChange,
 }: TreasuryPhaseProps) {
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
@@ -163,6 +170,9 @@ export function TreasuryPhase({
                 stageId="treasury"
                 isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
+                collapsible={collapsible}
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
             >
                 <div className="space-y-0.5 py-0.5">
                     <div className="flex items-center justify-between text-[10.5px] font-bold">

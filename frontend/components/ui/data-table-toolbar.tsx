@@ -85,6 +85,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
+    const rowSelectionCount = table.getFilteredSelectedRowModel().rows.length
 
     // Get all columns that are sortable
     const sortableColumns = table.getAllColumns().filter(
@@ -98,10 +99,11 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     return (
         <div className="flex flex-col gap-3 w-full px-1 mb-2">
             {/* ─── LEVEL 1: PRIMARY ACTIONS (HIGH HIERARCHY) ────────────────────── */}
-            {(toolbarAction || rightAction) && (
+            {((toolbarAction && !useAdvancedFilter) || rightAction) && (
                 <div className="flex items-center justify-end gap-3 min-h-[40px] animate-in fade-in slide-in-from-top-1 duration-300">
                     <div className="flex items-center gap-2">
-                        {toolbarAction}
+                        {/* Render toolbarAction here ONLY if advanced filters are NOT used */}
+                        {!useAdvancedFilter && toolbarAction}
                     </div>
                     <div className="flex items-center gap-2">
                         {rightAction}
@@ -154,7 +156,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 filterColumn={filterColumn}
                                 globalFilterFields={globalFilterFields}
                                 searchPlaceholder={searchPlaceholder}
-                                toolbarAction={null} // Action handled in level 1
+                                toolbarAction={useAdvancedFilter ? toolbarAction : null}
                                 onReset={onReset}
                             />
                             {showToolbarSort && sortableColumns.length > 0 && (

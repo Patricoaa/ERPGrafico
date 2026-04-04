@@ -437,14 +437,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-    if (loading) {
-        return (
-            <div className="flex items-center gap-2 text-muted-foreground p-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Cargando sesión...</span>
-            </div>
-        )
-    }
 
 
 

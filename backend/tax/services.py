@@ -97,7 +97,7 @@ class F29CalculationService:
         net_taxed_purchases = purchases_taxed + purchase_debit_notes - purchase_credit_notes
         
         # Get accounting settings for VAT rate
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         tax_rate = settings.default_vat_rate if settings else Decimal('19.00')
         
         # Calculate VAT
@@ -234,7 +234,7 @@ class F29CalculationService:
             declaration_date = date(declaration.tax_period.year, declaration.tax_period.month, last_day)
         
         # Get accounting settings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("No se encontró configuración contable.")
         
@@ -579,7 +579,7 @@ class F29PaymentService:
             raise ValidationError("Esta declaración no tiene monto a pagar.")
         
         # Get accounting settings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings or not settings.vat_payable_account:
             raise ValidationError("Falta configurar cuenta IVA por Pagar.")
         

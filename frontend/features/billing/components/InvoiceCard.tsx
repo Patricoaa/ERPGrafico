@@ -15,7 +15,9 @@ interface InvoiceCardProps {
     item: any
     type: InvoiceType
     onClick?: () => void
+    onActionSuccess?: () => void
     className?: string
+    isSelected?: boolean
 }
 
 const dteTypeLabel: Record<string, string> = {
@@ -28,7 +30,7 @@ const dteTypeLabel: Record<string, string> = {
     PURCHASE_INV: 'FAC',
 }
 
-export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps) {
+export function InvoiceCard({ item, type, onClick, onActionSuccess, className, isSelected = false }: InvoiceCardProps) {
     const { openHub } = useHubPanel()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
@@ -44,7 +46,7 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
         Icon = Package
         iconBg = "bg-primary/5"
         iconColor = "text-info/60"
-        iconBorder = "border-primary/20/10"
+        iconBorder = "border-primary/20"
     } else if (isNote) {
         Icon = FileBadge
         iconBg = "bg-warning/5"
@@ -55,65 +57,77 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
     const typeCode = dteTypeLabel[item.dte_type] ?? 'DOC'
     const docNumber = item.number ? `${typeCode}-${item.number}` : '---'
     const partnerName = item.partner_name || item.customer_name || item.supplier_name || '---'
+    const displayTotal = parseFloat(item.total ?? '0')
 
-    const total = parseFloat(item.total ?? '0')
+    // Enrichment Data
+    const lines = item.lines || item.items || []
+    const pending = parseFloat(item.pending_amount || 0)
+    const hasPending = displayTotal > 0 && pending > 0
 
     const handleClick = () => {
-        if (onClick) {
-            onClick()
+        if (onClick) onClick()
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
         }
     }
 
     return (
         <IndustrialCard
             variant="list"
+            role="button"
+            tabIndex={0}
+            data-order-card="true"
+            aria-selected={isSelected}
+            data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-row items-center justify-between p-4 relative z-10",
+                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all",
+                isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
         >
-            {/* Left: icon + info */}
-            <div className="flex items-center gap-4 min-w-0">
-                <div className={cn(
-                    "w-12 h-12 shrink-0 rounded-xl flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-105",
-                    iconBg, iconColor, iconBorder
-                )}>
-                    <Icon className="h-6 w-6" />
-                </div>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
-                            {docNumber}
-                        </span>
-                        <h4 className="font-bold text-foreground truncate">
-                            {partnerName}
-                        </h4>
+            {/* ROW 1: Header */}
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-4 min-w-[30%]">
+                    <div className={cn("w-12 h-12 rounded flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
+                        <Icon className="h-5 w-5" />
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatPlainDate(item.date)}
-                        </span>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
+                                {partnerName}
+                            </h4>
+                        </div>
+                        <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground flex-wrap">
+                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {docNumber}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 opacity-70" />
+                                {formatPlainDate(item.date)}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Right: status + total + arrow */}
-            <div className="flex items-center gap-4 shrink-0 ml-4">
-                {/* Status badge */}
+                {/* CENTER: Status Badges and Origin Links */}
                 <div className="hidden sm:flex items-center gap-3">
                     {/* Parent/Corrected Invoice Link (only for Notes) */}
                     {isNote && (item.corrected_invoice || item.sale_order || item.purchase_order) && (
                         <Badge 
                             variant="outline" 
-                            className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20/30 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
+                            className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 if (item.corrected_invoice) {
-                                    openHub({ orderId: null, invoiceId: item.corrected_invoice.id, type: 'sale' })
+                                    openHub({ orderId: null, invoiceId: item.corrected_invoice.id, type: 'sale', onActionSuccess })
                                 } else if (item.sale_order || item.purchase_order) {
-                                    openHub({ orderId: item.sale_order || item.purchase_order, type: item.sale_order ? 'sale' : 'purchase' })
+                                    openHub({ orderId: item.sale_order || item.purchase_order, type: item.sale_order ? 'sale' : 'purchase', onActionSuccess })
                                 }
                             }}
                         >
@@ -129,10 +143,10 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                                 <Badge 
                                     key={adj.id}
                                     variant="outline" 
-                                    className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20/30 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
+                                    className="h-6 px-2 gap-1.5 text-[10px] font-bold border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 cursor-pointer transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase' })
+                                        openHub({ orderId: null, invoiceId: adj.id, type: isSale ? 'sale' : 'purchase', onActionSuccess })
                                     }}
                                 >
                                     <GitBranch className="size-3" />
@@ -144,15 +158,56 @@ export function InvoiceCard({ item, type, onClick, className }: InvoiceCardProps
                     <InvoiceHubStatus invoice={item} />
                 </div>
 
-                <div className="text-right min-w-[100px]">
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Total</div>
-                    <MoneyDisplay amount={total} showColor={false} className="text-sm" />
-                </div>
+                <div className="flex items-center gap-5">
+                    <div className="flex flex-col items-end min-w-[100px]">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                            Total
+                        </span>
+                        <MoneyDisplay
+                            amount={displayTotal}
+                            showColor={false}
+                            className="text-base font-heading font-bold tracking-tight"
+                        />
+                    </div>
 
-                <div className="transition-transform duration-500 ml-2">
-                    <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100" />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
             </div>
+
+            {/* ROW 2: Product Lines & Pending */}
+            {(lines.length > 0 || hasPending) && (
+                <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
+                        {lines.map((line: any, idx: number) => (
+                            <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
+                                <span className="font-semibold text-foreground/70">
+                                    {Math.round(parseFloat(line.quantity || 0))}
+                                </span>
+                                <span className="text-muted-foreground/50">×</span>
+                                <span className="truncate max-w-[200px]">
+                                    {line.product_name || line.description || 'Producto'}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+
+                    {hasPending && (
+                        <div className="flex items-center gap-5 shrink-0 pl-4">
+                            <div className="flex flex-col items-end min-w-[100px]">
+                                <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
+                                    Pdte
+                                </span>
+                                <MoneyDisplay
+                                    amount={pending}
+                                    showColor={false}
+                                    className="text-sm font-heading font-bold tracking-tight text-warning"
+                                />
+                            </div>
+                            <div className="w-5" />
+                        </div>
+                    )}
+                </div>
+            )}
         </IndustrialCard>
     )
 }
