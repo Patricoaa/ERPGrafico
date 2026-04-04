@@ -42,8 +42,8 @@ export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, vi
                 onOpenChange={onOpenChange}
                 tabLabel="Detalle Pago"
                 tabIcon={FileText}
-                fullWidth={650}
-                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw]"
+                size="xl"
+                className="max-w-[90vw] w-[90vw]"
             >
                 {payrollId && (
                     <PayrollDetailContent 

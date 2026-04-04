@@ -19,6 +19,7 @@ interface ModuleSettingsSheetProps {
     savingStatus?: SavingStatus
     children: React.ReactNode
     fullWidth?: number
+    size?: "sm" | "md" | "lg" | "xl" | "full"
 }
 
 export function ModuleSettingsSheet({
@@ -31,7 +32,8 @@ export function ModuleSettingsSheet({
     tabLabel = "Config",
     savingStatus = "idle",
     children,
-    fullWidth = 600
+    fullWidth,
+    size = "md"
 }: ModuleSettingsSheetProps) {
     return (
         <CollapsibleSheet
@@ -41,6 +43,7 @@ export function ModuleSettingsSheet({
             tabLabel={tabLabel}
             tabIcon={Icon}
             fullWidth={fullWidth}
+            size={size}
             className="flex flex-col"
         >
             {/* Header */}

@@ -898,8 +898,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             onOpenChange={handleOpenChangeProxy}
             tabLabel="FICHA PRODUCTO"
             tabIcon={Package}
-            fullWidth={fullWidth}
-            className="max-w-[95vw] w-[95vw] sm:max-w-[95vw] sm:w-[95vw]"
+            size="xl"
+            className="max-w-[95vw] w-[95vw]"
         >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
