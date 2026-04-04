@@ -52,16 +52,16 @@ export function TerminalBatchesManagement({
     }, [])
 
     useEffect(() => {
-        if (externalOpenBatch) {
+        if (isMounted && externalOpenBatch) {
             setOpenCreate(true)
         }
-    }, [externalOpenBatch])
+    }, [isMounted, externalOpenBatch])
 
     useEffect(() => {
-        if (externalOpenInvoice) {
+        if (isMounted && externalOpenInvoice) {
             setOpenInvoice(true)
         }
-    }, [externalOpenInvoice])
+    }, [isMounted, externalOpenInvoice])
 
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {

@@ -50,8 +50,17 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     UNDER_REVIEW: { label: "En Revisión", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
 
     // Lowercase fallbacks for legacy code
-    active: { label: "Activo", className: "bg-success/10 text-success border-success/20", type: "success" },
+    active: { label: "Activo", className: "bg-primary/10 text-primary border-primary/20", type: "neutral" },
     inactive: { label: "Inactivo", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
+
+    // Semantic / Hub universals
+    SUCCESS: { label: "Completado", className: "bg-success/10 text-success border-success/20", type: "success" },
+    INFO: { label: "Info", className: "bg-info/10 text-info border-info/20", type: "info" },
+    WARNING: { label: "Advertencia", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    ERROR: { label: "Error", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    DESTRUCTIVE: { label: "Eliminado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    NEUTRAL: { label: "Pendiente", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
+    NOT_APPLICABLE: { label: "No aplica", className: "bg-muted/50 text-muted-foreground/50 border-muted", type: "neutral" },
 }
 
 interface StatusBadgeProps {

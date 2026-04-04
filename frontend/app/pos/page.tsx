@@ -48,7 +48,7 @@ import {
 } from '@/features/pos/hooks'
 
 // UI Components from Feature
-import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader } from '@/features/pos/components'
+import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader, POSLayoutSkeleton } from '@/features/pos/components'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
@@ -340,6 +340,8 @@ function POSPageContent() {
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
 
+    if (loading) return <POSLayoutSkeleton />
+
     return (
         <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500">
             <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] border-b pb-2">
@@ -467,7 +469,7 @@ function POSPageContent() {
             </div>
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-                {currentSession !== undefined && (!currentSession || currentSession.status !== 'OPEN') && (
+                {currentSession !== undefined && currentSession === null && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-2xl border-primary/20 p-8 text-center space-y-4">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />

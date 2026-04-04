@@ -127,7 +127,10 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                                     <SalesOrdersView
                                         posSessionId={posSessionId}
                                         viewMode={viewMode}
-                                        onActionSuccess={() => onOpenChange(false)}
+                                        onActionSuccess={() => {
+                                            setWasOpenBeforeHub(false)
+                                            onOpenChange(false)
+                                        }}
                                     />
                                 </Suspense>
                             )}

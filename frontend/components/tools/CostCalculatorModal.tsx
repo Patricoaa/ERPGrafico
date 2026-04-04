@@ -23,6 +23,11 @@ import {
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { 
+    POSSearchSkeleton, 
+    POSGridSkeleton, 
+    POSCartSkeleton 
+} from "@/features/pos/components/skeletons/POSLayoutSkeleton"
 
 interface Product {
     id: number
@@ -253,28 +258,29 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                     {/* Panel Izquierdo: Catálogo */}
                     <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
                         <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                            <div className="p-4 border-b bg-background/50 space-y-3">
-                                <SearchBar 
-                                    value={searchTerm}
-                                    onChange={setSearchTerm}
-                                    placeholder="Buscar por nombre, código o código de barras..."
-                                    autoFocus={false}
-                                />
+                            {loading ? (
+                                <POSSearchSkeleton />
+                            ) : (
+                                <div className="p-4 border-b bg-background/50 space-y-3">
+                                    <SearchBar 
+                                        value={searchTerm}
+                                        onChange={setSearchTerm}
+                                        placeholder="Buscar por nombre, código o código de barras..."
+                                        autoFocus={false}
+                                    />
 
-                                <CategoryFilter 
-                                    categories={categories}
-                                    selectedCategoryId={selectedCategoryId}
-                                    onSelectCategory={setSelectedCategoryId}
-                                />
-                            </div>
+                                    <CategoryFilter 
+                                        categories={categories}
+                                        selectedCategoryId={selectedCategoryId}
+                                        onSelectCategory={setSelectedCategoryId}
+                                    />
+                                </div>
+                            )}
 
                             <ScrollArea className="flex-1">
                                 <CardContent className="p-6">
-                                    {loading && products.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center h-[200px] gap-3 text-muted-foreground">
-                                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                            <p>Cargando productos...</p>
-                                        </div>
+                                    {loading ? (
+                                        <POSGridSkeleton count={8} />
                                     ) : (
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                             {filteredProducts.map(product => (
@@ -353,7 +359,9 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                             </div>
 
                             <ScrollArea className="flex-1">
-                                {selectedItems.length === 0 ? (
+                                {loading ? (
+                                    <POSCartSkeleton />
+                                ) : selectedItems.length === 0 ? (
                                     <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
                                         <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
                                             <Calculator className="h-8 w-8 text-muted-foreground/20" />

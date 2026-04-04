@@ -667,7 +667,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         order={order}
                         currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
-                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as "WORK_ORDER" | "PURCHASE_ORDER" })}
+                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as "WORK_ORDER" | "PURCHASE_ORDER", onActionSuccess: fetchOrder })}
                         onAnnul={() => handleAnnulOrder()}
                         onDelete={() => setIsDeleteModalOpen(true)}
                         isAnnuling={isAnnuling}
