@@ -34,7 +34,7 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openHub, hubConfig } = useHubPanel()
+    const { openHub, closeHub, hubConfig } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     const { orders, refetch: refetchOrders } = useSalesOrders({
@@ -273,7 +273,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                                 type={viewMode === 'orders' ? 'sale' : 'note'}
                                                 hideStatus={hideStatusInCards}
                                                 onClick={() => {
-                                                    if (viewMode === 'orders') {
+                                                    if (isSelected) {
+                                                        closeHub()
+                                                    } else if (viewMode === 'orders') {
                                                         openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                     } else {
                                                         openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2, Receipt } from "lucide-react"
+import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2 } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { OrderHubStatus } from "./OrderHubStatus"
 import { NoteHubStatus } from "./NoteHubStatus"
@@ -72,22 +72,9 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     // --- Enrichment Data ---
     const lines = item.lines || item.items || []
 
-    // Invoice badge - find first non-cancelled, non-draft invoice
-    const mainInvoice = item.related_documents?.invoices?.find(
-        (inv: any) => inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' && inv.number && inv.number !== 'Draft'
-    )
-
-    // Payment progress
     const total = parseFloat(item.total || 0)
     const pending = parseFloat(item.pending_amount || 0)
-    const paidPct = total > 0 ? Math.round(((total - pending) / total) * 100) : 0
-    const showPaymentProgress = !isLedger && !isWorkOrder && total > 0 && pending > 0
-
-    // Delivery fraction
-    const deliveredLines = lines.filter((l: any) =>
-        (parseFloat(l.quantity_delivered || l.quantity_received || 0)) >= (parseFloat(l.quantity || 1))
-    ).length
-    const showDelivery = !isWorkOrder && !isLedger && lines.length > 0
+    const hasPending = !isLedger && !isWorkOrder && total > 0 && pending > 0
 
     const handleClick = () => {
         if (onActionClick) {
@@ -109,11 +96,12 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             variant="list"
             role="button"
             tabIndex={0}
+            data-order-card="true"
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
-                isSelected && "ring-2 ring-primary/40 bg-primary/5 border-primary/30",
+                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all",
+                isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
             onClick={handleClick}
@@ -122,30 +110,28 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             {/* ROW 1: Header — Icon + ID + Name + Hub Status + Total + Arrow */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-4 min-w-[30%]">
-                    <div className={cn("w-12 h-12 rounded-xl flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
-                        <Icon className="h-6 w-6" />
+                    <div className={cn("w-12 h-12 rounded flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
+                        <Icon className="h-5 w-5" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {itemNumber}
-                            </span>
-                            <h4 className="font-bold text-foreground line-clamp-1 max-w-[180px]">
+                            <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
                                 {itemName}
                             </h4>
                         </div>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground">
+                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                                {itemNumber}
+                            </span>
                             <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
+                                <Calendar className="h-3 w-3 opacity-70" />
                                 {formatPlainDate(item.date)}
                             </span>
                             {isSale && item.pos_session && (
-                                <StatusBadge
-                                    status="active"
-                                    label={`POS #${item.pos_session}`}
-                                    size="sm"
-                                    className="h-4 px-1 text-[9px] bg-primary/5 text-primary border-primary/10"
-                                />
+                                <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                    <Monitor className="h-3 w-3" />
+                                    #{item.pos_session}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -166,26 +152,26 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                     </div>
                 )}
 
-                <div className="flex items-center gap-6">
-                    <div className="text-right min-w-[100px]">
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+                <div className="flex items-center gap-5">
+                    <div className="flex flex-col items-end min-w-[100px]">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
                             Total
-                        </div>
+                        </span>
                         <MoneyDisplay
                             amount={displayTotal}
                             showColor={!isLedger}
-                            className={cn("text-sm", isLedger && "text-destructive dark:text-destructive")}
+                            className={cn("text-base font-heading font-bold tracking-tight", isLedger && "text-destructive dark:text-destructive")}
                         />
                     </div>
 
-                    <ArrowRight className="h-5 w-5 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
             </div>
 
             {/* ROW 2: Product Lines — Full list, multiline */}
-            {lines.length > 0 && !isWorkOrder && (
-                <div className="mt-2.5 pt-2 border-t border-border/30">
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+            {(lines.length > 0 || hasPending) && !isWorkOrder && (
+                <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
                         {lines.map((line: any, idx: number) => (
                             <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
                                 <span className="font-semibold text-foreground/70">
@@ -198,60 +184,26 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                             </span>
                         ))}
                     </div>
-                </div>
-            )}
 
-            {/* ROW 3: Context Bar — Invoice + Payment Progress + Delivery */}
-            {(mainInvoice || showPaymentProgress || showDelivery) && (
-                <div className="mt-2 pt-2 border-t border-border/20 flex items-center gap-4 flex-wrap">
-                    {/* Invoice Badge */}
-                    {mainInvoice && (
-                        <div className="flex items-center gap-1.5">
-                            <Receipt className="h-3 w-3 text-success/70" />
-                            <span className="text-[10px] font-bold text-success/90">
-                                {mainInvoice.display_id || mainInvoice.number}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Payment Progress: pending amount + bar */}
-                    {showPaymentProgress && (
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground font-medium">
-                                Pendiente:
-                            </span>
-                            <MoneyDisplay
-                                amount={pending}
-                                showColor={false}
-                                className="text-[10px] font-bold text-warning"
-                            />
-                            <div className="w-12 h-1.5 rounded-full bg-muted/50 overflow-hidden border border-border/20">
-                                <div
-                                    className={cn(
-                                        "h-full rounded-full transition-all duration-500",
-                                        paidPct >= 100 ? "bg-success" : paidPct > 50 ? "bg-primary" : "bg-warning"
-                                    )}
-                                    style={{ width: `${Math.min(paidPct, 100)}%` }}
+                    {hasPending && (
+                        <div className="flex items-center gap-5 shrink-0 pl-4">
+                            <div className="flex flex-col items-end min-w-[100px]">
+                                <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
+                                    Pdte
+                                </span>
+                                <MoneyDisplay
+                                    amount={pending}
+                                    showColor={false}
+                                    className="text-sm font-heading font-bold tracking-tight text-warning"
                                 />
                             </div>
-                            <span className="text-[9px] text-muted-foreground/60 font-mono">{paidPct}%</span>
-                        </div>
-                    )}
-
-                    {/* Delivery Fraction */}
-                    {showDelivery && (
-                        <div className="flex items-center gap-1.5">
-                            <Package className="h-3 w-3 text-muted-foreground/50" />
-                            <span className={cn(
-                                "text-[10px] font-medium",
-                                deliveredLines === lines.length ? "text-success/80" : "text-muted-foreground/70"
-                            )}>
-                                {deliveredLines}/{lines.length} desp.
-                            </span>
+                            <div className="w-5" /> {/* Empty spacer to align with arrow in row 1 */}
                         </div>
                     )}
                 </div>
             )}
+
+
         </IndustrialCard>
     )
 }

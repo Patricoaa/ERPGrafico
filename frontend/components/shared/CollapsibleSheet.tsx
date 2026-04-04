@@ -18,6 +18,7 @@ interface CollapsibleSheetProps {
     forceCollapse?: boolean
     fullWidth?: number
     hideOverlay?: boolean
+    pushOffset?: number
 }
 
 export function CollapsibleSheet({
@@ -31,7 +32,8 @@ export function CollapsibleSheet({
     side = "right",
     forceCollapse = false,
     fullWidth = 500,
-    hideOverlay = true
+    hideOverlay = true,
+    pushOffset = 0
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
@@ -91,7 +93,7 @@ export function CollapsibleSheet({
             <SheetContent
             side={side}
             className={cn(
-                "p-0 flex flex-col border-l shadow-2xl overflow-visible transition-all duration-500 ease-in-out",
+                "p-0 flex flex-col border-l shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
@@ -104,12 +106,10 @@ export function CollapsibleSheet({
             onInteractOutside={(e) => e.preventDefault()}
             style={{
                 transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
-                willChange: 'transform',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
-                maxWidth: fullWidth,
-                width: fullWidth,
-                // Ensure immediate positioning on mount if closed
-                transition: (!open && !isCollapsed) ? 'none' : undefined
+                // width and right are now handled by the .right-0 Repulsion System in globals.css
+                // This ensures perfect synchronization with the GlobalHubPanel without React latency.
+                transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
             {/* Vertical Tab (Solapa) - Only visible when collapsed AND open */}
@@ -142,7 +142,7 @@ export function CollapsibleSheet({
             <div className={cn(
                 "flex flex-col h-full bg-background transition-opacity duration-300",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
-                ((isHidden || !open) && !forceCollapse) && "hidden" // DO NOT prune from DOM if forced (modal is likely open)
+                (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes
             )}>
                 {children}
             </div>

@@ -83,9 +83,6 @@ export function OrderHubIntegrated({
             if (showLogistics && hubStatuses.logistics !== 'success' && hubStatuses.logistics !== 'not_applicable') openSet.add('logistics')
         }
 
-        // If all phases are complete, open origin as fallback
-        if (openSet.size === 0) openSet.add('origin')
-
         return openSet
     }, [activeDoc?.id]) // Only recalculate when the document changes, not on every render
 

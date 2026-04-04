@@ -122,9 +122,9 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "flex flex-col transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
+            "flex flex-col transition-all duration-500 border rounded relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
             (variantStyles[variant] || variantStyles.neutral),
-            "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-white/5",
+            "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-background",
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
             {/* Premium Glow Effect */}
@@ -159,7 +159,7 @@ export function PhaseCard({
                 <div className={cn(
                     "p-1 shadow-inner transition-transform duration-500 group-hover/card:scale-110",
                     iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-                    "p-2 flex items-center justify-center rounded-2xl h-9 w-9 shrink-0 shadow-sm border border-white/5"
+                    "p-2 flex items-center justify-center rounded h-9 w-9 shrink-0 shadow-sm border border-white/5"
                 )}>
                     <div className="relative flex items-center justify-center w-full h-full">
                         <Icon className="h-5 w-5 opacity-90" />
@@ -168,8 +168,8 @@ export function PhaseCard({
                         <div className={cn(
                             "absolute -top-2 -right-2 rounded-sm bg-background border shadow-sm",
                             isSuccess && "text-success border-success/30",
-                            isActive && "text-primary border-blue-600/30",
-                            variant === 'destructive' && "text-destructive border-red-600/30",
+                            isActive && "text-primary border-primary/30",
+                            variant === 'destructive' && "text-destructive border-destructive/30",
                             variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
                         )}>
                             {isSuccess && <CheckCircle2 className="size-3.5 bg-success/10 rounded-sm" />}
