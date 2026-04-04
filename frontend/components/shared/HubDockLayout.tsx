@@ -21,36 +21,41 @@ export function HubDockLayout({ children, className }: HubDockLayoutProps) {
     }, [setIsDocked])
 
     return (
-        <div className={cn("flex h-full w-full overflow-hidden relative bg-background", className)}>
+        <div className={cn("flex w-full flex-1 min-h-0 relative", className)}>
             {/* Main Content Area */}
             <motion.div 
                 layout
-                className="flex-1 min-w-0 h-full overflow-auto"
+                className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden relative z-0"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-                {children}
+                <div className="h-full transition-all duration-500">
+                    {children}
+                </div>
             </motion.div>
 
-            {/* Hub Dock */}
+            {/* Hub Dock - NO BORDER, Seamless integration */}
             <AnimatePresence mode="popLayout">
                 {isHubOpen && (
                     <motion.div
-                        initial={{ x: 500, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: 500, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-[500px] h-full border-l bg-background shadow-xl z-10 shrink-0"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 420, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                        className="sticky top-0 bg-background z-10 shrink-0 overflow-visible"
+                        style={{ height: "100%", minHeight: "100%" }}
                     >
-                        {hubConfig && (
-                            <OrderHubPanel
-                                orderId={hubConfig.orderId}
-                                invoiceId={hubConfig.invoiceId}
-                                type={hubConfig.type}
-                                onClose={closeHub}
-                                onActionSuccess={hubConfig.onActionSuccess}
-                                posSessionId={hubConfig.posSessionId}
-                            />
-                        )}
+                        <div className="w-[420px] h-full">
+                            {hubConfig && (
+                                <OrderHubPanel
+                                    orderId={hubConfig.orderId}
+                                    invoiceId={hubConfig.invoiceId}
+                                    type={hubConfig.type}
+                                    onClose={closeHub}
+                                    onActionSuccess={hubConfig.onActionSuccess}
+                                    posSessionId={hubConfig.posSessionId}
+                                />
+                            )}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

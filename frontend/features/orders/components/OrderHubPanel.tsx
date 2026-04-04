@@ -9,7 +9,12 @@ import {
     PlayCircle,
     MinusCircle,
     XCircle,
-    X
+    X,
+    ShoppingCart,
+    FileText,
+    Receipt,
+    User,
+    ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -83,37 +88,40 @@ export function OrderHubPanel({
 
     if (!activeDoc) {
         return (
-            <div className="flex flex-col h-full bg-transparent">
-                <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
-                    <div className="flex flex-col items-center gap-3 text-muted-foreground p-6 rounded-2xl bg-background/50 backdrop-blur-sm border shadow-sm">
-                        <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                        <span className="text-sm font-medium">Cargando datos...</span>
+            <div className="flex flex-col h-full bg-background/50 backdrop-blur-sm">
+                <div className="flex-1 flex flex-col items-center justify-center p-12 gap-6">
+                    <div className="relative flex items-center justify-center">
+                        <div className="h-20 w-20 border-t-2 border-primary rounded-full animate-spin shadow-[0_0_15px_rgba(var(--primary),0.2)]" />
+                        <div className="absolute inset-0 h-20 w-20 border-2 border-primary/10 rounded-full" />
+                        <ShoppingCart className="absolute h-8 w-8 text-primary/40 animate-pulse" />
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-xs font-heading font-black uppercase tracking-widest text-muted-foreground animate-pulse">
+                            Consolidando Entidad
+                        </span>
+                        <div className="h-1 w-24 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary/40 w-1/3 animate-progress transition-all duration-1000 ease-in-out" />
+                        </div>
                     </div>
                 </div>
             </div>
         )
     }
 
-    const prefix = isNoteMode 
-        ? (activeInvoice.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND') 
-        : (type === 'purchase' ? 'OCS' : type === 'obligation' ? 'OB' : 'NV')
-
     return (
-        <div className="flex flex-col h-full bg-transparent">
-            {/* Content wrapped in ScrollArea */}
-            <ScrollArea className="flex-1 w-full" type="always">
-                <div className="p-3 pt-1">
-                    <OrderHubIntegrated 
-                        data={hubData}
-                        type={type}
-                        onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                        openDetails={openDetails}
-                        onEdit={onEdit}
-                        posSessionId={posSessionId}
-                        compact={true}
-                    />
-                </div>
-            </ScrollArea>
+        <div className="flex flex-col h-full bg-background">
+            {/* Content Container - No internal ScrollArea to avoid double scrollbars */}
+            <div className="flex-1 w-full p-4 pt-0">
+                <OrderHubIntegrated 
+                    data={hubData}
+                    type={type}
+                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                    openDetails={openDetails}
+                    onEdit={onEdit}
+                    posSessionId={posSessionId}
+                    compact={true}
+                />
+            </div>
 
             {/* Shared Modal for viewing Details */}
             <TransactionViewModal

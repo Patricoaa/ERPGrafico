@@ -122,9 +122,9 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "flex flex-col transition-all duration-500 border rounded relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
+            "flex flex-col transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
             (variantStyles[variant] || variantStyles.neutral),
-            "hover:translate-y-[-1px] hover:shadow-lg hover:border-white/30 shadow-sm min-h-[auto] bg-background",
+            "hover:translate-y-[-1px] hover:shadow-xl hover:border-primary/30 shadow-md min-h-[auto] bg-background",
             isSuccess && "animate-in fade-in zoom-in-95 duration-700"
         )}>
             {/* Premium Glow Effect */}
@@ -181,8 +181,8 @@ export function PhaseCard({
                 </div>
                 <div className="flex-1">
                     <h3 className={cn(
-                        "font-heading font-extrabold uppercase tracking-widest text-foreground/90 leading-none",
-                        "text-[10px] tracking-wider"
+                        "font-heading font-black uppercase tracking-widest text-foreground leading-none",
+                        "text-[10px]"
                     )}>
                         {title}
                     </h3>
@@ -267,8 +267,8 @@ export function PhaseCard({
             >
                 <div className="overflow-hidden">
                     <CardContent className={cn(
-                        "flex-1 flex flex-col relative z-10",
-                        "p-3 px-5 gap-2"
+                        "flex-1 flex flex-col relative z-10 font-sans",
+                        "p-4 px-5 gap-3"
                     )}>
                         {/* Documents List */}
                         <div className={cn("w-full", "space-y-2")}>

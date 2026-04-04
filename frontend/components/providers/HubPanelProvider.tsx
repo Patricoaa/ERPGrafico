@@ -22,6 +22,7 @@ interface HubPanelContextType {
     triggerAction: (actionId: string) => void
     isDocked: boolean
     setIsDocked: (docked: boolean) => void
+    isHubEffectivelyOpen: boolean // Added unified state
 }
 
 const HubPanelContext = createContext<HubPanelContextType | undefined>(undefined)
@@ -66,6 +67,8 @@ export function HubPanelProvider({
         closeHub()
     }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    const isHubEffectivelyOpen = isHubOpen && !isDocked && !isHubTemporarilyHidden
+
     const value = useMemo(() => ({
         openHub,
         closeHub,
@@ -76,8 +79,9 @@ export function HubPanelProvider({
         actionEngineRef,
         triggerAction,
         isDocked,
-        setIsDocked
-    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isDocked])
+        setIsDocked,
+        isHubEffectivelyOpen
+    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isDocked, isHubEffectivelyOpen])
 
     return (
         <HubPanelContext.Provider value={value}>

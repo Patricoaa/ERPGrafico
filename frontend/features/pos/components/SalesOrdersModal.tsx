@@ -60,16 +60,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
 
     const isDesktop = windowWidth >= 768;
     const isTablet = windowWidth >= 640;
-    // We adjust the HUB width mathematically to match what GlobalHubPanel takes
-    const hubWidth = isDesktop ? 380 : (isTablet ? 350 : windowWidth);
-
     const activePush = isHubOpen && !isSheetCollapsed("POS_SALES");
-    const pushOffset = activePush ? hubWidth : 0;
-    
-    // Volvemos al ancho completo a la izquierda
-    const baseSheetWidth = windowWidth; 
-    const targetWidth = baseSheetWidth - pushOffset;
-    const fullWidth = Math.max(targetWidth, 0); // No min width constraint so it can shrink cleanly on mobile
 
     return (
             <CollapsibleSheet
@@ -78,17 +69,11 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                 onOpenChange={handleOpenChange}
                 tabLabel={viewMode === 'orders' ? 'NOTAS VENTAS' : 'NOTAS C/D'}
                 tabIcon={viewMode === 'orders' ? ShoppingCart : FileText}
-<<<<<<< Updated upstream
-                fullWidth={fullWidth}
-                pushOffset={pushOffset}
+                size="full"
                 className={cn(
-                    "max-w-[100vw] sm:max-w-none sm:w-auto",
+                    "max-w-full w-full",
                     activePush ? "!shadow-[-15px_0_30px_rgba(0,0,0,0.08)] !border-r-0 !ring-0" : "shadow-2xl"
                 )}
-=======
-                size="full"
-                className="max-w-full w-full"
->>>>>>> Stashed changes
             >
                 <div className="flex flex-col h-full bg-transparent backdrop-blur-md">
                     <SheetHeader className="p-6 pb-4 border-b bg-transparent sticky top-0 z-50">

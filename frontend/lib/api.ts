@@ -65,14 +65,6 @@ api.interceptors.response.use(
     }
 );
 
-<<<<<<< Updated upstream
-export async function pollTask(taskId: string, endpoint: string = 'finances/api/report-status/', interval: number = 2000): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const checkStatus = async () => {
-            try {
-                const response = await api.get(`${endpoint}${taskId}/`);
-=======
-
 export async function pollTask(
     taskId: string, 
     endpoint: string = 'finances/api/report-status/', 
@@ -89,22 +81,11 @@ export async function pollTask(
                 const cleanEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
                 const response = await api.get(`${cleanEndpoint}${taskId}/`);
                 
->>>>>>> Stashed changes
                 if (response.data.status === 'SUCCESS') {
                     resolve(response.data.data);
                 } else if (response.data.status === 'FAILURE') {
                     reject(new Error(response.data.error || 'Task failed'));
                 } else {
-<<<<<<< Updated upstream
-                    // PENDING or other state, continue polling
-                    setTimeout(checkStatus, interval);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        };
-        setTimeout(checkStatus, interval);
-=======
                     // PENDING or other state, continue polling with reset interval
                     currentInterval = initialInterval; 
                     setTimeout(checkStatus, currentInterval);
@@ -122,7 +103,6 @@ export async function pollTask(
             }
         };
         setTimeout(checkStatus, currentInterval);
->>>>>>> Stashed changes
     });
 }
 

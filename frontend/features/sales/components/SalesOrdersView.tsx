@@ -35,7 +35,7 @@ interface SalesOrdersViewProps {
 }
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openHub, closeHub, hubConfig } = useHubPanel()
+    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
 
     const { orders, refetch: refetchOrders } = useSalesOrders({
@@ -171,8 +171,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     ]
 
     return (
-        <HubDockLayout>
-            <Tabs value={viewMode} className="w-full flex flex-col h-full">
+        <div className="w-full">
+            <HubDockLayout>
                 <DataTable
                     columns={viewMode === 'orders' ? columns : noteColumns}
                     data={viewMode === 'orders' ? filteredOrders : filteredNotes}
@@ -250,42 +250,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         const rows = table.getRowModel().rows
                         if (rows.length === 0) {
                             return (
-<<<<<<< Updated upstream
-                                <div className="grid gap-3 pt-2">
-                                    {rows.map((row: any) => {
-                                        const item = row.original
-                                        const isSelected = viewMode === 'orders' 
-                                            ? hubConfig?.orderId === item.id 
-                                            : hubConfig?.invoiceId === item.id
-                                            
-                                        return (
-                                            <OrderCard
-                                                key={item.id}
-                                                item={item}
-                                                isSelected={isSelected}
-                                                type={viewMode === 'orders' ? 'sale' : 'note'}
-                                                hideStatus={hideStatusInCards}
-                                                onClick={() => {
-                                                    if (isSelected) {
-                                                        closeHub()
-                                                    } else if (viewMode === 'orders') {
-                                                        openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                                    } else {
-                                                        openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                                    }
-                                                }}
-                                            />
-                                        )
-                                    })}
-                                </div>
-                            )
-                        }}
-                    />
-
-                </Tabs>
-            </div>
-        </div>
-=======
                                 <EmptyState
                                     context="search"
                                     title={viewMode === 'orders' ? "No se encontraron órdenes" : "No se encontraron notas"}
@@ -294,20 +258,28 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             )
                         }
                         return (
-                            <div className="grid gap-3 pt-2">
+                            <div className="grid gap-3 pt-1">
                                 {rows.map((row: any) => {
                                     const item = row.original
+                                    const isSelected = viewMode === 'orders' 
+                                        ? hubConfig?.orderId === item.id 
+                                        : hubConfig?.invoiceId === item.id
+                                        
                                     return (
                                         <OrderCard
                                             key={item.id}
                                             item={item}
+                                            isSelected={isSelected}
+                                            isHubOpen={isHubOpen}
                                             type={viewMode === 'orders' ? 'sale' : 'note'}
                                             hideStatus={hideStatusInCards}
                                             onClick={() => {
-                                                if (viewMode === 'orders') {
-                                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                if (isSelected) {
+                                                    closeHub()
+                                                } else if (viewMode === 'orders') {
+                                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                 } else {
-                                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                 }
                                             }}
                                         />
@@ -317,8 +289,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         )
                     }}
                 />
-            </Tabs>
-        </HubDockLayout>
->>>>>>> Stashed changes
+            </HubDockLayout>
+        </div>
     )
 }
