@@ -260,8 +260,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 onOpenChange={handleOpenChangeProxy}
                 tabLabel="FICHA CONTACTO"
                 tabIcon={User}
-                fullWidth={600}
-                className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw]"
+                size="xl"
+                className="max-w-[95vw] w-[95vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">

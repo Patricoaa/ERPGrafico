@@ -8,7 +8,6 @@ import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Download } from "lucide-react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import type { DashboardKPIData, TrendItem, DashboardPendingItem, TreasuryAccount } from "../types"
 
@@ -47,31 +46,12 @@ export function ReconciliationDashboard() {
         }
     }
 
-    const handleExport = async () => {
-        try {
-            const params: any = {}
-            if (selectedAccount !== 'all') params.treasury_account = selectedAccount
-            const queryString = new URLSearchParams(params).toString()
-            const url = `${api.defaults.baseURL}/treasury/reconciliation-reports/export_report/?${queryString}`
-            window.open(url, '_blank')
-        } catch (error) {
-            console.error("Export error", error)
-        }
-    }
+
 
     return (
         <div className="space-y-6">
             {/* Level 1: Primary Actions */}
-            <div className="flex items-center justify-end px-1">
-                <Button 
-                    variant="outline" 
-                    onClick={handleExport}
-                    className="h-9 px-4 font-black uppercase tracking-widest text-[10px] border-border/60 hover:bg-muted/50 transition-all rounded-[0.25rem]"
-                >
-                    <Download className="mr-2 h-3.5 w-3.5" />
-                    Exportar reporte consolidado
-                </Button>
-            </div>
+
 
             {/* Level 2: Filters & Account Selection */}
             <div className="flex items-center justify-between gap-4 px-1 pb-2 border-b border-border/10">

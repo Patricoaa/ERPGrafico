@@ -18,7 +18,11 @@ interface CollapsibleSheetProps {
     forceCollapse?: boolean
     fullWidth?: number
     hideOverlay?: boolean
+<<<<<<< Updated upstream
     pushOffset?: number
+=======
+    size?: "sm" | "md" | "lg" | "xl" | "full"
+>>>>>>> Stashed changes
 }
 
 export function CollapsibleSheet({
@@ -33,10 +37,26 @@ export function CollapsibleSheet({
     forceCollapse = false,
     fullWidth = 500,
     hideOverlay = true,
+<<<<<<< Updated upstream
     pushOffset = 0
+=======
+    size
+>>>>>>> Stashed changes
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
+
+    // Map named sizes to pixel widths
+    const sizeMap: Record<string, number> = {
+        sm: 442,
+        md: 682,
+        lg: 882,
+        xl: 1082,
+        full: typeof window !== 'undefined' ? window.innerWidth : 1600
+    }
+    
+    // Prioritize size prop, fallback to fullWidth
+    const calculatedWidth = size ? sizeMap[size] : fullWidth
 
     useEffect(() => {
         setIsMounted(true)
@@ -44,12 +64,12 @@ export function CollapsibleSheet({
 
     useEffect(() => {
         if (open) {
-            registerSheet(sheetId, fullWidth, forceCollapse)
+            registerSheet(sheetId, calculatedWidth, forceCollapse)
         } else {
             unregisterSheet(sheetId)
         }
         return () => unregisterSheet(sheetId)
-    }, [open, sheetId, fullWidth, forceCollapse, registerSheet, unregisterSheet])
+    }, [open, sheetId, calculatedWidth, forceCollapse, registerSheet, unregisterSheet])
 
     const isCollapsed = isSheetCollapsed(sheetId)
     const offset = getSheetOffset(sheetId)
@@ -107,9 +127,17 @@ export function CollapsibleSheet({
             style={{
                 transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
+<<<<<<< Updated upstream
                 // width and right are now handled by the .right-0 Repulsion System in globals.css
                 // This ensures perfect synchronization with the GlobalHubPanel without React latency.
                 transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
+=======
+                // If full size, use 100vw but keep offset for layering if needed
+                maxWidth: size === "full" ? '100vw' : calculatedWidth,
+                width: size === "full" ? '100vw' : calculatedWidth,
+                // Ensure immediate positioning on mount if closed
+                transition: (!open && !isCollapsed) ? 'none' : undefined
+>>>>>>> Stashed changes
             }}
         >
             {/* Vertical Tab (Solapa) - Only visible when collapsed AND open */}

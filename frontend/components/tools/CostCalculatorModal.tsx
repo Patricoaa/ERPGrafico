@@ -215,8 +215,8 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 onOpenChange={handleOpenChangeProxy}
                 tabLabel="CALCULADORA"
                 tabIcon={Calculator}
-                fullWidth={fullWidth}
-                className="max-w-[90vw] w-[90vw] sm:max-w-[85vw] sm:w-[85vw]"
+                size="xl"
+                className="max-w-[90vw] w-[90vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">

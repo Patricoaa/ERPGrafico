@@ -113,7 +113,7 @@ export function OrderActionPanel({
                 onOpenChange={onOpenChange}
                 tabLabel="Acciones"
                 tabIcon={Zap}
-                fullWidth={500}
+                size="md"
             >
                 <div className="flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4">

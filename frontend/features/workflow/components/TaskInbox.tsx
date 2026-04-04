@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRef } from "react"
+import { HubDockLayout } from "@/components/shared/HubDockLayout"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -420,101 +421,103 @@ export function TaskInbox() {
     )
 
     return (
-        <div className="space-y-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 border border-border/50 backdrop-blur-md rounded-xl">
-                    <TabsTrigger
-                        value="approvals"
-                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
-                    >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Aprobaciones</span>
-                        <span className="sm:hidden">Aprob.</span>
-                        <span className={cn(
-                            "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
-                            "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
-                            approvalsPending.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
-                        )}>
-                            {approvalsPending.length}
-                        </span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="tasks"
-                        className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
-                    >
-                        <ListTodo className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Tareas</span>
-                        <span className="sm:hidden">Tareas</span>
-                        <span className={cn(
-                            "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
-                            "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
-                            operationalTasks.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
-                        )}>
-                            {operationalTasks.length}
-                        </span>
-                    </TabsTrigger>
-                </TabsList>
+        <HubDockLayout>
+            <div className="space-y-4 p-4 h-full overflow-auto">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 border border-border/50 backdrop-blur-md rounded-xl">
+                        <TabsTrigger
+                            value="approvals"
+                            className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
+                        >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Aprobaciones</span>
+                            <span className="sm:hidden">Aprob.</span>
+                            <span className={cn(
+                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
+                                "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
+                                approvalsPending.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                            )}>
+                                {approvalsPending.length}
+                            </span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="tasks"
+                            className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
+                        >
+                            <ListTodo className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Tareas</span>
+                            <span className="sm:hidden">Tareas</span>
+                            <span className={cn(
+                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
+                                "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
+                                operationalTasks.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                            )}>
+                                {operationalTasks.length}
+                            </span>
+                        </TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="approvals" className="mt-4">
-                    {loading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
-                            ))}
-                        </div>
-                    ) : (
-                        <>
-                            {approvalsPending.length > 0 && (
-                                <CollapsibleSection
-                                    title="Pendientes"
-                                    count={approvalsPending.length}
-                                    expanded={approvalsExpanded}
-                                    onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
-                                >
-                                    {approvalsPending.map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
-                            )}
+                    <TabsContent value="approvals" className="mt-4">
+                        {loading ? (
+                            <div className="space-y-2">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+                                ))}
+                            </div>
+                        ) : (
+                            <>
+                                {approvalsPending.length > 0 && (
+                                    <CollapsibleSection
+                                        title="Pendientes"
+                                        count={approvalsPending.length}
+                                        expanded={approvalsExpanded}
+                                        onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
+                                    >
+                                        {approvalsPending.map(task => renderTaskCard(task))}
+                                    </CollapsibleSection>
+                                )}
 
-                            {approvalsCompleted.length > 0 && (
-                                <CollapsibleSection
-                                    title="Completadas"
-                                    count={approvalsCompleted.length}
-                                    expanded={completedExpanded}
-                                    onToggle={() => setCompletedExpanded(!completedExpanded)}
-                                >
-                                    {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
-                            )}
+                                {approvalsCompleted.length > 0 && (
+                                    <CollapsibleSection
+                                        title="Completadas"
+                                        count={approvalsCompleted.length}
+                                        expanded={completedExpanded}
+                                        onToggle={() => setCompletedExpanded(!completedExpanded)}
+                                    >
+                                        {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
+                                    </CollapsibleSection>
+                                )}
 
-                            {approvalTasks.length === 0 && (
-                                <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
-                                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-xs">No tienes aprobaciones</p>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </TabsContent>
+                                {approvalTasks.length === 0 && (
+                                    <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                                        <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                        <p className="text-xs">No tienes aprobaciones</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="tasks" className="mt-4">
-                    {loading ? (
-                        <div className="space-y-2">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
-                            ))}
-                        </div>
-                    ) : operationalTasks.length === 0 ? (
-                        <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
-                            <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                            <p className="text-xs">No tienes tareas pendientes</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {operationalTasks.map(task => renderTaskCard(task))}
-                        </div>
-                    )}
-                </TabsContent>
-            </Tabs>
-        </div>
+                    <TabsContent value="tasks" className="mt-4">
+                        {loading ? (
+                            <div className="space-y-2">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+                                ))}
+                            </div>
+                        ) : operationalTasks.length === 0 ? (
+                            <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                                <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                <p className="text-xs">No tienes tareas pendientes</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {operationalTasks.map(task => renderTaskCard(task))}
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </HubDockLayout>
     )
 }
