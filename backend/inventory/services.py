@@ -23,7 +23,7 @@ class StockService:
         quantity_orig = quantity
 
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("No se encontró la configuración contable global.")
 

@@ -59,7 +59,7 @@ class BillingService:
         
         # Calculate POS Fallback Credit
         from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.objects.first()
+        acc_settings = AccountingSettings.get_solo()
         # Ensure we use a safe division and handle None/0
         fb_val = acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')
         fallback_percentage = Decimal(str(fb_val)) / Decimal('100.0')
@@ -81,7 +81,7 @@ class BillingService:
 
         # Calculate POS Fallback Credit
         from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.objects.first()
+        acc_settings = AccountingSettings.get_solo()
         fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else Decimal('0')) / Decimal('100.0')
         pos_credit = total * fallback_percentage
 
@@ -253,7 +253,7 @@ class BillingService:
         )
 
         # 2. Accounting Entry via Mapper
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         description, reference, items = AccountingMapper.get_entries_for_sale_invoice(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -360,7 +360,7 @@ class BillingService:
         )
 
         # 2. Accounting Entry via Mapper (includes tax capitalization logic for Boletas)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         description, reference, items = AccountingMapper.get_entries_for_purchase_bill(invoice, settings)
         entry = JournalEntryService.create_entry(
             {
@@ -585,7 +585,7 @@ class BillingService:
 
             # Fallback Logic: check if we can bypass credit_enabled check
             from accounting.models import AccountingSettings
-            acc_settings = AccountingSettings.objects.first()
+            acc_settings = AccountingSettings.get_solo()
             fallback_percentage = (acc_settings.pos_default_credit_percentage if acc_settings else 0) / Decimal('100.0')
             allowed_fallback = order.total * fallback_percentage
             

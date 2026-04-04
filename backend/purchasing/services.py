@@ -278,7 +278,7 @@ class PurchasingService:
         
         total_amount = Decimal('0.00')
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         for line in receipt.lines.all():
             # 1. Create Stock Move (OUT) - quantity is already negative in receipt line
@@ -388,7 +388,7 @@ class PurchasingService:
         from accounting.services import JournalEntryService, AccountingMapper
         from datetime import datetime
 
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("No se encontró configuración contable.")
 
@@ -582,7 +582,7 @@ class PurchasingService:
         from inventory.models import StockMove
         from billing.services import BillingService
         
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
              raise ValidationError("No se encontró configuración contable.")
         

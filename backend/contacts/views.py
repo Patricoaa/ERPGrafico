@@ -377,7 +377,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if total_balance <= 0:
             return Response({"error": "El contacto no tiene deuda activa para castigar."}, status=400)
             
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings or not settings.default_uncollectible_expense_account:
             return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada en Contabilidad."}, status=400)
             
@@ -503,7 +503,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": "Debe especificar el monto recuperado."}, status=400)
             
         amount = Decimal(amount_str)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         # We need a recovery account. If not set, use uncollectible expense as negative (reversal)
         # or a generic other income account.

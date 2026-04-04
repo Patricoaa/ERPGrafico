@@ -111,7 +111,7 @@ class TreasuryReturnService:
         )
         
         # 4. Create accounting entry (separate reversal entry)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         # Determine accounts based on payment type
         if payment.sale_order:

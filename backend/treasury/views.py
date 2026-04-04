@@ -875,7 +875,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if fund_source_id:
                 try:
                     from accounting.models import AccountingSettings
-                    settings = AccountingSettings.objects.first()
+                    settings = AccountingSettings.get_solo()
                     fund_source = TreasuryAccount.objects.get(id=fund_source_id)
                     
                     # book_balance = fund_source.account.balance # This might be inaccurate if multiple sessions use it
@@ -1230,7 +1230,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             if amount <= 0:
                 return Response({'error': 'El monto debe ser mayor a cero'}, status=status.HTTP_400_BAD_REQUEST)
             
-            settings = AccountingSettings.objects.first()
+            settings = AccountingSettings.get_solo()
             if not settings:
                 return Response({'error': 'Configuración contable no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
             
