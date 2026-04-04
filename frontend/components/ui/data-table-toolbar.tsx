@@ -99,7 +99,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     return (
         <div className="w-full px-1 mb-0">
             {/* ─── UNIFIED TOOLBAR: LEFT (SEARCH) | CENTER (ACTIONS) | RIGHT (TOOLS) ─── */}
-            <div className="flex items-center justify-between gap-4 h-8 w-full relative">
+            <div className="flex items-center justify-between gap-4 h-9 w-full relative">
                 
                 {/* Left Section: Search & Batch Actions (flex-1) */}
                 <div className="flex-1 flex items-center gap-3 min-w-0">

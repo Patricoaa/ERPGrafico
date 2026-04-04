@@ -246,7 +246,7 @@ export function DataTable<TData, TValue>({
             <div className="relative space-y-1">
                 {/* Toolbar Section (Outside) */}
                 {showToolbar && (
-                    <div className={cn("px-0", toolbarClassName)}>
+                    <div className={cn("px-1", toolbarClassName)}>
                         <DataTableToolbar
                             table={table}
                             filterColumn={filterColumn}

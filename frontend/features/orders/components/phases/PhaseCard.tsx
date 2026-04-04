@@ -1,10 +1,8 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { ActionCategory } from "../ActionCategory"
-import { Eye, Settings2, CheckCircle2, PlayCircle, MinusCircle, XCircle, ChevronDown } from "lucide-react"
+import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 
@@ -26,6 +24,7 @@ interface PhaseCardProps {
     posSessionId?: number | null
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
+    className?: string
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -50,6 +49,7 @@ export function PhaseCard({
     posSessionId = null,
     isTimeline = false,
     onModalChange = () => { },
+    className,
     // Accordion props
     collapsible = false,
     isOpen: controlledOpen,
@@ -79,18 +79,11 @@ export function PhaseCard({
         onOpenChange?.(nextOpen)
     }
 
-    const variantStyles: Record<string, string> = {
-        success: 'border-success/40 bg-success/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]',
-        active: 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(var(--primary),0.1)]',
-        neutral: 'border-white/10 bg-white/5',
-        destructive: 'border-destructive/40 bg-destructive/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
-    }
-
     const iconStyles: Record<string, string> = {
-        success: 'bg-success/20 text-success',
-        active: 'bg-primary/20 text-primary',
-        neutral: 'bg-white/10 text-muted-foreground',
-        destructive: 'bg-destructive/20 text-destructive'
+        success: 'text-success',
+        active: 'text-primary',
+        neutral: 'text-muted-foreground',
+        destructive: 'text-destructive'
     }
 
     // Separate actions into primary (closing) and secondary
@@ -116,24 +109,15 @@ export function PhaseCard({
         return { primary, secondary }
     })()
 
-    // Collapsed summary for accordion mode
-    const collapsedDocCount = documents.length
-    const collapsedActionCount = categorizedActions.primary.length
-
     return (
-        <Card className={cn(
-            "flex flex-col transition-all duration-500 border rounded-2xl relative overflow-hidden backdrop-blur-md group/card flex-shrink-0",
-            (variantStyles[variant] || variantStyles.neutral),
-            "hover:translate-y-[-1px] hover:shadow-xl hover:border-primary/30 shadow-md min-h-[auto] bg-background",
-            isSuccess && "animate-in fade-in zoom-in-95 duration-700"
+        <div className={cn(
+            "flex flex-col transition-all duration-300 relative group/card flex-shrink-0",
+            "border-b-4 border-border/40 first:border-t-4",
+            isActive && "border-primary/60",
+            isSuccess && "opacity-80 grayscale-[0.3] hover:opacity-100 hover:grayscale-0",
+            className
         )}>
-            {/* Premium Glow Effect */}
-            <div className="absolute -inset-px bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-            {/* Background Gradient for Success */}
-            {isSuccess && (
-                <div className="absolute inset-0 bg-gradient-to-br from-success/10 to-transparent pointer-events-none" />
-            )}
 
             {/* HEADER — Clickable when collapsible */}
             <div
@@ -150,58 +134,45 @@ export function PhaseCard({
                     }
                 } : undefined}
                 className={cn(
-                    "border-b border-white/10 flex items-center shrink-0 transition-all",
-                    "bg-white/5 p-3 px-4 gap-3",
-                    collapsible && "cursor-pointer hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-inset select-none",
-                    collapsible && !open && "border-b-0"
+                    "flex items-center shrink-0 transition-all",
+                    "p-3 px-4 gap-3",
+                    collapsible && "cursor-pointer select-none"
                 )}
             >
                 <div className={cn(
-                    "p-1 shadow-inner transition-transform duration-500 group-hover/card:scale-110",
+                    "transition-all duration-500 group-hover/card:scale-105",
                     iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-                    "p-2 flex items-center justify-center rounded h-9 w-9 shrink-0 shadow-sm border border-white/5"
+                    "p-2 flex items-center justify-center rounded-[0.25rem] h-9 w-9 shrink-0 border-2 border-border/80"
                 )}>
                     <div className="relative flex items-center justify-center w-full h-full">
-                        <Icon className="h-5 w-5 opacity-90" />
+                        <Icon className="h-4 w-4 opacity-90" />
 
-                        {/* Mini Status Badge */}
+                        {/* Mini Status Badge - Simplified to a Small Dot */}
                         <div className={cn(
-                            "absolute -top-2 -right-2 rounded-sm bg-background border shadow-sm",
-                            isSuccess && "text-success border-success/30",
-                            isActive && "text-primary border-primary/30",
-                            variant === 'destructive' && "text-destructive border-destructive/30",
-                            variant === 'neutral' && !isActive && !isSuccess && "text-muted-foreground border-muted-foreground/30"
-                        )}>
-                            {isSuccess && <CheckCircle2 className="size-3.5 bg-success/10 rounded-sm" />}
-                            {isActive && <PlayCircle className="size-3.5 bg-primary/10 rounded-sm" />}
-                            {variant === 'destructive' && <XCircle className="size-3.5 bg-destructive/10 rounded-sm" />}
-                            {variant === 'neutral' && !isActive && !isSuccess && <MinusCircle className="size-3.5 bg-muted/10 rounded-sm" />}
-                        </div>
+                            "absolute -top-1 -right-1 h-2 w-2 rounded-full border shadow-sm",
+                            isSuccess && "bg-success border-background",
+                            isActive && "bg-primary border-background",
+                            variant === 'destructive' && "bg-destructive border-background",
+                            variant === 'neutral' && !isActive && !isSuccess && "bg-muted-foreground border-background"
+                        )} />
                     </div>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
-                        "font-heading font-black uppercase tracking-widest text-foreground leading-none",
-                        "text-[10px]"
+                        "font-heading font-black uppercase tracking-[0.2em] text-foreground leading-none",
+                        "text-[11.5px]"
                     )}>
                         {title}
                     </h3>
-                    {/* Collapsed summary — visible only when collapsed */}
-                    {collapsible && !open && (
-                        <p className="text-[9px] text-muted-foreground/60 mt-1 tracking-wide">
-                            {collapsedDocCount > 0 && `${collapsedDocCount} doc${collapsedDocCount > 1 ? 's' : ''}`}
-                            {collapsedDocCount > 0 && collapsedActionCount > 0 && ' · '}
-                            {collapsedActionCount > 0 && `${collapsedActionCount} acción${collapsedActionCount > 1 ? 'es' : ''}`}
-                            {collapsedDocCount === 0 && collapsedActionCount === 0 && emptyMessage}
-                        </p>
+                    {isSuccess && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                     )}
                 </div>
 
-                {/* Header Action Icons */}
-                <div className="flex items-center gap-1.5">
-                    {categorizedActions.secondary.filter((a: any) =>
-                        ['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                    ).map((action: any, idx: number) => {
+                {/* Unified Action Icons — Primary + Shortcuts */}
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {/* Primary actions — prominent style */}
+                    {!isSuccess && categorizedActions.primary.map((action: any, idx: number) => {
                         const disabled = action.isDisabled?.(order) || false
                         let tooltipText = action.label
                         if (disabled && action.disabledTooltip) {
@@ -211,7 +182,7 @@ export function PhaseCard({
                         }
 
                         return (
-                            <Tooltip key={idx}>
+                            <Tooltip key={`p-${idx}`}>
                                 <TooltipTrigger asChild>
                                     <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
                                         <Button
@@ -219,19 +190,64 @@ export function PhaseCard({
                                             size="icon"
                                             disabled={disabled}
                                             className={cn(
-                                                "h-7 w-7 rounded transition-all active:scale-90 border border-white/10 shadow-sm",
-                                                "bg-white/5 hover:bg-white/10",
-                                                (action.id.includes('note')) && "text-warning bg-warning/5 border-warning/20 hover:bg-warning/10 hover:border-warning/40",
-                                                action.id === 'payment-history' && "text-primary bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40",
+                                                "h-7 w-7 rounded transition-all active:scale-90",
+                                                "border-2 border-primary/40 bg-primary/10 text-primary",
+                                                "hover:bg-primary/20 hover:border-primary/60",
+                                                action.variant === 'destructive' && "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/60",
                                                 disabled && "pointer-events-none"
                                             )}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                console.log(`[PhaseCard] Triggering global action: ${action.id}`);
                                                 triggerAction(action.id);
                                             }}
                                         >
-                                            <action.icon className="h-4 w-4" />
+                                            <action.icon className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{tooltipText}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )
+                    })}
+
+                    {/* Separator between primary and secondary if both exist */}
+                    {!isSuccess && categorizedActions.primary.length > 0 && categorizedActions.secondary.length > 0 && (
+                        <div className="h-4 w-[1px] bg-border/20 mx-0.5" />
+                    )}
+
+                    {/* Secondary/shortcut actions — ghost style */}
+                    {categorizedActions.secondary.map((action: any, idx: number) => {
+                        const disabled = action.isDisabled?.(order) || false
+                        let tooltipText = action.label
+                        if (disabled && action.disabledTooltip) {
+                            tooltipText = typeof action.disabledTooltip === 'function'
+                                ? action.disabledTooltip(order)
+                                : action.disabledTooltip
+                        }
+
+                        return (
+                            <Tooltip key={`s-${idx}`}>
+                                <TooltipTrigger asChild>
+                                    <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            disabled={disabled}
+                                            className={cn(
+                                                "h-7 w-7 rounded transition-all active:scale-90 border border-white/5",
+                                                "bg-transparent hover:bg-white/5",
+                                                (action.id.includes('note')) && "text-warning border-warning/20 hover:bg-warning/10 hover:border-warning/40",
+                                                action.id === 'payment-history' && "text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/40",
+                                                disabled && "pointer-events-none"
+                                            )}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                triggerAction(action.id);
+                                            }}
+                                        >
+                                            <action.icon className="h-3.5 w-3.5" />
                                         </Button>
                                     </div>
                                 </TooltipTrigger>
@@ -265,28 +281,21 @@ export function PhaseCard({
                     open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                 )}
             >
-                <div className="overflow-hidden">
-                    <CardContent className={cn(
-                        "flex-1 flex flex-col relative z-10 font-sans",
-                        "p-4 px-5 gap-3"
+                <div className="overflow-hidden min-h-0">
+                    <div className={cn(
+                        "flex flex-col relative z-10 font-sans p-2 px-4 gap-2"
                     )}>
                         {/* Documents List */}
-                        <div className={cn("w-full", "space-y-2")}>
+                        <div className={cn("w-full", "space-y-1.5")}>
                             {documents.length > 0 ? (
                                 documents.map((doc: any, i: number) => (
                                     <div key={i} className={cn(
-                                        "flex items-center justify-between bg-muted/5 border-border/40 hover:bg-muted/10 transition-all duration-300 group/doc",
-                                        "rounded-2xl border min-h-[2.5rem] py-2 px-3 shadow-sm",
-                                        doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 bg-muted0/5 cursor-not-allowed",
-                                        doc.isWarning && "bg-warning/5 border-warning/20 hover:bg-warning/15"
+                                        "flex items-center justify-between border-border/30 hover:bg-white/5 transition-all duration-300 group/doc",
+                                        "rounded-[0.25rem] border-2 min-h-[2.25rem] py-1.5 px-3",
+                                        doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 cursor-not-allowed",
+                                        doc.isWarning && "border-warning/40 hover:bg-warning/5"
                                     )}>
                                         <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={cn(
-                                                "flex items-center justify-center bg-background rounded-sm border border-border/20 shadow-sm shrink-0",
-                                                "h-8 w-8"
-                                            )}>
-                                                <doc.icon className="text-primary/80 h-4 w-4" />
-                                            </div>
                                             <div className="flex flex-col overflow-hidden">
                                                 <div className="flex flex-col justify-center">
                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
@@ -311,7 +320,7 @@ export function PhaseCard({
                                                     key={idx}
                                                     variant="ghost"
                                                     size="icon"
-                                                    className={cn("rounded", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-8 w-8")}
+                                                    className={cn("rounded", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-7 w-7")}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         e.preventDefault();
@@ -319,14 +328,14 @@ export function PhaseCard({
                                                     }}
                                                     title={action.title}
                                                 >
-                                                    <action.icon className="h-4 w-4" />
+                                                    <action.icon className="h-3.5 w-3.5" />
                                                 </Button>
                                             ))}
 
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-8 w-8")}
+                                                className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-7 w-7")}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     e.preventDefault();
@@ -335,13 +344,13 @@ export function PhaseCard({
                                                 disabled={doc.disabled}
                                                 title="Ver Detalles"
                                             >
-                                                <Eye className="h-4 w-4" />
+                                                <Eye className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="flex flex-col items-center justify-center py-2 border border-dashed border-border/20 rounded-2xl bg-muted/5">
+                                <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-[0.25rem]">
                                     <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                                 </div>
                             )}
@@ -351,60 +360,14 @@ export function PhaseCard({
                         {children && (
                             <div className={cn(
                                 "flex-1 flex flex-col justify-center",
-                                "my-2 px-1 text-[12px]"
+                                "px-1 text-[12px]"
                             )}>
                                 {children}
                             </div>
                         )}
-
-                        {/* Actions Section */}
-                        <div className="mt-auto">
-                            {!isSuccess && categorizedActions.primary.length > 0 && (
-                                <ActionCategory
-                                    category={{ actions: categorizedActions.primary } as any}
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    layout="grid"
-                                    compact={true}
-                                    showBadge={false}
-                                    posSessionId={posSessionId}
-                                />
-                            )}
-
-                            {isSuccess && (
-                                <div className="flex flex-col items-center justify-center py-2 opacity-30">
-                                    <Settings2 className="h-3 w-3 text-muted-foreground mb-1" />
-                                    <span className="text-[7px] text-muted-foreground font-black uppercase tracking-widest">Etapa Completada</span>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-
-                    {/* Bottom Ghost Actions */}
-                    {categorizedActions.secondary.filter((a: any) =>
-                        !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                    ).length > 0 && (
-                            <div className="pb-1 px-4">
-                                <ActionCategory
-                                    category={{
-                                        actions: categorizedActions.secondary.filter((a: any) =>
-                                            !['create-note', 'create-credit-note', 'create-debit-note', 'payment-history'].includes(a.id)
-                                        )
-                                    } as any}
-                                    order={order}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    layout="flex"
-                                    compact={true}
-                                    ghost={true}
-                                    showBadge={false}
-                                    posSessionId={posSessionId}
-                                />
-                            </div>
-                        )}
+                    </div>
                 </div>
             </div>
-        </Card>
+        </div>
     )
 }

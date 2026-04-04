@@ -26,7 +26,7 @@ export function GlobalHubPanel() {
     const panelRef = useRef<HTMLDivElement>(null)
 
     return (
-        <AnimatePresence mode="wait">
+        <>
             {/* STABLE ACTION ENGINE (Headless) - ALWAYS RENDERED IF OPEN */}
             {isHubOpen && (
                 <div className="sr-only" aria-hidden="true" id="global-action-engine">
@@ -48,28 +48,31 @@ export function GlobalHubPanel() {
                 </div>
             )}
 
-            {/* Hub Panel (Right/Fixed) - STRICTLY MUTUALLY EXCLUSIVE WITH DOCK */}
-            {showFixedPanel && (
-                <motion.div 
-                    ref={panelRef}
-                    initial={{ x: "100%", opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: "100%", opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l shadow-2xl bg-background flex flex-col pointer-events-auto"
-                >
-                    {hubConfig && (
-                        <OrderHubPanel
-                            orderId={hubConfig.orderId}
-                            invoiceId={hubConfig.invoiceId}
-                            type={hubConfig.type}
-                            onClose={closeHub}
-                            onActionSuccess={hubConfig.onActionSuccess}
-                            posSessionId={hubConfig.posSessionId}
-                        />
-                    )}
-                </motion.div>
-            )}
-        </AnimatePresence>
+            <AnimatePresence mode="wait">
+                {/* Hub Panel (Right/Fixed) - STRICTLY MUTUALLY EXCLUSIVE WITH DOCK */}
+                {showFixedPanel && (
+                    <motion.div 
+                        key="global-hub-fixed-panel"
+                        ref={panelRef}
+                        initial={{ x: "100%", opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: "100%", opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l shadow-2xl bg-background flex flex-col pointer-events-auto"
+                    >
+                        {hubConfig && (
+                            <OrderHubPanel
+                                orderId={hubConfig.orderId}
+                                invoiceId={hubConfig.invoiceId}
+                                type={hubConfig.type}
+                                onClose={closeHub}
+                                onActionSuccess={hubConfig.onActionSuccess}
+                                posSessionId={hubConfig.posSessionId}
+                            />
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     )
 }

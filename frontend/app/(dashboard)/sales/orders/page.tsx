@@ -60,7 +60,7 @@ export default function SalesOrdersPage({ searchParams }: PageProps) {
                 ) : null}
             />
 
-            <Tabs value={viewMode} className="w-full space-y-0">
+            <Tabs value={viewMode} className="w-full">
                 <div className="-mx-8">
                     <PageTabs tabs={tabs} activeValue={viewMode} />
                 </div>

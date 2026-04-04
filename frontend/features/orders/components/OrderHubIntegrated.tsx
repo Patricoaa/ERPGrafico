@@ -12,6 +12,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { ActionCategory } from "./ActionCategory"
 import { cn } from "@/lib/utils"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { getHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderHubIntegratedProps {
@@ -117,7 +118,8 @@ export function OrderHubIntegrated({
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col w-full min-h-full pb-8">
                 <div className="w-full">
-                    <div className="flex flex-col gap-3 py-1 px-1">
+                    <IndustrialCard className="bg-transparent border-white/5 overflow-hidden rounded-[0.25rem]">
+                        <div className="flex flex-col">
                         {/* 1. Origen */}
                         <PhaseWrapper index={visiblePhases.indexOf('origin')}>
                             <OriginPhase
@@ -210,8 +212,9 @@ export function OrderHubIntegrated({
                             </PhaseWrapper>
                         )}
                     </div>
-                </div>
+                </IndustrialCard>
             </div>
+        </div>
         </TooltipProvider>
     )
 }
