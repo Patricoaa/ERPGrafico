@@ -45,6 +45,11 @@ export function TerminalBatchesManagement({
         from: subDays(new Date(), 30),
         to: new Date()
     })
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     useEffect(() => {
         if (externalOpenBatch) {
@@ -159,7 +164,7 @@ export function TerminalBatchesManagement({
             <DataTable
                 columns={columns}
                 data={batches}
-                isLoading={isLoading}
+                isLoading={!isMounted || isLoading}
                 cardMode
                 useAdvancedFilter={true}
                 facetedFilters={[

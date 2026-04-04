@@ -341,7 +341,7 @@ def get_financial_analysis_data(request):
         endpoint='analysis',
         params={'start': start_date, 'end': str(end_date)},
         timeout=90,
-        generator=lambda: _compute_analysis(end_date_obj, start_date_obj),
+        generator=lambda end_date_obj=end_date_obj, start_date_obj=start_date_obj: _compute_analysis(end_date_obj, start_date_obj),
     )
     return Response(data)
 
