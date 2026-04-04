@@ -199,11 +199,14 @@ class WorkflowSettings(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1  # Force singleton
         super().save(*args, **kwargs)
+        # Invalidate Redis cache
+        from core.cache import invalidate_singleton, CACHE_KEY_WORKFLOW_SETTINGS
+        invalidate_singleton(CACHE_KEY_WORKFLOW_SETTINGS)
 
     @classmethod
     def get_settings(cls):
-        settings, _ = cls.objects.get_or_create(pk=1)
-        return settings
+        from core.cache import cached_singleton, CACHE_KEY_WORKFLOW_SETTINGS
+        return cached_singleton(cls, CACHE_KEY_WORKFLOW_SETTINGS)
 
 class NotificationRule(models.Model):
     """

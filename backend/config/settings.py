@@ -195,6 +195,15 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'EXCEPTION_HANDLER': 'core.api.exceptions.erpgrafico_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/minute',
+        'user': '300/minute',
+        'heavy_report': '10/minute',
+    },
 }
 
 from datetime import timedelta
@@ -203,9 +212,26 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
+# ── Redis ────────────────────────────────────────────────────────────────────
+# Central Redis URL. DB selection:
+#   DB 0 — Celery Broker
+#   DB 1 — Celery Results
+#   DB 2 — Django Cache (general cache, singletons, throttle counters)
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
+
+# Django Cache Framework — backed by Redis DB 2
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f'{REDIS_URL}/2',
+        'KEY_PREFIX': 'erp',
+        'TIMEOUT': 300,  # 5 min default TTL
+    }
+}
+
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', f'{REDIS_URL}/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'{REDIS_URL}/1')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

@@ -93,6 +93,15 @@ class CompanySettings(models.Model):
 
         super().save(*args, **kwargs)
 
+        # Invalidate Redis cache
+        from core.cache import invalidate_singleton, CACHE_KEY_COMPANY_SETTINGS
+        invalidate_singleton(CACHE_KEY_COMPANY_SETTINGS)
+
+    @classmethod
+    def get_solo(cls):
+        from core.cache import cached_singleton, CACHE_KEY_COMPANY_SETTINGS
+        return cached_singleton(cls, CACHE_KEY_COMPANY_SETTINGS)
+
 class ActionLog(models.Model):
     class Type(models.TextChoices):
         LOGIN = 'LOGIN', _('Inicio de Sesión')
