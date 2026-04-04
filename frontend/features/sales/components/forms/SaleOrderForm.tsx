@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
@@ -43,6 +44,15 @@ import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { PricingUtils } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 import { useStockValidation } from "@/hooks/useStockValidation"
+import { SaleOrder, SaleOrderLine, SaleOrderPayload } from "../../types"
+import { Product } from "@/features/inventory/types"
+
+interface UoM {
+    id: number
+    name: string
+    category: number
+    ratio: number
+}
 
 const saleLineSchema = z.object({
     id: z.number().optional(),
@@ -66,9 +76,9 @@ const saleOrderSchema = z.object({
 type SaleOrderFormValues = z.infer<typeof saleOrderSchema>
 
 interface SaleOrderFormProps {
-    onSuccess?: (order?: any) => void
-    onConfirmCheckout?: (data: any) => void
-    initialData?: any
+    onSuccess?: (order?: SaleOrder) => void
+    onConfirmCheckout?: (data: SaleOrderPayload) => void
+    initialData?: SaleOrder | Partial<SaleOrder>
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerVariant?: "default" | "circular"
@@ -110,15 +120,15 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
-    const [uoms, setUoMs] = useState<any[]>([])
+    const [products, setProducts] = useState<Product[]>([])
+    const [uoms, setUoMs] = useState<UoM[]>([])
     const { checkAvailability, validateLine, getStockMessage } = useStockValidation()
 
     const form = useForm<SaleOrderFormValues>({
         resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
-            lines: initialData.lines.map((l: any) => ({
+            lines: initialData?.lines?.map((l: any) => ({
                 id: l.id,
                 product: l.product?.toString() || "",
                 description: l.description,
@@ -129,7 +139,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 tax_rate: parseFloat(l.tax_rate) || 19,
                 custom_specs: l.custom_specs || {},
                 manufacturing_data: l.manufacturing_data || null,
-            }))
+            })) || []
         } : {
             payment_method: "CREDIT",
             notes: "",
@@ -156,10 +166,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
         }
     }
 
-    const fetchEffectivePrice = async (product: any, qty: number, selectedUomId?: number) => {
+    const fetchEffectivePrice = async (product: Product, qty: number, selectedUomId?: number) => {
         if (!product || !product.id) return { net: 0, gross: 0 }
         try {
-            const params: any = { quantity: qty }
+            const params: Record<string, string | number> = { quantity: qty }
             if (selectedUomId) params.uom_id = selectedUomId
 
             const response = await api.get(`/inventory/products/${product.id}/effective_price/`, { params })
@@ -183,7 +193,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    lines: initialData.lines.map((l: any) => ({
+                    lines: initialData?.lines?.map((l: any) => ({
                         id: l.id,
                         product: l.product?.toString() || "",
                         description: l.description,
@@ -194,7 +204,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         tax_rate: parseFloat(l.tax_rate) || 19,
                         custom_specs: l.custom_specs || {},
                         manufacturing_data: l.manufacturing_data || null,
-                    }))
+                    })) || []
                 })
             } else {
                 form.reset({
@@ -274,7 +284,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     mfg_auto_finalize: product?.mfg_auto_finalize,
                 };
             });
-            onConfirmCheckout({ ...data, lines: enrichedLines });
+            onConfirmCheckout({ 
+                ...data, 
+                lines: enrichedLines,
+                customer: (initialData as any)?.customer || null,
+                date: new Date().toISOString()
+            });
             setOpen(false)
             return
         }
@@ -292,9 +307,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess(res?.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving sale order:", error)
-            toast.error(error.response?.data?.detail || "Error al guardar la Nota de Venta")
+            showApiError(error, "Error al guardar la Nota de Venta")
         } finally {
             setLoading(false)
         }
@@ -420,12 +435,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 {prod.product_type === 'STORABLE' && (
                                                                                     <>
                                                                                         <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-red-400"
+                                                                                            (prod.current_stock || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-destructive/20 text-destructive/60"
                                                                                         )}>
                                                                                             Stock: {prod.current_stock || 0}
                                                                                         </Badge>
                                                                                         <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-amber-500 text-amber-600"
+                                                                                            (prod.qty_available || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-warning/50 text-warning bg-warning/10"
                                                                                         )}>
                                                                                             Disp: {prod.qty_available || 0}
                                                                                         </Badge>
@@ -433,13 +448,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 )}
 
                                                                                 {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-blue-400 text-blue-600">
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-info/50 text-info bg-info/10">
                                                                                         Fab: {prod.manufacturable_quantity ?? 'N/A'}
                                                                                     </Badge>
                                                                                 )}
 
                                                                                 {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-emerald-500 text-emerald-600">
+                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-success/50 text-success bg-success/10">
                                                                                         Disponible
                                                                                     </Badge>
                                                                                 )}
@@ -474,7 +489,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                                                                             // Highlight if at max
                                                                             const currentVal = parseFloat(field.value.toString()) || 0
-                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-amber-500 text-amber-600 bg-amber-50" : ""
+                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-warning text-warning bg-warning/10" : ""
                                                                         })()
                                                                     )}
                                                                     onChange={async (e) => {
@@ -548,9 +563,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                         field.onChange(val)
                                                                         const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
                                                                         const uomId = parseInt(val)
-                                                                        const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
-                                                                        form.setValue(`lines.${index}.unit_price`, net)
-                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                        if (selectedProduct) {
+                                                                            const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                            form.setValue(`lines.${index}.unit_price`, net)
+                                                                            form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                        }
                                                                     }}
                                                                     uoms={uoms}
                                                                     showConversionHint={true}

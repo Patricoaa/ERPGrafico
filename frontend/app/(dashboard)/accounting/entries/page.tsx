@@ -7,15 +7,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { JournalEntryForm } from "@/components/forms/JournalEntryForm"
+import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { formatPlainDate } from "@/lib/utils"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 interface JournalEntry {
     id: number
@@ -32,11 +32,42 @@ interface JournalEntry {
     }[]
 }
 
-export default function EntriesPage() {
+interface EntriesPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
+
+export default function EntriesPage({ externalOpen, onExternalOpenChange }: EntriesPageProps) {
     const [entries, setEntries] = useState<JournalEntry[]>([])
     const [accounts, setAccounts] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const handleCloseModal = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    // Synchronize external modal trigger
+    useEffect(() => {
+        if (externalOpen) {
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
+
+    const handleFormOpenChange = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            onExternalOpenChange?.(false)
+            handleCloseModal()
+        }
+    }
 
     const fetchEntries = async () => {
         setLoading(true)
@@ -140,13 +171,13 @@ export default function EntriesPage() {
                             onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
                             title="Ver Detalle"
                         >
-                            <Eye className="h-4 w-4 text-blue-600" />
+                            <Eye className="h-4 w-4 text-primary" />
                         </Button>
                         {entry.state === 'DRAFT' && (
                             <>
                                 <JournalEntryForm
                                     accounts={accounts}
-                                    initialData={entry}
+                                    initialData={entry as any}
                                     onSuccess={fetchEntries}
                                 />
                                 <Button
@@ -163,7 +194,7 @@ export default function EntriesPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="text-red-500"
+                            className="text-destructive"
                             onClick={() => handleDelete(entry.id)}
                             title="Eliminar"
                         >
@@ -176,51 +207,45 @@ export default function EntriesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Asientos Contables"
-                description="Registro cronológico de todas las transacciones contables del sistema."
-                titleActions={
-                    <JournalEntryForm accounts={accounts} onSuccess={fetchEntries} triggerVariant="circular" />
-                }
-            />
-
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando asientos...
-                </div>
-            ) : (
-                <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={entries}
-                        cardMode
-                        filterColumn="description"
-                        searchPlaceholder="Buscar por descripción..."
-                        facetedFilters={[
-                            {
-                                column: "state",
-                                title: "Estado",
-                                options: [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                ],
-                            },
-                        ]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={20}
-                    />
-                </div>
-            )}
-
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
-                    id={viewingTransaction.id}
+        <div className="space-y-4">
+            <div className="pt-2">
+                <DataTable
+                    columns={columns}
+                    data={entries}
+                    isLoading={loading}
+                    cardMode
+                    filterColumn="description"
+                    searchPlaceholder="Buscar por descripción..."
+                    facetedFilters={[
+                        {
+                            column: "state",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
                 />
-            )}
+
+                <JournalEntryForm 
+                    accounts={accounts} 
+                    onSuccess={fetchEntries} 
+                    open={isFormOpen}
+                    onOpenChange={handleFormOpenChange}
+                />
+
+                {viewingTransaction && (
+                    <TransactionViewModal
+                        open={!!viewingTransaction}
+                        onOpenChange={(open) => !open && setViewingTransaction(null)}
+                        type={viewingTransaction.type}
+                        id={viewingTransaction.id}
+                    />
+                )}
+            </div>
         </div>
     )
 }

@@ -8,6 +8,8 @@ from django.conf import settings
 from django.utils import timezone
 from core.utils import get_current_date
 from django.core.validators import MinValueValidator
+from core.validators import validate_file_size, validate_file_extension
+from core.storages import PrivateMediaStorage
 
 
 def get_default_date():
@@ -617,8 +619,10 @@ class BankStatement(models.Model):
     file = models.FileField(
         _("Archivo"), 
         upload_to='bank_statements/', 
+        storage=PrivateMediaStorage(),
         null=True, 
-        blank=True
+        blank=True,
+        validators=[validate_file_size, validate_file_extension]
     )
     imported_at = models.DateTimeField(_("Importado el"), auto_now_add=True)
     imported_by = models.ForeignKey(

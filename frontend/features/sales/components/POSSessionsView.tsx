@@ -7,14 +7,12 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { FileText, Store, Lock } from "lucide-react"
+import { FileText, Lock } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { POSReport } from "@/components/pos/POSReport"
-import { SessionCloseModal } from "@/components/pos/SessionCloseModal"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { POSReport } from "@/features/pos/components/POSReport"
+import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 
 interface POSSession {
     id: number
@@ -144,15 +142,15 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                         {session.status === 'OPEN' ? (
                             <>
                                 <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0">
-                                    <FileText className="h-4 w-4 text-blue-500" />
+                                    <FileText className="h-4 w-4 text-info" />
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600">
+                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
                                     <Lock className="h-4 w-4" />
                                 </Button>
                             </>
                         ) : (
                             <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0">
-                                <FileText className="h-4 w-4 text-emerald-500" />
+                                <FileText className="h-4 w-4 text-success" />
                             </Button>
                         )}
                     </div>
@@ -162,34 +160,20 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     ]
 
     return (
-        <div className={cn("flex-1 space-y-4", !hideHeader && "p-8 pt-6")}>
-            {!hideHeader && (
-                <PageHeader title="Sesiones Punto de Venta" description="Historial de aperturas y cierres de caja.">
-                    <Button onClick={() => window.open('/pos', '_blank')} className="bg-primary hover:bg-primary/90">
-                        <Store className="mr-2 h-4 w-4" />
-                        Ir al POS
-                    </Button>
-                </PageHeader>
-            )}
-
-            {loading ? (
-                <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-            ) : (
-                <div className="mt-4">
-                    <DataTable
-                        columns={columns}
-                        data={sessions}
-                        cardMode
-                        globalFilterFields={["user_name", "status_display", "id"]}
-                        searchPlaceholder="Buscar por cajero..."
-                        facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={10}
-                    />
-                </div>
-            )}
+        <div className="flex-1 space-y-4">
+            <div className="mt-4">
+                <DataTable
+                    columns={columns}
+                    data={sessions}
+                    cardMode
+                    isLoading={loading}
+                    globalFilterFields={["user_name", "status_display", "id"]}
+                    searchPlaceholder="Buscar por cajero..."
+                    facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={10}
+                />
+            </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
             {reportDialogOpen && (

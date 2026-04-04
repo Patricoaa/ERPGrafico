@@ -14,15 +14,10 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { format } from "date-fns"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
+import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
+import { SaleOrder } from "@/types/entities"
 
-interface SaleOrder {
-    id: number
-    number: string
-    customer_name: string
-    created_at: string
-    total: string
-    status: string
-}
+
 
 interface AdvancedSaleOrderSelectorProps {
     value?: string | number | null
@@ -39,12 +34,12 @@ export function AdvancedSaleOrderSelector({
     disabled = false,
     customFilter
 }: AdvancedSaleOrderSelectorProps) {
+    const { orders: rawOrders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useSaleOrderSearch()
     const [open, setOpen] = useState(false)
     const [previewOpen, setPreviewOpen] = useState(false)
     const [previewId, setPreviewId] = useState<number | null>(null)
 
     const [orders, setOrders] = useState<SaleOrder[]>([])
-    const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
@@ -52,48 +47,35 @@ export function AdvancedSaleOrderSelector({
 
     // Fetch initial selected order if value exists
     useEffect(() => {
-        const fetchSelected = async () => {
-            if (value && !selectedOrder && value !== "__none__" && value !== "none") {
-                try {
-                    const res = await api.get(`/sales/orders/${value}/`)
-                    setSelectedOrder(res.data)
-                } catch (e) {
-                    console.error("Failed to fetch selected sale order", e)
-                }
-            } else if (!value || value === "__none__" || value === "none") {
-                setSelectedOrder(null)
-            }
+        if (value && !selectedOrder && value !== "__none__" && value !== "none" && value.toString() !== singleOrder?.id?.toString()) {
+            fetchSingleOrder(value.toString())
+        } else if (!value || value === "__none__" || value === "none") {
+            setSelectedOrder(null)
         }
-        fetchSelected()
-    }, [value])
+    }, [value, selectedOrder, singleOrder, fetchSingleOrder])
+
+    // Sync selected
+    useEffect(() => {
+        if (singleOrder && singleOrder.id.toString() === value?.toString()) {
+            setSelectedOrder(singleOrder)
+        }
+    }, [singleOrder, value])
 
     // Fetch orders on search
     useEffect(() => {
-        const fetchOrders = async () => {
-            setLoading(true)
-            try {
-                const params = new URLSearchParams()
-                if (debouncedSearch) params.append('search', debouncedSearch)
-                // Filter to confirmed/paid/partially_paid orders usually? 
-                // Or just show all available for OT creation.
-
-                const res = await api.get(`/sales/orders/?${params.toString()}`)
-                let allOrders = res.data.results || res.data
-                if (customFilter) {
-                    allOrders = allOrders.filter(customFilter)
-                }
-                setOrders(allOrders)
-            } catch (error) {
-                console.error("Error searching sale orders", error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         if (open) {
-            fetchOrders()
+            fetchOrders(debouncedSearch)
         }
-    }, [debouncedSearch, open])
+    }, [debouncedSearch, open, fetchOrders])
+
+    // Filter
+    useEffect(() => {
+        let allOrders = [...rawOrders]
+        if (customFilter) {
+            allOrders = allOrders.filter(customFilter)
+        }
+        setOrders(allOrders)
+    }, [rawOrders, customFilter])
 
     const handleSelect = (order: SaleOrder) => {
         setSelectedOrder(order)
@@ -153,9 +135,9 @@ export function AdvancedSaleOrderSelector({
                             />
                         </div>
                         <div className="max-h-[300px] overflow-y-auto space-y-1">
-                            {loading ? (
-                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                            ) : orders.length === 0 ? (
+                        {searchLoading ? (
+                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                        ) : orders.length === 0 ? (
                                 <div className="p-4 text-sm text-center text-muted-foreground">
                                     {searchTerm ? "No se encontraron notas." : "Escriba para buscar..."}
                                 </div>
@@ -193,7 +175,7 @@ export function AdvancedSaleOrderSelector({
                                                     onClick={(e) => openPreview(e, order.id)}
                                                     title="Previsualizar"
                                                 >
-                                                    <Eye className="h-4 w-4 text-blue-600" />
+                                                    <Eye className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 {selectedOrder?.id === order.id && (
                                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />

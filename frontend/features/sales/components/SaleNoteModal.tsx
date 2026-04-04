@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,14 @@ import { PricingUtils } from "@/lib/pricing"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { EmptyState } from "@/components/shared/EmptyState"
+
+import { SaleOrderLine } from "../types"
+
+interface SaleNoteLine extends SaleOrderLine {
+    note_quantity: number
+    note_unit_price: number
+}
 
 interface SaleNoteModalProps {
     open: boolean
@@ -42,7 +51,7 @@ export function SaleNoteModal({
 }: SaleNoteModalProps) {
     const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
-    const [lines, setLines] = useState<any[]>([])
+    const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [loadingOrder, setLoadingOrder] = useState(false)
@@ -58,24 +67,21 @@ export function SaleNoteModal({
     const fetchDetails = async () => {
         setLoadingOrder(true)
         try {
-            let data: any = {}
-            let fetchedLines: any[] = []
+            let fetchedLines: SaleOrderLine[] = []
 
             if (orderId) {
                 const response = await api.get(`/sales/orders/${orderId}/`)
-                data = response.data
-                fetchedLines = data.lines || []
+                fetchedLines = response.data.lines || []
             } else if (invoiceId) {
                 const response = await api.get(`/billing/invoices/${invoiceId}/`)
-                data = response.data
-                fetchedLines = data.lines || []
+                fetchedLines = response.data.lines || []
             }
 
             // Initializing lines with 0 quantity but original unit price
-            const initialLines = fetchedLines.map((line: any) => ({
+            const initialLines: SaleNoteLine[] = fetchedLines.map((line: SaleOrderLine) => ({
                 ...line,
                 note_quantity: 0,
-                note_unit_price: parseFloat(line.unit_price)
+                note_unit_price: Number(line.unit_price)
             }))
             setLines(initialLines)
         } catch (error) {
@@ -86,9 +92,12 @@ export function SaleNoteModal({
         }
     }
 
-    const handleLineChange = (index: number, field: string, value: string) => {
+    const handleLineChange = (index: number, field: 'note_quantity' | 'note_unit_price', value: string) => {
         const newLines = [...lines]
-        newLines[index][field] = parseFloat(value) || 0
+        newLines[index] = {
+            ...newLines[index],
+            [field]: parseFloat(value) || 0
+        }
         setLines(newLines)
     }
 
@@ -121,7 +130,7 @@ export function SaleNoteModal({
             const returnItems = lines
                 .filter(l => l.note_quantity > 0)
                 .map(l => ({
-                    product_id: l.product,
+                    product_id: l.product as number,
                     quantity: l.note_quantity,
                     unit_price: l.note_unit_price
                 }))
@@ -150,9 +159,9 @@ export function SaleNoteModal({
             toast.success("Nota registrada correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error registering note:", error)
-            toast.error(error.response?.data?.error || "Error al registrar la nota")
+            showApiError(error, "Error al registrar la nota")
         } finally {
             setSubmitting(false)
         }
@@ -177,7 +186,7 @@ export function SaleNoteModal({
                     <Button
                         onClick={handleSubmit}
                         disabled={submitting || !documentNumber || amountNet <= 0}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold h-11 px-8"
+                        className="font-bold h-11 px-8"
                     >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Registro de Nota
@@ -230,7 +239,14 @@ export function SaleNoteModal({
                                 </tr>
                             ) : lines.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-4 text-center text-muted-foreground italic">No se encontraron productos en la orden</td>
+                                    <td colSpan={6} className="py-8">
+                                        <EmptyState
+                                            context="search"
+                                            variant="compact"
+                                            title="No hay productos"
+                                            description="No se encontraron líneas disponibles en el documento original."
+                                        />
+                                    </td>
                                 </tr>
                             ) : lines.map((line, idx) => (
                                 <tr key={line.id} className={line.note_quantity > 0 ? "bg-purple-50/30" : ""}>
@@ -300,8 +316,8 @@ export function SaleNoteModal({
                 </div>
 
                 {noteType === 'NOTA_CREDITO' && (
-                    <div className="flex gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded border border-blue-100 dark:border-blue-900/30 text-[10px] text-blue-700 dark:text-blue-400">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
+                    <div className="flex gap-2 p-3 bg-info/5 rounded border border-info/20 text-[10px] text-info-foreground">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-info" />
                         <p>Si la nota implica devolución de productos, el sistema registrará una entrada de inventario (Stock IN) y reversará el costo de venta proporcionalmente.</p>
                     </div>
                 )}

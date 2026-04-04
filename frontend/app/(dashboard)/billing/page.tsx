@@ -1,41 +1,69 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Receipt, ShoppingCart, TrendingUp } from "lucide-react"
-import Link from "next/link"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Tabs } from "@/components/ui/tabs"
 
-export default function BillingPage() {
+// Lazy load feature components
+const SalesInvoicesClientView = lazy(() => import("@/features/billing/components/SalesInvoicesClientView").then(m => ({ default: m.SalesInvoicesClientView })))
+const PurchaseInvoicesClientView = lazy(() => import("@/features/billing/components/PurchaseInvoicesClientView").then(m => ({ default: m.PurchaseInvoicesClientView })))
+const BillingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.BillingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
+
+export const metadata: Metadata = {
+    title: "Módulo de Facturación | ERPGrafico",
+    description: "Gestión centralizada de documentos electrónicos emitidos y recibidos.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; tab?: string }>
+}
+
+export default async function BillingPage({ searchParams }: PageProps) {
+    const { view, tab } = await searchParams
+    const configTab = tab || "accounts"
+    const viewMode = (view as 'sales' | 'purchases') || 'sales'
+
+    const tabs = [
+        { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing?view=sales" },
+        { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing?view=purchases" },
+    ]
+
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Facturación"
-                description="Gestión integral de documentos electrónicos emitidos y recibidos."
+                title={viewMode === 'sales' ? "Facturación de Ventas" : "Facturación de Compras"}
+                description={viewMode === 'sales' 
+                    ? "Gestión de boletas, facturas y notas de venta emitidas a clientes." 
+                    : "Recepción y cuadratura de facturas y notas de crédito de proveedores."}
+                iconName={viewMode === 'sales' ? "receipt" : "file-badge"}
+                variant="minimal"
+                configHref="?config=true"
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/billing/sales">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-emerald-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ventas (Emitidos)</CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Documentos</div>
-                            <p className="text-xs text-muted-foreground">Facturas, Boletas y Notas</p>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/billing/purchases">
-                    <Card className="hover:bg-accent transition-colors cursor-pointer border-l-4 border-blue-500">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Compras (Recibidos)</CardTitle>
-                            <Receipt className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Proveedores</div>
-                            <p className="text-xs text-muted-foreground">Registro de facturas recibidas</p>
-                        </CardContent>
-                    </Card>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-2">
+                <Suspense fallback={<LoadingFallback />}>
+                    {viewMode === 'sales' && <SalesInvoicesClientView />}
+                    {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
+                </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="billing-settings"
+                title="Configuración de Facturación"
+                description="Gestione las cuentas contables, impuestos y parámetros de DTE."
+                tabLabel="Configuración"
+                fullWidth={600}
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <BillingSettingsView activeTab={configTab} />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ArrowLeftRight } from "lucide-react"
@@ -43,8 +44,8 @@ export function CashMovementModal({
             toast.success("Movimiento registrado correctamente")
             onOpenChange(false)
             onSuccess?.()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al registrar movimiento")
+        } catch (error: unknown) {
+            showApiError(error, "Error al registrar movimiento")
             console.error(error)
             throw error // Throw to stop MovementWizard loading state
         }

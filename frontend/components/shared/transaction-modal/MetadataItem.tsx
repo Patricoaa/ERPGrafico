@@ -1,6 +1,6 @@
 import { Minus } from "lucide-react"
 
-export const MetadataItem = ({ label, value, icon: Icon, className = "" }: { label: string, value: any, icon?: any, className?: string }) => {
+export const MetadataItem = ({ label, value, icon: Icon, className = "" }: { label: string, value: React.ReactNode, icon?: React.ElementType, className?: string }) => {
     if (value === undefined || value === null || value === "") return null
     // Fallback icon if none provided
     const DisplayIcon = Icon || Minus

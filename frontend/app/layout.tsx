@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Syne, Onest } from "next/font/google";
-import { GlobalHubPanel } from "@/components/orders/GlobalHubPanel";
+import { GlobalHubPanel } from "@/features/orders/components/GlobalHubPanel";
 import "./globals.css";
 import AuthGuard from "@/components/auth/AuthGuard"
 import { AuthProvider } from "@/contexts/AuthContext"

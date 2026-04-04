@@ -1,10 +1,11 @@
-import React from "react"
 import { Metadata } from "next"
+import { Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ProductList } from "@/components/inventory/ProductList"
-import { CategoryList } from "@/components/inventory/CategoryList"
-import { PricingRuleList } from "@/components/inventory/PricingRuleList"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { ProductList } from "@/features/inventory/components/ProductList"
+import { CategoryList } from "@/features/inventory/components/CategoryList"
+import { PricingRuleList } from "@/features/inventory/components/PricingRuleList"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -68,41 +69,52 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
-
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={actionTitle ? (
-                        <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title={actionTitle}
-                            />
-                        </Link>
-                    ) : null}
-                />
-
-                <div className="pt-4">
-                    <TabsContent value="products" className="mt-0 outline-none">
-                        <ProductList
-                            externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
+            <PageHeader
+                title={title}
+                description={description}
+                variant="minimal"
+                iconName="package"
+                titleActions={actionTitle ? (
+                    <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
+                        <PageHeaderButton
+                            iconName="plus"
+                            circular
+                            title={actionTitle}
                         />
+                    </Link>
+                ) : null}
+            />
+
+            <div className="pt-2">
+                <PageTabs tabs={tabs} activeValue={activeTab} />
+            </div>
+
+            <Tabs value={activeTab} className="space-y-4 pt-4">
+                <div className="pt-0 min-h-[400px]">
+                    <TabsContent value="products" className="mt-0 outline-none">
+                        <Suspense fallback={<LoadingFallback />}>
+                            <ProductList
+                                externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                     <TabsContent value="categories" className="mt-0 outline-none">
-                        <CategoryList
-                            externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
-                        />
+                        <Suspense fallback={<LoadingFallback />}>
+                            <CategoryList
+                                externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                     <TabsContent value="pricing-rules" className="mt-0 outline-none">
-                        <PricingRuleList
-                            externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
-                        />
+                        <Suspense fallback={<LoadingFallback />}>
+                            <PricingRuleList
+                                externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                 </div>
             </Tabs>
         </div>
     )
 }
+

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -84,8 +85,8 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
 
             toast.success("Factura generada exitosamente")
             onOpenChange(false)
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || error.response?.data?.error || "Error al generar factura")
+        } catch (error: unknown) {
+            showApiError(error, "Error al generar factura")
         } finally {
             setLoading(false)
         }

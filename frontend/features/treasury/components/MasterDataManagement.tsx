@@ -5,8 +5,10 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
 import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag } from "lucide-react"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -32,10 +34,10 @@ interface Bank {
 
 interface BankManagementProps {
     externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
+    onOpenChange?: (open: boolean) => void
 }
 
-export function BankManagement({ externalOpen, onExternalOpenChange }: BankManagementProps) {
+export function BankManagement({ externalOpen, onOpenChange }: BankManagementProps) {
     const [banks, setBanks] = useState<Bank[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -57,14 +59,7 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
         fetchBanks()
     }, [])
 
-    useEffect(() => {
-        if (externalOpen) {
-            openCreate()
-        }
-    }, [externalOpen])
-
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este banco?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/banks/${id}/`)
             toast.success("Banco eliminado")
@@ -72,6 +67,10 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
         } catch (error) {
             toast.error("Error al eliminar banco")
         }
+    })
+
+    const handleDelete = (id: number) => {
+        deleteConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
@@ -144,17 +143,31 @@ export function BankManagement({ externalOpen, onExternalOpenChange }: BankManag
             />
 
             <BankDialog
-                open={dialogOpen}
+                open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        setSelectedBank(null)
+                        onOpenChange?.(false)
+                    } else {
+                        setDialogOpen(true)
+                    }
                 }}
                 bank={selectedBank}
                 onSuccess={() => {
                     setDialogOpen(false)
-                    onExternalOpenChange?.(false)
+                    onOpenChange?.(false)
                     fetchBanks()
                 }}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Banco"
+                description="¿Está seguro de eliminar este banco? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )
@@ -291,10 +304,10 @@ interface PaymentMethod {
 
 interface PaymentMethodManagementProps {
     externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
+    onOpenChange?: (open: boolean) => void
 }
 
-export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: PaymentMethodManagementProps) {
+export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentMethodManagementProps) {
     const [methods, setMethods] = useState<PaymentMethod[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -316,14 +329,7 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
         fetchMethods()
     }, [])
 
-    useEffect(() => {
-        if (externalOpen) {
-            openCreate()
-        }
-    }, [externalOpen])
-
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de eliminar este método de pago?")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/payment-methods/${id}/`)
             toast.success("Método eliminado")
@@ -331,6 +337,10 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
         } catch (error) {
             toast.error("Error al eliminar")
         }
+    })
+
+    const handleDelete = (id: number) => {
+        deleteConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
@@ -379,8 +389,8 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
                 <div className="flex flex-col items-center gap-1">
                     <span className="text-xs text-muted-foreground text-center">{row.original.treasury_account_name}</span>
                     <div className="flex justify-center gap-1">
-                        {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-green-50 text-green-700 border-green-200">Ventas</Badge>}
-                        {row.original.allow_for_purchases && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-blue-50 text-blue-700 border-blue-200">Compras</Badge>}
+                        {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-success/10 text-success border-success/20">Ventas</Badge>}
+                        {row.original.allow_for_purchases && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-info/10 text-info border-info/20">Compras</Badge>}
                     </div>
                 </div>
             )
@@ -425,17 +435,31 @@ export function PaymentMethodManagement({ externalOpen, onExternalOpenChange }: 
             />
 
             <PaymentMethodDialog
-                open={dialogOpen}
+                open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) {
+                        setSelectedMethod(null)
+                        onOpenChange?.(false)
+                    } else {
+                        setDialogOpen(true)
+                    }
                 }}
                 method={selectedMethod}
                 onSuccess={() => {
                     setDialogOpen(false)
-                    onExternalOpenChange?.(false)
+                    onOpenChange?.(false)
                     fetchMethods()
                 }}
+            />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Método de Pago"
+                description="¿Está seguro de eliminar este método de pago? Esta acción no se puede deshacer."
+                variant="destructive"
             />
         </div>
     )

@@ -1,12 +1,12 @@
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { WarehouseList } from "@/components/inventory/WarehouseList"
-import { MovementList } from "@/components/inventory/MovementList"
-import { StockReport } from "@/components/inventory/StockReport"
+import { WarehouseList } from "@/features/inventory/components/WarehouseList"
+import { MovementList } from "@/features/inventory/components/MovementList"
+import { StockReport } from "@/features/inventory/components/StockReport"
 import { Warehouse, History, FileBarChart } from "lucide-react"
-import { ServerPageTabs } from "@/components/shared/ServerPageTabs"
+import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { Button } from "@/components/ui/button"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"
 
 export const metadata: Metadata = {
@@ -73,17 +73,19 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     const { title, description, actions } = getHeaderConfig()
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <Tabs value={activeTab} className="space-y-4">
-                <ServerPageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
+        <div className={LAYOUT_TOKENS.view}>
+            <PageHeader
+                title={title}
+                description={description}
+                titleActions={actions}
+                iconName="warehouse"
+                variant="minimal"
+            />
 
-                <PageHeader
-                    title={title}
-                    description={description}
-                    titleActions={actions}
-                />
+            <PageTabs tabs={tabs} activeValue={activeTab} />
 
-                <div className="pt-4">
+            <div className="pt-4">
+                <Tabs value={activeTab} className="space-y-4">
                     <TabsContent value="report" className="mt-0 outline-none">
                         <StockReport />
                     </TabsContent>
@@ -97,8 +99,9 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                             externalOpen={activeTab === 'warehouses' && modal === 'new'}
                         />
                     </TabsContent>
-                </div>
-            </Tabs>
+                </Tabs>
+            </div>
         </div>
     )
 }
+

@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,8 @@ import api from "@/lib/api"
 import { ReconciliationPanel } from "@/features/treasury"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface BankStatement {
     id: number
@@ -54,21 +57,21 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
         await fetchStatement()
     }
 
-    const handleConfirmStatement = async () => {
-        if (!confirm('¿Confirmar cartola? Esto lo bloqueará y no podrá modificarse.')) return
-
+    const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${statementId}/confirm/`)
             alert('✅ Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error confirming statement:', error)
-            alert(error.response?.data?.error || 'Error al confirmar cartola')
+            showApiError(error, 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
         }
-    }
+    })
+
+    const handleConfirmStatement = () => confirmAction.requestConfirm()
 
     if (loading) {
         return (
@@ -86,7 +89,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
             <div className="flex-1 p-8 pt-6">
                 <Card className="max-w-md mx-auto mt-12 bg-red-50/50 border-red-100">
                     <CardHeader>
-                        <CardTitle className="text-red-600 flex items-center gap-2">
+                        <CardTitle className="text-destructive flex items-center gap-2">
                             <Info className="h-5 w-5" />
                             Error
                         </CardTitle>
@@ -191,6 +194,15 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                     </div>
                 </div>
             )}
+            
+            <ActionConfirmModal
+                open={confirmAction.isOpen}
+                onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+                onConfirm={confirmAction.confirm}
+                title="Confirmar Cartola"
+                description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+                confirmText="Confirmar"
+            />
         </div>
     )
 }

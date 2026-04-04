@@ -11,9 +11,13 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
@@ -24,8 +28,10 @@ interface TerminalManagementProps {
     onExternalOpenChange?: (open: boolean) => void
 }
 
+import { Skeleton } from "@/components/ui/skeleton"
+
 export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
-    const { terminals, toggleActive, deleteTerminal, refetch } = useTerminals()
+    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
@@ -54,45 +60,41 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
         }
     }
 
-    const handleDelete = async (terminal: Terminal) => {
+    const deleteConfirm = useConfirmAction<Terminal>(async (terminal) => {
         try {
             await deleteTerminal(terminal)
         } catch (error) {
             // Error already handled by hook
         }
+    })
+
+    const handleDelete = (terminal: Terminal) => {
+        deleteConfirm.requestConfirm(terminal)
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex justify-between items-center bg-white/50 p-5 rounded-xl border border-primary/10 backdrop-blur-md shadow-sm hidden">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight text-primary">Terminales POS</h2>
-                    <p className="text-sm text-muted-foreground">Administre los puntos de venta y sus métodos de pago autorizados.</p>
+        <div className="space-y-6">
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[1, 2, 3].map((i) => (
+                        <TerminalCardSkeleton key={i} />
+                    ))}
                 </div>
-                <Button onClick={handleCreate} size="lg" className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
-                    <Plus className="mr-2 h-5 w-5" /> Nuevo Terminal
-                </Button>
-            </div>
-
-            {terminals.length === 0 ? (
-                <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <p className="text-muted-foreground mb-4">No hay terminales configurados</p>
-                        <Button onClick={handleCreate} variant="outline">
-                            Crear primer terminal
+            ) : terminals.length === 0 ? (
+                <EmptyState
+                    context="finance"
+                    title="No hay terminales configurados"
+                    description="Administre los puntos de venta y sus métodos de pago autorizados desde aquí."
+                    action={
+                        <Button onClick={handleCreate} className="h-9">
+                            <Plus className="mr-2 h-4 w-4" /> Crear primer terminal
                         </Button>
-                    </CardContent>
-                </Card>
+                    }
+                />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {terminals.map((terminal) => (
-                        <TerminalCard
-                            key={terminal.id}
-                            terminal={terminal}
-                            onEdit={() => handleEdit(terminal)}
-                            onToggleActive={() => handleToggleActive(terminal)}
-                            onDelete={() => handleDelete(terminal)}
-                        />
+                        <TerminalCard key={terminal.id} terminal={terminal} onEdit={() => handleEdit(terminal)} onToggleActive={() => handleToggleActive(terminal)} onDelete={() => handleDelete(terminal)} />
                     ))}
                 </div>
             )}
@@ -106,7 +108,50 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
                 terminal={editingTerminal}
                 onSuccess={refetch}
             />
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Terminal"
+                description={`¿Está seguro de eliminar el terminal "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
+                variant="destructive"
+            />
         </div>
+    )
+}
+
+function TerminalCardSkeleton() {
+    return (
+        <Card className="bg-background border-2 shadow-none">
+            <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-2 w-full">
+                        <Skeleton className="h-5 w-1/2" />
+                        <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-16" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-1/3 mt-3" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-3 w-1/4" />
+                    <div className="flex flex-wrap gap-1.5">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-14" />
+                    </div>
+                </div>
+                <div className="pt-2 border-t flex justify-end gap-2">
+                    <Skeleton className="h-7 w-20" />
+                    <Skeleton className="h-7 w-10" />
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -125,7 +170,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
     }, {} as Record<string, number>)
 
     return (
-        <Card className={`transition-all hover:shadow-md ${!terminal.is_active ? "opacity-70 bg-muted/20" : "bg-white"}`}>
+        <Card className={`transition-all hover:shadow-md ${!terminal.is_active ? "opacity-70 bg-muted/20" : "bg-background"}`}>
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
@@ -133,18 +178,14 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             {terminal.name}
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono text-[10px] bg-muted">
+                            <Badge variant="outline" className="font-mono text-[10px] bg-muted/50 border-border">
                                 {terminal.code}
                             </Badge>
-                            {terminal.is_active ? (
-                                <Badge variant="default" className="text-[10px] bg-emerald-500 hover:bg-emerald-600">
-                                    Activo
-                                </Badge>
-                            ) : (
-                                <Badge variant="secondary" className="text-[10px]">
-                                    Inactivo
-                                </Badge>
-                            )}
+                            <StatusBadge 
+                                status={terminal.is_active ? "active" : "inactive"} 
+                                size="sm"
+                                className="uppercase font-bold tracking-tight"
+                            />
                         </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8 -mr-2">
@@ -166,7 +207,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             <Badge key={type} variant="secondary" className="text-[10px] px-1.5 font-normal">
                                 {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-success" />}
                                 {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-info" />}
-                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-indigo-500" />}
+                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-primary" />}
                                 {type} <span className="ml-1 text-muted-foreground">({count})</span>
                             </Badge>
                         ))}
@@ -318,7 +359,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             }
             onSuccess()
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             const err = error as any
             console.error("Error saving terminal:", err.response?.data || err)
             toast.error("Error al guardar terminal")
@@ -392,11 +433,11 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                     <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Nombre <span className="text-red-500">*</span></Label>
+                                <Label className={FORM_STYLES.label}>Nombre <span className="text-destructive">*</span></Label>
                                 <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required className={FORM_STYLES.input} />
                             </div>
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Código <span className="text-red-500">*</span></Label>
+                                <Label className={FORM_STYLES.label}>Código <span className="text-destructive">*</span></Label>
                                 <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className={cn(FORM_STYLES.input, "uppercase")} />
                             </div>
                             <div className="space-y-2">
@@ -412,7 +453,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                         <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
                                 <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
-                                <Badge variant="outline" className="text-[10px] bg-white">
+                                <Badge variant="outline" className="text-[10px] bg-background">
                                     {selectedMethodIds.length} seleccionados
                                 </Badge>
                             </div>
@@ -427,7 +468,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                             <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
                                                 {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
                                                 {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-indigo-500" />}
+                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-info" />}
                                                 {getTypeLabel(type)}
                                             </h4>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -441,7 +482,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                                                 flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
                                                                 ${isSelected
                                                                     ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                                                    : 'bg-white border-transparent hover:border-gray-200'
+                                                                    : 'bg-background border-transparent hover:border-border'
                                                                 }
                                                             `}
                                                         >

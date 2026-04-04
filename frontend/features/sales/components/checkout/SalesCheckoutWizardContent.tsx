@@ -1,5 +1,6 @@
 "use client"
 
+import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
@@ -28,11 +29,13 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
-import { PINPadModal } from "@/components/pos/PINPadModal"
+import { PINPadModal } from "@/features/pos/components/PINPadModal"
+import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData } from "../../types"
+import { Product } from "@/features/inventory/types"
 
 export interface SalesCheckoutWizardContentProps {
-    order: any | null
-    orderLines: any[]
+    order: SaleOrder | null
+    orderLines: SaleOrderLine[]
     total: number
     totalDiscountAmount?: number
     onComplete: (data?: any) => void
@@ -46,16 +49,16 @@ export interface SalesCheckoutWizardContentProps {
     terminalId?: number
     quickSale?: boolean
     initialStep?: number
-    initialDteData?: any
-    initialPaymentData?: any
-    initialDeliveryData?: any
+    initialDteData?: CheckoutDTEData
+    initialPaymentData?: CheckoutPaymentData
+    initialDeliveryData?: CheckoutDeliveryData
     initialApprovalTaskId?: number | null
     initialIsWaitingApproval?: boolean
     initialIsApproved?: boolean
     initialDraftId?: number | null
     onStateChange?: (state: any) => void
-    isInline?: boolean // Flag to adjust UI for inline use
-    isSessionHost?: boolean // Whether current user is the host of the POSSession (Shared PC)
+    isInline?: boolean
+    isSessionHost?: boolean
 }
 
 export function SalesCheckoutWizardContent({
@@ -88,32 +91,32 @@ export function SalesCheckoutWizardContent({
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
     
-    const hasManufacturing = useMemo(() => initialOrderLines.some((line: any) =>
+    const hasManufacturing = useMemo(() => initialOrderLines.some((line: SaleOrderLine) =>
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     ), [initialOrderLines]);
 
     const [step, setStep] = useState(initialStep || (hasManufacturing ? 2 : 1))
     const [showSuspendDialog, setShowSuspendDialog] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [currentOrderLines, setCurrentOrderLines] = useState(initialOrderLines)
+    const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
-    const [dteData, setDteData] = useState<any>(initialDteData || {
+    const [dteData, setDteData] = useState<CheckoutDTEData>(initialDteData || {
         type: 'BOLETA',
         number: '',
         date: dateString || '',
         attachment: null,
         isPending: false
     })
-    const [paymentData, setPaymentData] = useState<any>(initialPaymentData || {
+    const [paymentData, setPaymentData] = useState<CheckoutPaymentData>(initialPaymentData || {
         method: 'CASH',
         amount: 0,
         transactionNumber: '',
         treasuryAccountId: null,
         isPending: false
     })
-    const [deliveryData, setDeliveryData] = useState<any>(initialDeliveryData || {
+    const [deliveryData, setDeliveryData] = useState<CheckoutDeliveryData>(initialDeliveryData || {
         type: 'IMMEDIATE',
         date: null,
         notes: ''
@@ -155,7 +158,7 @@ export function SalesCheckoutWizardContent({
 
     const currentTotal = useMemo(() => {
         const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
-        const linesTotal = currentOrderLines.reduce((acc: number, line: any) => {
+        const linesTotal = currentOrderLines.reduce((acc: number, line: SaleOrderLine) => {
             const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
             if (isExempt) return acc + net;
             if (line.total_gross !== undefined) return acc + line.total_gross;
@@ -237,7 +240,7 @@ export function SalesCheckoutWizardContent({
         }
     }, [selectedCustomerId])
 
-    const isOnlyService = currentOrderLines.every((line: any) => line.product_type === 'SERVICE');
+    const isOnlyService = currentOrderLines.every((line: SaleOrderLine) => line.product_type === 'SERVICE');
     const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
 
     useEffect(() => {
@@ -417,20 +420,20 @@ export function SalesCheckoutWizardContent({
                 payment_method: paymentData.method,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
-                lines: currentOrderLines.map((l: any) => {
+                lines: currentOrderLines.map((l: SaleOrderLine) => {
                     let cleanMfgData = null
                     if (l.manufacturing_data) {
                         const { design_files, approval_file, ...rest } = l.manufacturing_data
                         cleanMfgData = {
                             ...rest,
-                            design_filenames: (design_files || []).map((f: any) => f.name),
+                            design_filenames: (design_files || []).map((f: File) => f.name),
                             approval_filename: approval_file ? approval_file.name : null
                         }
                     }
                     return {
                         product: l.product || l.id || null,
-                        description: l.name || l.product_name || l.description,
-                        quantity: l.qty || l.quantity,
+                        description: l.product_name || l.description,
+                        quantity: l.qty || l.quantity || 0,
                         unit_price: l.unit_price_net || l.unit_price,
                         unit_price_gross: l.unit_price_gross,
                         uom: l.uom || null,
@@ -443,7 +446,7 @@ export function SalesCheckoutWizardContent({
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
 
-            currentOrderLines.forEach((l: any, lineIdx: number) => {
+            currentOrderLines.forEach((l: SaleOrderLine, lineIdx: number) => {
                 if (l.manufacturing_data) {
                     if (l.manufacturing_data.design_files) {
                         l.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
@@ -462,7 +465,7 @@ export function SalesCheckoutWizardContent({
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
 
-            const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : paymentData.method
+            const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : (paymentData.method || "NOT_SET")
             formData.append('payment_method', finalPaymentMethod)
             if (paymentData.paymentMethodId && paymentData.amount > 0) {
                 formData.append('payment_method_id', paymentData.paymentMethodId.toString())
@@ -470,7 +473,7 @@ export function SalesCheckoutWizardContent({
             formData.append('amount', paymentData.amount.toString())
             formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
-            if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+            if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
             formData.append('payment_type', 'INBOUND')
 
             formData.append('delivery_type', deliveryData.type)
@@ -509,9 +512,9 @@ export function SalesCheckoutWizardContent({
             const res = await api.post('/billing/invoices/pos_checkout/', formData)
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Checkout error:", error)
-            const rawError = error.response?.data?.error || "Error al procesar la venta"
+            const rawError = getErrorMessage(error) || "Error al procesar la venta"
             const errorMessage = Array.isArray(rawError) ? rawError[0] : String(rawError)
             
             if (errorMessage.includes("Intento de aumento de crédito") || 
@@ -555,10 +558,10 @@ export function SalesCheckoutWizardContent({
                 payment_method: paymentData.method,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
-                lines: currentOrderLines.map((l: any) => ({
+                lines: currentOrderLines.map((l: SaleOrderLine) => ({
                     product: l.product || l.id || null,
-                    description: l.name || l.product_name || l.description,
-                    quantity: l.qty || l.quantity,
+                    description: l.product_name || l.description,
+                    quantity: l.qty || l.quantity || 0,
                     unit_price: l.unit_price_net || l.unit_price,
                     unit_price_gross: l.unit_price_gross,
                     uom: l.uom || null,
@@ -570,7 +573,7 @@ export function SalesCheckoutWizardContent({
             const formData = new FormData()
             formData.append('order_data', JSON.stringify(payloadOrder))
             formData.append('dte_type', dteData.type)
-            formData.append('payment_method', paymentData.method)
+            formData.append('payment_method', paymentData.method || "NOT_SET")
             formData.append('amount', paymentData.amount.toString())
             if (posSessionId) formData.append('pos_session_id', posSessionId.toString())
             if (initialDraftId) formData.append('draft_id', initialDraftId.toString())
@@ -579,9 +582,9 @@ export function SalesCheckoutWizardContent({
             const taskId = response.data.task_id
             setApprovalTaskId(taskId)
             pollApprovalStatus(taskId)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error requesting approval:", error)
-            toast.error(error.response?.data?.error || "Error al solicitar aprobación")
+            showApiError(error, "Error al solicitar aprobación")
             setIsWaitingApproval(false)
         }
     }
@@ -662,11 +665,14 @@ export function SalesCheckoutWizardContent({
                     hasManufacturing={hasManufacturing}
                     dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
                     paymentData={step > (hasManufacturing ? 4 : 3) ? {
-                        method: paymentData.method,
+                        method: (paymentData.method || "NOT_SET") as string,
                         amount: paymentData.amount,
                         creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
                     } : undefined}
-                    deliveryData={step > (hasManufacturing ? 3 : 2) ? deliveryData : undefined}
+                    deliveryData={step > (hasManufacturing ? 3 : 2) ? {
+                        ...deliveryData,
+                        date: deliveryData.date || undefined
+                    } : undefined}
                 />
             )}
 
@@ -675,17 +681,17 @@ export function SalesCheckoutWizardContent({
                     <>
                         {/* Pending Debts Banner - Compact Version */}
                         {pendingDebts && pendingDebts.length > 0 && (
-                            <Alert className="mb-4 border border-orange-500/30 bg-orange-500/5 p-3 sm:py-2.5">
+                            <Alert className="mb-4 border border-warning/30 bg-warning/5 p-3 sm:py-2.5">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="bg-orange-500/10 p-1.5 rounded-full shrink-0">
-                                            <FileWarning className="h-3.5 w-3.5 text-orange-600" />
+                                        <div className="bg-warning/10 p-1.5 rounded-full shrink-0">
+                                            <FileWarning className="h-3.5 w-3.5 text-warning" />
                                         </div>
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                            <span className="text-sm font-bold text-orange-800 shrink-0">
+                                            <span className="text-sm font-bold text-warning-foreground shrink-0">
                                                 Deudas Pendientes ({pendingDebts.length})
                                             </span>
-                                            <span className="text-xs text-orange-700/80 leading-none">
+                                            <span className="text-xs text-warning-foreground/80 leading-none">
                                                 Total: <span className="font-bold font-mono">${pendingDebts.reduce((sum: number, d: any) => sum + Number(d.balance || 0), 0).toLocaleString('es-CL')}</span>
                                             </span>
                                         </div>
@@ -696,18 +702,18 @@ export function SalesCheckoutWizardContent({
                                                 key={debt.id}
                                                 size="sm"
                                                 variant="outline"
-                                                className="h-6 px-2 border-orange-500/20 text-orange-800 hover:bg-orange-500/10 text-[10px] gap-1 font-medium bg-white/50"
+                                                className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-[10px] gap-1 font-medium bg-white/50"
                                                 onClick={() => openHub({ orderId: debt.id, type: 'sale' })}
                                             >
                                                 <span className="font-mono">NV-{debt.number}</span>
                                                 <span className="opacity-60">${Number(debt.balance).toLocaleString('es-CL')}</span>
                                                 {debt.days_overdue > 0 && (
-                                                    <span className="text-red-600 font-bold ml-0.5">{debt.days_overdue}d</span>
+                                                    <span className="text-destructive font-bold ml-0.5">{debt.days_overdue}d</span>
                                                 )}
                                             </Button>
                                         ))}
                                         {pendingDebts.length > 4 && (
-                                            <div className="text-[10px] text-orange-600/70 py-1 px-1.5 bg-orange-500/5 rounded border border-orange-500/10">
+                                            <div className="text-[10px] text-warning/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
                                                 +{pendingDebts.length - 4}
                                             </div>
                                         )}
@@ -718,19 +724,19 @@ export function SalesCheckoutWizardContent({
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert className={`mb-4 border ${isApproved ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-amber-500/50 bg-amber-500/5'}`}>
+                            <Alert className={`mb-4 border ${isApproved ? 'border-success/50 bg-success/5' : 'border-warning/50 bg-warning/5'}`}>
                                 {isWaitingApproval ? (
-                                    <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                                    <Loader2 className="h-4 w-4 text-warning animate-spin" />
                                 ) : isApproved ? (
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <CheckCircle2 className="h-4 w-4 text-success" />
                                 ) : (
-                                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                                    <AlertCircle className="h-4 w-4 text-warning" />
                                 )}
-                                <AlertTitle className={`font-bold ${isApproved ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                <AlertTitle className={`font-bold ${isApproved ? 'text-success-foreground' : 'text-warning-foreground'}`}>
                                     {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
                                 </AlertTitle>
                                 <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className={`text-sm ${isApproved ? 'text-emerald-700/80' : 'text-amber-700/80'}`}>
+                                    <span className={`text-sm ${isApproved ? 'text-success-foreground/80' : 'text-warning-foreground/80'}`}>
                                         {isWaitingApproval 
                                             ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
                                             : isApproved 

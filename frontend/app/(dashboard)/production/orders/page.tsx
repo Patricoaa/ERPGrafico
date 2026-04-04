@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -9,18 +10,20 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
-import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, X } from "lucide-react"
-import { WorkOrderForm } from "@/components/forms/WorkOrderForm"
-import { WorkOrderWizard } from "@/components/production/WorkOrderWizard"
-import { WorkOrderKanban } from "@/components/production/WorkOrderKanban"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, Columns, X, Factory } from "lucide-react"
+import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
+import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
+import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
+import { TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { FacetedFilter } from "@/components/shared/FacetedFilter"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface WorkOrder {
     id: number
@@ -57,8 +60,31 @@ export default function WorkOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban")
+    const [viewMode, setViewMode] = useState<string>("kanban")
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
+
+    // Modal state sync with URL
+    useEffect(() => {
+        if (isNewModalOpen) {
+            setIsFormOpen(true)
+            setEditingOrder(null)
+        }
+    }, [isNewModalOpen])
+
+    const handleFormClose = (open: boolean) => {
+        setIsFormOpen(open)
+        if (!open) {
+            setEditingOrder(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.push(`?${params.toString()}`, { scroll: false })
+            }
+        }
+    }
 
     const filteredOrders = orders.filter(order => {
         // Date range filter
@@ -85,8 +111,7 @@ export default function WorkOrdersPage() {
         }
     }
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible.")) return
+    const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/orders/${id}/`)
             toast.success("OT eliminada correctamente.")
@@ -95,10 +120,11 @@ export default function WorkOrdersPage() {
             console.error("Error deleting order:", error)
             toast.error("Error al eliminar la OT.")
         }
-    }
+    })
 
-    const handleCancel = async (id: number) => {
-        if (!confirm("¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas.")) return
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const cancelConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.post(`/production/orders/${id}/transition/`, {
                 next_stage: 'CANCELLED'
@@ -109,7 +135,9 @@ export default function WorkOrdersPage() {
             console.error("Error canceling order:", error)
             toast.error("Error al anular la OT.")
         }
-    }
+    })
+
+    const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)
 
     const handleKanbanTransition = async (orderId: number, nextStage: string) => {
         // Instead of auto-transitioning, open the wizard to validate/confirm details
@@ -228,7 +256,7 @@ export default function WorkOrdersPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-orange-500 hover:text-orange-600"
+                            className="h-8 w-8 text-orange-500 hover:text-amber-700"
                             onClick={() => handleCancel(row.original.id)}
                             title="Anular"
                         >
@@ -242,61 +270,29 @@ export default function WorkOrdersPage() {
 
     const renderKanbanView = useCallback((table: any) => (
         <div className="relative">
-            {loading ? (
-                <div className="min-h-[600px] flex items-center justify-center">
-                    <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
-                </div>
-            ) : (
-                <div className="min-h-[600px]">
-                    <WorkOrderKanban
-                        orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
-                        onTransition={handleKanbanTransition}
-                        onManage={(id) => setActiveWizardId(id)}
-                    />
-                </div>
-            )}
+            <div className="min-h-[600px]">
+                <WorkOrderKanban
+                    orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                    onTransition={handleKanbanTransition}
+                    onManage={(id) => setActiveWizardId(id)}
+                    isLoading={loading}
+                />
+            </div>
         </div>
     ), [loading, handleKanbanTransition])
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <PageHeader
-                title="Ordenes de Trabajo (OT)"
-                description="Seguimiento y control de procesos productivos."
-                titleActions={
-                    <div className="flex items-center gap-4">
-                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "kanban" | "list")} className="w-auto">
-                            <TabsList className="bg-muted/50 border-0 h-9 p-1">
-                                <TabsTrigger value="kanban" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <LayoutGrid className="h-3.5 w-3.5" />
-                                    <span>Tablero</span>
-                                </TabsTrigger>
-                                <TabsTrigger value="list" className="h-7 text-xs gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <List className="h-3.5 w-3.5" />
-                                    <span>Lista</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <WorkOrderForm
-                            onSuccess={fetchOrders}
-                            triggerVariant="circular"
-                        />
-                    </div>
-                }
-            />
+        <div className="space-y-4">
 
             {/* Hidden Forms */}
-            {editingOrder && (
+            {editingOrder || isFormOpen ? (
                 <WorkOrderForm
                     initialData={editingOrder}
-                    open={isFormOpen && !!editingOrder}
-                    onOpenChange={(open) => {
-                        setIsFormOpen(open)
-                        if (!open) setEditingOrder(null)
-                    }}
+                    open={isFormOpen}
+                    onOpenChange={handleFormClose}
                     onSuccess={fetchOrders}
                 />
-            )}
+            ) : null}
             {activeWizardId && (
                 <WorkOrderWizard
                     orderId={activeWizardId}
@@ -316,11 +312,19 @@ export default function WorkOrdersPage() {
                 <DataTable
                     columns={columns}
                     data={orders}
-                    cardMode={viewMode === "list"}
+                    isLoading={loading}
+                    cardMode={viewMode === "list" || viewMode === "grid"}
                     filterColumn="description"
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
                     searchPlaceholder="Buscar por folio, descripción o cliente..."
+                    viewOptions={[
+                        { label: "Lista", value: "list", icon: List },
+                        { label: "Grilla", value: "grid", icon: LayoutGrid },
+                        { label: "Tablero", value: "kanban", icon: Columns },
+                    ]}
+                    currentView={viewMode}
+                    onViewChange={setViewMode}
                     facetedFilters={[
                         {
                             column: "status",
@@ -336,6 +340,24 @@ export default function WorkOrdersPage() {
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
                 />
             </div>
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar OT"
+                description="¿Está seguro de que desea eliminar esta OT? Esta acción es irreversible."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={cancelConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) cancelConfirm.cancel() }}
+                onConfirm={cancelConfirm.confirm}
+                title="Anular OT"
+                description="¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas."
+                variant="destructive"
+            />
         </div >
     )
 }

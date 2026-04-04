@@ -1,4 +1,3 @@
-"use client"
 
 import React from "react"
 import { Card } from "@/components/ui/card"
@@ -6,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { CARD_TOKENS } from "@/lib/styles"
 
 interface IndustrialCardProps extends React.ComponentProps<typeof Card> {
-    variant?: "standard" | "industrial" | "glass"
+    variant?: "standard" | "industrial" | "glass" | "list"
 }
 
 /**

@@ -3,6 +3,7 @@
 import { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, FileText, CreditCard, Calendar } from "lucide-react"
@@ -13,7 +14,10 @@ import { es } from "date-fns/locale"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { DateRangeFilter, type DateRange } from "@/components/shared/DateRangeFilter"
+import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import type { DateRange } from "react-day-picker"
 
 // Lazy load feature components
 const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -34,7 +38,7 @@ export function TerminalBatchesManagement({
     externalOpenInvoice,
     onExternalOpenInvoiceChange
 }: TerminalBatchesManagementProps) {
-    const { batches, refetch } = useTerminalBatches()
+    const { batches, refetch, isLoading } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -54,7 +58,7 @@ export function TerminalBatchesManagement({
         }
     }, [externalOpenInvoice])
 
-    const columns = [
+    const columns: ColumnDef<any>[] = [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -113,12 +117,6 @@ export function TerminalBatchesManagement({
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }: any) => {
                 const status = row.original.status
-                const variants: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-                    'PENDING': 'secondary',
-                    'SETTLED': 'default',
-                    'RECONCILED': 'outline',
-                    'INVOICED': 'outline'
-                }
                 const labels: Record<string, string> = {
                     'PENDING': 'Pendiente',
                     'SETTLED': 'Liquidado',
@@ -126,15 +124,20 @@ export function TerminalBatchesManagement({
                     'INVOICED': 'Facturado'
                 }
 
-                const className = status === 'SETTLED'
-                    ? "bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200"
-                    : status === 'RECONCILED'
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : ""
+                let badgeStatus: any = "info"
+                if (status === 'PENDING') badgeStatus = "pending"
+                if (status === 'SETTLED') badgeStatus = "received"
+                if (status === 'RECONCILED') badgeStatus = "success"
+                if (status === 'INVOICED') badgeStatus = "sent"
 
                 return (
                     <div className="flex justify-center">
-                        <Badge variant={variants[status] || "outline"} className={className}>{labels[status] || status}</Badge>
+                        <StatusBadge 
+                            status={badgeStatus} 
+                            label={labels[status] || status} 
+                            size="sm"
+                            className="uppercase font-bold tracking-tight"
+                        />
                     </div>
                 )
             },
@@ -153,37 +156,10 @@ export function TerminalBatchesManagement({
 
     return (
         <div className="space-y-4">
-            {showTitle && (
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Lotes de Terminales</h2>
-                        <p className="text-muted-foreground">Registre liquidaciones y comisiones de terminales de cobro.</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Button variant="outline" onClick={() => setOpenInvoice(true)}>
-                            <FileText className="mr-2 h-4 w-4" /> Generar Factura Mensual
-                        </Button>
-                        <Button onClick={() => setOpenCreate(true)}>
-                            <Plus className="mr-2 h-4 w-4" /> Registrar Liquidación
-                        </Button>
-                    </div>
-                </div>
-            )}
-
-            {!showTitle && (
-                <div className="flex justify-end gap-2 mb-2 hidden">
-                    <Button variant="outline" size="sm" onClick={() => setOpenInvoice(true)}>
-                        <FileText className="mr-2 h-4 w-4" /> Factura Mensual
-                    </Button>
-                    <Button size="sm" onClick={() => setOpenCreate(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Registrar Liquidación
-                    </Button>
-                </div>
-            )}
-
             <DataTable
                 columns={columns}
                 data={batches}
+                isLoading={isLoading}
                 cardMode
                 useAdvancedFilter={true}
                 facetedFilters={[
@@ -204,7 +180,7 @@ export function TerminalBatchesManagement({
                 onReset={() => setDateRange(undefined)}
             />
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <TerminalBatchDialog
                     open={openCreate}
                     onOpenChange={(open: boolean) => {
@@ -219,7 +195,7 @@ export function TerminalBatchesManagement({
                 />
             </Suspense>
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<LoadingFallback />}>
                 <MonthlyInvoiceDialog
                     open={openInvoice}
                     onOpenChange={(open: boolean) => {
@@ -254,3 +230,4 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
 }
 
 export default TerminalBatchesManagement
+

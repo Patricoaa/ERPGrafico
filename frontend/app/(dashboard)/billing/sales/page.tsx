@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { SalesInvoicesClientView } from "@/components/billing/SalesInvoicesClientView"
+import { SalesInvoicesClientView } from "@/features/billing/components/SalesInvoicesClientView"
 
 export const metadata: Metadata = {
     title: "Documentos Emitidos | ERPGrafico",
@@ -9,3 +9,4 @@ export const metadata: Metadata = {
 export default function SalesInvoicesPage() {
     return <SalesInvoicesClientView />
 }
+

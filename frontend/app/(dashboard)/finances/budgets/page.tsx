@@ -1,10 +1,16 @@
+import { BudgetsListView } from "@/features/finance/components/BudgetsListView"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { LAYOUT_TOKENS } from "@/lib/styles"
 
-import { BudgetsListView } from "@/features/finances/components/BudgetsListView"
+interface BudgetsPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+}
 
-export default function BudgetsPage() {
+export default function BudgetsPage({ externalOpen, onExternalOpenChange }: BudgetsPageProps) {
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <BudgetsListView />
+        <div className="pt-2">
+            <BudgetsListView externalOpen={externalOpen} onExternalOpenChange={onExternalOpenChange} />
         </div>
     )
 }

@@ -65,9 +65,9 @@ export function ActionConfirmModal({
             case "info":
                 return {
                     icon: CustomIcon || Info,
-                    iconClassName: "text-blue-600 bg-blue-50",
+                    iconClassName: "text-primary bg-blue-50",
                     buttonVariant: "default" as const,
-                    titleClassName: "text-blue-700"
+                    titleClassName: "text-primary"
                 }
             case "success":
                 return {

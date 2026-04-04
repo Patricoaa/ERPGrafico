@@ -110,7 +110,7 @@ export function Numpad({
                 {/* Row 4 */}
                 <Button
                     variant="destructive"
-                    className="h-14 text-lg font-bold active:scale-95 transition-transform bg-red-100 text-red-600 hover:bg-red-200 border-red-200"
+                    className="h-14 text-lg font-bold active:scale-95 transition-transform bg-red-100 text-destructive hover:bg-red-200 border-red-200"
                     onClick={handleClear}
                 >
                     C
@@ -135,7 +135,7 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className="h-14 text-orange-600 font-bold active:scale-95 transition-transform"
+                        className="h-14 text-amber-700 font-bold active:scale-95 transition-transform"
                         onClick={handleDelete}
                     >
                         <Delete className="h-6 w-6" />
@@ -155,7 +155,7 @@ export function Numpad({
 
             {onConfirm && (
                 <Button
-                    className="w-full h-14 font-black uppercase tracking-widest text-lg bg-blue-600 hover:bg-blue-700 mt-2"
+                    className="w-full h-14 font-black uppercase tracking-widest text-lg bg-primary hover:bg-primary mt-2"
                     onClick={onConfirm}
                 >
                     {confirmLabel}

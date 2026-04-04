@@ -27,17 +27,17 @@ import { toast } from "sonner"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X } from "lucide-react"
-import { OrderCard } from "@/components/orders/OrderCard"
+import { OrderCard } from "@/features/orders/components/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
-import { OrderHubStatus } from "@/components/orders/OrderHubStatus"
+import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -79,14 +79,15 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights } = useContactInsights(contact?.id)
-    const { closeCommandCenter, isSheetCollapsed } = useGlobalModals()
+    const { isSheetCollapsed } = useGlobalModals()
+    const { closeHub } = useHubPanel()
 
     const windowWidth = useWindowWidth(150, open)
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
             // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeCommandCenter()
+            closeHub()
         }
         onOpenChange(newOpen)
     }
@@ -243,14 +244,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     return (
-        <Sheet open={open} onOpenChange={handleOpenChangeProxy}>
             <CollapsibleSheet
                 sheetId="CONTACT_DETAIL"
                 open={open}
                 onOpenChange={handleOpenChangeProxy}
                 tabLabel="FICHA CONTACTO"
                 tabIcon={User}
-                fullWidth={fullWidth}
+                fullWidth={600}
                 className="max-w-[95vw] w-[95vw] sm:max-w-[90vw] sm:w-[90vw]"
             >
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
@@ -554,7 +554,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     }
                 />
             </CollapsibleSheet>
-        </Sheet>
     )
 }
 

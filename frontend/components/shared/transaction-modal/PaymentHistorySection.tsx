@@ -1,10 +1,13 @@
+"use client"
+
 import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Banknote, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, translatePaymentMethod, formatCurrency } from "@/lib/utils"
+import type { TransactionData, TransactionType } from "@/types/transactions"
 
-export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: any, currentType: string, navigateTo: any, handleDeletePayment: any }) => {
+export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void, handleDeletePayment: (id: number) => void }) => {
     const payments = data?.serialized_payments || data?.payments_detail || [];
     if (payments.length === 0) return null;
 
@@ -25,7 +28,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {payments.map((pay: any) => (
+                        {payments.map((pay: { id: number, date?: string, created_at?: string, payment_method?: string, journal_name?: string, transaction_number?: string, reference?: string, amount?: number | string }) => (
                             <TableRow key={pay.id} className="hover:bg-muted/10 transition-colors">
                                 <TableCell className="text-xs font-semibold">{formatPlainDate(pay.date || pay.created_at)}</TableCell>
                                 <TableCell>
@@ -39,7 +42,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 rounded-lg hover:bg-blue-50" onClick={() => navigateTo('payment', pay.id)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary rounded-lg hover:bg-blue-50" onClick={() => navigateTo('payment', pay.id)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                     </div>

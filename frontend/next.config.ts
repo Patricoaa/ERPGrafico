@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+      {
+        protocol: "http",
+        hostname: "backend",
+      },
+    ],
+  },
   experimental: {
     // Importa solo los módulos utilizados de estas librerías pesadas
     // → evita que el compilador procese toda la librería en cada build

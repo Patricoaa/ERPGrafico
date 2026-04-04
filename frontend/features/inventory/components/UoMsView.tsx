@@ -1,82 +1,35 @@
 "use client"
 
-import React, { useState } from "react"
-import { TabsContent } from "@/components/ui/tabs"
-import { UoMList } from "@/components/inventory/UoMList"
-import { UoMCategoryList } from "@/components/inventory/UoMCategoryList"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import React from "react"
+import { UoMList } from "@/features/inventory/components/UoMList"
+import { UoMCategoryList } from "@/features/inventory/components/UoMCategoryList"
 
 interface UoMsViewProps {
     activeTab: string
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
 }
 
-export function UoMsView({ activeTab }: UoMsViewProps) {
-    const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
-    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-
-    const getHeaderConfig = () => {
-        switch (activeTab) {
-            case "units":
-                return {
-                    title: "Unidades de Medida",
-                    description: "Gestión de unidades (Kg, Mts, Un, etc.) y sus equivalencias.",
-                    actions: (
-                        <PageHeaderButton
-                            onClick={() => setIsUoMModalOpen(true)}
-                            icon={Plus}
-                            circular
-                            title="Nueva Unidad"
-                        />
-                    )
-                }
-            case "categories":
-                return {
-                    title: "Categorías de Unidades",
-                    description: "Agrupe unidades relacionadas para facilitar conversiones.",
-                    actions: (
-                        <PageHeaderButton
-                            onClick={() => setIsCategoryModalOpen(true)}
-                            icon={Plus}
-                            circular
-                            title="Nueva Categoría"
-                        />
-                    )
-                }
-            default:
-                return { title: "Unidades", description: "", actions: null }
-        }
-    }
-
-    const { title, description, actions } = getHeaderConfig()
-
+/**
+ * View component for Units of Measure and Categories.
+ * Refactored to remove redundant headers and fix TabsContent context error.
+ * Navigation is now handled at the page level.
+ */
+export function UoMsView({ activeTab, externalOpen, onExternalOpenChange }: UoMsViewProps) {
     return (
-        <>
-            <PageHeader
-                title={title}
-                description={description}
-                titleActions={actions}
-            />
-
-            <div className="pt-4">
-                <TabsContent value="units" className="mt-0 outline-none">
-                    {activeTab === "units" && (
-                        <UoMList
-                            externalOpen={isUoMModalOpen}
-                            onExternalOpenChange={setIsUoMModalOpen}
-                        />
-                    )}
-                </TabsContent>
-                <TabsContent value="categories" className="mt-0 outline-none">
-                    {activeTab === "categories" && (
-                        <UoMCategoryList
-                            externalOpen={isCategoryModalOpen}
-                            onExternalOpenChange={setIsCategoryModalOpen}
-                        />
-                    )}
-                </TabsContent>
-            </div>
-        </>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {activeTab === "units" && (
+                <UoMList
+                    externalOpen={externalOpen}
+                    onExternalOpenChange={onExternalOpenChange}
+                />
+            )}
+            {activeTab === "categories" && (
+                <UoMCategoryList
+                    externalOpen={externalOpen}
+                    onExternalOpenChange={onExternalOpenChange}
+                />
+            )}
+        </div>
     )
 }

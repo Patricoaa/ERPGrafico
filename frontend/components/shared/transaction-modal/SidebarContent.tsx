@@ -1,5 +1,8 @@
+"use client"
+
 import React from "react"
 import { ExternalLink, User, MonitorSmartphone, Package, Calendar, CalendarClock, Receipt, Hash, Wallet, FileText, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Activity, Gavel } from "lucide-react"
+import type { TransactionData } from "@/types/transactions"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useRouter } from "next/navigation"
 import { formatPlainDate, translateReceivingStatus, translatePaymentMethod } from "@/lib/utils"
@@ -17,7 +20,7 @@ export const SidebarSection = ({ title, children }: { title: string, children: R
     </div>
 )
 
-export const SidebarContent = React.memo(({ data, currentType, closeModal }: { data: any, currentType: string, closeModal: () => void }) => {
+export const SidebarContent = React.memo(({ data, currentType, closeModal }: { data: TransactionData, currentType: string, closeModal: () => void }) => {
     if (!data) return null
     const router = useRouter()
     const { openContact } = useGlobalModalActions()

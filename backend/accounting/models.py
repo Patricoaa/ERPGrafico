@@ -850,6 +850,10 @@ class AccountingSettings(models.Model):
 
         super().save(*args, **kwargs)
 
+        # Invalidate Redis cache on every save
+        from core.cache import invalidate_singleton, CACHE_KEY_ACCOUNTING_SETTINGS
+        invalidate_singleton(CACHE_KEY_ACCOUNTING_SETTINGS)
+
         # Trigger mass update if prefixes or separator changed
         new_prefixes = {
             'ASSET': self.asset_prefix,
@@ -874,10 +878,8 @@ class AccountingSettings(models.Model):
 
     @classmethod
     def get_solo(cls):
-        obj = cls.objects.first()
-        if not obj:
-            obj = cls.objects.create()
-        return obj
+        from core.cache import cached_singleton, CACHE_KEY_ACCOUNTING_SETTINGS
+        return cached_singleton(cls, CACHE_KEY_ACCOUNTING_SETTINGS)
 
     class Meta:
         verbose_name = _("Configuración Contable")

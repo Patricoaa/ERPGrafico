@@ -6,11 +6,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/lib/hr/api"
-import { PaymentDialog } from "@/components/shared/PaymentDialog"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { ActivitySidebar } from "@/components/audit/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -40,7 +41,8 @@ import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+import { FORM_STYLES, LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
 
 const advanceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -52,14 +54,30 @@ const advanceSchema = z.object({
 type AdvanceFormValues = z.infer<typeof advanceSchema>
 
 export default function AdvancesPage() {
+    const searchParams = useSearchParams()
     const [advances, setAdvances] = useState<SalaryAdvance[]>([])
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    const [dialogOpen, setDialogOpen] = useState(false)
+    
+    // Dialog state synchronized with URL or local edit
+    const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingAdvance, setEditingAdvance] = useState<SalaryAdvance | null>(null)
+    const dialogOpen = isNewModalOpen || !!editingAdvance
+
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<any>(null)
+
+    const setDialogOpen = (open: boolean) => {
+        if (!open) {
+            setEditingAdvance(null)
+            if (isNewModalOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                window.history.replaceState(null, "", `?${params.toString()}`)
+            }
+        }
+    }
 
     const fetchAll = useCallback(async () => {
         try {
@@ -172,26 +190,20 @@ export default function AdvancesPage() {
     ]
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            <div className="flex items-center justify-between">
-                <PageHeader
-                    title="Anticipos de Sueldo"
-                    description="Registro de anticipos entregados a trabajadores"
-                    icon={WalletCards}
-                />
-                <Button onClick={() => { setEditingAdvance(null); setDialogOpen(true) }} className="gap-2">
-                    <Plus className="h-4 w-4" /> Nuevo Anticipo
-                </Button>
-            </div>
+        <div className="space-y-4">
 
-            <DataTable
-                columns={columns}
-                data={advances}
-                cardMode
-                filterColumn="employee_name"
-                defaultPageSize={20}
-                useAdvancedFilter={true}
-            />
+            {loading ? (
+                <TableSkeleton columns={5} rows={10} />
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={advances}
+                    cardMode
+                    filterColumn="employee_name"
+                    defaultPageSize={20}
+                    useAdvancedFilter={true}
+                />
+            )}
 
             <AdvanceDialog
                 open={dialogOpen}
@@ -442,3 +454,4 @@ function AdvanceDialog({ open, onOpenChange, advance, employees, payrolls, onSav
         </BaseModal>
     )
 }
+

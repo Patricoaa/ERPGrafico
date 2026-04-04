@@ -1,32 +1,80 @@
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, FileText, ShoppingBag } from "lucide-react"
-import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { Metadata } from "next"
+import { lazy, Suspense } from "react"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import Link from "next/link"
 
-export default function PurchasingPage() {
+const PurchasingOrdersClientView = lazy(() =>
+    import("./orders/components/PurchasingOrdersClientView").then(m => ({ default: m.PurchasingOrdersClientView }))
+)
+const PurchasingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.PurchasingSettingsView })))
+import { SettingsSheetRouteWrapper } from "@/components/shared"
+import { Settings2 } from "lucide-react"
+
+export const metadata: Metadata = {
+    title: "Módulo de Compras | ERPGrafico",
+    description: "Gestión integral de órdenes de compra, notas y configuración.",
+}
+
+interface PageProps {
+    searchParams: Promise<{ view?: string; modal?: string; tab?: string }>
+}
+
+export default async function PurchasingPage({ searchParams }: PageProps) {
+    const { view, modal, tab } = await searchParams
+    const configTab = tab || "global"
+    const viewMode = (view as 'orders' | 'notes') || 'orders'
+    const modalOpen = modal === 'new'
+
+    const tabs = [
+        { value: "orders", label: "Órdenes", iconName: "shopping-cart", href: "/purchasing?view=orders" },
+        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing?view=notes" },
+    ]
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
-                title="Módulo de Compras"
-                description="Control de proveedores, órdenes de compra y adquisición de existencias."
-                iconName="shopping-bag"
+                title={viewMode === 'orders' ? "Órdenes de Compra" : "Notas de Crédito y Débito"}
+                description={viewMode === 'orders' 
+                    ? "Gestión integral de órdenes de compra y recepciones" 
+                    : "Gestión de notas de crédito y débito de proveedores"
+                }
+                iconName={viewMode === 'orders' ? "shopping-cart" : "file-text"}
+                variant="minimal"
+                configHref="?config=true"
+                titleActions={
+                    viewMode === 'orders' && (
+                        <Link href="/purchasing?view=orders&modal=new">
+                            <PageHeaderButton
+                                iconName="plus"
+                                circular
+                                title="Nueva Orden"
+                            />
+                        </Link>
+                    )
+                }
             />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Link href="/purchasing/orders">
-                    <IndustrialCard variant="industrial" className="hover:bg-accent transition-colors cursor-pointer">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ordenes de Compra</CardTitle>
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Pedidos</div>
-                            <p className="text-xs text-muted-foreground">Emitir y recibir órdenes</p>
-                        </CardContent>
-                    </IndustrialCard>
-                </Link>
+
+            <PageTabs tabs={tabs} activeValue={viewMode} />
+
+            <div className="pt-4">
+                <Suspense fallback={<LoadingFallback />}>
+                    <PurchasingOrdersClientView viewMode={viewMode} externalOpenCheckout={modalOpen} />
+                </Suspense>
             </div>
+
+            <SettingsSheetRouteWrapper
+                sheetId="purchasing-settings"
+                title="Configuración de Compras"
+                description="Gestione las cuentas de gastos para diferentes tipos de compras."
+                tabLabel="Configuración"
+            >
+                <Suspense fallback={<LoadingFallback />}>
+                    <PurchasingSettingsView />
+                </Suspense>
+            </SettingsSheetRouteWrapper>
         </div>
     )
 }

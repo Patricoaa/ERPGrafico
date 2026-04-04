@@ -66,7 +66,7 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
     const isSale = type === 'sale'
     const isCreditNote = activeInvoice?.dte_type === 'NOTA_CREDITO'
 
-    // Status Calculations (copied from OrderCommandCenter)
+    // Status Calculations
     const activeOTs = activeDoc?.work_orders?.filter((ot: any) => ot.status !== 'CANCELLED') || []
     const totalOTs = activeOTs.length
     const totalOTProgress = totalOTs > 0
