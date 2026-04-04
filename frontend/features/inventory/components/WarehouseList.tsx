@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { WarehouseForm } from "./WarehouseForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
@@ -32,6 +33,8 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+
 
     const router = useRouter()
     const pathname = usePathname()
@@ -88,6 +91,26 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+        },
+        {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" />,
             cell: ({ row }) => (
@@ -142,6 +165,24 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         },
     ], [])
 
+    const selectedWarehouses = useMemo(() => {
+        return warehouses.filter((_, index) => selectedRows[index])
+    }, [selectedRows, warehouses])
+
+    const handleBulkDelete = async () => {
+        if (selectedWarehouses.length === 0) return
+        if (!confirm(`¿Está seguro de que desea eliminar ${selectedWarehouses.length} almacenes? Esta acción es irreversible.`)) return
+
+        try {
+            await Promise.all(selectedWarehouses.map(w => api.delete(`/inventory/warehouses/${w.id}/`)))
+            toast.success(`${selectedWarehouses.length} almacenes eliminados`)
+            setSelectedRows({})
+            fetchWarehouses()
+        } catch (error) {
+            toast.error("Error al eliminar los almacenes (algunos podrían estar en uso)")
+        }
+    }
+
     return (
         <div className="space-y-6">
             <DataTable
@@ -153,6 +194,18 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 filterColumn="name"
                 searchPlaceholder="Buscar almacén por nombre o código..."
                 globalFilterFields={["name", "code", "address"]}
+                onRowSelectionChange={setSelectedRows}
+                batchActions={
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
+                        onClick={handleBulkDelete}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Eliminar
+                    </Button>
+                }
             />
 
             <WarehouseForm

@@ -7,6 +7,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { useCompanySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -32,6 +33,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { Button } from "@/components/ui/button"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
+import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import api from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
@@ -73,7 +75,7 @@ export function CompanySettingsView({
     activeTab: string,
     onSavingChange?: (saving: boolean) => void
 }) {
-    const { settings, saving, updateSettings } = useCompanySettings()
+    const { settings, isLoading, saving, updateSettings } = useCompanySettings()
     
     // Propage saving status to parent
     useEffect(() => {
@@ -206,6 +208,31 @@ export function CompanySettingsView({
         } catch (error) {
             toast.error("Error al eliminar el logo")
         }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-48 mb-2" />
+                        <Skeleton className="h-4 w-64" />
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <Skeleton className="h-20 w-full" />
+                        <div className="grid grid-cols-2 gap-6">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <Skeleton className="h-32 w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
     return (

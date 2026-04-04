@@ -1,13 +1,15 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
     ColumnDef,
+    RowSelectionState
 } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Pause,
     Play,
@@ -72,6 +74,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+
 
     // Form & Actions state
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -101,7 +105,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         }
     }
 
-    const fetchSubscriptions = async () => {
+    const fetchSubscriptions = useCallback(async () => {
         try {
             setLoading(true)
             const response = await api.get('/inventory/subscriptions/')
@@ -112,23 +116,37 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const response = await api.get('/inventory/subscriptions/stats/')
             setStats(response.data)
         } catch (error) {
             console.error("Error fetching stats:", error)
         }
-    }
-
-    useEffect(() => {
-        fetchSubscriptions()
-        fetchStats()
     }, [])
 
-    const handlePause = async (id: number) => {
+    useEffect(() => {
+        let isMounted = true
+        
+        const load = async () => {
+            if (isMounted) {
+                await Promise.all([
+                    fetchSubscriptions(),
+                    fetchStats()
+                ])
+            }
+        }
+
+        load()
+
+        return () => {
+            isMounted = false
+        }
+    }, [fetchSubscriptions, fetchStats])
+
+    const handlePause = useCallback(async (id: number) => {
         try {
             await api.post(`/inventory/subscriptions/${id}/pause/`)
             toast.success("Suscripción pausada")
@@ -137,9 +155,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         } catch (error: unknown) {
             showApiError(error, "Error al pausar suscripción")
         }
-    }
+    }, [fetchSubscriptions, fetchStats])
 
-    const handleArchive = async () => {
+    const handleArchive = useCallback(async () => {
         if (!currentArchivingProduct) return
 
         if (isRestrictionsDialogOpen) {
@@ -167,9 +185,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         } finally {
             setIsRetrying(false)
         }
-    }
+    }, [currentArchivingProduct, isRestrictionsDialogOpen, fetchSubscriptions])
 
-    const openEditForm = async (productId: number) => {
+    const openEditForm = useCallback(async (productId: number) => {
         try {
             const response = await api.get(`/inventory/products/${productId}/`)
             setEditingProduct(response.data)
@@ -178,7 +196,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             console.error("Error fetching product details:", error)
             toast.error("Error al cargar detalles del producto")
         }
-    }
+    }, [])
 
     const handleTriggerInspection = async () => {
         try {
@@ -192,7 +210,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         }
     }
 
-    const handleResume = async (id: number) => {
+    const handleResume = useCallback(async (id: number) => {
         try {
             await api.post(`/inventory/subscriptions/${id}/resume/`)
             toast.success("Suscripción reactivada")
@@ -201,7 +219,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         } catch (error: unknown) {
             showApiError(error, "Error al reactivar suscripción")
         }
-    }
+    }, [fetchSubscriptions, fetchStats])
 
     const getPaymentScheduleText = (sub: Subscription) => {
         if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
@@ -212,7 +230,27 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
         return sub.recurrence_display
     }
 
-    const columns: ColumnDef<Subscription>[] = [
+    const columns = useMemo<ColumnDef<Subscription>[]>(() => [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+        },
         {
             id: "product",
             header: ({ column }) => (
@@ -367,7 +405,61 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                 )
             },
         },
-    ]
+    ], [handlePause, handleResume, openEditForm, handleArchive])
+
+    const selectedSubscriptions = useMemo(() => {
+        return subscriptions.filter((_, index) => selectedRows[index])
+    }, [selectedRows, subscriptions])
+
+    const canPauseAll = useMemo(() => {
+        if (selectedSubscriptions.length === 0) return false
+        return selectedSubscriptions.every(s => s.status === "ACTIVE")
+    }, [selectedSubscriptions])
+
+    const canResumeAll = useMemo(() => {
+        if (selectedSubscriptions.length === 0) return false
+        return selectedSubscriptions.every(s => s.status === "PAUSED")
+    }, [selectedSubscriptions])
+
+    const canArchiveAllActive = useMemo(() => {
+        if (selectedSubscriptions.length === 0) return false
+        return selectedSubscriptions.every(s => s.status === "ACTIVE" || s.status === "PAUSED")
+    }, [selectedSubscriptions])
+
+    const handleBulkPause = async () => {
+        try {
+            await Promise.all(selectedSubscriptions.map(s => api.post(`/inventory/subscriptions/${s.id}/pause/`)))
+            toast.success(`${selectedSubscriptions.length} suscripciones pausadas`)
+            setSelectedRows({})
+            fetchSubscriptions()
+            fetchStats()
+        } catch (error) {
+            toast.error("Error al pausar suscripciones")
+        }
+    }
+
+    const handleBulkResume = async () => {
+        try {
+            await Promise.all(selectedSubscriptions.map(s => api.post(`/inventory/subscriptions/${s.id}/resume/`)))
+            toast.success(`${selectedSubscriptions.length} suscripciones reactivadas`)
+            setSelectedRows({})
+            fetchSubscriptions()
+            fetchStats()
+        } catch (error) {
+            toast.error("Error al reactivar suscripciones")
+        }
+    }
+
+    const handleBulkArchive = async () => {
+        try {
+            await Promise.all(selectedSubscriptions.map(s => api.patch(`/inventory/products/${s.product}/`, { active: false })))
+            toast.success(`${selectedSubscriptions.length} productos de suscripción archivados`)
+            setSelectedRows({})
+            fetchSubscriptions()
+        } catch (error) {
+            toast.error("Error al archivar suscripciones")
+        }
+    }
 
     return (
         <div className={cn(LAYOUT_TOKENS.view, hideHeader && "pt-0")}>
@@ -442,6 +534,41 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             ]}
                             useAdvancedFilter={true}
                             defaultPageSize={20}
+                            onRowSelectionChange={setSelectedRows}
+                            batchActions={
+                                <>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 text-amber-500 hover:bg-amber-500/10 gap-2 disabled:opacity-30"
+                                        onClick={handleBulkPause}
+                                        disabled={!canPauseAll}
+                                    >
+                                        <Pause className="h-3.5 w-3.5" />
+                                        Pausar
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 text-emerald-500 hover:bg-emerald-500/10 gap-2 disabled:opacity-30"
+                                        onClick={handleBulkResume}
+                                        disabled={!canResumeAll}
+                                    >
+                                        <Play className="h-3.5 w-3.5" />
+                                        Reanudar
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
+                                        onClick={handleBulkArchive}
+                                        disabled={!canArchiveAllActive}
+                                    >
+                                        <Archive className="h-3.5 w-3.5" />
+                                        Archivar
+                                    </Button>
+                                </>
+                            }
                         />
                     </div>
                 )}

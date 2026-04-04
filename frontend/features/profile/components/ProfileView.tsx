@@ -34,6 +34,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // --- Schemas ---
 const passwordSchema = z.object({
@@ -93,8 +94,30 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
 
     if (loading) {
         return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="space-y-6">
+                <Card className="border shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b bg-muted/30 flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-2 w-24" />
+                        </div>
+                    </div>
+                    <CardContent className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="space-y-2">
+                                    <Skeleton className="h-3 w-16" />
+                                    <Skeleton className="h-10 w-full rounded-xl" />
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-[200px] w-full rounded-xl" />
+                    <Skeleton className="h-[200px] w-full rounded-xl" />
+                </div>
             </div>
         )
     }

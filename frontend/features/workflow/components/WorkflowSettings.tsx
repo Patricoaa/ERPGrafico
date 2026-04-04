@@ -179,11 +179,23 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
 
     if (loading) {
         return (
-            <div className="space-y-4">
-                <Skeleton className="h-[40px] w-full max-w-2xl" />
+            <div className="space-y-6">
+                <div className="flex gap-2">
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
                 <div className="grid gap-4">
-                    {[1, 2, 3].map(i => (
-                        <Skeleton key={i} className="h-[80px] w-full rounded-xl" />
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex items-center gap-4 p-3 border rounded-xl bg-card/50">
+                            <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-3 w-1/2 opacity-50" />
+                            </div>
+                            <Skeleton className="h-10 w-48 shrink-0" />
+                            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                        </div>
                     ))}
                 </div>
             </div>

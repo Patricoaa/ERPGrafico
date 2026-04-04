@@ -97,4 +97,14 @@ Todo hook de feature debe seguir este patrón:
   - `onSuccess: (data: T) => void`: Callback tras guardado exitoso.
   - `onCancel: () => void`: Cerrar modal o volver atrás.
 
+## 7. CONTRATO DE SKELETONS Y ESTADOS DE CARGA
+La experiencia "Industrial Premium" exige que no existan saltos visuales bruscos.
+
+- **LoadingFallback**: Es el componente estándar para `Suspense`. 
+  - Por defecto renderiza una **Tabla** (`variant="table"`).
+  - Soporta `variant="card"` para vistas de rejilla.
+  - La variante `spinner` queda delegada solo a procesos de fondo o elementos muy pequeños.
+- **Animación**: Todo esqueleto debe usar la clase `.skeleton` que implementa el **shimmer lineal**.
+- **Regla de Oro**: El esqueleto debe aproximar la altura y estructura del contenido final para minimizar el Layout Shift (CLS).
+
 

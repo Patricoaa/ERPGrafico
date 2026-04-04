@@ -317,50 +317,53 @@ export function BlacklistView() {
         }
     ]
 
-    if (loading) return <LoadingFallback message="Cargando lista negra..." />
-
-    if (!data?.contacts || data.contacts.length === 0) {
-        return (
-            <EmptyState
-                context="search"
-                title="Lista Negra Vacía"
-                description="No hay clientes bloqueados o en historial de castigos actualmente."
-            />
-        )
-    }
+    const contacts = data?.contacts || []
 
     return (
         <div className="space-y-6">
             <DataTable
                 columns={columns}
-                data={data.contacts}
+                data={contacts}
                 useAdvancedFilter
                 searchPlaceholder="Buscar por cliente o RUT..."
                 globalFilterFields={["name", "tax_id"]}
                 cardMode
-                renderCustomView={(table) => (
-                    <div className="overflow-x-auto pb-4">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-border/50">
-                                {table.getHeaderGroups().map((headerGroup: any) => (
-                                    <tr key={headerGroup.id}>
-                                        {headerGroup.headers.map((header: any) => (
-                                            <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                            </th>
-                                        ))}
-                                        <th className="px-3 py-3 w-12" />
-                                    </tr>
-                                ))}
-                            </thead>
-                            <tbody className="divide-y divide-border/50">
-                                {table.getRowModel().rows.map((row: any) => (
-                                    <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                isLoading={loading}
+                renderCustomView={(table) => {
+                    const rows = table.getRowModel().rows
+                    if (rows.length === 0 && !loading) {
+                        return (
+                            <EmptyState
+                                context="search"
+                                title="Lista Negra Vacía"
+                                description="No hay clientes bloqueados o en historial de castigos actualmente."
+                            />
+                        )
+                    }
+                    return (
+                        <div className="overflow-x-auto pb-4">
+                            <table className="w-full text-left">
+                                <thead className="border-b border-border/50">
+                                    {table.getHeaderGroups().map((headerGroup: any) => (
+                                        <tr key={headerGroup.id}>
+                                            {headerGroup.headers.map((header: any) => (
+                                                <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                </th>
+                                            ))}
+                                            <th className="px-3 py-3 w-12" />
+                                        </tr>
+                                    ))}
+                                </thead>
+                                <tbody className="divide-y divide-border/50">
+                                    {rows.map((row: any) => (
+                                        <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )
+                }}
             />
         </div>
     )

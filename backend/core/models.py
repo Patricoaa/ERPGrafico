@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from simple_history.models import HistoricalRecords
 import os
 import uuid
+from core.validators import validate_file_size, validate_file_extension, validate_image_extension
+from core.storages import PublicMediaStorage, PrivateMediaStorage
 
 class User(AbstractUser):
     pos_pin = models.CharField(
@@ -43,7 +45,14 @@ class CompanySettings(models.Model):
     email = models.EmailField(_("Email"), blank=True)
     website = models.URLField(_("Sitio Web"), blank=True)
     logo_url = models.URLField(_("URL del Logo"), blank=True)
-    logo = models.ImageField(_("Logo"), upload_to='company/logos/', null=True, blank=True)
+    logo = models.ImageField(
+        _("Logo"), 
+        upload_to='company/logos/', 
+        storage=PublicMediaStorage(),
+        null=True, 
+        blank=True,
+        validators=[validate_file_size, validate_image_extension]
+    )
     
     # Association with Contact
     contact = models.ForeignKey(
@@ -125,7 +134,12 @@ def attachment_upload_path(instance, filename):
     return os.path.join('attachments', 'general', name)
 
 class Attachment(models.Model):
-    file = models.FileField(_("Archivo"), upload_to=attachment_upload_path)
+    file = models.FileField(
+        _("Archivo"), 
+        upload_to=attachment_upload_path,
+        storage=PrivateMediaStorage(),
+        validators=[validate_file_size, validate_file_extension]
+    )
     original_filename = models.CharField(_("Nombre Original"), max_length=255)
     
     # Generic Relation

@@ -24,7 +24,7 @@ interface TreasuryAccountsViewProps {
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen }) => {
     const { openTreasuryAccount } = useGlobalModalActions()
-    const { accounts, deleteAccount } = useTreasuryAccounts()
+    const { accounts, deleteAccount, isLoading } = useTreasuryAccounts()
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -208,6 +208,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     columns={columns}
                     data={accounts}
                     cardMode
+                    isLoading={isLoading}
                     searchPlaceholder="Buscar cuentas por nombre..."
                     filterColumn="name"
                     initialColumnVisibility={{

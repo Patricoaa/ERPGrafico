@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration } from "../types"
 
+import { Skeleton } from "@/components/ui/skeleton"
+
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
@@ -308,12 +310,18 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
-                        <CardDescription className="text-2xl font-bold text-foreground">
-                            {currentPeriodDisplay}
-                        </CardDescription>
+                        {isLoading ? (
+                            <Skeleton className="h-8 w-32 mt-1" />
+                        ) : (
+                            <CardDescription className="text-2xl font-bold text-foreground">
+                                {currentPeriodDisplay}
+                            </CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent>
-                        {isLatestClosed ? (
+                        {isLoading ? (
+                            <Skeleton className="h-4 w-24" />
+                        ) : isLatestClosed ? (
                             <div className="flex items-center gap-2 text-sm text-success font-medium">
                                 <CheckCircle2 className="h-4 w-4" />
                                 Período Cerrado
@@ -330,14 +338,22 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
-                        <CardDescription className="text-2xl font-bold text-foreground">
-                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
-                        </CardDescription>
+                        {isLoading ? (
+                            <Skeleton className="h-8 w-32 mt-1" />
+                        ) : (
+                            <CardDescription className="text-2xl font-bold text-foreground">
+                                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
+                            </CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xs text-muted-foreground italic">
-                            Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
-                        </div>
+                        {isLoading ? (
+                            <Skeleton className="h-4 w-40" />
+                        ) : (
+                            <div className="text-xs text-muted-foreground italic">
+                                Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -359,6 +375,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             <DataTable
                 columns={columns}
                 data={periods}
+                isLoading={isLoading}
                 cardMode
                 filterColumn="period_display"
                 searchPlaceholder="Buscar período..."
@@ -377,6 +394,29 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 ]}
                 renderCustomView={(table) => {
                     const rows = table.getRowModel().rows
+                    
+                    if (isLoading) {
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 bg-muted/20 border border-border/50 rounded-2xl opacity-60">
+                                        <div className="flex items-center gap-4">
+                                            <Skeleton className="w-12 h-12 rounded-xl" />
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-5 w-32" />
+                                                <Skeleton className="h-4 w-20" />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <Skeleton className="h-8 w-24" />
+                                            <Skeleton className="h-8 w-24" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    }
+
                     if (rows.length === 0) {
                         return (
                             <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
@@ -495,7 +535,6 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                     )
                 }}
             />
-
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}
                 onOpenChange={handleWizardOpenChange}

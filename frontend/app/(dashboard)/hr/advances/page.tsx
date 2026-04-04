@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/lib/hr/api"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -191,14 +192,18 @@ export default function AdvancesPage() {
     return (
         <div className="space-y-4">
 
-            <DataTable
-                columns={columns}
-                data={advances}
-                cardMode
-                filterColumn="employee_name"
-                defaultPageSize={20}
-                useAdvancedFilter={true}
-            />
+            {loading ? (
+                <TableSkeleton columns={5} rows={10} />
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={advances}
+                    cardMode
+                    filterColumn="employee_name"
+                    defaultPageSize={20}
+                    useAdvancedFilter={true}
+                />
+            )}
 
             <AdvanceDialog
                 open={dialogOpen}

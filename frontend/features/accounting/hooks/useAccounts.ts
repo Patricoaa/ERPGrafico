@@ -1,5 +1,5 @@
 import { showApiError } from "@/lib/errors"
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
 import type { AccountFilters, AccountPayload } from '../types'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ interface UseAccountsProps {
 export function useAccounts({ filters }: UseAccountsProps = {}) {
     const queryClient = useQueryClient()
 
-    const { data: accounts, refetch } = useSuspenseQuery({
+    const { data: accounts, refetch, isLoading } = useQuery({
         queryKey: [...ACCOUNTS_QUERY_KEY, filters],
         queryFn: () => accountingApi.getAccounts(filters),
     })
@@ -53,8 +53,9 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     })
 
     return {
-        accounts,
+        accounts: accounts || [],
         refetch,
+        isLoading,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
         deleteAccount: deleteMutation.mutateAsync,

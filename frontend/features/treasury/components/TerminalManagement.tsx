@@ -28,8 +28,10 @@ interface TerminalManagementProps {
     onExternalOpenChange?: (open: boolean) => void
 }
 
+import { Skeleton } from "@/components/ui/skeleton"
+
 export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
-    const { terminals, toggleActive, deleteTerminal, refetch } = useTerminals()
+    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
@@ -72,7 +74,13 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
 
     return (
         <div className="space-y-6">
-            {terminals.length === 0 ? (
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[1, 2, 3].map((i) => (
+                        <TerminalCardSkeleton key={i} />
+                    ))}
+                </div>
+            ) : terminals.length === 0 ? (
                 <EmptyState
                     context="finance"
                     title="No hay terminales configurados"
@@ -86,13 +94,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {terminals.map((terminal) => (
-                        <TerminalCard
-                            key={terminal.id}
-                            terminal={terminal}
-                            onEdit={() => handleEdit(terminal)}
-                            onToggleActive={() => handleToggleActive(terminal)}
-                            onDelete={() => handleDelete(terminal)}
-                        />
+                        <TerminalCard key={terminal.id} terminal={terminal} onEdit={() => handleEdit(terminal)} onToggleActive={() => handleToggleActive(terminal)} onDelete={() => handleDelete(terminal)} />
                     ))}
                 </div>
             )}
@@ -116,6 +118,40 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
                 variant="destructive"
             />
         </div>
+    )
+}
+
+function TerminalCardSkeleton() {
+    return (
+        <Card className="bg-background border-2 shadow-none">
+            <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-2 w-full">
+                        <Skeleton className="h-5 w-1/2" />
+                        <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-4 w-16" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-1/3 mt-3" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-3 w-1/4" />
+                    <div className="flex flex-wrap gap-1.5">
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-14" />
+                    </div>
+                </div>
+                <div className="pt-2 border-t flex justify-end gap-2">
+                    <Skeleton className="h-7 w-20" />
+                    <Skeleton className="h-7 w-10" />
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 

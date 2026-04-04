@@ -176,35 +176,30 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
 
     return (
         <div className="space-y-6">
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <p className="text-muted-foreground text-sm animate-pulse">Cargando presupuestos...</p>
-                </div>
-            ) : budgets.length === 0 ? (
-                <div className="bg-white rounded-xl border shadow-sm">
-                    <EmptyState
-                        icon={Wallet}
-                        title="No hay presupuestos"
-                        description="Aún no has creado ningún presupuesto anual para monitorear la ejecución financiera."
-                        action={
-                            <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="gap-2">
-                                <Plus className="h-4 w-4" />
-                                Crear Primer Presupuesto
-                            </Button>
-                        }
-                    />
-                </div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={budgets}
-                    cardMode
-                    globalFilterFields={["name"]}
-                    searchPlaceholder="Buscar presupuestos..."
-                    useAdvancedFilter={true}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={budgets}
+                isLoading={loading}
+                cardMode
+                globalFilterFields={["name"]}
+                searchPlaceholder="Buscar presupuestos..."
+                useAdvancedFilter={true}
+                emptyState={
+                    <div className="bg-white rounded-xl border shadow-sm">
+                        <EmptyState
+                            icon={Wallet}
+                            title="No hay presupuestos"
+                            description="Aún no has creado ningún presupuesto anual para monitorear la ejecución financiera."
+                            action={
+                                <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Crear Primer Presupuesto
+                                </Button>
+                            }
+                        />
+                    </div>
+                }
+            />
 
             {/* Create Modal */}
             <BaseModal

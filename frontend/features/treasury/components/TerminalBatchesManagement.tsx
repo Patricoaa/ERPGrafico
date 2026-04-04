@@ -3,6 +3,7 @@
 import { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, FileText, CreditCard, Calendar } from "lucide-react"
@@ -37,7 +38,7 @@ export function TerminalBatchesManagement({
     externalOpenInvoice,
     onExternalOpenInvoiceChange
 }: TerminalBatchesManagementProps) {
-    const { batches, refetch } = useTerminalBatches()
+    const { batches, refetch, isLoading } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -57,7 +58,7 @@ export function TerminalBatchesManagement({
         }
     }, [externalOpenInvoice])
 
-    const columns = [
+    const columns: ColumnDef<any>[] = [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -158,6 +159,7 @@ export function TerminalBatchesManagement({
             <DataTable
                 columns={columns}
                 data={batches}
+                isLoading={isLoading}
                 cardMode
                 useAdvancedFilter={true}
                 facetedFilters={[

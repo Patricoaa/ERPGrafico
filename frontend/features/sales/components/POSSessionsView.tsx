@@ -161,24 +161,19 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
 
     return (
         <div className="flex-1 space-y-4">
-            {loading ? (
-                <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-            ) : (
-                <div className="mt-4">
-                    <DataTable
-                        columns={columns}
-                        data={sessions}
-                        cardMode
-                        globalFilterFields={["user_name", "status_display", "id"]}
-                        searchPlaceholder="Buscar por cajero..."
-                        facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={10}
-                    />
-                </div>
-            )}
+            <div className="mt-4">
+                <DataTable
+                    columns={columns}
+                    data={sessions}
+                    cardMode
+                    isLoading={loading}
+                    globalFilterFields={["user_name", "status_display", "id"]}
+                    searchPlaceholder="Buscar por cajero..."
+                    facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={10}
+                />
+            </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
             {reportDialogOpen && (

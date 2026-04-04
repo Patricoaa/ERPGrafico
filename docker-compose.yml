@@ -9,8 +9,6 @@
 # Para limpiar TODO (caché incluido):
 #   docker compose down -v
 #
-# MODO ESTABLE (Sin Hot Reload / Más estable en Windows):
-#   docker compose -f docker-compose.yml -f docker-compose.stable.yml up frontend -d
 #
 # MODO HÍBRIDO (Máximo Rendimiento Front nativo + Back Docker - RECOMENDADO):
 #   docker compose -f docker-compose.yml -f docker-compose.hybrid.yml up -d
@@ -92,6 +90,43 @@ services:
       resources:
         limits:
           memory: 128M
+
+  # ── MinIO (S3 Object Storage Local) ─────────────────────
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - backend_net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ── MinIO Init (Creates default bucket) ─────────────────
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/erpgrafico-media-public --ignore-existing;
+      /usr/bin/mc mb myminio/erpgrafico-media-private --ignore-existing;
+      /usr/bin/mc anonymous set download myminio/erpgrafico-media-public;
+      exit 0;
+      "
+    networks:
+      - backend_net
 
   # ── Celery Worker ───────────────────────────────────────
   celery-worker:
@@ -216,6 +251,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/media:/app/media:ro
     ports:
       - "80:80"
     networks:
@@ -253,3 +289,6 @@ volumes:
 
   # venv del backend — isolado del SO host
   backend_venv:
+
+  # Datos de MinIO (Archivos y Objetos)
+  minio_data:

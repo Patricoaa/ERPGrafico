@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -54,7 +54,8 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
     }
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
+        setLoading(true)
         try {
             const response = await api.get('/inventory/categories/')
             setCategories(response.data.results || response.data)
@@ -64,9 +65,9 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
-    const handleDelete = async (category: Category | null, isConfirmed = false) => {
+    const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {
         if (!category) return
 
         if (!isConfirmed) {
@@ -84,11 +85,21 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             console.error("Error deleting category:", error)
             toast.error("Error al eliminar la categoría.")
         }
-    }
+    }, [fetchCategories])
 
     useEffect(() => {
-        fetchCategories()
-    }, [])
+        let isMounted = true
+        
+        const load = async () => {
+            if (isMounted) await fetchCategories()
+        }
+
+        load()
+
+        return () => {
+            isMounted = false
+        }
+    }, [fetchCategories])
 
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
@@ -131,8 +142,10 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 </div>
             ),
         },
-    ], [])
+    ], [handleDelete])
 
+
+    const globalFilterFields = useMemo(() => ["name", "parent_name"], [])
 
     return (
         <div className="space-y-4">
@@ -142,7 +155,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 cardMode
                 isLoading={loading}
                 searchPlaceholder="Buscar categoría por nombre..."
-                globalFilterFields={["name", "parent_name"]}
+                globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
             />
 

@@ -5,7 +5,8 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import api from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Ruler } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -34,6 +35,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [currentCategory, setCurrentCategory] = useState<Partial<UoMCategory>>({})
     const [isSaving, setIsSaving] = useState(false)
 
@@ -108,6 +110,26 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
 
     const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
         {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+        },
+        {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
             cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
@@ -128,16 +150,47 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
         },
     ], [])
 
+    const selectedCategories = useMemo(() => {
+        return categories.filter((_, index) => selectedRows[index])
+    }, [selectedRows, categories])
+
+    const handleBulkDelete = async () => {
+        if (selectedCategories.length === 0) return
+        if (!confirm(`¿Está seguro de que desea eliminar ${selectedCategories.length} categorías de unidades?`)) return
+
+        try {
+            await Promise.all(selectedCategories.map(c => api.delete(`/inventory/uom-categories/${c.id}/`)))
+            toast.success(`${selectedCategories.length} categorías eliminadas`)
+            setSelectedRows({})
+            fetchCategories()
+        } catch (error) {
+            toast.error("Error al eliminar las categorías (pueden tener unidades asociadas)")
+        }
+    }
+
 
     return (
         <div className="space-y-4">
             <DataTable
                 columns={columns}
                 data={categories}
+                isLoading={loading}
                 cardMode
                 filterColumn="name"
-                searchPlaceholder="Buscar por nombre..."
+                pageSizeOptions={[10, 20]}
                 useAdvancedFilter={true}
+                onRowSelectionChange={setSelectedRows}
+                batchActions={
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
+                        onClick={handleBulkDelete}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Eliminar
+                    </Button>
+                }
             />
 
             <BaseModal

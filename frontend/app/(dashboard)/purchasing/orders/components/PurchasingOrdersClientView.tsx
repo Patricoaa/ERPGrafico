@@ -33,6 +33,9 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { formatPlainDate } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { EmptyState } from "@/components/shared/EmptyState"
+import Link from "next/link"
 
 interface PurchaseOrder {
     id: number
@@ -458,9 +461,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando datos...</div>
-                </div>
+                <LoadingFallback variant="list" className="pt-2" />
             ) : (
                 <Tabs value={viewMode} className="w-full">
                     <DataTable
@@ -526,10 +527,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                             const rows = table.getRowModel().rows
                             if (rows.length === 0) {
                                 return (
-                                    <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
-                                        <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                        <p className="text-muted-foreground font-medium">No se encontraron resultados</p>
-                                    </div>
+                                    <EmptyState
+                                        context="inventory"
+                                        title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
+                                        description={viewMode === 'orders'
+                                            ? "No se han encontrado órdenes de compra en este periodo."
+                                            : "No hay notas de crédito ni débito asociadas a tus compras."
+                                        }
+
+                                        className="py-24"
+                                    />
                                 )
                             }
                             return (

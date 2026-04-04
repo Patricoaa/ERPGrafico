@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getAbsences, createAbsence, updateAbsence, deleteAbsence, getEmployees } from "@/lib/hr/api"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Absence, Employee } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
@@ -151,9 +152,7 @@ export default function AbsencesPage() {
             />
 
             {loading ? (
-                <div className="flex items-center justify-center h-48">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <TableSkeleton columns={5} rows={8} />
             ) : (
                 <DataTable
                     columns={columns}
