@@ -23,6 +23,7 @@ import { translateSalesChannel, formatPlainDate } from "@/lib/utils"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder } from "@/features/sales"
+import { HubDockLayout } from "@/components/shared/HubDockLayout"
 
 
 
@@ -170,94 +171,86 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     ]
 
     return (
-        <div className="w-full h-full">
-            <div className="w-full">
-                <Tabs value={viewMode} className="w-full flex flex-col">
-                    <DataTable
-                        columns={viewMode === 'orders' ? columns : noteColumns}
-                        data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                        cardMode
-                        isLoading={viewMode === 'notes' ? loadingNotes : false}
-                        filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
-                        searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
-                        facetedFilters={[
+        <HubDockLayout>
+            <Tabs value={viewMode} className="w-full flex flex-col h-full">
+                <DataTable
+                    columns={viewMode === 'orders' ? columns : noteColumns}
+                    data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                    cardMode
+                    isLoading={viewMode === 'notes' ? loadingNotes : false}
+                    filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
+                    searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: viewMode === 'orders' ? [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Confirmado", value: "CONFIRMED" },
+                                { label: "Facturado", value: "INVOICED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ] : [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                        ...(viewMode === 'orders' ? [
                             {
-                                column: "status",
-                                title: "Estado",
-                                options: viewMode === 'orders' ? [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Confirmado", value: "CONFIRMED" },
-                                    { label: "Facturado", value: "INVOICED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ] : [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
+                                column: "production_status",
+                                title: "Producción",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
                             },
-                            ...(viewMode === 'orders' ? [
-                                {
-                                    column: "production_status",
-                                    title: "Producción",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "logistics_status",
-                                    title: "Logística",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "billing_status",
-                                    title: "Facturación",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "treasury_status",
-                                    title: "Tesorería",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                }
-                            ] : [])
-                        ]}
-                        useAdvancedFilter={true}
-                        showToolbarSort={true}
-                        onReset={() => setDateRange(undefined)}
-                        toolbarAction={
-                            <div className="flex items-center gap-2">
-                                <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
-                            </div>
-                        }
-
-                        defaultPageSize={20}
-                        renderCustomView={(table) => {
-                            const rows = table.getRowModel().rows
-                            if (rows.length === 0) {
-                                return (
-                                    <EmptyState
-                                        context="search"
-                                        title={viewMode === 'orders' ? "No se encontraron órdenes" : "No se encontraron notas"}
-                                        description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
-                                    />
-                                )
+                            {
+                                column: "logistics_status",
+                                title: "Logística",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "billing_status",
+                                title: "Facturación",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "treasury_status",
+                                title: "Tesorería",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
                             }
+                        ] : [])
+                    ]}
+                    useAdvancedFilter={true}
+                    showToolbarSort={true}
+                    onReset={() => setDateRange(undefined)}
+                    toolbarAction={
+                        <div className="flex items-center gap-2">
+                            <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
+                        </div>
+                    }
+
+                    defaultPageSize={20}
+                    renderCustomView={(table) => {
+                        const rows = table.getRowModel().rows
+                        if (rows.length === 0) {
                             return (
+<<<<<<< Updated upstream
                                 <div className="grid gap-3 pt-2">
                                     {rows.map((row: any) => {
                                         const item = row.original
@@ -292,5 +285,40 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 </Tabs>
             </div>
         </div>
+=======
+                                <EmptyState
+                                    context="search"
+                                    title={viewMode === 'orders' ? "No se encontraron órdenes" : "No se encontraron notas"}
+                                    description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
+                                />
+                            )
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: any) => {
+                                    const item = row.original
+                                    return (
+                                        <OrderCard
+                                            key={item.id}
+                                            item={item}
+                                            type={viewMode === 'orders' ? 'sale' : 'note'}
+                                            hideStatus={hideStatusInCards}
+                                            onClick={() => {
+                                                if (viewMode === 'orders') {
+                                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                } else {
+                                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess })
+                                                }
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )
+                    }}
+                />
+            </Tabs>
+        </HubDockLayout>
+>>>>>>> Stashed changes
     )
 }

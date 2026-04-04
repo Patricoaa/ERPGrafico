@@ -20,6 +20,8 @@ interface HubPanelContextType {
     setHubTemporarilyHidden: (hidden: boolean) => void
     actionEngineRef: React.RefObject<any>
     triggerAction: (actionId: string) => void
+    isDocked: boolean
+    setIsDocked: (docked: boolean) => void
 }
 
 const HubPanelContext = createContext<HubPanelContextType | undefined>(undefined)
@@ -34,6 +36,7 @@ export function HubPanelProvider({
     const pathname = usePathname()
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
     const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
+    const [isDocked, setIsDocked] = useState(false)
     const actionEngineRef = React.useRef<any>(null)
 
     const triggerAction = useCallback((actionId: string) => {
@@ -71,8 +74,10 @@ export function HubPanelProvider({
         isHubTemporarilyHidden,
         setHubTemporarilyHidden,
         actionEngineRef,
-        triggerAction
-    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction])
+        triggerAction,
+        isDocked,
+        setIsDocked
+    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isDocked])
 
     return (
         <HubPanelContext.Provider value={value}>

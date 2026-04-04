@@ -11,7 +11,7 @@ import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { cn } from "@/lib/utils"
 
 export function GlobalHubPanel() {
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, actionEngineRef } = useHubPanel()
+    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, actionEngineRef, isDocked } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
     
     const { activeDoc, fetchOrderDetails, userPermissions } = useOrderHubData({ 
@@ -20,6 +20,7 @@ export function GlobalHubPanel() {
         type: hubConfig?.type || 'sale', 
         enabled: isHubOpen 
     })
+<<<<<<< Updated upstream
 
     const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden
 
@@ -49,6 +50,11 @@ export function GlobalHubPanel() {
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [isHubEffectivelyOpen, closeHub])
 
+=======
+ 
+    const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden && !isDocked
+ 
+>>>>>>> Stashed changes
     return (
         <>
             {/* Hub Panel (Right) - Fixed position, NO Dialog/Portal */}

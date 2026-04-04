@@ -249,18 +249,25 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <RefreshCw className="h-3.5 w-3.5 mr-2" /> Actualizar
                     </Button>
                     
-                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button 
-                                size="sm" 
-                                className="text-xs font-bold rounded-xl"
-                                disabled={availableAttributes.length === 0}
-                            >
-                                <Wand2 className="h-4 w-4 mr-2" />
-                                {isPendingGeneration ? "Modificar Gen." : "Generador"}
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent className="w-[400px] sm:w-[540px] border-l-0 shadow-2xl flex flex-col p-6 sm:p-8">
+                    <Button 
+                        size="sm" 
+                        className="text-xs font-bold rounded-xl"
+                        disabled={availableAttributes.length === 0}
+                        onClick={() => setIsSheetOpen(true)}
+                    >
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        {isPendingGeneration ? "Modificar Gen." : "Generador"}
+                    </Button>
+
+                    <CollapsibleSheet 
+                        sheetId="PRODUCT_VARIANT_GENERATOR"
+                        open={isSheetOpen} 
+                        onOpenChange={setIsSheetOpen}
+                        size="md"
+                        tabLabel="GENERADOR"
+                        tabIcon={Wand2}
+                    >
+                        <div className="flex flex-col h-full p-6 sm:p-8">
                             <SheetHeader className="mb-6 shrink-0">
                                 <SheetTitle className="flex items-center gap-3 text-xl font-bold">
                                     <div className="p-2.5 rounded-xl bg-violet-100/80">
@@ -310,8 +317,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                     )}
                                 </div>
                             </div>
-                        </SheetContent>
-                    </Sheet>
+                        </div>
+                    </CollapsibleSheet>
                 </div>
             </div>
 

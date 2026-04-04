@@ -65,16 +65,37 @@ api.interceptors.response.use(
     }
 );
 
+<<<<<<< Updated upstream
 export async function pollTask(taskId: string, endpoint: string = 'finances/api/report-status/', interval: number = 2000): Promise<any> {
     return new Promise((resolve, reject) => {
         const checkStatus = async () => {
             try {
                 const response = await api.get(`${endpoint}${taskId}/`);
+=======
+
+export async function pollTask(
+    taskId: string, 
+    endpoint: string = 'finances/api/report-status/', 
+    initialInterval: number = 2000,
+    maxRetries: number = 10
+): Promise<any> {
+    let currentInterval = initialInterval;
+    let retryCount = 0;
+
+    return new Promise((resolve, reject) => {
+        const checkStatus = async () => {
+            try {
+                // Remove the extra slash if endpoint already ends with it
+                const cleanEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
+                const response = await api.get(`${cleanEndpoint}${taskId}/`);
+                
+>>>>>>> Stashed changes
                 if (response.data.status === 'SUCCESS') {
                     resolve(response.data.data);
                 } else if (response.data.status === 'FAILURE') {
                     reject(new Error(response.data.error || 'Task failed'));
                 } else {
+<<<<<<< Updated upstream
                     // PENDING or other state, continue polling
                     setTimeout(checkStatus, interval);
                 }
@@ -83,6 +104,25 @@ export async function pollTask(taskId: string, endpoint: string = 'finances/api/
             }
         };
         setTimeout(checkStatus, interval);
+=======
+                    // PENDING or other state, continue polling with reset interval
+                    currentInterval = initialInterval; 
+                    setTimeout(checkStatus, currentInterval);
+                }
+            } catch (error: any) {
+                if (error.response?.status === 429 && retryCount < maxRetries) {
+                    retryCount++;
+                    // Exponential backoff: increase interval (e.g. 2s, 4s, 8s, 16s, max 30s)
+                    currentInterval = Math.min(currentInterval * 2, 30000); 
+                    console.warn(`Rate limit hit (429). Retrying in ${currentInterval}ms... (Attempt ${retryCount}/${maxRetries})`);
+                    setTimeout(checkStatus, currentInterval);
+                } else {
+                    reject(error);
+                }
+            }
+        };
+        setTimeout(checkStatus, currentInterval);
+>>>>>>> Stashed changes
     });
 }
 
