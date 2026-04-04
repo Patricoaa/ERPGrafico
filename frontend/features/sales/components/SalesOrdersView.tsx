@@ -171,7 +171,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     ]
 
     return (
-        <div className="w-full">
+        <Tabs value={viewMode} className="w-full flex flex-col h-full">
             <HubDockLayout>
                 <DataTable
                     columns={viewMode === 'orders' ? columns : noteColumns}
@@ -290,6 +290,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     }}
                 />
             </HubDockLayout>
-        </div>
+        </Tabs>
     )
 }

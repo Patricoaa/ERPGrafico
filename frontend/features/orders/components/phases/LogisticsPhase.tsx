@@ -206,16 +206,16 @@ export function LogisticsPhase({
                         return (
                             <div key={idx} className="space-y-0.5">
                                 <div className="flex items-center justify-between text-[10px] gap-2">
-                                    <span className="text-foreground/70 line-clamp-1 flex-1">
+                                    <span className="text-foreground/70 line-clamp-1 flex-1 leading-tight">
                                         {line.product_name || line.description}
                                     </span>
-                                    <span className="shrink-0 font-bold text-primary/80">
-                                        {Math.round(showAnimations ? current : 0)}/{Math.round(total)}
+                                    <span className="shrink-0 font-black text-primary text-[11px]">
+                                        {Math.round(showAnimations ? current : 0)} / {Math.round(total)}
                                     </span>
                                 </div>
-                                <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-1 w-full bg-border/20 rounded-full overflow-hidden">
                                     <div
-                                        className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-success/30" : "bg-primary/30")}
+                                        className={cn("h-full transition-all duration-1000", pct === 100 ? "bg-success" : "bg-primary")}
                                         style={{ width: `${showAnimations ? pct : 0}%` }}
                                         role="progressbar"
                                         aria-valuenow={pct}

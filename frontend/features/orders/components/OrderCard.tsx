@@ -103,7 +103,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             className={cn(
                 "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all duration-300",
                 // SEAMLESS INTEGRATION WITH HUB DOCK
-                isSelected && isHubOpen && "rounded-r-none border-r-transparent z-[30] !bg-background",
+                isSelected && isHubOpen && "z-[30] !bg-background shadow-xl shadow-primary/10",
                 // NO SCALE SHIFT - ONLY OPACITY/GRAYSCALE FOR FOCUS
                 !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
                 className

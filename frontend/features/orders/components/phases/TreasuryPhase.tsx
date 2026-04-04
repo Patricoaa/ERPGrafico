@@ -174,26 +174,32 @@ export function TreasuryPhase({
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
             >
-                <div className="space-y-0.5 py-0.5">
-                    <div className="flex items-center justify-between text-[10.5px] font-bold">
-                        <span className="text-muted-foreground/60 uppercase tracking-tighter">Pagado</span>
-                        <span className="text-success/90">
+                <div className="flex items-center justify-between py-2 px-2 border-y border-border/10 my-2">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
+                        <span className="text-[14px] font-heading font-black text-success tracking-tight">
                             {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
                         </span>
                     </div>
-                    <div className="flex items-center justify-between text-[10.5px] font-bold">
-                        <span className="text-muted-foreground/60 uppercase tracking-tighter">Pendiente</span>
-                        <span className={cn(parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-warning" : "text-muted-foreground/30")}>
+                    
+                    <div className="h-6 w-[1px] bg-border/20 mx-2" />
+
+                    <div className="flex flex-col gap-0.5 text-right">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
+                        <span className={cn(
+                            "text-[14px] font-heading font-black tracking-tight",
+                            parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-warning" : "text-muted-foreground/30"
+                        )}>
                             {formatCurrency(activeDoc.pending_amount || 0)}
                         </span>
                     </div>
-                    {hasPendingTransactions && (
-                        <div className="flex items-center gap-1 mt-0.5 text-[8.5px] text-warning/80 animate-pulse font-black uppercase tracking-widest">
-                            <AlertCircle className="size-2.5" />
-                            Falta N° TRX
-                        </div>
-                    )}
                 </div>
+                {hasPendingTransactions && (
+                    <div className="flex items-center justify-center gap-1.5 py-1 text-[9px] text-warning/80 animate-pulse font-black uppercase tracking-widest">
+                        <AlertCircle className="size-3" />
+                        Falta N° TRX
+                    </div>
+                )}
             </PhaseCard>
 
             <TransactionNumberForm

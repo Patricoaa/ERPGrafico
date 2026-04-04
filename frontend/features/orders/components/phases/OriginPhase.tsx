@@ -149,15 +149,15 @@ export function OriginPhase({
                         <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
                             {line.product_name || line.description}
                         </span>
-                        <span className="shrink-0 font-bold text-primary/80">
+                        <span className="shrink-0 font-black text-primary text-[11px]">
                             {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}
                 {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
-                    <div className="text-[9px] text-muted-foreground/60 italic pt-0.5 flex justify-between items-center bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                    <div className="text-[9px] text-muted-foreground/60 italic pt-1 flex justify-between items-center border-t border-border/10 mt-1">
                         <span>Y {(activeDoc?.lines || activeDoc?.items || []).length - 3} productos más...</span>
-                        <span className="font-bold text-primary/40 text-[8px] uppercase tracking-tighter">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
+                        <span className="font-bold text-primary/60 text-[8px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
                     </div>
                 )}
             </div>

@@ -42,7 +42,7 @@ export function DateRangeFilter({
     }
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("grid gap-2", className)}>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button

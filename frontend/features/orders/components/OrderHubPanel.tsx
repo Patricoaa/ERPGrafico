@@ -111,7 +111,7 @@ export function OrderHubPanel({
     return (
         <div className="flex flex-col h-full bg-background">
             {/* Content Container - No internal ScrollArea to avoid double scrollbars */}
-            <div className="flex-1 w-full p-4 pt-0">
+            <div className="flex-1 w-full px-4 pb-4">
                 <OrderHubIntegrated 
                     data={hubData}
                     type={type}
