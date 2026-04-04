@@ -189,7 +189,7 @@ class ReturnService:
             return return_doc
             
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         created_moves = []
         total_cogs_reversal = Decimal('0')

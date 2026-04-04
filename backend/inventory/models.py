@@ -623,7 +623,7 @@ class Product(models.Model):
             return self.category.asset_account
         
         # 2. Type-based account from settings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
         
@@ -659,7 +659,7 @@ class Product(models.Model):
             return self.category.income_account
             
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
             
@@ -686,7 +686,7 @@ class Product(models.Model):
             return self.category.expense_account
             
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             return None
             

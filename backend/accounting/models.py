@@ -129,7 +129,7 @@ class Account(models.Model):
                 })
         # Max hierarchy depth validation
         from .models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if settings:
             depth = self.get_depth()
             if depth > settings.hierarchy_levels:

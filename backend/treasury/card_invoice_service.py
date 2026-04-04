@@ -54,7 +54,7 @@ class CardInvoiceService:
         )
         
         # 3. Create Journal Entry (Draft)
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         # Accounts
         expense_account = settings.bank_commission_account

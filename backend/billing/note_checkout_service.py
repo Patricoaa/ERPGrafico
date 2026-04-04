@@ -558,7 +558,7 @@ class NoteCheckoutService:
                 f"No se puede registrar documento en etapa {workflow.get_current_stage_display()}"
             )
         
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
         
@@ -1201,7 +1201,7 @@ class NoteCheckoutService:
         
         # Create Accounting Entry
         # Pass moved_quantities so COGS is reversed only for what moved
-        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.objects.first(), moved_quantities=moved_quantities)
+        entry = NoteCheckoutService._create_accounting_entry(workflow, AccountingSettings.get_solo(), moved_quantities=moved_quantities)
         
         if not val_is_pending:
             from accounting.services import JournalEntryService

@@ -129,7 +129,7 @@ class Command(BaseCommand):
         The populate_ifrs_coa() service already configures ALL accounts comprehensively.
         This method just adds any additional demo-specific accounts or adjustments.
         """
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             self.stdout.write(self.style.WARNING("  ⚠ No AccountingSettings found. Skipping additional configuration."))
             return
@@ -861,7 +861,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("  No warehouse found to add initial stock."))
             return
 
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         initial_inv_account = accounts['capital']  # Use capital account directly (initial_inventory_account was removed)
         
         if not initial_inv_account:

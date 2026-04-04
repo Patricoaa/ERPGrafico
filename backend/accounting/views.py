@@ -22,7 +22,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get', 'put', 'patch'])
     def current(self, request):
-        obj = AccountingSettings.objects.first()
+        obj = AccountingSettings.get_solo()
         if not obj:
             if request.method == 'GET':
                  return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)

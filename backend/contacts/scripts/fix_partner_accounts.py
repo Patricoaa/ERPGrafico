@@ -9,7 +9,7 @@ from contacts.models import Contact
 from accounting.models import AccountingSettings, Account
 
 def fix_partner_accounts():
-    settings = AccountingSettings.objects.first()
+    settings = AccountingSettings.get_solo()
     if not settings:
         print("Error: No AccountingSettings found.")
         return

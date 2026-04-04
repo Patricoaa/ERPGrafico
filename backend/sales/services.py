@@ -25,7 +25,7 @@ class SalesService:
         # 1. Validate Stock Availability (Strict Reservation)
         from inventory.services import UoMService
         from sales.models import SalesSettings
-        settings = SalesSettings.objects.first()
+        settings = SalesSettings.get_solo()
         
         if settings and settings.restrict_stock_sales:
             for line in order.lines.all():
@@ -537,7 +537,7 @@ class SalesService:
         delivery.recalculate_totals()
         
         from accounting.models import AccountingSettings
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         
         if delivery.total_cost > 0:
             description, reference, items = AccountingMapper.get_entries_for_delivery(delivery, settings)
@@ -757,7 +757,7 @@ class SalesService:
         from inventory.models import StockMove, Product, Warehouse
         
         # 0. Initial Validations
-        settings = AccountingSettings.objects.first()
+        settings = AccountingSettings.get_solo()
         if not settings:
             raise ValidationError("Debe configurar la contabilidad primero.")
 
