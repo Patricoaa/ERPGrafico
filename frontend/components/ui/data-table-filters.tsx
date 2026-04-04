@@ -117,18 +117,7 @@ export function DataTableFilters<TData>({
                             </div>
                         )}
 
-                        {/* Custom Actions (Dates) Section */}
-                        {toolbarAction && (
-                            <div className="px-3 py-2 mb-2">
-                                <div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2 flex items-center gap-2 font-heading">
-                                    <Calendar className="h-3 w-3 opacity-50" />
-                                    Fecha
-                                </div>
-                                {toolbarAction}
-                            </div>
-                        )}
-
-                        {(filterColumn || globalFilterFields || toolbarAction) && facetedFilters.length > 0 && (
+                        {(filterColumn || globalFilterFields) && facetedFilters.length > 0 && (
                             <Separator className="my-2" />
                         )}
 

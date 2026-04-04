@@ -243,10 +243,10 @@ export function DataTable<TData, TValue>({
 
 
         return (
-            <div className="relative space-y-4">
+            <div className="relative space-y-1">
                 {/* Toolbar Section (Outside) */}
                 {showToolbar && (
-                    <div className={cn("px-1", toolbarClassName)}>
+                    <div className={cn("px-0", toolbarClassName)}>
                         <DataTableToolbar
                             table={table}
                             filterColumn={filterColumn}
@@ -289,7 +289,7 @@ export function DataTable<TData, TValue>({
 
                 <div className="overflow-x-auto">
                     {renderCustomView ? (
-                        <div className="py-4">{renderCustomView(table)}</div>
+                        <div className="py-0">{renderCustomView(table)}</div>
                     ) : (
                         <Table>
                             <TableHeader className="bg-transparent">

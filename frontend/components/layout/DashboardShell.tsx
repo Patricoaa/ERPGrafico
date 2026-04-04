@@ -23,10 +23,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden } = useHubPanel()
+    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
 
-    const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden
 
     useEffect(() => {
         // Sync active category with URL
@@ -98,8 +97,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             <div
                 className={cn(
                     "flex-1 flex flex-col min-w-0 relative transition-all duration-500 ease-in-out",
-                    isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]",
-                    isHubEffectivelyOpen && "mr-[380px]"
+                    isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
                 )}
             >
                 <main className="flex-1 overflow-y-auto pb-24">

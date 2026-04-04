@@ -97,27 +97,15 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     const currentSortColumn = currentSort ? table.getColumn(currentSort.id) : null
 
     return (
-        <div className="flex flex-col gap-3 w-full px-1 mb-2">
-            {/* ─── LEVEL 1: PRIMARY ACTIONS (HIGH HIERARCHY) ────────────────────── */}
-            {((toolbarAction && !useAdvancedFilter) || rightAction) && (
-                <div className="flex items-center justify-end gap-3 min-h-[40px] animate-in fade-in slide-in-from-top-1 duration-300">
-                    <div className="flex items-center gap-2">
-                        {/* Render toolbarAction here ONLY if advanced filters are NOT used */}
-                        {!useAdvancedFilter && toolbarAction}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {rightAction}
-                    </div>
-                </div>
-            )}
-
-            {/* ─── LEVEL 2: OPERATIONAL CONTROLS (SEARCH, FILTERS, TOOLS) ────────── */}
-            <div className="flex items-center justify-between gap-4 h-10">
-                {/* Left Section: Search & Batch Actions */}
-                <div className="flex items-center gap-3 flex-1">
+        <div className="w-full px-1 mb-0">
+            {/* ─── UNIFIED TOOLBAR: LEFT (SEARCH) | CENTER (ACTIONS) | RIGHT (TOOLS) ─── */}
+            <div className="flex items-center justify-between gap-4 h-8 w-full relative">
+                
+                {/* Left Section: Search & Batch Actions (flex-1) */}
+                <div className="flex-1 flex items-center gap-3 min-w-0">
                     {batchActions}
                     {(filterColumn || globalFilterFields) && !useAdvancedFilter && (
-                        <div className="relative w-64 lg:w-80 group">
+                        <div className="relative w-64 lg:w-72 group shrink-0">
                             <Input
                                 placeholder={searchPlaceholder}
                                 value={filterColumn
@@ -146,8 +134,16 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     )}
                 </div>
 
-                {/* Right Section: Filters & Tools */}
-                <div className="flex items-center gap-2">
+                {/* Center Section: Primary Actions (flex-1 + justify-center) */}
+                <div className="flex-1 flex items-center justify-center min-w-0 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="flex items-center gap-2">
+                        {/* Always show toolbarAction in the center of the toolbar */}
+                        {toolbarAction}
+                    </div>
+                </div>
+
+                {/* Right Section: Filters & Tools (flex-1 + justify-end) */}
+                <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
                     {useAdvancedFilter ? (
                         <div className="flex items-center gap-2">
                             <DataTableFilters
@@ -156,7 +152,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 filterColumn={filterColumn}
                                 globalFilterFields={globalFilterFields}
                                 searchPlaceholder={searchPlaceholder}
-                                toolbarAction={useAdvancedFilter ? toolbarAction : null}
+                                // We no longer pass toolbarAction into filters since it's centered in the main toolbar
                                 onReset={onReset}
                             />
                             {showToolbarSort && sortableColumns.length > 0 && (
@@ -271,6 +267,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             )}
+                        </div>
+                    )}
+
+                    {rightAction && (
+                        <div className="flex items-center gap-2">
+                            {rightAction}
                         </div>
                     )}
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect } from "react"
+import React, { useRef } from "react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { OrderHubPanel } from "@/features/orders/components/OrderHubPanel"
@@ -8,10 +8,10 @@ import { ActionCategory } from "@/features/orders/components/ActionCategory"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function GlobalHubPanel() {
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, actionEngineRef, isDocked } = useHubPanel()
+    const { isHubOpen, hubConfig, closeHub, actionEngineRef, isHubEffectivelyOpen } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
     
     const { activeDoc, fetchOrderDetails, userPermissions } = useOrderHubData({ 
@@ -20,68 +20,14 @@ export function GlobalHubPanel() {
         type: hubConfig?.type || 'sale', 
         enabled: isHubOpen 
     })
-<<<<<<< Updated upstream
 
-    const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden
-
+    // Derived: check modal as well to hide UI (but keep engine alive)
+    const showFixedPanel = isHubEffectivelyOpen && !isSubModalActive
     const panelRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            // Do not close if hub is not effectively open or we have popups active
-            if (!isHubEffectivelyOpen) return
-            
-            const target = event.target as Element
-
-            // Do not close if clicking inside the Panel itself
-            if (panelRef.current && panelRef.current.contains(target)) return
-            
-            // Do not close if clicking any OrderCard (they handle their own selection logic)
-            if (target.closest('[data-order-card="true"]')) return
-
-            // Do not close if clicking inside any Dialog or Sheet that is side-by-side with HUB
-            if (target.closest('[role="dialog"]')) return
-
-            // Close otherwise
-            closeHub()
-        }
-
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [isHubEffectivelyOpen, closeHub])
-
-=======
- 
-    const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden && !isDocked
- 
->>>>>>> Stashed changes
     return (
-        <>
-            {/* Hub Panel (Right) - Fixed position, NO Dialog/Portal */}
-            <div 
-                ref={panelRef}
-                className={cn(
-                    "fixed top-0 right-0 h-screen w-[min(380px,100vw)] sm:min-w-[350px] md:min-w-[380px] z-[60] bg-transparent flex flex-col pointer-events-auto",
-                    isHubEffectivelyOpen ? "translate-x-0" : "translate-x-[110%]"
-                )}
-                style={{
-                    transition: 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1)',
-                    willChange: 'transform'
-                }}
-            >
-                {isHubOpen && hubConfig && (
-                    <OrderHubPanel
-                        orderId={hubConfig.orderId}
-                        invoiceId={hubConfig.invoiceId}
-                        type={hubConfig.type}
-                        onClose={closeHub}
-                        onActionSuccess={hubConfig.onActionSuccess}
-                        posSessionId={hubConfig.posSessionId}
-                    />
-                )}
-            </div>
-
-            {/* STABLE ACTION ENGINE (Headless) */}
+        <AnimatePresence mode="wait">
+            {/* STABLE ACTION ENGINE (Headless) - ALWAYS RENDERED IF OPEN */}
             {isHubOpen && (
                 <div className="sr-only" aria-hidden="true" id="global-action-engine">
                     <ActionCategory
@@ -101,6 +47,29 @@ export function GlobalHubPanel() {
                     />
                 </div>
             )}
-        </>
+
+            {/* Hub Panel (Right/Fixed) - STRICTLY MUTUALLY EXCLUSIVE WITH DOCK */}
+            {showFixedPanel && (
+                <motion.div 
+                    ref={panelRef}
+                    initial={{ x: "100%", opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: "100%", opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l shadow-2xl bg-background flex flex-col pointer-events-auto"
+                >
+                    {hubConfig && (
+                        <OrderHubPanel
+                            orderId={hubConfig.orderId}
+                            invoiceId={hubConfig.invoiceId}
+                            type={hubConfig.type}
+                            onClose={closeHub}
+                            onActionSuccess={hubConfig.onActionSuccess}
+                            posSessionId={hubConfig.posSessionId}
+                        />
+                    )}
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 }

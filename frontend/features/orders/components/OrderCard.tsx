@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Calendar, ArrowRight, ShoppingCart, Package, Monitor, FileBadge, Wand2 } from "lucide-react"
+import { Calendar, ArrowRight, ArrowLeft, ShoppingCart, Package, Monitor, FileBadge, Wand2 } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import { OrderHubStatus } from "./OrderHubStatus"
 import { NoteHubStatus } from "./NoteHubStatus"
@@ -18,10 +18,11 @@ interface OrderCardProps {
     onActionClick?: () => void
     hideStatus?: boolean
     isSelected?: boolean
+    isHubOpen?: boolean
     className?: string
 }
 
-export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, className }: OrderCardProps) {
+export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
     const isPurchase = type === 'purchase' || (isNote && (item.purchase_order || item.purchase_order_id || item.supplier_name))
@@ -100,8 +101,11 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all",
-                isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
+                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all duration-300",
+                // SEAMLESS INTEGRATION WITH HUB DOCK
+                isSelected && isHubOpen && "rounded-r-none border-r-transparent z-[30] !bg-background",
+                // NO SCALE SHIFT - ONLY OPACITY/GRAYSCALE FOR FOCUS
+                !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
                 className
             )}
             onClick={handleClick}
@@ -164,7 +168,11 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                         />
                     </div>
 
-                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    {isHubOpen && isSelected ? (
+                        <ArrowLeft className="h-5 w-5 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                    ) : (
+                        <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    )}
                 </div>
             </div>
 
@@ -189,7 +197,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                         <div className="flex items-center gap-5 shrink-0 pl-4">
                             <div className="flex flex-col items-end min-w-[100px]">
                                 <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
-                                    Pdte
+                                    Pendiente
                                 </span>
                                 <MoneyDisplay
                                     amount={pending}

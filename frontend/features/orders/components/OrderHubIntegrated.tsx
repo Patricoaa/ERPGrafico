@@ -115,9 +115,9 @@ export function OrderHubIntegrated({
 
     return (
         <TooltipProvider delayDuration={150}>
-            <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full min-h-full pb-8">
                 <div className="w-full">
-                    <div className="flex flex-col gap-4 py-4">
+                    <div className="flex flex-col gap-3 py-1 px-1">
                         {/* 1. Origen */}
                         <PhaseWrapper index={visiblePhases.indexOf('origin')}>
                             <OriginPhase
