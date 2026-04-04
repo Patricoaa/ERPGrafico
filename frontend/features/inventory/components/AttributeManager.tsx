@@ -12,7 +12,8 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table" // Ensure this is installed/available
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
@@ -44,6 +45,8 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newValueName, setNewValueName] = useState("")
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+
 
     const router = useRouter()
     const pathname = usePathname()
@@ -144,6 +147,26 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
     const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
         {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+        },
+        {
             accessorKey: "name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
@@ -214,25 +237,49 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
         },
     ], [])
 
+    const selectedAttributes = useMemo(() => {
+        return attributes.filter((_, index) => selectedRows[index])
+    }, [selectedRows, attributes])
+
+    const handleBulkDelete = async () => {
+        if (selectedAttributes.length === 0) return
+        if (!confirm(`¿Está seguro de que desea eliminar ${selectedAttributes.length} atributos y todos sus valores?`)) return
+
+        try {
+            await Promise.all(selectedAttributes.map(a => api.delete(`/inventory/attributes/${a.id}/`)))
+            toast.success(`${selectedAttributes.length} atributos eliminados`)
+            setSelectedRows({})
+            fetchAttributes()
+        } catch (error) {
+            toast.error("Error al eliminar los atributos")
+        }
+    }
+
 
     return (
         <div className="space-y-4">
 
-            {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-muted-foreground">Cargando atributos...</div>
-                </div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={attributes}
-                    cardMode
-                    isLoading={loading}
-                    filterColumn="name"
-                    searchPlaceholder="Buscar atributos..."
-                    useAdvancedFilter={true}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={attributes}
+                cardMode
+                isLoading={loading}
+                filterColumn="name"
+                searchPlaceholder="Buscar atributos..."
+                useAdvancedFilter={true}
+                onRowSelectionChange={setSelectedRows}
+                batchActions={
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
+                        onClick={handleBulkDelete}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Eliminar
+                    </Button>
+                }
+            />
 
             {/* Modal para Atributo */}
             <BaseModal

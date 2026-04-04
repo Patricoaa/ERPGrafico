@@ -28,6 +28,8 @@ export interface Product {
     track_inventory: boolean
     can_be_sold: boolean
     can_be_purchased: boolean
+    image_thumbnail?: string
+    image_catalog?: string
     active: boolean
     is_dynamic_pricing?: boolean
     has_variants?: boolean

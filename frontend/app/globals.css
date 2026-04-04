@@ -132,6 +132,8 @@
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
 
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* 
    * RHYTHM & SPACING 
    * Extending Tailwind scale (Prefixed with 'r-' to avoid collision with standard keywords)
@@ -146,6 +148,17 @@
   /* 24px */
   --spacing-r-xl: 2rem;
   /* 32px */
+
+  /* SHIMMER ANIMATION */
+  --animate-shimmer: shimmer 2s infinite linear;
+  @keyframes shimmer {
+    0% {
+      background-position: -40rem 0;
+    }
+    100% {
+      background-position: 40rem 0;
+    }
+  }
 }
 
 @layer base {
@@ -162,6 +175,20 @@
       radial-gradient(at 0% 0%, oklch(0.98 0.01 240 / 0.15) 0px, transparent 50%),
       url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
     background-attachment: fixed;
+  }
+
+  /* REUSABLE SKELETON SHIMMER */
+  .skeleton {
+    @apply relative overflow-hidden bg-muted/40 rounded-md;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
   }
 
   /* Interaction Guards (Ley de Fitts) 
@@ -209,5 +236,124 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /*
+   * GLOBAL REPULSION SYSTEM
+   * Captures the widths of global panels (Inbox, Hub) and stores them for reactive layouts.
+   */
+  body {
+    --inbox-width: 0px;
+    --hub-width: 0px;
+  }
+
+  body[data-inbox-open="true"] {
+    --inbox-width: clamp(320px, 25vw, 450px);
+  }
+
+  body[data-hub-open="true"] {
+    --hub-width: 500px;
+  }
+
+  /* 
+   * PREMIUM ANIMATIONS - SHEET OVERRIDES
+   * Dedicated hardware-accelerated keyframes. 
+   * We replace tailwindcss-animate to ensure Radix Presence picks up the animation-duration correctly 
+   * and doesn't instantly unmount the element.
+   */
+  @keyframes sheet-slide-in-right {
+    from { transform: translate3d(100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-right {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(100%, 0, 0); }
+  }
+  @keyframes sheet-slide-in-left {
+    from { transform: translate3d(-100%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-left {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-100%, 0, 0); }
+  }
+  @keyframes sheet-slide-in-top {
+    from { transform: translate3d(0, -100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-top {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, -100%, 0); }
+  }
+  @keyframes sheet-slide-in-bottom {
+    from { transform: translate3d(0, 100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes sheet-slide-out-bottom {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, 100%, 0); }
+  }
+
+  @keyframes sheet-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sheet-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  [data-slot="sheet-content"] {
+    animation-duration: 400ms !important;
+    animation-timing-function: var(--ease-premium) !important;
+    animation-fill-mode: both !important;
+    will-change: transform;
+    /* Clean up conflicting tailwind transition */
+    transition: none !important;
+  }
+
+  [data-slot="sheet-content"][data-state="closed"] {
+    animation-duration: 300ms !important;
+  }
+
+  [data-slot="sheet-content"].right-0[data-state="open"] { animation-name: sheet-slide-in-right !important; }
+  [data-slot="sheet-content"].right-0[data-state="closed"] { animation-name: sheet-slide-out-right !important; }
+
+  /* 
+   * DYNAMIC REPULSION FOR FLOATING LAYERS 
+   * Applies the combined displacement of active side panels to the Sheets to avoid intersection.
+   */
+  [data-slot="sheet-content"].right-0,
+  [data-slot="sheet-overlay"] {
+    margin-right: calc(var(--inbox-width) + var(--hub-width));
+    /* Add margin-right to the transitions handled by animation, overriding inline tailwind classes */
+    transition: margin-right 300ms var(--ease-premium) !important;
+  }
+
+  [data-slot="sheet-content"].left-0[data-state="open"] { animation-name: sheet-slide-in-left !important; }
+  [data-slot="sheet-content"].left-0[data-state="closed"] { animation-name: sheet-slide-out-left !important; }
+
+  [data-slot="sheet-content"].top-0[data-state="open"] { animation-name: sheet-slide-in-top !important; }
+  [data-slot="sheet-content"].top-0[data-state="closed"] { animation-name: sheet-slide-out-top !important; }
+
+  [data-slot="sheet-content"].bottom-0[data-state="open"] { animation-name: sheet-slide-in-bottom !important; }
+  [data-slot="sheet-content"].bottom-0[data-state="closed"] { animation-name: sheet-slide-out-bottom !important; }
+
+
+  /* Overlay */
+  [data-slot="sheet-overlay"] {
+    animation-duration: 400ms !important;
+    animation-timing-function: var(--ease-premium) !important;
+    animation-fill-mode: both !important;
+    will-change: opacity;
+  }
+  
+  [data-slot="sheet-overlay"][data-state="open"] {
+    animation-name: sheet-fade-in !important;
+  }
+
+  [data-slot="sheet-overlay"][data-state="closed"] {
+    animation-duration: 300ms !important;
+    animation-name: sheet-fade-out !important;
   }
 }

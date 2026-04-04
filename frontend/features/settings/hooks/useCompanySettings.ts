@@ -7,6 +7,7 @@ export const COMPANY_SETTINGS_QUERY_KEY = ['settings-company']
 
 interface UseCompanySettingsReturn {
     settings: CompanySettings | undefined
+    isLoading: boolean
     saving: boolean
     updateSettings: (payload: CompanySettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<any>
@@ -18,7 +19,7 @@ interface UseCompanySettingsReturn {
 export function useCompanySettings(): UseCompanySettingsReturn {
     const queryClient = useQueryClient()
 
-    const { data: settings, refetch } = useQuery({
+    const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getCompanySettings,
         enabled: typeof window !== 'undefined',
@@ -42,6 +43,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
 
     return {
         settings,
+        isLoading,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

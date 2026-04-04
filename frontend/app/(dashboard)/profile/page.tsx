@@ -10,6 +10,7 @@ import { getMyProfile } from "@/lib/profile/api"
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
 import { Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ProfilePage() {
     const searchParams = useSearchParams()
@@ -32,13 +33,26 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className={LAYOUT_TOKENS.view}>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-48" />
+                        </div>
+                    </div>
+                </div>
+                <div className="flex gap-4 mb-4">
+                    <Skeleton className="h-10 w-32 rounded-lg" />
+                    <Skeleton className="h-10 w-32 rounded-lg" />
+                </div>
+                <div className="pt-4">
+                    <ProfileView activeTab={activeTab} />
+                </div>
             </div>
         )
     }
-
-    if (!profile) return null
 
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
@@ -84,7 +98,7 @@ export default function ProfilePage() {
             <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
             
             <div className="pt-4">
-                <ProfileView activeTab={activeTab} initialProfile={profile} />
+                <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />
             </div>
         </div>
     )

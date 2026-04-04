@@ -5,13 +5,14 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { TableRow, TableCell } from "@/components/ui/table"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { ProductForm } from "./ProductForm"
 import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType, formatCurrency } from "@/lib/utils"
 import { PricingUtils } from "@/lib/pricing"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -45,6 +46,8 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
     const [view, setView] = useState("table")
+    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+
 
     const router = useRouter()
     const pathname = usePathname()
@@ -217,6 +220,12 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 return (
                     <div className={cn("max-w-[250px] flex items-center gap-2", isChild && "ml-8")}>
                         {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
+                        {product.image_thumbnail && !isChild && (
+                            <Avatar className="h-7 w-7 rounded border bg-muted shrink-0">
+                                <AvatarImage src={product.image_thumbnail} alt={product.name} className="object-cover" />
+                                <AvatarFallback className="rounded bg-muted text-[8px]"></AvatarFallback>
+                            </Avatar>
+                        )}
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <DataCell.Text className={cn(!product.active ? "line-through text-muted-foreground" : "", isChild && "text-[11px] text-muted-foreground/70")}>
@@ -358,7 +367,49 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     ], [expandedTemplates])
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
-    const initialColumnVisibility = useMemo(() => ({ }), [])
+    const initialColumnVisibility = useMemo(() => ({ active: false }), [])
+
+    const selectedProducts = useMemo(() => {
+        const ids = Object.keys(selectedRows).map(Number)
+        // Note: we need to find the products in displayProducts because displayProducts contains variants too
+        return displayProducts.filter((_, index) => selectedRows[index])
+    }, [selectedRows, displayProducts])
+
+    const canArchiveAll = useMemo(() => {
+        if (selectedProducts.length === 0) return false
+        return selectedProducts.every(p => p.active)
+    }, [selectedProducts])
+
+    const canRestoreAll = useMemo(() => {
+        if (selectedProducts.length === 0) return false
+        return selectedProducts.every(p => !p.active)
+    }, [selectedProducts])
+
+    const handleBulkArchive = async () => {
+        if (selectedProducts.length === 0) return
+        const action = "archivar"
+        try {
+            await Promise.all(selectedProducts.map(p => updateProduct({ id: p.id, payload: { active: false } })))
+            toast.success(`${selectedProducts.length} productos archivados correctamente.`)
+            setSelectedRows({})
+            refetch()
+        } catch (error) {
+            toast.error(`Error al ${action} los productos.`)
+        }
+    }
+
+    const handleBulkRestore = async () => {
+        if (selectedProducts.length === 0) return
+        const action = "restaurar"
+        try {
+            await Promise.all(selectedProducts.map(p => updateProduct({ id: p.id, payload: { active: true } })))
+            toast.success(`${selectedProducts.length} productos restaurados correctamente.`)
+            setSelectedRows({})
+            refetch()
+        } catch (error) {
+            toast.error(`Error al ${action} los productos.`)
+        }
+    }
 
 
     return (
@@ -377,13 +428,26 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     ]}
                     currentView={view}
                     onViewChange={setView}
+                    onRowSelectionChange={setSelectedRows}
                     batchActions={
                         <>
-                            <Button variant="ghost" size="sm" className="h-8 text-white hover:bg-white/10 gap-2">
-                                <Download className="h-3.5 w-3.5" />
-                                Exportar
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 text-white hover:bg-white/10 gap-2 disabled:opacity-30"
+                                onClick={handleBulkRestore}
+                                disabled={!canRestoreAll}
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                Restaurar
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2 disabled:opacity-30"
+                                onClick={handleBulkArchive}
+                                disabled={!canArchiveAll}
+                            >
                                 <ArchiveIcon className="h-3.5 w-3.5" />
                                 Archivar
                             </Button>

@@ -209,33 +209,26 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
     return (
         <div className="space-y-4">
             <div className="pt-2">
-                {loading ? (
-                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                        Cargando asientos...
-                    </div>
-                ) : (
-                    <div className="">
-                        <DataTable
-                            columns={columns}
-                            data={entries}
-                            cardMode
-                            filterColumn="description"
-                            searchPlaceholder="Buscar por descripción..."
-                            facetedFilters={[
-                                {
-                                    column: "state",
-                                    title: "Estado",
-                                    options: [
-                                        { label: "Borrador", value: "DRAFT" },
-                                        { label: "Publicado", value: "POSTED" },
-                                    ],
-                                },
-                            ]}
-                            useAdvancedFilter={true}
-                            defaultPageSize={20}
-                        />
-                    </div>
-                )}
+                <DataTable
+                    columns={columns}
+                    data={entries}
+                    isLoading={loading}
+                    cardMode
+                    filterColumn="description"
+                    searchPlaceholder="Buscar por descripción..."
+                    facetedFilters={[
+                        {
+                            column: "state",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                />
 
                 <JournalEntryForm 
                     accounts={accounts} 

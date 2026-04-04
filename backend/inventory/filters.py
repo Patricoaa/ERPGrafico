@@ -11,7 +11,6 @@ class ProductFilter(filters.FilterSet):
             'category': ['exact'],
             'can_be_sold': ['exact'],
             'can_be_purchased': ['exact'],
-            'active': ['exact'],
             'parent_template': ['exact', 'isnull'],
             'has_variants': ['exact']
         }

@@ -26,7 +26,7 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange }: AccountsClientViewProps) {
-    const { accounts, refetch, deleteAccount } = useAccounts()
+    const { accounts, refetch, deleteAccount, isLoading } = useAccounts()
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -167,6 +167,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             <DataTable
                 columns={columns}
                 data={accounts}
+                isLoading={isLoading}
                 cardMode
                 globalFilterFields={["code", "name"]}
                 searchPlaceholder="Buscar por código o nombre..."

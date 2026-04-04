@@ -21,3 +21,5 @@ openpyxl>=3.1.0
 xlrd>=2.0.1
 pyxlsb>=1.0.10
 whitenoise
+django-storages[boto3]>=1.14.2
+django-imagekit

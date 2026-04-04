@@ -96,7 +96,7 @@ export function ReconciliationDashboard() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <DashboardTrendChart data={trend} />
-                <DashboardPendingTable data={pending} />
+                <DashboardPendingTable data={pending} loading={loading} />
             </div>
         </div>
     )

@@ -1,9 +1,10 @@
-import React from "react"
 import { Metadata } from "next"
+import { Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList } from "@/features/inventory/components/ProductList"
 import { CategoryList } from "@/features/inventory/components/CategoryList"
 import { PricingRuleList } from "@/features/inventory/components/PricingRuleList"
+import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Button } from "@/components/ui/button"
@@ -89,21 +90,27 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
             </div>
 
             <Tabs value={activeTab} className="space-y-4 pt-4">
-                <div className="pt-0">
+                <div className="pt-0 min-h-[400px]">
                     <TabsContent value="products" className="mt-0 outline-none">
-                        <ProductList
-                            externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
-                        />
+                        <Suspense fallback={<LoadingFallback />}>
+                            <ProductList
+                                externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                     <TabsContent value="categories" className="mt-0 outline-none">
-                        <CategoryList
-                            externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
-                        />
+                        <Suspense fallback={<LoadingFallback />}>
+                            <CategoryList
+                                externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                     <TabsContent value="pricing-rules" className="mt-0 outline-none">
-                        <PricingRuleList
-                            externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
-                        />
+                        <Suspense fallback={<LoadingFallback />}>
+                            <PricingRuleList
+                                externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
+                            />
+                        </Suspense>
                     </TabsContent>
                 </div>
             </Tabs>

@@ -7,6 +7,9 @@ from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
 from core.validators import validate_file_size, validate_image_extension
 from core.utils import generic_upload_path, get_current_date
+from core.storages import PublicMediaStorage
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill
 
 
 class ProductCategory(models.Model):
@@ -116,8 +119,21 @@ class Product(models.Model):
     image = models.ImageField(
         _("Imagen"), 
         upload_to=generic_upload_path('products/'), 
+        storage=PublicMediaStorage(),
         null=True, blank=True,
         validators=[validate_file_size, validate_image_extension]
+    )
+    image_catalog = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(400, 400)],
+        format='WEBP',
+        options={'quality': 80}
+    )
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(120, 120)],
+        format='WEBP',
+        options={'quality': 80}
     )
 
     # Variants Integration

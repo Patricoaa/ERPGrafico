@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getPayrolls, createPayroll, getEmployees, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll, Employee } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
@@ -370,9 +371,7 @@ export default function PayrollsPage() {
             />
 
             {loading ? (
-                <div className="flex items-center justify-center h-48">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <TableSkeleton columns={10} rows={12} />
             ) : (
                 <>
                 <DataTable

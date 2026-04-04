@@ -23,7 +23,7 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton as SharedTableSkeleton } from "@/components/shared/TableSkeleton"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SearchX, CheckCircle2, ChevronRight, X } from "lucide-react"
@@ -77,26 +77,6 @@ interface DataTableProps<TData, TValue> {
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
 
-function TableSkeleton({ rows, columns }: { rows: number; columns: number }) {
-    return (
-        <>
-            {Array.from({ length: rows }).map((_, i) => (
-                <TableRow key={i} className="hover:bg-transparent">
-                    {Array.from({ length: columns }).map((_, j) => (
-                        <TableCell key={j} className="py-3">
-                            <Skeleton className={cn(
-                                "h-4 rounded-md",
-                                j === 0 ? "w-[60%]" :
-                                j === columns - 1 ? "w-[60px] mx-auto" :
-                                "w-[80%]"
-                            )} />
-                        </TableCell>
-                    ))}
-                </TableRow>
-            ))}
-        </>
-    )
-}
 
 export function DataTable<TData, TValue>({
     columns,
@@ -199,11 +179,18 @@ export function DataTable<TData, TValue>({
     })
 
     const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction
+    const selectedRows = table.getSelectedRowModel().rows
 
-    // ─── Card Mode ────────────────────────────────────────────────────────────
     if (cardMode) {
         const tableBody = isLoading ? (
-            <TableSkeleton rows={skeletonRows} columns={columns.length} />
+            <TableRow className="hover:bg-transparent border-none">
+                <TableCell
+                    colSpan={columns.length}
+                    className="p-6 pt-0 text-center"
+                >
+                    <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />
+                </TableCell>
+            </TableRow>
         ) : renderCustomView ? null : (
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
@@ -254,7 +241,6 @@ export function DataTable<TData, TValue>({
             )
         )
 
-        const selectedRows = table.getSelectedRowModel().rows
 
         return (
             <div className="relative space-y-4">
@@ -409,7 +395,14 @@ export function DataTable<TData, TValue>({
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableSkeleton rows={skeletonRows} columns={columns.length} />
+                                <TableRow className="hover:bg-transparent border-none">
+                                    <TableCell
+                                        colSpan={columns.length}
+                                        className="p-6 pt-0"
+                                    >
+                                        <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />
+                                    </TableCell>
+                                </TableRow>
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
                                     <React.Fragment key={row.id}>

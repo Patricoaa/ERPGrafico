@@ -42,6 +42,21 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         }
     }, [isHubOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Sync global data attributes for repelling fixed UI elements (like Sheets)
+    useEffect(() => {
+        if (isInboxOpen) {
+            document.body.setAttribute('data-inbox-open', 'true')
+        } else {
+            document.body.removeAttribute('data-inbox-open')
+        }
+
+        if (isHubEffectivelyOpen) {
+            document.body.setAttribute('data-hub-open', 'true')
+        } else {
+            document.body.removeAttribute('data-hub-open')
+        }
+    }, [isInboxOpen, isHubEffectivelyOpen])
+
     const handleInboxToggle = () => {
         const next = !isInboxOpen
         setIsInboxOpen(next)

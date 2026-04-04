@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { RefreshCw, ArrowRightLeft, History, Download } from "lucide-react"
+import { ArrowRightLeft, History } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -35,13 +35,13 @@ export function StockReport() {
 
     useEffect(() => {
         let isMounted = true
-        
+
         const load = async () => {
             if (isMounted) await fetchReport()
         }
-        
+
         load()
-        
+
         return () => {
             isMounted = false
         }
@@ -103,19 +103,21 @@ export function StockReport() {
         },
         {
             accessorKey: "qty_reserved",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Res." className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center opacity-40">
                     <span className="font-mono font-bold text-[12px] tracking-tighter">
                         {Number(row.getValue("qty_reserved")).toFixed(2)}
                     </span>
-                    <span className="text-[8px] font-black uppercase tracking-widest">Lote</span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">
+                        {row.original.uom_name}
+                    </span>
                 </div>
             ),
         },
         {
             accessorKey: "qty_available",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disp." className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
             cell: ({ row }) => {
                 const qty = Number(row.getValue("qty_available"))
                 return (
@@ -134,21 +136,33 @@ export function StockReport() {
         {
             accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-end">
-                    <span className="font-mono font-black text-[13px] tracking-tighter text-primary">
-                        {formatCurrency(Number(row.getValue("total_value")))}
-                    </span>
-                    <span className="text-[8px] font-black uppercase tracking-widest opacity-30">PMP Actual</span>
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="flex flex-col items-end">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-tighter">
+                                {formatCurrency(item.unit_cost)}
+                                <span className="mx-1 opacity-50">/</span>
+                                {item.uom_name}
+                            </span>
+                            <span className="font-mono font-black text-[13px] tracking-tighter text-primary">
+                                {formatCurrency(Number(item.total_value))}
+                            </span>
+                        </div>
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Total Valorizado</span>
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "moves_in",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Flujo" className="justify-center" />,
             cell: ({ row }) => {
-                const movesIn = Number(row.getValue("moves_in"))
-                const movesOut = Number(row.getValue("moves_out"))
+                const item = row.original;
+                const movesIn = Number(item.moves_in || 0)
+                const movesOut = Number(item.moves_out || 0)
+                const netFlow = movesIn - movesOut
                 return (
                     <div className="flex items-center gap-2 justify-center">
                         <div className="flex flex-col items-end opacity-60">
@@ -158,9 +172,9 @@ export function StockReport() {
                         <div className="h-6 w-px bg-border/40" />
                         <span className={cn(
                             "font-mono font-black text-[12px] tracking-tighter",
-                            (movesIn - movesOut) >= 0 ? "text-emerald-700" : "text-rose-700"
+                            netFlow >= 0 ? "text-emerald-700" : "text-rose-700"
                         )}>
-                            {(movesIn - movesOut).toFixed(0)}
+                            {netFlow.toFixed(0)}
                         </span>
                     </div>
                 )
@@ -194,11 +208,6 @@ export function StockReport() {
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
 
-
-    const handleExport = () => {
-        toast.info("Exportando reporte consolidado...")
-    }
-
     return (
         <div className={cn(LAYOUT_TOKENS.view, "space-y-6")}>
             <DataTable
@@ -207,28 +216,6 @@ export function StockReport() {
                 cardMode
                 searchPlaceholder="Filtrar producto, SKU o código..."
                 globalFilterFields={globalFilterFields}
-                toolbarAction={
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={fetchReport} 
-                            className="h-9 px-4 font-black uppercase tracking-widest text-[10px] rounded-[0.25rem] border-border/60 hover:bg-muted/50"
-                        >
-                             <RefreshCw className={cn("h-3.5 w-3.5 mr-2", loading && "animate-spin")} /> 
-                             Recargar datos
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={handleExport}
-                            className="h-9 px-4 font-black uppercase tracking-widest text-[10px] rounded-[0.25rem] border-border/60 hover:bg-muted/50"
-                        >
-                             <Download className="h-3.5 w-3.5 mr-2" /> 
-                             Excel
-                        </Button>
-                    </div>
-                }
                 useAdvancedFilter={true}
                 defaultPageSize={50}
                 isLoading={loading}
@@ -263,7 +250,7 @@ export function StockReport() {
                     />
                 )}
             </BaseModal>
-            
+
             <ProductInsightsDialog
                 open={!!insightsProduct}
                 onOpenChange={(open) => !open && setInsightsProduct(null)}

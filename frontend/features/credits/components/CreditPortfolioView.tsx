@@ -647,7 +647,12 @@ export function CreditPortfolioView({
         }
     }, [externalOpen])
 
-    if (loading) return <LoadingFallback message="Cargando cartera de créditos..." />
+    // Summary and contacts calculation
+    const s = data?.summary
+    const totalDebt = Number(s?.total_debt || 0)
+    const potentialLoss = Number(s?.potential_loss || 0)
+    const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
+    const contacts = data?.contacts || []
 
     if (error) return (
         <EmptyState
@@ -658,12 +663,6 @@ export function CreditPortfolioView({
             onAction={load}
         />
     )
-
-    const s = data?.summary
-    const totalDebt = Number(s?.total_debt || 0)
-    const potentialLoss = Number(s?.potential_loss || 0)
-    const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
-    const contacts = data?.contacts || []
 
     const computedTotalLimit = contacts.reduce((acc, c) => {
         const limit = Number(c.credit_limit || 0)
@@ -715,26 +714,31 @@ export function CreditPortfolioView({
                     </div>
 
                     <div className="mt-6">
-                        {contacts.length === 0 ? (
-                            <EmptyState
-                                context="finance"
-                                title="No hay clientes con crédito"
-                                description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
-                                actionText="Asignar Crédito"
-                                onAction={() => setAssignmentModalOpen(true)}
-                            />
-                        ) : (
                             <DataTable
                                 columns={portfolioColumns(handleEditLimit)}
                                 data={contacts}
                                 cardMode
+                                isLoading={loading}
                                 useAdvancedFilter
                                 globalFilterFields={["name", "tax_id"]}
                                 searchPlaceholder="Buscar cliente..."
-                                renderCustomView={(table) => (
-                                    <div className="overflow-x-auto pb-4">
-                                        <table className="w-full text-left">
-                                            <thead className="border-b border-border/50">
+                                renderCustomView={(table) => {
+                                    const rows = table.getRowModel().rows
+                                    if (rows.length === 0 && !loading) {
+                                        return (
+                                            <EmptyState
+                                                context="finance"
+                                                title="No hay clientes con crédito"
+                                                description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
+                                                actionText="Asignar Crédito"
+                                                onAction={() => setAssignmentModalOpen(true)}
+                                            />
+                                        )
+                                    }
+                                    return (
+                                        <div className="overflow-x-auto pb-4">
+                                            <table className="w-full text-left">
+                                                <thead className="border-b border-border/50">
                                                 {table.getHeaderGroups().map((headerGroup: any) => (
                                                     <tr key={headerGroup.id}>
                                                         {headerGroup.headers.map((header: any) => (
@@ -753,31 +757,22 @@ export function CreditPortfolioView({
                                             </tbody>
                                         </table>
                                     </div>
-                                )}
-                            />
-                        )}
+                                )
+                            }}
+                        />
                     </div>
                 </>
             ) : (
                 <div className="mt-2">
-                    {loadingHistory ? (
-                        <LoadingFallback message="Cargando historial..." />
-                    ) : !history || history.length === 0 ? (
-                        <EmptyState
-                            context="search"
-                            title="Sin historial"
-                            description="No se han registrado asignaciones de crédito en el periodo."
-                        />
-                    ) : (
                         <DataTable
                             columns={historyColumns}
-                            data={history}
+                            data={history || []}
                             cardMode
+                            isLoading={loadingHistory}
                             useAdvancedFilter
                             globalFilterFields={["customer_name", "number"]}
                             searchPlaceholder="Filtrar historial..."
                         />
-                    )}
                 </div>
             )}
         </div>

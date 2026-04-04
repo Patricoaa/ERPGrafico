@@ -28,7 +28,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     return (
         <Tabs value={activeTab} className="space-y-4">
             <TabsContent value="terminals" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback message="Cargando terminales..." />}>
+                <Suspense fallback={<LoadingFallback variant="card" />}>
                     <TerminalManagement 
                         externalOpen={isTerminalModalOpen} 
                         onExternalOpenChange={setIsTerminalModalOpen} 

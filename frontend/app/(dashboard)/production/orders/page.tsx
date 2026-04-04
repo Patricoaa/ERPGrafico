@@ -270,19 +270,14 @@ export default function WorkOrdersPage() {
 
     const renderKanbanView = useCallback((table: any) => (
         <div className="relative">
-            {loading ? (
-                <div className="min-h-[600px] flex items-center justify-center">
-                    <p className="text-muted-foreground animate-pulse font-medium">Actualizando tablero...</p>
-                </div>
-            ) : (
-                <div className="min-h-[600px]">
-                    <WorkOrderKanban
-                        orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
-                        onTransition={handleKanbanTransition}
-                        onManage={(id) => setActiveWizardId(id)}
-                    />
-                </div>
-            )}
+            <div className="min-h-[600px]">
+                <WorkOrderKanban
+                    orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                    onTransition={handleKanbanTransition}
+                    onManage={(id) => setActiveWizardId(id)}
+                    isLoading={loading}
+                />
+            </div>
         </div>
     ), [loading, handleKanbanTransition])
 
@@ -317,6 +312,7 @@ export default function WorkOrdersPage() {
                 <DataTable
                     columns={columns}
                     data={orders}
+                    isLoading={loading}
                     cardMode={viewMode === "list" || viewMode === "grid"}
                     filterColumn="description"
                     defaultPageSize={50}

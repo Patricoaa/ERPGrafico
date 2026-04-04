@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { getEmployees, createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/lib/hr/api"
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -203,18 +204,8 @@ export default function EmployeesPage() {
 
     return (
         <div className="space-y-4">
-
-            <EmployeeDialog
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                employee={editingEmployee}
-                onSaved={() => { setDialogOpen(false); fetchEmployees() }}
-            />
-
             {loading ? (
-                <div className="flex items-center justify-center h-48">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <TableSkeleton columns={6} rows={10} />
             ) : (
                 <DataTable
                     columns={columns}

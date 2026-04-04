@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge"
 
 interface DashboardPendingTableProps {
     data: DashboardPendingItem[]
+    loading?: boolean
 }
 
-export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
+export function DashboardPendingTable({ data, loading }: DashboardPendingTableProps) {
     const columns = useMemo<ColumnDef<DashboardPendingItem>[]>(() => [
         {
             accessorKey: "date",
@@ -92,6 +93,7 @@ export function DashboardPendingTable({ data }: DashboardPendingTableProps) {
             <DataTable
                 columns={columns}
                 data={data}
+                isLoading={loading}
                 cardMode
                 searchPlaceholder="Filtrar pendientes..."
                 globalFilterFields={["description", "account"]}

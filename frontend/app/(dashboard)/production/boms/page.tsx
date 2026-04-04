@@ -218,6 +218,7 @@ export default function BOMsPage() {
                 <DataTable
                     columns={columns}
                     data={boms}
+                    isLoading={loading}
                     cardMode
                     defaultPageSize={20}
                     filterColumn="product_name"
