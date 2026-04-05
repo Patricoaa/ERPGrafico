@@ -138,7 +138,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    {formatPlainDate(row.getValue("date"))}
+                    <DataCell.Date value={row.getValue("date")} />
                 </div>
             ),
         },
@@ -148,9 +148,9 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                 <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full text-center">
+                <DataCell.Text className="text-center">
                     <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
-                </div>
+                </DataCell.Text>
             )
         },
         {
@@ -158,16 +158,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
-            cell: ({ row }) => {
-                const state = row.getValue("state") as string
-                return (
-                    <div className="flex justify-center w-full">
-                        <Badge variant={state === 'POSTED' ? 'default' : 'secondary'} className="uppercase font-bold text-[10px]">
-                            {state === 'POSTED' ? 'Publicado' : 'Borrador'}
-                        </Badge>
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.getValue("state")} />
+                </div>
+            ),
         },
         {
             id: "actions",
@@ -198,22 +193,22 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600 transition-colors"
+                                    className="h-8 w-8 rounded-xl hover:bg-success/10 hover:text-success transition-colors group"
                                     onClick={() => handlePost(entry.id)}
                                     title="Publicar"
                                 >
-                                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                                    <CheckCircle className="h-4 w-4 text-muted-foreground/30 group-hover:text-success transition-colors" />
                                 </Button>
                             </>
                         )}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                            className="h-8 w-8 rounded-xl hover:bg-destructive/10 hover:text-destructive text-muted-foreground/30 transition-colors"
                             onClick={() => handleDelete(entry.id)}
                             title="Eliminar"
                         >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                         </Button>
                     </div>
                 )

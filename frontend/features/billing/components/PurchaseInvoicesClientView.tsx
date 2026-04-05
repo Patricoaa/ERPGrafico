@@ -19,6 +19,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { formatPlainDate } from "@/lib/utils"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -143,15 +144,16 @@ export function PurchaseInvoicesClientView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const doc = row.original
+                const label = doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
+                             doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
+                             doc.dte_type === 'BOLETA' ? 'BOL' :
+                             doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                             doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
                 return (
                     <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
-                        <FileBadge className="h-4 w-4 text-muted-foreground/70" />
-                        <DataCell.Secondary className="font-bold uppercase hidden md:inline-block text-[10px] text-center">
-                            {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                                doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                                    doc.dte_type === 'BOLETA' ? 'BOL' :
-                                        doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'}
+                        <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
+                        <DataCell.Secondary className="font-bold uppercase text-[10px]">
+                            {label}
                         </DataCell.Secondary>
                     </div>
                 )
@@ -178,13 +180,12 @@ export function PurchaseInvoicesClientView() {
                 const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
                 return (
                     <div className="flex justify-center w-full">
-                        <div className="space-y-1 w-32">
-                            <div className="flex justify-between text-[10px] font-bold">
-                                <span>{percentage}%</span>
-                                <MoneyDisplay amount={paid} showColor={false} className="text-[10px]" />
-                            </div>
-                            <Progress value={percentage} className="h-1" />
-                        </div>
+                        <DataCell.Progress 
+                            value={percentage} 
+                            label={`${percentage}%`}
+                            subLabel={paid.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                            className="w-32"
+                        />
                     </div>
                 )
             },

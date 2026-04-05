@@ -16,6 +16,7 @@ import { useTerminalBatches } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import type { DateRange } from "react-day-picker"
 
@@ -68,11 +69,8 @@ export function TerminalBatchesManagement({
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center justify-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-center">
-                        {format(new Date(row.original.sales_date), "dd/MM/yyyy")}
-                    </span>
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.original.sales_date} />
                 </div>
             )
         },
@@ -94,14 +92,11 @@ export function TerminalBatchesManagement({
         {
             accessorKey: "net_amount",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Depósito Neto" className="justify-center" />,
-            cell: ({ row }: any) => {
-                const amount = row.getValue("net_amount")
-                return (
-                    <div className="flex justify-center">
-                        <MoneyDisplay amount={amount} />
-                    </div>
-                )
-            }
+            cell: ({ row }: any) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("net_amount")} />
+                </div>
+            )
         },
         {
             accessorKey: "commission_total",
@@ -109,9 +104,9 @@ export function TerminalBatchesManagement({
             cell: ({ row }: any) => {
                 const amount = row.original.commission_total
                 return (
-                    <div className="flex justify-center">
-                        <MoneyDisplay 
-                            amount={amount ? -Math.abs(parseFloat(amount)) : 0} 
+                    <div className="flex justify-center w-full">
+                        <DataCell.Currency 
+                            value={amount ? -Math.abs(parseFloat(amount)) : 0} 
                         />
                     </div>
                 )
@@ -120,32 +115,11 @@ export function TerminalBatchesManagement({
         {
             accessorKey: "status",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }: any) => {
-                const status = row.original.status
-                const labels: Record<string, string> = {
-                    'PENDING': 'Pendiente',
-                    'SETTLED': 'Liquidado',
-                    'RECONCILED': 'Conciliado',
-                    'INVOICED': 'Facturado'
-                }
-
-                let badgeStatus: any = "info"
-                if (status === 'PENDING') badgeStatus = "pending"
-                if (status === 'SETTLED') badgeStatus = "received"
-                if (status === 'RECONCILED') badgeStatus = "success"
-                if (status === 'INVOICED') badgeStatus = "sent"
-
-                return (
-                    <div className="flex justify-center">
-                        <StatusBadge 
-                            status={badgeStatus} 
-                            label={labels[status] || status} 
-                            size="sm"
-                            className="uppercase font-bold tracking-tight"
-                        />
-                    </div>
-                )
-            },
+            cell: ({ row }: any) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.original.status} />
+                </div>
+            ),
             meta: {
                 title: "Estado"
             }

@@ -186,14 +186,12 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "internal_code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cód. Interno" className="justify-center" />
+                <DataTableColumnHeader column={column} title="ID" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                        {row.getValue("internal_code")}
-                    </DataCell.Code>
-                </div>
+                <DataCell.Code>
+                    {row.getValue("internal_code")}
+                </DataCell.Code>
             ),
             size: 100,
             minSize: 80,
@@ -204,7 +202,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTableColumnHeader column={column} title="SKU" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase bg-secondary/50">
+                <DataCell.Code className="bg-secondary/30">
                     {row.getValue("code")}
                 </DataCell.Code>
             ),
@@ -341,7 +339,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 rounded-xl"
                         onClick={() => { setEditingProduct(row.original); setIsFormOpen(true); }}
                     >
                         <Pencil className="h-4 w-4" />
@@ -349,7 +347,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={cn("h-8 w-8", row.original.active ? "text-destructive" : "text-emerald-600")}
+                        className={cn("h-8 w-8 rounded-xl", row.original.active ? "text-destructive" : "text-emerald-600")}
                         onClick={() => handleArchive(row.original)}
                         title={row.original.active ? "Archivar" : "Restaurar"}
                     >
@@ -473,6 +471,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         }
                     ]}
                     useAdvancedFilter={true}
+                    defaultPageSize={500}
                 />
             </div>
 

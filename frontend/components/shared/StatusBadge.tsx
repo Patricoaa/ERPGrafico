@@ -19,14 +19,12 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     // Lifecycle & Documents
     DRAFT: { label: "Borrador", className: "bg-info/10 text-info border-info/20", type: "info" },
     CONFIRMED: { label: "Confirmado", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
-    INVOICED: { label: "Facturado", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     PAID: { label: "Pagado", className: "bg-success/10 text-success border-success/20", type: "success" },
     CANCELLED: { label: "Cancelado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     VOIDED: { label: "Anulado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     POSTED: { label: "Publicado", className: "bg-success/10 text-success border-success/20", type: "success" },
 
     // Progress / Logistics
-    PENDING: { label: "Pendiente", className: "bg-info/10 text-info border-info/20", type: "info" },
     PARTIAL: { label: "Parcial", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     DELIVERED: { label: "Entregado", className: "bg-success/10 text-success border-success/20", type: "success" },
     SENT: { label: "Enviado", className: "bg-info/10 text-info border-info/20", type: "info" },
@@ -48,6 +46,9 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     OPEN: { label: "Abierto", className: "bg-success/10 text-success border-success/20", type: "success" },
     CLOSED: { label: "Cerrado", className: "bg-info/10 text-info border-info/20", type: "info" },
     UNDER_REVIEW: { label: "En Revisión", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    SETTLED: { label: "Liquidado", className: "bg-success/10 text-success border-success/20", type: "success" },
+    INVOICED: { label: "Facturado", className: "bg-info/10 text-info border-info/20", type: "info" },
+    PENDING: { label: "Pendiente", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
 
     // Lowercase fallbacks for legacy code
     active: { label: "Activo", className: "bg-primary/10 text-primary border-primary/20", type: "neutral" },
@@ -68,6 +69,25 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     EQUITY: { label: "Patrimonio", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
     INCOME: { label: "Ingreso", className: "bg-success/10 text-success border-success/20", type: "success" },
     EXPENSE: { label: "Gasto", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+
+    // Credit / Risk
+    RISK_LOW: { label: "Riesgo Bajo", className: "bg-success/10 text-success border-success/20", type: "success" },
+    RISK_MEDIUM: { label: "Riesgo Medio", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    RISK_HIGH: { label: "Riesgo Alto", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    RISK_CRITICAL: { label: "Riesgo Crítico", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+
+    // Credit Origins
+    ORIGIN_MANUAL: { label: "Manual", className: "bg-info/10 text-info border-info/20", type: "info" },
+    ORIGIN_FALLBACK: { label: "Fallback", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    ORIGIN_CREDIT_PORTFOLIO: { label: "Cartera", className: "bg-success/10 text-success border-success/20", type: "success" },
+
+    // Credit Aging
+    WRITTEN_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    CURRENT: { label: "Vigente", className: "bg-success/10 text-success border-success/20", type: "success" },
+    OVERDUE_30: { label: "1-30 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    OVERDUE_60: { label: "31-60 Días", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    OVERDUE_90: { label: "61-90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    OVERDUE_90PLUS: { label: "+90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 }
 
 interface StatusBadgeProps {
@@ -112,7 +132,7 @@ export function StatusBadge({
         if (config?.type === 'warning') hubColor = "text-warning bg-warning/10 border-warning/20"
         if (config?.type === 'destructive') hubColor = "text-destructive bg-destructive/10 border-destructive/20"
         if (config?.type === 'info') hubColor = "text-info bg-info/10 border-info/20"
-        
+
         // Special case for "Active" and "Manufacturing"
         if (['ACTIVE', 'MANUFACTURING'].includes(normalizedStatus) || ['active', 'manufacturing'].includes(status)) {
             hubColor = "text-primary bg-primary/10 border-primary/20"

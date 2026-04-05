@@ -10,10 +10,11 @@ import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Eye, ArrowRightLeft, Plus } from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { cn, formatPlainDate } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 interface StockMove {
     id: number
@@ -80,12 +81,10 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             id: "folio",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="flex flex-col gap-0.5">
-                    <span className="font-mono font-black text-[12px] text-primary tracking-tighter">MOV-{row.original.id}</span>
-                    <span className="text-[9px] font-black uppercase text-muted-foreground opacity-50 tracking-widest leading-none">
-                        {formatPlainDate(row.original.date)}
-                    </span>
-                </DataCell.Secondary>
+                <div className="flex flex-col items-center gap-0.5">
+                    <DataCell.Code className="text-primary font-black uppercase">MOV-{row.original.id}</DataCell.Code>
+                    <DataCell.Date value={row.original.date} className="text-[10px] opacity-50" />
+                </div>
             ),
             size: 100,
         },
@@ -93,18 +92,16 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             accessorKey: "product_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center gap-1 py-1 w-full">
-                    <DataCell.Text className="font-black text-[12px] uppercase tracking-tight text-center">{row.original.product_name}</DataCell.Text>
+                <div className="flex flex-col items-center py-1 w-full">
+                    <DataCell.Text className="text-center">{row.original.product_name}</DataCell.Text>
                     <div className="flex gap-2 items-center justify-center">
                         {row.original.product_internal_code && (
-                            <DataCell.Code className="text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
-                                {row.original.product_internal_code}
-                            </DataCell.Code>
+                            <DataCell.Code>{row.original.product_internal_code}</DataCell.Code>
                         )}
                         {row.original.product_code && row.original.product_code !== row.original.product_internal_code && (
-                            <DataCell.Code className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60 bg-secondary/50">
+                            <DataCell.Secondary className="text-[9px] font-mono opacity-50">
                                 {row.original.product_code}
-                            </DataCell.Code>
+                            </DataCell.Secondary>
                         )}
                     </div>
                 </div>
@@ -114,7 +111,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             accessorKey: "warehouse_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80">
+                <DataCell.Secondary className="font-bold opacity-80 text-center">
                     {row.getValue("warehouse_name")}
                 </DataCell.Secondary>
             ),
@@ -136,11 +133,15 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const type = row.original.move_type
+                const statusMap: Record<string, { status: string, label: string }> = {
+                    'IN': { status: 'SUCCESS', label: 'Entrada' },
+                    'OUT': { status: 'DESTRUCTIVE', label: 'Salida' },
+                    'ADJ': { status: 'WARNING', label: 'Ajuste' }
+                }
+                const config = statusMap[type] || { status: 'NEUTRAL', label: type }
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80 border rounded-[0.125rem] bg-secondary/30 px-2 py-0 border-border/50 h-5">
-                                {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
-                        </DataCell.Secondary>
+                        <StatusBadge status={config.status} label={config.label} size="sm" />
                     </div>
                 )
             },

@@ -52,32 +52,27 @@ export function StockReport() {
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
-            cell: ({ row }) => {
-                const item = row.original;
-                return (
-                    <div className="flex flex-col items-center gap-1 py-1">
-                        <DataCell.Text className="font-black text-[12px] uppercase tracking-tight text-center">{item.name}</DataCell.Text>
-                        <div className="flex gap-2 items-center justify-center">
-                            {item.internal_code && (
-                                <DataCell.Code className="text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
-                                    {item.internal_code}
-                                </DataCell.Code>
-                            )}
-                            {item.code && item.code !== item.internal_code && (
-                                <DataCell.Code className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60 bg-secondary/50">
-                                    {item.code}
-                                </DataCell.Code>
-                            )}
-                        </div>
+            cell: ({ row }) => (
+                <div className="flex flex-col items-center py-1">
+                    <DataCell.Text className="text-center">{row.original.name}</DataCell.Text>
+                    <div className="flex gap-2 items-center justify-center">
+                        {row.original.internal_code && (
+                            <DataCell.Code>{row.original.internal_code}</DataCell.Code>
+                        )}
+                        {row.original.code && row.original.code !== row.original.internal_code && (
+                            <DataCell.Secondary className="text-[9px] font-mono opacity-50">
+                                {row.original.code}
+                            </DataCell.Secondary>
+                        )}
                     </div>
-                );
-            },
+                </div>
+            ),
         },
         {
             accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
+                <DataCell.Secondary className="font-bold opacity-70">
                     {row.getValue("category_name")}
                 </DataCell.Secondary>
             ),
@@ -88,17 +83,15 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("stock_qty"))
                 return (
-                    <div className="flex flex-col items-center group cursor-help w-full">
-                        <span className={cn(
-                            "font-mono font-black text-[14px] tracking-tighter transition-all group-hover:scale-110",
+                    <DataCell.Number 
+                        value={qty} 
+                        suffix={row.original.uom_name} 
+                        decimals={2}
+                        className={cn(
+                            "text-[14px]",
                             qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
-                        )}>
-                            {qty.toFixed(2)}
-                        </span>
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity text-muted-foreground mt-0.5">
-                            {row.original.uom_name}
-                        </span>
-                    </div>
+                        )}
+                    />
                 )
             },
         },
@@ -106,14 +99,12 @@ export function StockReport() {
             accessorKey: "qty_reserved",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center opacity-40 w-full">
-                    <span className="font-mono font-bold text-[12px] tracking-tighter">
-                        {Number(row.getValue("qty_reserved")).toFixed(2)}
-                    </span>
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
-                        {row.original.uom_name}
-                    </span>
-                </div>
+                <DataCell.Number 
+                    value={row.getValue("qty_reserved")} 
+                    suffix={row.original.uom_name} 
+                    decimals={2}
+                    className="opacity-40"
+                />
             ),
         },
         {
@@ -122,15 +113,15 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("qty_available"))
                 return (
-                    <div className="flex flex-col items-center w-full">
-                        <span className={cn(
-                            "font-mono font-black text-[14px] tracking-tighter transition-all",
-                            qty <= 0 ? "text-destructive" : "text-primary group-hover:scale-110"
-                        )}>
-                            {qty.toFixed(2)}
-                        </span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/40 mt-0.5">Disponible</span>
-                    </div>
+                    <DataCell.Number 
+                        value={qty} 
+                        suffix={row.original.uom_name} 
+                        decimals={2}
+                        className={cn(
+                            "text-[14px]",
+                            qty <= 0 ? "text-destructive" : "text-primary font-black"
+                        )}
+                    />
                 )
             },
         },
@@ -141,39 +132,15 @@ export function StockReport() {
                 const item = row.original;
                 return (
                     <div className="flex flex-col items-center w-full">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-tighter">
-                                {formatCurrency(item.unit_cost)}
-                                <span className="mx-1 opacity-50">/</span>
-                                {item.uom_name}
-                            </span>
-                            <DataCell.Currency value={item.total_value} className="font-black text-[13px] text-primary" />
-                        </div>
-                        <span className="text-[8px] font-black uppercase tracking-widest opacity-30 mt-0.5">Total Valorizado</span>
+                        <DataCell.Currency value={item.total_value} className="text-[13px] text-primary" />
+                        <DataCell.Secondary className="text-[9px] opacity-40 uppercase tracking-tighter">
+                            {formatCurrency(item.unit_cost)} / {item.uom_name} Total
+                        </DataCell.Secondary>
                     </div>
                 )
             },
         },
-        {
-            accessorKey: "moves_in",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Flujo" className="justify-center" />,
-            cell: ({ row }) => {
-                const item = row.original;
-                const movesIn = Number(item.moves_in || 0)
-                const movesOut = Number(item.moves_out || 0)
-                const netFlow = movesIn - movesOut
-                return (
-                    <div className="flex items-center gap-2 justify-center">
-                        <div className="flex flex-col items-end opacity-60">
-                            <span className="font-mono font-bold text-[10px] text-success">+{movesIn.toFixed(0)}</span>
-                            <span className="font-mono font-bold text-[10px] text-destructive">-{movesOut.toFixed(0)}</span>
-                        </div>
-                        <div className="h-6 w-px bg-border/40" />
-                        <DataCell.NumericFlow value={netFlow} showSign={true} />
-                    </div>
-                )
-            },
-        },
+
         {
             id: "actions",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,

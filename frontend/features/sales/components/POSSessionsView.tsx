@@ -7,6 +7,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FileText, Lock } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -146,15 +147,11 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => {
-                const state = row.getValue("status") as string
-                const variant = state === 'OPEN' ? 'success' : state === 'CLOSED' ? 'secondary' : 'warning'
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Badge variant={variant}>{row.original.status_display}</DataCell.Badge>
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.original.status} />
+                </div>
+            ),
         },
         {
             id: "actions",
@@ -165,16 +162,16 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     <div className="flex justify-center gap-2">
                         {session.status === 'OPEN' ? (
                             <>
-                                <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0">
-                                    <FileText className="h-4 w-4 text-info" />
+                                <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0 rounded-xl hover:bg-info/10 hover:text-info border-info/20 shadow-sm">
+                                    <FileText className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
-                                    <Lock className="h-4 w-4" />
+                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 rounded-xl hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm">
+                                    <Lock className="h-3.5 w-3.5" />
                                 </Button>
                             </>
                         ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0">
-                                <FileText className="h-4 w-4 text-success" />
+                            <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0 rounded-xl hover:bg-success/10 hover:text-success border-success/20 shadow-sm">
+                                <FileText className="h-3.5 w-3.5" />
                             </Button>
                         )}
                     </div>

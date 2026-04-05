@@ -37,6 +37,8 @@ import { flexRender } from "@tanstack/react-table"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -54,49 +56,10 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 const fmt = (v: string | number | undefined) =>
     Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
 
-const agingLabel: Record<string, string> = {
-    current: "Corriente",
-    overdue_30: "1–30 días",
-    overdue_60: "31–60 días",
-    overdue_90: "61–90 días",
-    overdue_90plus: "+90 días",
-}
+const EMPTY_CONTACTS: CreditContact[] = []
+const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
-const agingColor: Record<string, string> = {
-    current: "text-success",
-    overdue_30: "text-warning",
-    overdue_60: "text-orange-500",
-    overdue_90: "text-destructive",
-    overdue_90plus: "text-destructive font-black underline",
-}
-
-const agingBg: Record<string, string> = {
-    current: "bg-success/10 text-success border-success/20",
-    overdue_30: "bg-warning/10 text-warning border-warning/20",
-    overdue_60: "bg-orange-500/10 text-orange-700 border-orange-200",
-    overdue_90: "bg-destructive/10 text-destructive border-destructive/20",
-    overdue_90plus: "bg-destructive/20 text-destructive border-destructive/30",
-}
-
-const riskLabel: Record<string, string> = {
-    LOW: "Riesgo Bajo",
-    MEDIUM: "Riesgo Medio",
-    HIGH: "Riesgo Alto",
-    CRITICAL: "Riesgo Crítico",
-}
-
-const riskBg: Record<string, string> = {
-    LOW: "bg-success/10 text-success border-success/20",
-    MEDIUM: "bg-warning/10 text-warning border-warning/20",
-    HIGH: "bg-orange-500/10 text-orange-700 border-orange-200",
-    CRITICAL: "bg-destructive/10 text-destructive border-destructive/20",
-}
-
-const originBg: Record<string, string> = {
-    MANUAL: "bg-info/10 text-info border-info/20",
-    FALLBACK: "bg-warning/10 text-warning border-warning/20",
-    CREDIT_PORTFOLIO: "bg-success/10 text-success border-success/20",
-}
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -441,15 +404,10 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         cell: ({ row }) => {
             const contact = row.original
             return (
-                <div className="flex items-center justify-center gap-3">
-                    <div className="text-center">
-                        <div className="font-semibold text-[13px] leading-tight flex items-center justify-center gap-2">
-                            {contact.name}
-                            {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning" />}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground font-mono">{contact.display_id} · {contact.tax_id}</div>
-                    </div>
-                </div>
+                <DataCell.ContactLink contactId={contact.id}>
+                    {contact.name}
+                    {contact.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning ml-2" />}
+                </DataCell.ContactLink>
             )
         },
     },
@@ -457,11 +415,18 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         accessorKey: "credit_risk_level",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Riesgo" className="justify-center" />,
         cell: ({ row }) => {
-            const lvl = row.original.credit_risk_level
+            const risk = row.original.credit_risk_level
+            const color = risk === 'LOW' ? 'text-success' : 
+                         risk === 'MEDIUM' ? 'text-warning' : 
+                         risk === 'HIGH' ? 'text-orange-500' : 'text-destructive'
+            const label = risk === 'LOW' ? 'Bajo' : 
+                         risk === 'MEDIUM' ? 'Medio' : 
+                         risk === 'HIGH' ? 'Alto' : 'Crítico'
+            
             return (
-                <div className={cn("flex flex-col items-center px-2 py-0.5 rounded-md border w-fit mx-auto", riskBg[lvl])}>
-                    <span className="text-[10px] font-bold leading-tight whitespace-nowrap">{riskLabel[lvl]}</span>
-                </div>
+                <DataCell.Text className={cn("font-black uppercase tracking-tighter text-[11px]", color)}>
+                    {label}
+                </DataCell.Text>
             )
         }
     },
@@ -471,22 +436,9 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         cell: ({ row }) => {
             const contact = row.original
             const limit = Number(contact.credit_limit || 0)
-            const balance = Number(contact.credit_balance_used)
-            const isFallback = limit === 0 && balance > 0
-
             return (
-                <div
-                    className="text-center flex flex-col items-center justify-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors w-full"
-                    onClick={(e) => { e.stopPropagation(); onEdit(contact); }}
-                >
-                    <span className={cn(
-                        "text-[12px] font-mono group-hover:underline",
-                        isFallback ? "text-warning font-bold" : "text-muted-foreground",
-                        !isFallback && limit > 0 && "text-primary font-bold"
-                    )}>
-                        {isFallback ? fmt(balance) : (limit > 0 ? fmt(limit) : <span className="text-muted-foreground/40">—</span>)}
-                    </span>
-                    {isFallback && <span className="text-[8px] font-black uppercase tracking-tighter text-warning/80">Pre-aprobado</span>}
+                <div className="flex justify-center w-full" onClick={(e) => { e.stopPropagation(); onEdit(contact); }}>
+                    <DataCell.Currency value={limit} className="font-bold cursor-pointer hover:underline text-primary" />
                 </div>
             )
         },
@@ -495,22 +447,19 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="text-center font-mono font-bold text-[13px] flex justify-center w-full">
-                {Number(row.original.credit_balance_used) > 0 ? fmt(row.original.credit_balance_used) : <span className="text-muted-foreground/40">—</span>}
+            <div className="flex justify-center w-full">
+                <DataCell.Currency value={row.original.credit_balance_used} className="text-info font-black" />
             </div>
         ),
     },
     {
         id: "current",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center text-success" />,
-        cell: ({ row }) => {
-            const val = Number(row.original.credit_aging.current)
-            return (
-                <div className="flex justify-center w-full">
-                    <div className={cn("text-center text-[12px] font-mono", agingColor.current)}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
-                </div>
-            )
-        },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center" />,
+        cell: ({ row }) => (
+            <div className="flex justify-center w-full">
+                <DataCell.Currency value={row.original.credit_aging.current} className="text-success" />
+            </div>
+        ),
     },
     {
         id: "overdue",
@@ -542,16 +491,18 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
             const aging = contact.credit_aging
             const hasOverdue = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus) > 0
 
-            const status = contact.credit_blocked ? "destructive" : contact.credit_auto_blocked ? "warning" : hasOverdue ? "warning" : totalDebt > 0 ? "info" : "success";
-            const label = contact.credit_blocked ? "Bloqueado" : contact.credit_auto_blocked ? "Auto-Bloqueo" : hasOverdue ? "En mora" : totalDebt > 0 ? "Activo" : "Al día";
-
-            const cls = status === "destructive" ? agingBg.overdue_90 : status === "warning" ? agingBg.overdue_30 : status === "info" ? originBg.MANUAL : agingBg.current;
+            const statusKey = contact.credit_blocked ? "ERROR" : 
+                             contact.credit_auto_blocked ? "WARNING" : 
+                             hasOverdue ? "WARNING" : 
+                             totalDebt > 0 ? "INFO" : "SUCCESS";
+            const label = contact.credit_blocked ? "Bloqueado" : 
+                         contact.credit_auto_blocked ? "Auto-Bloqueo" : 
+                         hasOverdue ? "En mora" : 
+                         totalDebt > 0 ? "Activo" : "Al día";
 
             return (
-                <div className="flex justify-center">
-                    <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md border", cls)}>
-                        {label}
-                    </span>
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={statusKey} label={label} />
                 </div>
             )
         },
@@ -563,14 +514,18 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "date",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full text-center font-medium">{new Date(row.original.date).toLocaleDateString()}</div>
+            <div className="flex justify-center w-full">
+                <DataCell.Date value={row.original.date} />
+            </div>
         )
     },
     {
         accessorKey: "customer_name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full text-center font-bold text-[13px]">{row.original.customer_name}</div>
+            <DataCell.ContactLink contactId={(row.original as any).customer_id || (row.original as any).customer}>
+                {row.original.customer_name}
+            </DataCell.ContactLink>
         )
     },
     {
@@ -578,23 +533,28 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nota Venta" className="justify-center" />,
         cell: ({ row }) => (
             <div className="flex justify-center w-full">
-                <Badge variant="outline" className="font-mono text-[11px]">NV-{row.original.number}</Badge>
+                <DataCell.Code>NV-{row.original.number}</DataCell.Code>
             </div>
         )
     },
     {
         accessorKey: "effective_total",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
-        cell: ({ row }) => <div className="flex justify-center w-full text-center font-mono font-bold">{fmt(row.original.effective_total)}</div>
+        cell: ({ row }) => (
+            <div className="flex justify-center w-full">
+                <DataCell.Currency value={row.original.effective_total} className="font-black" />
+            </div>
+        )
     },
     {
         accessorKey: "credit_assignment_origin",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Origen" className="justify-center" />,
         cell: ({ row }) => (
             <div className="flex justify-center w-full">
-                <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", originBg[row.original.credit_assignment_origin] || "bg-muted text-muted-foreground")}>
-                    {row.original.credit_assignment_origin_display}
-                </span>
+                <StatusBadge 
+                    status={`ORIGIN_${row.original.credit_assignment_origin}`} 
+                    label={row.original.credit_assignment_origin_display}
+                />
             </div>
         )
     },
@@ -619,10 +579,12 @@ export function CreditPortfolioView({
     const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
     const [editingContact, setEditingContact] = useState<CreditContact | null>(null)
 
-    const handleEditLimit = (contact: CreditContact) => {
+    const handleEditLimit = useCallback((contact: CreditContact) => {
         setEditingContact(contact)
         setAssignmentModalOpen(true)
-    }
+    }, [])
+
+    const portfolioCols = useMemo(() => portfolioColumns(handleEditLimit), [handleEditLimit])
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -661,7 +623,44 @@ export function CreditPortfolioView({
     const totalDebt = Number(s?.total_debt || 0)
     const potentialLoss = Number(s?.potential_loss || 0)
     const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
-    const contacts = data?.contacts || []
+    const contacts = data?.contacts || EMPTY_CONTACTS
+
+    const renderPortfolioCustomView = useCallback((table: any) => {
+        const rows = table.getRowModel().rows
+        if (rows.length === 0 && !loading) {
+            return (
+                <EmptyState
+                    context="finance"
+                    title="No hay clientes con crédito"
+                    description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
+                    action={<Button onClick={() => setAssignmentModalOpen(true)}>Asignar Crédito</Button>}
+                />
+            )
+        }
+        return (
+            <div className="overflow-x-auto pb-4">
+                <table className="w-full text-left">
+                    <thead className="border-b border-border/50">
+                    {table.getHeaderGroups().map((headerGroup: any) => (
+                        <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header: any) => (
+                                <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                </th>
+                            ))}
+                            <th className="px-3 py-3 w-12" />
+                        </tr>
+                    ))}
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                    {table.getRowModel().rows.map((row: any) => (
+                        <ExpandableContactRow key={row.id} row={row} onRefresh={load} />
+                    ))}
+                </tbody>
+            </table>
+        </div>
+        )
+    }, [loading, load])
 
     if (error) return (
         <EmptyState
@@ -723,57 +722,22 @@ export function CreditPortfolioView({
 
                     <div className="mt-6">
                             <DataTable
-                                columns={portfolioColumns(handleEditLimit)}
+                                columns={portfolioCols}
                                 data={contacts}
                                 cardMode
                                 isLoading={loading}
                                 useAdvancedFilter
                                 globalFilterFields={["name", "tax_id"]}
                                 searchPlaceholder="Buscar cliente..."
-                                renderCustomView={(table) => {
-                                    const rows = table.getRowModel().rows
-                                    if (rows.length === 0 && !loading) {
-                                        return (
-                                            <EmptyState
-                                                context="finance"
-                                                title="No hay clientes con crédito"
-                                                description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
-                                                action={<Button onClick={() => setAssignmentModalOpen(true)}>Asignar Crédito</Button>}
-                                            />
-                                        )
-                                    }
-                                    return (
-                                        <div className="overflow-x-auto pb-4">
-                                            <table className="w-full text-left">
-                                                <thead className="border-b border-border/50">
-                                                {table.getHeaderGroups().map((headerGroup: any) => (
-                                                    <tr key={headerGroup.id}>
-                                                        {headerGroup.headers.map((header: any) => (
-                                                            <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                                            </th>
-                                                        ))}
-                                                        <th className="px-3 py-3 w-12" />
-                                                    </tr>
-                                                ))}
-                                            </thead>
-                                            <tbody className="divide-y divide-border/50">
-                                                {table.getRowModel().rows.map((row: any) => (
-                                                    <ExpandableContactRow key={row.id} row={row} onRefresh={load} />
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )
-                            }}
-                        />
+                                renderCustomView={renderPortfolioCustomView}
+                            />
                     </div>
                 </>
             ) : (
                 <div className="mt-2">
                         <DataTable
                             columns={historyColumns}
-                            data={history || []}
+                            data={history || EMPTY_HISTORY}
                             cardMode
                             isLoading={loadingHistory}
                             useAdvancedFilter

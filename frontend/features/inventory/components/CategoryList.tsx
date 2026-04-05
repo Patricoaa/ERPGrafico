@@ -111,10 +111,10 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 if (!iconName) return <div className="flex justify-center w-full">-</div>
                 return (
                     <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/50">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
                                 const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
-                                return <Icon className="h-4 w-4 text-muted-foreground" />
+                                return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
                     </div>
@@ -133,13 +133,13 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         },
         {
             id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
+            header: () => <div className="text-center font-bold">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive" onClick={() => handleDelete(row.original)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>

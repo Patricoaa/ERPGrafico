@@ -115,17 +115,17 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="flex flex-col py-1">
-                    <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{row.original.name}</span>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Ubicación Física</span>
-                </DataCell.Secondary>
+                <div className="flex flex-col items-center py-1">
+                    <DataCell.Text className="text-center">{row.original.name}</DataCell.Text>
+                    <DataCell.Secondary className="text-[9px] opacity-40 tracking-widest">Ubicación Física</DataCell.Secondary>
+                </div>
             ),
         },
         {
             accessorKey: "code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Code className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
+                <DataCell.Code className="text-primary">
                     {row.original.code}
                 </DataCell.Code>
             ),
@@ -135,7 +135,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             accessorKey: "address",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] text-center w-full">
+                <DataCell.Secondary className="text-center w-full truncate max-w-[200px] opacity-70">
                     {row.original.address || "-"}
                 </DataCell.Secondary>
             ),

@@ -21,6 +21,7 @@ import {
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsDialog } from "@/features/inventory/components/ArchivingRestrictionsDialog"
@@ -279,7 +280,14 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text className="text-center w-full">{row.getValue("supplier_name")}</DataCell.Text>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.ContactLink 
+                        name={row.getValue("supplier_name")} 
+                        id={row.original.supplier_id.toString()} 
+                    />
+                </div>
+            ),
         },
         {
             accessorKey: "amount",
@@ -313,13 +321,13 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Status
+                    <StatusBadge
                         status={row.getValue("status")}
                         map={{
-                            ACTIVE: "success",
-                            PAUSED: "warning",
-                            CANCELLED: "destructive",
-                            PENDING: "secondary"
+                            ACTIVE: "SUCCESS",
+                            PAUSED: "WARNING",
+                            CANCELLED: "ERROR",
+                            PENDING: "INFO"
                         }}
                     />
                 </div>
@@ -335,7 +343,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
                             onClick={() => openEditForm(sub.product)}
                             title="Editar Producto"
                         >
@@ -346,7 +354,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-amber-700 hover:text-amber-700 hover:bg-yellow-50"
+                                className="h-8 w-8 rounded-xl text-amber-700 hover:text-amber-700 hover:bg-yellow-50"
                                 onClick={() => handlePause(sub.id)}
                                 title="Pausar Suscripción"
                             >
@@ -357,7 +365,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-emerald-700 hover:text-emerald-700 hover:bg-green-50"
+                                className="h-8 w-8 rounded-xl text-emerald-700 hover:text-emerald-700 hover:bg-green-50"
                                 onClick={() => handleResume(sub.id)}
                                 title="Reanudar Suscripción"
                             >
@@ -368,7 +376,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-primary hover:text-primary hover:bg-blue-50"
+                            className="h-8 w-8 rounded-xl text-primary hover:text-primary hover:bg-blue-50"
                             onClick={() => {
                                 setCurrentHistorySubscriptionId(sub.id)
                                 setIsHistoryOpen(true)
@@ -381,7 +389,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 rounded-xl text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                                 setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
                                 setIsConfirmModalOpen(true)
@@ -507,7 +515,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 text-amber-500 hover:bg-amber-500/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-xl text-amber-500 hover:bg-amber-500/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkPause}
                                         disabled={!canPauseAll}
                                     >
@@ -517,7 +525,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 text-emerald-500 hover:bg-emerald-500/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-xl text-emerald-500 hover:bg-emerald-500/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkResume}
                                         disabled={!canResumeAll}
                                     >
@@ -527,7 +535,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-xl text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkArchive}
                                         disabled={!canArchiveAllActive}
                                     >
