@@ -100,12 +100,12 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
         },
         {
             id: "applies_to",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Aplica a" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Aplica a" className="justify-center" />,
             cell: ({ row }) => {
                 const rule = row.original
                 return (
@@ -137,7 +137,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             id: "condition",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Condición (Cantidad)" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Condición (Cantidad)" className="justify-center" />,
             cell: ({ row }) => {
                 const rule = row.original
                 return (
@@ -153,7 +153,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             id: "uom",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="UdM" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="UdM" className="justify-center" />,
             cell: ({ row }) => {
                 const name = row.original.uom_name
                 return name ? <Badge variant="outline">{name}</Badge> : <span className="text-xs text-muted-foreground italic">Base</span>
@@ -161,12 +161,12 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             accessorKey: "rule_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => <div>{row.getValue("rule_type_display")}</div>,
         },
         {
             id: "value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valor" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Valor" className="justify-center" />,
             cell: ({ row }) => {
                 const rule = row.original
                 return (
@@ -180,7 +180,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             id: "validity",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Vigencia" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Vigencia" className="justify-center" />,
             cell: ({ row }) => <div className="text-xs whitespace-nowrap">{row.original.start_date || '...'} a {row.original.end_date || '...'}</div>,
         },
         {
@@ -201,7 +201,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>

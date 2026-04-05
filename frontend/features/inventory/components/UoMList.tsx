@@ -152,17 +152,17 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         },
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
         },
         {
             accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
         },
         {
             accessorKey: "uom_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const type = row.getValue("uom_type")
                 return (
@@ -176,12 +176,12 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         },
         {
             accessorKey: "ratio",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-center" />,
             cell: ({ row }) => <div className="text-right font-mono text-xs tabular-nums text-muted-foreground">{parseFloat(row.getValue("ratio")).toString()}</div>,
         },
         {
             id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(row.original); setIsUoMModalOpen(true) }}>

@@ -281,57 +281,49 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
 
         {
             accessorKey: "sale_price",
-            header: ({ column }) => (
-                <div className="text-right">Neto</div>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Neto" className="justify-center" />,
             cell: ({ row }) => {
                 if (row.original.is_dynamic_pricing) {
-                    return <div className="text-right"><DataCell.Badge variant="warning" className="text-[9px]">Precio Dinámico</DataCell.Badge></div>
+                    return <DataCell.Badge variant="warning" className="text-[9px]">Dinámico</DataCell.Badge>
                 }
-                return <DataCell.Currency value={row.getValue("sale_price")} className="text-muted-foreground font-bold" />
+                return <DataCell.Currency value={row.getValue("sale_price")} />
             },
             size: 120,
             minSize: 100,
         },
         {
             id: "tax",
-            header: ({ column }) => (
-                <div className="text-right">IVA (19%)</div>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="IVA (19%)" className="justify-center" />,
             cell: ({ row }) => {
                 const tax = PricingUtils.calculateTax(Number(row.getValue("sale_price")))
-                return <DataCell.Currency value={tax} className="text-xs text-muted-foreground font-normal" />
+                return <DataCell.Currency value={tax} />
             },
             size: 110,
             minSize: 90,
         },
         {
             id: "total",
-            header: ({ column }) => (
-                <div className="text-right">Total (c/IVA)</div>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total (c/IVA)" className="justify-center" />,
             cell: ({ row }) => {
                 const total = row.original.sale_price_gross || PricingUtils.netToGross(Number(row.getValue("sale_price")))
                 if (row.original.is_dynamic_pricing) {
-                    return <div className="text-right"><DataCell.Badge variant="warning" className="text-[9px]">Precio Dinámico</DataCell.Badge></div>
+                    return <DataCell.Badge variant="warning" className="text-[9px]">Dinámico</DataCell.Badge>
                 }
-                return <DataCell.Currency value={total} className="text-primary font-bold" />
+                return <DataCell.Currency value={total} className="font-bold text-foreground" />
             },
             size: 130,
             minSize: 110,
         },
         {
             id: "attributes",
-            header: ({ column }) => (
-                <div className="text-center">Disponible para</div>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible para" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     {row.original.can_be_sold && (
-                        <DataCell.Badge variant="success" className="text-[9px] px-1.5 py-0 h-4">Venta</DataCell.Badge>
+                        <DataCell.Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">Venta</DataCell.Badge>
                     )}
                     {row.original.can_be_purchased && (
-                        <DataCell.Badge variant="info" className="text-[9px] px-1.5 py-0 h-4">Compra</DataCell.Badge>
+                        <DataCell.Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">Compra</DataCell.Badge>
                     )}
                     {!row.original.can_be_sold && !row.original.can_be_purchased && (
                         <span className="text-[10px] text-muted-foreground italic">Ninguno</span>

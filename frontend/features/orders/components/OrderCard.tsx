@@ -20,9 +20,10 @@ interface OrderCardProps {
     isSelected?: boolean
     isHubOpen?: boolean
     className?: string
+    visibleColumns?: Record<string, boolean>
 }
 
-export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className }: OrderCardProps) {
+export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className, visibleColumns }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
     const isPurchase = type === 'purchase' || (isNote && (item.purchase_order || item.purchase_order_id || item.supplier_name))
@@ -118,19 +119,23 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                         <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
-                                {itemName}
-                            </h4>
-                        </div>
+                        {(visibleColumns?.customer_name !== false && visibleColumns?.partner_name !== false) && (
+                            <div className="flex items-center gap-2">
+                                <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
+                                    {itemName}
+                                </h4>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground">
                             <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
                                 {itemNumber}
                             </span>
-                            <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3 opacity-70" />
-                                {formatPlainDate(item.date)}
-                            </span>
+                            {visibleColumns?.date !== false && (
+                                <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 opacity-70" />
+                                    {formatPlainDate(item.date)}
+                                </span>
+                            )}
                             {isSale && item.pos_session && (
                                 <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
                                     <Monitor className="h-3 w-3" />
@@ -142,7 +147,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                 </div>
 
                 {/* CENTERED MINI STATES */}
-                {!hideStatus && (
+                {!hideStatus && visibleColumns?.status !== false && (
                     <div className="flex-1 flex justify-center px-4">
                         {isNote ? (
                             <NoteHubStatus note={item} />
@@ -158,14 +163,18 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
 
                 <div className="flex items-center gap-5">
                     <div className="flex flex-col items-end min-w-[100px]">
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
-                            Total
-                        </span>
-                        <MoneyDisplay
-                            amount={displayTotal}
-                            showColor={!isLedger}
-                            className={cn("text-base font-heading font-bold tracking-tight", isLedger && "text-destructive dark:text-destructive")}
-                        />
+                        {visibleColumns?.total !== false && (
+                            <>
+                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                                    Total
+                                </span>
+                                <MoneyDisplay
+                                    amount={displayTotal}
+                                    showColor={!isLedger}
+                                    className={cn("text-base font-heading font-bold tracking-tight", isLedger && "text-destructive dark:text-destructive")}
+                                />
+                            </>
+                        )}
                     </div>
 
                     {isHubOpen && isSelected ? (
@@ -193,7 +202,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                         ))}
                     </div>
 
-                    {hasPending && (
+                    {hasPending && visibleColumns?.payment_status !== false && (
                         <div className="flex items-center gap-5 shrink-0 pl-4">
                             <div className="flex flex-col items-end min-w-[100px]">
                                 <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">

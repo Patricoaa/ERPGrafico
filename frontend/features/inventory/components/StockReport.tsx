@@ -12,6 +12,7 @@ import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ProductInsightsDialog } from "@/features/inventory/components/ProductInsightsDialog"
 import { Badge } from "@/components/ui/badge"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
 
@@ -74,11 +75,11 @@ export function StockReport() {
         },
         {
             accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
+                <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
                     {row.getValue("category_name")}
-                </span>
+                </DataCell.Secondary>
             ),
         },
         {
@@ -90,7 +91,7 @@ export function StockReport() {
                     <div className="flex flex-col items-center group cursor-help">
                         <span className={cn(
                             "font-mono font-black text-[14px] tracking-tighter",
-                            qty <= 0 ? "text-rose-600" : qty < 10 ? "text-amber-600" : "text-foreground/80"
+                            qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
                         )}>
                             {qty.toFixed(2)}
                         </span>
@@ -124,7 +125,7 @@ export function StockReport() {
                     <div className="flex flex-col items-center">
                         <span className={cn(
                             "font-mono font-black text-[14px] tracking-tighter",
-                            qty <= 0 ? "text-rose-600" : "text-primary group-hover:scale-110 transition-transform"
+                            qty <= 0 ? "text-destructive" : "text-primary group-hover:scale-110 transition-transform"
                         )}>
                             {qty.toFixed(2)}
                         </span>
@@ -166,16 +167,11 @@ export function StockReport() {
                 return (
                     <div className="flex items-center gap-2 justify-center">
                         <div className="flex flex-col items-end opacity-60">
-                            <span className="font-mono font-bold text-[10px] text-emerald-700">+{movesIn.toFixed(0)}</span>
-                            <span className="font-mono font-bold text-[10px] text-rose-700">-{movesOut.toFixed(0)}</span>
+                            <span className="font-mono font-bold text-[10px] text-success">+{movesIn.toFixed(0)}</span>
+                            <span className="font-mono font-bold text-[10px] text-destructive">-{movesOut.toFixed(0)}</span>
                         </div>
                         <div className="h-6 w-px bg-border/40" />
-                        <span className={cn(
-                            "font-mono font-black text-[12px] tracking-tighter",
-                            netFlow >= 0 ? "text-emerald-700" : "text-rose-700"
-                        )}>
-                            {netFlow.toFixed(0)}
-                        </span>
+                        <DataCell.NumericFlow value={netFlow} showSign={true} />
                     </div>
                 )
             },
