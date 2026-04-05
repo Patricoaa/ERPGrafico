@@ -323,7 +323,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                         <th className="pb-2 pr-4 text-center">Saldo</th>
                                                         <th className="pb-2 pr-4 text-center">Origen</th>
                                                         <th className="pb-2 pr-4 text-center">Estado</th>
-                                                        {isDefault && <th className="pb-2 pr-2 text-center">Castigo</th>}
+                                                        <th className="pb-2 pr-2 text-center">Acciones</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-border/20">
@@ -367,9 +367,9 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            {isDefault && (
-                                                                <td className="py-2 pr-2 text-center">
-                                                                    {Number(entry.balance) > 0 && (
+                                                            <td className="py-2 pr-2 text-center">
+                                                                <div className="flex justify-center gap-1">
+                                                                    {isDefault && Number(entry.balance) > 0 && (
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="sm"
@@ -386,8 +386,9 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                                                             Castigar
                                                                         </Button>
                                                                     )}
-                                                                </td>
-                                                            )}
+                                                                    {!isDefault && <span className="text-muted-foreground/30">—</span>}
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -475,7 +476,7 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
 
             return (
                 <div
-                    className="text-center flex flex-col items-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors"
+                    className="text-center flex flex-col items-center justify-center cursor-pointer group hover:bg-muted/50 rounded-lg p-1 transition-colors w-full"
                     onClick={(e) => { e.stopPropagation(); onEdit(contact); }}
                 >
                     <span className={cn(
@@ -494,7 +495,7 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="text-center font-mono font-bold text-[13px]">
+            <div className="text-center font-mono font-bold text-[13px] flex justify-center w-full">
                 {Number(row.original.credit_balance_used) > 0 ? fmt(row.original.credit_balance_used) : <span className="text-muted-foreground/40">—</span>}
             </div>
         ),
@@ -504,7 +505,11 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center text-success" />,
         cell: ({ row }) => {
             const val = Number(row.original.credit_aging.current)
-            return <div className={cn("text-center text-[12px] font-mono", agingColor.current)}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+            return (
+                <div className="flex justify-center w-full">
+                    <div className={cn("text-center text-[12px] font-mono", agingColor.current)}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+                </div>
+            )
         },
     },
     {
@@ -513,7 +518,11 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
         cell: ({ row }) => {
             const aging = row.original.credit_aging
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
-            return <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-destructive font-black" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+            return (
+                <div className="flex justify-center w-full">
+                    <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-destructive font-black" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+                </div>
+            )
         },
     },
     {
@@ -554,21 +563,21 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "date",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="text-center font-medium">{new Date(row.original.date).toLocaleDateString()}</div>
+            <div className="flex justify-center w-full text-center font-medium">{new Date(row.original.date).toLocaleDateString()}</div>
         )
     },
     {
         accessorKey: "customer_name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="text-center font-bold text-[13px]">{row.original.customer_name}</div>
+            <div className="flex justify-center w-full text-center font-bold text-[13px]">{row.original.customer_name}</div>
         )
     },
     {
         accessorKey: "number",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nota Venta" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center">
+            <div className="flex justify-center w-full">
                 <Badge variant="outline" className="font-mono text-[11px]">NV-{row.original.number}</Badge>
             </div>
         )
@@ -576,13 +585,13 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
     {
         accessorKey: "effective_total",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
-        cell: ({ row }) => <div className="text-center font-mono font-bold">{fmt(row.original.effective_total)}</div>
+        cell: ({ row }) => <div className="flex justify-center w-full text-center font-mono font-bold">{fmt(row.original.effective_total)}</div>
     },
     {
         accessorKey: "credit_assignment_origin",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Origen" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center">
+            <div className="flex justify-center w-full">
                 <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border", originBg[row.original.credit_assignment_origin] || "bg-muted text-muted-foreground")}>
                     {row.original.credit_assignment_origin_display}
                 </span>
@@ -659,8 +668,7 @@ export function CreditPortfolioView({
             context="finance"
             title="Error al cargar datos"
             description={error}
-            actionText="Reintentar"
-            onAction={load}
+            action={<Button onClick={load}>Reintentar</Button>}
         />
     )
 
@@ -686,7 +694,7 @@ export function CreditPortfolioView({
                         <KpiCard
                             label="Deuda Total"
                             value={fmt(totalDebt)}
-                            sub={`${s?.count_active || 0} clientes con deuda activa`}
+                            sub={`${s?.count_debtors || 0} clientes con deuda activa`}
                             icon={CreditCard}
                             color="bg-primary/5 text-primary border-primary/20"
                         />
@@ -730,8 +738,7 @@ export function CreditPortfolioView({
                                                 context="finance"
                                                 title="No hay clientes con crédito"
                                                 description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
-                                                actionText="Asignar Crédito"
-                                                onAction={() => setAssignmentModalOpen(true)}
+                                                action={<Button onClick={() => setAssignmentModalOpen(true)}>Asignar Crédito</Button>}
                                             />
                                         )
                                     }

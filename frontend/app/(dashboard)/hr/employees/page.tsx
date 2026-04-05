@@ -111,30 +111,30 @@ export default function EmployeesPage() {
     const columns: ColumnDef<Employee>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code></div>,
         },
         {
             accessorFn: (row) => row.contact_detail?.name || "",
             id: "nombre",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex flex-col gap-0.5">
-                        <div className="font-medium text-sm">{emp.contact_detail?.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">{emp.contact_detail?.tax_id}</div>
+                    <div className="flex flex-col items-center justify-center gap-0.5 w-full">
+                        <div className="font-medium text-sm text-center">{emp.contact_detail?.name}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono text-center">{emp.contact_detail?.tax_id}</div>
                     </div>
                 );
             },
         },
         {
             id: "prevision",
-            header: "Previsión / Salud",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión / Salud" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex flex-col gap-1 items-start">
+                    <div className="flex flex-col gap-1 items-center justify-center w-full">
                         <Badge variant="outline" className="text-[9px]">
                             AFP: {emp.afp_detail?.name || 'No disp.'}
                         </Badge>
@@ -147,11 +147,11 @@ export default function EmployeesPage() {
         },
         {
             accessorKey: "position",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="text-sm">
+                    <div className="text-sm text-center w-full">
                         <div>{emp.position || '—'}</div>
                         <div className="text-[10px] text-muted-foreground">{emp.department}</div>
                     </div>
@@ -160,44 +160,49 @@ export default function EmployeesPage() {
         },
         {
             accessorKey: "base_salary",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Sueldo Base" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Sueldo Base" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="opacity-80 font-medium">
+                <div className="opacity-80 font-medium flex justify-center w-full">
                     <MoneyDisplay amount={parseFloat((row.getValue("base_salary") as string) || "0")} />
                 </div>
             ),
         },
         {
             accessorKey: "status",
-            header: "Estado",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <Badge
-                        variant={emp.status === 'ACTIVE' ? 'default' : 'secondary'}
-                        className={cn(
-                            "text-[10px] font-bold uppercase",
-                            emp.status === 'ACTIVE'
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : "bg-muted/30 text-muted-foreground border-transparent"
-                        )}
-                    >
-                        {emp.status_display}
-                    </Badge>
+                    <div className="flex justify-center w-full">
+                        <Badge
+                            variant={emp.status === 'ACTIVE' ? 'default' : 'secondary'}
+                            className={cn(
+                                "text-[10px] font-bold uppercase",
+                                emp.status === 'ACTIVE'
+                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                    : "bg-muted/30 text-muted-foreground border-transparent"
+                            )}
+                        >
+                            {emp.status_display}
+                        </Badge>
+                    </div>
                 );
             },
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                    onClick={() => { setEditingEmployee(row.original); setDialogOpen(true) }}
-                >
-                    <Pencil className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex justify-center w-full">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={() => { setEditingEmployee(row.original); setDialogOpen(true) }}
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
             ),
         },
     ]

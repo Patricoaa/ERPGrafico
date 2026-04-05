@@ -108,10 +108,10 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
+                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col items-center justify-center w-full">
                     <Link
                         href={`/finances/budgets/${row.original.id}`}
                         className="font-medium hover:underline text-primary flex items-center gap-2"
@@ -130,10 +130,10 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
         {
             accessorKey: "start_date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Periodo" />
+                <DataTableColumnHeader column={column} title="Periodo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground w-full">
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm">
                         {row.original.start_date} - {row.original.end_date}
@@ -143,9 +143,11 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
         },
         {
             id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+            ),
             cell: ({ row }) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-center gap-2 w-full">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -184,21 +186,6 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
                 globalFilterFields={["name"]}
                 searchPlaceholder="Buscar presupuestos..."
                 useAdvancedFilter={true}
-                emptyState={
-                    <div className="bg-white rounded-xl border shadow-sm">
-                        <EmptyState
-                            icon={Wallet}
-                            title="No hay presupuestos"
-                            description="Aún no has creado ningún presupuesto anual para monitorear la ejecución financiera."
-                            action={
-                                <Button onClick={() => setIsCreateOpen(true)} variant="outline" className="gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    Crear Primer Presupuesto
-                                </Button>
-                            }
-                        />
-                    </div>
-                }
             />
 
             {/* Create Modal */}

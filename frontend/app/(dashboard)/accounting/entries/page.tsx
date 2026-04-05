@@ -13,7 +13,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { formatPlainDate } from "@/lib/utils"
+import { formatPlainDate, cn } from "@/lib/utils"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -123,55 +123,69 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
         {
             accessorKey: "number",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" />
+                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.DocumentId type="JOURNAL_ENTRY" number={row.getValue("number")} />
+                <div className="flex justify-center w-full">
+                    <DataCell.DocumentId type="JOURNAL_ENTRY" number={row.getValue("number")} />
+                </div>
             ),
         },
         {
             accessorKey: "date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
             ),
-            cell: ({ row }) => {
-                return formatPlainDate(row.getValue("date"))
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    {formatPlainDate(row.getValue("date"))}
+                </div>
+            ),
         },
         {
             accessorKey: "description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full text-center">
+                    <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
+                </div>
+            )
         },
         {
             accessorKey: "state",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const state = row.getValue("state") as string
                 return (
-                    <Badge variant={state === 'POSTED' ? 'default' : 'secondary'}>
-                        {state === 'POSTED' ? 'Publicado' : 'Borrador'}
-                    </Badge>
+                    <div className="flex justify-center w-full">
+                        <Badge variant={state === 'POSTED' ? 'default' : 'secondary'} className="uppercase font-bold text-[10px]">
+                            {state === 'POSTED' ? 'Publicado' : 'Borrador'}
+                        </Badge>
+                    </div>
                 )
             },
         },
         {
             id: "actions",
-            header: "Acciones",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+            ),
             cell: ({ row }) => {
                 const entry = row.original
                 return (
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-center gap-1 w-full">
                         <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
                             onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
                             title="Ver Detalle"
                         >
-                            <Eye className="h-4 w-4 text-primary" />
+                            <Eye className="h-3.5 w-3.5" />
                         </Button>
                         {entry.state === 'DRAFT' && (
                             <>
@@ -179,26 +193,27 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                                     accounts={accounts}
                                     initialData={entry as any}
                                     onSuccess={fetchEntries}
+                                    triggerVariant="circular"
                                 />
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="text-emerald-600"
+                                    className="h-8 w-8 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600 transition-colors"
                                     onClick={() => handlePost(entry.id)}
                                     title="Publicar"
                                 >
-                                    <CheckCircle className="h-4 w-4" />
+                                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                                 </Button>
                             </>
                         )}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="text-destructive"
+                            className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
                             onClick={() => handleDelete(entry.id)}
                             title="Eliminar"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                 )

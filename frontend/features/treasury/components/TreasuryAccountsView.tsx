@@ -14,6 +14,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
+import { DataCell } from "@/components/ui/data-table-cells"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -86,7 +87,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         {
             accessorKey: "name",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Nombre | Tipo" />
+                <DataTableColumnHeader column={column} title="Nombre | Tipo" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => {
                 const acc = row.original
@@ -118,7 +119,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         {
             accessorKey: "account_name",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Cuenta Contable" />
+                <DataTableColumnHeader column={column} title="Cuenta Contable" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => {
                 const name = row.original.account_name
@@ -136,42 +137,50 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         {
             accessorKey: "current_balance",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Saldo" />
+                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => {
                 const balance = row.getValue("current_balance")
                 return (
-                    <MoneyDisplay
-                        amount={balance as number}
-                        currency={row.original.currency}
-                    />
+                    <div className="flex justify-center w-full">
+                        <DataCell.Currency
+                            value={balance as number}
+                            currency={row.original.currency}
+                            className="font-bold"
+                        />
+                    </div>
                 )
             },
         },
         {
             accessorKey: "location",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Ubicación" />
+                <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => {
                 const val = row.original.location
-                if (!val) return <span className="text-muted-foreground">-</span>
                 return (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 text-warning" />
-                        {val}
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground w-full">
+                        {!val ? <span className="text-muted-foreground">-</span> : (
+                            <div className="flex items-center gap-1.5">
+                                <MapPin className="h-3 w-3 text-warning" />
+                                {val}
+                            </div>
+                        )}
                     </div>
                 )
             }
         },
         {
             id: "custodian",
-            header: "Responsable",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Responsable" className="justify-center" />
+            ),
             cell: ({ row }: { row: any }) => {
                 const acc = row.original
-                if (!acc.custodian_name) return <span className="text-muted-foreground">-</span>
+                if (!acc.custodian_name) return <div className="flex justify-center w-full text-muted-foreground">-</div>
                 return (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground w-full text-center">
                         <Shield className="h-3 w-3 text-info" />
                         {acc.custodian_name}
                     </div>
@@ -185,15 +194,30 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             id: "actions",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+            ),
             cell: ({ row }: { row: any }) => {
                 const acc = row.original
                 return (
-                    <div className="flex items-center gap-2 justify-end">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(acc)} title="Editar">
-                            <Pencil className="h-4 w-4" />
+                    <div className="flex items-center justify-center gap-1.5 w-full">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleEdit(acc)} 
+                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                            title="Editar"
+                        >
+                            <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(acc.id)} title="Eliminar">
-                            <Trash2 className="h-4 w-4" />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                            onClick={() => handleDelete(acc.id)} 
+                            title="Eliminar"
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                 )

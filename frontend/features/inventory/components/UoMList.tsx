@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
@@ -153,12 +154,12 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text className="font-medium text-center w-full">{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => <div className="text-sm">{row.getValue("category_name")}</div>,
+            cell: ({ row }) => <DataCell.Secondary className="text-sm text-center w-full">{row.getValue("category_name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "uom_type",
@@ -166,10 +167,10 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             cell: ({ row }) => {
                 const type = row.getValue("uom_type")
                 return (
-                    <div>
-                        {type === 'REFERENCE' && <Badge variant="default" className="text-[10px]">Referencia</Badge>}
-                        {type === 'BIGGER' && <Badge variant="secondary" className="text-[10px]">Mayor</Badge>}
-                        {type === 'SMALLER' && <Badge variant="outline" className="text-[10px]">Menor</Badge>}
+                    <div className="flex justify-center w-full">
+                        {type === 'REFERENCE' && <DataCell.Badge variant="default" className="text-[10px]">Referencia</DataCell.Badge>}
+                        {type === 'BIGGER' && <DataCell.Badge variant="secondary" className="text-[10px]">Mayor</DataCell.Badge>}
+                        {type === 'SMALLER' && <DataCell.Badge variant="outline" className="text-[10px]">Menor</DataCell.Badge>}
                     </div>
                 )
             },
@@ -177,7 +178,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         {
             accessorKey: "ratio",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-center" />,
-            cell: ({ row }) => <div className="text-right font-mono text-xs tabular-nums text-muted-foreground">{parseFloat(row.getValue("ratio")).toString()}</div>,
+            cell: ({ row }) => <DataCell.Number value={row.getValue("ratio")} className="text-center w-full" decimals={2} />,
         },
         {
             id: "actions",

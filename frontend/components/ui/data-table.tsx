@@ -76,6 +76,8 @@ interface DataTableProps<TData, TValue> {
     customFilters?: React.ReactNode
     isCustomFiltered?: boolean
     customFilterCount?: number
+    getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
+    autoExpand?: boolean
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -85,7 +87,7 @@ export function DataTable<TData, TValue>({
     columns,
     data,
     defaultPageSize = 20,
-    pageSizeOptions = [10, 20, 50, 100],
+    pageSizeOptions = [10, 20, 50, 100, 500],
     filterColumn,
     searchPlaceholder,
     globalFilterFields,
@@ -116,9 +118,11 @@ export function DataTable<TData, TValue>({
     customFilters,
     isCustomFiltered,
     customFilterCount,
+    getSubRows,
+    autoExpand,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([])
-    const [expanded, setExpanded] = React.useState<ExpandedState>({})
+    const [expanded, setExpanded] = React.useState<ExpandedState>(autoExpand ? true : {})
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
 
@@ -159,6 +163,7 @@ export function DataTable<TData, TValue>({
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getExpandedRowModel: getExpandedRowModel(),
+        getSubRows,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setGlobalFilter,
@@ -178,6 +183,7 @@ export function DataTable<TData, TValue>({
                 pageSize: defaultPageSize,
             },
             columnVisibility: initialColumnVisibility,
+            expanded: autoExpand ? true : {},
         },
     })
 

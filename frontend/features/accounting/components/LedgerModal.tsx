@@ -108,21 +108,27 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         {
             accessorKey: "date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
             ),
-            cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
+                </div>
+            )
         },
         {
             accessorKey: "description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const mov = row.original
                 const glosa = mov.label || mov.description
                 return (
-                    <div className="max-w-[400px] text-xs leading-relaxed" title={glosa}>
-                        {glosa}
+                    <div className="flex justify-center w-full">
+                        <div className="max-w-[400px] text-xs leading-relaxed text-center" title={glosa}>
+                            {glosa}
+                        </div>
                     </div>
                 )
             },
@@ -130,12 +136,12 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         {
             accessorKey: "debit",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Debe" /></div>
+                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
                 return (
-                    <div className="text-right">
+                    <div className="flex justify-center w-full">
                         <MoneyDisplay amount={val} showZeroAsDash />
                     </div>
                 )
@@ -144,12 +150,12 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         {
             accessorKey: "credit",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Haber" /></div>
+                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
                 return (
-                    <div className="text-right">
+                    <div className="flex justify-center w-full">
                         <MoneyDisplay amount={val} showZeroAsDash />
                     </div>
                 )
@@ -158,12 +164,12 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         {
             accessorKey: "balance",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Saldo" /></div>
+                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("balance"))
                 return (
-                    <div className="text-right">
+                    <div className="flex justify-center w-full">
                         <MoneyDisplay amount={val} showColor={true} />
                     </div>
                 )
@@ -171,11 +177,13 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         },
         {
             id: "actions",
-            header: "Acciones",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+            ),
             cell: ({ row }) => {
                 const mov = row.original
                 return (
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-center gap-1 w-full">
                         <Button
                             variant="ghost"
                             size="icon"

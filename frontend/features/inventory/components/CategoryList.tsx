@@ -108,13 +108,15 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
             cell: ({ row }) => {
                 const iconName = row.original.icon
-                if (!iconName) return null
+                if (!iconName) return <div className="flex justify-center w-full">-</div>
                 return (
-                    <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/50">
-                        {(() => {
-                            const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
-                            return <Icon className="h-4 w-4 text-muted-foreground" />
-                        })()}
+                    <div className="flex items-center justify-center w-full">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/50">
+                            {(() => {
+                                const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
+                                return <Icon className="h-4 w-4 text-muted-foreground" />
+                            })()}
+                        </div>
                     </div>
                 )
             },
@@ -122,12 +124,12 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-[12px] font-black uppercase text-foreground/80">{row.getValue("name")}</DataCell.Secondary>,
+            cell: ({ row }) => <DataCell.Text className="text-[12px] font-black uppercase text-center w-full">{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "parent_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-[10px] uppercase font-bold text-muted-foreground opacity-60">{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
+            cell: ({ row }) => <DataCell.Secondary className="text-[10px] uppercase font-bold text-muted-foreground opacity-60 text-center w-full">{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
         {
             id: "actions",

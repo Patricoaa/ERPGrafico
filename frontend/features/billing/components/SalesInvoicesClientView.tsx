@@ -99,27 +99,27 @@ export function SalesInvoicesClientView() {
     const columns: ColumnDef<Invoice>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.original.number} />,
         },
         {
             accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />
         },
         {
             accessorKey: "dte_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
-            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px]">{row.getValue("dte_type_display")}</DataCell.Secondary>
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px] text-center">{row.getValue("dte_type_display")}</DataCell.Secondary>
         },
         {
             accessorKey: "partner_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || (row.original as any).partner}>{row.getValue("partner_name")}</DataCell.ContactLink>
         },
         {
             accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />
         },
         {

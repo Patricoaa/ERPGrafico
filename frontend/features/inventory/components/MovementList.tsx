@@ -91,20 +91,20 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         },
         {
             accessorKey: "product_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col gap-1 py-1">
-                    <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{row.original.product_name}</span>
-                    <div className="flex gap-2 items-center">
+                <div className="flex flex-col items-center gap-1 py-1 w-full">
+                    <DataCell.Text className="font-black text-[12px] uppercase tracking-tight text-center">{row.original.product_name}</DataCell.Text>
+                    <div className="flex gap-2 items-center justify-center">
                         {row.original.product_internal_code && (
-                            <span className="font-mono text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
+                            <DataCell.Code className="text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
                                 {row.original.product_internal_code}
-                            </span>
+                            </DataCell.Code>
                         )}
                         {row.original.product_code && row.original.product_code !== row.original.product_internal_code && (
-                            <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60">
+                            <DataCell.Code className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60 bg-secondary/50">
                                 {row.original.product_code}
-                            </Badge>
+                            </DataCell.Code>
                         )}
                     </div>
                 </div>
@@ -137,9 +137,11 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             cell: ({ row }) => {
                 const type = row.original.move_type
                 return (
-                    <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80 border rounded-[0.125rem] bg-secondary/30 px-2 py-0 border-border/50 h-5">
-                            {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
-                    </DataCell.Secondary>
+                    <div className="flex justify-center w-full">
+                        <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80 border rounded-[0.125rem] bg-secondary/30 px-2 py-0 border-border/50 h-5">
+                                {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
+                        </DataCell.Secondary>
+                    </div>
                 )
             },
             size: 100,

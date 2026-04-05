@@ -39,6 +39,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES, LAYOUT_TOKENS } from "@/lib/styles"
@@ -111,9 +112,9 @@ export default function AdvancesPage() {
     const columns: ColumnDef<SalaryAdvance>[] = [
         {
             accessorKey: "employee_name",
-            header: "Empleado",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-sm">{row.original.employee_name}</span>
                     <span className="text-[10px] text-muted-foreground">{row.original.employee_display_id}</span>
                 </div>
@@ -121,44 +122,58 @@ export default function AdvancesPage() {
         },
         {
             accessorKey: "date",
-            header: "Fecha",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => (
-                <span className="font-mono text-xs">
-                    {format(new Date(row.original.date), "dd/MM/yyyy")}
-                </span>
+                <div className="flex justify-center w-full">
+                    <span className="font-mono text-xs">
+                        {format(new Date(row.original.date), "dd/MM/yyyy")}
+                    </span>
+                </div>
             )
         },
         {
             accessorKey: "amount",
-            header: "Monto",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => (
-                <MoneyDisplay amount={parseFloat(row.original.amount)} className="font-mono text-sm font-bold text-amber-600" />
+                <div className="flex justify-center w-full">
+                    <MoneyDisplay amount={parseFloat(row.original.amount)} className="font-mono text-sm font-bold text-amber-600" />
+                </div>
             )
         },
         {
             accessorKey: "is_discounted",
-            header: "Estado",
-            cell: ({ row }) => row.original.is_discounted ? (
-                <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 bg-emerald-50">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Descontado
-                </Badge>
-            ) : (
-                <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 bg-amber-50">
-                    <Clock className="h-3 w-3 mr-1" /> Pendiente
-                </Badge>
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.is_discounted ? (
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 bg-emerald-50">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Descontado
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 bg-amber-50">
+                            <Clock className="h-3 w-3 mr-1" /> Pendiente
+                        </Badge>
+                    )}
+                </div>
             )
         },
         {
             accessorKey: "payroll_display_id",
-            header: "Liquidación",
-            cell: ({ row }) => row.original.payroll_display_id
-                ? <span className="font-mono text-xs text-muted-foreground">{row.original.payroll_display_id}</span>
-                : <span className="text-xs text-muted-foreground italic">—</span>
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Liquidación" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.payroll_display_id
+                        ? <span className="font-mono text-xs text-muted-foreground">{row.original.payroll_display_id}</span>
+                        : <span className="text-xs text-muted-foreground italic">—</span>
+                    }
+                </div>
+            )
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex items-center gap-1 justify-end">
+                <div className="flex items-center gap-1 justify-center w-full">
                     {!row.original.is_discounted && (
                         <Button variant="ghost" size="icon" className="h-7 w-7"
                             onClick={() => { setEditingAdvance(row.original); setDialogOpen(true) }}>

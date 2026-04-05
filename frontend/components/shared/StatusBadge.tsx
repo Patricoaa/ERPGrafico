@@ -61,6 +61,13 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     DESTRUCTIVE: { label: "Eliminado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     NEUTRAL: { label: "Pendiente", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
     NOT_APPLICABLE: { label: "No aplica", className: "bg-muted/50 text-muted-foreground/50 border-muted", type: "neutral" },
+
+    // Accounting - Account Types
+    ASSET: { label: "Activo", className: "bg-info/10 text-info border-info/20", type: "info" },
+    LIABILITY: { label: "Pasivo", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    EQUITY: { label: "Patrimonio", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
+    INCOME: { label: "Ingreso", className: "bg-success/10 text-success border-success/20", type: "success" },
+    EXPENSE: { label: "Gasto", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 }
 
 interface StatusBadgeProps {

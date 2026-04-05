@@ -186,12 +186,14 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "internal_code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cód. Interno" />
+                <DataTableColumnHeader column={column} title="Cód. Interno" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
-                    {row.getValue("internal_code")}
-                </Badge>
+                <div className="flex justify-center w-full">
+                    <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                        {row.getValue("internal_code")}
+                    </DataCell.Code>
+                </div>
             ),
             size: 100,
             minSize: 80,
@@ -199,12 +201,12 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="SKU" />
+                <DataTableColumnHeader column={column} title="SKU" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase bg-secondary/50">
                     {row.getValue("code")}
-                </Badge>
+                </DataCell.Code>
             ),
             size: 100,
             minSize: 80,
@@ -212,7 +214,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
+                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const product = row.original as any;
@@ -254,14 +256,14 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "category_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Categoría" />
+                <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("category_name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "active",
             id: "active",
-            header: "Estado",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             enableHiding: true,
             filterFn: (row, id, value: string[]) => {
                 if (!value || value.length === 0) return true
@@ -272,7 +274,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
         {
             accessorKey: "product_type",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" />
+                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <DataCell.Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</DataCell.Badge>

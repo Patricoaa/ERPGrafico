@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag } from "lucide-react"
+import { Plus, Edit2, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -88,7 +88,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
             accessorKey: "name",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 w-full">
                     <Landmark className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-center">{row.original.name}</span>
                 </div>
@@ -98,20 +98,31 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
             accessorKey: "code",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center w-full">
                     <Badge variant="outline" className="font-mono text-[10px]">{row.original.code || 'N/A'}</Badge>
                 </div>
             )
         },
         {
             id: "actions",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex justify-end space-x-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(row.original)}>
-                        <Edit2 className="h-4 w-4" />
+                <div className="flex justify-center w-full gap-1.5">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors" 
+                        onClick={() => openEdit(row.original)}
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             )
@@ -358,7 +369,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             accessorKey: "name",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 w-full">
                     {row.original.is_terminal ? (
                         <div className="bg-primary/10 p-1 rounded" title="Terminal de Cobro">
                             <CreditCard className="h-4 w-4 text-primary" />
@@ -377,7 +388,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             accessorKey: "method_type_display",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center w-full">
                     <Badge variant="secondary" className="text-center">{row.original.method_type_display}</Badge>
                 </div>
             )
@@ -386,7 +397,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             accessorKey: "treasury_account_name",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center justify-center gap-1 w-full">
                     <span className="text-xs text-muted-foreground text-center">{row.original.treasury_account_name}</span>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && <Badge variant="outline" className="text-[9px] px-1 h-4 bg-success/10 text-success border-success/20">Ventas</Badge>}
@@ -397,13 +408,24 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         {
             id: "actions",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex justify-end space-x-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(row.original)}>
-                        <Edit2 className="h-4 w-4" />
+                <div className="flex justify-center w-full gap-1.5">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors" 
+                        onClick={() => openEdit(row.original)}
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        onClick={() => handleDelete(row.original.id)}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             )
