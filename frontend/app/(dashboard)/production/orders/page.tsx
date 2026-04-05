@@ -333,8 +333,14 @@ export default function WorkOrdersPage() {
                         }
                     ]}
                     useAdvancedFilter={true}
-                    toolbarAction={
-                        <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Entrega" />
+                    isCustomFiltered={!!dateRange}
+                    customFilterCount={dateRange ? 1 : 0}
+                    customFilters={
+                        <DateRangeFilter 
+                            onRangeChange={setDateRange} 
+                            label="Fecha de Entrega" 
+                            className="bg-transparent border-none w-full"
+                        />
                     }
                     onReset={() => setDateRange(undefined)}
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}

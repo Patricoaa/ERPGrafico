@@ -5,13 +5,9 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import {
-    LayoutDashboard, Monitor, ArrowRight, Calendar,
-    ShoppingCart, Package, FileBadge
-} from "lucide-react"
+import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
+
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
@@ -19,11 +15,9 @@ import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { translateSalesChannel, formatPlainDate } from "@/lib/utils"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder } from "@/features/sales"
-import { HubDockLayout } from "@/components/shared/HubDockLayout"
 
 
 
@@ -37,6 +31,13 @@ interface SalesOrdersViewProps {
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+
+    const viewOptions = [
+        { label: "Lista", value: "list", icon: List },
+        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
+
+    ]
 
     const { orders, refetch: refetchOrders } = useSalesOrders({
         filters: {
@@ -66,7 +67,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         if (!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)) return false
         // Only show documents linked to a Sale Order (Emitted)
         if (!note.sale_order) return false
-        
+
         if (!dateRange || !dateRange.from) return true
         const noteDate = parseISO(note.date)
         const start = startOfDay(dateRange.from)
@@ -92,6 +93,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
             cell: ({ row }) => <DataCell.Text>{row.getValue("customer_name")}</DataCell.Text>,
             meta: { title: "Cliente" },
+            size: 400,
         },
         {
             accessorKey: "total",
@@ -101,7 +103,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         },
         {
             accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Hub" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" />,
             cell: ({ row }) => <OrderHubStatus order={row.original} />,
             meta: { title: "Estado" },
         },
@@ -109,22 +111,60 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             id: "production_status",
             accessorFn: (row) => getHubStatuses(row).production,
+            header: () => null,
+            cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {
             id: "logistics_status",
             accessorFn: (row) => getHubStatuses(row).logistics,
+            header: () => null,
+            cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {
             id: "billing_status",
             accessorFn: (row) => getHubStatuses(row).billing,
+            header: () => null,
+            cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {
             id: "treasury_status",
             accessorFn: (row) => getHubStatuses(row).treasury,
+            header: () => null,
+            cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
+        },
+        {
+            id: "hub_trigger",
+            header: () => null,
+            cell: ({ row }) => {
+                const item = row.original
+                const isSelected = hubConfig?.orderId === item.id
+                return (
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected) {
+                                    closeHub()
+                                } else {
+                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
+                    </div>
+                )
+            },
         }
     ]
 
@@ -154,29 +194,55 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             meta: { title: "Total" },
         },
         {
-            id: "status_hub",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Hub" />,
+            accessorKey: "status",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <NoteHubStatus note={row.original} />
                 </div>
             ),
-            meta: { title: "Estado" },
         },
         {
-            id: "status",
-            accessorFn: (row) => row.status,
-            filterFn: (row, id, value) => value.includes(row.getValue(id))
+            id: "hub_trigger",
+            header: () => null,
+            cell: ({ row }) => {
+                const item = row.original
+                const isSelected = hubConfig?.invoiceId === item.id
+                return (
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected) {
+                                    closeHub()
+                                } else {
+                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
+                    </div>
+                )
+            },
         }
     ]
 
     return (
         <Tabs value={viewMode} className="w-full flex flex-col h-full">
-            <HubDockLayout>
-                <DataTable
-                    columns={viewMode === 'orders' ? columns : noteColumns}
-                    data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                    cardMode
+            <DataTable
+                columns={viewMode === 'orders' ? columns : noteColumns}
+                data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                    cardMode={true}
+                    currentView={currentView}
+                    onViewChange={(v: any) => setCurrentView(v)}
+                    viewOptions={viewOptions}
                     isLoading={viewMode === 'notes' ? loadingNotes : false}
                     filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
                     searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
@@ -240,9 +306,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     showToolbarSort={true}
                     onReset={() => setDateRange(undefined)}
                     customFilters={
-                        <DateRangeFilter 
-                            onRangeChange={setDateRange} 
-                            label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} 
+                        <DateRangeFilter
+                            onRangeChange={setDateRange}
+                            label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"}
                             className="bg-transparent border-none w-full"
                         />
                     }
@@ -250,7 +316,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     customFilterCount={dateRange ? 1 : 0}
 
                     defaultPageSize={20}
-                    renderCustomView={(table) => {
+                    renderCustomView={currentView === 'card' ? (table) => {
                         const rows = table.getRowModel().rows
                         if (rows.length === 0) {
                             return (
@@ -265,10 +331,10 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             <div className="grid gap-3 pt-1">
                                 {rows.map((row: any) => {
                                     const item = row.original
-                                    const isSelected = viewMode === 'orders' 
-                                        ? hubConfig?.orderId === item.id 
+                                    const isSelected = viewMode === 'orders'
+                                        ? hubConfig?.orderId === item.id
                                         : hubConfig?.invoiceId === item.id
-                                        
+
                                     return (
                                         <OrderCard
                                             key={item.id}
@@ -291,9 +357,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                 })}
                             </div>
                         )
-                    }}
+                    } : undefined}
                 />
-            </HubDockLayout>
+            
         </Tabs>
     )
 }

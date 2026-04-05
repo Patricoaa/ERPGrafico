@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus, ArrowRight, Calendar, Search, Filter } from "lucide-react"
+import { List, Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Calendar, Search, Filter, Monitor } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -21,21 +21,17 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
-import { es } from "date-fns/locale"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { OrderCard } from "@/features/orders/components/OrderCard"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { formatPlainDate } from "@/lib/utils"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { EmptyState } from "@/components/shared/EmptyState"
-import Link from "next/link"
+
 
 interface PurchaseOrder {
     id: number
@@ -85,8 +81,15 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
 
-    const { openHub, closeHub, hubConfig } = useHubPanel()
+    const viewOptions = [
+        { label: "Lista", value: "list", icon: List },
+        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
+
+    ]
+
+    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
     const searchParams = useSearchParams()
     const hubOpenedFromUrl = useRef(false)
@@ -292,9 +295,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
             meta: { title: "Total" },
         },
         {
-            id: "status_hub",
+            accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado Hub" />
+                <DataTableColumnHeader column={column} title="Estados" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
@@ -313,21 +316,34 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
             filterFn: (row, id, value) => value.includes(row.getValue(id))
         },
         {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-1">
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => openHub({ orderId: null, invoiceId: row.original.id, type: 'purchase', onActionSuccess: fetchNotes })}
-                        className="h-8 px-3 w-full"
-                    >
-                        <LayoutDashboard className="h-4 w-4 mr-1" />
-                        Gestionar
-                    </Button>
-                </div>
-            ),
+            id: "hub_trigger",
+            header: () => null,
+            cell: ({ row }) => {
+                const item = row.original
+                const isSelected = hubConfig?.invoiceId === item.id
+                return (
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected && isHubOpen) {
+                                    closeHub()
+                                } else {
+                                    openHub({ orderId: null, invoiceId: item.id, type: 'purchase', onActionSuccess: fetchNotes })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
+                    </div>
+                )
+            },
         },
     ]
 
@@ -379,7 +395,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
         {
             accessorKey: "status",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado Hub" />
+                <DataTableColumnHeader column={column} title="Estados" />
             ),
             cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
             meta: { title: "Estado" },
@@ -421,21 +437,34 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
         },
 
         {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-1">
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => openHub({ orderId: row.original.id, type: 'purchase', onActionSuccess: fetchOrders })}
-                        className="h-8 px-3 w-full"
-                    >
-                        <LayoutDashboard className="h-4 w-4 mr-1" />
-                        Gestionar
-                    </Button>
-                </div>
-            ),
+            id: "hub_trigger",
+            header: () => null,
+            cell: ({ row }) => {
+                const item = row.original
+                const isSelected = hubConfig?.orderId === item.id
+                return (
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected) {
+                                    closeHub()
+                                } else {
+                                    openHub({ orderId: item.id, type: 'purchase', onActionSuccess: fetchOrders })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
+                    </div>
+                )
+            },
         },
     ]
 
@@ -467,7 +496,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                     <DataTable
                         columns={viewMode === 'orders' ? columns : noteColumns}
                         data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                        cardMode
+                        cardMode={true}
+                        currentView={currentView}
+                        onViewChange={(v: any) => setCurrentView(v)}
+                        viewOptions={viewOptions}
                         filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
                         searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
                         facetedFilters={[
@@ -517,13 +549,17 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         useAdvancedFilter={true}
                         showToolbarSort={true}
                         onReset={() => setDateRange(undefined)}
-                        toolbarAction={
-                            <div className="flex items-center gap-2">
-                                <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"} />
-                            </div>
-                        }
                         globalFilterFields={["number"]}
-                        renderCustomView={(table) => {
+                        isCustomFiltered={!!dateRange}
+                        customFilterCount={dateRange ? 1 : 0}
+                        customFilters={
+                            <DateRangeFilter
+                                onRangeChange={setDateRange}
+                                label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
+                                className="bg-transparent border-none w-full"
+                            />
+                        }
+                        renderCustomView={currentView === 'card' ? (table) => {
                             const rows = table.getRowModel().rows
                             if (rows.length === 0) {
                                 return (
@@ -543,8 +579,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                                 <div className="grid gap-3 pt-2">
                                     {rows.map((row: any) => {
                                         const item = row.original
-                                        const isSelected = viewMode === 'orders' 
-                                            ? hubConfig?.orderId === item.id 
+                                        const isSelected = viewMode === 'orders'
+                                            ? hubConfig?.orderId === item.id
                                             : hubConfig?.invoiceId === item.id
 
                                         return (
@@ -567,7 +603,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                                     })}
                                 </div>
                             )
-                        }}
+                        } : undefined}
                     />
                 </Tabs>
             )}
