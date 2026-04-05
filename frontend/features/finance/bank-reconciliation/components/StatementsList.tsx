@@ -12,6 +12,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 export function StatementsList({ externalOpen = false }: { externalOpen?: boolean }) {
     const router = useRouter()
@@ -139,17 +140,11 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
-            cell: ({ row }) => {
-                const state = row.getValue("state") as string
-                const variant = state === 'CONFIRMED' ? 'success' : state === 'CANCELLED' ? 'destructive' : 'secondary'
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Badge variant={variant} className="uppercase font-bold text-[10px]">
-                            {row.original.state_display}
-                        </DataCell.Badge>
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.getValue("state") as string} label={row.original.state_display} />
+                </div>
+            ),
         },
         {
             id: "actions",
@@ -159,7 +154,7 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => router.push(`/treasury/reconciliation/${row.original.id}`)}
                     >
                         <Eye className="h-3.5 w-3.5 text-primary" />

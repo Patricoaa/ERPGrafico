@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import {
     Plus, Edit, Trash2, Check, Loader2, Workflow, Box, Layers, Copy
 } from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BOMFormDialog } from "./BOMFormDialog"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -155,9 +156,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Lista de Materiales (Receta)" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center py-1 text-center w-full">
-                    <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
+                    <DataCell.Text className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</DataCell.Text>
                     {row.original.notes && (
-                        <span className="text-[10px] text-muted-foreground italic truncate max-w-[200px] mt-1">{row.original.notes}</span>
+                        <DataCell.Secondary className="text-[10px] italic truncate max-w-[200px] mt-1">{row.original.notes}</DataCell.Secondary>
                     )}
                 </div>
             )
@@ -170,15 +171,16 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
-                            <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5 rounded-[0.125rem]">
+                            <DataCell.Badge 
+                                variant="outline"
+                                className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5"
+                            >
                                 BASE
-                            </Badge>
+                            </DataCell.Badge>
                         ) : (
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-[9px] font-mono font-black text-primary/80 bg-primary/5 px-1 rounded-[0.125rem] border border-primary/10 w-fit leading-none py-0.5">
-                                    {row.original.product_internal_code || 'VAR'}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[120px]">{row.original.product_name}</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                                <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>
+                                <DataCell.Secondary className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Secondary>
                             </div>
                         )}
                     </div>
@@ -190,11 +192,10 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Rendimiento (Output)" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <div className="text-center">
-                        <span className="font-black font-mono text-[11px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-[0.125rem] border border-emerald-200/50">
-                            {row.original.yield_quantity} {row.original.yield_uom_name || (product as any).uom_name}
-                        </span>
-                    </div>
+                    <DataCell.NumericFlow 
+                        value={row.original.yield_quantity} 
+                        unit={row.original.yield_uom_name || (product as any).uom_name}
+                    />
                 </div>
             )
         },
@@ -203,20 +204,15 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    {row.original.active ? (
-                        <Badge className="h-5 px-2 bg-success text-white font-black text-[9px] uppercase tracking-widest rounded-[0.125rem] shadow-sm">
-                            <Check className="h-2.5 w-2.5 mr-1" /> ACTIVA
-                        </Badge>
-                    ) : (
-                        <Badge
-                            variant="outline"
-                            className="h-5 px-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 cursor-pointer hover:bg-success/10 hover:text-success hover:border-success/20 transition-all rounded-[0.125rem]"
-                            onClick={() => handleToggleActive(row.original)}
-                            title="Haz clic para activar como receta principal"
-                        >
-                            INACTIVA
-                        </Badge>
-                    )}
+                    <button 
+                        onClick={() => !row.original.active && handleToggleActive(row.original)}
+                        className={cn(!row.original.active && "hover:scale-105 transition-transform")}
+                    >
+                        <StatusBadge 
+                            status={row.original.active ? "active" : "inactive"} 
+                            className="cursor-pointer"
+                        />
+                    </button>
                 </div>
             )
         },
@@ -224,8 +220,10 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             accessorKey: "lines_count",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Comp." className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-center text-[10px] font-black opacity-60">
-                    {row.original.lines?.length || 0} ITEMS
+                <div className="flex justify-center">
+                    <DataCell.Secondary className="font-black opacity-60">
+                        {`${row.original.lines?.length || 0} ITEMS`}
+                    </DataCell.Secondary>
                 </div>
             )
         },

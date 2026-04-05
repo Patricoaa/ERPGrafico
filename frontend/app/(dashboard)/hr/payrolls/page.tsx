@@ -14,6 +14,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -169,7 +170,7 @@ export default function PayrollsPage() {
             accessorFn: (row) => row.employee_name || "",
             id: "employee",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <div className="font-medium text-sm text-center w-full">{row.original.employee_name}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-bold">{row.original.employee_name}</DataCell.Text></div>,
         },
         {
             accessorKey: "period_label",
@@ -180,8 +181,8 @@ export default function PayrollsPage() {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full opacity-80 font-medium">
-                    <MoneyDisplay amount={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600" />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600 font-medium" />
                 </div>
             ),
         },
@@ -189,8 +190,8 @@ export default function PayrollsPage() {
             accessorKey: "legal_deductions_worker",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
                 </div>
             ),
         },
@@ -198,8 +199,8 @@ export default function PayrollsPage() {
             accessorKey: "employer_contribution",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
                 </div>
             ),
         },
@@ -207,8 +208,8 @@ export default function PayrollsPage() {
             accessorKey: "other_deductions",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).other_deductions || 0)} className="text-muted-foreground text-[11px]" />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat((row.original as any).other_deductions || 0)} className="text-muted-foreground text-[11px]" />
                 </div>
             ),
         },
@@ -216,8 +217,8 @@ export default function PayrollsPage() {
             accessorKey: "advances_total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full opacity-70">
-                    <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
                 </div>
             ),
         },
@@ -225,63 +226,37 @@ export default function PayrollsPage() {
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full font-bold text-sm">
-                    <MoneyDisplay amount={parseFloat(row.getValue("net_salary"))} />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat(row.getValue("net_salary"))} className="font-bold" />
                 </div>
             ),
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => {
-                const s = row.getValue("status") as string;
-                return (
-                    <div className="flex justify-center w-full">
-                        <Badge variant="outline" className={cn(
-                            "text-[9px] uppercase font-bold",
-                            s === 'POSTED' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : "text-amber-600 border-amber-500/30 bg-amber-50"
-                        )}>
-                            {s === 'POSTED' ? 'Contabilizado' : 'Borrador'}
-                        </Badge>
-                    </div>
-                )
-            }
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.getValue("status") as string} />
+                </div>
+            )
         },
         {
             accessorKey: "remuneration_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
-            cell: ({ row }) => {
-                const s = (row.original as any).remuneration_paid_status;
-                return (
-                    <div className="flex justify-center w-full">
-                        <Badge variant="outline" className={cn(
-                            "text-[9px] uppercase font-bold",
-                            s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
-                            s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
-                        )}>
-                            {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
-                        </Badge>
-                    </div>
-                )
-            }
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={(row.original as any).remuneration_paid_status} />
+                </div>
+            )
         },
         {
             accessorKey: "previred_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
-            cell: ({ row }) => {
-                const s = (row.original as any).previred_paid_status;
-                return (
-                    <div className="flex justify-center w-full">
-                        <Badge variant="outline" className={cn(
-                            "text-[9px] uppercase font-bold",
-                            s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
-                            s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
-                        )}>
-                            {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
-                        </Badge>
-                    </div>
-                )
-            }
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={(row.original as any).previred_paid_status} />
+                </div>
+            )
         },
         {
             id: "actions",
@@ -290,16 +265,16 @@ export default function PayrollsPage() {
                 const p = row.original;
                 return (
                     <div className="flex items-center gap-1 justify-center w-full">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] transition-colors" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
                             <Eye className="h-3.5 w-3.5" />
                         </Button>
-
+ 
                         {p.status === 'DRAFT' && (
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-7 w-7 text-primary hover:text-primary hover:bg-blue-50"
+                                className="h-8 w-8 rounded-[0.25rem] text-primary hover:text-primary hover:bg-blue-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -309,13 +284,13 @@ export default function PayrollsPage() {
                                 <Wallet className="h-3.5 w-3.5" />
                             </Button>
                         )}
-
+ 
                         {p.status === 'POSTED' && (row.original as any).remuneration_paid_status !== 'PAID' && (
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Pago Sueldo"
-                                className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                className="h-8 w-8 rounded-[0.25rem] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -325,13 +300,13 @@ export default function PayrollsPage() {
                                 <Coins className="h-3.5 w-3.5" />
                             </Button>
                         )}
-
+ 
                         {p.status === 'POSTED' && (row.original as any).previred_paid_status !== 'PAID' && (
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
                                 title="Pagar Previred"
-                                className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                className="h-8 w-8 rounded-[0.25rem] text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -341,12 +316,12 @@ export default function PayrollsPage() {
                                 <CreditCard className="h-3.5 w-3.5" />
                             </Button>
                         )}
-
+ 
                         {p.status === 'DRAFT' && (
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-7 w-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                className="h-8 w-8 rounded-[0.25rem] text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (confirm("¿Eliminar borrador?")) {

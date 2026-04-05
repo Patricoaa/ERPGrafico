@@ -133,7 +133,11 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="font-medium text-center w-full">{row.getValue("name")}</DataCell.Text>,
+            cell: ({ row }) => (
+                <DataCell.Text className="text-center w-full">
+                    {row.getValue("name")}
+                </DataCell.Text>
+            ),
         },
         {
             id: "actions",

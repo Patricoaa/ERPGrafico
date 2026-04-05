@@ -214,9 +214,11 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-2 font-medium w-full">
-                    <Tag className="h-4 w-4 text-primary" />
-                    <DataCell.Text className="text-center">{row.getValue("name")}</DataCell.Text>
+                <div className="flex items-center justify-center gap-2 w-full">
+                    <Tag className="h-4 w-4 text-primary opacity-70" />
+                    <DataCell.Text className="text-center font-black uppercase text-[12px] tracking-tight">
+                        {row.getValue("name")}
+                    </DataCell.Text>
                 </div>
             ),
         },
@@ -228,9 +230,13 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             cell: ({ row }) => {
                 const values = row.original.values || []
                 return (
-                    <div className="flex flex-nowrap justify-center gap-1 w-full overflow-x-auto scrollbar-hide py-1">
+                    <div className="flex flex-nowrap justify-center gap-1.5 w-full overflow-x-auto scrollbar-hide py-1">
                         {values.map((val) => (
-                            <DataCell.Badge key={val.id} variant="secondary" className="flex items-center gap-1 group py-0 h-6 px-2 shrink-0">
+                            <DataCell.Badge 
+                                key={val.id} 
+                                variant="secondary" 
+                                className="flex items-center gap-1 px-2.5 py-0.5 h-6 text-[10px] font-bold border-secondary/50"
+                            >
                                 {val.value}
                                 <button
                                     onClick={(e) => {
@@ -247,16 +253,20 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-primary/10 hover:text-primary"
+                            className="h-6 w-6 rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
                             onClick={() => {
                                 setSelectedAttribute(row.original)
                                 setIsValueModalOpen(true)
                             }}
                             title="Añadir valor"
                         >
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-3.5 w-3.5" />
                         </Button>
-                        {values.length === 0 && <DataCell.Secondary className="text-muted-foreground text-xs italic text-center w-full">Sin valores</DataCell.Secondary>}
+                        {values.length === 0 && (
+                            <DataCell.Secondary className="text-muted-foreground/40 italic">
+                                Sin valores
+                            </DataCell.Secondary>
+                        )}
                     </div>
                 )
             },

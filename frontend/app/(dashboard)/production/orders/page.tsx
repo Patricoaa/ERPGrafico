@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, Columns, X, Factory } from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
@@ -166,14 +167,18 @@ export default function WorkOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha Inicio" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("start_date") || '-'}</div>,
+            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("start_date")} /></div>,
         },
         {
             accessorKey: "description",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("description")}</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Text className="text-center">{row.getValue("description")}</DataCell.Text>
+                </div>
+            ),
         },
         {
             accessorKey: "status",
@@ -182,9 +187,7 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Badge variant={statusMap[row.original.status as string]?.variant || ("default" as any)}>
-                        {statusMap[row.original.status as string]?.label || row.original.status}
-                    </Badge>
+                    <StatusBadge status={row.original.status} />
                 </div>
             ),
             filterFn: (row, id, value) => {
@@ -198,9 +201,12 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Badge variant="outline" className="text-[10px] whitespace-nowrap">
+                    <DataCell.Badge 
+                        variant="outline" 
+                        className="text-[9px] uppercase tracking-tighter"
+                    >
                         {translateProductionStage(row.original.current_stage)}
-                    </Badge>
+                    </DataCell.Badge>
                 </div>
             ),
         },
@@ -209,7 +215,7 @@ export default function WorkOrdersPage() {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Fecha Entrega" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-center text-sm">{row.getValue("due_date") || '-'}</div>,
+            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
         },
         {
             id: "actions",
