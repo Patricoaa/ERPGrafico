@@ -239,11 +239,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     useAdvancedFilter={true}
                     showToolbarSort={true}
                     onReset={() => setDateRange(undefined)}
-                    toolbarAction={
-                        <div className="flex items-center gap-2">
-                            <DateRangeFilter onRangeChange={setDateRange} label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} />
-                        </div>
+                    customFilters={
+                        <DateRangeFilter 
+                            onRangeChange={setDateRange} 
+                            label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"} 
+                            className="bg-transparent border-none w-full"
+                        />
                     }
+                    isCustomFiltered={!!dateRange}
+                    customFilterCount={dateRange ? 1 : 0}
 
                     defaultPageSize={20}
                     renderCustomView={(table) => {

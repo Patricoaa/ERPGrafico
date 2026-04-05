@@ -42,6 +42,9 @@ interface DataTableToolbarProps<TData> {
     onViewChange?: (view: string) => void
     showColumnToggle?: boolean
     batchActions?: React.ReactNode
+    customFilters?: React.ReactNode
+    isCustomFiltered?: boolean
+    customFilterCount?: number
 }
 
 function translateColumnId(id: string): string {
@@ -82,9 +85,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         onViewChange,
         showColumnToggle = true,
         batchActions,
+        customFilters,
+        isCustomFiltered,
+        customFilterCount,
     } = props
 
-    const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0
+    const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0 || isCustomFiltered
     const rowSelectionCount = table.getFilteredSelectedRowModel().rows.length
 
     // Get all columns that are sortable
@@ -154,6 +160,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 searchPlaceholder={searchPlaceholder}
                                 // We no longer pass toolbarAction into filters since it's centered in the main toolbar
                                 onReset={onReset}
+                                customFilters={customFilters}
+                                customFilterCount={customFilterCount}
                             />
                             {showToolbarSort && sortableColumns.length > 0 && (
                                 <DropdownMenu>

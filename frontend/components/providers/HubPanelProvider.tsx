@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 export interface HubConfig {
     orderId?: number | null
@@ -35,6 +35,7 @@ export function HubPanelProvider({
     onHubOpenChange?: (isOpen: boolean) => void
 }) {
     const pathname = usePathname()
+    const searchParams = useSearchParams()
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
     const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
     const [isDocked, setIsDocked] = useState(false)
@@ -62,10 +63,10 @@ export function HubPanelProvider({
         onHubOpenChange?.(false)
     }, [onHubOpenChange])
 
-    // Auto-close on route change
+    // Auto-close on route change (including search params)
     useEffect(() => {
         closeHub()
-    }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [pathname, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const isHubEffectivelyOpen = isHubOpen && !isDocked && !isHubTemporarilyHidden
 

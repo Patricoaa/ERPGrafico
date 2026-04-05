@@ -175,13 +175,14 @@ export function TerminalBatchesManagement({
                             { label: "Pendiente", value: "PENDING" },
                             { label: "Liquidado", value: "SETTLED" },
                             { label: "Conciliado", value: "RECONCILED" },
-                            { label: "Facturado", value: "INVOICED" }
                         ]
                     }
                 ]}
-                toolbarAction={
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Ventas" />
+                customFilters={
+                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
                 }
+                isCustomFiltered={!!dateRange}
+                customFilterCount={dateRange ? 1 : 0}
                 onReset={() => setDateRange(undefined)}
             />
 

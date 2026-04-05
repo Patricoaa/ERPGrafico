@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
     CheckCircle2,
@@ -28,10 +30,11 @@ export interface OrderHubPanelProps {
     orderId?: number | null
     invoiceId?: number | null
     type?: 'purchase' | 'sale' | 'obligation'
-    onClose: () => void
+    onClose?: () => void
     onActionSuccess?: () => void
     onEdit?: (orderId: number) => void
     posSessionId?: number | null
+    showHeader?: boolean
 }
 
 export function OrderHubPanel({
@@ -42,6 +45,7 @@ export function OrderHubPanel({
     onActionSuccess,
     onEdit,
     posSessionId = null,
+    showHeader = false,
 }: OrderHubPanelProps) {
     const hubData = useOrderHubData({ orderId, invoiceId, type, enabled: true })
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
@@ -108,28 +112,101 @@ export function OrderHubPanel({
         )
     }
 
+    // Derive document type label
+    const docTypeLabel = (() => {
+        if (activeDoc.dte_type === 'NOTA_CREDITO') return 'NOTA DE CRÉDITO'
+        if (activeDoc.dte_type === 'NOTA_DEBITO') return 'NOTA DE DÉBITO'
+        if (type === 'purchase' || type === 'obligation') return 'COMPRA'
+        return 'VENTA'
+    })()
+
+    const StatusIcon = globalStatus.icon
+
     return (
-        <div className="flex flex-col h-full bg-background">
-            {/* Content Container - No internal ScrollArea to avoid double scrollbars */}
-            <div className="flex-1 w-full px-4 pb-4">
-                <OrderHubIntegrated 
-                    data={hubData}
-                    type={type}
-                    onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
-                    openDetails={openDetails}
-                    onEdit={onEdit}
-                    posSessionId={posSessionId}
-                    compact={true}
-                />
-            </div>
+        <TooltipProvider delayDuration={150}>
+            <div className="flex flex-col h-full overflow-hidden">
+            {/* ── Panel Header (only in panel context) ──────────────────── */}
+            {showHeader && (
+                <div className="flex items-center gap-3 shrink-0 border-b-4 border-border/40 px-4 py-3">
+                    {/* Document type + ID */}
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <span className="text-[9px] font-heading font-black uppercase tracking-[0.2em] text-muted-foreground/60 leading-none mb-0.5">
+                            {docTypeLabel}
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-heading font-black text-[15px] text-foreground leading-tight truncate">
+                                {activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
+                            </span>
+                            {/* Global status badge */}
+                            <span className={cn(
+                                "inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[0.25rem] border shrink-0",
+                                globalStatus.status === 'success' && "text-success border-success/30 bg-success/10",
+                                globalStatus.status === 'active' && "text-primary border-primary/30 bg-primary/10",
+                                globalStatus.status === 'cancelled' && "text-destructive border-destructive/30 bg-destructive/10",
+                                globalStatus.status === 'neutral' && "text-muted-foreground border-border/40 bg-muted/10",
+                            )}>
+                                <StatusIcon className="h-2.5 w-2.5" />
+                                {globalStatus.label}
+                            </span>
+                        </div>
+                        {/* Partner name */}
+                        {(activeDoc.customer_name || activeDoc.supplier_name) && (
+                            <span className="text-[10px] text-muted-foreground/60 truncate mt-0.5 flex items-center gap-1">
+                                <User className="h-2.5 w-2.5 shrink-0" />
+                                {activeDoc.customer_name || activeDoc.supplier_name}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Date */}
+                    {activeDoc.date && (
+                        <span className="text-[9px] text-muted-foreground/40 font-mono shrink-0 hidden sm:block">
+                            {formatPlainDate(activeDoc.date)}
+                        </span>
+                    )}
+
+                    {/* Close button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={onClose}
+                                className="h-7 w-7 rounded text-muted-foreground/50 hover:text-foreground hover:bg-white/10 shrink-0"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Cerrar Hub</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
+            )}
+            {/* ── Scrollable Phase Content ──────────────────────── */}
+            <ScrollArea className="flex-1 w-full">
+                <div className="px-4 pb-4">
+                    <OrderHubIntegrated
+                        data={hubData}
+                        type={type}
+                        onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
+                        openDetails={openDetails}
+                        onEdit={onEdit}
+                        posSessionId={posSessionId}
+                        compact={true}
+                    />
+                </div>
+            </ScrollArea>
 
             {/* Shared Modal for viewing Details */}
             <TransactionViewModal
                 open={detailsModal.open}
-                onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
+                onOpenChange={(open) => setDetailsModal((prev: any) => ({ ...prev, open }))}
                 type={detailsModal.type}
                 id={Number(detailsModal.id)}
             />
-        </div>
+            </div>
+        </TooltipProvider>
     )
 }
+

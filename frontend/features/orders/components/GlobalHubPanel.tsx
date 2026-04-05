@@ -58,7 +58,7 @@ export function GlobalHubPanel() {
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: "100%", opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l shadow-2xl bg-background flex flex-col pointer-events-auto"
+                        className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l border-white/5 bg-sidebar dark flex flex-col pointer-events-auto"
                     >
                         {hubConfig && (
                             <OrderHubPanel
@@ -68,6 +68,7 @@ export function GlobalHubPanel() {
                                 onClose={closeHub}
                                 onActionSuccess={hubConfig.onActionSuccess}
                                 posSessionId={hubConfig.posSessionId}
+                                showHeader={true}
                             />
                         )}
                     </motion.div>
