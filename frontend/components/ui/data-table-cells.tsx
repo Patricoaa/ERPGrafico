@@ -163,14 +163,22 @@ export const DataCell = {
     },
 
     /** Progress bar cell */
-    Progress: ({ value, max = 100, className }: ValueCellProps<number> & { max?: number }) => {
+    Progress: ({ value, max = 100, label, subLabel, className, ...props }: ValueCellProps<number> & { max?: number, label?: string, subLabel?: string }) => {
         const percentage = Math.min(100, Math.max(0, ((value || 0) / max) * 100))
         return (
-            <div className={cn("w-full bg-secondary/30 rounded-full h-1.5 overflow-hidden flex items-center justify-center", className)}>
-                <div
-                    className={cn("h-full transition-all", percentage > 100 ? "bg-destructive" : "bg-primary")}
-                    style={{ width: `${percentage}%` }}
-                />
+            <div className={cn("space-y-1 w-full", className)} {...props}>
+                {(label || subLabel) && (
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider mb-0.5 px-0.5">
+                        <span className="text-foreground/80">{label}</span>
+                        <span className="text-muted-foreground/60">{subLabel}</span>
+                    </div>
+                )}
+                <div className="w-full bg-secondary/30 rounded-full h-1 overflow-hidden">
+                    <div
+                        className={cn("h-full transition-all", percentage >= 100 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-primary")}
+                        style={{ width: `${percentage}%` }}
+                    />
+                </div>
             </div>
         )
     },

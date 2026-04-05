@@ -81,13 +81,14 @@ interface DataTableProps<TData, TValue> {
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
-
+const EMPTY_ARRAY: any[] = []
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     defaultPageSize = 20,
-    pageSizeOptions = [10, 20, 50, 100, 500],
+    pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     filterColumn,
     searchPlaceholder,
     globalFilterFields,
@@ -95,7 +96,7 @@ export function DataTable<TData, TValue>({
     toolbarAction,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
-    hiddenColumns = [],
+    hiddenColumns = EMPTY_ARRAY,
     useAdvancedFilter = false,
     onReset,
     renderCustomView,

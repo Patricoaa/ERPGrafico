@@ -12,6 +12,7 @@ import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -175,7 +176,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                     <div className="flex justify-center w-full">
                         <span className="font-bold">
                             {rule.rule_type === "FIXED"
-                                ? <MoneyDisplay amount={Number(rule.fixed_price)} showColor={false} />
+                                ? <DataCell.Currency value={Number(rule.fixed_price)} />
                                 : `${Number(rule.discount_percentage)}%`}
                         </span>
                     </div>
@@ -201,9 +202,10 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <Badge variant={row.getValue("active") ? "default" : "secondary"}>
-                        {row.getValue("active") ? "Activo" : "Inactivo"}
-                    </Badge>
+                    <StatusBadge 
+                        status={row.getValue("active") ? "SUCCESS" : "ERROR"} 
+                        label={row.getValue("active") ? "Activo" : "Inactivo"}
+                    />
                 </div>
             ),
         },
@@ -211,11 +213,11 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             id: "actions",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
+                <div className="flex justify-center w-full gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(row.original.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive hover:text-destructive" onClick={() => handleDelete(row.original.id)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>

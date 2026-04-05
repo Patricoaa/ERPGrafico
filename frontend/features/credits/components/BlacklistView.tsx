@@ -8,6 +8,7 @@ import {
     recoverDebt 
 } from "@/lib/credits/api"
 import { CreditContact, CreditLedgerEntry } from "@/lib/credits/api"
+import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, flexRender } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -47,17 +48,10 @@ import { Input } from "@/components/ui/input"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
-const fmt = (v: any) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(v || 0))
-
-const agingLabel: Record<string, string> = {
-    'written_off': 'Castigado',
-    'current': 'Vigente',
-    'overdue_30': '1–30 días',
-    'overdue_60': '31–60 días',
-    'overdue_90': '61–90 días',
-    'overdue_90plus': '+90 días',
-}
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
 const agingBg: Record<string, string> = {
     'written_off': 'bg-destructive/10 text-destructive border-destructive/20',
@@ -110,7 +104,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
         if (!recoveryAmount) return
         try {
             await recoverDebt(contact.id, recoveryAmount)
-            toast.success(`Recuperación de ${fmt(recoveryAmount)} registrada correctamente.`)
+            toast.success(`Recuperación de ${formatCurrency(recoveryAmount)} registrada correctamente.`)
             setShowRecoveryDialog(false)
             setRecoveryAmount("")
             onRefresh()
@@ -207,18 +201,23 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                                     {ledger.map((entry) => (
                                                         <tr key={entry.id} className="text-[12px] group">
                                                             <td className="py-2 pr-4 text-center">
-                                                                <span className="font-bold">NV-{entry.number}</span>
+                                                                <DataCell.Code className="font-bold">NV-{entry.number}</DataCell.Code>
                                                             </td>
-                                                            <td className="py-2 pr-4 text-muted-foreground text-center">{entry.date}</td>
-                                                            <td className="py-2 pr-4 text-center font-mono">{fmt(entry.effective_total)}</td>
-                                                            <td className="py-2 pr-4 text-center font-mono text-success font-medium">{fmt(entry.paid_amount)}</td>
-                                                            <td className="py-2 pr-4 text-center font-mono font-bold">{fmt(entry.balance)}</td>
+                                                            <td className="py-2 pr-4 text-center">
+                                                                <DataCell.Date value={entry.date} className="text-muted-foreground" />
+                                                            </td>
+                                                            <td className="py-2 pr-4 text-center">
+                                                                <DataCell.Currency value={entry.effective_total} />
+                                                            </td>
+                                                            <td className="py-2 pr-4 text-center">
+                                                                <DataCell.Currency value={entry.paid_amount} className="text-success" />
+                                                            </td>
+                                                            <td className="py-2 pr-4 text-center">
+                                                                <DataCell.Currency value={entry.balance} className="font-bold" />
+                                                            </td>
                                                             <td className="py-2 text-center">
                                                                 <div className="flex justify-center">
-                                                                    <span className={cn("text-[10px] items-center gap-1.5 font-bold px-2 py-0.5 rounded border inline-flex", agingBg[entry.aging_bucket as string])}>
-                                                                        {(entry.aging_bucket as string) === 'written_off' ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                                                                        {agingLabel[entry.aging_bucket as string]}
-                                                                    </span>
+                                                                    <StatusBadge status={String(entry.aging_bucket).toUpperCase()} />
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -294,27 +293,19 @@ export function BlacklistView() {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full text-center font-semibold text-[13px]">
-                    <div>
-                        <div className="font-bold text-foreground">
-                            {row.original.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.original.tax_id}</div>
-                    </div>
-                </div>
+                <DataCell.ContactLink contactId={row.original.id}>
+                    {row.original.name}
+                </DataCell.ContactLink>
             ),
         },
         {
             accessorKey: "credit_balance_used",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
-            cell: ({ row }) => {
-                const val = Number(row.original.credit_balance_used)
-                return (
-                    <div className="flex justify-center w-full">
-                        <div className="text-center font-mono font-bold text-[13px] text-destructive">{fmt(val)}</div>
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.original.credit_balance_used} className="text-destructive font-black" />
+                </div>
+            ),
         },
         {
             accessorKey: "credit_last_evaluated",
