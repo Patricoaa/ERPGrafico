@@ -496,6 +496,18 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                     <DataTable
                         columns={viewMode === 'orders' ? columns : noteColumns}
                         data={viewMode === 'orders' ? filteredOrders : filteredNotes}
+                        onRowClick={(row: any) => {
+                            const isSelected = viewMode === "orders" ? hubConfig?.orderId === row.id : hubConfig?.invoiceId === row.id
+                            if (isSelected && isHubOpen) {
+                                closeHub()
+                            } else {
+                                if (viewMode === "orders") {
+                                    openHub({ orderId: row.id, type: 'purchase', onActionSuccess: fetchOrders })
+                                } else {
+                                    openHub({ orderId: null, invoiceId: row.id, type: 'purchase', onActionSuccess: fetchNotes })
+                                }
+                            }
+                        }}
                         cardMode={true}
                         currentView={currentView}
                         onViewChange={(v: any) => setCurrentView(v)}

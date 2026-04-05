@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { CategoryForm } from "./CategoryForm"
@@ -104,7 +105,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
             id: "icon",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
             cell: ({ row }) => {
                 const iconName = row.original.icon
                 if (!iconName) return null
@@ -120,17 +121,17 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         },
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Secondary className="text-[12px] font-black uppercase text-foreground/80">{row.getValue("name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "parent_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" />,
-            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("parent_name") || "-"}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Secondary className="text-[10px] uppercase font-bold text-muted-foreground opacity-60">{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
         {
             id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>

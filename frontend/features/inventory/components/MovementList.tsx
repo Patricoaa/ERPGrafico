@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -77,14 +78,14 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
         {
             id: "folio",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <DataCell.Secondary className="flex flex-col gap-0.5">
                     <span className="font-mono font-black text-[12px] text-primary tracking-tighter">MOV-{row.original.id}</span>
-                    <span className="text-[9px] font-black uppercase text-muted-foreground opacity-50 tracking-widest">
+                    <span className="text-[9px] font-black uppercase text-muted-foreground opacity-50 tracking-widest leading-none">
                         {formatPlainDate(row.original.date)}
                     </span>
-                </div>
+                </DataCell.Secondary>
             ),
             size: 100,
         },
@@ -111,32 +112,23 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
         },
         {
             accessorKey: "warehouse_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" className="justify-center" />,
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80">
+                <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80">
                     {row.getValue("warehouse_name")}
-                </span>
+                </DataCell.Secondary>
             ),
         },
         {
             accessorKey: "quantity",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad" className="justify-end" />,
-            cell: ({ row }) => {
-                const qty = parseFloat(row.getValue("quantity"))
-                return (
-                    <div className="flex flex-col items-end group">
-                        <span className={cn(
-                            "font-mono font-black text-[14px] tracking-tighter transition-all group-hover:scale-110",
-                            qty > 0 ? "text-emerald-700" : "text-rose-700"
-                        )}>
-                            {qty > 0 ? '+' : ''}{qty.toFixed(2)}
-                        </span>
-                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100">
-                            {row.original.uom_name}
-                        </span>
-                    </div>
-                )
-            },
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad" className="justify-center" />,
+            cell: ({ row }) => (
+                <DataCell.NumericFlow 
+                    value={row.getValue("quantity")} 
+                    unit={row.original.uom_name} 
+                    showSign={true} 
+                />
+            ),
             size: 100,
         },
         {
@@ -145,18 +137,9 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             cell: ({ row }) => {
                 const type = row.original.move_type
                 return (
-                    <div className="flex justify-center">
-                        <Badge
-                            className={cn(
-                                "text-[9px] font-black uppercase h-5 px-2 tracking-tight rounded-[0.125rem]",
-                                type === 'IN' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                type === 'OUT' ? "bg-rose-50 text-rose-700 border-rose-200" :
-                                "bg-amber-50 text-amber-700 border-amber-200"
-                            )}
-                        >
+                    <DataCell.Secondary className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-80 border rounded-[0.125rem] bg-secondary/30 px-2 py-0 border-border/50 h-5">
                             {type === 'IN' ? 'Entrada' : type === 'OUT' ? 'Salida' : 'Ajuste'}
-                        </Badge>
-                    </div>
+                    </DataCell.Secondary>
                 )
             },
             size: 100,

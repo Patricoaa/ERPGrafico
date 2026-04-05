@@ -136,7 +136,7 @@ export function PurchaseInvoicesClientView() {
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
-            cell: ({ row }) => <span>{formatPlainDate(row.getValue("date"))}</span>,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "dte_type",
@@ -144,15 +144,15 @@ export function PurchaseInvoicesClientView() {
             cell: ({ row }) => {
                 const doc = row.original
                 return (
-                    <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
-                        <span className="text-xs font-bold uppercase hidden md:inline-block">
+                    <div className="flex items-center gap-2 justify-center" title={doc.dte_type_display}>
+                        <FileBadge className="h-4 w-4 text-muted-foreground/70" />
+                        <DataCell.Secondary className="font-bold uppercase hidden md:inline-block text-[10px]">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
                                     doc.dte_type === 'BOLETA' ? 'BOL' :
                                         doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
                                             doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'}
-                        </span>
+                        </DataCell.Secondary>
                     </div>
                 )
             },
@@ -160,15 +160,12 @@ export function PurchaseInvoicesClientView() {
         {
             accessorKey: "partner_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" />,
+            cell: ({ row }) => <DataCell.ContactLink contactId={row.original.partner || row.original.supplier}>{row.getValue("partner_name")}</DataCell.ContactLink>,
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
-            cell: ({ row }) => (
-                <div className="text-right">
-                    <MoneyDisplay amount={Number(row.getValue("total"))} showColor={false} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
         },
         {
             id: "payment_status",
@@ -238,6 +235,19 @@ export function PurchaseInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={documents}
+                onRowClick={(row: any) => {
+                    const isSelected = hubConfig?.invoiceId === row.id
+                    if (isSelected && isHubOpen) {
+                        closeHub()
+                    } else {
+                        openHub({
+                            orderId: row.purchase_order || null,
+                            invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(row.dte_type) ? row.id : null,
+                            type: 'purchase',
+                            onActionSuccess: fetchDocuments
+                        })
+                    }
+                }}
                 cardMode={true}
                 currentView={currentView}
                 onViewChange={(v: any) => setCurrentView(v)}
@@ -279,6 +289,7 @@ export function PurchaseInvoicesClientView() {
                                         item={inv}
                                         type="purchase_invoice"
                                         isSelected={isSelected}
+                                        visibleColumns={table.getState().columnVisibility}
                                         onClick={() => {
                                             if (isSelected) {
                                                 closeHub()

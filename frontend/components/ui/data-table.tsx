@@ -133,16 +133,13 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(visibilityState)
     const [rowSelection, setRowSelection] = React.useState({})
 
-    // Sync column visibility when initialColumnVisibility prop changes
+    const prevInitialVisibility = React.useRef(initialColumnVisibility)
     React.useEffect(() => {
-        const currentString = JSON.stringify(columnVisibility)
-        const initialString = JSON.stringify(initialColumnVisibility)
-        
-        if (currentString !== initialString) {
-            setColumnVisibility(initialColumnVisibility || DEFAULT_COLUMN_VISIBILITY)
+        if (JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)) {
+            setColumnVisibility(visibilityState)
+            prevInitialVisibility.current = initialColumnVisibility
         }
-    }, [initialColumnVisibility, columnVisibility]) // Added columnVisibility to deps for safety, but with string check to prevent loops
-
+    }, [initialColumnVisibility, visibilityState])
 
     const prevRowSelection = React.useRef(rowSelection)
     React.useEffect(() => {
@@ -214,10 +211,6 @@ export function DataTable<TData, TValue>({
                                 <TableCell 
                                     key={cell.id} 
                                     className="py-4"
-                                    style={{ 
-                                        width: cell.column.getSize(),
-                                        minWidth: cell.column.columnDef.minSize
-                                    }}
                                 >
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                 </TableCell>
@@ -311,10 +304,6 @@ export function DataTable<TData, TValue>({
                                             <TableHead
                                                 key={header.id}
                                                 className="h-12"
-                                                style={{ 
-                                                    width: header.column.getSize(),
-                                                    minWidth: header.column.columnDef.minSize
-                                                }}
                                             >
                                                 {header.isPlaceholder
                                                     ? null

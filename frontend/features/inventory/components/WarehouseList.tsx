@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
@@ -112,31 +113,31 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         },
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col py-1">
+                <DataCell.Secondary className="flex flex-col py-1">
                     <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{row.original.name}</span>
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">Ubicación Física</span>
-                </div>
+                </DataCell.Secondary>
             ),
         },
         {
             accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
             cell: ({ row }) => (
-                <span className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
+                <DataCell.Secondary className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
                     {row.original.code}
-                </span>
+                </DataCell.Secondary>
             ),
             size: 120,
         },
         {
             accessorKey: "address",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] block">
+                <DataCell.Secondary className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] block">
                     {row.original.address || "-"}
-                </span>
+                </DataCell.Secondary>
             ),
         },
         {

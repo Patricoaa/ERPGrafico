@@ -107,4 +107,16 @@ La experiencia "Industrial Premium" exige que no existan saltos visuales bruscos
 - **Animación**: Todo esqueleto debe usar la clase `.skeleton` que implementa el **shimmer lineal**.
 - **Regla de Oro**: El esqueleto debe aproximar la altura y estructura del contenido final para minimizar el Layout Shift (CLS).
 
+## 8. CONTRATO DE DATA-CELLS (DataTables)
+La visualización de celdas en el `DataTable` debe seguir estrictamente la regla 60-30-10 de *Industrial Premium*, evitando la "saturación de badges". Todas las celdas y headers deben estar alineados usando `flex justify-center items-center` para mantener un balance armónico.
+
+- **`DataCell.Text`**: `font-sans text-sm font-medium text-foreground truncate flex justify-center items-center`. Para texto general.
+- **`DataCell.DocumentId`**: `font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-primary flex justify-center items-center transition-colors`. Sin fondos de colores.
+- **`DataCell.ContactLink`**: `font-sans text-sm font-medium text-primary hover:underline cursor-pointer flex justify-center items-center`. Convierte la identidad humana en interactiva. **Incluye obligatoriamente un icono `ExternalLink` (h-3 w-3) a su derecha** para otorgar feedback visual rápido de que es un ancla. Detiene la propagación (`e.stopPropagation()`) de la fila al ser presionado.
+- **`DataCell.Date`**: `tabular-nums text-sm text-foreground/80 flex justify-center items-center`.
+- **`DataCell.Currency`** (vía `MoneyDisplay`): El dinero debe ir centrado como norma general de balance horizontal o derecha financiera, sin prop `showColor=true` salvo para riesgo comercial o deudas.
+- **Atributos de Categoría (e.g., Tipos DTE)**: Despojados de fondos de color. Deben renderizarse `font-bold text-[10px] uppercase text-muted-foreground ml-2` acompañados del ícono `text-muted-foreground/70`.
+- **`StatusBadge`**: Es el **único** elemento de la columna con permiso para inyectar fondos de color (`primary`, `warning`, `destructive`, `success`) basados en `BUSINESS_STATES.md`.
+
+
 

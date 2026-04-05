@@ -102,17 +102,25 @@ export function SalesInvoicesClientView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
             cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.original.number} />,
         },
-        { accessorKey: "date", header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" /> },
-        { accessorKey: "dte_type_display", header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" /> },
-        { accessorKey: "partner_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" /> },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />
+        },
+        {
+            accessorKey: "dte_type_display",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px]">{row.getValue("dte_type_display")}</DataCell.Secondary>
+        },
+        {
+            accessorKey: "partner_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || (row.original as any).partner}>{row.getValue("partner_name")}</DataCell.ContactLink>
+        },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
-            cell: ({ row }) => (
-                <div className="text-right">
-                    <MoneyDisplay amount={Number(row.getValue("total"))} showColor={false} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />
         },
         {
             accessorKey: "status",
@@ -158,6 +166,14 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
+                onRowClick={(row: any) => {
+                    const isSelected = hubConfig?.invoiceId === row.id
+                    if (isSelected && isHubOpen) {
+                        closeHub()
+                    } else {
+                        openHub({ orderId: row.sale_order || null, invoiceId: row.id, type: 'sale', onActionSuccess: refetch })
+                    }
+                }}
                 cardMode={true}
                 currentView={currentView}
                 onViewChange={(v: any) => setCurrentView(v)}
@@ -202,6 +218,7 @@ export function SalesInvoicesClientView() {
                                         item={inv}
                                         type="sale_invoice"
                                         isSelected={isSelected}
+                                        visibleColumns={table.getState().columnVisibility}
                                         onClick={() => {
                                             if (isSelected) {
                                                 closeHub()

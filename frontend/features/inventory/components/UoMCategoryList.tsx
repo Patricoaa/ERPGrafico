@@ -131,12 +131,12 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
         },
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
         },
         {
             id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="text-center" />,
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentCategory(row.original); setIsModalOpen(true) }}>
