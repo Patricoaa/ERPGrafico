@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Landmark, Pencil, Trash2, MapPin, Shield } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -99,17 +100,20 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     'CASH': 'Efectivo',
                 }
                 return (
-                    <div className="flex flex-col items-center text-center">
-                        <span className="font-bold text-primary">{acc.name}</span>
-                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                            <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 uppercase bg-muted/50">
-                                {labels[acc.account_type] || acc.account_type}
-                            </Badge>
+                    <div className="flex flex-col items-center text-center w-full">
+                        <DataCell.Text className="font-bold text-primary">{acc.name}</DataCell.Text>
+                        <div className="flex items-center justify-center gap-1.5 mt-1">
+                            <StatusBadge 
+                                status={acc.account_type} 
+                                label={labels[acc.account_type] || acc.account_type}
+                                size="sm"
+                                className="bg-muted/50 border-muted"
+                            />
                             {acc.bank_name && (
-                                <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                                <DataCell.Secondary className="text-[9px] flex items-center gap-0.5">
                                     <Landmark className="h-2.5 w-2.5" />
                                     {acc.bank_name}
-                                </span>
+                                </DataCell.Secondary>
                             )}
                         </div>
                     </div>
@@ -123,13 +127,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => {
                 const name = row.original.account_name
-                if (!name) return <span className="text-muted-foreground italic text-xs">No vinculada</span>
+                if (!name) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
                 return (
-                    <div className="flex justify-center w-full" title={`${row.original.account_code || ''} - ${name}`}>
-                        <div className="text-center text-xs truncate max-w-[200px] flex items-center justify-center gap-1">
-                            <span className="font-mono font-bold whitespace-nowrap">{row.original.account_code}</span>
-                            <span className="text-muted-foreground font-medium truncate">{name}</span>
-                        </div>
+                    <div className="flex flex-col items-center justify-center w-full" title={`${row.original.account_code || ''} - ${name}`}>
+                        <DataCell.Code>{row.original.account_code}</DataCell.Code>
+                        <DataCell.Secondary className="truncate max-w-[180px]">{name}</DataCell.Secondary>
                     </div>
                 )
             }
@@ -159,14 +161,13 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => {
                 const val = row.original.location
+                if (!val) return <div className="flex justify-center text-muted-foreground opacity-30">-</div>
                 return (
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground w-full">
-                        {!val ? <span className="text-muted-foreground">-</span> : (
-                            <div className="flex items-center gap-1.5">
-                                <MapPin className="h-3 w-3 text-warning" />
-                                {val}
-                            </div>
-                        )}
+                    <div className="flex justify-center w-full">
+                        <DataCell.Secondary className="text-center flex items-center gap-1.5">
+                            <MapPin className="h-3 w-3 text-warning" />
+                            {val}
+                        </DataCell.Secondary>
                     </div>
                 )
             }
@@ -178,11 +179,13 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => {
                 const acc = row.original
-                if (!acc.custodian_name) return <div className="flex justify-center w-full text-muted-foreground">-</div>
+                if (!acc.custodian_name) return <div className="flex justify-center text-muted-foreground opacity-30">-</div>
                 return (
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground w-full text-center">
-                        <Shield className="h-3 w-3 text-info" />
-                        {acc.custodian_name}
+                    <div className="flex justify-center w-full">
+                        <DataCell.Secondary className="text-center flex items-center gap-1.5">
+                            <Shield className="h-3 w-3 text-info" />
+                            {acc.custodian_name}
+                        </DataCell.Secondary>
                     </div>
                 )
             }
@@ -205,7 +208,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleEdit(acc)} 
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                            className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
                             title="Editar"
                         >
                             <Pencil className="h-3.5 w-3.5" />
@@ -213,7 +216,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                            className="h-8 w-8 rounded-[0.25rem] hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
                             onClick={() => handleDelete(acc.id)} 
                             title="Eliminar"
                         >

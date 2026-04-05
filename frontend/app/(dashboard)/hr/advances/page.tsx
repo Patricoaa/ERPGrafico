@@ -40,6 +40,8 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES, LAYOUT_TOKENS } from "@/lib/styles"
@@ -115,8 +117,8 @@ export default function AdvancesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
-                    <span className="font-semibold text-sm">{row.original.employee_name}</span>
-                    <span className="text-[10px] text-muted-foreground">{row.original.employee_display_id}</span>
+                    <DataCell.Text className="font-bold">{row.original.employee_name}</DataCell.Text>
+                    <DataCell.Secondary>{row.original.employee_display_id}</DataCell.Secondary>
                 </div>
             )
         },
@@ -125,9 +127,7 @@ export default function AdvancesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <span className="font-mono text-xs">
-                        {format(new Date(row.original.date), "dd/MM/yyyy")}
-                    </span>
+                    <DataCell.Date value={row.original.date} />
                 </div>
             )
         },
@@ -136,7 +136,7 @@ export default function AdvancesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <MoneyDisplay amount={parseFloat(row.original.amount)} className="font-mono text-sm font-bold text-amber-600" />
+                    <DataCell.Currency value={parseFloat(row.original.amount)} className="text-amber-600 font-bold" />
                 </div>
             )
         },
@@ -145,15 +145,10 @@ export default function AdvancesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    {row.original.is_discounted ? (
-                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600 bg-emerald-50">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Descontado
-                        </Badge>
-                    ) : (
-                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 bg-amber-50">
-                            <Clock className="h-3 w-3 mr-1" /> Pendiente
-                        </Badge>
-                    )}
+                    <StatusBadge 
+                        status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"} 
+                        label={row.original.is_discounted ? "Descontado" : "Pendiente"} 
+                    />
                 </div>
             )
         },
@@ -163,7 +158,7 @@ export default function AdvancesPage() {
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     {row.original.payroll_display_id
-                        ? <span className="font-mono text-xs text-muted-foreground">{row.original.payroll_display_id}</span>
+                        ? <DataCell.Code>{row.original.payroll_display_id}</DataCell.Code>
                         : <span className="text-xs text-muted-foreground italic">—</span>
                     }
                 </div>
@@ -175,15 +170,15 @@ export default function AdvancesPage() {
             cell: ({ row }) => (
                 <div className="flex items-center gap-1 justify-center w-full">
                     {!row.original.is_discounted && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
                             onClick={() => { setEditingAdvance(row.original); setDialogOpen(true) }}>
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-3.5 w-3.5" />
                         </Button>
                     )}
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500">
-                                <Trash2 className="h-3 w-3" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

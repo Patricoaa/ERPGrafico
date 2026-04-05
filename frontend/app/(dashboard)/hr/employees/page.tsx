@@ -14,6 +14,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -121,9 +122,9 @@ export default function EmployeesPage() {
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex flex-col items-center justify-center gap-0.5 w-full">
-                        <div className="font-medium text-sm text-center">{emp.contact_detail?.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono text-center">{emp.contact_detail?.tax_id}</div>
+                    <div className="flex flex-col items-center justify-center w-full">
+                        <DataCell.Text className="font-bold">{emp.contact_detail?.name}</DataCell.Text>
+                        <DataCell.Secondary>{emp.contact_detail?.tax_id}</DataCell.Secondary>
                     </div>
                 );
             },
@@ -135,12 +136,12 @@ export default function EmployeesPage() {
                 const emp = row.original;
                 return (
                     <div className="flex flex-col gap-1 items-center justify-center w-full">
-                        <Badge variant="outline" className="text-[9px]">
+                        <DataCell.Secondary className="text-[9px] uppercase font-bold">
                             AFP: {emp.afp_detail?.name || 'No disp.'}
-                        </Badge>
-                        <Badge variant="outline" className="text-[9px]">
+                        </DataCell.Secondary>
+                        <DataCell.Secondary className="text-[9px] uppercase font-bold">
                             Salud: {emp.salud_type_display}
-                        </Badge>
+                        </DataCell.Secondary>
                     </div>
                 );
             },
@@ -151,9 +152,9 @@ export default function EmployeesPage() {
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="text-sm text-center w-full">
-                        <div>{emp.position || '—'}</div>
-                        <div className="text-[10px] text-muted-foreground">{emp.department}</div>
+                    <div className="flex flex-col items-center justify-center w-full">
+                        <DataCell.Text>{emp.position || '—'}</DataCell.Text>
+                        <DataCell.Secondary>{emp.department}</DataCell.Secondary>
                     </div>
                 );
             },
@@ -162,32 +163,19 @@ export default function EmployeesPage() {
             accessorKey: "base_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sueldo Base" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="opacity-80 font-medium flex justify-center w-full">
-                    <MoneyDisplay amount={parseFloat((row.getValue("base_salary") as string) || "0")} />
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={parseFloat((row.getValue("base_salary") as string) || "0")} />
                 </div>
             ),
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => {
-                const emp = row.original;
-                return (
-                    <div className="flex justify-center w-full">
-                        <Badge
-                            variant={emp.status === 'ACTIVE' ? 'default' : 'secondary'}
-                            className={cn(
-                                "text-[10px] font-bold uppercase",
-                                emp.status === 'ACTIVE'
-                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                    : "bg-muted/30 text-muted-foreground border-transparent"
-                            )}
-                        >
-                            {emp.status_display}
-                        </Badge>
-                    </div>
-                );
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.getValue("status") as string} label={row.original.status_display} />
+                </div>
+            ),
         },
         {
             id: "actions",
@@ -197,7 +185,7 @@ export default function EmployeesPage() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => { setEditingEmployee(row.original); setDialogOpen(true) }}
                     >
                         <Pencil className="h-3.5 w-3.5" />

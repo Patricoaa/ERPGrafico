@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "luci
 import { Badge } from "@/components/ui/badge"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -69,7 +70,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         setIsUoMModalOpen(false)
         setCurrentUoM({})
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -154,23 +155,38 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="font-medium text-center w-full">{row.getValue("name")}</DataCell.Text>,
+            cell: ({ row }) => (
+                <DataCell.Text className="text-center w-full">
+                    {row.getValue("name")}
+                </DataCell.Text>
+            ),
         },
         {
             accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-sm text-center w-full">{row.getValue("category_name")}</DataCell.Secondary>,
+            cell: ({ row }) => (
+                <DataCell.Secondary className="text-center w-full">
+                    {row.getValue("category_name")}
+                </DataCell.Secondary>
+            ),
         },
         {
             accessorKey: "uom_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
-                const type = row.getValue("uom_type")
+                const type = row.getValue("uom_type") as string
+                const config: Record<string, { status: string, label: string }> = {
+                    'REFERENCE': { status: 'INFO', label: 'Referencia' },
+                    'BIGGER': { status: 'SUCCESS', label: 'Mayor' },
+                    'SMALLER': { status: 'WARNING', label: 'Menor' }
+                }
                 return (
                     <div className="flex justify-center w-full">
-                        {type === 'REFERENCE' && <DataCell.Badge variant="default" className="text-[10px]">Referencia</DataCell.Badge>}
-                        {type === 'BIGGER' && <DataCell.Badge variant="secondary" className="text-[10px]">Mayor</DataCell.Badge>}
-                        {type === 'SMALLER' && <DataCell.Badge variant="outline" className="text-[10px]">Menor</DataCell.Badge>}
+                        <StatusBadge
+                            status={config[type]?.status || 'NEUTRAL'}
+                            label={config[type]?.label || type}
+                            size="sm"
+                        />
                     </div>
                 )
             },
@@ -178,7 +194,13 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         {
             accessorKey: "ratio",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Number value={row.getValue("ratio")} className="text-center w-full" decimals={2} />,
+            cell: ({ row }) => (
+                <DataCell.Number
+                    value={row.getValue("ratio")}
+                    decimals={2}
+                    className="text-center w-full"
+                />
+            ),
         },
         {
             id: "actions",
@@ -227,9 +249,9 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 useAdvancedFilter={true}
                 onRowSelectionChange={setSelectedRows}
                 batchActions={
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
                         onClick={handleBulkDelete}
                     >
@@ -291,134 +313,134 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Categoría</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn("w-full justify-between font-normal", FORM_STYLES.input)}
-                                    >
-                                        {currentUoM.category
-                                            ? categories.find(cat => cat.id === currentUoM.category)?.name
-                                            : "Seleccionar categoría"}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="col-span-3 w-[var(--radix-popover-trigger-width)] p-0">
-                                    <div className="p-2">
-                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                            <input
-                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
-                                                placeholder="Buscar categoría..."
-                                                onChange={(e) => {
-                                                    const val = e.target.value.toLowerCase()
-                                                    const items = document.querySelectorAll('.category-item')
-                                                    items.forEach((el) => {
-                                                        if (el.textContent?.toLowerCase().includes(val)) {
-                                                            (el as HTMLElement).style.display = 'flex'
-                                                        } else {
-                                                            (el as HTMLElement).style.display = 'none'
-                                                        }
-                                                    })
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                            {categories.map((cat) => (
-                                                <div
-                                                    key={cat.id}
-                                                    className={cn(
-                                                        "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                        currentUoM.category === cat.id && "bg-accent"
-                                                    )}
-                                                    onClick={() => {
-                                                        setCurrentUoM({ ...currentUoM, category: cat.id })
-                                                        document.body.click()
+                            <div className="space-y-2">
+                                <Label className={FORM_STYLES.label}>Categoría</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between font-normal", FORM_STYLES.input)}
+                                        >
+                                            {currentUoM.category
+                                                ? categories.find(cat => cat.id === currentUoM.category)?.name
+                                                : "Seleccionar categoría"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="col-span-3 w-[var(--radix-popover-trigger-width)] p-0">
+                                        <div className="p-2">
+                                            <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                <input
+                                                    className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
+                                                    placeholder="Buscar categoría..."
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.toLowerCase()
+                                                        const items = document.querySelectorAll('.category-item')
+                                                        items.forEach((el) => {
+                                                            if (el.textContent?.toLowerCase().includes(val)) {
+                                                                (el as HTMLElement).style.display = 'flex'
+                                                            } else {
+                                                                (el as HTMLElement).style.display = 'none'
+                                                            }
+                                                        })
                                                     }}
-                                                >
-                                                    <span>{cat.name}</span>
-                                                    {currentUoM.category === cat.id && (
-                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {categories.length === 0 && (
-                                                <div className="p-4 text-sm text-center text-muted-foreground">
-                                                    No hay categorías
-                                                </div>
-                                            )}
+                                                />
+                                            </div>
+                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                {categories.map((cat) => (
+                                                    <div
+                                                        key={cat.id}
+                                                        className={cn(
+                                                            "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                            currentUoM.category === cat.id && "bg-accent"
+                                                        )}
+                                                        onClick={() => {
+                                                            setCurrentUoM({ ...currentUoM, category: cat.id })
+                                                            document.body.click()
+                                                        }}
+                                                    >
+                                                        <span>{cat.name}</span>
+                                                        {currentUoM.category === cat.id && (
+                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {categories.length === 0 && (
+                                                    <div className="p-4 text-sm text-center text-muted-foreground">
+                                                        No hay categorías
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Tipo</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn("w-full justify-between font-normal", FORM_STYLES.input)}
-                                    >
-                                        {currentUoM.uom_type === 'REFERENCE' ? 'Referencia (Base de la categoría)' :
-                                         currentUoM.uom_type === 'BIGGER' ? 'Más Grande que la base' :
-                                         currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que la base' :
-                                         "Seleccionar tipo"}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="col-span-3 w-[var(--radix-popover-trigger-width)] p-0">
-                                    <div className="p-2">
-                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                            <input
-                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
-                                                placeholder="Buscar tipo..."
-                                                onChange={(e) => {
-                                                    const val = e.target.value.toLowerCase()
-                                                    const items = document.querySelectorAll('.type-item')
-                                                    items.forEach((el) => {
-                                                        if (el.textContent?.toLowerCase().includes(val)) {
-                                                            (el as HTMLElement).style.display = 'flex'
-                                                        } else {
-                                                            (el as HTMLElement).style.display = 'none'
-                                                        }
-                                                    })
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                            {[
-                                                { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
-                                                { value: 'BIGGER', label: 'Más Grande que la base' },
-                                                { value: 'SMALLER', label: 'Más Pequeña que la base' }
-                                            ].map((opt) => (
-                                                <div
-                                                    key={opt.value}
-                                                    className={cn(
-                                                        "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                        currentUoM.uom_type === opt.value && "bg-accent"
-                                                    )}
-                                                    onClick={() => {
-                                                        setCurrentUoM({ ...currentUoM, uom_type: opt.value as any })
-                                                        document.body.click()
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className={FORM_STYLES.label}>Tipo</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between font-normal", FORM_STYLES.input)}
+                                        >
+                                            {currentUoM.uom_type === 'REFERENCE' ? 'Referencia (Base de la categoría)' :
+                                                currentUoM.uom_type === 'BIGGER' ? 'Más Grande que la base' :
+                                                    currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que la base' :
+                                                        "Seleccionar tipo"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="col-span-3 w-[var(--radix-popover-trigger-width)] p-0">
+                                        <div className="p-2">
+                                            <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                <input
+                                                    className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
+                                                    placeholder="Buscar tipo..."
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.toLowerCase()
+                                                        const items = document.querySelectorAll('.type-item')
+                                                        items.forEach((el) => {
+                                                            if (el.textContent?.toLowerCase().includes(val)) {
+                                                                (el as HTMLElement).style.display = 'flex'
+                                                            } else {
+                                                                (el as HTMLElement).style.display = 'none'
+                                                            }
+                                                        })
                                                     }}
-                                                >
-                                                    <span>{opt.label}</span>
-                                                    {currentUoM.uom_type === opt.value && (
-                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                    )}
-                                                </div>
-                                            ))}
+                                                />
+                                            </div>
+                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                {[
+                                                    { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
+                                                    { value: 'BIGGER', label: 'Más Grande que la base' },
+                                                    { value: 'SMALLER', label: 'Más Pequeña que la base' }
+                                                ].map((opt) => (
+                                                    <div
+                                                        key={opt.value}
+                                                        className={cn(
+                                                            "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                            currentUoM.uom_type === opt.value && "bg-accent"
+                                                        )}
+                                                        onClick={() => {
+                                                            setCurrentUoM({ ...currentUoM, uom_type: opt.value as any })
+                                                            document.body.click()
+                                                        }}
+                                                    >
+                                                        <span>{opt.label}</span>
+                                                        {currentUoM.uom_type === opt.value && (
+                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
                         {currentUoM.uom_type !== 'REFERENCE' && (
                             <div className="space-y-2">

@@ -200,40 +200,36 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
                     destData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
                 }
 
-                const EntityLink = ({ data, colorClass = "text-muted-foreground" }: { data: typeof sourceData, colorClass?: string }) => {
+                const EntityLink = ({ data }: { data: typeof sourceData }) => {
                     if (data.type === 'contact' && data.id) {
                         return (
-                            <span 
-                                onClick={(e) => { e.stopPropagation(); openContact(data.id!); }}
-                                className={cn("font-bold truncate max-w-[150px] cursor-pointer hover:text-primary hover:underline transition-colors", colorClass)}
-                                title={data.label}
+                            <DataCell.ContactLink 
+                                contactId={data.id} 
+                                className="text-[11px] font-bold"
                             >
                                 {data.label}
-                            </span>
+                            </DataCell.ContactLink>
                         );
                     }
                     if (data.type === 'account' && data.id) {
+                        const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
                         return (
-                            <span 
-                                onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    openTreasuryAccount(m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null)));
-                                }}
-                                className={cn("font-bold truncate max-w-[150px] cursor-pointer hover:text-primary hover:underline transition-colors", colorClass)}
-                                title={data.label}
+                            <DataCell.Link 
+                                onClick={() => openTreasuryAccount(accountId)}
+                                className="text-[11px] font-bold"
                             >
                                 {data.label}
-                            </span>
+                            </DataCell.Link>
                         );
                     }
-                    return <span className={cn("font-bold truncate max-w-[150px] opacity-70", colorClass)} title={data.label}>{data.label}</span>;
+                    return <DataCell.Secondary className="text-[11px] font-bold opacity-70">{data.label}</DataCell.Secondary>;
                 };
 
                 return (
-                    <div className="flex flex-col items-center gap-0.5 text-[11px] py-1 w-full min-w-[120px]">
-                        <EntityLink data={sourceData} colorClass="text-muted-foreground" />
+                    <div className="flex flex-col items-center gap-0.5 py-1 w-full min-w-[120px]">
+                        <EntityLink data={sourceData} />
                         <ArrowDown className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-                        <EntityLink data={destData} colorClass="text-foreground" />
+                        <EntityLink data={destData} />
                     </div>
                 );
             },
@@ -243,9 +239,9 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
             header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <span className="text-[10px] uppercase bg-muted/30 px-1.5 py-0.5 rounded border border-border/50">
+                    <DataCell.Secondary className="uppercase font-bold tracking-tighter">
                         {row.original.payment_method_display}
-                    </span>
+                    </DataCell.Secondary>
                 </div>
             )
         },

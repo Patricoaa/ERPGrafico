@@ -13,6 +13,8 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -96,31 +98,31 @@ export default function AbsencesPage() {
         {
             accessorKey: "employee_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <div className="font-medium text-sm text-center w-full">{row.getValue("employee_name")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-bold">{row.getValue("employee_name")}</DataCell.Text></div>,
         },
         {
             accessorKey: "absence_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <Badge variant="outline" className="text-[10px]">{row.getValue("absence_type_display")}</Badge>
+                    <StatusBadge status={row.original.absence_type} label={row.original.absence_type_display} />
                 </div>
             ),
         },
         {
             accessorKey: "start_date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Inicio" className="justify-center" />,
-            cell: ({ row }) => <div className="text-sm text-center w-full">{row.getValue("start_date")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Date value={row.getValue("start_date")} /></div>,
         },
         {
             accessorKey: "end_date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fin" className="justify-center" />,
-            cell: ({ row }) => <div className="text-sm text-center w-full">{row.getValue("end_date")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Date value={row.getValue("end_date")} /></div>,
         },
         {
             accessorKey: "days",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
-            cell: ({ row }) => <div className="text-center font-mono text-sm w-full">{row.getValue("days")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-mono">{row.getValue("days")}</DataCell.Text></div>,
         },
         {
             id: "actions",
@@ -129,16 +131,17 @@ export default function AbsencesPage() {
                 <div className="flex items-center justify-center gap-1 w-full">
                     <Button
                         variant="ghost" size="icon"
+                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary"
                         onClick={() => { setEditingAbsence(row.original); setDialogOpen(true) }}
                     >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                         variant="ghost" size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 rounded-[0.25rem] text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(row.original.id)}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             ),

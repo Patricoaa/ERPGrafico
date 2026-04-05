@@ -88,6 +88,15 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     OVERDUE_60: { label: "31-60 Días", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
     OVERDUE_90: { label: "61-90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     OVERDUE_90PLUS: { label: "+90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+
+    // HR - Absences
+    AUSENTISMO: { label: "Ausentismo", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    LICENCIA: { label: "Licencia", className: "bg-info/10 text-info border-info/20", type: "info" },
+    PERMISO_SIN_GOCE: { label: "Permiso s/Goce", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    AUSENCIA_HORAS: { label: "Horas", className: "bg-neutral/10 text-neutral border-neutral/20", type: "neutral" },
+
+    // HR - General
+    DISCOUNTED: { label: "Descontado", className: "bg-success/10 text-success border-success/20", type: "success" },
 }
 
 interface StatusBadgeProps {
