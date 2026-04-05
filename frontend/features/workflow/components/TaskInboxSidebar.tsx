@@ -4,6 +4,7 @@ import { X, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
 import { cn } from "@/lib/utils"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface TaskInboxSidebarProps {
     isOpen: boolean
@@ -11,10 +12,16 @@ interface TaskInboxSidebarProps {
 }
 
 export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
+    const { isHubEffectivelyOpen } = useHubPanel()
+
     return (
         <aside
             className={cn(
-                "fixed right-0 top-0 w-1/4 min-w-[320px] max-w-[450px] bg-sidebar border-l border-white/5 h-screen flex flex-col transition-transform duration-300 ease-in-out will-change-transform overflow-hidden z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)]",
+                "fixed top-0 h-screen w-1/4 min-w-[320px] max-w-[450px] bg-sidebar dark border-l border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)]",
+                "transition-all duration-500 ease-in-out",
+                // Horizontal position: pushed left by Hub panel when hub is open
+                isHubEffectivelyOpen ? "right-[420px]" : "right-0",
+                // Vertical slide-in: move off-screen to the right when closed
                 isOpen ? "translate-x-0" : "translate-x-full"
             )}
         >
@@ -43,3 +50,4 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
         </aside>
     )
 }
+

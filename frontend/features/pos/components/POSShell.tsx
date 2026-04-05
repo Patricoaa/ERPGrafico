@@ -6,10 +6,12 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { cn } from "@/lib/utils"
 
 export function POSShell({ children }: { children: React.ReactNode }) {
-    const { isHubOpen, isHubTemporarilyHidden } = useHubPanel()
+    const { isHubOpen, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen: isHubGlobalVisible } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
 
-    const isHubEffectivelyOpen = isHubOpen && !isSubModalActive && !isHubTemporarilyHidden
+    // The shell should only repel if the Hub is open globally (fixed), 
+    // NOT when it's docked inside a sub-view (like the Sales Notes sheet).
+    const isHubEffectivelyOpen = isHubGlobalVisible && !isSubModalActive
 
     // Sync global data attributes for repulsion system
     React.useEffect(() => {

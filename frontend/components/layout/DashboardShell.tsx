@@ -34,13 +34,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }, [pathname])
 
 
-    // Mutually exclusive: close inbox when Hub opens
-    useEffect(() => {
-        if (isHubOpen && isInboxOpen) {
-            setIsInboxOpen(false)
-        }
-    }, [isHubOpen]) // eslint-disable-line react-hooks/exhaustive-deps
-
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
     useEffect(() => {
         if (isInboxOpen) {
@@ -57,12 +50,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }, [isInboxOpen, isHubEffectivelyOpen])
 
     const handleInboxToggle = () => {
-        const next = !isInboxOpen
-        setIsInboxOpen(next)
-        // Close Hub when opening inbox
-        if (next && isHubOpen) {
-            closeHub()
-        }
+        setIsInboxOpen(prev => !prev)
     }
 
     const categoryToUrl: Record<string, string> = {
@@ -93,11 +81,17 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 }}
             />
 
-            {/* Main Content Area */}
+            {/* Main Content Area — contracts to accommodate both Hub panel and Inbox simultaneously */}
             <div
                 className={cn(
                     "flex-1 flex flex-col min-w-0 relative transition-all duration-500 ease-in-out",
-                    isInboxOpen && "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
+                    isInboxOpen && isHubEffectivelyOpen
+                        ? "mr-[740px]"
+                        : isHubEffectivelyOpen
+                        ? "mr-[420px]"
+                        : isInboxOpen
+                        ? "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
+                        : ""
                 )}
             >
                 <main className="flex-1 overflow-y-auto pb-24">

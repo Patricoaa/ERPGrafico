@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRef } from "react"
-import { HubDockLayout } from "@/components/shared/HubDockLayout"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -214,7 +213,7 @@ export function TaskInbox() {
             <Card
                 key={task.id}
                 className={cn(
-                    "p-3 transition-all cursor-pointer border-sidebar-border/50 bg-white/5 hover:bg-white/10 hover:border-primary/50 hover:shadow-lg backdrop-blur-sm group",
+                    "p-3 transition-all cursor-pointer border-border/50 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-lg backdrop-blur-sm group rounded-md",
                     isCompleted && "opacity-50 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
@@ -247,7 +246,7 @@ export function TaskInbox() {
                 {/* HUB Stage Context Card */}
                 {task.task_type?.startsWith('HUB_') && (
                     <div className="mt-3 pt-3 border-t border-border/50">
-                        <div className="text-[11px] text-muted-foreground space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
+                        <div className="text-[11px] text-muted-foreground space-y-1.5 bg-muted/30 p-2.5 rounded-md border border-border/30">
                             {task.data?.contact_name && (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
@@ -269,7 +268,7 @@ export function TaskInbox() {
                                     </span>
                                 </div>
                             ) : null}
-                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
+                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
                                 <span className="font-bold text-warning">Acción Requerida:</span>
                                 <span className="font-medium text-warning text-right">
                                     {task.data?.stage === 'logistics' && (task.data?.is_invoice ? 'Registrar Devolución' : 'Registrar Despacho')}
@@ -327,7 +326,7 @@ export function TaskInbox() {
                                 <ExternalLink className="h-3 w-3 opacity-70 group-hover/name:opacity-100" />
                             </button>
                         </div>
-                        <div className="text-[11px] text-muted-foreground mb-3 space-y-1.5 bg-black/10 p-2.5 rounded-lg border border-white/5">
+                        <div className="text-[11px] text-muted-foreground mb-3 space-y-1.5 bg-muted/30 p-2.5 rounded-md border border-border/30">
                             {!task.data?.is_default_customer && task.data?.customer_name !== 'Publico General' && (
                                 <div className="flex justify-between items-center text-destructive/90">
                                     <span className="opacity-70">Deuda Pendiente:</span>
@@ -348,7 +347,7 @@ export function TaskInbox() {
                                     ${Number(task.data?.pos_credit || 0).toLocaleString('es-CL')}
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-white/5">
+                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
                                 <span className="font-bold text-warning">Crédito pendiente de aprobación:</span>
                                 <span className="font-mono font-bold text-warning underline decoration-warning/30 underline-offset-2">
                                     ${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}
@@ -403,7 +402,7 @@ export function TaskInbox() {
         <div className="mb-4">
             <button
                 onClick={onToggle}
-                className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-lg hover:bg-sidebar-accent"
+                className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
             >
                 <span>{title} ({count})</span>
                 {expanded ? (
@@ -421,10 +420,9 @@ export function TaskInbox() {
     )
 
     return (
-        <HubDockLayout>
-            <div className="space-y-4 p-4 h-full overflow-auto">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 border border-border/50 backdrop-blur-md rounded-xl">
+        <div className="space-y-4 p-4 h-full overflow-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border border-border/50 backdrop-blur-md rounded-md">
                         <TabsTrigger
                             value="approvals"
                             className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
@@ -461,7 +459,7 @@ export function TaskInbox() {
                         {loading ? (
                             <div className="space-y-2">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
                                 ))}
                             </div>
                         ) : (
@@ -489,7 +487,7 @@ export function TaskInbox() {
                                 )}
 
                                 {approvalTasks.length === 0 && (
-                                    <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                                    <div className="text-center py-12 bg-muted/30 rounded-md border border-dashed text-muted-foreground">
                                         <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                         <p className="text-xs">No tienes aprobaciones</p>
                                     </div>
@@ -502,7 +500,7 @@ export function TaskInbox() {
                         {loading ? (
                             <div className="space-y-2">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
                                 ))}
                             </div>
                         ) : operationalTasks.length === 0 ? (
@@ -517,7 +515,6 @@ export function TaskInbox() {
                         )}
                     </TabsContent>
                 </Tabs>
-            </div>
-        </HubDockLayout>
+        </div>
     )
 }

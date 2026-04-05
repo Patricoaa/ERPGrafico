@@ -261,13 +261,20 @@ export function PhaseCard({
 
                 {/* Chevron for Accordion */}
                 {collapsible && (
-                    <ChevronDown
-                        className={cn(
-                            "h-4 w-4 text-muted-foreground/50 transition-transform duration-300 shrink-0",
-                            open && "rotate-180"
-                        )}
-                        aria-hidden="true"
-                    />
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <ChevronDown
+                                className={cn(
+                                    "h-4 w-4 text-muted-foreground/50 transition-transform duration-300 shrink-0",
+                                    open && "rotate-180"
+                                )}
+                                aria-hidden="true"
+                            />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{open ? 'Contraer' : 'Expandir'}</p>
+                        </TooltipContent>
+                    </Tooltip>
                 )}
             </div>
 
@@ -316,36 +323,47 @@ export function PhaseCard({
 
                                         <div className="flex items-center gap-0.5 opacity-20 group-hover/doc:opacity-100 transition-opacity">
                                             {doc.actions?.map((action: any, idx: number) => (
-                                                <Button
-                                                    key={idx}
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={cn("rounded", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-7 w-7")}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        e.preventDefault();
-                                                        action.onClick();
-                                                    }}
-                                                    title={action.title}
-                                                >
-                                                    <action.icon className="h-3.5 w-3.5" />
-                                                </Button>
+                                                <Tooltip key={idx}>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className={cn("rounded", action.color, action.isPrimary && "animate-[pulse-glow_2s_infinite] bg-primary/10", "h-7 w-7")}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                action.onClick();
+                                                            }}
+                                                        >
+                                                            <action.icon className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{action.title}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             ))}
 
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-7 w-7")}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    e.preventDefault();
-                                                    if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
-                                                }}
-                                                disabled={doc.disabled}
-                                                title="Ver Detalles"
-                                            >
-                                                <Eye className="h-3.5 w-3.5" />
-                                            </Button>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-7 w-7")}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            e.preventDefault();
+                                                            if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
+                                                        }}
+                                                        disabled={doc.disabled}
+                                                    >
+                                                        <Eye className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Ver Detalles</p>
+                                                </TooltipContent>
+                                            </Tooltip>
                                         </div>
                                     </div>
                                 ))

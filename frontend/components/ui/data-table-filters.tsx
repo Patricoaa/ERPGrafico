@@ -30,6 +30,8 @@ interface DataTableFiltersProps<TData> {
     globalFilterFields?: string[]
     searchPlaceholder?: string
     toolbarAction?: React.ReactNode
+    customFilters?: React.ReactNode
+    customFilterCount?: number
     onReset?: () => void
     className?: string
 }
@@ -41,6 +43,8 @@ export function DataTableFilters<TData>({
     globalFilterFields,
     searchPlaceholder = "Filtrar...",
     toolbarAction,
+    customFilters,
+    customFilterCount = 0,
     onReset,
     className,
 }: DataTableFiltersProps<TData>) {
@@ -52,7 +56,7 @@ export function DataTableFilters<TData>({
             return acc + filter.value.length
         }
         return acc + (filter.value ? 1 : 0)
-    }, 0) + (globalFilter ? 1 : 0)
+    }, 0) + (globalFilter ? 1 : 0) + customFilterCount
 
     const isFiltered = totalActiveFilters > 0
 
@@ -87,6 +91,13 @@ export function DataTableFilters<TData>({
                         </Button>
                     </div>
                     <div className="scroll-area h-full max-h-[500px] overflow-y-auto p-1">
+                        {/* Custom Advanced Filters (e.g. Date Range) */}
+                        {customFilters && (
+                            <div className="px-3 pb-2">
+                                {customFilters}
+                            </div>
+                        )}
+
                         {/* Search Section */}
                         {(filterColumn || globalFilterFields) && (
                             <div className="px-3 py-2 mb-2">
