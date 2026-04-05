@@ -19,6 +19,10 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { ChevronRight, ChevronDown } from "lucide-react"
+import { buildAccountTree } from "../utils/accountTree"
+import { cn } from "@/lib/utils"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -26,9 +30,18 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange }: AccountsClientViewProps) {
-    const { accounts, refetch, deleteAccount, isLoading } = useAccounts()
+    const { accounts: flatAccounts, refetch, deleteAccount, isLoading } = useAccounts()
+    const [accounts, setAccounts] = useState<any[]>([])
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+
+    useEffect(() => {
+        if (flatAccounts.length > 0) {
+            setAccounts(buildAccountTree(flatAccounts))
+        } else {
+            setAccounts([])
+        }
+    }, [flatAccounts])
 
     const router = useRouter()
     const pathname = usePathname()
@@ -65,34 +78,73 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         {
             accessorKey: "code",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Código" />
+                <DataTableColumnHeader column={column} title="Código" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Code>{row.original.code}</DataCell.Code>,
+            cell: ({ row }) => {
+                const canExpand = row.getCanExpand()
+                const isExpanded = row.getIsExpanded()
+                
+                return (
+                    <div 
+                        className="flex items-center w-full"
+                        style={{ paddingLeft: `${row.depth * 1.5}rem` }}
+                    >
+                        <div className="flex items-center gap-2 flex-1 justify-center relative translate-x-[0.75rem]">
+                            {canExpand ? (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-4 w-4 p-0 hover:bg-transparent absolute -left-6"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        row.toggleExpanded()
+                                    }}
+                                >
+                                    {isExpanded ? (
+                                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                    )}
+                                </Button>
+                            ) : (
+                                <div className="w-4 h-4 absolute -left-6" />
+                            )}
+                            <DataCell.Code>{row.original.code}</DataCell.Code>
+                        </div>
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
+                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text>{row.original.name}</DataCell.Text>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text>{row.original.name}</DataCell.Text></div>,
         },
         {
             accessorKey: "account_type",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" />
+                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Badge variant="secondary" className="text-[10px]">{row.original.account_type_display}</DataCell.Badge>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge 
+                        status={row.original.account_type} 
+                        label={row.original.account_type_display} 
+                    />
+                </div>
+            ),
         },
         {
             accessorKey: "debit_total",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Debe" /></div>
+                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="text-right">
-                    <MoneyDisplay 
-                        amount={parseFloat(row.getValue("debit_total") || "0")} 
-                        showColor={false}
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency 
+                        value={parseFloat(row.getValue("debit_total") || "0")} 
                         className="text-muted-foreground font-normal"
                     />
                 </div>
@@ -101,13 +153,12 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         {
             accessorKey: "credit_total",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Haber" /></div>
+                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="text-right">
-                    <MoneyDisplay 
-                        amount={parseFloat(row.getValue("credit_total") || "0")} 
-                        showColor={false}
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency 
+                        value={parseFloat(row.getValue("credit_total") || "0")} 
                         className="text-muted-foreground font-normal"
                     />
                 </div>
@@ -116,12 +167,12 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         {
             accessorKey: "balance",
             header: ({ column }) => (
-                <div className="text-right"><DataTableColumnHeader column={column} title="Saldo" /></div>
+                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="text-right">
-                    <MoneyDisplay 
-                        amount={parseFloat(row.getValue("balance") || "0")} 
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency 
+                        value={parseFloat(row.getValue("balance") || "0")} 
                         className="font-bold"
                     />
                 </div>
@@ -129,10 +180,13 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         },
         {
             id: "actions",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+            ),
             cell: ({ row }) => {
                 const account = row.original
                 return (
-                    <div className="flex justify-end items-center gap-1">
+                    <div className="flex justify-center items-center gap-1 w-full">
                         {account.is_selectable && (
                             <LedgerModal
                                 accountId={account.id}
@@ -141,7 +195,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                             />
                         )}
                         <AccountForm
-                            accounts={accounts}
+                            accounts={flatAccounts}
                             initialData={account as any}
                             onSuccess={refetch}
                             triggerText={<Pencil className="h-4 w-4" />}
@@ -185,11 +239,13 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                     },
                 ]}
                 useAdvancedFilter={true}
-                defaultPageSize={50}
+                defaultPageSize={500}
+                getSubRows={(row: any) => row.children}
+                autoExpand={true}
             />
 
             <AccountForm 
-                accounts={accounts} 
+                accounts={flatAccounts} 
                 onSuccess={refetch} 
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {

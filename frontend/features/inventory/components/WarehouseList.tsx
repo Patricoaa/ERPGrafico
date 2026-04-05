@@ -125,9 +125,9 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             accessorKey: "code",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
+                <DataCell.Code className="font-mono text-[10px] font-black uppercase text-primary bg-primary/5 px-2 py-0.5 rounded-[0.125rem] border border-primary/10">
                     {row.original.code}
-                </DataCell.Secondary>
+                </DataCell.Code>
             ),
             size: 120,
         },
@@ -135,7 +135,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             accessorKey: "address",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] block">
+                <DataCell.Secondary className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight opacity-70 truncate max-w-[200px] text-center w-full">
                     {row.original.address || "-"}
                 </DataCell.Secondary>
             ),

@@ -152,6 +152,7 @@ export function TerminalBatchesManagement({
         },
         {
             id: "actions",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: () => (
                 <div className="flex justify-center gap-2">
                 </div>

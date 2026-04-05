@@ -81,16 +81,16 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
     const columns: ColumnDef<Contact>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code></div>,
         },
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => {
-                const contact = row.original
+                const contact = row.original as any
                 return (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 w-full">
                         <DataCell.Text>{contact.name}</DataCell.Text>
                         <div className="flex gap-1">
                             {contact.is_default_customer && (
@@ -148,26 +148,26 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
         },
         {
             accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
             cell: ({ row }) => {
                 const taxId = row.getValue("tax_id") as string | null
-                return <DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code>
+                return <div className="flex justify-center w-full"><DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code></div>
             },
         },
         {
             accessorKey: "contact_type",
-            header: "Tipo",
-            cell: ({ row }) => getContactTypeBadge(row.getValue("contact_type")),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full">{getContactTypeBadge(row.getValue("contact_type"))}</div>,
         },
         {
             accessorKey: "email",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary></div>,
         },
         {
             accessorKey: "phone",
-            header: "Teléfono",
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary></div>,
         },
         {
             id: "actions",

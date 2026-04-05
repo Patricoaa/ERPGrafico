@@ -217,6 +217,18 @@ Las etapas de taller son un flujo lineal. Se muestran como texto plano o stepper
 | `UNDER_REVIEW` | `warning` | En proceso de cierre |
 | `CLOSED` | `info` | Bloqueado (solo lectura), estado neutro |
 
+### Accounting — Account Types (Tipo de Cuenta)
+
+Este mapa define la codificación de color por naturaleza de cuenta contable para facilitar el análisis visual del balance y estado de resultados.
+
+| Tipo backend | Token semántico | Justificación | Color visual |
+|-------------|-----------------|---------------|-------------|
+| `ASSET` | `info` | Recursos, liquidez y estabilidad | Azul/Cian |
+| `LIABILITY` | `warning` | Obligaciones y compromisos (riesgo) | Ámbar |
+| `EQUITY` | `neutral` | Valor residual, core de la empresa | Gris |
+| `INCOME` | `success` | Flujo positivo, éxito comercial | Verde |
+| `EXPENSE` | `destructive` | Salida de recursos, consumo | Rojo |
+
 ---
 
 ## Reglas Anti-Patrón

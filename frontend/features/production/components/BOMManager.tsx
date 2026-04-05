@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
 
 import { BOM, ProductMinimal } from "../types"
@@ -151,23 +152,23 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "name",
-            header: "Lista de Materiales (Receta)",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Lista de Materiales (Receta)" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col py-1">
+                <div className="flex flex-col items-center py-1 text-center w-full">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
                     {row.original.notes && (
-                        <span className="text-[10px] text-muted-foreground italic truncate max-w-[200px] mt-1 pr-4">{row.original.notes}</span>
+                        <span className="text-[10px] text-muted-foreground italic truncate max-w-[200px] mt-1">{row.original.notes}</span>
                     )}
                 </div>
             )
         },
         {
             accessorKey: "product_id",
-            header: "Variante / Contexto",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Variante / Contexto" className="justify-center" />,
             cell: ({ row }) => {
-                const isBase = row.original.product_id === product.id
+                const isBase = row.original.product_id === (product as any).id
                 return (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
                             <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5 rounded-[0.125rem]">
                                 BASE
@@ -186,18 +187,20 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         },
         {
             accessorKey: "yield_quantity",
-            header: () => <div className="text-right whitespace-nowrap">Rendimiento (Output)</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Rendimiento (Output)" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-right">
-                    <span className="font-black font-mono text-[11px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-[0.125rem] border border-emerald-200/50">
-                        {row.original.yield_quantity} {row.original.yield_uom_name || product.uom_name}
-                    </span>
+                <div className="flex justify-center w-full">
+                    <div className="text-center">
+                        <span className="font-black font-mono text-[11px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-[0.125rem] border border-emerald-200/50">
+                            {row.original.yield_quantity} {row.original.yield_uom_name || (product as any).uom_name}
+                        </span>
+                    </div>
                 </div>
             )
         },
         {
             accessorKey: "active",
-            header: () => <div className="text-center">Estado</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     {row.original.active ? (
@@ -219,7 +222,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         },
         {
             accessorKey: "lines_count",
-            header: () => <div className="text-center">Comp.</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Comp." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="text-center text-[10px] font-black opacity-60">
                     {row.original.lines?.length || 0} ITEMS
@@ -228,18 +231,18 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         },
         {
             accessorKey: "updated_at",
-            header: () => <div className="text-right">Actualizado</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Actualizado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-right">
+                <div className="flex justify-center w-full">
                     <DataCell.Date value={row.original.updated_at} className="text-[10px] font-medium opacity-50" />
                 </div>
             )
         },
         {
             id: "actions",
-            header: () => <div className="text-right pr-4">Opciones</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Opciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex items-center justify-end gap-1 pr-2">
+                <div className="flex items-center justify-center gap-1 w-full pr-2">
                     <Button
                         type="button"
                         variant="ghost"

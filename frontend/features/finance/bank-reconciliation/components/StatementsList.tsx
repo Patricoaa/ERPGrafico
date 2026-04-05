@@ -53,43 +53,63 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
         {
             accessorKey: "display_id",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="ID" />
+                <DataTableColumnHeader column={column} title="ID" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Code className="font-bold">{row.getValue("display_id")}</DataCell.Code>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Code className="font-bold">{row.getValue("display_id")}</DataCell.Code>
+                </div>
+            ),
         },
         {
             accessorKey: "treasury_account_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuenta" />
+                <DataTableColumnHeader column={column} title="Cuenta" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text>{row.getValue("treasury_account_name")}</DataCell.Text>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Text>{row.getValue("treasury_account_name")}</DataCell.Text>
+                </div>
+            ),
         },
         {
             accessorKey: "statement_date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Date value={row.getValue("statement_date")} />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.getValue("statement_date")} />
+                </div>
+            ),
         },
         {
             accessorKey: "opening_balance",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Apertura" />
+                <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />
+                </div>
+            ),
         },
         {
             accessorKey: "closing_balance",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cierre" />
+                <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("closing_balance")} className="font-bold text-foreground" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("closing_balance")} className="font-bold text-foreground" />
+                </div>
+            ),
         },
         {
             id: "lines_info",
-            header: "Líneas",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-xs">{row.original.total_lines} total</span>
                     <span className="text-[10px] text-muted-foreground">
                         {row.original.reconciled_lines} rec.
@@ -100,15 +120,15 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
         {
             accessorKey: "reconciliation_progress",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Progreso" />
+                <DataTableColumnHeader column={column} title="Progreso" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const progress = parseFloat(row.getValue("reconciliation_progress") as string)
                 return (
-                    <div className="flex items-center gap-2 min-w-[100px]">
-                        <Progress value={progress} className="h-2" />
-                        <span className="text-[10px] font-medium w-8">
-                            {progress}%
+                    <div className="flex items-center justify-center gap-2 min-w-[120px] w-full">
+                        <Progress value={progress} className="h-1.5 w-16" />
+                        <span className="text-[10px] font-mono font-bold w-8 text-right">
+                            {Math.round(progress)}%
                         </span>
                     </div>
                 )
@@ -117,30 +137,32 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
         {
             accessorKey: "state",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
+                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const state = row.getValue("state") as string
                 const variant = state === 'CONFIRMED' ? 'success' : state === 'CANCELLED' ? 'destructive' : 'secondary'
                 return (
-                    <DataCell.Badge variant={variant}>
-                        {row.original.state_display}
-                    </DataCell.Badge>
+                    <div className="flex justify-center w-full">
+                        <DataCell.Badge variant={variant} className="uppercase font-bold text-[10px]">
+                            {row.original.state_display}
+                        </DataCell.Badge>
+                    </div>
                 )
             },
         },
         {
             id: "actions",
-            header: "Acción",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center w-full">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => router.push(`/treasury/reconciliation/${row.original.id}`)}
                     >
-                        <Eye className="h-4 w-4 text-primary" />
+                        <Eye className="h-3.5 w-3.5 text-primary" />
                     </Button>
                 </div>
             ),

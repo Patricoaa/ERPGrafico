@@ -196,9 +196,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const columns: ColumnDef<TaxPeriod>[] = [
         {
             accessorKey: "period_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3 w-full">
                     <div className="w-10 h-10 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
                         <span className="text-[9px] font-bold text-primary/60">{row.original.year}</span>
                         <span className="text-xs font-bold text-primary">{row.original.month_display?.substring(0, 3)}</span>
@@ -217,36 +217,46 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
         },
         {
             accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><StatusBadge status={row.original.status} /></div>,
             filterFn: (row, id, value) => value.includes(row.getValue(id))
         },
         {
             id: "vat_to_pay",
             accessorFn: (row) => row.declaration_summary?.vat_to_pay || 0,
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Impuesto Determinado" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Impuesto Determinado" className="justify-center" />,
             cell: ({ row }) => {
                 const amount = row.getValue("vat_to_pay") as number
-                return <div className="font-mono">{new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}</div>
+                return (
+                    <div className="flex justify-center w-full font-mono">
+                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}
+                    </div>
+                )
             }
         },
         {
             accessorKey: "payment_status",
-            header: "Estado Pago",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Pago" className="justify-center" />,
             cell: ({ row }) => {
                 const summary = row.original.declaration_summary
-                if (!summary) return <span className="text-muted-foreground">-</span>
-                if (summary.is_fully_paid) {
-                    return <StatusBadge status="PAID" label="Pagado" size="sm" />
-                }
-                if (summary.vat_to_pay > 0 && row.original.status === 'CLOSED') {
-                    return <StatusBadge status="VOIDED" label="Pendiente" size="sm" />
-                }
-                return <span className="text-muted-foreground">-</span>
+                return (
+                    <div className="flex justify-center w-full">
+                        {!summary ? (
+                            <span className="text-muted-foreground">-</span>
+                        ) : summary.is_fully_paid ? (
+                            <StatusBadge status="PAID" label="Pagado" size="sm" />
+                        ) : summary.vat_to_pay > 0 && row.original.status === 'CLOSED' ? (
+                            <StatusBadge status="VOIDED" label="Pendiente" size="sm" />
+                        ) : (
+                            <span className="text-muted-foreground">-</span>
+                        )}
+                    </div>
+                )
             }
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => {
                 const period = row.original
                 const summary = period.declaration_summary
@@ -255,7 +265,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 const canOpenChecklist = period.status === 'OPEN'
 
                 return (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-center gap-2 w-full">
                         {showPaymentButton && (
                             <Button
                                 variant="outline"

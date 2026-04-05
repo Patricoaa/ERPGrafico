@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -101,7 +102,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text className="font-medium text-center w-full">{row.getValue("name")}</DataCell.Text>,
         },
         {
             id: "applies_to",
@@ -109,27 +110,27 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             cell: ({ row }) => {
                 const rule = row.original
                 return (
-                    <div className="flex flex-col gap-1 py-1">
+                    <div className="flex flex-col items-center gap-1 py-1 w-full">
                         {rule.product_name ? (
                             <>
-                                <span className="font-medium text-xs leading-tight">{rule.product_name}</span>
-                                <div className="flex flex-wrap gap-1">
+                                <DataCell.Text className="font-medium text-xs leading-tight text-center">{rule.product_name}</DataCell.Text>
+                                <div className="flex flex-wrap justify-center gap-1">
                                     {rule.product_internal_code && (
-                                        <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                        <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
                                             {rule.product_internal_code}
-                                        </Badge>
+                                        </DataCell.Code>
                                     )}
                                     {rule.product_code && rule.product_code !== rule.product_internal_code && (
-                                        <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                        <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase bg-secondary/50">
                                             {rule.product_code}
-                                        </Badge>
+                                        </DataCell.Code>
                                     )}
                                 </div>
                             </>
                         ) : rule.category_name ? (
-                            <Badge variant="outline" className="w-fit">Categoría: {rule.category_name}</Badge>
+                            <DataCell.Badge variant="outline" className="w-fit">Categoría: {rule.category_name}</DataCell.Badge>
                         ) : (
-                            <Badge variant="secondary" className="w-fit">Todos</Badge>
+                            <DataCell.Badge variant="secondary" className="w-fit">Todos</DataCell.Badge>
                         )}
                     </div>
                 )
@@ -141,11 +142,11 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             cell: ({ row }) => {
                 const rule = row.original
                 return (
-                    <div className="text-right font-mono">
+                    <div className="text-center font-mono w-full">
                         <span className="text-xs text-muted-foreground mr-1">{rule.operator_display}</span>
-                        {Number(rule.min_quantity)}
+                        <span className="font-bold">{Number(rule.min_quantity)}</span>
                         {rule.operator === "BT" && rule.max_quantity && (
-                            <> y {Number(rule.max_quantity)}</>
+                            <> y <span className="font-bold">{Number(rule.max_quantity)}</span></>
                         )}
                     </div>
                 )
@@ -154,15 +155,16 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         {
             id: "uom",
             header: ({ column }) => <DataTableColumnHeader column={column} title="UdM" className="justify-center" />,
-            cell: ({ row }) => {
-                const name = row.original.uom_name
-                return name ? <Badge variant="outline">{name}</Badge> : <span className="text-xs text-muted-foreground italic">Base</span>
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.uom_name ? <Badge variant="outline">{row.original.uom_name}</Badge> : <span className="text-xs text-muted-foreground italic">Base</span>}
+                </div>
+            ),
         },
         {
             accessorKey: "rule_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <div>{row.getValue("rule_type_display")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full text-center">{row.getValue("rule_type_display")}</div>,
         },
         {
             id: "value",
@@ -170,10 +172,12 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             cell: ({ row }) => {
                 const rule = row.original
                 return (
-                    <div className="text-right font-bold">
-                        {rule.rule_type === "FIXED"
-                            ? <MoneyDisplay amount={Number(rule.fixed_price)} showColor={false} />
-                            : `${Number(rule.discount_percentage)}%`}
+                    <div className="flex justify-center w-full">
+                        <span className="font-bold">
+                            {rule.rule_type === "FIXED"
+                                ? <MoneyDisplay amount={Number(rule.fixed_price)} showColor={false} />
+                                : `${Number(rule.discount_percentage)}%`}
+                        </span>
                     </div>
                 )
             },
@@ -181,18 +185,22 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         {
             id: "validity",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Vigencia" className="justify-center" />,
-            cell: ({ row }) => <div className="text-xs whitespace-nowrap">{row.original.start_date || '...'} a {row.original.end_date || '...'}</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <span className="text-xs whitespace-nowrap">{row.original.start_date || '...'} a {row.original.end_date || '...'}</span>
+                </div>
+            ),
         },
         {
             accessorKey: "priority",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Prioridad" className="justify-center" />,
-            cell: ({ row }) => <div className="text-center">{row.getValue("priority")}</div>,
+            cell: ({ row }) => <div className="flex justify-center w-full text-center">{row.getValue("priority")}</div>,
         },
         {
             accessorKey: "active",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-center">
+                <div className="flex justify-center w-full">
                     <Badge variant={row.getValue("active") ? "default" : "secondary"}>
                         {row.getValue("active") ? "Activo" : "Inactivo"}
                     </Badge>
@@ -201,9 +209,9 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
         },
         {
             id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center space-x-2">
+                <div className="flex justify-center w-full space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
                         <Pencil className="h-4 w-4" />
                     </Button>

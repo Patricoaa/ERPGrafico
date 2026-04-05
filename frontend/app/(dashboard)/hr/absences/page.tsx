@@ -95,33 +95,38 @@ export default function AbsencesPage() {
     const columns: ColumnDef<Absence>[] = [
         {
             accessorKey: "employee_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" />,
-            cell: ({ row }) => <div className="font-medium text-sm">{row.getValue("employee_name")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
+            cell: ({ row }) => <div className="font-medium text-sm text-center w-full">{row.getValue("employee_name")}</div>,
         },
         {
             accessorKey: "absence_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
-            cell: ({ row }) => <Badge variant="outline" className="text-[10px]">{row.getValue("absence_type_display")}</Badge>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <Badge variant="outline" className="text-[10px]">{row.getValue("absence_type_display")}</Badge>
+                </div>
+            ),
         },
         {
             accessorKey: "start_date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Inicio" />,
-            cell: ({ row }) => <div className="text-sm">{row.getValue("start_date")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Inicio" className="justify-center" />,
+            cell: ({ row }) => <div className="text-sm text-center w-full">{row.getValue("start_date")}</div>,
         },
         {
             accessorKey: "end_date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fin" />,
-            cell: ({ row }) => <div className="text-sm">{row.getValue("end_date")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fin" className="justify-center" />,
+            cell: ({ row }) => <div className="text-sm text-center w-full">{row.getValue("end_date")}</div>,
         },
         {
             accessorKey: "days",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Días" />,
-            cell: ({ row }) => <div className="text-right font-mono text-sm">{row.getValue("days")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
+            cell: ({ row }) => <div className="text-center font-mono text-sm w-full">{row.getValue("days")}</div>,
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-center gap-1 w-full">
                     <Button
                         variant="ghost" size="icon"
                         onClick={() => { setEditingAbsence(row.original); setDialogOpen(true) }}

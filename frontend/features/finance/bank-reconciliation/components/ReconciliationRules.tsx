@@ -80,11 +80,11 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
     const columns = useMemo<ColumnDef<RuleRow>[]>(() => [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-medium text-sm">{row.original.name}</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[280px] text-center">
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[280px] text-center">
                         {row.original.description}
                     </span>
                 </div>
@@ -93,18 +93,22 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
         },
         {
             accessorKey: "account_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
-            cell: ({ row }) => <Badge variant="outline">{row.getValue("account_name")}</Badge>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <Badge variant="outline" className="font-mono text-[10px]">{row.getValue("account_name")}</Badge>
+                </div>
+            ),
             filterFn: "arrIncludes",
         },
         {
             id: "criterios",
             accessorKey: "match_config",
-            header: () => <span className="text-sm font-medium text-muted-foreground">Criterios</span>,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Criterios" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex gap-1 flex-wrap justify-center">
+                <div className="flex gap-1 flex-wrap justify-center w-full">
                     {row.original.match_config.criteria?.map((c: string) => (
-                        <Badge key={c} variant="secondary" className="text-[10px]">
+                        <Badge key={c} variant="secondary" className="text-[10px] lowercase">
                             {c.replace('_', ' ')}
                         </Badge>
                     ))}
@@ -114,38 +118,52 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
         },
         {
             accessorKey: "auto_confirm",
-            header: () => <span className="text-sm font-medium text-muted-foreground">Auto Confirm</span>,
-            cell: ({ row }) => row.original.auto_confirm
-                ? <CheckCircle2 className="h-4 w-4 text-emerald-700 mx-auto" />
-                : <span className="text-muted-foreground">-</span>,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Auto" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.auto_confirm
+                        ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        : <span className="text-muted-foreground/30">-</span>
+                    }
+                </div>
+            ),
             enableSorting: false,
         },
         {
             accessorKey: "success_rate",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Éxito" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Éxito" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center justify-center w-full">
                     <span className={cn(
                         "font-bold text-sm",
-                        row.original.success_rate > 80 ? 'text-emerald-700' :
-                        row.original.success_rate > 50 ? 'text-amber-700' : 'text-muted-foreground'
+                        row.original.success_rate > 80 ? 'text-emerald-600' :
+                        row.original.success_rate > 50 ? 'text-amber-600' : 'text-muted-foreground'
                     )}>
                         {row.original.success_rate}%
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{row.original.times_applied} usos</span>
+                    <span className="text-[9px] text-muted-foreground font-mono">{row.original.times_applied} usos</span>
                 </div>
             ),
         },
         {
             id: "actions",
-            header: () => <span className="text-sm font-medium text-muted-foreground">Acciones</span>,
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditingRule(row.original); setOpenDialog(true) }}>
-                        <Edit className="h-4 w-4" />
+                <div className="flex items-center justify-center gap-1 w-full">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={() => { setEditingRule(row.original); setOpenDialog(true) }}
+                    >
+                        <Edit className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive">
-                        <Trash2 className="h-4 w-4" />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             ),

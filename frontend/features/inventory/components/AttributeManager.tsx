@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
-import { Plus, Trash2, Tag, LayoutDashboard } from "lucide-react"
+import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -44,8 +45,11 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
+    const [newAttrValues, setNewAttrValues] = useState<string[]>([])
+    const [tagInput, setTagInput] = useState("")
     const [newValueName, setNewValueName] = useState("")
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
+    const [isSaving, setIsSaving] = useState(false)
 
 
     const router = useRouter()
@@ -55,6 +59,9 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
     const handleCloseModal = () => {
         setIsAttrModalOpen(false)
         setSelectedAttribute(null)
+        setNewAttrName("")
+        setNewAttrValues([])
+        setTagInput("")
         
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -94,15 +101,50 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
     const handleCreateAttribute = async () => {
         if (!newAttrName.trim()) return
+        setIsSaving(true)
         try {
-            await api.post("/inventory/attributes/", { name: newAttrName })
-            toast.success("Atributo creado")
-            setNewAttrName("")
-            setIsAttrModalOpen(false)
+            let attrId: number;
+            
+            if (selectedAttribute) {
+                // Update existing attribute (only name for now)
+                await api.patch(`/inventory/attributes/${selectedAttribute.id}/`, { name: newAttrName })
+                attrId = selectedAttribute.id;
+            } else {
+                // Create new attribute
+                const res = await api.post("/inventory/attributes/", { name: newAttrName })
+                attrId = res.data.id;
+            }
+
+            // Create values if there are any new ones
+            if (newAttrValues.length > 0) {
+                await Promise.all(newAttrValues.map(val => 
+                    api.post("/inventory/attribute-values/", {
+                        attribute: attrId,
+                        value: val
+                    })
+                ))
+            }
+
+            toast.success(selectedAttribute ? "Atributo actualizado" : "Atributo creado")
+            handleCloseModal()
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al crear atributo")
+            toast.error("Error al guardar atributo")
+        } finally {
+            setIsSaving(false)
         }
+    }
+
+    const addTag = () => {
+        const tag = tagInput.trim()
+        if (tag && !newAttrValues.includes(tag)) {
+            setNewAttrValues([...newAttrValues, tag])
+            setTagInput("")
+        }
+    }
+
+    const removeTag = (tag: string) => {
+        setNewAttrValues(newAttrValues.filter(v => v !== tag))
     }
 
     const handleCreateValue = async () => {
@@ -172,9 +214,9 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-2 font-medium">
+                <div className="flex items-center justify-center gap-2 font-medium w-full">
                     <Tag className="h-4 w-4 text-primary" />
-                    <span className="text-center">{row.getValue("name")}</span>
+                    <DataCell.Text className="text-center">{row.getValue("name")}</DataCell.Text>
                 </div>
             ),
         },
@@ -186,23 +228,35 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             cell: ({ row }) => {
                 const values = row.original.values || []
                 return (
-                    <div className="flex flex-wrap justify-center gap-1">
+                    <div className="flex flex-nowrap justify-center gap-1 w-full overflow-x-auto scrollbar-hide py-1">
                         {values.map((val) => (
-                            <Badge key={val.id} variant="secondary" className="flex items-center gap-1 group">
+                            <DataCell.Badge key={val.id} variant="secondary" className="flex items-center gap-1 group py-0 h-6 px-2 shrink-0">
                                 {val.value}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleDeleteValue(val.id)
                                     }}
-                                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
                                     title="Eliminar valor"
                                 >
-                                    <Trash2 className="h-3 w-3" />
+                                    <X className="h-3 w-3" />
                                 </button>
-                            </Badge>
+                            </DataCell.Badge>
                         ))}
-                        {values.length === 0 && <span className="text-muted-foreground text-xs italic text-center w-full">Sin valores</span>}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-primary/10 hover:text-primary"
+                            onClick={() => {
+                                setSelectedAttribute(row.original)
+                                setIsValueModalOpen(true)
+                            }}
+                            title="Añadir valor"
+                        >
+                            <Plus className="h-3 w-3" />
+                        </Button>
+                        {values.length === 0 && <DataCell.Secondary className="text-muted-foreground text-xs italic text-center w-full">Sin valores</DataCell.Secondary>}
                     </div>
                 )
             },
@@ -213,22 +267,24 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             cell: ({ row }) => (
                 <div className="flex justify-center gap-2">
                     <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => {
                             setSelectedAttribute(row.original)
-                            setIsValueModalOpen(true)
+                            setNewAttrName(row.original.name)
+                            setIsAttrModalOpen(true)
                         }}
-                        className="h-8"
+                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                        title="Ver/Editar Atributo"
                     >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Valor
+                        <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDeleteAttribute(row.original.id)}
-                        className="h-8 w-8 text-destructive hover:text-destructive/90"
+                        className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                        title="Eliminar Atributo"
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -296,14 +352,17 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                         <div className="p-2 bg-primary/10 rounded-lg">
                             <Tag className="h-5 w-5 text-primary" />
                         </div>
-                        <span>Nuevo Atributo de Variante</span>
+                        <span>{selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}</span>
                     </div>
                 }
-                description="Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."
+                description={selectedAttribute ? "Modifica el nombre o añade nuevos valores al atributo." : "Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => { setIsAttrModalOpen(false); setSelectedAttribute(null); }}>Cancelar</Button>
-                        <Button onClick={handleCreateAttribute}>Crear Atributo</Button>
+                        <Button variant="outline" onClick={handleCloseModal} disabled={isSaving}>Cancelar</Button>
+                        <Button onClick={handleCreateAttribute} disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
+                        </Button>
                     </div>
                 }
                 hideScrollArea={true}
@@ -311,15 +370,61 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             >
                 <div className="flex flex-1 overflow-hidden min-h-[400px]">
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="attr-name" className={FORM_STYLES.label}>Nombre (ej: Color, Talla)</Label>
-                            <Input
-                                id="attr-name"
-                                value={newAttrName}
-                                onChange={(e) => setNewAttrName(e.target.value)}
-                                placeholder="Escribe el nombre..."
-                                className={FORM_STYLES.input}
-                            />
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="attr-name" className={FORM_STYLES.label}>Nombre del Atributo (ej: Color, Talla)</Label>
+                                <Input
+                                    id="attr-name"
+                                    value={newAttrName}
+                                    onChange={(e) => setNewAttrName(e.target.value)}
+                                    placeholder="Escribe el nombre..."
+                                    className={FORM_STYLES.input}
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex flex-col gap-1">
+                                    <Label className={FORM_STYLES.label}>Nuevos Valores</Label>
+                                    <p className="text-[10px] text-muted-foreground">Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={tagInput}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                addTag()
+                                            }
+                                        }}
+                                        placeholder="Ej: Rojo..."
+                                        className={FORM_STYLES.input}
+                                    />
+                                    <Button type="button" onClick={addTag} size="icon" variant="secondary" className="shrink-0">
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                
+                                <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-lg border border-dashed bg-muted/20">
+                                    {newAttrValues.map((tag, i) => (
+                                        <DataCell.Badge key={i} variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium animate-in zoom-in-50 duration-200">
+                                            {tag}
+                                            <button 
+                                                type="button" 
+                                                onClick={() => removeTag(tag)}
+                                                className="hover:text-destructive transition-colors"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        </DataCell.Badge>
+                                    ))}
+                                    {newAttrValues.length === 0 && (
+                                        <div className="flex items-center justify-center w-full h-full text-muted-foreground text-[11px] italic">
+                                            Lista de nuevos valores vacía
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -351,8 +456,11 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsValueModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleCreateValue}>Añadir Valor</Button>
+                        <Button variant="outline" onClick={() => setIsValueModalOpen(false)} disabled={isSaving}>Cancelar</Button>
+                        <Button onClick={handleCreateValue} disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Añadir Valor
+                        </Button>
                     </div>
                 }
             >

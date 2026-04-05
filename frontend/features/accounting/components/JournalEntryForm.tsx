@@ -111,7 +111,8 @@ export function JournalEntryForm({
     triggerText = "Nuevo Asiento",
     triggerVariant = "default",
     open: openProp,
-    onOpenChange
+    onOpenChange,
+    auditSidebar
 }: JournalEntryFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
@@ -384,18 +385,18 @@ export function JournalEntryForm({
                         <div className="border rounded-md p-2">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[300px]")}>Cuenta</TableHead>
-                                        <TableHead className={FORM_STYLES.label}>Glosa</TableHead>
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px]")}>Debe</TableHead>
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px]")}>Haber</TableHead>
-                                        <TableHead className="w-[50px]"></TableHead>
+                                    <TableRow className="hover:bg-transparent border-b">
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[300px] text-center")}>Cuenta</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "text-center")}>Glosa</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Debe</TableHead>
+                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Haber</TableHead>
+                                        <TableHead className="w-[50px] text-center">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {fields.map((field, index) => (
-                                        <TableRow key={field.id}>
-                                            <TableCell>
+                                        <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
+                                            <TableCell className="p-2">
                                                 <FormField
                                                     control={form.control}
                                                     name={`items.${index}.account`}
@@ -412,53 +413,54 @@ export function JournalEntryForm({
                                                     )}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="p-2">
                                                 <FormField
                                                     control={form.control}
                                                     name={`items.${index}.label`}
                                                     render={({ field }) => (
                                                         <FormItem className="space-y-0">
                                                             <FormControl>
-                                                                <Input {...field} className={cn(FORM_STYLES.input, "h-8")} />
+                                                                <Input {...field} className={cn(FORM_STYLES.input, "h-8 text-center")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="p-2">
                                                 <FormField
                                                     control={form.control}
                                                     name={`items.${index}.debit`}
                                                     render={({ field }) => (
-                                                        <FormItem className="space-y-0">
+                                                        <FormItem className="space-y-0 text-center">
                                                             <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8")} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="p-2">
                                                 <FormField
                                                     control={form.control}
                                                     name={`items.${index}.credit`}
                                                     render={({ field }) => (
-                                                        <FormItem className="space-y-0">
+                                                        <FormItem className="space-y-0 text-center">
                                                             <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8")} />
+                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
                                                 />
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="p-2 text-center">
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => remove(index)}
+                                                    className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                    <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

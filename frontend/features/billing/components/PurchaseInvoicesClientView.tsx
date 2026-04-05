@@ -130,23 +130,23 @@ export function PurchaseInvoicesClientView() {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />,
         },
         {
             accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "dte_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const doc = row.original
                 return (
-                    <div className="flex items-center gap-2 justify-center" title={doc.dte_type_display}>
+                    <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
                         <FileBadge className="h-4 w-4 text-muted-foreground/70" />
-                        <DataCell.Secondary className="font-bold uppercase hidden md:inline-block text-[10px]">
+                        <DataCell.Secondary className="font-bold uppercase hidden md:inline-block text-[10px] text-center">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
                                     doc.dte_type === 'BOLETA' ? 'BOL' :
@@ -159,17 +159,17 @@ export function PurchaseInvoicesClientView() {
         },
         {
             accessorKey: "partner_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={row.original.partner || row.original.supplier}>{row.getValue("partner_name")}</DataCell.ContactLink>,
         },
         {
             accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
         },
         {
             id: "payment_status",
-            header: "Pagado/Devuelto",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Pagado/Devuelto" className="justify-center" />,
             cell: ({ row }) => {
                 const doc = row.original
                 const total = parseFloat(doc.total)
@@ -177,12 +177,14 @@ export function PurchaseInvoicesClientView() {
                 const paid = total - pending
                 const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
                 return (
-                    <div className="space-y-1 w-32">
-                        <div className="flex justify-between text-[10px] font-bold">
-                            <span>{percentage}%</span>
-                            <MoneyDisplay amount={paid} showColor={false} className="text-[10px]" />
+                    <div className="flex justify-center w-full">
+                        <div className="space-y-1 w-32">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span>{percentage}%</span>
+                                <MoneyDisplay amount={paid} showColor={false} className="text-[10px]" />
+                            </div>
+                            <Progress value={percentage} className="h-1" />
                         </div>
-                        <Progress value={percentage} className="h-1" />
                     </div>
                 )
             },

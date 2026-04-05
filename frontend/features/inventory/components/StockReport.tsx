@@ -51,22 +51,22 @@ export function StockReport() {
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col gap-1 py-1">
-                        <span className="font-black text-[12px] uppercase tracking-tight text-foreground/80">{item.name}</span>
-                        <div className="flex gap-2 items-center">
+                    <div className="flex flex-col items-center gap-1 py-1">
+                        <DataCell.Text className="font-black text-[12px] uppercase tracking-tight text-center">{item.name}</DataCell.Text>
+                        <div className="flex gap-2 items-center justify-center">
                             {item.internal_code && (
-                                <span className="font-mono text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
+                                <DataCell.Code className="text-[9px] font-black uppercase text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-[0.125rem]">
                                     {item.internal_code}
-                                </span>
+                                </DataCell.Code>
                             )}
                             {item.code && item.code !== item.internal_code && (
-                                <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60">
+                                <DataCell.Code className="text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter opacity-60 bg-secondary/50">
                                     {item.code}
-                                </Badge>
+                                </DataCell.Code>
                             )}
                         </div>
                     </div>
@@ -88,14 +88,14 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("stock_qty"))
                 return (
-                    <div className="flex flex-col items-center group cursor-help">
+                    <div className="flex flex-col items-center group cursor-help w-full">
                         <span className={cn(
-                            "font-mono font-black text-[14px] tracking-tighter",
+                            "font-mono font-black text-[14px] tracking-tighter transition-all group-hover:scale-110",
                             qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
                         )}>
                             {qty.toFixed(2)}
                         </span>
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity text-muted-foreground mt-0.5">
                             {row.original.uom_name}
                         </span>
                     </div>
@@ -106,11 +106,11 @@ export function StockReport() {
             accessorKey: "qty_reserved",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center opacity-40">
+                <div className="flex flex-col items-center opacity-40 w-full">
                     <span className="font-mono font-bold text-[12px] tracking-tighter">
                         {Number(row.getValue("qty_reserved")).toFixed(2)}
                     </span>
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
                         {row.original.uom_name}
                     </span>
                 </div>
@@ -122,36 +122,34 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("qty_available"))
                 return (
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center w-full">
                         <span className={cn(
-                            "font-mono font-black text-[14px] tracking-tighter",
-                            qty <= 0 ? "text-destructive" : "text-primary group-hover:scale-110 transition-transform"
+                            "font-mono font-black text-[14px] tracking-tighter transition-all",
+                            qty <= 0 ? "text-destructive" : "text-primary group-hover:scale-110"
                         )}>
                             {qty.toFixed(2)}
                         </span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/40">Disponible</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/40 mt-0.5">Disponible</span>
                     </div>
                 )
             },
         },
         {
             accessorKey: "total_value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-end" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col items-end">
-                        <div className="flex items-baseline gap-2">
+                    <div className="flex flex-col items-center w-full">
+                        <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-tighter">
                                 {formatCurrency(item.unit_cost)}
                                 <span className="mx-1 opacity-50">/</span>
                                 {item.uom_name}
                             </span>
-                            <span className="font-mono font-black text-[13px] tracking-tighter text-primary">
-                                {formatCurrency(Number(item.total_value))}
-                            </span>
+                            <DataCell.Currency value={item.total_value} className="font-black text-[13px] text-primary" />
                         </div>
-                        <span className="text-[8px] font-black uppercase tracking-widest opacity-30">Total Valorizado</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-30 mt-0.5">Total Valorizado</span>
                     </div>
                 )
             },
@@ -178,8 +176,9 @@ export function StockReport() {
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex gap-1 justify-end">
+                <div className="flex gap-1 justify-center w-full">
                     <Button
                         variant="ghost"
                         size="icon"

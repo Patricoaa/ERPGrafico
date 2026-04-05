@@ -97,44 +97,68 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const columns: ColumnDef<POSSession>[] = [
         {
             accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="ID" />,
-            cell: ({ row }) => <DataCell.Code className="font-bold">SES-{row.original.id}</DataCell.Code>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="ID" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Code className="font-bold">SES-{row.original.id}</DataCell.Code>
+                </div>
+            ),
         },
         {
             accessorKey: "user_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>
+                </div>
+            ),
         },
         {
             accessorKey: "opened_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("opened_at")} showTime />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.getValue("opened_at")} showTime />
+                </div>
+            ),
         },
         {
             accessorKey: "closed_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cierre" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />,
             cell: ({ row }) => {
                 const val = row.getValue("closed_at") as string
-                return val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>
+                return (
+                    <div className="flex justify-center w-full">
+                        {val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>}
+                    </div>
+                )
             },
         },
         {
             accessorKey: "start_amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />
+                </div>
+            ),
         },
         {
             accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => {
                 const state = row.getValue("status") as string
                 const variant = state === 'OPEN' ? 'success' : state === 'CLOSED' ? 'secondary' : 'warning'
-                return <DataCell.Badge variant={variant}>{row.original.status_display}</DataCell.Badge>
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Badge variant={variant}>{row.original.status_display}</DataCell.Badge>
+                    </div>
+                )
             },
         },
         {
             id: "actions",
-            header: "Acción",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => {
                 const session = row.original
                 return (

@@ -162,127 +162,134 @@ export default function PayrollsPage() {
     const columns: ColumnDef<Payroll>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code>{row.getValue("display_id")}</DataCell.Code></div>,
         },
         {
             accessorFn: (row) => row.employee_name || "",
             id: "employee",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" />,
-            cell: ({ row }) => <div className="font-medium text-sm">{row.original.employee_name}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
+            cell: ({ row }) => <div className="font-medium text-sm text-center w-full">{row.original.employee_name}</div>,
         },
         {
             accessorKey: "period_label",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
-            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("period_label")}</div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
+            cell: ({ row }) => <div className="text-sm text-muted-foreground text-center w-full">{row.getValue("period_label")}</div>,
         },
         {
             accessorKey: "total_haberes",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-80 font-medium">
+                <div className="flex justify-center w-full opacity-80 font-medium">
                     <MoneyDisplay amount={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600" />
                 </div>
             ),
         },
         {
             accessorKey: "legal_deductions_worker",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-70">
+                <div className="flex justify-center w-full opacity-70">
                     <MoneyDisplay amount={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
                 </div>
             ),
         },
         {
             accessorKey: "employer_contribution",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-70">
+                <div className="flex justify-center w-full opacity-70">
                     <MoneyDisplay amount={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
                 </div>
             ),
         },
         {
             accessorKey: "other_deductions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-70">
+                <div className="flex justify-center w-full opacity-70">
                     <MoneyDisplay amount={parseFloat((row.original as any).other_deductions || 0)} className="text-muted-foreground text-[11px]" />
                 </div>
             ),
         },
         {
             accessorKey: "advances_total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end opacity-70">
+                <div className="flex justify-center w-full opacity-70">
                     <MoneyDisplay amount={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
                 </div>
             ),
         },
         {
             accessorKey: "net_salary",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-end font-bold text-sm">
+                <div className="flex justify-center w-full font-bold text-sm">
                     <MoneyDisplay amount={parseFloat(row.getValue("net_salary"))} />
                 </div>
             ),
         },
         {
             accessorKey: "status",
-            header: "Estado",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => {
                 const s = row.getValue("status") as string;
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] uppercase font-bold",
-                        s === 'POSTED' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : "text-amber-600 border-amber-500/30 bg-amber-50"
-                    )}>
-                        {s === 'POSTED' ? 'Contabilizado' : 'Borrador'}
-                    </Badge>
+                    <div className="flex justify-center w-full">
+                        <Badge variant="outline" className={cn(
+                            "text-[9px] uppercase font-bold",
+                            s === 'POSTED' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : "text-amber-600 border-amber-500/30 bg-amber-50"
+                        )}>
+                            {s === 'POSTED' ? 'Contabilizado' : 'Borrador'}
+                        </Badge>
+                    </div>
                 )
             }
         },
         {
             accessorKey: "remuneration_paid_status",
-            header: "Remuneración",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
             cell: ({ row }) => {
                 const s = (row.original as any).remuneration_paid_status;
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] uppercase font-bold",
-                        s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
-                        s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
-                    )}>
-                        {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
-                    </Badge>
+                    <div className="flex justify-center w-full">
+                        <Badge variant="outline" className={cn(
+                            "text-[9px] uppercase font-bold",
+                            s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
+                            s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
+                        )}>
+                            {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
+                        </Badge>
+                    </div>
                 )
             }
         },
         {
             accessorKey: "previred_paid_status",
-            header: "Previred",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
             cell: ({ row }) => {
                 const s = (row.original as any).previred_paid_status;
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] uppercase font-bold",
-                        s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
-                        s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
-                    )}>
-                        {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
-                    </Badge>
+                    <div className="flex justify-center w-full">
+                        <Badge variant="outline" className={cn(
+                            "text-[9px] uppercase font-bold",
+                            s === 'PAID' ? "text-emerald-600 border-emerald-500/30 bg-emerald-50" : 
+                            s === 'PARTIAL' ? "text-amber-600 border-amber-500/30 bg-amber-50" : "text-muted-foreground"
+                        )}>
+                            {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
+                        </Badge>
+                    </div>
                 )
             }
         },
         {
             id: "actions",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => {
                 const p = row.original;
                 return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 justify-center w-full">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
                             <Eye className="h-3.5 w-3.5" />
                         </Button>

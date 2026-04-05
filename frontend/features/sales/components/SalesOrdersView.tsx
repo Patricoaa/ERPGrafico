@@ -78,31 +78,31 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const columns: ColumnDef<SaleOrder>[] = [
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => <DataCell.DocumentId type="SALE_ORDER" number={row.getValue("number")} />,
             meta: { title: "Folio" },
         },
         {
             accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
             meta: { title: "Fecha" },
         },
         {
             accessorKey: "customer_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={row.original.customer}>{row.getValue("customer_name")}</DataCell.ContactLink>,
             meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
             meta: { title: "Total" },
         },
         {
             accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center items-center"><OrderHubStatus order={row.original} /></div>,
             meta: { title: "Estado" },
         },
@@ -175,31 +175,31 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const noteColumns: ColumnDef<any>[] = [
         {
             accessorKey: "dte_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" />,
-            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px]">{row.original.dte_type_display}</DataCell.Secondary>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px] text-center">{row.original.dte_type_display}</DataCell.Secondary>,
             meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
             cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />,
             meta: { title: "Número" },
         },
         {
             accessorKey: "customer_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={row.original.customer || row.original.partner}>{row.original.customer_name || row.original.partner_name}</DataCell.ContactLink>,
             meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
             meta: { title: "Total" },
         },
         {
             accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center items-center">
                     <NoteHubStatus note={row.original} />

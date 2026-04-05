@@ -195,11 +195,11 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                                             <table className="w-full text-left">
                                                 <thead>
                                                     <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                                                        <th className="pb-2 pr-4 text-center">N° Documento</th>
-                                                        <th className="pb-2 pr-4 text-center">Fecha</th>
-                                                        <th className="pb-2 pr-4 text-center">Total</th>
-                                                        <th className="pb-2 pr-4 text-center">Pagado</th>
-                                                        <th className="pb-2 pr-4 text-center">Saldo</th>
+                                                        <th className="pb-2 text-center">N° Documento</th>
+                                                        <th className="pb-2 text-center">Fecha</th>
+                                                        <th className="pb-2 text-center">Total</th>
+                                                        <th className="pb-2 text-center">Pagado</th>
+                                                        <th className="pb-2 text-center">Saldo</th>
                                                         <th className="pb-2 text-center">Estado</th>
                                                     </tr>
                                                 </thead>
@@ -294,11 +294,13 @@ export function BlacklistView() {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-center font-semibold text-[13px]">
-                    <div className="font-bold text-foreground">
-                        {row.original.name}
+                <div className="flex justify-center w-full text-center font-semibold text-[13px]">
+                    <div>
+                        <div className="font-bold text-foreground">
+                            {row.original.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.original.tax_id}</div>
                     </div>
-                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.original.tax_id}</div>
                 </div>
             ),
         },
@@ -307,13 +309,21 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
             cell: ({ row }) => {
                 const val = Number(row.original.credit_balance_used)
-                return <div className="text-center font-mono font-bold text-[13px] text-destructive">{fmt(val)}</div>
+                return (
+                    <div className="flex justify-center w-full">
+                        <div className="text-center font-mono font-bold text-[13px] text-destructive">{fmt(val)}</div>
+                    </div>
+                )
             },
         },
         {
             accessorKey: "credit_last_evaluated",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
-            cell: ({ row }) => <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : "—"}</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : "—"}</div>
+                </div>
+            ),
         }
     ]
 

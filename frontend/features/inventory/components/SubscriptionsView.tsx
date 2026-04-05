@@ -249,18 +249,18 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             cell: ({ row }) => {
                 const sub = row.original;
                 return (
-                    <div className="flex flex-col items-center gap-1 py-1">
-                        <span className="font-medium text-xs leading-tight text-center">{sub.product_name}</span>
+                    <div className="flex flex-col items-center gap-1 py-1 w-full">
+                        <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
                         <div className="flex flex-wrap justify-center gap-1">
                             {sub.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
                                     {sub.product_internal_code}
-                                </Badge>
+                                </DataCell.Code>
                             )}
                             {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center bg-secondary/50">
                                     {sub.product_code}
-                                </Badge>
+                                </DataCell.Code>
                             )}
                         </div>
                     </div>
@@ -272,14 +272,14 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text className="text-xs text-center">{row.getValue("category_name")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Secondary className="text-xs text-center w-full">{row.getValue("category_name")}</DataCell.Secondary>,
         },
         {
             accessorKey: "supplier_name",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="text-center"><DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text></div>,
+            cell: ({ row }) => <DataCell.Text className="text-center w-full">{row.getValue("supplier_name")}</DataCell.Text>,
         },
         {
             accessorKey: "amount",
