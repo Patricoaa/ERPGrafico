@@ -1,11 +1,11 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
+import { Eye, List, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
@@ -20,38 +20,11 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { EmptyState } from "@/components/shared/EmptyState"
-
-interface PurchaseDocument {
-    id: number
-    date: string
-    dte_type: string
-    dte_type_display?: string
-    number: string
-    partner_name?: string
-    purchase_order?: number
-    purchase_order_number?: string
-    service_obligation?: number
-    service_obligation_data?: any
-    total: string
-    status: string
-    status_display?: string
-    pending_amount?: number
-    serialized_payments?: any[]
-    po_receiving_status?: string
-    related_stock_moves?: any[]
-    related_documents?: {
-        invoices: any[]
-        notes: any[]
-        receipts: any[]
-        payments: any[]
-    }
-}
+import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
     'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as any },
@@ -61,38 +34,21 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 }
 
 export function PurchaseInvoicesClientView() {
-    const [documents, setDocuments] = useState<PurchaseDocument[]>([])
-    const [loading, setLoading] = useState(true)
+    const { invoices: documents, refetch: fetchDocuments } = usePurchaseInvoices()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
-    const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
-    const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
-    const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
-    const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
+    const [payingDoc, setPayingDoc] = useState<any | null>(null)
+    const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
+    const [notingDoc, setNotingDoc] = useState<any | null>(null)
+    const [completingDoc, setCompletingDoc] = useState<any | null>(null)
+    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
 
-    const { openHub, closeHub, hubConfig } = useHubPanel()
+    const viewOptions = [
+        { label: "Lista", value: "list", icon: List },
+        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
+    ]
 
-    useEffect(() => {
-        fetchDocuments()
-    }, [])
-
-    const fetchDocuments = async () => {
-        try {
-            const res = await api.get('/billing/invoices/')
-            const results = res.data.results || res.data
-            const filtered = results.filter((i: any) =>
-                i.purchase_order ||
-                i.service_obligation ||
-                i.dte_type === 'PURCHASE_INV'
-            )
-            setDocuments(filtered)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar documentos")
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -157,9 +113,9 @@ export function PurchaseInvoicesClientView() {
             if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
             if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
             if (data.dteType) formData.append('dte_type', data.dteType)
-            if (data.documentReference) formData.append('document_reference', data.documentReference)
-            if (data.documentDate) formData.append('document_date', data.documentDate)
-            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+            if (data.document_reference) formData.append('document_reference', data.document_reference)
+            if (data.document_date) formData.append('document_date', data.document_date)
+            if (data.document_attachment) formData.append('document_attachment', data.document_attachment)
 
             await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
@@ -171,7 +127,7 @@ export function PurchaseInvoicesClientView() {
         }
     }
 
-    const columns: ColumnDef<PurchaseDocument>[] = [
+    const columns: ColumnDef<any>[] = [
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" />,
@@ -236,128 +192,41 @@ export function PurchaseInvoicesClientView() {
         },
         {
             accessorKey: "status",
-            header: "Estado",
-            cell: ({ row }) => {
-                const doc = row.original
-                const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
-                return (
-                    <div className="flex flex-col gap-1">
-                        {doc.status !== 'POSTED' && (
-                            <Badge variant={badgeStyle.variant as any} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
-                                {badgeStyle.label}
-                            </Badge>
-                        )}
-                        <div className="flex flex-wrap gap-1">
-                            {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
-                                <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
-                            )}
-                            {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-warning/50 text-warning font-bold whitespace-nowrap">
-                                    {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
-                )
-            },
+            header: () => null,
+            cell: () => null,
+            filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {
-            id: "actions",
-            header: "Acciones",
+            id: "hub_trigger",
+            header: () => null,
             cell: ({ row }) => {
-                const doc = row.original
-                const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
-
+                const item = row.original
+                const isSelected = hubConfig?.invoiceId === item.id
                 return (
-                    <div className="flex justify-center space-x-1">
-                        {doc.purchase_order ? (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => openHub({
-                                    orderId: doc.purchase_order!,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
-                                    type: 'purchase',
-                                    onActionSuccess: fetchDocuments
-                                })}
-                                title="Gestionar Orden"
-                                className="h-8 px-3"
-                            >
-                                <MoreVertical className="h-4 w-4 mr-1" />
-                                Gestionar
-                            </Button>
-                        ) : (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
-                                    title="Ver Detalle"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                </Button>
-                                {doc.status === 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setCompletingDoc(doc)}
-                                        title="Completar Folio"
-                                    >
-                                        <FileEdit className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setReceivingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
-                                    >
-                                        <Package className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {!isNote && doc.number && doc.status !== 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setNotingDoc(doc)}
-                                        title="Registrar Nota Crédito/Débito"
-                                    >
-                                        <FileBadge className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => setPayingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                    >
-                                        <Banknote className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
-                                        title="Historial de Pagos"
-                                    >
-                                        <History className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {doc.status === 'DRAFT' ? (
-                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(doc.id)} title="Eliminar"><Trash2 className="h-4 w-4" /></Button>
-                                ) : doc.status !== 'CANCELLED' ? (
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleAnnul(doc.id)} title="Anular Documento"><X className="h-4 w-4" /></Button>
-                                ) : null}
-                            </>
-                        )}
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected && isHubOpen) {
+                                    closeHub()
+                                } else {
+                                    openHub({
+                                        orderId: item.purchase_order || null,
+                                        invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type) ? item.id : null,
+                                        type: 'purchase',
+                                        onActionSuccess: fetchDocuments
+                                    })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
                     </div>
                 )
             },
@@ -366,66 +235,64 @@ export function PurchaseInvoicesClientView() {
 
     return (
         <div className="space-y-4 px-1">
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">Cargando documentos...</div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={documents}
-                    cardMode
-                    isLoading={loading}
-                    filterColumn="partner_name"
-                    searchPlaceholder="Buscar por proveedor..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Folio Pendiente", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    renderCustomView={(table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
-                            return (
-                                <div className="py-12">
-                                    <EmptyState context="search" title="No hay documentos" description="No se encontraron facturas recibidas." />
-                                </div>
-                            )
-                        }
+            <DataTable
+                columns={columns}
+                data={documents}
+                cardMode={true}
+                currentView={currentView}
+                onViewChange={(v: any) => setCurrentView(v)}
+                viewOptions={viewOptions}
+                filterColumn="partner_name"
+                searchPlaceholder="Buscar por proveedor..."
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Folio Pendiente", value: "DRAFT" },
+                            { label: "Publicado", value: "POSTED" },
+                            { label: "Pagado", value: "PAID" },
+                            { label: "Anulado", value: "CANCELLED" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+                renderCustomView={currentView === 'card' ? (table) => {
+                    const rows = table.getRowModel().rows
+                    if (rows.length === 0) {
                         return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: any) => {
-                                    const inv = row.original
-                                    const isSelected = hubConfig?.invoiceId === inv.id
-                                    
-                                    return (
-                                        <InvoiceCard
-                                            key={inv.id}
-                                            item={inv}
-                                            type="purchase_invoice"
-                                            isSelected={isSelected}
-                                            onClick={() => {
-                                                if (isSelected) {
-                                                    closeHub()
-                                                } else {
-                                                    openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
-                                                }
-                                            }}
-                                        />
-                                    )
-                                })}
+                            <div className="py-12">
+                                <EmptyState context="search" title="No hay documentos" description="No se encontraron facturas recibidas." />
                             </div>
                         )
-                    }}
-                />
-            )}
+                    }
+                    return (
+                        <div className="grid gap-3 pt-2">
+                            {rows.map((row: any) => {
+                                const inv = row.original
+                                const isSelected = hubConfig?.invoiceId === inv.id
+
+                                return (
+                                    <InvoiceCard
+                                        key={inv.id}
+                                        item={inv}
+                                        type="purchase_invoice"
+                                        isSelected={isSelected}
+                                        onClick={() => {
+                                            if (isSelected) {
+                                                closeHub()
+                                            } else {
+                                                openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
+                                            }
+                                        }}
+                                    />
+                                )
+                            })}
+                        </div>
+                    )
+                } : undefined}
+            />
             {viewingTransaction && <TransactionViewModal open={!!viewingTransaction} onOpenChange={(open) => !open && setViewingTransaction(null)} type={viewingTransaction.type} id={viewingTransaction.id} view={viewingTransaction.view} />}
             {payingDoc && <PaymentDialog open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}

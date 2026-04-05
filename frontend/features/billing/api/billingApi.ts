@@ -20,10 +20,13 @@ export const billingApi = {
         // Client-side filtering if needed (mirroring previous logic for safety, though API should handle most)
         // Previous logic filtered by sale_order OR dte_type in ['FACTURA', 'BOLETA']
         // We might want to move this to the backend or keep it here if the endpoint returns mixed types
-        invoices = (invoices as any[]).filter((i: any) =>
-            i.sale_order ||
-            ['FACTURA', 'BOLETA'].includes(i.dte_type)
-        )
+        invoices = (invoices as any[]).filter((i: any) => {
+            if (filters?.mode === 'purchase') {
+                return i.purchase_order || i.service_obligation || i.dte_type === 'PURCHASE_INV'
+            }
+            // Default to sale filtering for backward compatibility or if mode is 'sale'
+            return i.sale_order || ['FACTURA', 'BOLETA'].includes(i.dte_type)
+        })
 
         return invoices as Invoice[]
     },

@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical, Package } from "lucide-react"
+import { List, Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical, Package, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
@@ -28,10 +28,17 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
-    const { openHub, closeHub, hubConfig } = useHubPanel()
+    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
+    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+
+    const viewOptions = [
+        { label: "Lista", value: "list", icon: List },
+        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
+
+    ]
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -109,118 +116,36 @@ export function SalesInvoicesClientView() {
         },
         {
             accessorKey: "status",
-            header: "Estado",
-            cell: ({ row }) => {
-                const inv = row.original
-                return (
-                    <Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'POSTED' ? 'info' : inv.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                        {inv.status === 'CANCELLED' ? 'Anulado' : inv.status_display}
-                    </Badge>
-                )
-            },
+            header: () => null,
+            cell: () => null,
+            filterFn: (row, id, value) => value.includes(row.getValue(id)),
         },
         {
-            id: "actions",
+            id: "hub_trigger",
+            header: () => null,
             cell: ({ row }) => {
-                const inv = row.original
+                const item = row.original
+                const isSelected = hubConfig?.invoiceId === item.id
                 return (
-                    <div className="flex space-x-1">
-                        {inv.sale_order ? (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => openHub({
-                                    orderId: inv.sale_order,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) ? inv.id : null,
-                                    type: 'sale',
-                                    onActionSuccess: refetch
-                                })}
-                                title="Gestionar Orden"
-                                className="h-8 px-3 w-full"
-                            >
-                                <MoreVertical className="h-4 w-4 mr-1" />
-                                Gestionar
-                            </Button>
-                        ) : (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'details' })}
-                                    title="Ver Detalle"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                </Button>
-                                {((inv.related_documents?.payments?.length ?? 0) > 0 || inv.status === 'PAID') && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-emerald-600"
-                                        onClick={() => setViewingTransaction({ type: 'invoice', id: inv.id, view: 'history' })}
-                                        title="Historial de Pagos"
-                                    >
-                                        <History className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                {inv.status !== 'CANCELLED' && (
-                                    <>
-                                        {(inv.pending_amount ?? (inv.status === 'PAID' ? 0 : inv.total)) > 0 && inv.status === 'POSTED' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-emerald-600"
-                                                onClick={() => setPayingInv(inv)}
-                                                title={inv.dte_type === 'NOTA_CREDITO' ? "Registrar Reembolso" : "Registrar Pago"}
-                                            >
-                                                <Banknote className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        {!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && (() => {
-                                            const isDraft = inv.status === 'DRAFT'
-                                            const isPaid = inv.status === 'PAID'
-                                            const isDelivered = inv.sale_order ? inv.order_delivery_status === 'DELIVERED' : true
-                                            const disabled = isDraft || !isPaid || !isDelivered
-                                            let tooltipText = ""
-                                            if (isDraft) tooltipText = "La factura debe estar publicada (no borrador)"
-                                            else if (!isPaid) tooltipText = "La factura debe estar completamente pagada"
-                                            else if (!isDelivered) tooltipText = "La logística debe estar completamente finalizada"
-                                            const ButtonComponent = (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={disabled ? "text-muted-foreground opacity-50 cursor-not-allowed" : "text-primary"}
-                                                    onClick={() => !disabled && setNotingInvoice(inv)}
-                                                    disabled={disabled}
-                                                    title={disabled ? "" : "Registrar Nota Crédito/Débito"}
-                                                >
-                                                    <FileBadge className="h-4 w-4" />
-                                                </Button>
-                                            )
-                                            if (disabled) {
-                                                return (
-                                                    <TooltipProvider delayDuration={0}>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild><div>{ButtonComponent}</div></TooltipTrigger>
-                                                            <TooltipContent><p>{tooltipText}</p></TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                )
-                                            }
-                                            return ButtonComponent
-                                        })()}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-destructive hover:text-destructive"
-                                            onClick={() => handleAnnul(inv.id)}
-                                            title="Anular Documento"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </>
-                                )}
-                            </>
-                        )}
+                    <div className="flex justify-end pr-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => {
+                                if (isSelected && isHubOpen) {
+                                    closeHub()
+                                } else {
+                                    openHub({ orderId: item.sale_order || null, invoiceId: item.id, type: 'sale', onActionSuccess: refetch })
+                                }
+                            }}
+                        >
+                            {isSelected && isHubOpen ? (
+                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                            ) : (
+                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                            )}
+                        </Button>
                     </div>
                 )
             },
@@ -233,7 +158,10 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
-                cardMode
+                cardMode={true}
+                currentView={currentView}
+                onViewChange={(v: any) => setCurrentView(v)}
+                viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por cliente..."
                 facetedFilters={[
@@ -250,7 +178,7 @@ export function SalesInvoicesClientView() {
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={20}
-                renderCustomView={(table) => {
+                renderCustomView={currentView === 'card' ? (table) => {
                     const rows = table.getRowModel().rows
                     if (rows.length === 0) {
                         return (
@@ -291,7 +219,7 @@ export function SalesInvoicesClientView() {
                             })}
                         </div>
                     )
-                }}
+                } : undefined}
             />
 
 

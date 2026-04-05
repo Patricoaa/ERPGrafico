@@ -47,7 +47,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<LoadingFallback variant="list" />}>
                     {viewMode === 'sales' && <SalesInvoicesClientView />}
                     {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
                 </Suspense>
@@ -60,7 +60,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
                 tabLabel="Configuración"
                 fullWidth={600}
             >
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<LoadingFallback variant="list" />}>
                     <BillingSettingsView activeTab={configTab} />
                 </Suspense>
             </SettingsSheetRouteWrapper>

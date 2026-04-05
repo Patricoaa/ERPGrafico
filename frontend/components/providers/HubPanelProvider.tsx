@@ -20,8 +20,6 @@ interface HubPanelContextType {
     setHubTemporarilyHidden: (hidden: boolean) => void
     actionEngineRef: React.RefObject<any>
     triggerAction: (actionId: string) => void
-    isDocked: boolean
-    setIsDocked: (docked: boolean) => void
     isHubEffectivelyOpen: boolean // Added unified state
 }
 
@@ -38,7 +36,6 @@ export function HubPanelProvider({
     const searchParams = useSearchParams()
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
     const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
-    const [isDocked, setIsDocked] = useState(false)
     const actionEngineRef = React.useRef<any>(null)
 
     const triggerAction = useCallback((actionId: string) => {
@@ -68,7 +65,7 @@ export function HubPanelProvider({
         closeHub()
     }, [pathname, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const isHubEffectivelyOpen = isHubOpen && !isDocked && !isHubTemporarilyHidden
+    const isHubEffectivelyOpen = isHubOpen && !isHubTemporarilyHidden
 
     const value = useMemo(() => ({
         openHub,
@@ -79,10 +76,8 @@ export function HubPanelProvider({
         setHubTemporarilyHidden,
         actionEngineRef,
         triggerAction,
-        isDocked,
-        setIsDocked,
         isHubEffectivelyOpen
-    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isDocked, isHubEffectivelyOpen])
+    }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isHubEffectivelyOpen])
 
     return (
         <HubPanelContext.Provider value={value}>

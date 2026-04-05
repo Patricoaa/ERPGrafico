@@ -22,7 +22,7 @@ export function GlobalHubPanel() {
     })
 
     // Derived: check modal as well to hide UI (but keep engine alive)
-    const showFixedPanel = isHubEffectivelyOpen && !isSubModalActive
+    const showPanel = isHubEffectivelyOpen && !isSubModalActive
     const panelRef = useRef<HTMLDivElement>(null)
 
     return (
@@ -49,8 +49,8 @@ export function GlobalHubPanel() {
             )}
 
             <AnimatePresence mode="wait">
-                {/* Hub Panel (Right/Fixed) - STRICTLY MUTUALLY EXCLUSIVE WITH DOCK */}
-                {showFixedPanel && (
+                {/* Hub Panel (Right/Fixed Overlay) */}
+                {showPanel && (
                     <motion.div 
                         key="global-hub-fixed-panel"
                         ref={panelRef}

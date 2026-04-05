@@ -15,6 +15,13 @@ export interface Invoice {
         payments?: any[]
     }
     order_delivery_status?: string
+    // Purchase related fields
+    purchase_order?: number | null
+    purchase_order_number?: string | null
+    service_obligation?: number | null
+    po_receiving_status?: string | null
+    serialized_payments?: any[]
+    related_stock_moves?: any[]
     // Helper property for filtering
     is_sale_document?: boolean
 }
@@ -23,6 +30,7 @@ export interface InvoiceFilters {
     partner_name?: string
     status?: string
     dte_type?: string
+    mode?: 'sale' | 'purchase'
 }
 
 export interface AnnulInvoicePayload {
