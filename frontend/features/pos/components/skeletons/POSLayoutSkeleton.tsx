@@ -45,7 +45,7 @@ export function POSHeaderSkeleton() {
 export function POSSearchSkeleton() {
     return (
         <div className="p-4 border-b bg-background/50 space-y-4">
-            <div className="h-10 w-full bg-muted animate-pulse rounded-xl" />
+            <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
             <div className="flex gap-2 overflow-hidden">
                 {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="h-8 w-24 bg-muted animate-pulse rounded-full shrink-0" />

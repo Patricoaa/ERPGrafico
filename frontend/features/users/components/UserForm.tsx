@@ -157,7 +157,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                 onOpenChange={setOpen}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl">
+                        <div className="p-2 bg-primary/10 rounded-lg">
                             <User className="h-5 w-5 text-primary" />
                         </div>
                         <span className="font-bold tracking-tight">Ficha de Usuario</span>
@@ -177,10 +177,10 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                 contentClassName="p-0"
                 footer={
                     <div className="flex justify-end gap-3 w-full">
-                        <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
+                        <Button variant="outline" onClick={() => setOpen(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
                             Cancelar
                         </Button>
-                        <Button onClick={form.handleSubmit(onSubmit)} disabled={loading} className="rounded-xl text-xs font-bold">
+                        <Button onClick={form.handleSubmit(onSubmit)} disabled={loading} className="rounded-lg text-xs font-bold">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {initialData ? "Guardar Cambios" : "Crear Usuario"}
                         </Button>
@@ -248,7 +248,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                     control={form.control}
                                                     name="is_active"
                                                     render={({ field }) => (
-                                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-xl p-4 bg-muted/5 border-none")}>
+                                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-lg p-4 bg-muted/5 border-none")}>
                                                             <div className="space-y-0.5">
                                                                 <FormLabel className={cn("flex items-center gap-2", FORM_STYLES.label)}>
                                                                     {field.value ? <ShieldCheck className="h-4 w-4 text-success" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
@@ -388,7 +388,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                                             control={form.control}
                                                                             name="functional_groups"
                                                                             render={({ field }) => (
-                                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-dashed hover:border-primary/30 transition-colors">
+                                                                                <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-lg border border-dashed hover:border-primary/30 transition-colors">
                                                                                     <FormControl>
                                                                                         <Checkbox
                                                                                             checked={field.value?.includes(group.name)}

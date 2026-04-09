@@ -343,7 +343,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
                             onClick={() => openEditForm(sub.product)}
                             title="Editar Producto"
                         >
@@ -354,7 +354,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 rounded-xl text-amber-700 hover:text-amber-700 hover:bg-yellow-50"
+                                className="h-8 w-8 rounded-lg text-amber-700 hover:text-amber-700 hover:bg-yellow-50"
                                 onClick={() => handlePause(sub.id)}
                                 title="Pausar Suscripción"
                             >
@@ -365,7 +365,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 rounded-xl text-emerald-700 hover:text-emerald-700 hover:bg-green-50"
+                                className="h-8 w-8 rounded-lg text-emerald-700 hover:text-emerald-700 hover:bg-green-50"
                                 onClick={() => handleResume(sub.id)}
                                 title="Reanudar Suscripción"
                             >
@@ -376,7 +376,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-xl text-primary hover:text-primary hover:bg-blue-50"
+                            className="h-8 w-8 rounded-lg text-primary hover:text-primary hover:bg-blue-50"
                             onClick={() => {
                                 setCurrentHistorySubscriptionId(sub.id)
                                 setIsHistoryOpen(true)
@@ -389,7 +389,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-xl text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                                 setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
                                 setIsConfirmModalOpen(true)
@@ -485,7 +485,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             <div className="space-y-4">
 
                 {loading ? (
-                    <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
+                    <div className="rounded-lg border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
                         Cargando suscripciones...
                     </div>
                 ) : (
@@ -515,7 +515,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-xl text-amber-500 hover:bg-amber-500/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-lg text-amber-500 hover:bg-amber-500/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkPause}
                                         disabled={!canPauseAll}
                                     >
@@ -525,7 +525,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-xl text-emerald-500 hover:bg-emerald-500/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-lg text-emerald-500 hover:bg-emerald-500/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkResume}
                                         disabled={!canResumeAll}
                                     >
@@ -535,7 +535,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-xl text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-lg text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkArchive}
                                         disabled={!canArchiveAllActive}
                                     >

@@ -228,7 +228,7 @@ export function SessionCloseModal({
                             </div>
 
                             <div className="flex justify-center">
-                                <div className="w-full bg-muted/30 p-4 rounded-xl">
+                                <div className="w-full bg-muted/30 p-4 rounded-lg">
                                     <div className="text-right mb-4">
                                         <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
                                         <div className="text-3xl font-black font-mono tracking-tight text-primary">
@@ -255,7 +255,7 @@ export function SessionCloseModal({
             case 2: // Review & Difference
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="bg-card border rounded-xl p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-lg p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
@@ -267,7 +267,7 @@ export function SessionCloseModal({
                         </div>
 
                         {hasDiff ? (
-                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 space-y-3">
+                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-amber-700 font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Diferencia Detectada</span>
@@ -350,7 +350,7 @@ export function SessionCloseModal({
                                 )}
                             </div>
                         ) : (
-                            <div className="text-center p-6 bg-emerald-50 text-emerald-700 rounded-xl">
+                            <div className="text-center p-6 bg-emerald-50 text-emerald-700 rounded-lg">
                                 <span className="text-4xl block mb-2">✨</span>
                                 <div className="font-bold">¡Cierre Perfecto!</div>
                                 <div className="text-sm opacity-80">El efectivo coincide exactamente con el sistema.</div>
@@ -416,7 +416,7 @@ export function SessionCloseModal({
             case 4: // Withdrawal (Optional Step)
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="p-4 bg-muted/20 rounded-xl space-y-4">
+                        <div className="p-4 bg-muted/20 rounded-lg space-y-4">
                             <div className="space-y-4">
                                 <div className="text-right">
                                     <div className="text-xs font-bold uppercase text-muted-foreground">Monto a Retirar</div>

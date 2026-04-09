@@ -523,7 +523,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     return (
         <div className="space-y-6">
             {/* ─── Level 1 Hierarchy Toolbar ─── */}
-            <div className="flex items-center justify-between bg-white border border-border/40 p-4 rounded-xl shadow-sm">
+            <div className="flex items-center justify-between bg-white border border-border/40 p-4 rounded-lg shadow-sm">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
                         <h3 className="text-lg font-black tracking-tight text-foreground/80 uppercase">Workbench de Conciliación</h3>
@@ -553,7 +553,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             {/* ─── Sticky Balance Bar ─── */}
             <div className={cn(
-                "sticky top-4 z-40 bg-foreground text-background border shadow-2xl rounded-xl p-5 transition-all transform duration-500",
+                "sticky top-4 z-40 bg-foreground text-background border shadow-2xl rounded-lg p-5 transition-all transform duration-500",
                 (selectedLines.length > 0 || selectedPayments.length > 0) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
             )}>
                 <div className="flex items-center justify-between">

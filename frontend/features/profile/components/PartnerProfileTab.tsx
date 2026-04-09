@@ -168,7 +168,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                                         <Wallet className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -183,7 +183,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 <CardContent className="p-6">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {/* Participation Card */}
-                                        <div className="bg-muted/30 p-4 rounded-2xl border flex flex-col justify-center text-center">
+                                        <div className="bg-muted/30 p-4 rounded-lg border flex flex-col justify-center text-center">
                                             <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Participación</span>
                                             <div className="text-3xl font-extrabold text-foreground">
                                                 {summary.equity_percentage}%
@@ -192,7 +192,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                         </div>
 
                                         {/* Net Balance Card */}
-                                        <div className="md:col-span-2 bg-primary/5 p-4 rounded-2xl border border-primary/20 flex flex-col justify-center items-center text-center">
+                                        <div className="md:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20 flex flex-col justify-center items-center text-center">
                                             <span className="text-[10px] text-primary/70 uppercase font-bold tracking-widest mb-1">Saldo Particular Neto</span>
                                             <div className="text-4xl font-black text-primary">
                                                 <MoneyDisplay amount={parseFloat(summary.balance)} />
@@ -212,7 +212,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                                         <Briefcase className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -251,7 +251,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+                                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
                                         <Activity className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -295,7 +295,7 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="space-y-1.5">
             <span className={FORM_STYLES.label}>{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-xl border bg-muted/20 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
             </div>

@@ -163,7 +163,7 @@ export function PayrollCard({
                 <div className="flex justify-between items-start gap-8">
                     <div className="space-y-4 flex-1">
                         <div className="flex items-center gap-4">
-                            <div className="p-2.5 bg-primary/10 rounded-xl text-primary shadow-sm border border-primary/5">
+                            <div className="p-2.5 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5">
                                 <Sparkles className="h-7 w-7" />
                             </div>
                             <div>
@@ -209,7 +209,7 @@ export function PayrollCard({
                     {!isReadOnly && (
                         <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
                             <Badge variant="outline" className={cn(
-                                "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm border-none ring-1 ring-inset",
+                                "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border-none ring-1 ring-inset",
                                 isPosted
                                     ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
                                     : "bg-amber-50 text-amber-700 ring-amber-600/20"
@@ -229,7 +229,7 @@ export function PayrollCard({
                 </div>
 
                 {/* STATS BAR */}
-                <div className="mt-1 grid grid-cols-4 border rounded-2xl overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-slate-200/60">
+                <div className="mt-1 grid grid-cols-4 border rounded-lg overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-slate-200/60">
                     <div className="p-4 text-center space-y-1">
                         <p className={FORM_STYLES.label}>Días Pactados</p>
                         <p className="text-sm font-bold text-foreground">{payroll.agreed_days || 0}</p>
@@ -263,7 +263,7 @@ export function PayrollCard({
                     <div className="flex-1 h-px bg-slate-200" />
                 </div>
 
-                <div className="border border/60 rounded-2xl overflow-hidden shadow-sm bg-white transition-all">
+                <div className="border border/60 rounded-lg overflow-hidden shadow-sm bg-white transition-all">
                     <Table>
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">
@@ -314,7 +314,7 @@ export function PayrollCard({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-xl text-[10px] font-bold uppercase tracking-wider h-9 px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-sm"
+                            className="rounded-lg text-[10px] font-bold uppercase tracking-wider h-9 px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-sm"
                             onClick={onAddItem}
                         >
                             <Plus className="h-3.5 w-3.5" /> Agregar Concepto Manual
@@ -327,7 +327,7 @@ export function PayrollCard({
                     <div className="space-y-4 pt-2">
                         {/* APORTES PATRONALES (ONLY IF ALLOWED) */}
                         {showEmployerContributions && employerContributions.length > 0 && (
-                            <div className="space-y-4 p-5 bg-muted/50 rounded-2xl border border/60">
+                            <div className="space-y-4 p-5 bg-muted/50 rounded-lg border border/60">
                                 <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2 mb-2">
                                     <AlertCircle className="h-3 w-3" /> Costo Empresa / Aportes Patronales
                                 </h3>
@@ -353,7 +353,7 @@ export function PayrollCard({
 
                     <div className="space-y-4">
                         {/* THE LIQUID CARD */}
-                        <div className="p-7 rounded-3xl bg-primary shadow-xl shadow-primary/20 border-none text-white relative overflow-hidden group">
+                        <div className="p-7 rounded-lg bg-primary shadow-xl shadow-primary/20 border-none text-white relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                                 <DollarSign className="h-20 w-20" />
                             </div>
@@ -365,7 +365,7 @@ export function PayrollCard({
 
                         {/* HISTORIAL DE PAGOS (Moved to right column) */}
                         {(unifiedPayments.length > 0) && (
-                            <div className="bg-muted/50 rounded-2xl border border/60 p-5 space-y-4">
+                            <div className="bg-muted/50 rounded-lg border border/60 p-5 space-y-4">
                                 <div className="flex justify-between items-center pb-2 border-b border/60">
                                     <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Historial de Pagos</h4>
                                     <span className={cn(FORM_STYLES.label, "text-muted-foreground opacity-20 uppercase tracking-widest")}>Recibos</span>
@@ -404,9 +404,9 @@ export function PayrollCard({
 
                         {/* STATUS MESSAGE FOR EMPLOYEE */}
                         {isPosted && isSalaryPaid && (
-                            <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-between transition-all hover:shadow-md">
+                            <div className="p-5 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-between transition-all hover:shadow-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-100 rounded-xl">
+                                    <div className="p-2 bg-emerald-100 rounded-lg">
                                         <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                                     </div>
                                     <div className="flex flex-col">

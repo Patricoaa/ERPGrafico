@@ -102,7 +102,7 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                         <FileSpreadsheet className="h-5 w-5" />
                     </div>
                     <span className="font-bold tracking-tight">Generar Facturas de Liquidación</span>
@@ -117,13 +117,13 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
             }
             footer={
                 <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="rounded-xl text-xs font-bold"
+                        className="rounded-lg text-xs font-bold"
                     >
                         {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {loading ? "Procesando..." : "Generar y Finalizar"}

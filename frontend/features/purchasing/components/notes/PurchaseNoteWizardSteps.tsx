@@ -54,7 +54,7 @@ export function Step1_GeneralInfo({
                     <div className="grid grid-cols-2 gap-4">
                         <div
                             className={cn(
-                                "cursor-pointer rounded-xl border-2 p-4 transition-all hover:bg-muted/50",
+                                "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_CREDITO"
                                     ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20"
                                     : "border-muted"
@@ -76,7 +76,7 @@ export function Step1_GeneralInfo({
 
                         <div
                             className={cn(
-                                "cursor-pointer rounded-xl border-2 p-4 transition-all hover:bg-muted/50",
+                                "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_DEBITO"
                                     ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20"
                                     : "border-muted"
@@ -160,7 +160,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 </div>
             </div>
 
-            <div className="border rounded-xl overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+            <div className="border rounded-lg overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/30 border-b">
                         <tr>
@@ -260,7 +260,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 )}
             </div>
 
-            <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl flex gap-3 text-sm text-blue-800">
+            <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-lg flex gap-3 text-sm text-blue-800">
                 <AlertCircle className="h-5 w-5 shrink-0" />
                 <p>
                     Los montos calculados aquí son referenciales. El sistema ajustará automáticamente los impuestos (IVA)

@@ -68,12 +68,12 @@ export function DocumentListModal({
         >
             <div className="flex-1 overflow-y-auto py-4">
                 {data.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed">
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed">
                         <Icon className="h-16 w-16 mb-4 opacity-10" />
                         <p className="font-medium">No se han encontrado registros en esta categoría.</p>
                     </div>
                 ) : (
-                    <div className="rounded-xl border shadow-sm overflow-hidden">
+                    <div className="rounded-lg border shadow-sm overflow-hidden">
                         <Table>
                             <TableHeader className="bg-muted/50">
                                 <TableRow>

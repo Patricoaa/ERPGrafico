@@ -153,7 +153,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => { setEditingRule(row.original); setOpenDialog(true) }}
                     >
                         <Edit className="h-3.5 w-3.5" />
@@ -161,7 +161,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                        className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
                     >
                         <Trash2 className="h-3.5 w-3.5" />
                     </Button>

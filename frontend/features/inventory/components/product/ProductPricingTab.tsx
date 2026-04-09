@@ -32,7 +32,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
-                <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
+                <div className={cn("flex items-center justify-between p-4 rounded-lg border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
                     <div className="flex gap-4 items-center">
                         <div className="p-2 rounded-lg bg-primary/10">
                             <Info className="h-5 w-5 text-primary" />
@@ -47,7 +47,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                         variant="default"
                         size="sm"
                         onClick={() => onOpenRuleDialog()}
-                        className="rounded-xl text-xs font-bold"
+                        className="rounded-lg text-xs font-bold"
                     >
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Regla
@@ -55,7 +55,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                 </div>
 
                 {!initialData && (
-                    <div className="py-12 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-center px-6">
+                    <div className="py-12 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-6">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                             <Pencil className="h-6 w-6 text-muted-foreground" />
                         </div>
@@ -65,7 +65,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                 )}
 
                 {initialData && (
-                    <div className="border rounded-2xl overflow-hidden shadow-sm">
+                    <div className="border rounded-lg overflow-hidden shadow-sm">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">

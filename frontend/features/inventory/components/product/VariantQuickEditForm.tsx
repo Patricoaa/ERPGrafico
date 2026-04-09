@@ -92,10 +92,10 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
   }, [form, variant, onSaved]);
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-2xl border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-card rounded-lg border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between p-4 border-b bg-muted/10">
         <div className="flex items-center gap-3">
-           <div className="p-2 rounded-xl bg-primary/10">
+           <div className="p-2 rounded-lg bg-primary/10">
              <Layers className="h-4 w-4 text-primary" />
            </div>
            <div>
@@ -178,7 +178,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                   </Badge>
                 </div>
                 
-                <div className="p-4 border rounded-2xl bg-muted/5 border-dashed space-y-4">
+                <div className="p-4 border rounded-lg bg-muted/5 border-dashed space-y-4">
                     <div className="flex items-center justify-between">
                         <p className="text-[11px] font-medium text-muted-foreground">
                             Recetas configuradas: <span className="text-foreground font-bold">{availableBOMs.length}</span>
@@ -190,7 +190,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                           type="button" 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs h-9 border-dashed rounded-xl gap-2 text-primary hover:bg-primary/5 hover:border-primary/40"
+                          className="w-full text-xs h-9 border-dashed rounded-lg gap-2 text-primary hover:bg-primary/5 hover:border-primary/40"
                           onClick={() => onTabChange?.("manufacturing")}
                         >
                             <Plus className="h-3.5 w-3.5" /> Crear Primera Receta
@@ -200,7 +200,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                             type="button" 
                             variant="secondary" 
                             size="sm" 
-                            className="w-full text-xs h-9 rounded-xl gap-2 font-bold"
+                            className="w-full text-xs h-9 rounded-lg gap-2 font-bold"
                             onClick={() => onTabChange?.("manufacturing")}
                          >
                             <Settings2 className="h-3.5 w-3.5" /> Gestionar Listas de Materiales

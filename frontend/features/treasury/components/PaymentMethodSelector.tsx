@@ -158,7 +158,7 @@ export function PaymentMethodSelector({
     }
 
     if (loading && availableTypes.length === 0) {
-        return <div className="h-24 w-full animate-pulse bg-muted rounded-xl" />
+        return <div className="h-24 w-full animate-pulse bg-muted rounded-lg" />
     }
 
     if (availableTypes.length === 0) {
@@ -186,7 +186,7 @@ export function PaymentMethodSelector({
                             <Label
                                 htmlFor={`pm-type-${type.id}`}
                                 className={cn(
-                                    "flex flex-col items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all hover:bg-accent",
+                                    "flex flex-col items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-accent",
                                     isSelected
                                         ? `border-primary/50 bg-accent ring-1 ring-primary/20`
                                         : "border-muted bg-popover"

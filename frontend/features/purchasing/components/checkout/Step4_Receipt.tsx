@@ -203,7 +203,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         <div className="space-y-6">
             {/* Removed Warehouse Selector as per requirements */}
 
-            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
                 <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">
                     <Package className="h-4 w-4" />
                     Tipo de {receiptLabel}
@@ -217,7 +217,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <div key={type.id} className="relative">
                             <Label
                                 htmlFor={`receipt-${type.id}`}
-                                className={`flex items-start gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
+                                className={`flex items-start gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
                                     }`}
                             >
                                 <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="mt-1" />
@@ -355,7 +355,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {receiptData.type === 'DEFERRED' && (
-                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400">
+                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-600 dark:text-amber-400">
                     <div className="p-2 rounded-lg bg-background border border-amber-500/20">
                         <FileText className="h-5 w-5" />
                     </div>

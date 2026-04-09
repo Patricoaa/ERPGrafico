@@ -711,7 +711,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                         </div>
                         {type === 'CARD_TERMINAL' && (
-                            <div className="mt-4 p-4 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="mt-4 p-4 rounded-lg border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
                                 <div className="flex items-center gap-2 text-primary font-bold">
                                     <CreditCard className="h-4 w-4" /> Configuración de Recaudación
                                 </div>

@@ -57,7 +57,7 @@ export function CashMovementModal({
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10">
+                    <div className="p-2 rounded-lg bg-primary/10">
                         <ArrowLeftRight className="h-5 w-5 text-primary" />
                     </div>
                     <span>Nuevo Movimiento de Tesorería</span>

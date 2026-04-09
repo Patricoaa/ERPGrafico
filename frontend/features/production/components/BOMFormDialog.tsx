@@ -339,7 +339,7 @@ export function BOMFormDialog({
             className="max-w-[1200px]"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-xl text-primary shadow-sm border border-primary/5">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5">
                         <Workflow className="h-5 w-5" />
                     </div>
                     <span className="font-bold tracking-tight">
@@ -362,7 +362,7 @@ export function BOMFormDialog({
             }
             footer={
                 <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
                         Cancelar
                     </Button>
                     <Button
@@ -413,10 +413,10 @@ export function BOMFormDialog({
                                     }}
                                     disabled={!!bomToEdit}
                                 >
-                                    <SelectTrigger className="h-10 w-full rounded-xl bg-background border-border shadow-sm transition-all focus:ring-primary/20">
+                                    <SelectTrigger className="h-10 w-full rounded-lg bg-background border-border shadow-sm transition-all focus:ring-primary/20">
                                         <SelectValue placeholder="Seleccione variante..." />
                                     </SelectTrigger>
-                                    <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-xl overflow-hidden min-w-[320px]">
+                                    <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-lg overflow-hidden min-w-[320px]">
                                         {loadingVariants ? (
                                             <div className="p-3 text-[10px] text-center text-muted-foreground flex flex-col items-center gap-2">
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -502,7 +502,7 @@ export function BOMFormDialog({
                                     render={({ field }) => (
                                         <FormItem>
                                             <div className={cn(
-                                                "flex items-center gap-3 p-2 rounded-xl border border-border/50 transition-colors shadow-sm",
+                                                "flex items-center gap-3 p-2 rounded-lg border border-border/50 transition-colors shadow-sm",
                                                 field.value ? "bg-primary/5 border-primary/20" : "bg-muted/5 border-border"
                                             )}>
                                                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border">
@@ -590,7 +590,7 @@ export function BOMFormDialog({
                         </div>
 
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-primary/10 rounded-lg">
                                         <Package className="h-4 w-4 text-primary" />
@@ -608,7 +608,7 @@ export function BOMFormDialog({
                                     type="button"
                                     size="sm"
                                     onClick={() => appendMaterial({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
-                                    className="gap-2 rounded-xl h-9 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                                    className="gap-2 rounded-lg h-9 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Agregar Línea
@@ -616,7 +616,7 @@ export function BOMFormDialog({
                             </div>
 
                             {materialFields.length > 0 && (
-                                <div className="border rounded-2xl overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm border-border/60">
+                                <div className="border rounded-lg overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm border-border/60">
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
@@ -793,7 +793,7 @@ export function BOMFormDialog({
                             )}
 
                             {materialFields.length === 0 && (
-                                <div className="p-6 text-center text-muted-foreground border rounded-xl border-dashed bg-muted/5">
+                                <div className="p-6 text-center text-muted-foreground border rounded-lg border-dashed bg-muted/5">
                                     <Package className="h-6 w-6 mx-auto mb-2 opacity-50 text-muted-foreground" />
                                     <p className="text-xs font-medium">Sin materias primas</p>
                                     <p className="text-[10px] opacity-70 mt-0.5">Defina los componentes y cantidades necesarias para fabricar el producto.</p>
@@ -821,7 +821,7 @@ export function BOMFormDialog({
                         </div>
 
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/50">
+                            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-primary/10 rounded-lg">
                                         <Truck className="h-4 w-4 text-primary" />
@@ -843,7 +843,7 @@ export function BOMFormDialog({
                                         supplier: "", supplier_name: "",
                                         gross_price: 0, document_type: "FACTURA", notes: ""
                                     })}
-                                    className="gap-2 rounded-xl h-9 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                                    className="gap-2 rounded-lg h-9 px-4 font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Agregar Servicio
@@ -851,7 +851,7 @@ export function BOMFormDialog({
                             </div>
 
                             {serviceFields.length > 0 && (
-                                <div className="border rounded-2xl overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm border-border/60">
+                                <div className="border rounded-lg overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm border-border/60">
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/60">
@@ -1051,7 +1051,7 @@ export function BOMFormDialog({
                             )}
 
                             {serviceFields.length === 0 && (
-                                <div className="p-6 text-center text-muted-foreground border rounded-xl border-dashed bg-muted/5">
+                                <div className="p-6 text-center text-muted-foreground border rounded-lg border-dashed bg-muted/5">
                                     <Truck className="h-6 w-6 mx-auto mb-2 opacity-50 text-muted-foreground" />
                                     <p className="text-xs font-medium">Sin servicios tercerizados</p>
                                     <p className="text-[10px] opacity-70 mt-0.5">Defina los servicios tercerizados necesarios para fabricar el producto.</p>

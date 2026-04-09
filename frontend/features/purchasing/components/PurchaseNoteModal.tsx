@@ -234,7 +234,7 @@ export function PurchaseNoteModal({
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-2xl ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                    <div className={`p-3 rounded-lg ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100' : 'bg-blue-100'}`}>
                         <FileBadge className={`h-6 w-6 ${noteType === 'NOTA_CREDITO' ? 'text-amber-600' : 'text-primary'}`} />
                     </div>
                     <div>

@@ -156,7 +156,7 @@ export function Step2_Logistics({
                 </p>
 
                 {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 mt-2">
+                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 mt-2">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
@@ -192,7 +192,7 @@ export function Step2_Logistics({
                     <Label
                         htmlFor="del-immediate"
                         className={cn(
-                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
                             hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                         )}
@@ -210,7 +210,7 @@ export function Step2_Logistics({
                     <Label
                         htmlFor="del-scheduled"
                         className={cn(
-                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
                         )}
                     >
@@ -227,7 +227,7 @@ export function Step2_Logistics({
                     <Label
                         htmlFor="del-partial"
                         className={cn(
-                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
                         )}
                     >

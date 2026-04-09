@@ -208,7 +208,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     if (form.watch("parent_template")) {
         return (
             <TabsContent value="variants" className="mt-0 p-6 text-center space-y-4">
-                <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-3xl border-2 border-dashed">
+                <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-lg border-2 border-dashed">
                     <Layers className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-bold">Este producto es una variante</h3>
                     <p className="text-sm text-muted-foreground">
@@ -244,14 +244,14 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         variant="outline" 
                         size="sm" 
                         onClick={fetchVariants}
-                        className="text-xs rounded-xl border-primary/20 hover:bg-primary/5 font-bold"
+                        className="text-xs rounded-lg border-primary/20 hover:bg-primary/5 font-bold"
                     >
                         <RefreshCw className="h-3.5 w-3.5 mr-2" /> Actualizar
                     </Button>
                     
                     <Button 
                         size="sm" 
-                        className="text-xs font-bold rounded-xl"
+                        className="text-xs font-bold rounded-lg"
                         disabled={availableAttributes.length === 0}
                         onClick={() => setIsSheetOpen(true)}
                     >
@@ -270,7 +270,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <div className="flex flex-col h-full p-6 sm:p-8">
                             <SheetHeader className="mb-6 shrink-0">
                                 <SheetTitle className="flex items-center gap-3 text-xl font-bold">
-                                    <div className="p-2.5 rounded-xl bg-violet-100/80">
+                                    <div className="p-2.5 rounded-lg bg-violet-100/80">
                                         <Wand2 className="h-6 w-6 text-violet-700" />
                                     </div>
                                     GENERAR COMBINACIONES
@@ -280,11 +280,11 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                                 <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                                     {availableAttributes.map(attr => (
-                                        <div key={attr.id} className="space-y-4 p-5 border rounded-2xl bg-white shadow-sm">
+                                        <div key={attr.id} className="space-y-4 p-5 border rounded-lg bg-white shadow-sm">
                                             <Label className={cn(FORM_STYLES.label, "font-bold text-sm text-foreground/80 tracking-wide uppercase")}>{attr.name}</Label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {attr.values.map(val => (
-                                                    <div key={val.id} className="flex items-center space-x-3 p-3 rounded-xl border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">
+                                                    <div key={val.id} className="flex items-center space-x-3 p-3 rounded-lg border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">
                                                         <Checkbox
                                                             id={`val-${val.id}`}
                                                             checked={selectedValues[attr.id]?.includes(val.id) || false}
@@ -303,7 +303,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
                                 <div className="shrink-0 mt-8 pt-6 border-t">
                                     <Button
-                                        className="w-full h-14 rounded-xl font-bold text-md shadow-md bg-violet-700 hover:bg-violet-800 text-white transition-colors"
+                                        className="w-full h-14 rounded-lg font-bold text-md shadow-md bg-violet-700 hover:bg-violet-800 text-white transition-colors"
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
@@ -327,7 +327,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 
                 {/* Left: Master Table */}
                 <div className={cn(
-                    "flex-1 rounded-2xl border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
+                    "flex-1 rounded-lg border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
                     (activeEditVariant || selectedVariantIds.length > 0) ? "md:w-3/5 lg:w-2/3" : "w-full"
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">

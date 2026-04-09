@@ -352,7 +352,7 @@ export function PurchaseCheckoutWizard({
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-2xl">
+                    <div className="p-3 bg-primary/10 rounded-lg">
                         <ShoppingCart className="h-6 w-6 text-primary" />
                     </div>
                     <div>

@@ -221,7 +221,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 rounded-2xl text-primary shadow-sm border border-blue-100 hidden sm:block">
+                            <div className="p-3 bg-blue-50 rounded-lg text-primary shadow-sm border border-blue-100 hidden sm:block">
                                 <Calculator className="h-6 w-6" />
                             </div>
                             <div className="flex flex-col">

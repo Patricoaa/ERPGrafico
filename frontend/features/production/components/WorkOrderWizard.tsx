@@ -827,7 +827,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                                     if (v?.uom) setNewMaterialUoM(v.uom.toString())
                                                                                                 }}
                                                                                             >
-                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-xl">
+                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-lg">
                                                                                                     <SelectValue placeholder="Seleccione variante requerida..." />
                                                                                                 </SelectTrigger>
                                                                                                 <SelectContent>

@@ -51,7 +51,7 @@ export function Step0_Supplier({
         <div className="space-y-8 flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto">
             <div className="relative">
                 <div className="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                <div className="relative bg-background p-6 rounded-2xl shadow-xl border-2 border-primary/20">
+                <div className="relative bg-background p-6 rounded-lg shadow-xl border-2 border-primary/20">
                     <Building2 className="h-12 w-12 text-primary" />
                 </div>
             </div>

@@ -42,7 +42,7 @@
   --info-foreground: oklch(0.99 0.01 240);
 
   /* GEOMETRY & TYPOGRAPHY */
-  --radius: 0.25rem;
+  --radius: 0.75rem;
   /* Sharp Industrial look */
   --ring: oklch(0.65 0.25 310 / 0.4);
 

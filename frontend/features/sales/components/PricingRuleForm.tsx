@@ -515,7 +515,7 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                 control={form.control}
                                 name="active"
                                 render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-xl bg-muted/5")}>
+                                    <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg bg-muted/5")}>
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}

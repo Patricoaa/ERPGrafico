@@ -249,7 +249,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 border rounded-xl bg-warning/5 space-y-3 border-warning/10">
+                                    <div className="p-4 border rounded-lg bg-warning/5 space-y-3 border-warning/10">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox id="is-physical-p" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
                                             <Label htmlFor="is-physical-p" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>

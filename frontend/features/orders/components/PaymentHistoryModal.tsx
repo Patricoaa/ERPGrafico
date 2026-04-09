@@ -53,12 +53,12 @@ export function PaymentHistoryModal({
         >
             <div className="flex flex-col">
                 {payments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed mt-4">
+                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed mt-4">
                         <Landmark className="h-16 w-16 mb-4 opacity-10" />
                         <p className="font-medium text-lg">No se han registrado pagos aún.</p>
                     </div>
                 ) : (
-                    <div className="mt-4 rounded-xl border shadow-sm overflow-hidden">
+                    <div className="mt-4 rounded-lg border shadow-sm overflow-hidden">
                         <Table>
                             <TableHeader className="bg-muted/50">
                                 <TableRow>

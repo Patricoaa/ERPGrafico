@@ -365,7 +365,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                 </Button>
                             </div>
 
-                            <div className="rounded-2xl border border-dashed">
+                            <div className="rounded-lg border border-dashed">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>

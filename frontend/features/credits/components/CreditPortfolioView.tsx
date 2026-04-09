@@ -75,7 +75,7 @@ function KpiCard({ label, value, sub, icon: Icon, color }: {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "rounded-2xl border bg-card p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden",
+                "rounded-lg border bg-card p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden",
             )}
         >
             <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
@@ -83,7 +83,7 @@ function KpiCard({ label, value, sub, icon: Icon, color }: {
             </div>
             <div className="flex items-center justify-between relative z-10">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-                <div className={cn("p-2 rounded-xl border", color)}>
+                <div className={cn("p-2 rounded-lg border", color)}>
                     <Icon className="h-4 w-4" />
                 </div>
             </div>

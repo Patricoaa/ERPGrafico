@@ -329,7 +329,7 @@ export const ActionCategory = forwardRef(({
         <>
             {!headless && (
                 <div className={cn(
-                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-2xl border bg-card/50 shadow-sm")
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50 shadow-sm")
                 )}>
                     {layout === 'list' && (category.icon || category.label) && (
                         <div className="flex items-center gap-2 pb-2 border-b border-border/50">

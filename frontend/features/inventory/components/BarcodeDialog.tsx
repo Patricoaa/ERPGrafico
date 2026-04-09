@@ -182,7 +182,7 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl border-2 border-dashed min-h-[160px]">
+                    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-dashed min-h-[160px]">
                         {barcodeValue ? (
                             <svg ref={setRef} className="max-w-full h-auto" />
                         ) : (

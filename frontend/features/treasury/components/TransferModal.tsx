@@ -141,7 +141,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 </span>
             }
             footer={footerContent}
-            className="max-w-lg rounded-2xl"
+            className="max-w-lg rounded-lg"
             contentClassName="bg-white dark:bg-slate-950 p-6"
         >
             <div className="space-y-6">

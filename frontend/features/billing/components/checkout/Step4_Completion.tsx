@@ -80,11 +80,11 @@ export function Step4_Completion({
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                            <div className="bg-muted/20 p-4 rounded-xl space-y-1">
+                            <div className="bg-muted/20 p-4 rounded-lg space-y-1">
                                 <p className="text-[10px] font-black uppercase text-muted-foreground/60">Folio</p>
                                 <p className="text-sm font-bold truncate">{invoice.number}</p>
                             </div>
-                            <div className="bg-muted/20 p-4 rounded-xl space-y-1">
+                            <div className="bg-muted/20 p-4 rounded-lg space-y-1">
                                 <p className="text-[10px] font-black uppercase text-muted-foreground/60">Fecha</p>
                                 <p className="text-sm font-bold">{formatPlainDate(invoice.date)}</p>
                             </div>
@@ -97,7 +97,7 @@ export function Step4_Completion({
                 <Button
                     onClick={handleComplete}
                     disabled={loading}
-                    className="group w-full py-8 rounded-2xl font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl hover:shadow-primary/30"
+                    className="group w-full py-8 rounded-lg font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl hover:shadow-primary/30"
                 >
                     {loading ? (
                         <>
@@ -113,10 +113,10 @@ export function Step4_Completion({
                 </Button>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1 py-6 rounded-xl font-bold text-xs gap-2">
+                    <Button variant="outline" className="flex-1 py-6 rounded-lg font-bold text-xs gap-2">
                         <Printer className="h-4 w-4" /> Imprimir Borrador
                     </Button>
-                    <Button variant="outline" className="flex-1 py-6 rounded-xl font-bold text-xs gap-2">
+                    <Button variant="outline" className="flex-1 py-6 rounded-lg font-bold text-xs gap-2">
                         <FileText className="h-4 w-4" /> Ver Factura Original
                     </Button>
                 </div>

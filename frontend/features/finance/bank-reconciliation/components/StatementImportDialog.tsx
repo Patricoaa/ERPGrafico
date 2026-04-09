@@ -261,7 +261,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             size={step === 'MAPPING' ? "full" : "lg"}
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-warning/10 text-warning shadow-sm border border-warning/5">
+                    <div className="p-3 rounded-lg bg-warning/10 text-warning shadow-sm border border-warning/5">
                         <Upload className="h-6 w-6" />
                     </div>
                     <div className="space-y-1">
@@ -283,7 +283,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                         variant="ghost"
                         onClick={step === 'MAPPING' ? () => setStep('UPLOAD') : handleClose}
                         disabled={loading}
-                        className="rounded-xl px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
+                        className="rounded-lg px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
                     >
                         {step === 'MAPPING' ? "Atrás" : "Cancelar"}
                     </Button>
@@ -293,7 +293,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                             onClick={handleNext} 
                             disabled={loading || success || (step === 'UPLOAD' && !file)}
                             className={cn(
-                                "rounded-xl px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
+                                "rounded-lg px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
                                 step === 'UPLOAD' && isGenericFormat() 
                                     ? "bg-primary hover:bg-primary/90 shadow-primary/20" 
                                     : "bg-success hover:bg-success/90 shadow-success/20"
@@ -321,7 +321,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
                 {step === 'UPLOAD' && (
                     <div className="space-y-10 py-4 max-w-xl mx-auto">
-                        <div className="p-8 rounded-3xl bg-muted/5 border border-border/50 space-y-8">
+                        <div className="p-8 rounded-lg bg-muted/5 border border-border/50 space-y-8">
                             <div className="space-y-2">
                                 <Label className={FORM_STYLES.label}>Cuenta Corriente de Tesorería *</Label>
                                 <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
@@ -398,7 +398,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                 {step === 'MAPPING' && previewData && (
                     <div className="space-y-8 max-w-[95vw] mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="rounded-3xl border border-border/50 shadow-xl shadow-primary/5 p-1 bg-card overflow-hidden">
+                        <div className="rounded-lg border border-border/50 shadow-xl shadow-primary/5 p-1 bg-card overflow-hidden">
                             <div className="max-h-[60vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
                                 <Table className="w-max min-w-full border-separate border-spacing-0">
                                     <TableHeader className="sticky top-0 z-20">
@@ -461,7 +461,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 items-center justify-center p-4 rounded-2xl bg-muted/5 border border-dashed border-border/60">
+                        <div className="flex flex-wrap gap-3 items-center justify-center p-4 rounded-lg bg-muted/5 border border-dashed border-border/60">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mr-2">Estado de Mapeo:</span>
                             {REQUIRED_FIELDS.map(f => {
                                 const labels: Record<string, string> = {
@@ -492,7 +492,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                 {error && (
                     <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+                        <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
                             <AlertCircle className="h-4 w-4 text-destructive" />
                             <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
                                 {error}
@@ -503,7 +503,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
 
                 {success && (
                     <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert className="rounded-2xl border-success/20 bg-success/5">
+                        <Alert className="rounded-lg border-success/20 bg-success/5">
                             <CheckCircle2 className="h-4 w-4 text-success" />
                             <AlertDescription className="text-xs font-black uppercase tracking-[0.2em] text-success">
                                 Importación Finalizada con Éxito

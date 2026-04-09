@@ -221,7 +221,7 @@ export function InventoryContributionModal({
             <DialogContent className="sm:max-w-[560px]">
                 <DialogHeader className="mb-4">
                     <DialogTitle className="flex items-center gap-3 text-lg font-bold tracking-tight">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
                             <Package className="h-5 w-5" />
                         </div>
                         Aporte / Retiro de Bienes
@@ -410,7 +410,7 @@ export function InventoryContributionModal({
                         type="button"
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
+                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
                     >
                         Cancelar
                     </Button>
@@ -418,7 +418,7 @@ export function InventoryContributionModal({
                         onClick={handleSubmit}
                         disabled={isLoading}
                         className={cn(
-                            "rounded-xl text-xs font-bold",
+                            "rounded-lg text-xs font-bold",
                             moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
                         )}
                     >

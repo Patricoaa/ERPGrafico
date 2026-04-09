@@ -111,7 +111,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 if (!iconName) return <div className="flex justify-center w-full">-</div>
                 return (
                     <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-muted/30 border border-muted-foreground/10 transition-colors">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
                                 const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
@@ -136,10 +136,10 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             header: () => <div className="text-center font-bold">Acciones</div>,
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive" onClick={() => handleDelete(row.original)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive" onClick={() => handleDelete(row.original)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>

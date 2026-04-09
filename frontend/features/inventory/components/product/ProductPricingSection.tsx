@@ -50,7 +50,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     // UNLESS forceEdit is true (for simplified variant editing)
     if (hasVariants && !forceEdit) {
         return (
-            <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200">
+            <div className="p-6 rounded-lg bg-amber-50/50 border border-amber-200">
                 <div className="flex items-start gap-3">
                     <Info className="h-5 w-5 text-amber-600 mt-0.5" />
                     <div>
@@ -148,7 +148,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
 
                 <div className={cn("space-y-2", isDynamicPricing && "opacity-50")}>
                     <Label className={FORM_STYLES.label}>Impuestos (IVA)</Label>
-                    <div className="h-10 flex items-center px-4 rounded-xl bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
+                    <div className="h-10 flex items-center px-4 rounded-lg bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
                         + {formatCurrency(salePriceGross - salePrice)}
                     </div>
                 </div>
@@ -195,7 +195,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                                 variant="outline"
                                                 role="combobox"
                                                 disabled={isDisabled}
-                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-xl font-medium text-xs")}
+                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-lg font-medium text-xs")}
                                             >
                                                 {field.value
                                                     ? allowedUoms.find((u) => u.id.toString() === field.value.toString())?.name
@@ -259,7 +259,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                 {(initialData || Number(salePrice) > 0) && (
                     <div className="md:col-span-4 flex flex-col pt-4">
                         <div className={cn(
-                            "h-full flex flex-col justify-center p-4 rounded-xl border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
+                            "h-full flex flex-col justify-center p-4 rounded-lg border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
                             marginPercentage > 30
                                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                 : marginPercentage > 15
