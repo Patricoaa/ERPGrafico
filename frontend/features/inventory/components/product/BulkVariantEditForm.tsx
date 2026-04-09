@@ -95,7 +95,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   }
 
   return (
-    <div className="flex flex-col h-full bg-blue-50/30 rounded-2xl border border-blue-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-blue-50/30 rounded-lg border border-blue-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between p-4 border-b bg-blue-50/80">
         <div>
            <div className="flex items-center gap-2 mb-1">

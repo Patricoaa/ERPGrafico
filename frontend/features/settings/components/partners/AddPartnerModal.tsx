@@ -103,7 +103,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
 
                 <div className="space-y-6 py-4">
                     {/* Selector de nuevo socio */}
-                    <div className="grid gap-4 p-4 border rounded-xl bg-muted/30">
+                    <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
                         <div className="grid gap-2">
                             <Label>Seleccionar Persona / Empresa</Label>
                             <AdvancedContactSelector 
@@ -148,7 +148,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                             </div>
                         </div>
 
-                        <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+                        <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50">

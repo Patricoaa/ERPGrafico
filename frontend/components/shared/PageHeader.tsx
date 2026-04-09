@@ -86,7 +86,7 @@ export function PageHeader({
                     >
                         {/* Icon Slot with Loading Pulse */}
                         <div className={cn(
-                            "relative p-2 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5 shrink-0 transition-all duration-300",
+                            "relative p-2 rounded-lg bg-primary/10 text-primary shadow-sm border border-primary/5 shrink-0 transition-all duration-300",
                             isLoading && "animate-pulse"
                         )}>
                             {iconName ? (
@@ -98,7 +98,7 @@ export function PageHeader({
                             )}
                             
                             {isLoading && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-xl">
+                                <div className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg">
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                 </div>
                             )}
@@ -190,7 +190,7 @@ export function PageHeader({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300"
+                                    className="h-9 w-9 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300"
                                     title="Configuración de Módulo"
                                 >
                                     <DynamicIcon name="settings" className="h-5 w-5" />

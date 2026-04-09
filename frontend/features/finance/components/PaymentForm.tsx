@@ -186,7 +186,7 @@ export function PaymentForm({
         if (initialData) return null;
 
         return (
-            <Button className="rounded-xl shadow-md" onClick={() => setOpen(true)}>
+            <Button className="rounded-lg shadow-md" onClick={() => setOpen(true)}>
                 {triggerText}
             </Button>
         )
@@ -214,7 +214,7 @@ export function PaymentForm({
                 <Form {...form}>
                     <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <fieldset disabled={loading} className="space-y-6 group">
-                            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border group-disabled:opacity-60 transition-opacity">
+                            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border group-disabled:opacity-60 transition-opacity">
                                 {!initialData && (
                                 <FormField
                                     control={form.control}

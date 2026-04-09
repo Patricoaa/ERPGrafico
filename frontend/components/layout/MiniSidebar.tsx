@@ -119,7 +119,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                 className="mb-6 cursor-pointer"
                 onClick={() => onCategoryChange("dashboard")}
             >
-                <div className="w-11 h-11 rounded-[14px] bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-[0_8px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+                <div className="w-11 h-11 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-[0_8px_16px_rgba(0,0,0,0.3)] overflow-hidden">
                     {logo ? (
                         <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
@@ -143,7 +143,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => onCategoryChange(item.id)}
                                         className={cn(
-                                            "p-3.5 rounded-[12px] transition-all duration-300 group relative flex items-center justify-center",
+                                            "p-3.5 rounded-md transition-all duration-300 group relative flex items-center justify-center",
                                             activeCategory === item.id
                                                 ? "bg-primary text-primary-foreground shadow-[0_12px_24px_rgba(var(--primary),0.25)]"
                                                 : "text-sidebar-foreground/30 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -177,7 +177,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                     <motion.button
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
-                                        className="relative p-2.5 rounded-[12px] text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+                                        className="relative p-2.5 rounded-md text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
                                     >
                                         <Bell className="h-5 w-5" />
                                         {unreadCount > 0 && (
@@ -299,7 +299,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                             <TooltipTrigger asChild>
                                 <DropdownMenuTrigger asChild>
                                     <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
-                                        <Button variant="ghost" className="p-0 rounded-[12px] h-11 w-11 overflow-hidden group">
+                                        <Button variant="ghost" className="p-0 rounded-md h-11 w-11 overflow-hidden group">
                                             <Avatar className="h-full w-full border border-primary/20 bg-muted/20">
                                                 <AvatarImage src="" alt="User" />
                                                 <AvatarFallback className="bg-primary/5 text-primary font-black text-[10px] tracking-tighter">

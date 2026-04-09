@@ -313,7 +313,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                 control={form.control}
                                 name="allowed_treasury_account_ids"
                                 render={({ field }) => (
-                                    <FormItem className="space-y-2 border rounded-xl p-4 bg-muted/10 shadow-sm">
+                                    <FormItem className="space-y-2 border rounded-lg p-4 bg-muted/10 shadow-sm">
                                         <div className="flex justify-between items-center mb-2">
                                             <FormLabel className={cn(FORM_STYLES.label, "mb-0")}>Cuentas Permitidas</FormLabel>
                                             <Badge variant="secondary" className="font-mono">{field.value.length} SELECCIONADAS</Badge>

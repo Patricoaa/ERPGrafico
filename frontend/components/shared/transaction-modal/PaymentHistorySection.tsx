@@ -17,7 +17,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                 <Banknote className="h-5 w-5" />
                 Historial de Pagos
             </h3>
-            <div className="border rounded-2xl overflow-hidden bg-background shadow-sm">
+            <div className="border rounded-lg overflow-hidden bg-background shadow-sm">
                 <Table>
                     <TableHeader className="bg-muted/10">
                         <TableRow className="hover:bg-transparent tracking-widest text-[10px] font-black uppercase">

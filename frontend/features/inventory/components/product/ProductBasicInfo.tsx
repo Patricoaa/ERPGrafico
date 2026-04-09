@@ -94,7 +94,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 type="button"
                                                 variant="outline"
                                                 size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-xl"
+                                                className="shrink-0 h-10 w-10 rounded-lg"
                                                 onClick={() => setIsBarcodeDialogOpen(true)}
                                                 title="Gestionar Código de Barras"
                                             >
@@ -131,7 +131,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                         variant="outline"
                                                         role="combobox"
                                                         disabled={isEditing}
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-lg", !field.value && "text-muted-foreground", FORM_STYLES.input)}
                                                     >
                                                         {field.value
                                                             ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
@@ -193,7 +193,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 type="button"
                                                 variant="outline"
                                                 size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-xl"
+                                                className="shrink-0 h-10 w-10 rounded-lg"
                                                 onClick={onAddCategory}
                                                 title="Nueva Categoría"
                                             >

@@ -750,13 +750,13 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                 <div className="md:col-span-3 space-y-4">
-                                    <Skeleton className="h-[250px] w-full rounded-2xl" />
-                                    <Skeleton className="h-32 w-full rounded-2xl" />
+                                    <Skeleton className="h-[250px] w-full rounded-lg" />
+                                    <Skeleton className="h-32 w-full rounded-lg" />
                                 </div>
                                 <div className="md:col-span-9 space-y-4">
-                                    <Skeleton className="h-16 w-full rounded-2xl" />
-                                    <Skeleton className="h-40 w-full rounded-2xl" />
-                                    <Skeleton className="h-64 w-full rounded-2xl" />
+                                    <Skeleton className="h-16 w-full rounded-lg" />
+                                    <Skeleton className="h-40 w-full rounded-lg" />
+                                    <Skeleton className="h-64 w-full rounded-lg" />
                                 </div>
                             </div>
                         </div>
@@ -904,7 +904,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                            <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
                                 <Package className="h-6 w-6" />
                             </div>
                             <div className="flex flex-col">
@@ -944,7 +944,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
+                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
                     >
                         Cancelar
                     </Button>
@@ -952,7 +952,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                         form="product-form"
                         type="submit"
                         disabled={loading}
-                        className="rounded-xl text-xs font-bold"
+                        className="rounded-lg text-xs font-bold"
                     >
                         {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}

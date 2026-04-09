@@ -148,7 +148,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label className="text-sm font-semibold"></Label>
 
                 {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-xl text-destructive-foreground">
+                    <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive-foreground">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider">Producción Requerida</p>
@@ -191,7 +191,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     <Label
                         htmlFor="del-immediate"
                         className={cn(
-                            "flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
                             hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                         )}
@@ -208,7 +208,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
                     <Label
                         htmlFor="del-scheduled"
-                        className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'SCHEDULED' ? 'border-primary bg-primary/5' : ''}`}
+                        className={`flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'SCHEDULED' ? 'border-primary bg-primary/5' : ''}`}
                     >
                         <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
                         <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -222,7 +222,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
                     <Label
                         htmlFor="del-partial"
-                        className={`flex items-center gap-4 rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PARTIAL' ? 'border-primary bg-primary/5' : ''}`}
+                        className={`flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PARTIAL' ? 'border-primary bg-primary/5' : ''}`}
                     >
                         <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
                         <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>

@@ -28,7 +28,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-white/5  bg-sidebar backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-xl">
+                    <div className="p-2 bg-primary/10 rounded-lg">
                         <Inbox className="h-5 w-5 text-primary" />
                     </div>
                     <h2 className="text-lg font-bold tracking-tight text-white">Bandeja de Entrada</h2>
@@ -37,7 +37,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
-                    className="rounded-xl h-9 w-9 hover:bg-white/10 text-muted-foreground hover:text-white transition-all"
+                    className="rounded-lg h-9 w-9 hover:bg-white/10 text-muted-foreground hover:text-white transition-all"
                 >
                     <X className="h-5 w-5" />
                 </Button>

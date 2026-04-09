@@ -450,7 +450,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                             </div>
                         </div>
 
-                        <div className="space-y-4 border rounded-xl p-4 bg-muted/20">
+                        <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
                                 <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
                                 <Badge variant="outline" className="text-[10px] bg-background">

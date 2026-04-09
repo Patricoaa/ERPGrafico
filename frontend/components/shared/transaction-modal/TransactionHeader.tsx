@@ -103,7 +103,7 @@ export function TransactionHeader({
                             <ArrowLeft className="h-5 w-5 text-foreground" />
                         </Button>
                     )}
-                    <div className="p-3 bg-background rounded-2xl shadow-sm border border-primary/10">
+                    <div className="p-3 bg-background rounded-lg shadow-sm border border-primary/10">
                         {getIcon()}
                     </div>
                     <div className="flex flex-col">
@@ -120,7 +120,7 @@ export function TransactionHeader({
             {/* Action Buttons & Close Control */}
             <div className="flex items-center gap-4 print:hidden">
                 {/* ButtonGroup Container */}
-                <div className="flex items-center bg-background rounded-xl shadow-sm border border-border/60 overflow-hidden">
+                <div className="flex items-center bg-background rounded-lg shadow-sm border border-border/60 overflow-hidden">
                     <Button
                         variant="ghost"
                         size="sm"

@@ -79,7 +79,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     <SheetHeader className="p-6 pb-4 border-b bg-transparent sticky top-0 z-50">
                         <div className="flex items-center justify-between w-full pl-12 text-left">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                                <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
                                     {viewMode === 'orders' ? <ShoppingCart className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
                                 </div>
                                 <div className="flex flex-col">
@@ -97,7 +97,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                                 onValueChange={(v) => setViewMode(v as 'orders' | 'notes')}
                                 className="w-auto"
                             >
-                                <TabsList className="grid w-[320px] grid-cols-2 h-9 rounded-xl border-primary/10">
+                                <TabsList className="grid w-[320px] grid-cols-2 h-9 rounded-lg border-primary/10">
                                     <TabsTrigger value="orders" className="text-xs gap-2 rounded-lg">
                                         <ShoppingCart className="h-3.5 w-3.5" />
                                         Ventas

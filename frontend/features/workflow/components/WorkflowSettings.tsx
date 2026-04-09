@@ -187,7 +187,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                 </div>
                 <div className="grid gap-4">
                     {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="flex items-center gap-4 p-3 border rounded-xl bg-card/50">
+                        <div key={i} className="flex items-center gap-4 p-3 border rounded-lg bg-card/50">
                             <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
                             <div className="flex-1 space-y-2">
                                 <Skeleton className="h-4 w-1/4" />
@@ -212,7 +212,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                 const isRecurrent = !!type.dayField
 
                 return (
-                    <div key={type.id} className="group relative bg-card border rounded-xl p-3 hover:shadow-md transition-all">
+                    <div key={type.id} className="group relative bg-card border rounded-lg p-3 hover:shadow-md transition-all">
                         <div className="flex flex-col md:flex-row md:items-center gap-4">
                             {/* Stage identification */}
                             <div className="flex items-center gap-3 min-w-[200px] flex-1">
@@ -328,10 +328,10 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                 const isGroupMode = !!rule?.assigned_group && !rule?.assigned_user
 
                 return (
-                    <div key={type.id} className="group relative bg-card border rounded-xl p-4 hover:shadow-md transition-all">
+                    <div key={type.id} className="group relative bg-card border rounded-lg p-4 hover:shadow-md transition-all">
                         <div className="flex flex-col md:flex-row md:items-center gap-6">
                             <div className="flex items-center gap-4 min-w-[250px] flex-1">
-                                <div className="p-3 bg-primary/5 rounded-xl group-hover:bg-primary/10 transition-colors">
+                                <div className="p-3 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
                                     <BellRing className="h-5 w-5 text-primary/70" />
                                 </div>
                                 <div className="space-y-1">

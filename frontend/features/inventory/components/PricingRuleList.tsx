@@ -214,10 +214,10 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
                         <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-destructive hover:text-destructive" onClick={() => handleDelete(row.original.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => handleDelete(row.original.id)}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>

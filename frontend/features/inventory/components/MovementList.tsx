@@ -210,7 +210,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 size="lg"
                 title={
                     <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-primary/10 rounded-xl">
+                        <div className="p-2.5 bg-primary/10 rounded-lg">
                             <ArrowRightLeft className="h-6 w-6 text-primary" />
                         </div>
                         <div className="flex flex-col">

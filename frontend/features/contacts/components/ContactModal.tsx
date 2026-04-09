@@ -266,7 +266,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                 <div className="flex items-center justify-between w-full pr-12 text-left">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-sm border border-primary/5 hidden sm:block">
+                        <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
                             <User className="h-6 w-6" />
                         </div>
                         <div className="flex flex-col">
@@ -357,7 +357,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     <div className="p-8 pb-32">
                                         <div className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/5 rounded-xl border-none">
+                                                <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/5 rounded-lg border-none">
                                                     <FormField
                                                         control={form.control}
                                                         name="is_default_customer"
@@ -540,10 +540,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             </Form>
 
             <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto">
-                <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5">
+                <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
                     Cancelar
                 </Button>
-                <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-xl text-xs font-bold">
+                <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-lg text-xs font-bold">
                     {contact ? "Guardar Cambios" : "Crear Contacto"}
                 </Button>
             </div>
@@ -693,7 +693,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 px-3 text-[10px] font-bold rounded-xl text-primary hover:text-primary hover:bg-primary/10 border border-primary/10"
+                    className="h-8 px-3 text-[10px] font-bold rounded-lg text-primary hover:text-primary hover:bg-primary/10 border border-primary/10"
                     onClick={() => {
                         if (type === 'work_order') {
                             openWorkOrder(row.original.id)
@@ -715,7 +715,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {/* 1. Total Card (Available for all types) */}
                 <Card
-                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-xl ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
+                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-lg ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
                     onClick={() => setActiveFilter('all')}
                 >
                     <CardContent className="p-4 flex items-center justify-between">
@@ -734,7 +734,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     <>
                         {/* 2. Financial Card (Accounts Receivable/Payable) */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
                             onClick={() => setActiveFilter('financial')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -757,7 +757,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
                         {/* 3. Logistics Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('logistics')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -777,7 +777,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
                         {/* 4. Billing Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm rounded-xl ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('billing')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -812,7 +812,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                     {metrics.pendingWOCount}
                                 </p>
                             </div>
-                            <div className="h-8 w-8 rounded-xl bg-purple-100 flex items-center justify-center">
+                            <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                                 <ClipboardList className="h-4 w-4 text-purple-600" />
                             </div>
                         </CardContent>
@@ -879,7 +879,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
 
     if (data.length === 0) {
         return (
-            <div className="text-center py-12 bg-muted/5 rounded-2xl border border-dashed">
+            <div className="text-center py-12 bg-muted/5 rounded-lg border border-dashed">
                 <p className="text-sm text-muted-foreground">No hay documentos con deuda pendiente.</p>
             </div>
         )

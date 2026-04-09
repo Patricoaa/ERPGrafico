@@ -225,7 +225,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                             </Button>
                         </div>
 
-                        <div className="rounded-2xl border border-dashed">
+                        <div className="rounded-lg border border-dashed">
                             <Table>
                                 <TableHeader>
                                     <TableRow>

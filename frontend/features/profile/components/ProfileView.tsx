@@ -97,7 +97,7 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
             <div className="space-y-6">
                 <Card className="border shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b bg-muted/30 flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <Skeleton className="h-10 w-10 rounded-lg" />
                         <div className="space-y-2">
                             <Skeleton className="h-4 w-32" />
                             <Skeleton className="h-2 w-24" />
@@ -108,15 +108,15 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
                             {[1, 2, 3, 4].map(i => (
                                 <div key={i} className="space-y-2">
                                     <Skeleton className="h-3 w-16" />
-                                    <Skeleton className="h-10 w-full rounded-xl" />
+                                    <Skeleton className="h-10 w-full rounded-lg" />
                                 </div>
                             ))}
                         </div>
                     </CardContent>
                 </Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Skeleton className="h-[200px] w-full rounded-xl" />
-                    <Skeleton className="h-[200px] w-full rounded-xl" />
+                    <Skeleton className="h-[200px] w-full rounded-lg" />
+                    <Skeleton className="h-[200px] w-full rounded-lg" />
                 </div>
             </div>
         )
@@ -188,7 +188,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                 <Card className="border shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b bg-muted/30">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
                                 <User className="h-5 w-5" />
                             </div>
                             <div>
@@ -273,7 +273,7 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="space-y-1.5">
             <span className={FORM_STYLES.label}>{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-xl border bg-muted/20 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
             </div>
@@ -309,7 +309,7 @@ function PasswordChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
                         <KeyRound className="h-5 w-5" />
                     </div>
                     <div>
@@ -354,7 +354,7 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={saving} className="rounded-xl text-xs font-bold gap-2">
+                            <Button type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
@@ -619,7 +619,7 @@ function PersonalTab({
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                                         <BadgeCheck className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
@@ -669,7 +669,7 @@ function PersonalTab({
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
                                         <div className="space-y-1.5">
                                             <span className={FORM_STYLES.label}>Sueldo Base</span>
-                                            <div className="flex items-center gap-2 h-10 px-3 rounded-xl border bg-muted/20 text-sm font-bold text-foreground">
+                                            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-bold text-foreground">
                                                 <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
                                                 <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
                                             </div>
@@ -688,7 +688,7 @@ function PersonalTab({
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+                                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
                                             <FileText className="h-5 w-5" />
                                         </div>
                                         <div className="text-left">
@@ -706,7 +706,7 @@ function PersonalTab({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            className="gap-2 rounded-xl text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
+                                            className="gap-2 rounded-lg text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
                                             onClick={onBulkDownload}
                                             disabled={downloadingAll}
                                         >
@@ -803,7 +803,7 @@ function PinChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
                         <Wallet className="h-5 w-5" />
                     </div>
                     <div>
@@ -864,7 +864,7 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={saving} className="rounded-xl text-xs font-bold gap-2">
+                            <Button type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN

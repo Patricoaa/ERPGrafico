@@ -31,7 +31,7 @@ export function AttachmentList({
 }: AttachmentListProps) {
     if (!attachments || attachments.length === 0) {
         return (
-            <div className={cn("text-center py-6 border border-dashed rounded-xl bg-muted/5", className)}>
+            <div className={cn("text-center py-6 border border-dashed rounded-lg bg-muted/5", className)}>
                 <Paperclip className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground italic">No hay archivos adjuntos</p>
             </div>
@@ -43,7 +43,7 @@ export function AttachmentList({
             {attachments.map((file) => (
                 <div
                     key={file.id}
-                    className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:border-primary/50 transition-colors group"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors group"
                 >
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <FileText className="h-5 w-5 text-primary" />

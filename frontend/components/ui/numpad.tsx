@@ -86,7 +86,7 @@ export function Numpad({
     }, [value, allowDecimal, onConfirm, onClose])
 
     return (
-        <div className={cn("flex flex-col gap-2 p-2 bg-background border rounded-xl shadow-xl w-full max-w-[280px]", className)}>
+        <div className={cn("flex flex-col gap-2 p-2 bg-background border rounded-lg shadow-xl w-full max-w-[280px]", className)}>
             {!hideDisplay && (
                 <div className="flex justify-between items-center mb-1">
                     <div className="text-2xl font-black tracking-tight text-primary truncate px-2 w-full text-right">

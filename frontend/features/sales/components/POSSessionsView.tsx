@@ -162,15 +162,15 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     <div className="flex justify-center gap-2">
                         {session.status === 'OPEN' ? (
                             <>
-                                <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0 rounded-xl hover:bg-info/10 hover:text-info border-info/20 shadow-sm">
+                                <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0 rounded-lg hover:bg-info/10 hover:text-info border-info/20 shadow-sm">
                                     <FileText className="h-3.5 w-3.5" />
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 rounded-xl hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm">
+                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 rounded-lg hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm">
                                     <Lock className="h-3.5 w-3.5" />
                                 </Button>
                             </>
                         ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0 rounded-xl hover:bg-success/10 hover:text-success border-success/20 shadow-sm">
+                            <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0 rounded-lg hover:bg-success/10 hover:text-success border-success/20 shadow-sm">
                                 <FileText className="h-3.5 w-3.5" />
                             </Button>
                         )}

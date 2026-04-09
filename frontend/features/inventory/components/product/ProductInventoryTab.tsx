@@ -57,7 +57,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                     <Button
                                                         variant="outline"
                                                         role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-lg", !field.value && "text-muted-foreground", FORM_STYLES.input)}
                                                     >
                                                         {field.value
                                                             ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
@@ -126,7 +126,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                     <Button
                                                         variant="outline"
                                                         role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-lg", !field.value && "text-muted-foreground", FORM_STYLES.input)}
                                                     >
                                                         {field.value
                                                             ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
@@ -221,7 +221,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/5 min-h-[50px] items-center">
+                                                <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-muted/5 min-h-[50px] items-center">
                                                     {!stockCategoryId ? (
                                                         <span className="text-[10px] text-muted-foreground italic px-1">
                                                             Seleccione primero una Unidad de Stock.
@@ -292,7 +292,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                             render={({ field }) => (
                                 <div className="space-y-4">
                                     {productType === 'MANUFACTURABLE' ? (
-                                        <div className={cn("flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/20", FORM_STYLES.card)}>
+                                        <div className={cn("flex items-center justify-between p-4 rounded-lg border bg-primary/5 border-primary/20", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <div className="flex items-center gap-2">
                                                     <FormLabel className={FORM_STYLES.label}>Control de Inventario</FormLabel>
@@ -311,7 +311,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                             </div>
                                         </div>
                                     ) : (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-lg border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className={FORM_STYLES.label}>Controlar Stock</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -331,7 +331,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     )}
 
                                     {field.value && (
-                                        <div className="space-y-4 pt-2 border-t mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-xl">
+                                        <div className="space-y-4 pt-2 border-t mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-lg">
                                             <FormField<ProductFormValues>
                                                 control={form.control}
                                                 name="receiving_warehouse"
@@ -347,7 +347,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                     <Button
                                                                         variant="outline"
                                                                         role="combobox"
-                                                                        className={cn("w-full justify-between font-normal h-10 rounded-xl", !whField.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                                        className={cn("w-full justify-between font-normal h-10 rounded-lg", !whField.value && "text-muted-foreground", FORM_STYLES.input)}
                                                                     >
                                                                         {whField.value
                                                                             ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name

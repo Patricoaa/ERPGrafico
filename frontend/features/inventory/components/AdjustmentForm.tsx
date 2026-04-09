@@ -497,12 +497,12 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                 <div className="flex justify-end gap-3 pt-6 pb-2">
                     {onCancel && (
-                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-xl text-xs font-bold">Cancelar</Button>
+                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-lg text-xs font-bold">Cancelar</Button>
                     )}
                     <Button
                         type="submit"
                         disabled={isLoading}
-                        className={cn("rounded-xl text-xs font-bold", moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700')}
+                        className={cn("rounded-lg text-xs font-bold", moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700')}
                     >
                         {isLoading ? "Procesando..." : (
                             <>

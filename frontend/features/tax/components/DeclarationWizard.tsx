@@ -201,7 +201,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             variant="wizard"
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-primary/10 text-primary shadow-sm border border-primary/5">
+                    <div className="p-3 rounded-lg bg-primary/10 text-primary shadow-sm border border-primary/5">
                         <Calculator className="h-6 w-6" />
                     </div>
                     <div className="space-y-1">
@@ -225,7 +225,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         variant="ghost"
                         onClick={step === 1 ? () => onOpenChange(false) : prevStep}
                         disabled={isLoading}
-                        className="rounded-xl px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
+                        className="rounded-lg px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
                     >
                         {step === 1 ? "Cancelar" : (
                             <>
@@ -240,7 +240,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <Button 
                                 onClick={nextStep} 
                                 disabled={isLoading || !period.year || !period.month}
-                                className="rounded-xl px-8 h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-black uppercase tracking-widest text-[10px] group"
+                                className="rounded-lg px-8 h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
                                 Siguiente
                                 <ChevronRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
@@ -249,7 +249,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <Button 
                                 onClick={handleSave} 
                                 disabled={isLoading}
-                                className="rounded-xl px-10 h-11 bg-success hover:bg-success/90 shadow-lg shadow-success/20 transition-all font-black uppercase tracking-widest text-[10px] group"
+                                className="rounded-lg px-10 h-11 bg-success hover:bg-success/90 shadow-lg shadow-success/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
                                 {isLoading ? "Procesando..." : "Finalizar Declaración"}
                                 {!isLoading && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
@@ -280,7 +280,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <div
                                                 key={y}
                                                 className={cn(
-                                                    "cursor-pointer rounded-2xl border border-transparent px-4 py-5 text-center transition-all duration-200",
+                                                    "cursor-pointer rounded-lg border border-transparent px-4 py-5 text-center transition-all duration-200",
                                                     period.year === y 
                                                         ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" 
                                                         : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
@@ -307,7 +307,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <div
                                                 key={m}
                                                 className={cn(
-                                                    "rounded-xl border border-transparent px-2 py-4 text-center transition-all duration-200",
+                                                    "rounded-lg border border-transparent px-2 py-4 text-center transition-all duration-200",
                                                     disabled
                                                         ? "opacity-20 cursor-not-allowed grayscale"
                                                         : "cursor-pointer",
@@ -330,7 +330,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
 
                             <div className="pt-6">
-                                <div className="flex items-start gap-4 p-5 bg-primary/5 border border-primary/10 rounded-2xl text-primary/70">
+                                <div className="flex items-start gap-4 p-5 bg-primary/5 border border-primary/10 rounded-lg text-primary/70">
                                     <Info className="h-5 w-5 mt-0.5 flex-shrink-0 opacity-80" />
                                     <div className="space-y-1">
                                         <p className="text-xs font-bold uppercase tracking-wider">Flujo de Trabajo</p>
@@ -358,7 +358,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <div className="flex-1 h-px bg-border/60" />
                                 </div>
 
-                                <div className="space-y-4 bg-muted/5 p-6 rounded-3xl border border-transparent hover:border-primary/10 transition-all">
+                                <div className="space-y-4 bg-muted/5 p-6 rounded-lg border border-transparent hover:border-primary/10 transition-all">
                                     <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-muted-foreground/70 px-1">
                                         <span>Conceptos de Venta</span>
                                         <span>Monto Neto</span>
@@ -383,7 +383,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total Neto Ventas</span>
                                             <MoneyDisplay amount={calcData?.net_taxed_sales} showColor={false} className="text-lg font-black tracking-tight" />
                                         </div>
-                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                                        <div className="flex justify-between items-end p-4 rounded-lg bg-primary/5 border border-primary/10">
                                             <span className="text-xs font-black uppercase tracking-[0.1em] text-primary/80">IVA Débito ({manualFields.tax_rate}%)</span>
                                             <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-primary drop-shadow-sm" />
                                         </div>
@@ -402,7 +402,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <div className="flex-1 h-px bg-border/60" />
                                 </div>
 
-                                <div className="space-y-4 bg-primary/5 p-6 rounded-3xl border border-transparent hover:border-primary/10 transition-all">
+                                <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-transparent hover:border-primary/10 transition-all">
                                     <div className="flex justify-between items-center text-xs uppercase tracking-wider font-bold text-primary/50 px-1">
                                         <span>Conceptos de Compra</span>
                                         <span>Monto Neto</span>
@@ -427,7 +427,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">Total Neto Compras</span>
                                             <MoneyDisplay amount={calcData?.net_taxed_purchases} showColor={false} className="text-lg font-black tracking-tight text-primary/80" />
                                         </div>
-                                        <div className="flex justify-between items-end p-4 rounded-2xl bg-primary/5 border border-primary/10 text-primary">
+                                        <div className="flex justify-between items-end p-4 rounded-lg bg-primary/5 border border-primary/10 text-primary">
                                             <span className="text-xs font-black uppercase tracking-[0.1em] opacity-80">IVA Crédito ({manualFields.tax_rate}%)</span>
                                             <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black drop-shadow-sm" />
                                         </div>
@@ -436,7 +436,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </section>
                         </div>
 
-                        <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 flex gap-4 items-center text-[11px] text-primary/70 font-medium uppercase tracking-wider justify-center">
+                        <div className="bg-primary/5 p-5 rounded-lg border border-primary/10 flex gap-4 items-center text-[11px] text-primary/70 font-medium uppercase tracking-wider justify-center">
                             <Info className="h-4 w-4 flex-shrink-0 opacity-80" />
                             <span>Valores calculados automáticamente. Verifique la conciliación de documentos antes de proceder.</span>
                         </div>
@@ -565,7 +565,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
                         </div>
 
-                        <div className="bg-warning/5 p-5 rounded-2xl border border-warning/10 flex gap-4 items-center text-[11px] text-warning font-medium uppercase tracking-wider justify-center mx-auto max-w-2xl">
+                        <div className="bg-warning/5 p-5 rounded-lg border border-warning/10 flex gap-4 items-center text-[11px] text-warning font-medium uppercase tracking-wider justify-center mx-auto max-w-2xl">
                             <Info className="h-4 w-4 flex-shrink-0 opacity-80" />
                             <span>Complete los campos manuales según la información adicional del período.</span>
                         </div>
@@ -617,7 +617,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
                                 <section className="space-y-8 pt-2">
-                                    <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-primary/5 border border-primary/10 relative overflow-hidden group">
+                                    <div className="flex flex-col items-center justify-center p-8 rounded-lg bg-primary/5 border border-primary/10 relative overflow-hidden group">
                                         {/* Background Decoration */}
                                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
                                             <Calculator className="w-32 h-32 text-primary" />

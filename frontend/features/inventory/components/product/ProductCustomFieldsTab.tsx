@@ -35,7 +35,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="rounded-xl font-bold gap-2"
+                        className="rounded-lg font-bold gap-2"
                         onClick={onShowTemplateForm}
                     >
                         <Settings2 className="h-4 w-4" /> Gestionar Plantillas
@@ -44,7 +44,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                         type="button"
                         variant="default"
                         size="sm"
-                        className="rounded-xl font-bold gap-2"
+                        className="rounded-lg font-bold gap-2"
                         onClick={() => appendCustomField({ template: 0, order: customFields.length })}
                     >
                         <Plus className="h-4 w-4" /> Añadir Campo
@@ -52,7 +52,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                 </div>
             </div>
 
-            <div className="border rounded-2xl overflow-hidden shadow-sm">
+            <div className="border rounded-lg overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>

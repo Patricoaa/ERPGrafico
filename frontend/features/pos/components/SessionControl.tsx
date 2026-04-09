@@ -557,7 +557,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         <div className="flex justify-center">
-                            <div className="w-full max-w-sm bg-muted/30 p-4 rounded-xl">
+                            <div className="w-full max-w-sm bg-muted/30 p-4 rounded-lg">
                                 <div className="text-right mb-4">
                                     <div className="text-xs font-bold uppercase text-muted-foreground">Monto Ingresado</div>
                                     <div className="text-3xl font-black font-mono tracking-tight text-primary">
@@ -609,7 +609,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <p className="text-muted-foreground">{term?.name}</p>
                         </div>
 
-                        <div className="bg-card border rounded-xl p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-lg p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Fondo en Sistema:</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
@@ -621,7 +621,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         {hasDiff && (
-                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 space-y-3">
+                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-amber-700 font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Se detectó una diferencia</span>

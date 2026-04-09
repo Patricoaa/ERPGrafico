@@ -216,7 +216,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         </div>
                                     </div>
 
-                                    <div className="h-[400px] w-full bg-white rounded-2xl border p-6 shadow-sm">
+                                    <div className="h-[400px] w-full bg-white rounded-lg border p-6 shadow-sm">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={filteredPriceHistory}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
@@ -259,7 +259,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
                                 {/* ORDERS TAB */}
                                 <TabsContent value="orders" className="mt-0">
-                                    <div className="rounded-2xl border shadow-sm overflow-hidden bg-card">
+                                    <div className="rounded-lg border shadow-sm overflow-hidden bg-card">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
@@ -323,7 +323,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
                                 {/* NOTES TAB */}
                                 <TabsContent value="notes" className="mt-0">
-                                    <div className="rounded-2xl border shadow-sm overflow-hidden bg-card">
+                                    <div className="rounded-lg border shadow-sm overflow-hidden bg-card">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">

@@ -74,7 +74,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             size="md"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-warning/10 text-warning">
+                    <div className="p-3 rounded-lg bg-warning/10 text-warning">
                         <ShieldCheck className="h-6 w-6" />
                     </div>
                     <div>
@@ -87,14 +87,14 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             }
             footer={
                 <div className="flex justify-end gap-2 w-full">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg">
                         Aún no, cancelar
                     </Button>
                     <Button
                         onClick={handleClosePeriod}
                         disabled={!isAllChecked || isLoading}
                         className={cn(
-                            "rounded-xl px-8 shadow-lg transition-all",
+                            "rounded-lg px-8 shadow-lg transition-all",
                             isAllChecked
                                 ? "bg-warning hover:bg-warning/90 shadow-warning/20"
                                 : "opacity-50"
@@ -107,7 +107,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
             }
         >
             <div className="py-2 space-y-6">
-                <div className="bg-warning/5 p-4 rounded-2xl border border-warning/20 flex gap-4 items-start text-sm text-warning">
+                <div className="bg-warning/5 p-4 rounded-lg border border-warning/20 flex gap-4 items-start text-sm text-warning">
                     <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-warning" />
                     <p>
                         <span className="font-bold">¡Atención!</span> Cerrar un período bloqueará la edición de todos los documentos asociados (Ventas/Compras) para garantizar la consistencia contable y tributaria.
@@ -128,7 +128,7 @@ export function PeriodChecklist({ isOpen, onOpenChange, period, onSuccess }: Per
                             <div
                                 key={item.id}
                                 className={cn(
-                                    "flex items-center space-x-3 p-3 rounded-xl transition-all border border-transparent",
+                                    "flex items-center space-x-3 p-3 rounded-lg transition-all border border-transparent",
                                     checklist[item.id as keyof typeof checklist] ? "bg-success/5 border-success/20" : "hover:bg-muted/50"
                                 )}
                             >

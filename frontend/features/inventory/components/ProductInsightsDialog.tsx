@@ -232,7 +232,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <TrendingUp className="h-4 w-4 text-primary" />
                                             Análisis de Precios Unitarios
                                         </h4>
-                                        <div className="rounded-xl border p-4 space-y-3 bg-muted/50">
+                                        <div className="rounded-lg border p-4 space-y-3 bg-muted/50">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-muted-foreground">Precio Promedio de Venta:</span>
                                                 <DataCell.Currency value={data.sales_analysis.avg_price} className="font-bold" />
@@ -254,7 +254,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <Factory className="h-4 w-4 text-primary" />
                                             Consumo en Producción
                                         </h4>
-                                        <div className="rounded-xl border p-4 bg-muted/50">
+                                        <div className="rounded-lg border p-4 bg-muted/50">
                                             {data.production_usage.length > 0 ? (
                                                 <div className="space-y-3">
                                                     <div className="flex justify-between items-center">
@@ -277,7 +277,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
 
                             {/* HISTORY TAB */}
                             <TabsContent value="history" className="mt-0 space-y-6">
-                                <div className="h-[250px] w-full bg-white rounded-xl border p-4">
+                                <div className="h-[250px] w-full bg-white rounded-lg border p-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={[...data.price_history].reverse()}>
                                             <defs>

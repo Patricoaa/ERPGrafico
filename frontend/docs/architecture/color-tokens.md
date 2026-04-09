@@ -98,12 +98,12 @@ Estos son los tokens fundamentales del sistema. Se auto-adaptan al modo oscuro s
 | Borde estándar | `--border` | `border-border` | `oklch(0.12 0.02 240 / 15%)` — translúcido |
 | Input background | `--input` | `border-input` | `oklch(0.12 0.02 240 / 10%)` — muy sutil |
 | Focus ring | `--ring` | `ring` / `outline-ring` | `oklch(0.65 0.25 310 / 40%)` — violeta difuso |
-| Border radius base | `--radius` | `rounded-md` | `0.25rem` — esquinas sharp/industrial |
+| Border radius base | `--radius` | `rounded-md` | `0.75rem` — esquinas soft/premium (12px) |
 
-**Nota de radio:** El sistema usa esquinas deliberadamente cuadradas (`0.25rem`). Las variantes son:
-- `rounded-sm` → `calc(0.25rem - 2px)`
-- `rounded-md` → `0.25rem`
-- `rounded-lg` → `calc(0.25rem + 2px)`
+**Nota de radio:** El sistema usa esquinas suaves y redondeadas (`0.75rem` / 12px) para botones y tarjetas. Las variantes relativas de Tailwind en el sistema son:
+- `rounded-sm` → `calc(var(--radius) - 2px)` (aprox 10px)
+- `rounded-md` → `var(--radius)` (12px)
+- `rounded-lg` → `calc(var(--radius) + 2px)` (aprox 14px)
 
 ---
 

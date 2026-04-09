@@ -395,7 +395,7 @@ export function WorkOrderBasicInfo({
                             Contacto Relacionado
                         </Label>
                         {selectedContact ? (
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-primary/5 border border-primary/20 h-10">
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20 h-10">
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <User className="h-4 w-4 text-primary shrink-0" />
                                     <div className="flex flex-col overflow-hidden">

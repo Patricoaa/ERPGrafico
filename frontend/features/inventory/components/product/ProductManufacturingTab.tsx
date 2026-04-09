@@ -128,7 +128,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     const shouldDisable = isExpress && !hasVariants
 
                                     return (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-lg border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className={FORM_STYLES.label}>Posee Lista de Materiales</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -155,7 +155,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 name="has_variants"
                                 render={({ field }) => (
                                     !variantMode ? (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-xl border bg-background/50", FORM_STYLES.card)}>
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-lg border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className={FORM_STYLES.label}>Posee Variantes</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -315,7 +315,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                             </div>
 
                             {isEditing ? (
-                                <div className={cn("rounded-2xl border", variantMode && "p-0 border-none bg-transparent")}>
+                                <div className={cn("rounded-lg border", variantMode && "p-0 border-none bg-transparent")}>
                                     <BOMManager 
                                         product={initialData} 
                                         variantMode={variantMode} 
@@ -351,8 +351,8 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         />
                                     ))}
                                     {bomFields.length === 0 && (
-                                        <div className="py-12 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-6 bg-muted/5 group hover:bg-muted/10 transition-colors">
-                                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <div className="py-12 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-6 bg-muted/5 group hover:bg-muted/10 transition-colors">
+                                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                                 <Layers className="h-8 w-8 text-primary" />
                                             </div>
                                             <h4 className="font-bold text-muted-foreground">Sin recetas definidas</h4>
@@ -380,7 +380,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
 
     return (
         <div className={cn(
-            "rounded-xl border transition-all duration-200",
+            "rounded-lg border transition-all duration-200",
             isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
         )}>
             <div className="p-4 flex items-center justify-between gap-4">

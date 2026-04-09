@@ -193,7 +193,7 @@ export function TransactionContent({
 
         return (
             <div className="flex justify-end pt-4">
-                <div className="w-full md:w-80 space-y-3 bg-muted/30 p-6 rounded-3xl border border-border/40">
+                <div className="w-full md:w-80 space-y-3 bg-muted/30 p-6 rounded-lg border border-border/40">
                     <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         <span>Suma de Productos:</span>
                         <span className="font-mono text-primary">{formatCurrency(itemsSum + lineDiscountsSum)}</span>
@@ -247,7 +247,7 @@ export function TransactionContent({
                     <div className="h-8 w-1 bg-primary rounded-full" />
                     Flujo de Fondos
                 </h3>
-                <div className="bg-muted/30 p-8 rounded-3xl border border-dashed flex items-center justify-between gap-6 font-medium">
+                <div className="bg-muted/30 p-8 rounded-lg border border-dashed flex items-center justify-between gap-6 font-medium">
                     <div className="flex-1 text-center space-y-2">
                         <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Origen</div>
                         <div className="font-black text-lg truncate px-2 text-primary tracking-tight">
@@ -286,7 +286,7 @@ export function TransactionContent({
                         </h3>
                     </div>
 
-                    <div className="border border-border/60 rounded-3xl overflow-hidden bg-background shadow-sm">
+                    <div className="border border-border/60 rounded-lg overflow-hidden bg-background shadow-sm">
                         {renderLinesItemDetail()}
                     </div>
 

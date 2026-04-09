@@ -296,7 +296,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                 </div>
 
                 <div className="flex-1 overflow-hidden p-4">
-                    <ScrollArea className="h-full border rounded-xl overflow-hidden shadow-sm">
+                    <ScrollArea className="h-full border rounded-lg overflow-hidden shadow-sm">
                         <div className="min-w-[1200px]">
                             <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
                                 <div className="w-[300px] p-3 border-r bg-muted/50">Cuenta Contable</div>

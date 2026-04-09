@@ -128,7 +128,7 @@ export function POSVariantSelectorModal({
                 </span>
             }
             size="xl"
-            contentClassName="max-w-3xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl"
+            contentClassName="max-w-3xl rounded-lg p-0 overflow-hidden border-none shadow-2xl"
             headerClassName="p-6 bg-primary text-primary-foreground"
         >
             <div className="p-6">
@@ -150,12 +150,12 @@ export function POSVariantSelectorModal({
                                         key={v.id}
                                         onClick={() => isAvailable && handleSelect(v)}
                                         className={cn(
-                                            "relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer",
+                                            "relative flex items-center gap-4 p-4 rounded-lg border-2 transition-all cursor-pointer",
                                             !isAvailable ? "opacity-50 grayscale pointer-events-none bg-muted/20 border-dashed" : "border-muted bg-card hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
                                         )}
                                     >
                                         {/* Variant Image or Placeholder */}
-                                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                                        <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                             {v.image || product.image ? (
                                                 <img
                                                     src={v.image || product.image || ""}

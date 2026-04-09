@@ -339,7 +339,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-xl"
+                        className="h-8 w-8 rounded-lg"
                         onClick={() => { setEditingProduct(row.original); setIsFormOpen(true); }}
                     >
                         <Pencil className="h-4 w-4" />
@@ -347,7 +347,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={cn("h-8 w-8 rounded-xl", row.original.active ? "text-destructive" : "text-emerald-600")}
+                        className={cn("h-8 w-8 rounded-lg", row.original.active ? "text-destructive" : "text-emerald-600")}
                         onClick={() => handleArchive(row.original)}
                         title={row.original.active ? "Archivar" : "Restaurar"}
                     >

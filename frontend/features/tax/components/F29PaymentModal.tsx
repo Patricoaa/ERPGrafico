@@ -53,16 +53,16 @@ export function F29PaymentModal({
                 <div className="space-y-6">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                        <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
                             <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Impuesto Determinado</div>
                             <div className="text-xl font-bold font-mono">{formatCurrency(declaration.vat_to_pay)}</div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-success/5 border border-success/10">
+                        <div className="p-4 rounded-lg bg-success/5 border border-success/10">
                             <div className="text-[10px] uppercase font-bold text-success tracking-wider mb-1">Total Pagado</div>
                             <div className="text-xl font-bold text-success font-mono">{formatCurrency(declaration.total_paid)}</div>
                         </div>
                         <div className={cn(
-                            "p-4 rounded-2xl border",
+                            "p-4 rounded-lg border",
                             isFullyPaid
                                 ? "bg-success/10 border-success/20"
                                 : "bg-primary/5 border-primary/10"
@@ -79,12 +79,12 @@ export function F29PaymentModal({
 
                     {/* Status Alert */}
                     {isFullyPaid ? (
-                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-success/5 text-success border border-success/20">
+                        <div className="flex items-center gap-3 p-4 rounded-lg bg-success/5 text-success border border-success/20">
                             <CheckCircle2 className="h-5 w-5" />
                             <p className="text-sm font-medium">Esta declaración ha sido pagada en su totalidad.</p>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/10">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="h-5 w-5 text-primary" />
                                 <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
@@ -106,13 +106,13 @@ export function F29PaymentModal({
                             <span>Historial de Pagos</span>
                         </div>
 
-                        <div className="border rounded-2xl overflow-hidden bg-card">
+                        <div className="border rounded-lg overflow-hidden bg-card">
                             {declaration.payments.length > 0 ? (
                                 <div className="divide-y">
                                     {declaration.payments.map((payment) => (
                                         <div key={payment.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                                                     <CreditCard className="h-5 w-5 text-muted-foreground" />
                                                 </div>
                                                 <div>

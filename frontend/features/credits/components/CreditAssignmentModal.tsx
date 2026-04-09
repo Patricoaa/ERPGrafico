@@ -150,7 +150,7 @@ export default function CreditAssignmentModal({
                                         form.reset({ credit_limit: c.credit_limit ? Number(c.credit_limit) : null })
                                     }}
                                     className={cn(
-                                        "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group",
+                                        "w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left group",
                                         c.credit_blocked 
                                             ? "bg-muted/50 border-border/50 cursor-not-allowed opacity-75" 
                                             : "bg-card hover:bg-accent border-border hover:border-primary/20"
@@ -197,8 +197,8 @@ export default function CreditAssignmentModal({
                 {(initialContact || selectedContact) && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         {/* Header Context */}
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 border border-primary/10 mb-6">
-                            <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                        <div className="flex items-center gap-4 p-4 rounded-lg bg-primary/5 border border-primary/10 mb-6">
+                            <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                                 <CreditCard className="h-6 w-6 text-primary-foreground" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -219,14 +219,14 @@ export default function CreditAssignmentModal({
 
                         {/* Indicators grid */}
                         <div className="grid grid-cols-2 gap-3 mb-8">
-                            <div className="p-4 rounded-xl border bg-muted/30 flex flex-col gap-1 items-center justify-center">
+                            <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                 <TrendingUp className="h-4 w-4 text-emerald-600 mb-1" />
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
                                 <span className="text-lg font-mono font-black text-emerald-700">
                                     ${fmt((selectedContact || initialContact)?.credit_available || 0)}
                                 </span>
                             </div>
-                            <div className="p-4 rounded-xl border bg-muted/30 flex flex-col gap-1 items-center justify-center">
+                            <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                 <Banknote className="h-4 w-4 text-rose-600 mb-1" />
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
                                 <span className="text-lg font-mono font-black text-rose-700">

@@ -50,7 +50,7 @@ export function ModuleSettingsSheet({
             <div className="flex items-start justify-between shrink-0 p-6 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 sticky top-0">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/10">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/10">
                             <Icon className="h-5 w-5" />
                         </div>
                         <SheetTitle className="text-xl font-heading font-black tracking-tight text-foreground uppercase">
