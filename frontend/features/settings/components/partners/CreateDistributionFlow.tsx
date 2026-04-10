@@ -2,14 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,17 +14,21 @@ import {
     SelectValue 
 } from "@/components/ui/select"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { 
     Loader2, 
     PieChart,
     ArrowRight,
+    ArrowLeft,
     CheckCircle2,
     Calculator,
     AlertTriangle,
-    Wallet
+    Wallet,
+    CalendarCheck2
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface ModalProps {
     open: boolean
@@ -43,10 +40,11 @@ interface ModalProps {
 export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [fiscalYears, setFiscalYears] = useState<any[]>([])
     
     // Step 1 Form
     const [formData, setFormData] = useState({
-        fiscal_year: new Date().getFullYear() - 1,
+        fiscal_year_id: "",
         net_result: "",
         resolution_date: new Date().toISOString().split('T')[0],
         acta_number: "",
@@ -60,13 +58,20 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     // Destinations config
     const [lineDestinations, setLineDestinations] = useState<Record<number, string>>({})
 
+    const totalSteps = 3
+    const stepTitles = [
+        "Parámetros del Ejercicio",
+        "Asignación y Destino",
+        "Confirmación y Ejecución"
+    ]
+
     const resetFlow = () => {
         setStep(1)
         setDraftResolution(null)
         setLines([])
         setLineDestinations({})
         setFormData({
-            fiscal_year: new Date().getFullYear() - 1,
+            fiscal_year_id: "",
             net_result: "",
             resolution_date: new Date().toISOString().split('T')[0],
             acta_number: "",
@@ -74,12 +79,41 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         })
     }
 
+    // Load closed fiscal years
+    useEffect(() => {
+        if (open) {
+            const fetchYears = async () => {
+                try {
+                    const data = await accountingApi.getFiscalYears({ status: 'CLOSED' })
+                    setFiscalYears(data)
+                    
+                    // Pre-select if yearId is in URL
+                    const params = new URLSearchParams(window.location.search)
+                    const yearParam = params.get('yearId')
+                    if (yearParam) {
+                        const fy = data.find(f => f.year.toString() === yearParam)
+                        if (fy) {
+                            setFormData(prev => ({
+                                ...prev,
+                                fiscal_year_id: fy.id.toString(),
+                                net_result: fy.net_result?.toString() || ""
+                            }))
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error loading fiscal years", error)
+                }
+            }
+            fetchYears()
+        }
+    }, [open])
+
     // Hydrate state if initialResolution is provided
     useEffect(() => {
         if (open && initialResolution) {
             setDraftResolution(initialResolution)
             setFormData({
-                fiscal_year: initialResolution.fiscal_year,
+                fiscal_year_id: initialResolution.fiscal_year_obj?.toString() || "",
                 net_result: initialResolution.net_result.toString(),
                 resolution_date: initialResolution.resolution_date,
                 acta_number: initialResolution.acta_number || "",
@@ -105,39 +139,32 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     }, [open, initialResolution])
 
     const handleCreateOrUpdateDraft = async () => {
-        if (!formData.fiscal_year || !formData.net_result || !formData.resolution_date) {
+        if (!formData.fiscal_year_id || !formData.net_result || !formData.resolution_date) {
             toast.error("Complete los parámetros obligatorios")
             return
         }
         
         setLoading(true)
         try {
+            const payload = {
+                fiscal_year_obj: parseInt(formData.fiscal_year_id),
+                net_result: parseFloat(formData.net_result),
+                resolution_date: formData.resolution_date,
+                acta_number: formData.acta_number,
+                notes: formData.notes
+            }
+
             if (draftResolution?.status === 'DRAFT') {
-                // Update existing draft with PATCH and then recalculate
-                await partnersApi.updateProfitDistribution(draftResolution.id, {
-                    fiscal_year: formData.fiscal_year,
-                    net_result: parseFloat(formData.net_result),
-                    resolution_date: formData.resolution_date,
-                    acta_number: formData.acta_number,
-                    notes: formData.notes
-                })
+                await partnersApi.updateProfitDistribution(draftResolution.id, payload)
                 const res = await partnersApi.recalculateProfitDistribution(draftResolution.id)
                 setDraftResolution(res)
                 setLines(res.lines || [])
             } else {
-                // Create new
-                const res = await partnersApi.createProfitDistribution({
-                    fiscal_year: formData.fiscal_year,
-                    net_result: parseFloat(formData.net_result),
-                    resolution_date: formData.resolution_date,
-                    acta_number: formData.acta_number,
-                    notes: formData.notes
-                })
+                const res = await partnersApi.createProfitDistribution(payload)
                 setDraftResolution(res)
                 setLines(res.lines || [])
             }
             
-            // Sync destinations
             const dests: Record<number, string> = {}
             lines?.forEach((l: any) => {
                 dests[l.id] = l.destination
@@ -170,7 +197,6 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     }
 
     const handleUpdateDestinations = async () => {
-        // Validation: All lines must have a destination
         const allSet = lines.every(l => !!lineDestinations[l.id])
         if (!allSet) {
             toast.error("Debe asignar un destino para todos los socios antes de continuar")
@@ -196,13 +222,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     const handleExecute = async () => {
         setLoading(true)
         try {
-            // Only approve if not already approved
             if (draftResolution.status === 'DRAFT') {
                 await partnersApi.approveProfitDistribution(draftResolution.id)
             }
-            
             await partnersApi.executeProfitDistribution(draftResolution.id)
-            
             toast.success("Distribución contable ejecutada con éxito")
             onSuccess()
             onOpenChange(false)
@@ -214,127 +237,176 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         }
     }
 
-    // Determine titles based on step
-    const stepTitles = [
-        "Parámetros del Ejercicio",
-        "Asignación y Destino",
-        "Confirmación y Ejecución"
-    ]
+    const renderStepIndicator = () => (
+        <div className="flex items-center justify-between mb-8 px-2">
+            {[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center flex-1 last:flex-none">
+                    <div className={cn(
+                        "w-8 h-8 rounded-sm flex items-center justify-center text-xs font-bold transition-all duration-300",
+                        step === s ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]" :
+                            step > s ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
+                    )}>
+                        {step > s ? <CheckCircle2 className="w-4 h-4" /> : s}
+                    </div>
+                    {s < 3 && (
+                        <div className={cn(
+                            "h-[1px] flex-1 mx-2",
+                            step > s ? "bg-success" : "bg-border"
+                        )} />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
 
     return (
-        <Dialog open={open} onOpenChange={(v) => { 
-            if (!v && step > 1) {
-                toast.warning("El borrador quedó guardado pero no ejecutado.")
-            }
-            onOpenChange(v) 
-            if (!v) resetFlow() 
-        }}>
-            <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
-                <div className="bg-muted/30 px-6 py-4 border-b flex items-center justify-between">
-                    <div>
-                        <DialogTitle className="flex items-center gap-2 text-lg">
-                            <PieChart className="h-5 w-5 text-primary" />
-                            Distribución de Utilidades
-                        </DialogTitle>
-                        <DialogDescription className="mt-1">
-                            Paso {step} de 3: {stepTitles[step-1]}
-                        </DialogDescription>
-                    </div>
+        <BaseModal
+            open={open}
+            onOpenChange={(v) => { 
+                if (!v && step > 1) {
+                    toast.warning("El borrador quedó guardado pero no ejecutado.")
+                }
+                onOpenChange(v) 
+                if (!v) resetFlow() 
+            }}
+            title={
+                <div className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-primary" />
+                    <span>Distribución de Utilidades</span>
                 </div>
+            }
+            description={`Paso ${step} de ${totalSteps}: ${stepTitles[step - 1]}`}
+            headerClassName="bg-muted/30"
+            size="xl"
+            hideScrollArea
+        >
+            <div className="flex flex-col h-full min-h-[500px] p-6 pt-2">
+                {renderStepIndicator()}
 
-                <div className="p-6">
+                <div className="flex-1">
                     {/* STEP 1 */}
                     {step === 1 && (
-                        <div className="grid gap-4">
+                        <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Año Fiscal</Label>
-                                    <Input 
-                                        type="number" 
-                                        value={formData.fiscal_year}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, fiscal_year: parseInt(e.target.value) }))}
-                                    />
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Ejercicio Fiscal Cerrado</Label>
+                                    <Select 
+                                        value={formData.fiscal_year_id}
+                                        onValueChange={(val) => {
+                                            const fy = fiscalYears.find(f => f.id.toString() === val)
+                                            setFormData(prev => ({ 
+                                                ...prev, 
+                                                fiscal_year_id: val,
+                                                net_result: fy?.net_result?.toString() || "" 
+                                            }))
+                                        }}
+                                    >
+                                        <SelectTrigger className="font-bold">
+                                            <SelectValue placeholder="Seleccione un año cerrado" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {fiscalYears.map(fy => (
+                                                <SelectItem key={fy.id} value={fy.id.toString()}>{fy.year} - Cerrado</SelectItem>
+                                            ))}
+                                            {fiscalYears.length === 0 && (
+                                                <p className="text-[10px] p-2 text-muted-foreground text-center">No hay años cerrados disponibles</p>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Fecha Resolución (Corte para %)</Label>
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Fecha de Resolución</Label>
                                     <Input 
                                         type="date" 
                                         value={formData.resolution_date}
                                         onChange={(e) => setFormData(prev => ({ ...prev, resolution_date: e.target.value }))}
+                                        className="font-medium"
                                     />
                                 </div>
                             </div>
-                            <div className="grid gap-2 mt-2">
-                                <Label>Resultado Neto Contable ($)</Label>
-                                <Input 
-                                    type="number" 
-                                    placeholder="Ej: 5000000 (Utilidad) o -2000000 (Pérdida)"
-                                    value={formData.net_result}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, net_result: e.target.value }))}
-                                    className="font-mono text-lg"
-                                />
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                    * Los valores positivos (-) son Pérdidas.
-                                </p>
+                            
+                            <div className="grid gap-2">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Resultado Neto ($)</Label>
+                                <div className="relative">
+                                    <Input 
+                                        type="number" 
+                                        placeholder="0"
+                                        value={formData.net_result}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, net_result: e.target.value }))}
+                                        className="font-mono text-2xl h-14 pl-12"
+                                    />
+                                    <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        <span className={cn(
+                                            "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-sm",
+                                            parseFloat(formData.net_result) >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
+                                        )}>
+                                            {parseFloat(formData.net_result) >= 0 ? "Utilidad" : "Pérdida"}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 mt-2">
+
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Acta / Referencia (Opcional)</Label>
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Número de Acta</Label>
                                     <Input 
                                         value={formData.acta_number}
                                         onChange={(e) => setFormData(prev => ({ ...prev, acta_number: e.target.value }))}
-                                        placeholder="Ej: Junta Ordinaria N° 12"
+                                        placeholder="Ej: Acta N° 42"
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Notas</Label>
+                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Notas Internas</Label>
                                     <Input 
                                         value={formData.notes}
                                         onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                        placeholder="Distribuir según pacto social"
                                     />
                                 </div>
                             </div>
 
-                            <div className="bg-info/5 border border-info/20 p-4 rounded-lg mt-4 flex gap-3">
-                                <Calculator className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div className="text-xs text-info leading-relaxed font-medium">
-                                    Al continuar, el sistema buscará la <strong>participación exacta de cada socio a la fecha de resolución</strong> y pre-calculará la asignación descontando automáticamente los retiros provisorios realizados durante el año fiscal.
-                                </div>
-                            </div>
+                            <Alert className="bg-primary/5 border-primary/20">
+                                <CalendarCheck2 className="h-5 w-5 text-primary" />
+                                <AlertTitle className="text-primary font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
+                                <AlertDescription className="text-foreground/80 font-medium text-[10px] leading-relaxed">
+                                    El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los <strong>retiros provisorios</strong> detectados en la contabilidad del ejercicio.
+                                </AlertDescription>
+                            </Alert>
                         </div>
                     )}
 
                     {/* STEP 2 */}
                     {step === 2 && draftResolution && (
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-success/5 text-success p-3 rounded-lg border border-success/20">
-                                <div>
-                                    <div className="text-xs font-bold uppercase opacity-80">Resultado a Repartir</div>
-                                    <div className="text-xl font-mono font-bold">{formatCurrency(draftResolution.net_result)}</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-xs font-bold uppercase opacity-80">Año</div>
-                                    <div className="font-bold">{draftResolution.fiscal_year}</div>
-                                </div>
+                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="grid grid-cols-2 gap-4">
+                                <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
+                                    <p className="text-xl font-mono font-bold text-primary">{formatCurrency(draftResolution.net_result)}</p>
+                                </IndustrialCard>
+                                <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                                    <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
+                                    <p className="text-xl font-heading font-black">{draftResolution.fiscal_year}</p>
+                                </IndustrialCard>
                             </div>
 
-                            <div className="border rounded-md overflow-hidden">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-muted text-xs uppercase text-muted-foreground">
+                            <div className="border rounded-sm overflow-hidden">
+                                <table className="w-full text-[11px] text-left">
+                                    <thead className="bg-muted text-[10px] font-black uppercase text-muted-foreground tracking-wider border-b">
                                         <tr>
-                                            <th className="px-3 py-2">Socio</th>
-                                            <th className="px-3 py-2 text-right">Torta (%)</th>
-                                            <th className="px-3 py-2 text-right">Asignación</th>
-                                            <th className="px-3 py-2 text-right text-destructive">Menos Retirado</th>
-                                            <th className="px-3 py-2 text-right">Neto a Destinar</th>
-                                            <th className="px-3 py-2">Destino</th>
+                                            <th className="px-3 py-3">Socio</th>
+                                            <th className="px-3 py-3 text-right">Torta (%)</th>
+                                            <th className="px-3 py-3 text-right">Bruto</th>
+                                            <th className="px-3 py-3 text-right text-destructive">Retiros</th>
+                                            <th className="px-3 py-3 text-right">A Destinar</th>
+                                            <th className="px-3 py-3">Destino</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
                                         {lines.map((line: any) => (
                                             <tr key={line.id} className="hover:bg-muted/30">
-                                                <td className="px-3 py-2 font-medium">{line.partner_name}</td>
-                                                <td className="px-3 py-2 text-right font-bold">{line.percentage_at_date}%</td>
+                                                <td className="px-3 py-2 font-black">{line.partner_name}</td>
+                                                <td className="px-3 py-2 text-right font-bold text-muted-foreground">{line.percentage_at_date}%</td>
                                                 <td className="px-3 py-2 text-right font-mono text-success">{formatCurrency(line.gross_amount)}</td>
                                                 <td className="px-3 py-2 text-right font-mono text-destructive">
                                                     {parseFloat(line.provisional_withdrawals_offset) > 0 ? `-${formatCurrency(line.provisional_withdrawals_offset)}` : '0'}
@@ -348,7 +420,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                             value={lineDestinations[line.id]} 
                                                             onValueChange={(v) => setLineDestinations(prev => ({ ...prev, [line.id]: v }))}
                                                         >
-                                                            <SelectTrigger className="h-8 text-xs w-[140px]">
+                                                            <SelectTrigger className="h-8 text-[10px] w-[140px] font-bold">
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -364,7 +436,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                             </SelectContent>
                                                         </Select>
                                                     ) : (
-                                                        <span className="text-xs text-muted-foreground italic pl-2">Compensado</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase pl-2">Compensado</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -377,92 +449,88 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
 
                     {/* STEP 3 */}
                     {step === 3 && (
-                        <div className="space-y-6 py-4">
+                        <div className="space-y-6 py-4 animate-in zoom-in-95 duration-300">
                             <div className="flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="h-16 w-16 bg-success/10 text-success rounded-full flex items-center justify-center">
-                                    <CheckCircle2 className="h-8 w-8" />
+                                <div className="h-16 w-16 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                                    <Wallet className="h-8 w-8" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold">Distribución Lista para Ejecutar</h3>
+                                    <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
                                     <p className="text-sm text-muted-foreground max-w-md mt-2">
-                                        Al ejecutar, el sistema registrará automáticamente:
+                                        Al ejecutar, el sistema impactará el patrimonio de la empresa automáticamente.
                                     </p>
                                 </div>
                             </div>
                             
-                            <ul className="text-sm space-y-3 bg-muted/40 p-4 rounded-lg border">
-                                <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
-                                    <span>Cierre de la cuenta <strong>Utilidades del Ejercicio</strong>.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
-                                    <span>Liquidación contable de los retiros provisorios de los socios seleccionados.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
-                                    <span>Creación de pasivos en <strong>Dividendos por Pagar</strong> listos para ser emitidos desde la caja.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5" />
-                                    <span>Actualización de participaciones si hubo <strong>Reinversión de Utilidades</strong>.</span>
-                                </li>
-                            </ul>
+                            <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Impacto Contables Automatizado</p>
+                                {[
+                                    `Cierre de la cuenta "Utilidades del Ejercicio"`,
+                                    `Liquidación contable de retiros provisorios de socios`,
+                                    `Creación de pasivos en "Dividendos por Pagar"`,
+                                    `Aumento de Capital si hubo Reinversión`
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3 text-xs font-medium">
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
+                                        <span>{item}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                <DialogFooter className="px-6 py-4 border-t flex items-center justify-between sm:justify-between">
+                <div className="flex justify-between items-center pt-8 border-t border-border mt-8">
                     <div className="flex gap-2">
-                        {draftResolution?.status === 'DRAFT' && (
+                        <Button
+                            variant="ghost"
+                            onClick={step === 1 ? () => onOpenChange(false) : () => setStep(step - 1)}
+                            className="font-bold uppercase tracking-widest text-[10px]"
+                            disabled={loading}
+                        >
+                            <ArrowLeft className="w-3 h-3 mr-2" />
+                            {step === 1 ? 'Cancelar' : 'Anterior'}
+                        </Button>
+                    </div>
+
+                    <div className="flex gap-3">
+                        {draftResolution?.status === 'DRAFT' && step === 2 && (
                             <Button 
-                                variant="ghost" 
+                                variant="outline" 
                                 size="sm" 
-                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                className="text-destructive border-destructive/20 hover:bg-destructive/10 font-bold uppercase tracking-widest text-[10px]"
                                 onClick={handleDeleteDraft}
                                 disabled={loading}
                             >
-                                Eliminar Borrador
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="flex gap-2">
-                        {step > 1 && step < 4 && (
-                            <Button 
-                                variant="outline" 
-                                onClick={() => setStep(step - 1)}
-                                disabled={loading}
-                            >
-                                Atrás
+                                Anular Borrador
                             </Button>
                         )}
 
                         {step === 1 && (
-                            <Button onClick={handleCreateOrUpdateDraft} disabled={loading}>
+                            <Button onClick={handleCreateOrUpdateDraft} disabled={loading} className="font-bold uppercase tracking-widest text-[10px]">
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Calculator className="h-4 w-4 mr-2" />}
-                                {draftResolution ? "Actualizar y Recalcular" : "Generar Borrador"}
+                                {draftResolution ? "Recalcular Distribución" : "Generar Borrador"}
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
 
                         {step === 2 && (
-                            <Button onClick={handleUpdateDestinations} disabled={loading}>
+                            <Button onClick={handleUpdateDestinations} disabled={loading} className="font-bold uppercase tracking-widest text-[10px]">
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                                Continuar Revisión
+                                Confirmar Destinos
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         )}
 
                         {step === 3 && (
-                            <Button onClick={handleExecute} className="bg-success hover:bg-success/90" disabled={loading}>
+                            <Button onClick={handleExecute} className="bg-primary hover:bg-primary/90 font-black uppercase tracking-[0.15em] px-8" disabled={loading}>
                                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
-                                Confirmar y Ejecutar Contabilidad
+                                Ejecutar Contabilidad
                             </Button>
                         )}
                     </div>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            </div>
+        </BaseModal>
     )
 }

@@ -3,9 +3,13 @@ from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Q
-from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem
-from .serializers import AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer, BudgetSerializer, BudgetItemSerializer
+from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem, FiscalYear
+from .serializers import (
+    AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer,
+    BudgetSerializer, BudgetItemSerializer, FiscalYearSerializer, FiscalYearPreviewSerializer
+)
 from .services import JournalEntryService, AccountingService, BudgetService
+from .fiscal_year_service import FiscalYearClosingService
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
@@ -299,3 +303,98 @@ class BudgetViewSet(viewsets.ModelViewSet):
 class BudgetItemViewSet(viewsets.ModelViewSet):
     queryset = BudgetItem.objects.all()
     serializer_class = BudgetItemSerializer
+
+
+class FiscalYearViewSet(viewsets.ModelViewSet):
+    """
+    CRUD + custom actions for Fiscal Year management and annual closing.
+    """
+    queryset = FiscalYear.objects.all()
+    serializer_class = FiscalYearSerializer
+
+    @action(detail=False, methods=['get'], url_path='(?P<year>[0-9]{4})/preview-closing')
+    def preview_closing(self, request, year=None):
+        """
+        Returns a preview of the fiscal year closing: P&L account balances,
+        net result, and pre-closing validations.
+        """
+        try:
+            data = FiscalYearClosingService.preview_closing(int(year))
+            serializer = FiscalYearPreviewSerializer(data)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response(
+                {'error': str(e.message if hasattr(e, 'message') else e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='(?P<year>[0-9]{4})/close')
+    def close(self, request, year=None):
+        """
+        Executes the annual fiscal year closing.
+        """
+        if not request.user.has_perm('accounting.can_close_fiscal_year'):
+            return Response(
+                {'error': 'No tiene permisos para cerrar el ejercicio fiscal.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        notes = request.data.get('notes', '')
+
+        try:
+            result = FiscalYearClosingService.close_fiscal_year(
+                year=int(year),
+                user=request.user,
+                notes=notes
+            )
+            serializer = self.get_serializer(result)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response(
+                {'error': str(e.message if hasattr(e, 'message') else e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['post'], url_path='(?P<year>[0-9]{4})/reopen')
+    def reopen(self, request, year=None):
+        """
+        Reopens a closed fiscal year by reversing the closing entry.
+        """
+        if not request.user.has_perm('accounting.can_reopen_fiscal_year'):
+            return Response(
+                {'error': 'No tiene permisos para reabrir el ejercicio fiscal.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            result = FiscalYearClosingService.reopen_fiscal_year(
+                year=int(year),
+                user=request.user
+            )
+            serializer = self.get_serializer(result)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response(
+                {'error': str(e.message if hasattr(e, 'message') else e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['post'], url_path='(?P<year>[0-9]{4})/generate-opening')
+    def generate_opening(self, request, year=None):
+        """
+        Generates an opening journal entry for the next fiscal year.
+        """
+        try:
+            result = FiscalYearClosingService.generate_opening_entry(
+                year=int(year),
+                user=request.user
+            )
+            serializer = self.get_serializer(result)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response(
+                {'error': str(e.message if hasattr(e, 'message') else e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

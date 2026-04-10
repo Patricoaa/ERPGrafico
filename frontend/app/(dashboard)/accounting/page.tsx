@@ -8,7 +8,8 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 // Lazy load feature components
 const AccountsView = lazy(() => import("@/app/(dashboard)/accounting/accounts/page").then(m => ({ default: m.default })))
 const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
-const PeriodsView = lazy(() => import("@/app/(dashboard)/accounting/periods/page").then(m => ({ default: m.default })))
+const ClosuresView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.AccountingClosuresView })))
+const TrialBalanceView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.TrialBalanceView })))
 const TaxDeclarationsView = lazy(() => import("@/features/tax/components/TaxDeclarationsView").then(m => ({ default: m.TaxDeclarationsView })))
 const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
@@ -26,13 +27,13 @@ interface PageProps {
 export default async function AccountingPage({ searchParams }: PageProps) {
     const { view, modal, tab } = await searchParams
     const configTab = tab || "global"
-    const viewMode = (view as 'ledger' | 'entries' | 'periods' | 'tax') || 'ledger'
+    const viewMode = (view as 'ledger' | 'entries' | 'closures' | 'tax' | 'trial-balance') || 'ledger'
 
     const tabs = [
         { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting?view=ledger" },
         { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting?view=entries" },
-        { value: "periods", label: "Periodos", iconName: "calendar", href: "/accounting?view=periods" },
-        { value: "tax", label: "Impuestos (F29)", iconName: "calculator", href: "/accounting?view=tax" },
+        { value: "closures", label: "Cierres", iconName: "calendar", href: "/accounting?view=closures" },
+        { value: "tax", label: "Impuestos (F29)", iconName: "landmark", href: "/accounting?view=tax" },
     ]
 
     const getHeaderConfig = () => {
@@ -65,12 +66,19 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                         />
                     )
                 }
-            case 'periods':
+            case 'trial-balance':
                 return {
-                    title: "Gestión de Periodos",
-                    description: "Control de cierres mensuales y apertura de ejercicios.",
+                    title: "Balance de Comprobación",
+                    description: "Sumas y saldos del libro mayor para validar la integridad contable.",
+                    icon: "calculator",
+                    action: <PageHeaderButton iconName="download" title="Exportar Reporte" />
+                }
+            case 'closures':
+                return {
+                    title: "Gestión de Cierres",
+                    description: "Control de validación mensual y cierres de ejercicios anuales.",
                     icon: "calendar",
-                    action: null
+                    action: <PageHeaderButton href="/accounting?view=closures&modal=fy" iconName="plus" circular title="Nuevo Año Fiscal" />
                 }
             case 'tax':
                 return {
@@ -110,7 +118,8 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'ledger' && <AccountsView externalOpen={modal === 'new'} />}
                     {viewMode === 'entries' && <EntriesView externalOpen={modal === 'new'} />}
-                    {viewMode === 'periods' && <PeriodsView />}
+                    {viewMode === 'closures' && <ClosuresView externalOpen={modal === 'fy'} />}
+                    {viewMode === 'trial-balance' && <TrialBalanceView />}
                     {viewMode === 'tax' && <TaxDeclarationsView externalOpen={modal === 'new'} />}
                 </Suspense>
             </div>

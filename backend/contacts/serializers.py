@@ -114,7 +114,7 @@ class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfitDistributionResolution
         fields = [
-            'id', 'display_id', 'fiscal_year', 'resolution_date',
+            'id', 'display_id', 'fiscal_year', 'fiscal_year_obj', 'resolution_date',
             'net_result', 'is_profit', 'is_loss',
             'status', 'status_display',
             'approved_by', 'approved_by_name', 'approved_at',

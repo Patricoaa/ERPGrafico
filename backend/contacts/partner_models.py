@@ -251,9 +251,17 @@ class ProfitDistributionResolution(models.Model):
         EXECUTED = 'EXECUTED', _('Ejecutada')
         CANCELLED = 'CANCELLED', _('Anulada')
 
+    fiscal_year_obj = models.OneToOneField(
+        'accounting.FiscalYear',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='profit_distribution',
+        verbose_name=_("Ejercicio Fiscal Relacionado"),
+        help_text=_("El ejercicio contable cerrado del cual proviene esta distribución.")
+    )
     fiscal_year = models.IntegerField(
         _("Año Fiscal"),
-        help_text=_("Año del ejercicio cuyas utilidades se están distribuyendo.")
+        help_text=_("Año del ejercicio (campo denormalizado para búsquedas rápidas).")
     )
     resolution_date = models.DateField(
         _("Fecha de Resolución"),
