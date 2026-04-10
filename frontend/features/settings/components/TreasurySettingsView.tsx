@@ -134,7 +134,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
             <Form {...form}>
                 <form className="space-y-6">
                     <Tabs defaultValue="conciliation" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
                             <TabsTrigger value="conciliation" className="text-[10px] uppercase font-black tracking-widest gap-2">
                                 <ArrowLeftRight className="h-3.5 w-3.5" />
                                 Conciliación
@@ -151,7 +151,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
 
                         {/* --- Tab: Reconciliation --- */}
                         <TabsContent value="conciliation" className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-[0.25rem] border-2">
+                            <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
@@ -174,7 +174,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
 
                         {/* --- Tab: Audit (Arqueo) --- */}
                         <TabsContent value="audit" className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-[0.25rem] border-2">
+                            <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <Banknote className="h-4 w-4 text-primary opacity-50" />
@@ -193,7 +193,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
 
                         {/* --- Tab: Movements --- */}
                         <TabsContent value="movements" className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-[0.25rem] border-2">
+                            <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <Settings2 className="h-4 w-4 text-primary opacity-50" />

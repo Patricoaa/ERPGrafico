@@ -227,7 +227,7 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                <TabsList className="grid w-full grid-cols-4 h-12 p-1 bg-muted/50 rounded-md border-2">
                     <TabsTrigger value="income" className="text-[10px] uppercase font-black tracking-widest gap-2">
                         <TrendingUp className="h-3.5 w-3.5" />
                         Ingresos

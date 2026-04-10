@@ -170,14 +170,14 @@ export default function AdvancesPage() {
             cell: ({ row }) => (
                 <div className="flex items-center gap-1 justify-center w-full">
                     {!row.original.is_discounted && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                             onClick={() => { setEditingAdvance(row.original); setDialogOpen(true) }}>
                             <Pencil className="h-3.5 w-3.5" />
                         </Button>
                     )}
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         </AlertDialogTrigger>

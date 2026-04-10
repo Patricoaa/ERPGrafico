@@ -52,7 +52,7 @@ export function TaskInbox() {
             setOperationalTasks(tasks)
 
             // Notifications logic
-            const currentPendingApprovals = approvals.filter((t: any) => t.status === 'PENDING').length
+            const currentPendingApprovals = approvals.filter((t: Task) => t.status === 'PENDING').length
             const currentPendingTasks = tasks.length
 
             if (silent) {
@@ -213,13 +213,13 @@ export function TaskInbox() {
             <Card
                 key={task.id}
                 className={cn(
-                    "p-3 transition-all cursor-pointer border-border/50 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-lg backdrop-blur-sm group rounded-md",
+                    "p-3 transition-all cursor-pointer border-border/50 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-lg backdrop-blur-sm group rounded-md flex flex-col gap-3",
                     isCompleted && "opacity-50 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
             >
                 {/* Row 1: Task Name | Avatar */}
-                <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-medium text-foreground line-clamp-2 flex-1 group-hover:text-primary transition-colors flex items-center gap-2">
                         {task.task_type === 'CREDIT_POS_REQUEST' ? (
                             `Aprobación Crédito: ${task.data?.customer_name || task.title.replace('Aprobación Crédito: ', '') || 'Cliente'}`
@@ -236,8 +236,8 @@ export function TaskInbox() {
                             task.title
                         )}
                     </h3>
-                    <Avatar className="h-8 w-8 shrink-0 border border-primary/20">
-                        <AvatarFallback className="text-xs bg-primary/20 text-primary font-bold">
+                    <Avatar className="h-8 w-8 shrink-0 border border-border/50">
+                        <AvatarFallback className="text-xs bg-muted text-muted-foreground font-bold">
                             {initials}
                         </AvatarFallback>
                     </Avatar>
@@ -245,9 +245,8 @@ export function TaskInbox() {
 
                 {/* HUB Stage Context Card */}
                 {task.task_type?.startsWith('HUB_') && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                        <div className="text-[11px] text-muted-foreground space-y-1.5 bg-muted/30 p-2.5 rounded-md border border-border/30">
-                            {task.data?.contact_name && (
+                    <div className="text-[11px] text-muted-foreground space-y-1.5 bg-muted/30 p-2.5 rounded-md border border-border/30">
+                        {task.data?.contact_name && (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
                                     <span className="font-medium text-foreground">{task.data.contact_name}</span>
@@ -278,7 +277,6 @@ export function TaskInbox() {
                                 </span>
                             </div>
                         </div>
-                    </div>
                 )}
 
                 {/* Row 2: Status & Timeline */}
@@ -312,8 +310,8 @@ export function TaskInbox() {
 
                 {/* Row 3: Inline Actions for Credit Requests */}
                 {task.task_type === 'CREDIT_POS_REQUEST' && !isCompleted && task.status !== 'REJECTED' && (
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                        <div className="flex items-center justify-between mb-2">
+                    <div className="pt-2 border-t border-border/50 flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
                             <button
                                 className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 hover:text-primary transition-colors group/name"
                                 onClick={(e) => {
@@ -425,30 +423,30 @@ export function TaskInbox() {
                     <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border border-border/50 backdrop-blur-md rounded-md">
                         <TabsTrigger
                             value="approvals"
-                            className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
+                            className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
                         >
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Aprobaciones</span>
                             <span className="sm:hidden">Aprob.</span>
                             <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
-                                "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
-                                approvalsPending.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
+                                "bg-muted text-muted-foreground border-border/50",
+                                approvalsPending.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
                             )}>
                                 {approvalsPending.length}
                             </span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="tasks"
-                            className="gap-2 text-xs rounded-lg transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg group/trigger"
+                            className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
                         >
                             <ListTodo className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Tareas</span>
                             <span className="sm:hidden">Tareas</span>
                             <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors",
-                                "bg-primary/20 text-primary-foreground group-data-[state=active]/trigger:bg-white/20 group-data-[state=active]/trigger:text-white",
-                                operationalTasks.length > 0 && "bg-primary text-white shadow-[0_0_10px_rgba(var(--primary),0.5)]"
+                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
+                                "bg-muted text-muted-foreground border-border/50",
+                                operationalTasks.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
                             )}>
                                 {operationalTasks.length}
                             </span>

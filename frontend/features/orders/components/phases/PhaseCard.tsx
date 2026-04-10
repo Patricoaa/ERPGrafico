@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
+import { Card } from "@/components/ui/card"
 
 interface PhaseCardProps {
     title: string
@@ -110,11 +111,10 @@ export function PhaseCard({
     })()
 
     return (
-        <div className={cn(
-            "flex flex-col transition-all duration-300 relative group/card flex-shrink-0",
-            "border-b-4 border-border/40 first:border-t-4",
-            isActive && "border-primary/60",
+        <Card className={cn(
+            "flex flex-col transition-all duration-300 relative group/card border-border/50 bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md rounded-md overflow-hidden py-2 gap-2",
             isSuccess && "opacity-80 grayscale-[0.3] hover:opacity-100 hover:grayscale-0",
+            isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
             className
         )}>
 
@@ -135,17 +135,16 @@ export function PhaseCard({
                 } : undefined}
                 className={cn(
                     "flex items-center shrink-0 transition-all",
-                    "p-3 px-4 gap-3",
+                    "px-3 h-12 gap-2",
                     collapsible && "cursor-pointer select-none"
                 )}
             >
                 <div className={cn(
-                    "transition-all duration-500 group-hover/card:scale-105",
-                    iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')],
-                    "p-2 flex items-center justify-center rounded-[0.25rem] h-9 w-9 shrink-0 border-2 border-border/80"
+                    "transition-all duration-300",
+                    "p-1 flex items-center justify-center rounded-md h-7 w-7 shrink-0 border border-border/50 bg-muted/50 shadow-sm shadow-black/5"
                 )}>
                     <div className="relative flex items-center justify-center w-full h-full">
-                        <Icon className="h-4 w-4 opacity-90" />
+                        <Icon className={cn("h-4 w-4", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
 
                         {/* Mini Status Badge - Simplified to a Small Dot */}
                         <div className={cn(
@@ -298,7 +297,7 @@ export function PhaseCard({
                                 documents.map((doc: any, i: number) => (
                                     <div key={i} className={cn(
                                         "flex items-center justify-between border-border/30 hover:bg-white/5 transition-all duration-300 group/doc",
-                                        "rounded-[0.25rem] border-2 min-h-[2.25rem] py-1.5 px-3",
+                                        "rounded-md border-2 min-h-[2.25rem] py-1.5 px-3",
                                         doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 cursor-not-allowed",
                                         doc.isWarning && "border-warning/40 hover:bg-warning/5"
                                     )}>
@@ -368,7 +367,7 @@ export function PhaseCard({
                                     </div>
                                 ))
                             ) : (
-                                <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-[0.25rem]">
+                                <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-md">
                                     <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                                 </div>
                             )}
@@ -386,6 +385,6 @@ export function PhaseCard({
                     </div>
                 </div>
             </div>
-        </div>
+        </Card>
     )
 }

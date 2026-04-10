@@ -265,7 +265,7 @@ export default function PayrollsPage() {
                 const p = row.original;
                 return (
                     <div className="flex items-center gap-1 justify-center w-full">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-[0.25rem] transition-colors" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md transition-colors" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
                             <Eye className="h-3.5 w-3.5" />
                         </Button>
  
@@ -274,7 +274,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-8 w-8 rounded-[0.25rem] text-primary hover:text-primary hover:bg-blue-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-blue-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -290,7 +290,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Pago Sueldo"
-                                className="h-8 w-8 rounded-[0.25rem] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -306,7 +306,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Pagar Previred"
-                                className="h-8 w-8 rounded-[0.25rem] text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -321,7 +321,7 @@ export default function PayrollsPage() {
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 rounded-[0.25rem] text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (confirm("¿Eliminar borrador?")) {

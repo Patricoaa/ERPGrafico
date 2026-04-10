@@ -70,8 +70,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden font-sans">
-            {/* Mini Sidebar (Left) */}
+        <div className="relative h-screen bg-background overflow-hidden font-sans">
+            {/* Mini Sidebar - Now Floating & Independent */}
             <MiniSidebar
                 activeCategory={activeCategory}
                 onCategoryChange={(cat: string) => {
@@ -81,24 +81,27 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 }}
             />
 
-            {/* Main Content Area — contracts to accommodate both Hub panel and Inbox simultaneously */}
+            {/* Main Content Area - Wrapped in a Premium Card */}
             <div
-                className={cn(
-                    "flex-1 flex flex-col min-w-0 relative transition-all duration-500 ease-in-out",
-                    isInboxOpen && isHubEffectivelyOpen
-                        ? "mr-[740px]"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-16 pb-4 px-4"
+                style={{
+                    marginRight: isInboxOpen && isHubEffectivelyOpen
+                        ? "calc(360px + 320px + 3rem)"
                         : isHubEffectivelyOpen
-                        ? "mr-[420px]"
+                        ? "calc(360px + 2rem)"
                         : isInboxOpen
-                        ? "mr-[320px] xl:mr-[25%] 2xl:mr-[450px]"
-                        : ""
-                )}
+                        ? "calc(320px + 2rem)"
+                        : "0px"
+                }}
             >
-                <main className="flex-1 overflow-y-auto pb-24">
-                    <div className="p-0 w-full">
+                <main className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-sm custom-scrollbar relative backdrop-blur-sm">
+                    {/* El contenido ahora está encapsulado en un card que coincide con 
+                        el estilo de la bandeja de entrada y el hub */}
+                    <div className="w-full h-full">
                         {children}
                     </div>
                 </main>
+                
                 <QuickActionsMenu
                     isInboxOpen={isInboxOpen}
                     onInboxToggle={handleInboxToggle}

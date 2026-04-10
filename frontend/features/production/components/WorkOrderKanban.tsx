@@ -49,7 +49,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                     <div
                         key={stage.id}
                         className={cn(
-                            "flex-shrink-0 w-80 rounded-[0.25rem] flex flex-col border shadow-sm",
+                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm",
                             stage.color
                         )}
                     >
@@ -67,7 +67,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                             {isLoading ? (
                                 <>
                                     {[1, 2, 3].map((i) => (
-                                        <Card key={i} className="border-none shadow-sm rounded-[0.25rem] opacity-60">
+                                        <Card key={i} className="border-none shadow-sm rounded-md opacity-60">
                                             <CardContent className="p-3 space-y-4">
                                                 <div className="flex gap-2">
                                                     <Skeleton className="h-5 w-16" />
@@ -92,13 +92,13 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                             key={order.id}
                                             onClick={() => onManage(order.id)}
                                             className={cn(
-                                                "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-[0.25rem]",
+                                                "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-md",
                                                 "active:scale-95 duration-100"
                                             )}
                                         >
                                             <CardContent className="p-3 space-y-3">
                                                 <div className="flex gap-2 items-center flex-wrap">
-                                                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-[0.25rem]">
+                                                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                                                         OT-{order.number}
                                                     </span>
                                                     {order.outsourcing_status === 'partial' && (

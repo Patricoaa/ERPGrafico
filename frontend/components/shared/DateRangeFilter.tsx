@@ -50,7 +50,7 @@ export function DateRangeFilter({
                         variant={"outline"}
                         size="sm"
                         className={cn(
-                            "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] bg-background/50 backdrop-blur-sm border-border/60 rounded-[0.25rem] hover:bg-muted/50 transition-all group h-9",
+                            "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 transition-all group h-9",
                             !date && "text-muted-foreground"
                         )}
                     >
@@ -72,7 +72,7 @@ export function DateRangeFilter({
                         {date && (
                             <div
                                 onClick={clearDate}
-                                className="ml-2 p-0.5 rounded-[0.125rem] hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                                className="ml-2 p-0.5 rounded-sm hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
                             >
                                 <X className="h-3 w-3" />
                             </div>

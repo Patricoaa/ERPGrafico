@@ -208,7 +208,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleEdit(acc)} 
-                            className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
+                            className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                             title="Editar"
                         >
                             <Pencil className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 rounded-[0.25rem] hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                            className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
                             onClick={() => handleDelete(acc.id)} 
                             title="Eliminar"
                         >

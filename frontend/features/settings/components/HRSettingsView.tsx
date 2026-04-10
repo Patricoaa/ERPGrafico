@@ -266,7 +266,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
                     <TabsTrigger value="global" className="text-[10px] uppercase font-black tracking-widest gap-2">
                         <Settings2 className="h-3.5 w-3.5" />
                         Globales
@@ -285,7 +285,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                 <TabsContent value="global" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                     <Form {...globalForm}>
                         <div className="grid gap-6">
-                            <Card className="rounded-[0.25rem] border-2">
+                            <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Indicadores Económicos</CardTitle>
                                     <CardDescription className="text-[10px] uppercase font-bold">Valores oficiales para el cálculo mensual</CardDescription>
@@ -330,7 +330,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                                 </CardContent>
                             </Card>
 
-                            <Card className="rounded-[0.25rem] border-2">
+                            <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                         <AlertCircle className="h-4 w-4 opacity-50" />
@@ -418,7 +418,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {afps.map((afp) => (
-                            <Card key={afp.id} className="relative overflow-hidden group hover:border-blue-500/50 transition-all rounded-[0.25rem] border-2">
+                            <Card key={afp.id} className="relative overflow-hidden group hover:border-blue-500/50 transition-all rounded-md border-2">
                                 <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <AFPDialog afp={afp} onSaved={fetchData} />
                                 </div>
@@ -518,12 +518,12 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
-                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-[0.25rem] shadow-sm">
+                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm">
                         <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] rounded-[0.25rem] border-2">
+            <DialogContent className="sm:max-w-[425px] rounded-md border-2">
                 <DialogHeader>
                     <DialogTitle className="text-sm font-black uppercase tracking-widest">Mantenimiento de Concepto</DialogTitle>
                     <DialogDescription className="text-[10px] uppercase font-bold italic">
@@ -622,7 +622,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                 control={form.control}
                                 name="formula"
                                 render={({ field }) => (
-                                    <FormItem className="bg-primary/5 p-3 rounded-[0.25rem] border border-dashed border-primary/20">
+                                    <FormItem className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20">
                                         <FormLabel className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
                                             Constructor de Fórmula
                                             <Badge variant="outline" className="text-[8px] bg-background">ADVANCED</Badge>
@@ -714,12 +714,12 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
-                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-[0.25rem] shadow-sm">
+                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm">
                         <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[400px] border-2 rounded-[0.25rem]">
+            <DialogContent className="sm:max-w-[400px] border-2 rounded-md">
                 <DialogHeader>
                     <DialogTitle className="text-sm font-black uppercase tracking-widest">Mantenimiento de AFP</DialogTitle>
                     <DialogDescription className="text-[10px] uppercase font-bold italic">

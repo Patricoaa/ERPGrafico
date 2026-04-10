@@ -369,7 +369,7 @@ export function BOMFormDialog({
                         form="bom-form"
                         type="submit"
                         disabled={form.formState.isSubmitting}
-                        className="rounded-[0.25rem] text-xs font-bold"
+                        className="rounded-md text-xs font-bold"
                     >
                         {form.formState.isSubmitting ? (
                             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
@@ -438,7 +438,7 @@ export function BOMFormDialog({
                                                                         <Badge 
                                                                             key={attr.id} 
                                                                             variant="secondary" 
-                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none rounded-[0.125rem]"
+                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none rounded-sm"
                                                                         >
                                                                             {attr.value}
                                                                         </Badge>
@@ -462,7 +462,7 @@ export function BOMFormDialog({
                     </div>
                 </div>
             ) : (
-                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-[0.25rem]">
+                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-md">
                    <div className="flex items-center gap-3">
                        <Box className="h-5 w-5 text-muted-foreground" />
                        <div className="flex flex-col">

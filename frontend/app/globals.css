@@ -44,7 +44,7 @@
   /* GEOMETRY & TYPOGRAPHY */
   --radius: 0.75rem;
   /* Sharp Industrial look */
-  --ring: oklch(0.65 0.25 310 / 0.4);
+  --ring: oklch(0.65 0.25 301 / 0.4);
 
   --sidebar: oklch(0.10 0.02 240);
   --sidebar-foreground: oklch(0.90 0.02 240);
@@ -67,8 +67,8 @@
   --card-foreground: oklch(0.95 0.02 240);
   --popover: oklch(0.14 0.02 240);
   --popover-foreground: oklch(0.95 0.02 240);
-  --primary: oklch(0.75 0.20 310);
-  --primary-foreground: oklch(0.10 0.02 310);
+  --primary: oklch(0.65 0.24 301);
+  --primary-foreground: oklch(0.95 0.02 301);
   --secondary: oklch(0.25 0.03 240);
   --secondary-foreground: oklch(0.95 0.02 240);
   --muted: oklch(0.18 0.02 240);
@@ -79,7 +79,7 @@
   --destructive-foreground: oklch(0.95 0.02 25);
   --border: oklch(1 0 0 / 0.15);
   --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.75 0.20 310 / 0.5);
+  --ring: oklch(0.65 0.24 301 / 0.5);
 
   --success: oklch(0.65 0.20 145);
   --success-foreground: oklch(0.10 0.02 145);
@@ -112,6 +112,8 @@
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -151,10 +153,12 @@
 
   /* SHIMMER ANIMATION */
   --animate-shimmer: shimmer 2s infinite linear;
+
   @keyframes shimmer {
     0% {
       background-position: -40rem 0;
     }
+
     100% {
       background-position: 40rem 0;
     }
@@ -180,13 +184,11 @@
   /* REUSABLE SKELETON SHIMMER */
   .skeleton {
     @apply relative overflow-hidden bg-muted/40 rounded-md;
-    background-image: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.2) 20%,
-      rgba(255, 255, 255, 0.5) 60%,
-      rgba(255, 255, 255, 0)
-    );
+    background-image: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0.5) 60%,
+        rgba(255, 255, 255, 0));
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
@@ -248,11 +250,11 @@
   }
 
   body[data-inbox-open="true"] {
-    --inbox-width: clamp(320px, 25vw, 450px);
+    --inbox-width: calc(320px + 2rem);
   }
 
   body[data-hub-open="true"] {
-    --hub-width: 380px;
+    --hub-width: calc(360px + 2rem);
   }
 
   /* 
@@ -262,45 +264,103 @@
    * and doesn't instantly unmount the element.
    */
   @keyframes sheet-slide-in-right {
-    from { transform: translate3d(100%, 0, 0); }
-    to { transform: translate3d(0, 0, 0); }
+    from {
+      transform: translate3d(100%, 0, 0);
+    }
+
+    to {
+      transform: translate3d(0, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-out-right {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(100%, 0, 0); }
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+
+    to {
+      transform: translate3d(100%, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-in-left {
-    from { transform: translate3d(-100%, 0, 0); }
-    to { transform: translate3d(0, 0, 0); }
+    from {
+      transform: translate3d(-100%, 0, 0);
+    }
+
+    to {
+      transform: translate3d(0, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-out-left {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(-100%, 0, 0); }
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+
+    to {
+      transform: translate3d(-100%, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-in-top {
-    from { transform: translate3d(0, -100%, 0); }
-    to { transform: translate3d(0, 0, 0); }
+    from {
+      transform: translate3d(0, -100%, 0);
+    }
+
+    to {
+      transform: translate3d(0, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-out-top {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(0, -100%, 0); }
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+
+    to {
+      transform: translate3d(0, -100%, 0);
+    }
   }
+
   @keyframes sheet-slide-in-bottom {
-    from { transform: translate3d(0, 100%, 0); }
-    to { transform: translate3d(0, 0, 0); }
+    from {
+      transform: translate3d(0, 100%, 0);
+    }
+
+    to {
+      transform: translate3d(0, 0, 0);
+    }
   }
+
   @keyframes sheet-slide-out-bottom {
-    from { transform: translate3d(0, 0, 0); }
-    to { transform: translate3d(0, 100%, 0); }
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+
+    to {
+      transform: translate3d(0, 100%, 0);
+    }
   }
 
   @keyframes sheet-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
+
   @keyframes sheet-fade-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
   }
 
   [data-slot="sheet-content"] {
@@ -316,8 +376,13 @@
     animation-duration: 300ms !important;
   }
 
-  [data-slot="sheet-content"].right-0[data-state="open"] { animation-name: sheet-slide-in-right !important; }
-  [data-slot="sheet-content"].right-0[data-state="closed"] { animation-name: sheet-slide-out-right !important; }
+  [data-slot="sheet-content"].right-0[data-state="open"] {
+    animation-name: sheet-slide-in-right !important;
+  }
+
+  [data-slot="sheet-content"].right-0[data-state="closed"] {
+    animation-name: sheet-slide-out-right !important;
+  }
 
   /* 
    * DYNAMIC REPULSION FOR FLOATING LAYERS 
@@ -329,23 +394,39 @@
     --push-offset: calc(var(--inbox-width, 0px) + var(--hub-width, 0px));
     margin-right: 0 !important;
     width: 100vw !important;
-    max-width: 100vw !important; /* Force full screen coverage */
+    max-width: 100vw !important;
+    /* Force full screen coverage */
     padding-right: var(--push-offset) !important;
-    
+
     /* Synchronize transitions for premium side-by-side feel */
-    transition: 
+    transition:
       padding-right 500ms var(--ease-premium),
       transform 500ms var(--ease-premium) !important;
   }
 
-  [data-slot="sheet-content"].left-0[data-state="open"] { animation-name: sheet-slide-in-left !important; }
-  [data-slot="sheet-content"].left-0[data-state="closed"] { animation-name: sheet-slide-out-left !important; }
+  [data-slot="sheet-content"].left-0[data-state="open"] {
+    animation-name: sheet-slide-in-left !important;
+  }
 
-  [data-slot="sheet-content"].top-0[data-state="open"] { animation-name: sheet-slide-in-top !important; }
-  [data-slot="sheet-content"].top-0[data-state="closed"] { animation-name: sheet-slide-out-top !important; }
+  [data-slot="sheet-content"].left-0[data-state="closed"] {
+    animation-name: sheet-slide-out-left !important;
+  }
 
-  [data-slot="sheet-content"].bottom-0[data-state="open"] { animation-name: sheet-slide-in-bottom !important; }
-  [data-slot="sheet-content"].bottom-0[data-state="closed"] { animation-name: sheet-slide-out-bottom !important; }
+  [data-slot="sheet-content"].top-0[data-state="open"] {
+    animation-name: sheet-slide-in-top !important;
+  }
+
+  [data-slot="sheet-content"].top-0[data-state="closed"] {
+    animation-name: sheet-slide-out-top !important;
+  }
+
+  [data-slot="sheet-content"].bottom-0[data-state="open"] {
+    animation-name: sheet-slide-in-bottom !important;
+  }
+
+  [data-slot="sheet-content"].bottom-0[data-state="closed"] {
+    animation-name: sheet-slide-out-bottom !important;
+  }
 
 
   /* Overlay */
@@ -355,7 +436,7 @@
     animation-fill-mode: both !important;
     will-change: opacity;
   }
-  
+
   [data-slot="sheet-overlay"][data-state="open"] {
     animation-name: sheet-fade-in !important;
   }

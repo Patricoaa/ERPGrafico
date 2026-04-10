@@ -345,7 +345,7 @@ export function EquityCompositionTab() {
                         {!hasPartners ? (
                             <Button 
                                 onClick={() => setIsInitialSetupOpen(true)}
-                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-[0.25rem] shadow-sm"
+                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm"
                             >
                                 <Plus className="h-3.5 w-3.5 mr-2" />
                                 Configuración Inicial
@@ -363,7 +363,7 @@ export function EquityCompositionTab() {
                                 <Button 
                                     variant="outline" 
                                     onClick={() => setIsSubscriptionOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-muted-foreground/10 hover:bg-muted/5 transition-all rounded-[0.25rem]"
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-muted-foreground/10 hover:bg-muted/5 transition-all rounded-md"
                                 >
                                     <Plus className="h-3.5 w-3.5 mr-2" />
                                     Aumento / Reducción
