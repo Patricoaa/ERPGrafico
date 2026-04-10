@@ -51,7 +51,7 @@ export function OrderHubPanel({
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
     
     const { setHubTemporarilyHidden } = useHubPanel()
-    const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: any, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
+    const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
     
     const { openWorkOrder } = useGlobalModals()
 
@@ -112,80 +112,72 @@ export function OrderHubPanel({
         )
     }
 
-    // Derive document type label
-    const docTypeLabel = (() => {
-        if (activeDoc.dte_type === 'NOTA_CREDITO') return 'NOTA DE CRÉDITO'
-        if (activeDoc.dte_type === 'NOTA_DEBITO') return 'NOTA DE DÉBITO'
-        if (type === 'purchase' || type === 'obligation') return 'COMPRA'
-        return 'VENTA'
-    })()
-
     const StatusIcon = globalStatus.icon
+    const TopLeftIcon = (() => {
+        if (activeDoc?.dte_type === 'NOTA_CREDITO' || activeDoc?.dte_type === 'NOTA_DEBITO') return Receipt
+        if (activeInvoice || type === 'purchase' || type === 'obligation') return FileText
+        if (activeDoc?.is_quote) return LayoutDashboard
+        return ShoppingCart
+    })()
 
     return (
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col h-full overflow-hidden">
             {/* ── Panel Header (only in panel context) ──────────────────── */}
             {showHeader && (
-                <div className="flex items-center gap-3 shrink-0 border-b-4 border-border/40 px-4 py-3">
-                    {/* Document type + ID */}
-                    <div className="flex-1 flex flex-col min-w-0">
-                        <span className="text-[9px] font-heading font-black uppercase tracking-[0.2em] text-muted-foreground/60 leading-none mb-0.5">
-                            {docTypeLabel}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-heading font-black text-[15px] text-foreground leading-tight truncate">
-                                {activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
-                            </span>
-                            {/* Global status badge */}
-                            <span className={cn(
-                                "inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-[0.25rem] border shrink-0",
-                                globalStatus.status === 'success' && "text-success border-success/30 bg-success/10",
-                                globalStatus.status === 'active' && "text-primary border-primary/30 bg-primary/10",
-                                globalStatus.status === 'cancelled' && "text-destructive border-destructive/30 bg-destructive/10",
-                                globalStatus.status === 'neutral' && "text-muted-foreground border-border/40 bg-muted/10",
-                            )}>
-                                <StatusIcon className="h-2.5 w-2.5" />
-                                {globalStatus.label}
-                            </span>
+                <div className="flex items-center justify-between gap-3 shrink-0 px-4 py-3 border-b border-white/5 bg-sidebar backdrop-blur-md">
+                    <div className="flex items-center gap-3 min-w-0">
+                        {/* Unified Minimalist Icon Container */}
+                        <div className="p-2 bg-muted/50 rounded-md border border-border/50 shadow-sm shadow-black/5 shrink-0">
+                            <TopLeftIcon className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        {/* Partner name */}
-                        {(activeDoc.customer_name || activeDoc.supplier_name) && (
-                            <span className="text-[10px] text-muted-foreground/60 truncate mt-0.5 flex items-center gap-1">
-                                <User className="h-2.5 w-2.5 shrink-0" />
-                                {activeDoc.customer_name || activeDoc.supplier_name}
-                            </span>
-                        )}
+                        
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="font-heading font-black text-[15px] text-foreground leading-tight truncate">
+                                    {activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
+                                </span>
+                                {/* Global status badge */}
+                                <StatusBadge 
+                                    status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'} 
+                                    label={globalStatus.label}
+                                    icon={StatusIcon}
+                                    size="sm"
+                                    className="rounded-md"
+                                />
+                            </div>
+                            {/* Partner name */}
+                            {(activeDoc.customer_name || activeDoc.supplier_name) && (
+                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest leading-none mt-1 truncate max-w-[200px]">
+                                    {activeDoc.customer_name || activeDoc.supplier_name}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Date */}
-                    {activeDoc.date && (
-                        <span className="text-[9px] text-muted-foreground/40 font-mono shrink-0 hidden sm:block">
-                            {formatPlainDate(activeDoc.date)}
-                        </span>
-                    )}
-
-                    {/* Close button */}
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={onClose}
-                                className="h-7 w-7 rounded text-muted-foreground/50 hover:text-foreground hover:bg-white/10 shrink-0"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Cerrar Hub</p>
-                        </TooltipContent>
-                    </Tooltip>
+                    {/* Close button Area */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={onClose}
+                                    className="h-7 w-7 rounded text-muted-foreground/50 hover:text-foreground hover:bg-white/10 shrink-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Cerrar Hub</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
                 </div>
             )}
             {/* ── Scrollable Phase Content ──────────────────────── */}
             <ScrollArea className="flex-1 w-full">
-                <div className="px-4 pb-4">
+                <div className="px-4 pt-5 pb-4">
                     <OrderHubIntegrated
                         data={hubData}
                         type={type}
@@ -201,7 +193,7 @@ export function OrderHubPanel({
             {/* Shared Modal for viewing Details */}
             <TransactionViewModal
                 open={detailsModal.open}
-                onOpenChange={(open) => setDetailsModal((prev: any) => ({ ...prev, open }))}
+                onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
                 type={detailsModal.type}
                 id={Number(detailsModal.id)}
             />

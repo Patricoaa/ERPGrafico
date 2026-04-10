@@ -36,7 +36,7 @@ export function GlobalHubPanel() {
                         category={{ 
                             id: 'hub-engine', 
                             label: 'Global Engine', 
-                            icon: null as any, 
+                            icon: undefined as unknown as any, 
                             actions: Object.values(hubConfig?.type === 'purchase' || hubConfig?.type === 'obligation' ? purchaseOrderActions : saleOrderActions).flatMap(c => c.actions) 
                         }}
                         order={activeDoc}
@@ -54,11 +54,11 @@ export function GlobalHubPanel() {
                     <motion.div 
                         key="global-hub-fixed-panel"
                         ref={panelRef}
-                        initial={{ x: "100%", opacity: 0 }}
+                        initial={{ x: "120%", opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: "100%", opacity: 0 }}
+                        exit={{ x: "120%", opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="fixed top-0 right-0 h-screen w-[420px] max-w-[100vw] z-[60] border-l border-white/5 bg-sidebar dark flex flex-col pointer-events-auto"
+                        className="fixed top-16 right-4 h-[calc(100vh-5rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-2xl shadow-2xl overflow-hidden"
                     >
                         {hubConfig && (
                             <OrderHubPanel

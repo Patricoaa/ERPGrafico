@@ -144,7 +144,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         ? table.getColumn(filterColumn)?.setFilterValue(event.target.value)
                                         : table.setGlobalFilter(event.target.value)
                                 }
-                                className="h-9 w-full rounded-[0.25rem] bg-muted/20 border-border/40 focus:bg-background transition-all text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 pr-8"
+                                className="h-9 w-full rounded-md bg-muted/20 border-border/40 focus:bg-background transition-all text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 pr-8"
                             />
                             {isFiltered && (
                                 <button
@@ -187,7 +187,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             {showToolbarSort && sortableColumns.length > 0 && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="h-9 rounded-[0.25rem] border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                                        <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all">
                                             <ArrowUpDown className="mr-2 h-4 w-4 opacity-50" />
                                             <span className="font-heading uppercase tracking-wider text-[10px] font-bold">Ordenar</span>
                                             {currentSortColumn && (
@@ -207,12 +207,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <ChevronDown className="ml-2 h-3 w-3 opacity-30" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-[0.25rem] border-border/80 shadow-xl">
+                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl">
                                         {sortableColumns.map((column) => (
                                             <DropdownMenuItem
                                                 key={column.id}
                                                 onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                                                className="flex items-center justify-between rounded-[0.125rem] px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                                className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
                                             >
                                                 <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
                                                     {(column.columnDef.meta as { title?: string })?.title ||
@@ -260,7 +260,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             {showToolbarSort && sortableColumns.length > 0 && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="h-9 rounded-[0.25rem] border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                                        <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all">
                                             <ArrowUpDown className="mr-2 h-4 w-4 opacity-50" />
                                             <span className="font-heading uppercase tracking-wider text-[10px] font-bold">Ordenar</span>
                                             {currentSortColumn && (
@@ -275,12 +275,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <ChevronDown className="ml-2 h-3 w-3 opacity-30" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-[0.25rem] border-border/80 shadow-xl p-1">
+                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
                                         {sortableColumns.map((column) => (
                                             <DropdownMenuItem
                                                 key={column.id}
                                                 onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                                                className="flex items-center justify-between rounded-[0.125rem] px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                                className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
                                             >
                                                 <span className="text-[10px] uppercase tracking-wider font-bold font-heading">
                                                     {(column.columnDef.meta as { title?: string })?.title ||
@@ -306,14 +306,14 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     )}
 
                     {viewOptions && viewOptions.length > 0 && (
-                        <div className="flex items-center bg-muted/20 p-1 rounded-[0.25rem] border border-border/40 h-9">
+                        <div className="flex items-center bg-muted/20 p-1 rounded-md border border-border/40 h-9">
                             {viewOptions.map((option) => (
                                 <Button
                                     key={option.value}
                                     variant={currentView === option.value ? "secondary" : "ghost"}
                                     size="sm"
                                     className={cn(
-                                        "h-7 px-3 text-[10px] gap-1.5 uppercase font-bold tracking-wider transition-all rounded-[0.125rem]",
+                                        "h-7 px-3 text-[10px] gap-1.5 uppercase font-bold tracking-wider transition-all rounded-sm",
                                         currentView === option.value ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:bg-transparent"
                                     )}
                                     onClick={() => onViewChange?.(option.value)}
@@ -328,19 +328,19 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     {showColumnToggle && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-9 rounded-[0.25rem] border-dashed border-border/60 gap-2 hover:bg-muted/50 transition-all">
+                                <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 gap-2 hover:bg-muted/50 transition-all">
                                     <Settings2 className="h-4 w-4 opacity-50" />
                                     <span className="hidden lg:inline font-heading uppercase tracking-wider text-[10px] font-bold">Campos</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[180px] rounded-[0.25rem] border-border/80 shadow-xl">
+                            <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl">
                                 {table
                                     .getAllColumns()
                                     .filter((column) => column.getCanHide() && !["actions", "select", "hub_trigger", "production_status", "logistics_status", "billing_status", "treasury_status"].includes(column.id))
                                     .map((column) => (
                                         <DropdownMenuCheckboxItem
                                             key={column.id}
-                                            className="flex items-center justify-between rounded-[0.125rem] py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                            className="flex items-center justify-between rounded-sm py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
                                             checked={column.getIsVisible()}
                                             onCheckedChange={(value) => column.toggleVisibility(!!value)}
                                             onSelect={(e) => e.preventDefault()}

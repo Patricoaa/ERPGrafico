@@ -1,7 +1,7 @@
 import { showApiError } from "@/lib/errors"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
-import type { AccountFilters, AccountPayload } from '../types'
+import type { AccountFilters, AccountPayload, Account } from '../types'
 import { toast } from 'sonner'
 
 export const ACCOUNTS_QUERY_KEY = ['accounts']
@@ -9,6 +9,8 @@ export const ACCOUNTS_QUERY_KEY = ['accounts']
 interface UseAccountsProps {
     filters?: AccountFilters
 }
+
+const EMPTY_ARRAY: Account[] = []
 
 export function useAccounts({ filters }: UseAccountsProps = {}) {
     const queryClient = useQueryClient()
@@ -53,7 +55,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     })
 
     return {
-        accounts: accounts || [],
+        accounts: accounts || EMPTY_ARRAY,
         refetch,
         isLoading,
         createAccount: createMutation.mutateAsync,

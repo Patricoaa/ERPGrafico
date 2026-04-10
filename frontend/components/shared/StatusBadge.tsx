@@ -201,14 +201,15 @@ export function StatusBadge({
         <Badge
             variant="outline"
             className={cn(
-                "font-heading font-extrabold uppercase tracking-tighter border shadow-sm",
+                "inline-flex items-center font-heading font-extrabold uppercase tracking-tighter border shadow-sm",
                 colorClass,
-                size === "sm" && "text-[9px] px-1.5 py-0",
-                size === "md" && "text-[10px] px-2 py-0.5",
-                size === "lg" && "h-7 text-xs px-2.5",
+                size === "sm" && "text-[9px] px-1.5 py-0 gap-1",
+                size === "md" && "text-[10px] px-2 py-0.5 gap-1",
+                size === "lg" && "h-7 text-xs px-2.5 gap-1.5",
                 className
             )}
         >
+            {Icon && <Icon className={cn(size === "sm" ? "h-2 w-2" : size === "md" ? "h-2.5 w-2.5" : "h-3 w-3", "shrink-0")} />}
             {displayLabel}
         </Badge>
     )

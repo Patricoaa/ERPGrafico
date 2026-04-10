@@ -272,7 +272,7 @@ export function DataTable<TData, TValue>({
                             isCustomFiltered={isCustomFiltered}
                             customFilterCount={customFilterCount}
                             batchActions={batchActions && selectedRows.length > 0 ? (
-                                <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-[0.25rem] shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
+                                <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-md shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
                                     <div className="flex items-center gap-2 pr-3 border-r border-white/20">
                                         <div className="bg-primary p-0.5 rounded-full">
                                             <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
@@ -285,7 +285,7 @@ export function DataTable<TData, TValue>({
                                             variant="ghost" 
                                             size="icon" 
                                             onClick={() => table.toggleAllRowsSelected(false)}
-                                            className="h-6 w-6 hover:bg-white/10 text-white/50 hover:text-white rounded-[0.125rem]"
+                                            className="h-6 w-6 hover:bg-white/10 text-white/50 hover:text-white rounded-sm"
                                         >
                                             <X className="h-3 w-3" />
                                         </Button>
@@ -369,7 +369,7 @@ export function DataTable<TData, TValue>({
                         isCustomFiltered={isCustomFiltered}
                         customFilterCount={customFilterCount}
                         batchActions={batchActions && selectedRows.length > 0 ? (
-                            <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-[0.25rem] shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
+                            <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-md shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
                                 <span>{selectedRows.length} Sel.</span>
                                 <div className="mx-1 h-3 w-px bg-white/20" />
                                 {batchActions}

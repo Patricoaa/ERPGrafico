@@ -185,7 +185,7 @@ export default function EmployeesPage() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors"
+                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
                         onClick={() => { setEditingEmployee(row.original); setDialogOpen(true) }}
                     >
                         <Pencil className="h-3.5 w-3.5" />

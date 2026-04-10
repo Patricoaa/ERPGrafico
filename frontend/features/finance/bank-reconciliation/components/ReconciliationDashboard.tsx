@@ -60,7 +60,7 @@ export function ReconciliationDashboard() {
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">Monitoreo de flujo y conciliación</p>
                 </div>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                    <SelectTrigger className="w-[240px] h-9 rounded-[0.25rem] border-border/40 font-bold uppercase text-[10px] tracking-wider">
+                    <SelectTrigger className="w-[240px] h-9 rounded-md border-border/40 font-bold uppercase text-[10px] tracking-wider">
                         <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
                     <SelectContent>

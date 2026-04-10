@@ -17,18 +17,18 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
     return (
         <aside
             className={cn(
-                "fixed top-0 h-screen w-1/4 min-w-[320px] max-w-[450px] bg-sidebar dark border-l border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-[0_0_50px_rgba(0,0,0,0.5)]",
-                "transition-all duration-500 ease-in-out",
+                "fixed top-16 h-[calc(100vh-5rem)] w-[320px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-2xl rounded-2xl",
+                "transition-all duration-500 ease-[var(--ease-premium)]",
                 // Horizontal position: pushed left by Hub panel when hub is open
-                isHubEffectivelyOpen ? "right-[420px]" : "right-0",
+                isHubEffectivelyOpen ? "right-[calc(360px+2rem)]" : "right-4",
                 // Vertical slide-in: move off-screen to the right when closed
-                isOpen ? "translate-x-0" : "translate-x-full"
+                isOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/5  bg-sidebar backdrop-blur-md">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-sidebar backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-md border border-border/50 shadow-sm shadow-black/5">
                         <Inbox className="h-5 w-5 text-primary" />
                     </div>
                     <h2 className="text-lg font-bold tracking-tight text-white">Bandeja de Entrada</h2>

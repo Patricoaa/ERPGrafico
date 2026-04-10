@@ -117,7 +117,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
                         onClick={() => openEdit(row.original)}
                     >
                         <Pencil className="h-3.5 w-3.5" />
@@ -125,7 +125,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
                         onClick={() => handleDelete(row.original.id)}
                     >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -377,7 +377,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             cell: ({ row }: any) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     {row.original.is_terminal ? (
-                        <div className="bg-primary/10 p-1 rounded-[0.125rem]" title="Terminal de Cobro">
+                        <div className="bg-primary/10 p-1 rounded-sm" title="Terminal de Cobro">
                             <CreditCard className="h-4 w-4 text-primary" />
                         </div>
                     ) : (
@@ -441,7 +441,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
                         onClick={() => openEdit(row.original)}
                     >
                         <Pencil className="h-3.5 w-3.5" />
@@ -449,7 +449,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
                         onClick={() => handleDelete(row.original.id)}
                     >
                         <Trash2 className="h-3.5 w-3.5" />

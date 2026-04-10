@@ -12,7 +12,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { ActionCategory } from "./ActionCategory"
 import { cn } from "@/lib/utils"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+// IndustrialCard removed here as we are moving to individual Card components per phase
 import { getHubStatuses } from "@/lib/order-status-utils"
 
 interface OrderHubIntegratedProps {
@@ -108,111 +108,91 @@ export function OrderHubIntegrated({
 
     if (!activeDoc) return null
 
-    const PhaseWrapper = ({ children, index }: { children: React.ReactNode, index: number }) => (
-        <div className="w-full relative z-10 flex flex-col">
-            {children}
-        </div>
-    )
-
     return (
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col w-full min-h-full pb-8">
-                <div className="w-full">
-                    <IndustrialCard className="bg-card border border-border/50 shadow-sm ring-0 overflow-hidden rounded-[0.25rem]">
-                        <div className="flex flex-col">
-                            {/* 1. Origen */}
-                            <PhaseWrapper index={visiblePhases.indexOf('origin')}>
-                                <OriginPhase
-                                    isNoteMode={!!isNoteMode}
-                                    activeInvoice={activeInvoice}
-                                    noteStatuses={noteStatuses}
-                                    order={order}
-                                    activeDoc={activeDoc}
-                                    type={type || 'sale'}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    openDetails={openDetails}
-                                    onEdit={onEdit}
-                                    collapsible={true}
-                                    isOpen={openPhases.has('origin')}
-                                    onOpenChange={togglePhase('origin')}
-                                />
-                            </PhaseWrapper>
+                <div className="flex flex-col gap-2.5 w-full">
+                    {/* 1. Origen */}
+                    <OriginPhase
+                        isNoteMode={!!isNoteMode}
+                        activeInvoice={activeInvoice}
+                        noteStatuses={noteStatuses}
+                        order={order}
+                        activeDoc={activeDoc}
+                        type={type || 'sale'}
+                        userPermissions={userPermissions}
+                        onActionSuccess={onActionSuccess}
+                        openDetails={openDetails}
+                        onEdit={onEdit}
+                        collapsible={true}
+                        isOpen={openPhases.has('origin')}
+                        onOpenChange={togglePhase('origin')}
+                    />
 
-                            {/* 2. Facturación */}
-                            <PhaseWrapper index={visiblePhases.indexOf('billing')}>
-                                <BillingPhase
-                                    isNoteMode={!!isNoteMode}
-                                    noteStatuses={noteStatuses}
-                                    activeDoc={activeDoc}
-                                    invoices={invoices}
-                                    billingIsComplete={billingIsComplete}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    openDetails={openDetails}
-                                    posSessionId={posSessionId}
-                                    collapsible={true}
-                                    isOpen={openPhases.has('billing')}
-                                    onOpenChange={togglePhase('billing')}
-                                />
-                            </PhaseWrapper>
+                    {/* 2. Facturación */}
+                    <BillingPhase
+                        isNoteMode={!!isNoteMode}
+                        noteStatuses={noteStatuses}
+                        activeDoc={activeDoc}
+                        invoices={invoices}
+                        billingIsComplete={billingIsComplete}
+                        userPermissions={userPermissions}
+                        onActionSuccess={onActionSuccess}
+                        openDetails={openDetails}
+                        posSessionId={posSessionId}
+                        collapsible={true}
+                        isOpen={openPhases.has('billing')}
+                        onOpenChange={togglePhase('billing')}
+                    />
 
-                            {/* 3. Tesorería */}
-                            <PhaseWrapper index={visiblePhases.indexOf('treasury')}>
-                                <TreasuryPhase
-                                    isNoteMode={!!isNoteMode}
-                                    noteStatuses={noteStatuses}
-                                    activeDoc={activeDoc}
-                                    payments={payments}
-                                    userPermissions={userPermissions}
-                                    onActionSuccess={onActionSuccess}
-                                    openDetails={openDetails}
-                                    posSessionId={posSessionId}
-                                    collapsible={true}
-                                    isOpen={openPhases.has('treasury')}
-                                    onOpenChange={togglePhase('treasury')}
-                                />
-                            </PhaseWrapper>
+                    {/* 3. Tesorería */}
+                    <TreasuryPhase
+                        isNoteMode={!!isNoteMode}
+                        noteStatuses={noteStatuses}
+                        activeDoc={activeDoc}
+                        payments={payments}
+                        userPermissions={userPermissions}
+                        onActionSuccess={onActionSuccess}
+                        openDetails={openDetails}
+                        posSessionId={posSessionId}
+                        collapsible={true}
+                        isOpen={openPhases.has('treasury')}
+                        onOpenChange={togglePhase('treasury')}
+                    />
 
-                            {/* 4. Producción */}
-                            {showProduction && (
-                                <PhaseWrapper index={visiblePhases.indexOf('production')}>
-                                    <ProductionPhase
-                                        order={order}
-                                        activeDoc={activeDoc}
-                                        userPermissions={userPermissions}
-                                        onActionSuccess={onActionSuccess}
-                                        openDetails={openDetails}
-                                        showAnimations={showAnimations}
-                                        collapsible={true}
-                                        isOpen={openPhases.has('production')}
-                                        onOpenChange={togglePhase('production')}
-                                    />
-                                </PhaseWrapper>
-                            )}
+                    {/* 4. Producción */}
+                    {showProduction && (
+                        <ProductionPhase
+                            order={order}
+                            activeDoc={activeDoc}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            openDetails={openDetails}
+                            showAnimations={showAnimations}
+                            collapsible={true}
+                            isOpen={openPhases.has('production')}
+                            onOpenChange={togglePhase('production')}
+                        />
+                    )}
 
-                            {/* 5. Logística / Cumplimiento */}
-                            {showLogistics && (
-                                <PhaseWrapper index={visiblePhases.indexOf('logistics')}>
-                                    <LogisticsPhase
-                                        activeDoc={activeDoc}
-                                        isNoteMode={!!isNoteMode}
-                                        noteStatuses={noteStatuses}
-                                        isSale={type === 'sale'}
-                                        invoices={invoices}
-                                        userPermissions={userPermissions}
-                                        onActionSuccess={onActionSuccess}
-                                        openDetails={openDetails}
-                                        showAnimations={showAnimations}
-                                        logisticsProgress={data.logisticsProgress}
-                                        collapsible={true}
-                                        isOpen={openPhases.has('logistics')}
-                                        onOpenChange={togglePhase('logistics')}
-                                    />
-                                </PhaseWrapper>
-                            )}
-                        </div>
-                    </IndustrialCard>
+                    {/* 5. Logística / Cumplimiento */}
+                    {showLogistics && (
+                        <LogisticsPhase
+                            activeDoc={activeDoc}
+                            isNoteMode={!!isNoteMode}
+                            noteStatuses={noteStatuses}
+                            isSale={type === 'sale'}
+                            invoices={invoices}
+                            userPermissions={userPermissions}
+                            onActionSuccess={onActionSuccess}
+                            openDetails={openDetails}
+                            showAnimations={showAnimations}
+                            logisticsProgress={data.logisticsProgress}
+                            collapsible={true}
+                            isOpen={openPhases.has('logistics')}
+                            onOpenChange={togglePhase('logistics')}
+                        />
+                    )}
                 </div>
             </div>
         </TooltipProvider>

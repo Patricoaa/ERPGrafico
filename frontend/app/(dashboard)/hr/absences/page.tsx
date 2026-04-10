@@ -131,14 +131,14 @@ export default function AbsencesPage() {
                 <div className="flex items-center justify-center gap-1 w-full">
                     <Button
                         variant="ghost" size="icon"
-                        className="h-8 w-8 rounded-[0.25rem] hover:bg-primary/10 hover:text-primary"
+                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary"
                         onClick={() => { setEditingAbsence(row.original); setDialogOpen(true) }}
                     >
                         <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                         variant="ghost" size="icon"
-                        className="h-8 w-8 rounded-[0.25rem] text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(row.original.id)}
                     >
                         <Trash2 className="h-3.5 w-3.5" />

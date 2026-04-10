@@ -55,7 +55,7 @@ export function AccountingSettingsView({ activeTab = "structure", onSavingChange
     return (
         <div className="space-y-6">
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 rounded-[0.25rem] border-2">
+                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 rounded-md border-2">
                     <TabsTrigger value="structure" className="text-[10px] uppercase font-black tracking-widest gap-2">
                         <Settings2 className="h-3.5 w-3.5" />
                         Estructura Contable
@@ -183,7 +183,7 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
 
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card className="border-primary/10 shadow-sm rounded-[0.25rem] border-2">
+                    <Card className="border-primary/10 shadow-sm rounded-md border-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Estructura del Código</CardTitle>
                         </CardHeader>
@@ -329,7 +329,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
         <Form {...form}>
             <form className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card className="lg:col-span-1 border-2 rounded-[0.25rem]">
+                    <Card className="lg:col-span-1 border-2 rounded-md">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                 <Percent className="h-4 w-4" />
@@ -356,7 +356,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                     </Card>
 
                     <div className="lg:col-span-2 space-y-6">
-                        <Card className="border-2 rounded-[0.25rem]">
+                        <Card className="border-2 rounded-md">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                     <Receipt className="h-4 w-4" />
@@ -376,7 +376,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-2 rounded-[0.25rem]">
+                        <Card className="border-2 rounded-md">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                     <Coins className="h-4 w-4" />

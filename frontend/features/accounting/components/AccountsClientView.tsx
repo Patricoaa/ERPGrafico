@@ -31,16 +31,14 @@ interface AccountsClientViewProps {
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange }: AccountsClientViewProps) {
     const { accounts: flatAccounts, refetch, deleteAccount, isLoading } = useAccounts()
-    const [accounts, setAccounts] = useState<any[]>([])
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
-    useEffect(() => {
+    const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
-            setAccounts(buildAccountTree(flatAccounts))
-        } else {
-            setAccounts([])
+            return buildAccountTree(flatAccounts)
         }
+        return []
     }, [flatAccounts])
 
     const router = useRouter()

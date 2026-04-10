@@ -36,7 +36,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "account",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
             cell: ({ row }) => (
-                <Badge variant="outline" className="rounded-[0.125rem] text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20">
+                <Badge variant="outline" className="rounded-sm text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20">
                     {row.getValue("account")}
                 </Badge>
             ),

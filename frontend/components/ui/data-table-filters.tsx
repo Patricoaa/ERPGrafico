@@ -64,7 +64,7 @@ export function DataTableFilters<TData>({
         <div className={cn("flex items-center space-x-2", className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 flex items-center gap-2 px-4 rounded-[0.25rem] border-dashed border-border/60 hover:bg-muted/50 transition-all font-heading uppercase tracking-wider text-[10px] font-bold">
+                    <Button variant="outline" size="sm" className="h-9 flex items-center gap-2 px-4 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all font-heading uppercase tracking-wider text-[10px] font-bold">
                         <div className="relative">
                             <ListFilter className="h-4 w-4 opacity-70" />
                             {isFiltered && (
@@ -78,13 +78,13 @@ export function DataTableFilters<TData>({
                         <span className="ml-1">Filtros</span>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 rounded-[0.25rem] border-border/80 shadow-xl overflow-hidden" align="start">
+                <PopoverContent className="w-[320px] p-0 rounded-md border-border/80 shadow-xl overflow-hidden" align="start">
                     <div className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b border-border/40">
                         <h4 className="text-[10px] uppercase font-bold font-heading tracking-widest text-foreground/80">Filtrar</h4>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 rounded-[0.125rem] hover:bg-primary/10 hover:text-primary transition-all"
+                            className="h-6 w-6 rounded-sm hover:bg-primary/10 hover:text-primary transition-all"
                             onClick={() => setOpen(false)}
                         >
                             <X className="h-3.5 w-3.5" />
@@ -112,7 +112,7 @@ export function DataTableFilters<TData>({
                                         onChange={(event) =>
                                             table.getColumn(filterColumn)?.setFilterValue(event.target.value)
                                         }
-                                        className="h-9 w-full bg-background/50 border-border/40 focus:bg-background rounded-[0.25rem] text-[10px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 transition-all font-sans"
+                                        className="h-9 w-full bg-background/50 border-border/40 focus:bg-background rounded-md text-[10px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 transition-all font-sans"
                                     />
                                 )}
                                 {!filterColumn && globalFilterFields && (
@@ -122,7 +122,7 @@ export function DataTableFilters<TData>({
                                         onChange={(event) =>
                                             table.setGlobalFilter(event.target.value)
                                         }
-                                        className="h-9 w-full bg-background/50 border-border/40 focus:bg-background rounded-[0.25rem] text-[10px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 transition-all font-sans"
+                                        className="h-9 w-full bg-background/50 border-border/40 focus:bg-background rounded-md text-[10px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 transition-all font-sans"
                                     />
                                 )}
                             </div>
@@ -162,7 +162,7 @@ export function DataTableFilters<TData>({
                                                 <div
                                                     key={option.value}
                                                     className={cn(
-                                                        "relative flex cursor-pointer select-none items-center rounded-[0.125rem] px-3 py-1.5 text-[10px] uppercase font-bold font-heading tracking-wider outline-none transition-colors",
+                                                        "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[10px] uppercase font-bold font-heading tracking-wider outline-none transition-colors",
                                                         isSelected ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
                                                     )}
                                                     onClick={() => {
@@ -179,7 +179,7 @@ export function DataTableFilters<TData>({
                                                 >
                                                     <div
                                                         className={cn(
-                                                            "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-[0.125rem] border border-primary/50 transition-all",
+                                                            "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
                                                             isSelected
                                                                 ? "bg-primary text-primary-foreground border-primary"
                                                                 : "opacity-50 [&_svg]:invisible"
@@ -209,7 +209,7 @@ export function DataTableFilters<TData>({
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 px-3 text-primary hover:text-primary hover:bg-primary/10 rounded-[0.25rem] text-[10px] uppercase font-bold font-heading tracking-widest transition-all"
+                    className="h-9 px-3 text-primary hover:text-primary hover:bg-primary/10 rounded-md text-[10px] uppercase font-bold font-heading tracking-widest transition-all"
                     onClick={() => {
                         table.resetColumnFilters()
                         table.setGlobalFilter("")

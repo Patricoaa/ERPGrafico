@@ -79,7 +79,7 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-[0.25rem] border border-border/40 bg-muted/10 mb-6",
+                "relative flex items-center justify-center rounded-md border border-border/40 bg-muted/10 mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
                 {/* Decorative corners */}
