@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared"
 import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"

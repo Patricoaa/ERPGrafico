@@ -515,3 +515,119 @@ class FinanceService:
                 'purchase_total': float(purchase_vol)
             }
         }
+
+    @staticmethod
+    def get_trial_balance(start_date=None, end_date=None):
+        """
+        Returns the Trial Balance (Balance de comprobación y saldos).
+        Fetches all leaf accounts.
+        For each, calculates:
+         - Initial Balance (up to start_date)
+         - Debit total (in period)
+         - Credit total (in period)
+         - Closing Balance
+         - Saldo Deudor / Saldo Acreedor
+        """
+        from datetime import datetime, date
+        from decimal import Decimal
+        from django.db.models import Sum, Q
+
+        # Parse string dates if necessary
+        def to_date(d):
+            if not d: return None
+            if isinstance(d, date): return d
+            try:
+                return datetime.strptime(d, '%Y-%m-%d').date()
+            except Exception:
+                return None
+                
+        start = to_date(start_date)
+        end = to_date(end_date)
+        
+        # Get accounts that have items to ensure we don't drop balances due to dirty data
+        active_accounts = Account.objects.filter(journal_items__isnull=False).distinct().order_by('code')
+        
+        trial_balance = []
+        total_global_debit = Decimal('0.00')
+        total_global_credit = Decimal('0.00')
+        total_saldo_deudor = Decimal('0.00')
+        total_saldo_acreedor = Decimal('0.00')
+        
+        for account in active_accounts:
+            # ---------------------------------------------
+            # 1. Movimientos del Período
+            # ---------------------------------------------
+            period_qs = JournalItem.objects.filter(
+                account=account, 
+                entry__status='POSTED'
+            )
+            if start:
+                period_qs = period_qs.filter(entry__date__gte=start)
+            if end:
+                period_qs = period_qs.filter(entry__date__lte=end)
+                
+            period_agg = period_qs.aggregate(debit=Sum('debit'), credit=Sum('credit'))
+            p_debit = period_agg['debit'] or Decimal('0.00')
+            p_credit = period_agg['credit'] or Decimal('0.00')
+            
+            # ---------------------------------------------
+            # 2. Saldo Inicial
+            # ---------------------------------------------
+            initial_balance = Decimal('0.00')
+            if start:
+                init_qs = JournalItem.objects.filter(
+                    account=account, 
+                    entry__status='POSTED',
+                    entry__date__lt=start
+                )
+                init_agg = init_qs.aggregate(debit=Sum('debit'), credit=Sum('credit'))
+                i_debit = init_agg['debit'] or Decimal('0.00')
+                i_credit = init_agg['credit'] or Decimal('0.00')
+                
+                if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                    initial_balance = i_debit - i_credit
+                else:
+                    initial_balance = i_credit - i_debit
+                    
+            # ---------------------------------------------
+            # 3. Saldo Final y Tipificación Funcional
+            # ---------------------------------------------
+            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                closing_balance = initial_balance + p_debit - p_credit
+                saldo_deudor = closing_balance if closing_balance > 0 else Decimal('0.00')
+                saldo_acreedor = abs(closing_balance) if closing_balance < 0 else Decimal('0.00')
+            else:
+                closing_balance = initial_balance + p_credit - p_debit
+                saldo_acreedor = closing_balance if closing_balance > 0 else Decimal('0.00')
+                saldo_deudor = abs(closing_balance) if closing_balance < 0 else Decimal('0.00')
+                
+            # Omite la cuenta si no hay movimientos ni saldos históricos
+            if p_debit == 0 and p_credit == 0 and initial_balance == 0:
+                continue
+                
+            total_global_debit += p_debit
+            total_global_credit += p_credit
+            total_saldo_deudor += saldo_deudor
+            total_saldo_acreedor += saldo_acreedor
+            
+            trial_balance.append({
+                'id': account.id,
+                'code': account.code,
+                'name': account.name,
+                'type': account.account_type,
+                'initial_balance': float(initial_balance),
+                'debit': float(p_debit),
+                'credit': float(p_credit),
+                'closing_balance': float(closing_balance),
+                'saldo_deudor': float(saldo_deudor),
+                'saldo_acreedor': float(saldo_acreedor)
+            })
+            
+        return {
+            'accounts': trial_balance,
+            'total_debit': float(total_global_debit),
+            'total_credit': float(total_global_credit),
+            'total_saldo_deudor': float(total_saldo_deudor),
+            'total_saldo_acreedor': float(total_saldo_acreedor),
+            'is_balanced': total_global_debit == total_global_credit and total_saldo_deudor == total_saldo_acreedor
+        }

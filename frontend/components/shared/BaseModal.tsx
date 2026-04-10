@@ -89,6 +89,11 @@ export function BaseModal({
                 )}
                 {...props}
             >
+                {!title && (
+                    <DialogTitle className="sr-only">
+                        Modal Window
+                    </DialogTitle>
+                )}
                 {(title || description || headerActions) && (
                     <DialogHeader className={headerStyles}>
                         <div className="flex items-center justify-between gap-4 w-full">

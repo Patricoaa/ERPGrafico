@@ -972,6 +972,83 @@ class AccountingSettings(models.Model):
     def __str__(self):
         return "Configuración Contable Global"
 
+# --- Fiscal Year Closing ---
+
+class FiscalYear(models.Model):
+    """
+    Represents a fiscal year (ejercicio contable).
+    Tracks the annual closing process: closing P&L accounts and
+    transferring the result to equity.
+    """
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', _('Abierto')
+        CLOSING = 'CLOSING', _('En Proceso de Cierre')
+        CLOSED = 'CLOSED', _('Cerrado')
+
+    year = models.IntegerField(_("Año Fiscal"), unique=True)
+    start_date = models.DateField(_("Fecha Inicio"))
+    end_date = models.DateField(_("Fecha Fin"))
+    status = models.CharField(
+        _("Estado"), max_length=20,
+        choices=Status.choices, default=Status.OPEN
+    )
+
+    # Closing metadata
+    closing_entry = models.OneToOneField(
+        'JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='fiscal_year_closing',
+        verbose_name=_("Asiento de Cierre")
+    )
+    opening_entry = models.OneToOneField(
+        'JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='fiscal_year_opening',
+        verbose_name=_("Asiento de Apertura")
+    )
+    net_result = models.DecimalField(
+        _("Resultado Neto"), max_digits=20, decimal_places=0,
+        null=True, blank=True,
+        help_text=_("Utilidad (+) o Pérdida (-) del ejercicio al momento del cierre.")
+    )
+
+    closed_at = models.DateTimeField(_("Cerrado el"), null=True, blank=True)
+    closed_by = models.ForeignKey(
+        'core.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='closed_fiscal_years',
+        verbose_name=_("Cerrado por")
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ['-year']
+        verbose_name = _("Ejercicio Fiscal")
+        verbose_name_plural = _("Ejercicios Fiscales")
+        permissions = [
+            ('can_close_fiscal_year', 'Puede cerrar ejercicio fiscal'),
+            ('can_reopen_fiscal_year', 'Puede reabrir ejercicio fiscal'),
+        ]
+
+    def __str__(self):
+        return f"Ejercicio {self.year} ({self.get_status_display()})"
+
+    @property
+    def is_profit(self):
+        return self.net_result is not None and self.net_result > 0
+
+    @property
+    def is_loss(self):
+        return self.net_result is not None and self.net_result < 0
+
+
 # --- Budgeting Models ---
 
 class Budget(models.Model):

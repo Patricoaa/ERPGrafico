@@ -21,7 +21,12 @@ def generate_report_task(self, report_type, **kwargs):
     Delegates to FinanceService based on report_type.
     """
     try:
-        if report_type == 'balance_sheet':
+        if report_type == 'trial_balance':
+            end_date = _to_date(kwargs.get('end_date'))
+            start_date = _to_date(kwargs.get('start_date'))
+            return FinanceService.get_trial_balance(start_date, end_date)
+            
+        elif report_type == 'balance_sheet':
             end_date = _to_date(kwargs.get('end_date'))
             start_date = _to_date(kwargs.get('start_date'))
             comp_end = _to_date(kwargs.get('comp_end_date'))

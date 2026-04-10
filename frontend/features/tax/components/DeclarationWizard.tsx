@@ -237,8 +237,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
                     <div className="flex items-center gap-3">
                         {step < 4 ? (
-                            <Button 
-                                onClick={nextStep} 
+                            <Button
+                                onClick={nextStep}
                                 disabled={isLoading || !period.year || !period.month}
                                 className="rounded-lg px-8 h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
@@ -246,8 +246,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <ChevronRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         ) : (
-                            <Button 
-                                onClick={handleSave} 
+                            <Button
+                                onClick={handleSave}
                                 disabled={isLoading}
                                 className="rounded-lg px-10 h-11 bg-success hover:bg-success/90 shadow-lg shadow-success/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
@@ -281,8 +281,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                                 key={y}
                                                 className={cn(
                                                     "cursor-pointer rounded-lg border border-transparent px-4 py-5 text-center transition-all duration-200",
-                                                    period.year === y 
-                                                        ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" 
+                                                    period.year === y
+                                                        ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5"
                                                         : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
                                                 )}
                                                 onClick={() => setPeriod(p => ({ ...p, year: y }))}
@@ -329,17 +329,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 </div>
                             </div>
 
-                            <div className="pt-6">
-                                <div className="flex items-start gap-4 p-5 bg-primary/5 border border-primary/10 rounded-lg text-primary/70">
-                                    <Info className="h-5 w-5 mt-0.5 flex-shrink-0 opacity-80" />
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-bold uppercase tracking-wider">Flujo de Trabajo</p>
-                                        <p className="text-xs leading-relaxed opacity-80">
-                                            Al continuar, el sistema consolidará automáticamente todas las facturas, boletas y retenciones registradas para el período seleccionado.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -377,7 +366,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <MoneyDisplay amount={calcData?.credit_notes_taxed ? -calcData.credit_notes_taxed : 0} className="font-bold text-sm text-destructive" />
                                         </div>
                                     </div>
-                                    
+
                                     <div className="pt-4 space-y-2">
                                         <div className="flex justify-between items-end">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total Neto Ventas</span>
@@ -421,7 +410,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             <MoneyDisplay amount={calcData?.purchase_credit_notes ? -calcData.purchase_credit_notes : 0} className="font-bold text-sm text-warning" />
                                         </div>
                                     </div>
-                                    
+
                                     <div className="pt-4 space-y-2">
                                         <div className="flex justify-between items-end">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-primary/50">Total Neto Compras</span>
@@ -585,7 +574,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         <div className="relative">
                             {/* Decorative Receipt Edge */}
                             <div className="absolute -top-3 left-0 right-0 h-3 bg-[radial-gradient(circle,transparent_0,transparent_4px,white_4px,white_100%)] bg-[length:12px_12px] opacity-10" />
-                            
+
                             <div className="bg-card border-x border-b border-border/50 rounded-b-3xl shadow-xl shadow-primary/5 p-8 space-y-8 overflow-hidden">
                                 <section className="space-y-4">
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
@@ -622,11 +611,11 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
                                             <Calculator className="w-32 h-32 text-primary" />
                                         </div>
-                                        
+
                                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-2">Total a Pagar SII</span>
-                                        <MoneyDisplay 
-                                            amount={finalToPay} 
-                                            className="text-5xl font-black tracking-tighter text-primary drop-shadow-sm transition-transform hover:scale-105" 
+                                        <MoneyDisplay
+                                            amount={finalToPay}
+                                            className="text-5xl font-black tracking-tighter text-primary drop-shadow-sm transition-transform hover:scale-105"
                                         />
                                         <div className="mt-4 flex items-center gap-2">
                                             <Badge variant="outline" className="h-5 px-3 text-[9px] font-black uppercase tracking-wider bg-success/10 border-success/20 text-success">
