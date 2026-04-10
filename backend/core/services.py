@@ -44,7 +44,8 @@ class BaseNoteService:
     def create_document_note(order, note_type, amount_net, amount_tax, document_number, 
                              document_attachment=None, partner_name=None, 
                              receivable_account=None, payable_account=None,
-                             revenue_account=None, tax_account=None, inventory_account=None):
+                             revenue_account=None, tax_account=None, inventory_account=None,
+                             date=None):
         """
         Base logic for creating Credit/Debit Notes and their corresponding Accounting Entries.
         """
@@ -53,13 +54,14 @@ class BaseNoteService:
         from accounting.services import JournalEntryService
         
         total_amount = amount_net + amount_tax
+        doc_date = date or timezone.now().date()
         
         # 1. Create Invoice Record
         invoice_data = {
             'dte_type': note_type,
             'number': document_number,
             'document_attachment': document_attachment,
-            'date': timezone.now().date(),
+            'date': doc_date,
             'total_net': amount_net,
             'total_tax': amount_tax,
             'total': total_amount,
@@ -78,7 +80,7 @@ class BaseNoteService:
         # 2. Accounting Entry
         description = f"{invoice.get_dte_type_display()} {document_number} (Ref {order.number})"
         entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
+            date=doc_date,
             description=description,
             reference=f"NOTE-{invoice.id}",
             status=JournalEntry.State.DRAFT

@@ -750,7 +750,8 @@ class SalesService:
     @staticmethod
     @transaction.atomic
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
-                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
+                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None,
+                    date=None):
         print(f"DEBUG: create_note service started for order {order.number}")
         print(f"DEBUG: note_type: {note_type}, return_items: {return_items}")
         """
@@ -818,7 +819,8 @@ class SalesService:
             amount_tax=amount_tax,
             document_number=document_number,
             document_attachment=document_attachment,
-            partner_name=order.customer.name
+            partner_name=order.customer.name,
+            date=date
         )
         
         if original_invoice:
@@ -939,7 +941,7 @@ class SalesService:
                 if product.track_inventory:
                     # Create Stock Move (IN) - Returning to stock
                     StockMove.objects.create(
-                        date=timezone.now().date(),
+                        date=date or timezone.now().date(),
                         product=product,
                         warehouse=default_warehouse,
                         uom=product.uom,

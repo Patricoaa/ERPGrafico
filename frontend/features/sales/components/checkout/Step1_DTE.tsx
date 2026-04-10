@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { FileText, Receipt, AlertCircle, Loader2, CheckCircle } from "lucide-react"
+import { FileText, Receipt, AlertCircle, Loader2, CheckCircle, ShieldAlert } from "lucide-react"
 import { useFolioValidation } from "@/hooks/useFolioValidation"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
@@ -21,9 +21,18 @@ interface Step1_DTEProps {
     setDteData: (data: CheckoutDTEData) => void
     isPurchase?: boolean
     isDefaultCustomer?: boolean
+    isPeriodClosed?: boolean
+    periodMessage?: string
 }
 
-export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCustomer = false }: Step1_DTEProps) {
+export function Step1_DTE({ 
+    dteData, 
+    setDteData, 
+    isPurchase = false, 
+    isDefaultCustomer = false,
+    isPeriodClosed = false,
+    periodMessage = ""
+}: Step1_DTEProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
     const { dateString } = useServerDate()
 
@@ -180,12 +189,23 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
-                                <Input
-                                    id="date"
-                                    type="date"
-                                    value={dteData.date}
-                                    onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
-                                />
+                                <div className="space-y-2">
+                                    <Input
+                                        id="date"
+                                        type="date"
+                                        value={dteData.date}
+                                        onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
+                                        className={cn(isPeriodClosed && "border-destructive text-destructive")}
+                                    />
+                                    {isPeriodClosed && (
+                                        <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
+                                            <ShieldAlert className="h-4 w-4" />
+                                            <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
+                                                {periodMessage || "Periodo cerrado"}
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                </div>
                             </div>
                             <div className="col-span-2">
                                 <DocumentAttachmentDropzone

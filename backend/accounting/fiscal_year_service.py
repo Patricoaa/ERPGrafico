@@ -230,11 +230,10 @@ class FiscalYearClosingService:
     @transaction.atomic
     def reopen_fiscal_year(year: int, user) -> FiscalYear:
         """
-        Reopens a closed fiscal year by reversing the closing entry.
-        Also reverses the opening entry if one was generated.
-
-        Returns:
-            FiscalYear instance
+        Reopens a closed fiscal year using an administrative protocol:
+        1. Checks for downstream dependencies (e.g. executed profit distributions)
+        2. Sets year and relevant periods to OPEN (cascading)
+        3. Reverses the closing/opening entries
         """
         try:
             fiscal_year = FiscalYear.objects.get(year=year)
@@ -244,7 +243,44 @@ class FiscalYearClosingService:
         if fiscal_year.status != FiscalYear.Status.CLOSED:
             raise ValidationError("El ejercicio fiscal no está cerrado.")
 
-        # Reverse opening entry first (if exists)
+        # --- 1. Audit Dependency Check ---
+        # Check if there is an executed profit distribution resolution
+        # We use a late import to avoid circular dependencies
+        from contacts.partner_models import ProfitDistributionResolution
+        try:
+            distribution = fiscal_year.profit_distribution
+            if distribution.status == ProfitDistributionResolution.Status.EXECUTED:
+                raise ValidationError(
+                    f"No se puede reabrir el ejercicio {year} porque ya tiene "
+                    f"una Distribución de Utilidades EJECUTADA. Debe anular la "
+                    f"distribución en el módulo de Socios primero."
+                )
+        except ProfitDistributionResolution.DoesNotExist:
+            pass
+
+        # --- 2. Cascading Unlock ---
+        # We open the year first so validations in save() allow the reversal process
+        fiscal_year.status = FiscalYear.Status.OPEN
+        fiscal_year.save()
+
+        # Unlock the specific accounting periods related to the entries (not necessarily Dec/Jan)
+        from tax.models import AccountingPeriod
+        if fiscal_year.closing_entry:
+            AccountingPeriod.objects.filter(
+                year=fiscal_year.closing_entry.date.year, 
+                month=fiscal_year.closing_entry.date.month,
+                status=AccountingPeriod.Status.CLOSED
+            ).update(status=AccountingPeriod.Status.OPEN)
+
+        if fiscal_year.opening_entry:
+            AccountingPeriod.objects.filter(
+                year=fiscal_year.opening_entry.date.year, 
+                month=fiscal_year.opening_entry.date.month,
+                status=AccountingPeriod.Status.CLOSED
+            ).update(status=AccountingPeriod.Status.OPEN)
+
+        # --- 3. Entry Reversals ---
+        # Reverse opening entry (for year + 1)
         if fiscal_year.opening_entry:
             if fiscal_year.opening_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
@@ -253,7 +289,7 @@ class FiscalYearClosingService:
                 )
             fiscal_year.opening_entry = None
 
-        # Reverse closing entry
+        # Reverse closing entry (for current year)
         if fiscal_year.closing_entry:
             if fiscal_year.closing_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
@@ -262,8 +298,7 @@ class FiscalYearClosingService:
                 )
             fiscal_year.closing_entry = None
 
-        # Reopen
-        fiscal_year.status = FiscalYear.Status.OPEN
+        # Clean up metadata
         fiscal_year.net_result = None
         fiscal_year.closed_at = None
         fiscal_year.closed_by = None

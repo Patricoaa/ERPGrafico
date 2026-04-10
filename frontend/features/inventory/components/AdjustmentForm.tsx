@@ -6,12 +6,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Info,
-    Calculator,
-    Package,
-    Warehouse as WarehouseIcon
+    Warehouse as WarehouseIcon,
+    ShieldAlert
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -42,6 +38,7 @@ import api from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
 
 interface Warehouse {
     id: number
@@ -82,6 +79,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const [isLoading, setIsLoading] = useState(false)
     const [productDetails, setProductDetails] = useState<any>(null)
     const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
+    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string } | null>(null)
 
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),
@@ -124,6 +122,16 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             }
         }
         fetchWarehouses()
+    }, [])
+
+    // Check period status for today
+    useEffect(() => {
+        const checkPeriod = async () => {
+            const today = new Date().toISOString().split('T')[0]
+            const status = await validateAccountingPeriod(today)
+            setPeriodStatus(status)
+        }
+        checkPeriod()
     }, [])
 
     // 2. Fetch Product Details
@@ -173,6 +181,17 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const onSubmit = async (values: z.infer<typeof adjustmentSchema>) => {
         setIsLoading(true)
         try {
+            // Check period closure
+            const today = new Date().toISOString().split('T')[0]
+            const status = await validateAccountingPeriod(today)
+            if (status.is_closed) {
+                toast.error(`No se puede registrar el ajuste: El periodo ${status.period_name || ''} está cerrado.`, {
+                    icon: <ShieldAlert className="h-4 w-4 text-destructive" />
+                })
+                setIsLoading(false)
+                return
+            }
+
             const qty = Number(values.quantity)
             const finalQty = values.type === 'OUT' ? -qty : qty
 
@@ -231,6 +250,16 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+                {periodStatus?.is_closed && (
+                    <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive py-2">
+                        <ShieldAlert className="h-4 w-4" />
+                        <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
+                        <AlertDescription className="text-xs opacity-90">
+                            El periodo contable actual (<strong>{periodStatus.period_name}</strong>) está cerrado. No podrá guardar este ajuste.
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {/* 1. Transaction Type */}
                 <div className="flex justify-center">

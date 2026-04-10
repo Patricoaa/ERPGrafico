@@ -276,27 +276,21 @@ class JournalEntry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        # Validate period is not closed (only for existing entries being modified)
-        if self.pk and self.period_closed:
-            raise ValidationError(
-                _("No se puede modificar un asiento de un periodo cerrado.")
-            )
+        is_new = self.pk is None
         
-        # Auto-assign accounting period based on date
+        # 1. Determine/Refresh accounting period context
         if self.date and not self.accounting_period_id:
             from tax.models import AccountingPeriod
             try:
-                period, _ = AccountingPeriod.objects.get_or_create(
+                period, _created = AccountingPeriod.objects.get_or_create(
                     year=self.date.year,
                     month=self.date.month
                 )
                 self.accounting_period = period
                 self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
             except Exception:
-                # If period creation fails, continue without it
                 pass
         
-        # Update period_closed flag if period exists
         if self.accounting_period_id:
             from tax.models import AccountingPeriod
             try:
@@ -304,7 +298,29 @@ class JournalEntry(models.Model):
                 self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
             except AccountingPeriod.DoesNotExist:
                 pass
-        
+
+        # 2. Hard Enforcement of Period Closure
+        if self.period_closed:
+            if is_new:
+                # Block Creation
+                raise ValidationError(
+                    _("No se puede registrar un asiento contable en un periodo cerrado. Por favor, verifique la fecha o solicite la reapertura del periodo.")
+                )
+            else:
+                # Block Modification (except cancellation)
+                original = JournalEntry.objects.get(pk=self.pk)
+                # If it was already cancelled, block any further change
+                if original.status == JournalEntry.Status.CANCELLED:
+                     raise ValidationError(
+                        _("No se puede modificar un asiento ya anulado en un periodo cerrado.")
+                    )
+                # If attempting to change something other than status to CANCELLED
+                if self.status != JournalEntry.Status.CANCELLED:
+                    raise ValidationError(
+                        _("No se puede modificar un asiento de un periodo cerrado. Solo se permite la anulación.")
+                    )
+
+        # 3. Standard Field Assignments
         if not self.number:
             # Simple auto-numbering
             last_entry = JournalEntry.objects.all().order_by('id').last()
@@ -315,6 +331,7 @@ class JournalEntry(models.Model):
                     self.number = '000001'
             else:
                 self.number = '000001'
+        
         super().save(*args, **kwargs)
         from core.cache import invalidate_report_cache
         invalidate_report_cache('finances')

@@ -11,6 +11,7 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
@@ -109,6 +110,17 @@ export function PurchaseCheckoutWizard({
         isPending: false
     })
 
+    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
+
+    // Validate period when date changes
+    useEffect(() => {
+        if (dteData.date && !dteData.isPending) {
+            validatePeriod(dteData.date, 'both')
+        } else {
+            clearPeriodValidation()
+        }
+    }, [dteData.date, dteData.isPending, validatePeriod, clearPeriodValidation])
+
     // Sync DTE date with server date
     useEffect(() => {
         if (dateString) {
@@ -175,7 +187,7 @@ export function PurchaseCheckoutWizard({
         context: 'GENERAL'
     })
 
-    const validateCurrentStep = (targetStep: number) => {
+    const validateCurrentStep = async (targetStep: number) => {
         if (targetStep === 1) {
             if (!selectedSupplierId) {
                 toast.error("Debe seleccionar un proveedor para continuar.")
@@ -203,6 +215,15 @@ export function PurchaseCheckoutWizard({
                 return false
             }
         }
+
+        // Tax Period Validation (Handled visually in live, but enforced here)
+        if (targetStep === 3 && !dteData.isPending && dteData.date) {
+            if (isClosed) {
+                toast.error(message || `No se puede continuar. El periodo ya se encuentra CERRADO.`)
+                return false
+            }
+        }
+
         if (targetStep === 3 && dteData.type === 'BOLETA' && !dteData.isPending && !dteData.number) {
             toast.error("Debe ingresar el número de folio de la boleta.")
             return false
@@ -244,8 +265,9 @@ export function PurchaseCheckoutWizard({
         return true
     }
 
-    const handleNext = () => {
-        if (!validateCurrentStep(step)) return
+    const handleNext = async () => {
+        const isValid = await validateCurrentStep(step)
+        if (!isValid) return
         setStep(prev => prev + 1)
     }
 
@@ -432,7 +454,7 @@ export function PurchaseCheckoutWizard({
                                 selectedSupplierId={selectedSupplierId}
                             />
                         )}
-                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} />}
+                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} isPeriodClosed={isClosed} periodMessage={message} />}
                         {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
                         {step === 5 && (
                             <Step4_Receipt

@@ -17,7 +17,6 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
-import { PeriodChecklist } from "@/features/tax/components/PeriodChecklist"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -42,14 +41,12 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const [periods, setPeriods] = useState<TaxPeriod[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
-    const [isChecklistOpen, setIsChecklistOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-    const [selectedPeriod, setSelectedPeriod] = useState<TaxPeriod | null>(null)
+    const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
 
     const handleCloseModal = () => {
         setIsWizardOpen(false)
-        setIsChecklistOpen(false)
         setIsPaymentOpen(false)
         onExternalOpenChange?.(false)
         
@@ -90,7 +87,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                     if (action === 'pay') {
                         handleOpenPayment(target)
                     } else {
-                        handleOpenChecklist(target)
+                        handleOpenWizard(target)
                     }
                 }
             }
@@ -112,9 +109,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
         }
     }, [externalOpen])
 
-    const handleOpenChecklist = (period: TaxPeriod) => {
-        setSelectedPeriod(period)
-        setIsChecklistOpen(true)
+    const handleOpenWizard = (period: TaxPeriod) => {
+        setSelectedPeriodId(period.id)
+        setIsWizardOpen(true)
     }
 
     const handleOpenPayment = async (period: TaxPeriod) => {
@@ -301,9 +298,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                 className="h-8 w-8"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleOpenChecklist(period);
+                                    handleOpenWizard(period);
                                 }}
-                                title="Abrir checklist de cierre"
+                                title="Iniciar declaración/cierre F29"
                             >
                                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -448,7 +445,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                     <div
                                         key={period.id}
                                         className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
-                                        onClick={() => canOpenChecklist ? handleOpenChecklist(period) : null}
+                                        onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
@@ -530,8 +527,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                                         className="h-10 w-10 rounded-lg group-hover:translate-x-1 transition-transform"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleOpenChecklist(period);
+                                                            handleOpenWizard(period);
                                                         }}
+                                                        title="Iniciar declaración/cierre F29"
                                                     >
                                                         <ArrowRight className="h-5 w-5 text-primary" />
                                                     </Button>
@@ -548,21 +546,14 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}
                 onOpenChange={handleWizardOpenChange}
+                periodId={selectedPeriodId}
                 onSuccess={() => {
                     fetchPeriods()
                     setIsWizardOpen(false)
+                    setSelectedPeriodId(null)
                 }}
                 existingPeriods={periods}
             />
-
-            {selectedPeriod && (
-                <PeriodChecklist
-                    isOpen={isChecklistOpen}
-                    onOpenChange={(open) => !open && handleCloseModal()}
-                    period={selectedPeriod}
-                    onSuccess={fetchPeriods}
-                />
-            )}
 
             {selectedDeclaration && (
                 <F29PaymentModal

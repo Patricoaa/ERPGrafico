@@ -13,11 +13,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { FileText, Loader2, Upload } from "lucide-react"
-import api from "@/lib/api"
+import { FileText, Loader2, Upload, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import api from "@/lib/api"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+import { DatePicker } from "@/components/shared/DatePicker"
 
 interface DocumentRegistrationModalProps {
     open: boolean
@@ -48,6 +51,16 @@ export function DocumentRegistrationModal({
     const [attachment, setAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
+
+    // Validate period when date changes
+    useEffect(() => {
+        if (issueDate && !isPending) {
+            validatePeriod(issueDate, 'both')
+        } else {
+            clearPeriodValidation()
+        }
+    }, [issueDate, isPending, validatePeriod, clearPeriodValidation])
 
     const handleSubmit = async () => {
         // Validation: Required fields (Skip if isPending)
@@ -59,6 +72,12 @@ export function DocumentRegistrationModal({
 
             if (dteType === 'FACTURA' && !attachment) {
                 toast.error("El documento adjunto es obligatorio para Facturas")
+                return
+            }
+
+            // Live validation already handles this
+            if (isClosed) {
+                toast.error(message || "El periodo seleccionado está cerrado.")
                 return
             }
         }
@@ -109,7 +128,7 @@ export function DocumentRegistrationModal({
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={submitting}>
+                    <Button onClick={handleSubmit} disabled={submitting || (!isPending && (isClosed || periodValidating))}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Registrar Documento
                     </Button>
@@ -145,13 +164,20 @@ export function DocumentRegistrationModal({
 
                 <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
                     <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
-                    <Input
-                        id="issue-date"
-                        type="date"
-                        value={issueDate}
-                        onChange={(e) => setIssueDate(e.target.value)}
+                    <DatePicker
+                        date={issueDate ? new Date(issueDate + 'T12:00:00') : undefined}
+                        onDateChange={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : "")}
                         disabled={isPending}
+                        className={cn("w-full", isClosed && !isPending && "border-destructive")}
                     />
+                    {isClosed && !isPending && (
+                        <div className="flex items-center gap-2 mt-1 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                            <ShieldAlert className="h-3.5 w-3.5" />
+                            <span className="text-[10px] font-bold leading-tight uppercase">
+                                {message}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
