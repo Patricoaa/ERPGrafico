@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
-import { QuickActionsMenu } from "@/components/layout/QuickActionsMenu"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { HubPanelProvider, useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -87,15 +86,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pb-4 px-4"
                 style={{
                     marginRight: isInboxOpen && isHubEffectivelyOpen
-                        ? "calc(360px + 320px + 3rem)"
+                        ? "calc(360px + 320px + 2rem)"
                         : isHubEffectivelyOpen
-                            ? "calc(360px + 2rem)"
+                            ? "calc(360px + 1rem)"
                             : isInboxOpen
-                                ? "calc(320px + 2rem)"
+                                ? "calc(320px + 1rem)"
                                 : "0px"
                 }}
             >
-                <main className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-sm custom-scrollbar relative backdrop-blur-sm">
+                <main className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm">
                     {/* El contenido ahora está encapsulado en un card que coincide con 
                         el estilo de la bandeja de entrada y el hub */}
                     <div className="w-full h-full">
@@ -103,10 +102,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </div>
                 </main>
 
-                <QuickActionsMenu
-                    isInboxOpen={isInboxOpen}
-                    onInboxToggle={handleInboxToggle}
-                />
             </div>
 
             {/* Task Inbox Sidebar (Right) - Fixed position */}
@@ -118,7 +113,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </div>
             {/* User Avatar & Notifications - Top Right Preventive Space */}
             <div className="fixed top-4 right-4 z-[60]">
-                <UserActions />
+                <UserActions 
+                    isInboxOpen={isInboxOpen} 
+                    onInboxToggle={handleInboxToggle} 
+                />
             </div>
 
             <Toaster />

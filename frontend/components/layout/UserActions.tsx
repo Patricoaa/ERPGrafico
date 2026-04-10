@@ -1,11 +1,20 @@
 "use client"
 
-import { User, Settings, LogOut, Bell } from "lucide-react"
+import { User, Settings, LogOut, Bell, Store, Calculator, Inbox } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 import { useState, useEffect, useCallback } from "react"
-import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead, Notification } from "@/lib/workflow/api"
+import dynamic from "next/dynamic"
+import Link from "next/link"
+import { 
+    getNotifications, 
+    getUnreadNotificationCount, 
+    markNotificationRead, 
+    markAllNotificationsRead, 
+    Notification,
+    getTasks
+} from "@/lib/workflow/api"
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
     Tooltip,
@@ -24,34 +33,55 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 
-export function UserActions() {
+// Lazy load cost calculator
+const CostCalculatorModal = dynamic(
+    () => import("@/components/tools/CostCalculatorModal").then(m => ({ default: m.CostCalculatorModal })),
+    { ssr: false }
+)
+
+interface UserActionsProps {
+    isInboxOpen?: boolean
+    onInboxToggle?: () => void
+}
+
+export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     const router = useRouter()
     const { logout, user } = useAuth()
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
+    const [pendingTasksCount, setPendingTasksCount] = useState(0)
+    const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
     const [displayLimit] = useState(5)
 
-    const fetchNotifications = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         try {
-            const [data, count] = await Promise.all([
+            const [data, count, approvalsRes, tasksRes] = await Promise.all([
                 getNotifications(),
-                getUnreadNotificationCount()
+                getUnreadNotificationCount(),
+                getTasks({ category: 'APPROVAL', status: 'PENDING' }),
+                getTasks({ category: 'TASK', status: 'PENDING' })
             ])
+            
             setNotifications(data.results || data)
             setUnreadCount(count)
+            
+            const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
+            const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
+            setPendingTasksCount(approvals.length + tasks.length)
         } catch (error) {
-            console.error("Error fetching notifications:", error)
+            console.error("Error fetching data in UserActions:", error)
         }
     }, [])
 
     useEffect(() => {
         if (user) {
-            fetchNotifications()
-            const interval = setInterval(fetchNotifications, 30000)
+            fetchData()
+            const interval = setInterval(fetchData, 30000)
             return () => clearInterval(interval)
         }
-    }, [user, fetchNotifications])
+    }, [user, fetchData])
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
@@ -86,21 +116,85 @@ export function UserActions() {
     return (
         <div className="flex items-center gap-2">
             <TooltipProvider delayDuration={0}>
+                {/* POS Action */}
+                <PermissionGuard permission="sales.view_dashboard_sales">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Link 
+                                href="/pos" 
+                                target="_blank"
+                                className="p-2.5 rounded-xl text-primary hover:bg-primary/20 transition-all bg-primary/10 border border-primary/20 shadow-sm"
+                            >
+                                <Store className="h-5 w-5" />
+                            </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                            Punto de Venta (POS)
+                        </TooltipContent>
+                    </Tooltip>
+                </PermissionGuard>
+
+                {/* Calculator Action */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setIsCalculatorOpen(true)}
+                            className="p-2.5 rounded-xl text-primary hover:bg-primary/20 transition-all bg-primary/10 border border-primary/20 shadow-sm"
+                        >
+                            <Calculator className="h-5 w-5" />
+                        </motion.button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                        Calculadora de Costos
+                    </TooltipContent>
+                </Tooltip>
+
+                {/* Inbox Action */}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={onInboxToggle}
+                            className={cn(
+                                "relative p-2.5 rounded-xl transition-all border shadow-sm",
+                                isInboxOpen 
+                                    ? "bg-primary text-primary-foreground border-primary/20 shadow-primary/20" 
+                                    : "text-primary bg-primary/10 border-primary/20 hover:bg-primary/20"
+                            )}
+                        >
+                            <Inbox className="h-5 w-5" />
+                            {pendingTasksCount > 0 && !isInboxOpen && (
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-[#0a0a0a]">
+                                    {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
+                                </span>
+                            )}
+                        </motion.button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                        Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
+                    </TooltipContent>
+                </Tooltip>
+
+                <div className="w-px h-6 bg-white/5 mx-1" />
+
                 {/* Notifications */}
                 <DropdownMenu>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                                 <motion.button
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.05)" }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative p-2.5 rounded-xl text-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all bg-sidebar/40 border border-white/5 shadow-sm"
+                                    className="relative p-2.5 rounded-xl text-foreground/40 hover:text-foreground/70 transition-all bg-transparent border-none shadow-none"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
-                                        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                                        <span className="absolute top-2 right-2 flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                                         </span>
                                     )}
                                 </motion.button>
@@ -144,8 +238,8 @@ export function UserActions() {
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                                 <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
-                                    <Button variant="ghost" className="p-0 rounded-xl h-10 w-10 overflow-hidden group bg-sidebar/40 border border-white/5 shadow-sm">
-                                        <Avatar className="h-full w-full border border-primary/20 bg-muted/20">
+                                    <Button variant="ghost" className="p-0 rounded-xl h-10 w-10 overflow-hidden group bg-transparent border-none shadow-none hover:bg-white/5">
+                                        <Avatar className="h-full w-full border border-white/10 bg-muted/20">
                                             <AvatarFallback className="bg-primary/5 text-primary font-black text-xs">
                                                 {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                             </AvatarFallback>
@@ -184,6 +278,8 @@ export function UserActions() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </TooltipProvider>
+
+            <CostCalculatorModal open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
         </div>
     )
 }

@@ -26,7 +26,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-sidebar backdrop-blur-md">
+            <div className="flex items-center justify-between px-4 pt-1 pb-4 border-b border-white/5 bg-sidebar backdrop-blur-md">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-md border border-border/50 shadow-sm shadow-black/5">
                         <Inbox className="h-5 w-5 text-primary" />
