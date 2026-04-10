@@ -17,7 +17,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
     return (
         <aside
             className={cn(
-                "fixed top-16 h-[calc(100vh-5rem)] w-[320px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-2xl rounded-2xl",
+                "fixed top-20 h-[calc(100vh-6rem)] w-[320px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-2xl rounded-2xl",
                 "transition-all duration-500 ease-[var(--ease-premium)]",
                 // Horizontal position: pushed left by Hub panel when hub is open
                 isHubEffectivelyOpen ? "right-[calc(360px+2rem)]" : "right-4",
