@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { HubPanelProvider, useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { UserActions } from "@/components/layout/UserActions"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -83,15 +84,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
             {/* Main Content Area - Wrapped in a Premium Card */}
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-16 pb-4 px-4"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pb-4 px-4"
                 style={{
                     marginRight: isInboxOpen && isHubEffectivelyOpen
                         ? "calc(360px + 320px + 3rem)"
                         : isHubEffectivelyOpen
-                        ? "calc(360px + 2rem)"
-                        : isInboxOpen
-                        ? "calc(320px + 2rem)"
-                        : "0px"
+                            ? "calc(360px + 2rem)"
+                            : isInboxOpen
+                                ? "calc(320px + 2rem)"
+                                : "0px"
                 }}
             >
                 <main className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-sm custom-scrollbar relative backdrop-blur-sm">
@@ -101,7 +102,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
                 </main>
-                
+
                 <QuickActionsMenu
                     isInboxOpen={isInboxOpen}
                     onInboxToggle={handleInboxToggle}
@@ -114,6 +115,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     isOpen={isInboxOpen}
                     onClose={() => setIsInboxOpen(false)}
                 />
+            </div>
+            {/* User Avatar & Notifications - Top Right Preventive Space */}
+            <div className="fixed top-4 right-4 z-[60]">
+                <UserActions />
             </div>
 
             <Toaster />

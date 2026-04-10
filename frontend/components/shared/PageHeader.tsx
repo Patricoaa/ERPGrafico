@@ -71,7 +71,7 @@ export function PageHeader({
 
     return (
         <div className={cn(
-            "flex flex-col md:flex-row md:items-end justify-between gap-4 py-4 relative overflow-hidden transition-all duration-300",
+            "flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1 pb-4 relative overflow-hidden transition-all duration-300",
             !isMinimal && "border-b border-border/40 mb-6",
             isMinimal && "mb-2",
             className
