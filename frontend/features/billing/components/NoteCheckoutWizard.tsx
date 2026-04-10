@@ -25,7 +25,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+
 
 interface NoteCheckoutWizardProps {
     open: boolean
@@ -69,16 +69,7 @@ export function NoteCheckoutWizard({
         is_pending: false
     })
 
-    const { validatePeriod, isClosed, message: periodMessage, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (registrationData.document_date && !registrationData.is_pending) {
-            validatePeriod(registrationData.document_date, 'both')
-        } else {
-            clearPeriodValidation()
-        }
-    }, [registrationData.document_date, registrationData.is_pending, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // Computed Properties
     const requiresLogistics = selectedItems.some(item =>
@@ -205,9 +196,9 @@ export function NoteCheckoutWizard({
             }
 
             // TAX PERIOD VALIDATION (Handled visually in live, but enforced here)
-            if (isClosed) {
+            if (!registrationData.is_pending && !isPeriodValid) {
                 toast.error(
-                    periodMessage || `No se puede registrar. El periodo está CERRADO.`,
+                    `No se puede registrar. El periodo está cerrado.`,
                     { duration: 5000, icon: <ShieldAlert className="h-5 w-5 text-destructive" /> }
                 )
                 return
@@ -366,8 +357,7 @@ export function NoteCheckoutWizard({
                         isCreditNote={initialType === 'NOTA_CREDITO'}
                         data={registrationData}
                         setData={setRegistrationData}
-                        isPeriodClosed={isClosed}
-                        periodMessage={periodMessage}
+                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                     />
                 )
             case 4:
@@ -459,7 +449,7 @@ export function NoteCheckoutWizard({
                         <Button
                             onClick={handleNext}
                             className="w-40 h-12 font-bold shadow-lg hover:shadow-xl transition-all"
-                            disabled={isStepLoading}
+                            disabled={isStepLoading || (currentStepId === 'dte' && !isPeriodValid)}
                         >
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />

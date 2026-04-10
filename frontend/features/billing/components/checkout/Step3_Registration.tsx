@@ -11,20 +11,20 @@ import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachme
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+
 interface Step3_RegistrationProps {
     isCreditNote: boolean
     data: any
     setData: (data: any) => void
-    isPeriodClosed?: boolean
-    periodMessage?: string
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
 export function Step3_Registration({
     isCreditNote,
     data,
     setData,
-    isPeriodClosed = false,
-    periodMessage = ""
+    onPeriodValidityChange
 }: Step3_RegistrationProps) {
 
     const { dateString } = useServerDate()
@@ -62,11 +62,17 @@ export function Step3_Registration({
                         checked={formData.is_pending}
                         onCheckedChange={(val) => {
                             const isChecked = !!val;
-                            setData({
-                                ...formData,
-                                is_pending: isChecked,
-                                document_number: isChecked ? '' : formData.document_number
-                            });
+                            if (isChecked) {
+                                setData({
+                                    ...formData,
+                                    is_pending: true,
+                                    document_number: '',
+                                    attachment: null
+                                });
+                                onPeriodValidityChange?.(true);
+                            } else {
+                                setData({ ...formData, is_pending: false });
+                            }
                         }}
                     />
                     <Label htmlFor="is_pending" className="text-xs font-medium cursor-pointer">
@@ -97,22 +103,22 @@ export function Step3_Registration({
                                     <Calendar className="h-3 w-3" />
                                     Fecha Emisión
                                 </Label>
-                                <div className="space-y-2">
-                                    <Input
-                                        id="date"
-                                        type="date"
-                                        className={cn("bg-background", isPeriodClosed && "border-destructive text-destructive")}
-                                        value={formData.document_date}
-                                        onChange={(e) => setData({ ...formData, document_date: e.target.value })}
+                                <div>
+                                    <PeriodValidationDateInput
+                                        date={formData.document_date ? new Date(formData.document_date + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (d) {
+                                                const year = d.getFullYear()
+                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                const day = String(d.getDate()).padStart(2, '0')
+                                                setData({ ...formData, document_date: `${year}-${month}-${day}` })
+                                            } else {
+                                                setData({ ...formData, document_date: "" })
+                                            }
+                                        }}
+                                        validationType="both"
+                                        onValidityChange={onPeriodValidityChange}
                                     />
-                                    {isPeriodClosed && (
-                                        <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
-                                            <ShieldAlert className="h-4 w-4" />
-                                            <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
-                                                {periodMessage || "Periodo cerrado"}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
                                 </div>
                             </div>
 
@@ -137,9 +143,6 @@ export function Step3_Registration({
                     </div>
                 )}
             </div>
-        </div>
-    )
-}
         </div>
     )
 }

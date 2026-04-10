@@ -101,6 +101,8 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                         onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
                         invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
                         invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
+                        contactId={completingFolio?.customer || completingFolio?.customer_id}
+                        isPurchase={false}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
                                 headers: { 'Content-Type': 'multipart/form-data' }

@@ -18,7 +18,8 @@ import { FORM_STYLES } from "@/lib/styles"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { DatePicker } from "@/components/shared/DatePicker"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 // --- STEP 1: General Information ---
 
@@ -31,8 +32,9 @@ interface Step1Props {
     setDocumentDate: (date: Date | undefined) => void
     attachment: File | null
     setAttachment: (file: File | null) => void
-    isPeriodClosed?: boolean
-    periodMessage?: string | null
+    contactId?: number
+    onValidityChange?: (isValid: boolean) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
 export function Step1_GeneralInfo({
@@ -44,8 +46,9 @@ export function Step1_GeneralInfo({
     setDocumentDate,
     attachment,
     setAttachment,
-    isPeriodClosed,
-    periodMessage
+    contactId,
+    onValidityChange,
+    onPeriodValidityChange
 }: Step1Props) {
     return (
         <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -110,10 +113,13 @@ export function Step1_GeneralInfo({
                 {/* Document Number & Date */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
-                        <Label className="text-base font-bold">Número de Folio</Label>
-                        <Input
+                        <FolioValidationInput
                             value={documentNumber}
-                            onChange={(e) => setDocumentNumber(e.target.value)}
+                            onChange={setDocumentNumber}
+                            onValidityChange={onValidityChange}
+                            contactId={contactId}
+                            isPurchase={true}
+                            documentType={noteType}
                             placeholder="Ej: 12345"
                             className="h-12 text-lg font-mono tracking-widest uppercase"
                             autoFocus
@@ -124,20 +130,13 @@ export function Step1_GeneralInfo({
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="text-base font-bold">Fecha Emisión</Label>
-                        <DatePicker
+                        <PeriodValidationDateInput
                             date={documentDate}
                             onDateChange={setDocumentDate}
-                            className={cn("h-12 w-full", isPeriodClosed && "border-destructive ring-2 ring-destructive/10")}
+                            validationType="both"
+                            onValidityChange={onPeriodValidityChange}
+                            className="h-12 w-full"
                         />
-                        {isPeriodClosed && (
-                            <div className="flex items-center gap-2 mt-1 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
-                                <ShieldAlert className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold leading-tight uppercase">
-                                    {periodMessage}
-                                </span>
-                            </div>
-                        )}
                         <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                             * Fecha en que se emitió el documento
                         </p>

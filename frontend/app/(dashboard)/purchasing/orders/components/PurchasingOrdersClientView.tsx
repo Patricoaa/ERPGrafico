@@ -41,6 +41,7 @@ interface PurchaseOrder {
     status: string
     total: string
     warehouse_name: string
+    supplier?: number
     total_paid: number
     pending_amount: number
     is_invoiced: boolean
@@ -638,6 +639,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         onOpenChange={(open) => !open && setInvoicingOrder(null)}
                         orderId={invoicingOrder.id}
                         orderNumber={invoicingOrder.number}
+                        supplierId={invoicingOrder.supplier}
                         onSuccess={fetchOrders}
                     />
                 )
@@ -650,6 +652,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
+                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: any) => i.id === completingInvoice.id))?.supplier || undefined}
+                        isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
                                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -684,6 +688,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
+                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: any) => i.id === selectedInvoice.id))?.supplier || undefined}
+                        isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
                                 headers: { 'Content-Type': 'multipart/form-data' }

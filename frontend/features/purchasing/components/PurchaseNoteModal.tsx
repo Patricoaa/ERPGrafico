@@ -16,7 +16,7 @@ import {
 import api from "@/lib/api"
 import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { validateTaxPeriod } from "@/lib/actions/tax-actions"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+
 import { ShieldAlert } from "lucide-react"
 
 // Components
@@ -63,18 +63,9 @@ export function PurchaseNoteModal({
         transactionNumber: '',
         isPending: false
     })
+    const [isFolioValid, setIsFolioValid] = useState(true)
 
-    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (documentDate) {
-            const dateStr = documentDate.toISOString().split('T')[0]
-            validatePeriod(dateStr, 'both') // Checks both tax and accounting
-        } else {
-            clearPeriodValidation()
-        }
-    }, [documentDate, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // -- Effects --
     useEffect(() => {
@@ -179,12 +170,17 @@ export function PurchaseNoteModal({
 
     const handleNext = async () => {
         if (validateStep(step)) {
-                // Live validation already handles this, but as a secondary check/guard
-                if (isClosed) {
-                    toast.error(message || "El periodo seleccionado está cerrado.")
-                    return
-                }
+            // Live validation already handles this, but as a secondary check/guard
+            if (!isPeriodValid) {
+                toast.error("El periodo seleccionado está cerrado. No puede continuar.")
+                return
             }
+
+            if (step === 1 && !isFolioValid) {
+                toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
+                return
+            }
+
             setStep(prev => prev + 1)
         }
     }
@@ -297,7 +293,7 @@ export function PurchaseNoteModal({
                     {step < totalSteps ? (
                         <Button
                             onClick={handleNext}
-                            disabled={step === 1 && (isClosed || periodValidating || !documentNumber || !attachment)}
+                            disabled={step === 1 && (isClosed || periodValidating || !documentNumber || !attachment || !isFolioValid)}
                             className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                         >
                             Siguiente
@@ -356,14 +352,15 @@ export function PurchaseNoteModal({
                                         <Step1_GeneralInfo
                                             noteType={noteType}
                                             setNoteType={setNoteType}
-                                            documentNumber={documentNumber}
-                                            setDocumentNumber={setDocumentNumber}
+                                            documentNumber={reference}
+                                            setDocumentNumber={setReference}
                                             documentDate={documentDate}
                                             setDocumentDate={setDocumentDate}
                                             attachment={attachment}
                                             setAttachment={setAttachment}
-                                            isPeriodClosed={isClosed}
-                                            periodMessage={message}
+                                            contactId={orderDetails?.supplier}
+                                            onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                                            onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                                         />
                                     )}
                                     {step === 2 && (

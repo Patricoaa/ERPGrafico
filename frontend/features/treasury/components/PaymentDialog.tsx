@@ -18,8 +18,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface PaymentDialogProps {
     open: boolean
@@ -75,7 +74,7 @@ export function PaymentDialog({
     const [documentReference, setDocumentReference] = useState("")
     const [documentDate, setDocumentDate] = useState("")
 
-    const { validatePeriod, isClosed, message: periodMessage, clearPeriodValidation } = usePeriodValidation()
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // Sync document date with server date
     useEffect(() => {
@@ -83,15 +82,6 @@ export function PaymentDialog({
             setDocumentDate(dateString)
         }
     }, [dateString])
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (documentDate && (dteType === 'BOLETA' || dteType === 'FACTURA') && !isDocumentPending) {
-            validatePeriod(documentDate, 'both')
-        } else {
-            clearPeriodValidation()
-        }
-    }, [documentDate, dteType, isDocumentPending, validatePeriod, clearPeriodValidation])
 
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isDocumentPending, setIsDocumentPending] = useState(false)
@@ -123,7 +113,7 @@ export function PaymentDialog({
             if (dateString) setDocumentDate(dateString)
             setDocumentAttachment(null)
             setIsDocumentPending(false)
-            clearPeriodValidation()
+            setIsPeriodValid(true)
 
             if (existingInvoice) {
                 setDteType(existingInvoice.dte_type)
@@ -183,7 +173,7 @@ export function PaymentDialog({
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
                             ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
                             (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
-                            (isClosed)
+                            ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
                         }
                     >
                         {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
@@ -248,22 +238,23 @@ export function PaymentDialog({
                                 <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                     <Calendar className="h-3 w-3" /> Fecha de Emisión
                                 </Label>
-                                <div className="space-y-2">
-                                    <Input
-                                        type="date"
-                                        className={cn("h-9", isClosed && "border-destructive text-destructive")}
-                                        value={documentDate}
-                                        onChange={(e) => setDocumentDate(e.target.value)}
+                                <div>
+                                    <PeriodValidationDateInput
+                                        date={documentDate ? new Date(documentDate + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (d) {
+                                                const year = d.getFullYear()
+                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                const day = String(d.getDate()).padStart(2, '0')
+                                                setDocumentDate(`${year}-${month}-${day}`)
+                                            } else {
+                                                setDocumentDate("")
+                                            }
+                                        }}
                                         disabled={isDocumentPending}
+                                        validationType="both"
+                                        onValidityChange={setIsPeriodValid}
                                     />
-                                    {isClosed && (
-                                        <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
-                                            <ShieldAlert className="h-4 w-4" />
-                                            <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
-                                                {periodMessage || "Periodo cerrado"}
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
                                 </div>
                             </div>
 
@@ -307,42 +298,6 @@ export function PaymentDialog({
                             </div>
                         </div>
                     )}
-
-                    {/* Payment Method Card Selector */}
-                    {/* Only show when terminalId is loaded if posSessionId is provided */}
-                    {(!posSessionId || terminalId !== null) && (
-                        <PaymentMethodCardSelector
-                            operation={isPurchase ? 'purchases' : 'sales'}
-                            terminalId={terminalId || undefined}
-                            total={pendingAmount}
-                            paymentData={paymentData}
-                            onPaymentDataChange={setPaymentData}
-                            compactMode={true}
-                            customerCreditBalance={customerCreditBalance}
-                            allowCreditBalanceAccumulation={allowCreditBalanceAccumulation}
-                            labels={{
-                                totalLabel: isRefund ? 'Total a Reembolsar' : (isPurchase ? 'Total a Pagar' : 'Total a Cobrar'),
-                                amountLabel: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
-                                differencePositiveLabel: isRefund ? 'Diferencia a favor' : 'Vuelto',
-                                differenceNegativeLabel: 'Deuda Pendiente',
-                                amountModalTitle: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
-                                amountModalDescription: isRefund
-                                    ? 'Ingrese el monto a reembolsar.'
-                                    : (isPurchase ? 'Ingrese el monto a pagar.' : 'Ingrese el monto recibido.')
-                            }}
-                        />
-                    )}
-                    {posSessionId && terminalId === null && (
-                        <div className="flex items-center justify-center p-8 text-muted-foreground">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            <span className="ml-3">Cargando métodos de pago...</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </BaseModal>
-    )
-} export default PaymentDialog
 
                     {/* Payment Method Card Selector */}
                     {/* Only show when terminalId is loaded if posSessionId is provided */}
