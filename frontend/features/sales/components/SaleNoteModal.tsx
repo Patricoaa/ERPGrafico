@@ -22,8 +22,7 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { DatePicker } from "@/components/shared/DatePicker"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 import { SaleOrderLine } from "../types"
 
@@ -58,17 +57,7 @@ export function SaleNoteModal({
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [loadingOrder, setLoadingOrder] = useState(false)
-    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (documentDate) {
-            const dateStr = documentDate.toISOString().split('T')[0]
-            validatePeriod(dateStr, 'both') // Checks both tax and accounting
-        } else {
-            clearPeriodValidation()
-        }
-    }, [documentDate, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     useEffect(() => {
         if (open) {
@@ -131,8 +120,8 @@ export function SaleNoteModal({
         }
 
         // Live validation already handles this, but as a secondary check/guard
-        if (isClosed) {
-            toast.error(message || "El periodo seleccionado está cerrado.")
+        if (!isPeriodValid) {
+            toast.error("El periodo seleccionado está cerrado. No puede continuar.")
             return
         }
 
@@ -214,7 +203,7 @@ export function SaleNoteModal({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0 || isClosed || periodValidating}
+                        disabled={submitting || !documentNumber || amountNet <= 0 || !isPeriodValid}
                         className="font-bold h-11 px-8"
                     >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -250,19 +239,12 @@ export function SaleNoteModal({
 
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Fecha Emisión</Label>
-                        <DatePicker
+                        <PeriodValidationDateInput
                             date={documentDate}
                             onDateChange={setDocumentDate}
-                            className={cn("w-full", isClosed && "border-destructive")}
+                            validationType="both"
+                            onValidityChange={setIsPeriodValid}
                         />
-                        {isClosed && (
-                            <div className="flex items-center gap-2 mt-1 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
-                                <ShieldAlert className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold leading-tight uppercase">
-                                    {message}
-                                </span>
-                            </div>
-                        )}
                     </div>
                 </div>
 

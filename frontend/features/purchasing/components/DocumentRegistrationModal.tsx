@@ -19,14 +19,15 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
-import { DatePicker } from "@/components/shared/DatePicker"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 interface DocumentRegistrationModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     orderId: number
     orderNumber: string
+    supplierId?: number
     onSuccess?: () => void
 }
 
@@ -35,12 +36,14 @@ export function DocumentRegistrationModal({
     onOpenChange,
     orderId,
     orderNumber,
+    supplierId,
     onSuccess
 }: DocumentRegistrationModalProps) {
     const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("FACTURA")
     const [reference, setReference] = useState("")
     const [issueDate, setIssueDate] = useState("")
+    const [isFolioValid, setIsFolioValid] = useState(true)
 
     // Sync with server date
     useEffect(() => {
@@ -51,16 +54,7 @@ export function DocumentRegistrationModal({
     const [attachment, setAttachment] = useState<File | null>(null)
     const [isPending, setIsPending] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (issueDate && !isPending) {
-            validatePeriod(issueDate, 'both')
-        } else {
-            clearPeriodValidation()
-        }
-    }, [issueDate, isPending, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     const handleSubmit = async () => {
         // Validation: Required fields (Skip if isPending)
@@ -76,8 +70,13 @@ export function DocumentRegistrationModal({
             }
 
             // Live validation already handles this
-            if (isClosed) {
-                toast.error(message || "El periodo seleccionado está cerrado.")
+            if (!isPeriodValid) {
+                toast.error("El periodo seleccionado está cerrado. No puede continuar.")
+                return
+            }
+
+            if (!isFolioValid) {
+                toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
                 return
             }
         }
@@ -128,7 +127,10 @@ export function DocumentRegistrationModal({
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={submitting || (!isPending && (isClosed || periodValidating))}>
+                    <Button 
+                        onClick={handleSubmit} 
+                        disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}
+                    >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Registrar Documento
                     </Button>
@@ -154,7 +156,16 @@ export function DocumentRegistrationModal({
                         type="checkbox"
                         id="pending-check"
                         checked={isPending}
-                        onChange={(e) => setIsPending(e.target.checked)}
+                        onChange={(e) => {
+                            const pending = e.target.checked;
+                            setIsPending(pending);
+                            if (pending) {
+                                setReference('');
+                                setAttachment(null);
+                                setIsFolioValid(true);
+                                setIsPeriodValid(true);
+                            }
+                        }}
                         className="h-4 w-4 rounded border text-primary focus:ring-indigo-600"
                     />
                     <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
@@ -164,31 +175,24 @@ export function DocumentRegistrationModal({
 
                 <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
                     <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
-                    <DatePicker
+                    <PeriodValidationDateInput
                         date={issueDate ? new Date(issueDate + 'T12:00:00') : undefined}
                         onDateChange={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : "")}
                         disabled={isPending}
-                        className={cn("w-full", isClosed && !isPending && "border-destructive")}
+                        validationType="both"
+                        onValidityChange={setIsPeriodValid}
                     />
-                    {isClosed && !isPending && (
-                        <div className="flex items-center gap-2 mt-1 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
-                            <ShieldAlert className="h-3.5 w-3.5" />
-                            <span className="text-[10px] font-bold leading-tight uppercase">
-                                {message}
-                            </span>
-                        </div>
-                    )}
                 </div>
 
                 <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <Label htmlFor="reference">
-                        N° de Folio / Referencia <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                        id="reference"
-                        placeholder="Ej: 12345"
+                    <FolioValidationInput
                         value={reference}
-                        onChange={(e) => setReference(e.target.value)}
+                        onChange={setReference}
+                        onValidityChange={setIsFolioValid}
+                        contactId={supplierId}
+                        isPurchase={true}
+                        dteType={dteType}
+                        placeholder="Ej: 12345"
                         disabled={isPending}
                     />
                 </div>

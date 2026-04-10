@@ -15,7 +15,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+
 import { Step0_Customer } from "./Step0_Customer"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -122,19 +122,11 @@ export function SalesCheckoutWizardContent({
         date: null,
         notes: ''
     })
+    const [isFolioValid, setIsFolioValid] = useState(true)
 
     const [pinModalOpen, setPinModalOpen] = useState(false)
 
-    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (dteData.date && !dteData.isPending) {
-            validatePeriod(dteData.date, 'both')
-        } else {
-            clearPeriodValidation()
-        }
-    }, [dteData.date, dteData.isPending, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
@@ -314,8 +306,8 @@ export function SalesCheckoutWizardContent({
                     dteData={dteData}
                     setDteData={setDteData}
                     isDefaultCustomer={!!selectedCustomer?.is_default_customer}
-                    isPeriodClosed={isClosed}
-                    periodMessage={message}
+                    onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                    onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                 />
             )
         }
@@ -369,8 +361,8 @@ export function SalesCheckoutWizardContent({
 
                 // Tax Period Validation (Handled visually in live, but enforced here)
                 if (!dteData.isPending && dteData.date) {
-                    if (isClosed) {
-                        toast.error(message || `No se puede continuar. El periodo ya se encuentra CERRADO.`)
+                    if (!isPeriodValid) {
+                        toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
                         return { isValid: false }
                     }
                 }
@@ -416,6 +408,13 @@ export function SalesCheckoutWizardContent({
     const handleNext = async () => {
         const validation = await validateCurrentStep()
         if (!validation.isValid) return
+
+        // New folio validation check
+        if (step === (hasManufacturing ? 3 : 2) && !isFolioValid) {
+            toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
+            return
+        }
+
         if (step === totalSteps - 1) {
             setShowSuspendDialog(true)
             return
@@ -843,7 +842,11 @@ export function SalesCheckoutWizardContent({
                         </div>
                         <div className="flex gap-4">
                             {step < totalSteps ? (
-                                <Button onClick={handleNext} className="w-40 font-bold">
+                                <Button 
+                                    onClick={handleNext} 
+                                    className="w-40 font-bold"
+                                    disabled={step === (hasManufacturing ? 3 : 2) && !dteData.isPending && !isFolioValid}
+                                >
                                     Siguiente
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>

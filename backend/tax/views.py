@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from .models import TaxPeriod, F29Declaration, F29Payment, AccountingPeriod
@@ -64,7 +64,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
         checklist = TaxPeriodService.get_period_status(period.year, month=period.month)
         return Response(checklist)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
         """
         Check if a period is closed for a specific date.
@@ -304,7 +304,7 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
         status_data = AccountingPeriodService.get_period_status(period.year, period.month)
         return Response(status_data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
         """
         Check if an accounting period is closed for a specific date.

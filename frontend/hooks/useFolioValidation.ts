@@ -35,7 +35,11 @@ export function useFolioValidation() {
     const validateFolioImmediate = async (
         number: string,
         dteType: string,
-        excludeId?: number
+        options: {
+            excludeId?: number,
+            contactId?: number,
+            isPurchase?: boolean
+        } = {}
     ) => {
         // Skip validation for empty or draft numbers
         if (!number || number.trim() === '' || number === 'Draft') {
@@ -45,8 +49,13 @@ export function useFolioValidation() {
 
         setIsValidating(true)
         try {
-            const params: any = { number, dte_type: dteType }
-            if (excludeId) params.exclude_id = excludeId
+            const params: any = { 
+                number, 
+                dte_type: dteType,
+                is_purchase: options.isPurchase ? 'true' : 'false'
+            }
+            if (options.excludeId) params.exclude_id = options.excludeId
+            if (options.contactId) params.contact_id = options.contactId
 
             const response = await api.get('/billing/invoices/check_folio/', { params })
             setValidationResult(response.data)

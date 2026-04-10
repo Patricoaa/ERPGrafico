@@ -8,6 +8,7 @@ from purchasing.models import PurchaseOrder
 from simple_history.models import HistoricalRecords
 from core.validators import validate_file_size, validate_file_extension
 from core.utils import generic_upload_path, get_current_date
+from core.storages import PrivateMediaStorage
 from .note_workflow import NoteWorkflow  # Import workflow model
 
 class Invoice(models.Model):
@@ -52,6 +53,7 @@ class Invoice(models.Model):
     document_attachment = models.FileField(
         _("Adjunto de Documento"), 
         upload_to=generic_upload_path('invoices/'), 
+        storage=PrivateMediaStorage(),
         null=True, blank=True,
         validators=[validate_file_size, validate_file_extension]
     )

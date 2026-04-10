@@ -11,7 +11,7 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { usePeriodValidation } from "@/hooks/usePeriodValidation"
+
 import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
@@ -109,17 +109,9 @@ export function PurchaseCheckoutWizard({
         attachment: null,
         isPending: false
     })
+    const [isFolioValid, setIsFolioValid] = useState(true)
 
-    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
-
-    // Validate period when date changes
-    useEffect(() => {
-        if (dteData.date && !dteData.isPending) {
-            validatePeriod(dteData.date, 'both')
-        } else {
-            clearPeriodValidation()
-        }
-    }, [dteData.date, dteData.isPending, validatePeriod, clearPeriodValidation])
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // Sync DTE date with server date
     useEffect(() => {
@@ -218,8 +210,8 @@ export function PurchaseCheckoutWizard({
 
         // Tax Period Validation (Handled visually in live, but enforced here)
         if (targetStep === 3 && !dteData.isPending && dteData.date) {
-            if (isClosed) {
-                toast.error(message || `No se puede continuar. El periodo ya se encuentra CERRADO.`)
+            if (!isPeriodValid) {
+                toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
                 return false
             }
         }
@@ -268,6 +260,12 @@ export function PurchaseCheckoutWizard({
     const handleNext = async () => {
         const isValid = await validateCurrentStep(step)
         if (!isValid) return
+
+        if (step === 3 && !dteData.isPending && !isFolioValid) {
+            toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
+            return
+        }
+
         setStep(prev => prev + 1)
     }
 
@@ -395,7 +393,11 @@ export function PurchaseCheckoutWizard({
                     </Button>
 
                     {step < totalSteps ? (
-                        <Button onClick={handleNext} className="w-40 h-12 font-bold">
+                        <Button 
+                            onClick={handleNext} 
+                            className="w-40 h-12 font-bold"
+                            disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
+                        >
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -454,7 +456,15 @@ export function PurchaseCheckoutWizard({
                                 selectedSupplierId={selectedSupplierId}
                             />
                         )}
-                        {step === 3 && <Step2_PurchaseDTE dteData={dteData} setDteData={setDteData} isPeriodClosed={isClosed} periodMessage={message} />}
+                        {step === 3 && (
+                            <Step2_PurchaseDTE 
+                                dteData={dteData} 
+                                setDteData={setDteData} 
+                                contactId={selectedSupplierId}
+                                onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                                onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                            />
+                        )}
                         {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
                         {step === 5 && (
                             <Step4_Receipt

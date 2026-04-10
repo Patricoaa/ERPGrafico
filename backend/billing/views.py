@@ -67,10 +67,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def confirm(self, request, pk=None):
         instance = self.get_object()
         number = request.data.get('number')
+        date = request.data.get('date')
         document_attachment = request.FILES.get('document_attachment')
         
         try:
-            invoice = BillingService.confirm_invoice(instance, number, document_attachment)
+            invoice = BillingService.confirm_invoice(instance, number, document_attachment, date=date)
             return Response(InvoiceSerializer(invoice).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -86,6 +87,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         - number: Folio number to check
         - dte_type: Document type (BOLETA, FACTURA, etc.)
         - exclude_id (optional): Invoice ID to exclude from check (for editing)
+        - contact_id (optional): Supplier ID for purchase documents
+        - is_purchase (optional): "true" if checking a purchase document
         
         Response:
         {
@@ -97,6 +100,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         number = request.query_params.get('number')
         dte_type = request.query_params.get('dte_type')
         exclude_id = request.query_params.get('exclude_id')
+        contact_id = request.query_params.get('contact_id')
+        is_purchase = request.query_params.get('is_purchase', 'false').lower() == 'true'
         
         if not number or not dte_type:
             return Response({
@@ -116,21 +121,30 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if exclude_id:
             query = query.exclude(id=exclude_id)
         
-        # For sales documents, check only sale orders
-        # For purchase documents, we would need supplier_id (not implemented here for simplicity)
-        query = query.filter(sale_order__isnull=False)
+        if is_purchase:
+            # For purchase documents, uniqueness is usually per supplier
+            query = query.filter(purchase_order__isnull=False)
+            if contact_id:
+                query = query.filter(contact_id=contact_id)
+        else:
+            # For sales documents, folio must be unique across all sales
+            query = query.filter(sale_order__isnull=False)
         
         existing = query.first()
         
         if existing:
+            doc_origin = "compra" if is_purchase else "venta"
+            partner_type = "Proveedor" if is_purchase else "Cliente"
+            partner_name = existing.contact.name if existing.contact else (existing.sale_order.customer.name if existing.sale_order else 'Unknown')
+            
             return Response({
                 'is_unique': False,
-                'message': f'El folio {number} ya ha sido utilizado en otro documento de venta.',
+                'message': f'El folio {number} ya ha sido utilizado en otro documento de {doc_origin}.',
                 'existing_invoice': {
                     'id': existing.id,
                     'number': existing.number,
                     'date': existing.date.isoformat() if existing.date else None,
-                    'customer_name': existing.sale_order.customer.name if existing.sale_order else None,
+                    'partner_name': partner_name,
                     'total': float(existing.total)
                 }
             })

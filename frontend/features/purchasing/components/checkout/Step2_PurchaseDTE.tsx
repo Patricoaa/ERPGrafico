@@ -11,19 +11,23 @@ import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface Step2_PurchaseDTEProps {
     dteData: any
     setDteData: (data: any) => void
-    isPeriodClosed?: boolean
-    periodMessage?: string
+    contactId?: number | string | null
+    onValidityChange?: (isValid: boolean) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
 export function Step2_PurchaseDTE({ 
     dteData, 
     setDteData,
-    isPeriodClosed = false,
-    periodMessage = ""
+    contactId,
+    onValidityChange,
+    onPeriodValidityChange
 }: Step2_PurchaseDTEProps) {
     // Fetch billing settings to get allowed DTE types
     const { data: settings } = useQuery({
@@ -96,7 +100,16 @@ export function Step2_PurchaseDTE({
                     <Checkbox
                         id="is-pending"
                         checked={dteData.isPending}
-                        onCheckedChange={(checked) => setDteData({ ...dteData, isPending: !!checked })}
+                        onCheckedChange={(checked) => {
+                            const pending = !!checked;
+                            if (pending) {
+                                setDteData({ ...dteData, isPending: true, number: '', attachment: null });
+                                onValidityChange?.(true);
+                                onPeriodValidityChange?.(true);
+                            } else {
+                                setDteData({ ...dteData, isPending: false });
+                            }
+                        }}
                     />
                     <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
                         Recibiré el documento luego
@@ -106,35 +119,34 @@ export function Step2_PurchaseDTE({
                 {!dteData.isPending && (
                     <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
                         <div className="space-y-2">
-                            <Label htmlFor="folio" className="text-xs font-bold uppercase">
-                                N° de Folio <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="folio"
-                                placeholder="Ej: 45223"
+                            <FolioValidationInput
                                 value={dteData.number}
-                                onChange={(e) => setDteData({ ...dteData, number: e.target.value })}
-                                required
+                                onChange={(val: string) => setDteData({ ...dteData, number: val })}
+                                dteType={dteData.type}
+                                contactId={contactId ? Number(contactId) : undefined}
+                                isPurchase={true}
+                                onValidityChange={onValidityChange}
+                                disabled={dteData.isPending}
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
-                            <div className="space-y-2">
-                                <Input
-                                    id="date"
-                                    type="date"
-                                    value={dteData.date}
-                                    onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
-                                    className={cn(isPeriodClosed && "border-destructive text-destructive")}
+                            <div>
+                                <PeriodValidationDateInput
+                                    date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
+                                    onDateChange={(d) => {
+                                        if (d) {
+                                            const year = d.getFullYear()
+                                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                                            const day = String(d.getDate()).padStart(2, '0')
+                                            setDteData({ ...dteData, date: `${year}-${month}-${day}` })
+                                        } else {
+                                            setDteData({ ...dteData, date: "" })
+                                        }
+                                    }}
+                                    validationType="both"
+                                    onValidityChange={onPeriodValidityChange}
                                 />
-                                {isPeriodClosed && (
-                                    <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
-                                        <ShieldAlert className="h-4 w-4" />
-                                        <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
-                                            {periodMessage || "Periodo cerrado"}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
                             </div>
                         </div>
                         <div className="col-span-2">
@@ -162,9 +174,6 @@ export function Step2_PurchaseDTE({
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>
             )}
-        </div>
-    )
-}
         </div>
     )
 }
