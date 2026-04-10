@@ -6,6 +6,7 @@ import AuthGuard from "@/components/auth/AuthGuard"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
 import { HubPanelProvider } from "@/components/providers/HubPanelProvider"
+import { HeaderProvider } from "@/components/providers/HeaderProvider"
 import Providers from "./providers"
 
 const syne = Syne({
@@ -36,12 +37,14 @@ export default function RootLayout({
       >
         <Providers>
           <AuthProvider>
-            <HubPanelProvider>
-              <GlobalModalProvider>
-                {children}
-                <GlobalHubPanel />
-              </GlobalModalProvider>
-            </HubPanelProvider>
+            <HeaderProvider>
+              <HubPanelProvider>
+                <GlobalModalProvider>
+                  {children}
+                  <GlobalHubPanel />
+                </GlobalModalProvider>
+              </HubPanelProvider>
+            </HeaderProvider>
           </AuthProvider>
         </Providers>
       </body>

@@ -155,12 +155,7 @@ export default async function SalesPage({ searchParams }: PageProps) {
                     </Link>
                 )}
             >
-                <Link href="/pos" target="_blank">
-                    <Button className="bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-bold uppercase tracking-wider text-[11px]">
-                        <Store className="mr-2 h-4 w-4" />
-                        Ir al POS
-                    </Button>
-                </Link>
+
             </PageHeader>
 
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />

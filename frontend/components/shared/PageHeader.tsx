@@ -54,6 +54,9 @@ interface PageHeaderProps {
  * Reusable Page Header component for consistent titles and descriptions.
  * Supports loading states, status indicators, and right-side actions.
  */
+import { useHeader } from "@/components/providers/HeaderProvider"
+import { useEffect } from "react"
+
 export function PageHeader({ 
     title, 
     description, 
@@ -67,141 +70,45 @@ export function PageHeader({
     children, 
     className 
 }: PageHeaderProps) {
-    const isMinimal = variant === 'minimal'
+    const { setHeader, clearHeader } = useHeader()
 
-    return (
-        <div className={cn(
-            "flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1 pb-4 relative overflow-hidden transition-all duration-300",
-            !isMinimal && "border-b border-border/40 mb-6",
-            isMinimal && "mb-2",
-            className
-        )}>
-            <div className="space-y-2 relative z-10 flex-1">
-                <div className="flex flex-col gap-1">
-                    <motion.div
-                        initial={{ y: 10, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="flex items-center gap-3"
-                    >
-                        {/* Icon Slot with Loading Pulse */}
-                        <div className={cn(
-                            "relative p-2 rounded-lg bg-primary/10 text-primary shadow-sm border border-primary/5 shrink-0 transition-all duration-300",
-                            isLoading && "animate-pulse"
-                        )}>
-                            {iconName ? (
-                                <DynamicIcon name={iconName} className="h-5 w-5" />
-                            ) : Icon ? (
-                                <Icon className="h-5 w-5" />
-                            ) : (
-                                <div className="h-5 w-5" /> // Placeholder to keep layout
-                            )}
-                            
-                            {isLoading && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                </div>
-                            )}
-                        </div>
+    // Sync header config to global provider
+    useEffect(() => {
+        // Defer update to next tick to avoid React warnings about state updates during mount/hydration
+        // especially when parent is a Server Component and children are lazy-loaded
+        const timer = setTimeout(() => {
+            setHeader({
+                title,
+                description,
+                iconName,
+                titleActions,
+                isLoading,
+                status,
+                configHref,
+                children
+            })
+        }, 0)
 
-                        {/* Title Slot */}
-                        <div className="flex items-center gap-3">
-                            {isLoading ? (
-                                <Skeleton className="h-8 w-48 md:w-64" />
-                            ) : (
-                                <h1 className="text-2xl md:text-3xl font-black tracking-[-0.03em] leading-tight font-heading uppercase text-foreground">
-                                    {title}
-                                </h1>
-                            )}
+        return () => {
+            clearTimeout(timer)
+            // Optional: only clear if we are still the active header
+            // But since PageHeader usually defines the entire page's identity, clearing is fine.
+        }
+    }, [
+        title, 
+        description, 
+        iconName, 
+        titleActions, 
+        isLoading, 
+        status, 
+        configHref, 
+        children, 
+        setHeader
+    ])
 
-                            {/* Status Indicator */}
-                            <AnimatePresence mode="wait">
-                                {status && !isLoading && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-colors",
-                                            status.type === 'synced' && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-                                            status.type === 'saving' && "bg-primary/10 text-primary border-primary/20",
-                                            status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
-                                            status.type === 'warning' && "bg-amber-500/10 text-amber-600 border-amber-500/20",
-                                            (status.type === 'info' || !status.type) && "bg-muted/50 text-muted-foreground border-border"
-                                        )}
-                                    >
-                                        {status.type === 'synced' && <Check className="h-3 w-3" />}
-                                        {status.type === 'saving' && <CloudUpload className="h-3 w-3 animate-pulse" />}
-                                        {status.type === 'error' && <AlertCircle className="h-3 w-3" />}
-                                        {status.icon && <status.icon className="h-3 w-3" />}
-                                        {status.iconName && <DynamicIcon name={status.iconName} className="h-3 w-3" />}
-                                        <span>{status.label}</span>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-
-                            {/* Title Actions Slot */}
-                            {titleActions && !isLoading && (
-                                <motion.div
-                                    initial={{ x: -5, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: 0.2 }}
-                                    className="flex items-center ml-2"
-                                >
-                                    {titleActions}
-                                </motion.div>
-                            )}
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* Description Slot */}
-                {description && (
-                    <motion.div
-                        initial={{ y: 5, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.1, duration: 0.4 }}
-                    >
-                        {isLoading ? (
-                            <Skeleton className="h-4 w-full max-w-md mt-1" />
-                        ) : (
-                            <p className="text-muted-foreground text-xs md:text-sm max-w-2xl font-medium tracking-tight leading-snug">
-                                {description}
-                            </p>
-                        )}
-                    </motion.div>
-                )}
-            </div>
-
-            {/* Right Side Actions Area */}
-            {(children || configHref) && (
-                <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="flex items-center gap-2 relative z-10 shrink-0 self-center md:self-end"
-                >
-                    {children}
-                    
-                    {configHref && !isLoading && (
-                        <div className="flex items-center ml-2 pl-2 border-l border-border/50">
-                            <Link href={configHref}>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-9 w-9 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300"
-                                    title="Configuración de Módulo"
-                                >
-                                    <DynamicIcon name="settings" className="h-5 w-5" />
-                                </Button>
-                            </Link>
-                        </div>
-                    )}
-                </motion.div>
-            )}
-        </div>
-    )
+    // This component now renders nothing in-place,
+    // as the header is handled by DashboardShell
+    return null
 }
 
 interface PageHeaderButtonProps extends React.ComponentProps<typeof Button> {
