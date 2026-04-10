@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
 from datetime import date
+from django.utils.dateparse import parse_date
 from .models import TaxPeriod, F29Declaration, F29Payment
 from billing.models import Invoice
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
@@ -227,11 +228,17 @@ class F29CalculationService:
         if declaration.is_registered:
             raise ValidationError("Esta declaración ya fue registrada.")
         
+        # Accountant requirement: The tax clearing entry MUST be dated on the last day of the month 
+        # (accrual/devengo) to correctly zero out the accounts for the period, regardless 
+        # of when the declaration is filed (payment/declaration_date).
+        import calendar
+        last_day = calendar.monthrange(declaration.tax_period.year, declaration.tax_period.month)[1]
+        accrual_date = date(declaration.tax_period.year, declaration.tax_period.month, last_day)
+        
+        # We store the provided declaration_date (filed date) in the model, 
+        # but the transaction is recorded at accrual_date.
         if not declaration_date:
-            import calendar
-            # Usa el último día del mes del periodo tributario para el cierre
-            last_day = calendar.monthrange(declaration.tax_period.year, declaration.tax_period.month)[1]
-            declaration_date = date(declaration.tax_period.year, declaration.tax_period.month, last_day)
+            declaration_date = accrual_date
         
         # Get accounting settings
         settings = AccountingSettings.get_solo()
@@ -248,7 +255,7 @@ class F29CalculationService:
         # Create journal entry
         entry_desc = f"Declaración F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
         journal_entry = JournalEntry.objects.create(
-            date=declaration_date,
+            date=accrual_date,
             description=entry_desc,
             reference=f"F29-{folio_number}" if folio_number else ""
         )
@@ -448,6 +455,30 @@ class TaxPeriodService:
         """Get or create a tax period."""
         period, _ = TaxPeriod.objects.get_or_create(year=year, month=month)
         return period
+
+    @staticmethod
+    def is_period_closed(document_date) -> bool:
+        """
+        Checks if a given date falls within a closed tax period.
+        Supports both date objects and ISO date strings.
+        """
+        if not document_date:
+            return False
+
+        # Convert string to date object if necessary
+        if isinstance(document_date, str):
+            document_date = parse_date(document_date)
+            if not document_date:
+                return False
+            
+        try:
+            period = TaxPeriod.objects.get(
+                year=document_date.year,
+                month=document_date.month
+            )
+            return period.status == TaxPeriod.Status.CLOSED
+        except TaxPeriod.DoesNotExist:
+            return False
 
     @staticmethod
     @transaction.atomic
@@ -680,6 +711,31 @@ class AccountingPeriodService:
         return period
 
     @staticmethod
+    def is_period_closed(document_date) -> bool:
+        """
+        Checks if a given date falls within a closed accounting period.
+        Supports both date objects and ISO date strings.
+        """
+        from .models import AccountingPeriod
+        if not document_date:
+            return False
+
+        # Convert string to date object if necessary
+        if isinstance(document_date, str):
+            document_date = parse_date(document_date)
+            if not document_date:
+                return False
+            
+        try:
+            period = AccountingPeriod.objects.get(
+                year=document_date.year,
+                month=document_date.month
+            )
+            return period.status == AccountingPeriod.Status.CLOSED
+        except AccountingPeriod.DoesNotExist:
+            return False
+
+    @staticmethod
     @transaction.atomic
     def close_period(year: int, month: int, user):
         """
@@ -709,6 +765,22 @@ class AccountingPeriodService:
             raise ValidationError(
                 f"Hay {draft_count} asientos en borrador. "
                 "Todos los asientos deben estar publicados antes de cerrar el periodo."
+            )
+        
+        # Accountant requirement: Tax cycle MUST be finalized first
+        # ensure all VAT journal entries are recorded.
+        try:
+            tax_period = TaxPeriod.objects.get(year=year, month=month)
+            if tax_period.status != TaxPeriod.Status.CLOSED:
+                raise ValidationError(
+                    f"No se puede cerrar el periodo contable {month}/{year} "
+                    "porque el Ciclo Tributario (F29) no ha sido cerrado. "
+                    "Debe registrar el F29 y cerrar el Periodo Tributario primero."
+                )
+        except TaxPeriod.DoesNotExist:
+            raise ValidationError(
+                f"No se ha inicializado el Periodo Tributario para {month}/{year}. "
+                "Debe realizar el proceso de F29 primero."
             )
         
         # Close the period

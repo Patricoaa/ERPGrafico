@@ -4,19 +4,27 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { FileText, Receipt, AlertCircle } from "lucide-react"
+import { FileText, Receipt, AlertCircle, ShieldAlert } from "lucide-react"
 import { useQuery } from '@tanstack/react-query'
 import { settingsApi } from "@/features/settings/api/settingsApi"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Step2_PurchaseDTEProps {
     dteData: any
     setDteData: (data: any) => void
+    isPeriodClosed?: boolean
+    periodMessage?: string
 }
 
-export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProps) {
+export function Step2_PurchaseDTE({ 
+    dteData, 
+    setDteData,
+    isPeriodClosed = false,
+    periodMessage = ""
+}: Step2_PurchaseDTEProps) {
     // Fetch billing settings to get allowed DTE types
     const { data: settings } = useQuery({
         queryKey: ['settings-billing'],
@@ -110,13 +118,24 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión</Label>
-                            <Input
-                                id="date"
-                                type="date"
-                                value={dteData.date}
-                                onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
-                            />
+                            <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
+                            <div className="space-y-2">
+                                <Input
+                                    id="date"
+                                    type="date"
+                                    value={dteData.date}
+                                    onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
+                                    className={cn(isPeriodClosed && "border-destructive text-destructive")}
+                                />
+                                {isPeriodClosed && (
+                                    <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
+                                        <ShieldAlert className="h-4 w-4" />
+                                        <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
+                                            {periodMessage || "Periodo cerrado"}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
                         </div>
                         <div className="col-span-2">
                             <DocumentAttachmentDropzone
@@ -143,6 +162,9 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>
             )}
+        </div>
+    )
+}
         </div>
     )
 }

@@ -15,6 +15,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 import { Step0_Customer } from "./Step0_Customer"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -123,6 +124,17 @@ export function SalesCheckoutWizardContent({
     })
 
     const [pinModalOpen, setPinModalOpen] = useState(false)
+
+    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
+
+    // Validate period when date changes
+    useEffect(() => {
+        if (dteData.date && !dteData.isPending) {
+            validatePeriod(dteData.date, 'both')
+        } else {
+            clearPeriodValidation()
+        }
+    }, [dteData.date, dteData.isPending, validatePeriod, clearPeriodValidation])
 
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
@@ -302,6 +314,8 @@ export function SalesCheckoutWizardContent({
                     dteData={dteData}
                     setDteData={setDteData}
                     isDefaultCustomer={!!selectedCustomer?.is_default_customer}
+                    isPeriodClosed={isClosed}
+                    periodMessage={message}
                 />
             )
         }
@@ -349,6 +363,14 @@ export function SalesCheckoutWizardContent({
                 if (dteData.type !== 'BOLETA' && !dteData.isPending) {
                     if (!dteData.number || !dteData.date || !dteData.attachment) {
                         toast.error("Faltan datos obligatorios del documento DTE.")
+                        return { isValid: false }
+                    }
+                }
+
+                // Tax Period Validation (Handled visually in live, but enforced here)
+                if (!dteData.isPending && dteData.date) {
+                    if (isClosed) {
+                        toast.error(message || `No se puede continuar. El periodo ya se encuentra CERRADO.`)
                         return { isValid: false }
                     }
                 }

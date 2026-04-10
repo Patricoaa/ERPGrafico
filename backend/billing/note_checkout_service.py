@@ -14,6 +14,7 @@ from sales.return_services import ReturnService as SalesReturnService
 from purchasing.return_services import PurchaseReturnService
 from sales.services import SalesService
 from purchasing.services import PurchasingService
+from tax.services import TaxPeriodService
 
 class NoteCheckoutService:
     """
@@ -567,6 +568,15 @@ class NoteCheckoutService:
             raise ValidationError("El archivo PDF/XML es obligatorio para emitir la nota de crédito.")
 
         # Update invoice
+        doc_date = document_date or timezone.now().date()
+        
+        # Tax Period Validation
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"No se puede registrar el documento con fecha {doc_date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
+
         workflow.invoice.number = document_number
         workflow.invoice.date = document_date or timezone.now().date()
         if document_attachment:
@@ -1204,9 +1214,16 @@ class NoteCheckoutService:
 
         # 6. document Registration (DTE & Accounting)
         doc_number = registration_data.get('document_number')
-        doc_date = registration_data.get('document_date')
+        doc_date = registration_data.get('document_date') or timezone.now().date()
         val_is_pending = registration_data.get('is_pending', False)
         
+        # Tax Period Validation
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"No se puede registrar el documento con fecha {doc_date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
+
         invoice.number = doc_number
         invoice.date = doc_date
         if document_attachment:

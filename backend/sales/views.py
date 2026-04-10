@@ -344,7 +344,8 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     document_number=val['document_number'],
                     document_attachment=request.FILES.get('document_attachment'),
                     return_items=val.get('return_items'),
-                    original_invoice_id=val.get('original_invoice_id')
+                    original_invoice_id=val.get('original_invoice_id'),
+                    date=val.get('document_date')
                 )
                 
                 from billing.serializers import InvoiceSerializer

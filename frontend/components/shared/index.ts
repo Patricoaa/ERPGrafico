@@ -7,6 +7,7 @@ export * from './CommentSystem';
 export * from './DataManagement';
 export * from './DateRangeFilter';
 export * from './DocumentAttachmentDropzone';
+export * from './DatePicker';
 export * from './DocumentCompletionModal';
 export * from './EmptyState';
 export * from './FacetedFilter';

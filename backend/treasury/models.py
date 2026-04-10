@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 from core.utils import get_current_date
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
 from core.storages import PrivateMediaStorage
 
@@ -284,6 +285,36 @@ class TreasuryMovement(models.Model):
         return None
 
     def save(self, *args, **kwargs):
+        # Validate Accounting Period is not closed
+        is_new = self.pk is None
+        from tax.models import AccountingPeriod
+        
+        try:
+            period = AccountingPeriod.objects.filter(
+                year=self.date.year,
+                month=self.date.month
+            ).first()
+            
+            if period and period.status == AccountingPeriod.Status.CLOSED:
+                # If modifying existing, we might allow cancellation (though treasury is usually final)
+                # But for now, strictly follow the rule: No movements in closed periods.
+                if is_new:
+                    raise ValidationError(
+                        _("No se puede registrar un movimiento de tesorería en un periodo contable cerrado (%(period)s).") % {'period': str(period)}
+                    )
+                else:
+                    # In treasury, we rarely modify movements, but if we do, check original
+                    # If the period is closed, we block any modification to avoid financial drift.
+                    raise ValidationError(
+                        _("No se puede modificar un movimiento de tesorería en un periodo contable cerrado.")
+                    )
+        except ValidationError:
+            raise
+        except Exception:
+            # Fallback if period query fails (e.g. missing period record)
+            # Usually we don't want to block if periods haven't been initialized
+            pass
+
         super().save(*args, **kwargs)
         from core.cache import invalidate_report_cache
         invalidate_report_cache('treasury')

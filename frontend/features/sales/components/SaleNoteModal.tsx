@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { FileBadge, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { DatePicker } from "@/components/shared/DatePicker"
+import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 
 import { SaleOrderLine } from "../types"
 
@@ -51,14 +53,27 @@ export function SaleNoteModal({
 }: SaleNoteModalProps) {
     const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
+    const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [loadingOrder, setLoadingOrder] = useState(false)
+    const { validatePeriod, isClosed, message, isValidating: periodValidating, clearPeriodValidation } = usePeriodValidation()
+
+    // Validate period when date changes
+    useEffect(() => {
+        if (documentDate) {
+            const dateStr = documentDate.toISOString().split('T')[0]
+            validatePeriod(dateStr, 'both') // Checks both tax and accounting
+        } else {
+            clearPeriodValidation()
+        }
+    }, [documentDate, validatePeriod, clearPeriodValidation])
 
     useEffect(() => {
         if (open) {
             setDocumentNumber("")
+            setDocumentDate(new Date())
             setAttachment(null)
             fetchDetails()
         }
@@ -110,6 +125,17 @@ export function SaleNoteModal({
             toast.error("El número de documento es obligatorio")
             return
         }
+        if (!documentDate) {
+            toast.error("La fecha del documento es obligatoria")
+            return
+        }
+
+        // Live validation already handles this, but as a secondary check/guard
+        if (isClosed) {
+            toast.error(message || "El periodo seleccionado está cerrado.")
+            return
+        }
+
         if (!attachment) {
             toast.error("El archivo adjunto es obligatorio para este tipo de nota")
             return
@@ -124,6 +150,9 @@ export function SaleNoteModal({
             const formData = new FormData()
             formData.append('note_type', noteType)
             formData.append('document_number', documentNumber)
+            if (documentDate) {
+                formData.append('document_date', documentDate.toISOString().split('T')[0])
+            }
             formData.append('amount_net', amountNet.toString())
             formData.append('amount_tax', amountTax.toString())
 
@@ -185,7 +214,7 @@ export function SaleNoteModal({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0}
+                        disabled={submitting || !documentNumber || amountNet <= 0 || isClosed || periodValidating}
                         className="font-bold h-11 px-8"
                     >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -217,6 +246,23 @@ export function SaleNoteModal({
                             value={documentNumber}
                             onChange={(e) => setDocumentNumber(e.target.value)}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Fecha Emisión</Label>
+                        <DatePicker
+                            date={documentDate}
+                            onDateChange={setDocumentDate}
+                            className={cn("w-full", isClosed && "border-destructive")}
+                        />
+                        {isClosed && (
+                            <div className="flex items-center gap-2 mt-1 text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                                <ShieldAlert className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-bold leading-tight uppercase">
+                                    {message}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

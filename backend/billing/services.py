@@ -8,6 +8,7 @@ from accounting.services import JournalEntryService, AccountingMapper
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from decimal import Decimal
+from tax.services import TaxPeriodService
 
 
 class BillingService:
@@ -234,6 +235,14 @@ class BillingService:
                 filter_kwargs={'dte_type': Invoice.DTEType.BOLETA}
             )
 
+        # Tax Period Validation
+        doc_date = date or timezone.now().date()
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"No se puede registrar el documento con fecha {doc_date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
+
         # Validate Uniqueness
         if number:
             BillingService._validate_document_uniqueness(number, dte_type)
@@ -338,6 +347,14 @@ class BillingService:
         """
         if status == Invoice.Status.POSTED and not supplier_invoice_number:
             raise ValidationError("El número de folio es obligatorio para publicar la factura.")
+
+        # Tax Period Validation
+        doc_date = date or timezone.now().date()
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"No se puede registrar la factura con fecha {doc_date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
 
         # 0. Validate Uniqueness
         if supplier_invoice_number:
@@ -534,6 +551,13 @@ class BillingService:
             order.recalculate_totals()
             order.save()
         
+        # Tax Period Validation
+        doc_date = document_date or timezone.now().date()
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"Operación abortada: La fecha {doc_date} pertenece a un periodo tributario que ya ha sido CERRADO."
+            )
+
         # --- CREDIT VALIDATION ---
         # Determine the amount paid versus the order total
         # If no amount is explicitly provided, we assume the full total is being paid UNLESS payment_method is CREDIT
@@ -860,6 +884,13 @@ class BillingService:
         
         if not number:
             raise ValidationError("El número de folio es obligatorio para confirmar la factura.")
+
+        # Tax Period Validation
+        if TaxPeriodService.is_period_closed(invoice.date):
+            raise ValidationError(
+                f"No se puede confirmar la factura con fecha {invoice.date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
 
         # Validate Uniqueness
         supplier_id = None

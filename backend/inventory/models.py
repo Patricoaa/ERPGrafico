@@ -7,6 +7,7 @@ from simple_history.models import HistoricalRecords
 from accounting.models import Account, AccountType
 from core.validators import validate_file_size, validate_image_extension
 from core.utils import generic_upload_path, get_current_date
+from django.core.exceptions import ValidationError
 from core.storages import PublicMediaStorage
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
@@ -981,6 +982,32 @@ class StockMove(models.Model):
         return f"MOV-{str(self.id).zfill(5)}"
 
     def save(self, *args, **kwargs):
+        # Validate Accounting Period is not closed
+        is_new = self.pk is None
+        from tax.models import AccountingPeriod
+        
+        try:
+            period = AccountingPeriod.objects.filter(
+                year=self.date.year,
+                month=self.date.month
+            ).first()
+            
+            if period and period.status == AccountingPeriod.Status.CLOSED:
+                if is_new:
+                    raise ValidationError(
+                        _("No se puede registrar un movimiento de inventario en un periodo contable cerrado (%(period)s).") % {'period': str(period)}
+                    )
+                else:
+                    # Stock moves should not be modified once the period is closed.
+                    raise ValidationError(
+                        _("No se puede modificar un movimiento de inventario en un periodo contable cerrado.")
+                    )
+        except ValidationError:
+            raise
+        except Exception:
+            # Fallback if period query fails
+            pass
+
         super().save(*args, **kwargs)
         from core.cache import invalidate_report_cache
         invalidate_report_cache('inventory')

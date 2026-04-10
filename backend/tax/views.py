@@ -61,8 +61,26 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     def checklist(self, request, pk=None):
         """Get checklist status for a period"""
         period = self.get_object()
-        checklist = TaxPeriodService.get_period_status(period.year, period.month)
+        checklist = TaxPeriodService.get_period_status(period.year, month=period.month)
         return Response(checklist)
+
+    @action(detail=False, methods=['get'])
+    def check_closed(self, request):
+        """
+        Check if a period is closed for a specific date.
+        Query param: ?date=YYYY-MM-DD
+        """
+        date_str = request.query_params.get('date')
+        if not date_str:
+            return Response({'error': 'Date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from datetime import datetime
+            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            is_closed = TaxPeriodService.is_period_closed(query_date)
+            return Response({'is_closed': is_closed, 'date': date_str})
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
@@ -285,5 +303,23 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
         period = self.get_object()
         status_data = AccountingPeriodService.get_period_status(period.year, period.month)
         return Response(status_data)
+
+    @action(detail=False, methods=['get'])
+    def check_closed(self, request):
+        """
+        Check if an accounting period is closed for a specific date.
+        Query param: ?date=YYYY-MM-DD
+        """
+        date_str = request.query_params.get('date')
+        if not date_str:
+            return Response({'error': 'Date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from datetime import datetime
+            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            is_closed = AccountingPeriodService.is_period_closed(query_date)
+            return Response({'is_closed': is_closed, 'date': date_str})
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
 
 

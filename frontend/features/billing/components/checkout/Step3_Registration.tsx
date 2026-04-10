@@ -8,17 +8,23 @@ import { Button } from "@/components/ui/button"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { cn } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean
     data: any
     setData: (data: any) => void
+    isPeriodClosed?: boolean
+    periodMessage?: string
 }
 
 export function Step3_Registration({
     isCreditNote,
     data,
-    setData
+    setData,
+    isPeriodClosed = false,
+    periodMessage = ""
 }: Step3_RegistrationProps) {
 
     const { dateString } = useServerDate()
@@ -91,13 +97,23 @@ export function Step3_Registration({
                                     <Calendar className="h-3 w-3" />
                                     Fecha Emisión
                                 </Label>
-                                <Input
-                                    id="date"
-                                    type="date"
-                                    className="bg-background"
-                                    value={formData.document_date}
-                                    onChange={(e) => setData({ ...formData, document_date: e.target.value })}
-                                />
+                                <div className="space-y-2">
+                                    <Input
+                                        id="date"
+                                        type="date"
+                                        className={cn("bg-background", isPeriodClosed && "border-destructive text-destructive")}
+                                        value={formData.document_date}
+                                        onChange={(e) => setData({ ...formData, document_date: e.target.value })}
+                                    />
+                                    {isPeriodClosed && (
+                                        <Alert variant="destructive" className="py-2 bg-destructive/5 border-destructive/20">
+                                            <ShieldAlert className="h-4 w-4" />
+                                            <AlertDescription className="text-[10px] font-bold uppercase tracking-tight leading-none">
+                                                {periodMessage || "Periodo cerrado"}
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Attachment Section inside the card */}
@@ -121,6 +137,9 @@ export function Step3_Registration({
                     </div>
                 )}
             </div>
+        </div>
+    )
+}
         </div>
     )
 }

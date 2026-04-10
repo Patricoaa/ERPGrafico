@@ -41,9 +41,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
+    const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
     const [period, setPeriod] = useState({
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1
+        year: year || new Date().getFullYear(),
+        month: month || new Date().getMonth() + 1
     })
     const [manualFields, setManualFields] = useState({
         ppm_amount: 0,
@@ -95,6 +96,11 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             })
             setCalcData(response.data)
 
+            // If the calculation returns the tax_period ID, store it
+            if (response.data.tax_period_id) {
+                setTaxPeriodId(response.data.tax_period_id)
+            }
+
             // Sync tax rate from settings
             if (response.data.tax_rate) {
                 setManualFields(prev => ({
@@ -129,7 +135,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
 
 
-    const handleSave = async () => {
+    const handleSaveAndClose = async () => {
         setIsLoading(true)
         try {
             // 1. Create declaration
@@ -140,19 +146,23 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             })
 
             const declarationId = createResponse.data.id
+            const currentTaxPeriodId = createResponse.data.tax_period || taxPeriodId
 
-            // 2. Register it officially
+            // 2. Register it officially (Generates Journal Entry)
             await api.post(`/tax/declarations/${declarationId}/register/`, {
-                folio_number: "", // Could be added to manual fields
                 declaration_date: dateString || ""
             })
 
-            toast.success("Declaración registrada y asiento contable generado")
-            onSuccess()
-            onOpenChange(false)
+            // 3. Close the Tax Period (Official Lock)
+            if (currentTaxPeriodId) {
+                await api.post(`/tax/tax-periods/${currentTaxPeriodId}/close/`)
+            }
+
+            toast.success("Ciclo tributario finalizado exitosamente")
+            setStep(5)
         } catch (error) {
-            console.error("Error saving declaration:", error)
-            toast.error("Error al registrar la declaración")
+            console.error("Error in final process:", error)
+            toast.error("Error al finalizar el ciclo tributario")
         } finally {
             setIsLoading(false)
         }
@@ -208,7 +218,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Asistente F29</div>
                         <div className="flex items-center gap-2">
                             <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-primary/20 text-primary/80">
-                                Paso {step} de 4
+                            Paso {step} de 5
                             </Badge>
                             {period.month && period.year && (
                                 <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-widest opacity-70">
@@ -245,16 +255,27 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 Siguiente
                                 <ChevronRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                             </Button>
-                        ) : (
+                        ) : step === 4 ? (
                             <Button
-                                onClick={handleSave}
+                                onClick={handleSaveAndClose}
                                 disabled={isLoading}
                                 className="rounded-lg px-10 h-11 bg-success hover:bg-success/90 shadow-lg shadow-success/20 transition-all font-black uppercase tracking-widest text-[10px] group"
                             >
-                                {isLoading ? "Procesando..." : "Finalizar Declaración"}
+                                {isLoading ? "Procesando..." : "Registrar y Cerrar Ciclo"}
                                 {!isLoading && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
                             </Button>
-                        )}
+                        ) : step === 5 ? (
+                            <Button
+                                onClick={() => {
+                                    onSuccess()
+                                    onOpenChange(false)
+                                }}
+                                className="rounded-lg px-10 h-11 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-black uppercase tracking-widest text-[10px] group"
+                            >
+                                Finalizar Proceso
+                                <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
             }
@@ -572,10 +593,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </div>
 
                         <div className="relative">
-                            {/* Decorative Receipt Edge */}
-                            <div className="absolute -top-3 left-0 right-0 h-3 bg-[radial-gradient(circle,transparent_0,transparent_4px,white_4px,white_100%)] bg-[length:12px_12px] opacity-10" />
-
-                            <div className="bg-card border-x border-b border-border/50 rounded-b-3xl shadow-xl shadow-primary/5 p-8 space-y-8 overflow-hidden">
+                            <div className="bg-card border border-border/50 rounded-3xl shadow-xl shadow-primary/5 p-8 space-y-8 overflow-hidden">
                                 <section className="space-y-4">
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
                                         <ArrowRight className="h-3 w-3" />
@@ -607,7 +625,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
                                 <section className="space-y-8 pt-2">
                                     <div className="flex flex-col items-center justify-center p-8 rounded-lg bg-primary/5 border border-primary/10 relative overflow-hidden group">
-                                        {/* Background Decoration */}
                                         <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
                                             <Calculator className="w-32 h-32 text-primary" />
                                         </div>
@@ -627,10 +644,47 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
                                 <div className="text-center pt-2">
                                     <p className="text-[10px] text-muted-foreground/60 italic leading-relaxed">
-                                        Al hacer clic en "Finalizar Declaración", se creará el registro contable y se marcará el período como cerrado. Esta acción generará una obligación de pago en la tesorería.
+                                        Al hacer clic en "Registrar F29", se creará el registro contable y se marcará el periodo para su cierre final.
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {step === 5 && (
+                    <div className="space-y-12 max-w-4xl mx-auto py-20 min-h-[600px] animate-in fade-in zoom-in-95 duration-500 flex flex-col items-center justify-center text-center">
+                        <div className="w-24 h-24 rounded-full bg-success/10 text-success flex items-center justify-center mb-8 border-2 border-success/20 shadow-xl shadow-success/5">
+                            <CheckCircle2 className="h-12 w-12" />
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <h3 className="text-3xl font-black tracking-tight uppercase text-foreground/80">Ciclo Finalizado</h3>
+                            <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                                El proceso tributario del periodo se ha completado. Se generaron todos los registros y el ciclo ha quedado bloqueado para cambios.
+                            </p>
+                        </div>
+
+                        <div className="mt-12 p-8 rounded-2xl bg-muted/5 border border-dashed border-muted-foreground/20 max-w-lg w-full grid grid-cols-2 gap-4">
+                            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-background/50 border border-border/50">
+                                <CheckCircle2 className="h-5 w-5 text-success" />
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">F29 Registrado</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-background/50 border border-border/50">
+                                <Package className="h-5 w-5 text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Asiento Generado</span>
+                            </div>
+                            <div className="col-span-full flex flex-col items-center gap-2 p-4 rounded-xl bg-warning/5 border border-warning/20">
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-[9px] bg-warning/10 text-warning border-warning/20 px-3 py-0.5">ESTADO: CERRADO</Badge>
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Habilitado para Cierre Contable</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex items-center gap-2 text-primary/60 text-[10px] font-bold uppercase tracking-widest">
+                            <Info className="h-4 w-4" />
+                            <span>Esta acción es irreversible y bloquea el ciclo tributario</span>
                         </div>
                     </div>
                 )}

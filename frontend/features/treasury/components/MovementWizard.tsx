@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info } from "lucide-react"
+import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
 import { FORM_STYLES } from '@/lib/styles'
+import { validateAccountingPeriod } from '@/lib/actions/accounting-actions'
+import { toast } from 'sonner'
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';
@@ -110,6 +112,18 @@ export function MovementWizard({
     const handleComplete = async () => {
         setSubmitting(true)
         try {
+            // Period closure check (Today's date as it's the default for wizard)
+            const today = new Date().toISOString().split('T')[0]
+            const periodStatus = await validateAccountingPeriod(today)
+            if (periodStatus.is_closed) {
+                toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {
+                    icon: <ShieldAlert className="h-4 w-4 text-destructive" />,
+                    duration: 5000
+                })
+                setSubmitting(false)
+                return
+            }
+
             const numAmount = parseFloat(amount) || 0
 
             const data: MovementData = {

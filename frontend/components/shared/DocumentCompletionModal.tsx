@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileEdit, Loader2, Upload, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { validateTaxPeriod } from "@/lib/actions/tax-actions"
 
 interface DocumentCompletionModalProps {
     open: boolean
@@ -47,6 +48,13 @@ export function DocumentCompletionModal({
 
         if (invoiceType === 'FACTURA' && !attachment) {
             toast.error("El documento adjunto es obligatorio para Facturas")
+            return
+        }
+
+        // Tax Period Validation
+        const periodCheck = await validateTaxPeriod(date)
+        if (periodCheck.is_closed) {
+            toast.error(`No se puede registrar este documento. El periodo de ${date} ya se encuentra Tributariamente CERRADO.`)
             return
         }
 

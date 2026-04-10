@@ -320,6 +320,7 @@ class NoteCreationSerializer(serializers.Serializer):
     amount_net = serializers.DecimalField(max_digits=14, decimal_places=2)
     amount_tax = serializers.DecimalField(max_digits=14, decimal_places=2)
     document_number = serializers.CharField(max_length=50)
+    document_date = serializers.DateField(required=False, allow_null=True)
     original_invoice_id = serializers.IntegerField(required=False, allow_null=True)
     return_items = serializers.ListField(
         child=serializers.DictField(),
