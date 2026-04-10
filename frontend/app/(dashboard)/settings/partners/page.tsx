@@ -1,6 +1,7 @@
 "use client"
 
-import { lazy, Suspense, useState, useMemo } from "react"
+import { lazy, Suspense, useState, useMemo, useEffect, useRef } from "react"
+import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
@@ -23,6 +24,28 @@ export default function PartnersSettingsPage() {
     const activeTab = searchParams.get("tab") || "composition"
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
+    
+    // Track previous state to trigger toast on completion
+    const prevSaving = useRef(false)
+    const prevConfigSaving = useRef(false)
+
+    useEffect(() => {
+        if (prevSaving.current && !saving) {
+            toast.success("Cambios sincronizados", {
+                description: "La configuración de socios ha sido actualizada."
+            })
+        }
+        prevSaving.current = saving
+    }, [saving])
+
+    useEffect(() => {
+        if (prevConfigSaving.current && !configSaving) {
+            toast.success("Arquitectura contable actualizada", {
+                description: "Los cambios en las cuentas maestras se han guardado."
+            })
+        }
+        prevConfigSaving.current = configSaving
+    }, [configSaving])
 
     const tabs = [
 // ...
@@ -89,11 +112,6 @@ export default function PartnersSettingsPage() {
                 iconName={headerConfig.iconName}
                 variant="minimal"
                 configHref="?config=true"
-                status={
-                    saving 
-                        ? { label: "Guardando cambios...", type: "saving" } 
-                        : { label: "Cambios guardados", type: "synced" }
-                }
                 titleActions={headerConfig.showAction && headerConfig.actionHref && (
                     <Link href={headerConfig.actionHref}>
                         <PageHeaderButton
@@ -121,7 +139,6 @@ export default function PartnersSettingsPage() {
                 title="Arquitectura Contable de Socios"
                 description="Configure las cuentas maestras para el Modelo Híbrido de Capital."
                 tabLabel="Configuración"
-                savingStatus={configSaving ? "saving" : "synced"}
             >
                 <div className="p-1">
                     <PartnerAccountingTab onSavingChange={setConfigSaving} />

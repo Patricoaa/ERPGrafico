@@ -11,13 +11,14 @@ interface UserProfile {
 }
 
 import { useAuth } from "@/contexts/AuthContext"
+import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function DashboardPage() {
   const { user, isLoading: loading } = useAuth()
-
-  useEffect(() => {
-    // No longer need local fetch, AuthProvider handles it
-  }, [])
+  
+  const displayName = user?.first_name
+    ? `${user.first_name} ${user.last_name || ''}`.trim()
+    : user?.username || 'Usuario'
 
   if (loading) {
     return (
@@ -27,18 +28,22 @@ export default function DashboardPage() {
     )
   }
 
-  const displayName = user?.first_name
-    ? `${user.first_name} ${user.last_name || ''}`.trim()
-    : user?.username || 'Usuario'
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <h1 className="text-4xl font-bold tracking-tight text-primary animate-in fade-in slide-in-from-bottom-4 duration-1000">
-        Bienvenido, {displayName}
-      </h1>
-      <p className="text-muted-foreground text-lg animate-in fade-in duration-1000 delay-300">
-        Sistema de Gestión ERP Grafico
-      </p>
+    <div className="flex flex-col space-y-8">
+      <PageHeader 
+        title="Dashboard" 
+        description={`Bienvenido de nuevo, ${displayName}. Aquí tienes un resumen de la actividad.`}
+        iconName="home"
+      />
+      
+      <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
+        <h1 className="text-4xl font-bold tracking-tight text-primary animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          ERPGrafico
+        </h1>
+        <p className="text-muted-foreground text-lg animate-in fade-in duration-1000 delay-300 text-center">
+          Selecciona una opción del menú lateral para comenzar.
+        </p>
+      </div>
     </div>
   )
 }
