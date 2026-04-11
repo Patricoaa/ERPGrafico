@@ -8,14 +8,26 @@ import { ProfitDistributionsTab } from "./partners/ProfitDistributionsTab"
 interface PartnersSettingsViewProps {
     activeTab?: string
     onSavingChange?: (saving: boolean) => void
+    /** Whether the new-distribution modal should open on mount */
+    initialFlowOpen?: boolean
+    /** Callback to clear the modal query param from the URL */
+    onModalClose?: () => void
 }
 
-export function PartnersSettingsView({ activeTab = "composition", onSavingChange }: PartnersSettingsViewProps) {
-    // We could use this to track saving state if needed, 
-    // for now we'll just pass it down if any sub-tab needs it.
+export function PartnersSettingsView({ 
+    activeTab = "composition", 
+    onSavingChange,
+    initialFlowOpen = false,
+    onModalClose
+}: PartnersSettingsViewProps) {
+    // Reset saving state when switching tabs.
+    // We use a small delay to ensure this doesn't conflict with parent's mount/render cycle
+    // especially when rendered within a Suspense boundary.
     useEffect(() => {
-        // Reset saving state when switching tabs if desired
-        onSavingChange?.(false)
+        const timer = setTimeout(() => {
+            onSavingChange?.(false)
+        }, 0)
+        return () => clearTimeout(timer)
     }, [activeTab, onSavingChange])
 
     return (
@@ -29,7 +41,10 @@ export function PartnersSettingsView({ activeTab = "composition", onSavingChange
             )}
             
             {activeTab === "distributions" && (
-                <ProfitDistributionsTab />
+                <ProfitDistributionsTab 
+                    initialFlowOpen={initialFlowOpen}
+                    onModalClose={onModalClose}
+                />
             )}
         </div>
     )

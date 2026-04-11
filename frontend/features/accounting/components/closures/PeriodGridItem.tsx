@@ -49,7 +49,7 @@ export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: P
                         </p>
                     </div>
                 </div>
-                <StatusBadge status={getStatusToken(period.status)} type="generic" customLabel={period.status_display} />
+                <StatusBadge status={getStatusToken(period.status)} label={period.status_display} />
             </div>
 
             <div className="flex-1 mb-4">

@@ -300,7 +300,10 @@ class JournalEntry(models.Model):
                 pass
 
         # 2. Hard Enforcement of Period Closure
-        if self.period_closed:
+        # EXCEPTION: System-generated opening/closing entries bypass this to allow fiscal year closure
+        is_closing_entry = getattr(self, '_is_system_closing_entry', False)
+        
+        if self.period_closed and not is_closing_entry:
             if is_new:
                 # Block Creation
                 raise ValidationError(

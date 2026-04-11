@@ -1,7 +1,7 @@
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
@@ -124,12 +124,21 @@ export function JournalEntryForm({
     const [periodCheck, setPeriodCheck] = useState<{ is_closed: boolean; loading: boolean }>({ is_closed: false, loading: false })
     const [accounts, setAccounts] = useState<any[]>(accountsProp || [])
 
+    // Guard for async operations
+    const isMounted = useRef(true)
+
     // Sync local accounts state if prop changes
     useEffect(() => {
         if (accountsProp && accountsProp.length > 0) {
             setAccounts(accountsProp)
         }
     }, [accountsProp])
+
+    // Cleanup mount guard
+    useEffect(() => {
+        isMounted.current = true
+        return () => { isMounted.current = false }
+    }, [])
 
     const { serverDate } = useServerDate()
 
@@ -174,7 +183,9 @@ export function JournalEntryForm({
             const checkPeriod = async () => {
                 setPeriodCheck(prev => ({ ...prev, loading: true }))
                 const result = await validateAccountingPeriod(format(selectedDate, "yyyy-MM-dd"))
-                setPeriodCheck({ is_closed: result.is_closed, loading: false })
+                if (isMounted.current) {
+                    setPeriodCheck({ is_closed: result.is_closed, loading: false })
+                }
             }
             checkPeriod()
         }
@@ -188,11 +199,14 @@ export function JournalEntryForm({
     const fetchAccounts = async () => {
         try {
             const response = await api.get('/accounting/accounts/?is_leaf=true')
-            setAccounts(response.data.results || response.data)
+            if (isMounted.current) {
+                setAccounts(response.data.results || response.data)
+            }
         } catch (error) {
             console.error("Error fetching accounts:", error)
         }
     }
+
 
     useEffect(() => {
         if (open) {

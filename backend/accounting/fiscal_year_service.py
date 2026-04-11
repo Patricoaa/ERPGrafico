@@ -136,6 +136,13 @@ class FiscalYearClosingService:
 
         start_date = date(year, 1, 1)
         end_date = date(year, 12, 31)
+        
+        import calendar
+        from tax.models import AccountingPeriod
+        last_period = AccountingPeriod.objects.filter(year=year).order_by('-month').first()
+        entry_month = last_period.month if last_period else 12
+        entry_day = calendar.monthrange(year, entry_month)[1]
+        entry_date = date(year, entry_month, entry_day)
 
         # Collect P&L balances
         income_accounts = FiscalYearClosingService._get_pl_account_balances(
@@ -150,12 +157,14 @@ class FiscalYearClosingService:
         net_result = total_income - total_expenses
 
         # ------- Generate Closing Entry -------
-        closing_entry = JournalEntry.objects.create(
-            date=end_date,
+        closing_entry = JournalEntry(
+            date=entry_date,
             description=f"Cierre Anual del Ejercicio {year}",
             reference=f"CIERRE-{year}",
             status=JournalEntry.Status.DRAFT,
         )
+        closing_entry._is_system_closing_entry = True
+        closing_entry.save()
 
         items = []
 
@@ -341,7 +350,11 @@ class FiscalYearClosingService:
             )
 
         end_date = date(year, 12, 31)
-        opening_date = date(year + 1, 1, 1)
+        
+        from tax.models import AccountingPeriod
+        first_period = AccountingPeriod.objects.filter(year=year + 1).order_by('month').first()
+        entry_month = first_period.month if first_period else 1
+        opening_date = date(year + 1, entry_month, 1)
 
         # Get all balance sheet leaf accounts with non-zero balances
         balance_types = [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY]
@@ -350,12 +363,14 @@ class FiscalYearClosingService:
             children__isnull=True  # Only leaf accounts
         )
 
-        opening_entry = JournalEntry.objects.create(
+        opening_entry = JournalEntry(
             date=opening_date,
             description=f"Asiento de Apertura {year + 1}",
             reference=f"APERTURA-{year + 1}",
             status=JournalEntry.Status.DRAFT,
         )
+        opening_entry._is_system_closing_entry = True
+        opening_entry.save()
 
         items = []
 

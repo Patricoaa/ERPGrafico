@@ -1,12 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Trash2, Pencil } from "lucide-react"
+import { Trash2, Pencil, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
@@ -33,6 +33,16 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
     const { accounts: flatAccounts, refetch, deleteAccount, isLoading } = useAccounts()
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+    const [formParentId, setFormParentId] = useState<string | null>(null)
+
+    // Guard for async operations during mount/unmount
+    const isMounted = useRef(false)
+
+    useEffect(() => {
+        isMounted.current = true
+        return () => { isMounted.current = false }
+    }, [])
 
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
@@ -47,6 +57,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
+        setEditingAccount(null)
+        setFormParentId(null)
         onExternalOpenChange?.(false)
         
         if (externalOpen || searchParams.get("modal")) {
@@ -55,6 +67,25 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
+
+    const handleAddAccount = (parentId?: string) => {
+        setEditingAccount(null)
+        setFormParentId(parentId || null)
+        setIsFormOpen(true)
+    }
+
+    const handleEditAccount = (account: Account) => {
+        setEditingAccount(account)
+        setFormParentId(null)
+        setIsFormOpen(true)
+    }
+
+    // Synchronize external modal trigger
+    useEffect(() => {
+        if (externalOpen && isMounted.current) {
+            setIsFormOpen(true)
+        }
+    }, [externalOpen])
 
     const handleDelete = async (id: number) => {
         setDeleteTarget(id)
@@ -184,7 +215,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             cell: ({ row }) => {
                 const account = row.original
                 return (
-                    <div className="flex justify-center items-center gap-1 w-full">
+                    <div className="flex justify-center items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
                         {account.is_selectable && (
                             <LedgerModal
                                 accountId={account.id}
@@ -192,18 +223,30 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                                 accountCode={account.code}
                             />
                         )}
-                        <AccountForm
-                            accounts={flatAccounts}
-                            initialData={account as any}
-                            onSuccess={refetch}
-                            triggerText={<Pencil className="h-4 w-4" />}
-                        />
                         <Button
                             variant="ghost"
-                            size="sm"
-                            title="Eliminar"
-                            className="text-destructive hover:text-destructive"
+                            size="icon"
+                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => handleAddAccount(account.id.toString())}
+                            title="Añadir Sub-cuenta"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => handleEditAccount(account)}
+                            title="Editar"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-xl hover:bg-destructive/10 hover:text-destructive text-muted-foreground/30 transition-colors"
                             onClick={() => handleDelete(account.id)}
+                            title="Eliminar"
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
@@ -240,17 +283,28 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 defaultPageSize={500}
                 getSubRows={(row: any) => row.children}
                 autoExpand={true}
+                actionButton={
+                    <Button 
+                        onClick={() => handleAddAccount()}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-4 h-9 font-heading text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-primary/20"
+                    >
+                        Nueva Cuenta
+                    </Button>
+                }
             />
 
             <AccountForm 
                 accounts={flatAccounts} 
-                onSuccess={refetch} 
-                open={isFormOpen || !!externalOpen}
+                initialData={editingAccount as any}
+                parentId={formParentId || undefined}
+                onSuccess={() => {
+                    refetch()
+                    handleCloseModal()
+                }} 
+                open={isFormOpen}
                 onOpenChange={(open) => {
                     if (!open) {
                         handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
                     }
                 }}
             />

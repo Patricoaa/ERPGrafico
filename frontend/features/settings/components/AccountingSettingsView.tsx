@@ -370,8 +370,11 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                                 </div>
                                 <Separator />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <AccountField form={form} name="vat_payable_account" label="IVA por Pagar" accountType="LIABILITY" />
+                                    <AccountField form={form} name="vat_payable_account" label="IVA por Pagar (F29)" accountType="LIABILITY" />
                                     <AccountField form={form} name="vat_carryforward_account" label="Remanente IVA" accountType="ASSET" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <AccountField form={form} name="correction_income_account" label="IPCU / Corrección Monetaria" accountType="INCOME" />
                                 </div>
                             </CardContent>
                         </Card>
@@ -387,6 +390,9 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <AccountField form={form} name="ppm_account" label="PPM (Pago Prov.)" accountType="ASSET" />
                                     <AccountField form={form} name="withholding_tax_account" label="Retenciones Honorarios" accountType="LIABILITY" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <AccountField form={form} name="second_category_tax_account" label="Impuesto Único Trabajadores" accountType="LIABILITY" />
                                 </div>
                                 <div className="p-3 rounded-sm bg-info/10 border-2 border-info/20 text-[10px] text-info font-bold uppercase flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4" />

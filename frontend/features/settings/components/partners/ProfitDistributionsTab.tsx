@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useRef } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
@@ -23,49 +23,67 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentModal"
-import { useSearchParams, useRouter } from "next/navigation"
 
-export function ProfitDistributionsTab() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const [distributions, setDistributions] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [isFlowOpen, setIsFlowOpen] = useState(false)
-    const [isMassPaymentOpen, setIsMassPaymentOpen] = useState(false)
-    const [selectedResolution, setSelectedResolution] = useState<any>(null)
+interface ProfitDistributionsTabProps {
+    /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
+    initialFlowOpen?: boolean
+    /** Callback to clear the modal query param in the URL when the flow closes */
+    onModalClose?: () => void
+}
 
-    const fetchDistributions = async () => {
-        setLoading(true)
+export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }: ProfitDistributionsTabProps) {
+    // Unified state to prevent fragmented updates
+    const [state, setState] = useState({
+        distributions: [] as any[],
+        loading: true,
+        isFlowOpen: false,
+        isMassPaymentOpen: false,
+        selectedResolution: null as any
+    })
+
+    const isMounted = useRef(false)
+
+    const fetchDistributions = React.useCallback(async () => {
+        if (!isMounted.current) return
+        setState(prev => ({ ...prev, loading: true }))
+        
         try {
             const data = await partnersApi.getProfitDistributions()
-            setDistributions(data)
+            if (isMounted.current) {
+                setState(prev => ({ 
+                    ...prev, 
+                    distributions: data, 
+                    loading: false 
+                }))
+            }
         } catch (error) {
             console.error(error)
-        } finally {
-            setLoading(false)
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, loading: false }))
+            }
         }
-    }
-
-    useEffect(() => {
-        fetchDistributions()
     }, [])
 
-    // Handle URL-based modal trigger
     useEffect(() => {
-        const modal = searchParams.get("modal")
-        if (modal === "new-distribution") {
-            setSelectedResolution(null)
-            setIsFlowOpen(true)
+        isMounted.current = true
+        fetchDistributions()
+        
+        // Open the flow if requested via URL param (prop from parent)
+        if (initialFlowOpen) {
+            setState(prev => ({ 
+                ...prev, 
+                selectedResolution: null, 
+                isFlowOpen: true 
+            }))
         }
-    }, [searchParams])
+
+        return () => { isMounted.current = false }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const closeFlow = () => {
-        setIsFlowOpen(false)
-        if (searchParams.get("modal") === "new-distribution") {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
+        setState(prev => ({ ...prev, isFlowOpen: false }))
+        // Notify parent to clear the URL modal param
+        onModalClose?.()
         fetchDistributions()
     }
 
@@ -206,8 +224,11 @@ export function ProfitDistributionsTab() {
                                     <DropdownMenuItem 
                                         className="text-success font-black"
                                         onClick={() => {
-                                            setSelectedResolution(dist)
-                                            setIsFlowOpen(true)
+                                            setState(prev => ({ 
+                                                ...prev, 
+                                                selectedResolution: dist, 
+                                                isFlowOpen: true 
+                                            }))
                                         }}
                                     >
                                         <Plus className="h-3 w-3 mr-2 bg-success text-success-foreground rounded-full p-0.5" />
@@ -218,8 +239,11 @@ export function ProfitDistributionsTab() {
                                     <DropdownMenuItem 
                                         className="text-primary font-black"
                                         onClick={() => {
-                                            setSelectedResolution(dist)
-                                            setIsMassPaymentOpen(true)
+                                            setState(prev => ({ 
+                                                ...prev, 
+                                                selectedResolution: dist, 
+                                                isMassPaymentOpen: true 
+                                            }))
                                         }}
                                     >
                                         <Wallet className="h-3 w-3 mr-2" />
@@ -236,34 +260,34 @@ export function ProfitDistributionsTab() {
                 )
             }
         }
-    ], [searchParams, router])
+    ], [])
 
     return (
         <div className="space-y-6">
             <DataTable
                 columns={columns}
-                data={distributions}
-                isLoading={loading}
+                data={state.distributions}
+                isLoading={state.loading}
                 cardMode={true}
                 searchPlaceholder="Buscar por año o resolución..."
                 filterColumn="fiscal_year"
             />
 
             {/* Modal Flows */}
-            {isFlowOpen && (
+            {state.isFlowOpen && (
                 <CreateDistributionFlow 
-                    open={isFlowOpen} 
+                    open={state.isFlowOpen} 
                     onOpenChange={closeFlow}
                     onSuccess={fetchDistributions}
-                    initialResolution={selectedResolution}
+                    initialResolution={state.selectedResolution}
                 />
             )}
 
-            {isMassPaymentOpen && (
+            {state.isMassPaymentOpen && (
                 <MassPaymentModal
-                    open={isMassPaymentOpen}
-                    onOpenChange={setIsMassPaymentOpen}
-                    resolution={selectedResolution}
+                    open={state.isMassPaymentOpen}
+                    onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
+                    resolution={state.selectedResolution}
                     onSuccess={fetchDistributions}
                 />
             )}

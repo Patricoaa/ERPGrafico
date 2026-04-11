@@ -444,7 +444,10 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                                 return (
                                     <div
                                         key={period.id}
-                                        className="group flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer"
+                                        className={cn(
+                                            "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg transition-all",
+                                            canOpenChecklist ? "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-pointer" : "cursor-default"
+                                        )}
                                         onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                     >
                                         <div className="flex items-center gap-4">

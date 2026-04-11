@@ -17,7 +17,8 @@ import {
     ArrowDownLeft,
     HandCoins,
     History,
-    ArrowRight
+    ArrowRight,
+    Package
 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -27,6 +28,9 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 import { TaxPeriod, TaxCalculationData } from "../types"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, ExternalLink } from "lucide-react"
 
 interface DeclarationWizardProps {
     isOpen: boolean
@@ -38,6 +42,7 @@ interface DeclarationWizardProps {
 
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
     const { year, month, dateString, serverDate } = useServerDate()
+    const { openHub } = useHubPanel()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
@@ -149,20 +154,33 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             const currentTaxPeriodId = createResponse.data.tax_period || taxPeriodId
 
             // 2. Register it officially (Generates Journal Entry)
-            await api.post(`/tax/declarations/${declarationId}/register/`, {
-                declaration_date: dateString || ""
-            })
+            try {
+                await api.post(`/tax/declarations/${declarationId}/register/`, {
+                    declaration_date: dateString || ""
+                })
+            } catch (regError: any) {
+                // If it's already registered, we can skip and try to close the period
+                const isAlreadyRegistered = regError.response?.data?.error?.includes("ya fue registrada") || 
+                                             regError.response?.data?.error?.includes("ya ha sido registrada");
+                
+                if (!isAlreadyRegistered) {
+                    throw regError; // Re-throw if it's a real error (missing accounts, etc.)
+                }
+                console.log("Declaration already registered, proceeding to close period.");
+            }
 
             // 3. Close the Tax Period (Official Lock)
             if (currentTaxPeriodId) {
-                await api.post(`/tax/tax-periods/${currentTaxPeriodId}/close/`)
+                await api.post(`/tax/periods/${currentTaxPeriodId}/close/`)
             }
 
             toast.success("Ciclo tributario finalizado exitosamente")
             setStep(5)
-        } catch (error) {
+            onSuccess(); // Ensure the parent view refreshes
+        } catch (error: any) {
             console.error("Error in final process:", error)
-            toast.error("Error al finalizar el ciclo tributario")
+            const errorMessage = error.response?.data?.error || "Error al finalizar el ciclo tributario";
+            toast.error(errorMessage)
         } finally {
             setIsLoading(false)
         }
@@ -445,6 +463,68 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 </div>
                             </section>
                         </div>
+
+                        {/* Draft Documents Alert (Advisory) */}
+                        {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
+                            <div className="mt-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <Alert variant="warning" className="border-warning/30 bg-warning/5 rounded-2xl p-6">
+                                    <AlertCircle className="h-5 w-5 text-warning" />
+                                    <div className="flex flex-col gap-4 w-full">
+                                        <div className="space-y-1">
+                                            <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">
+                                                Documentos en Borrador Detectados
+                                            </AlertTitle>
+                                            <AlertDescription className="text-xs text-warning/70 font-medium">
+                                                Existen documentos pendientes que no han sido incluidos en este cálculo. Se recomienda procesarlos antes de cerrar el ciclo.
+                                            </AlertDescription>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {calcData.drafts_summary.invoices.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Facturas Pendientes</span>
+                                                    <div className="space-y-2">
+                                                        {calcData.drafts_summary.invoices.map(inv => (
+                                                            <div key={inv.id} className="flex items-center justify-between bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-warning/10">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[11px] font-bold">{inv.display_id}</span>
+                                                                    <span className="text-[10px] opacity-60 uppercase">{new Date(inv.date).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm" 
+                                                                    className="h-8 text-[10px] font-black uppercase tracking-wider text-warning hover:bg-warning/10"
+                                                                    onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}
+                                                                >
+                                                                    Abrir Hub
+                                                                    <ExternalLink className="ml-2 h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {calcData.drafts_summary.entries.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Asientos en Borrador</span>
+                                                    <div className="space-y-2">
+                                                        {calcData.drafts_summary.entries.map(entry => (
+                                                            <div key={entry.id} className="flex items-center justify-between bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-warning/10">
+                                                                <div className="flex flex-col overflow-hidden">
+                                                                    <span className="text-[11px] font-bold">{entry.display_id}</span>
+                                                                    <span className="text-[10px] opacity-60 truncate max-w-[150px]">{entry.description || 'Sin glosa'}</span>
+                                                                </div>
+                                                                {/* Potential action for entries if needed */}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Alert>
+                            </div>
+                        )}
 
                         <div className="bg-primary/5 p-5 rounded-lg border border-primary/10 flex gap-4 items-center text-[11px] text-primary/70 font-medium uppercase tracking-wider justify-center">
                             <Info className="h-4 w-4 flex-shrink-0 opacity-80" />

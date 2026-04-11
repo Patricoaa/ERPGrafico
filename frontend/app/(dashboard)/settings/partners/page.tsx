@@ -1,12 +1,12 @@
 "use client"
 
-import { lazy, Suspense, useState, useMemo, useEffect, useRef } from "react"
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { PartnerAccountingTab } from "@/features/settings/components/partners/PartnerAccountingTab"
 import Link from "next/link"
@@ -21,9 +21,20 @@ const PartnersSettingsView = lazy(() =>
 
 export default function PartnersSettingsPage() {
     const searchParams = useSearchParams()
+    const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
+    const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
+
+    // Callback to clear modal param from URL (lifted from ProfitDistributionsTab)
+    const handleModalClose = useCallback(() => {
+        if (searchParams.get("modal") === "new-distribution") {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.push(`?${params.toString()}`, { scroll: false })
+        }
+    }, [searchParams, router])
     
     // Track previous state to trigger toast on completion
     const prevSaving = useRef(false)
@@ -130,6 +141,8 @@ export default function PartnersSettingsPage() {
                     <PartnersSettingsView 
                         activeTab={activeTab} 
                         onSavingChange={setSaving}
+                        initialFlowOpen={isNewDistributionModal}
+                        onModalClose={handleModalClose}
                     />
                 </Suspense>
             </div>

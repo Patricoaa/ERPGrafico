@@ -15,7 +15,7 @@ from inventory.models import (
     CustomFieldTemplate, ProductCustomField
 )
 from contacts.models import Contact
-from contacts.partner_models import PartnerTransaction
+from contacts.partner_models import PartnerTransaction, PartnerEquityStake
 from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
@@ -97,11 +97,11 @@ class Command(BaseCommand):
             self._create_subscriptions(accounts, partners['suppliers'])
 
             self.stdout.write('Creating Opening Balance...')
-            self._create_opening_balance(accounts)
+            self._create_opening_balance(accounts, partners)
             
             # Add initial stock for all storable products
             self.stdout.write('Adding Initial Stock...')
-            self._add_initial_stock(accounts)
+            self._add_initial_stock(accounts, partners)
 
             self.stdout.write('Creating Treasury Infrastructure...')
             self._create_treasury_infrastructure(accounts, partners)
@@ -403,9 +403,12 @@ class Command(BaseCommand):
                 'is_partner': True,
                 'partner_contribution_account': acc_cap_a,
                 'partner_earnings_account': acc_earn_a,
-                'partner_receivable_account': acc_recv_a
+                'partner_receivable_account': acc_recv_a,
+                'partner_equity_percentage': Decimal('50.00'),
             }
         )
+        if not PartnerEquityStake.objects.filter(partner=socio_a).exists():
+            PartnerEquityStake.objects.create(partner=socio_a, percentage=Decimal('50.00'), effective_from=timezone.now().date())
 
         # Socio B: Capitalista
         acc_cap_b = get_or_create_subaccount('3.1.01', "Socio B", "002")
@@ -420,9 +423,12 @@ class Command(BaseCommand):
                 'is_partner': True,
                 'partner_contribution_account': acc_cap_b,
                 'partner_earnings_account': acc_earn_b,
-                'partner_receivable_account': acc_recv_b
+                'partner_receivable_account': acc_recv_b,
+                'partner_equity_percentage': Decimal('50.00'),
             }
         )
+        if not PartnerEquityStake.objects.filter(partner=socio_b).exists():
+            PartnerEquityStake.objects.create(partner=socio_b, percentage=Decimal('50.00'), effective_from=timezone.now().date())
 
         # 3. Regular Customers and Suppliers
         c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
@@ -733,20 +739,93 @@ class Command(BaseCommand):
             }
         )
 
-    def _create_opening_balance(self, accounts):
+    def _create_opening_balance(self, accounts, partners):
         if JournalEntry.objects.filter(reference="OPEN-2026").exists():
             return
             
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description="Asiento de Apertura 2026",
+            description="Asiento de Apertura 2026 (Suscripción y Pago de Capital)",
             reference="OPEN-2026",
             status=JournalEntry.State.POSTED,
         )
         
-        # Initial Bank Capital
-        JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Aporte Inicial", debit=50000000, credit=0)
-        JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social", debit=0, credit=50000000)
+        owners = partners.get('owners', [])
+        num_owners = len(owners)
+        
+        if num_owners > 0:
+            # 1. Suscripción de Capital (Subscription) - Fixed amount 100M (50M each)
+            total_subscription = Decimal('100000000')
+            sub_per_owner = (total_subscription / num_owners).quantize(Decimal('0.01'))
+            
+            for owner in owners:
+                owner_capital_account = owner.partner_contribution_account or accounts['capital']
+                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                
+                # Debit: Cuentas por Cobrar Socios
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=owner_recv_account,
+                    debit=sub_per_owner,
+                    credit=0,
+                    label=f"Suscripción de Capital - {owner.name}",
+                    partner=owner
+                )
+                # Credit: Capital Social
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=owner_capital_account,
+                    debit=0,
+                    credit=sub_per_owner,
+                    label=f"Suscripción de Capital - {owner.name}",
+                    partner=owner
+                )
+                
+                PartnerTransaction.objects.create(
+                    partner=owner,
+                    transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
+                    amount=sub_per_owner,
+                    date=timezone.now().date(),
+                    description="Suscripción Inicial de Capital",
+                    journal_entry=entry,
+                )
+        
+            # 2. Pago de Capital en Efectivo/Banco (Cash Contribution)
+            total_bank = Decimal('50000000')
+            JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Ingreso Aporte Inicial Banco", debit=total_bank, credit=0)
+            
+            val_per_owner = (total_bank / num_owners).quantize(Decimal('0.01'))
+            total_distributed = val_per_owner * num_owners
+            diff = total_bank - total_distributed
+            
+            for i, owner in enumerate(owners):
+                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                val = val_per_owner
+                if i == 0:
+                    val += diff
+                    
+                # Credit: Cuentas por Cobrar Socios (reduces debt)
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=owner_recv_account,
+                    debit=0,
+                    credit=val,
+                    label=f"Pago Capital (Banco) - {owner.name}",
+                    partner=owner
+                )
+                
+                PartnerTransaction.objects.create(
+                    partner=owner,
+                    transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
+                    amount=val,
+                    date=timezone.now().date(),
+                    description="Pago de Capital en Efectivo (Depósito Bancario)",
+                    journal_entry=entry,
+                )
+        else:
+            total_bank = Decimal('50000000')
+            JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Ingreso Aporte Inicial", debit=total_bank, credit=0)
+            JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social Banco", debit=0, credit=total_bank)
 
     def _create_groups(self):
         """Creates standard functional groups (departments)."""
@@ -852,7 +931,7 @@ class Command(BaseCommand):
             status = "created" if created else "updated"
             self.stdout.write(f"  User '{username}' {status} with password '111111' (Role: {role_name})")
 
-    def _add_initial_stock(self, accounts):
+    def _add_initial_stock(self, accounts, partners):
         """
         Creates initial inventory moves and accounting entries for all storable products.
         """
@@ -932,15 +1011,45 @@ class Command(BaseCommand):
             )
             count += 1
 
-        # 3. Create Balanced Equity Entry (Credit)
+        # 3. Create Balanced Equity Entry (Credit) - Split across partners
         if total_value > 0:
-            JournalItem.objects.create(
-                entry=entry,
-                account=initial_inv_account,
-                debit=0,
-                credit=total_value,
-                label="Contrapartida Carga Inicial Inventario"
-            )
+            owners = partners.get('owners', [])
+            if owners:
+                per_owner_value = (total_value / len(owners)).quantize(Decimal('1'))
+                allocated_value = Decimal('0')
+                
+                for i, owner in enumerate(owners):
+                    val = per_owner_value if i < len(owners) - 1 else total_value - allocated_value
+                    allocated_value += val
+                    
+                    owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                    
+                    # Credit: Cuentas por Cobrar Socios (reduces debt)
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=owner_recv_account,
+                        debit=0,
+                        credit=val,
+                        label=f"Pago Capital (Inventario) - {owner.name}",
+                        partner=owner
+                    )
+                    
+                    PartnerTransaction.objects.create(
+                        partner=owner,
+                        transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
+                        amount=val,
+                        date=timezone.now().date(),
+                        description="Pago de Capital en Especies (Inventario Inicial)",
+                        journal_entry=entry,
+                    )
+            else:
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=initial_inv_account,
+                    debit=0,
+                    credit=total_value,
+                    label="Contrapartida Carga Inicial Inventario"
+                )
 
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
 

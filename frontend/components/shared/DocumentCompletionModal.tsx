@@ -28,6 +28,8 @@ interface DocumentCompletionModalProps {
 
 export function DocumentCompletionModal({
     open,
+    onOpenChange,
+    invoiceId,
     invoiceType,
     onComplete,
     onSuccess,
