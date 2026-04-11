@@ -80,7 +80,7 @@ export const partnersApi = {
         return response.data
     },
 
-    createProfitDistribution: async (data: { fiscal_year: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }) => {
+    createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }) => {
         const response = await api.post('/contacts/profit-distributions/', data)
         return response.data
     },

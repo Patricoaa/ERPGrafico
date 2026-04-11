@@ -22,7 +22,7 @@ class ProfitDistributionService:
     @staticmethod
     @transaction.atomic
     def create_draft_resolution(
-        fiscal_year: int,
+        fiscal_year_id: int,
         net_result: Decimal,
         resolution_date,
         acta_number: str = '',
@@ -34,12 +34,21 @@ class ProfitDistributionService:
         Calculates the exact participation percentage of each partner at `resolution_date`
         and prepares the lines with their corresponding gross amounts.
         """
+        from accounting.models import FiscalYear
+        try:
+            fy_obj = FiscalYear.objects.get(id=fiscal_year_id)
+        except FiscalYear.DoesNotExist:
+            raise ValidationError(f"El año fiscal con ID {fiscal_year_id} no existe.")
+
+        fiscal_year = fy_obj.year
+
         if net_result == 0:
             raise ValidationError("El resultado del ejercicio no puede ser cero.")
 
         settings = ProfitDistributionService._get_settings()
         
         # Check if resolution for this fiscal year already exists
+        # We check both the integer year and the specific object to be safe
         existing = ProfitDistributionResolution.objects.filter(
             fiscal_year=fiscal_year,
             status__in=[
@@ -52,6 +61,7 @@ class ProfitDistributionService:
             raise ValidationError(f"Ya existe una resolución activa para el año fiscal {fiscal_year}.")
 
         resolution = ProfitDistributionResolution.objects.create(
+            fiscal_year_obj=fy_obj,
             fiscal_year=fiscal_year,
             resolution_date=resolution_date,
             net_result=net_result,

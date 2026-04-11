@@ -32,8 +32,8 @@ export default async function AccountingPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting?view=ledger" },
         { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting?view=entries" },
-        { value: "closures", label: "Cierres", iconName: "calendar", href: "/accounting?view=closures" },
-        { value: "tax", label: "Impuestos (F29)", iconName: "landmark", href: "/accounting?view=tax" },
+        { value: "closures", label: "Cierre Contable", iconName: "calendar", href: "/accounting?view=closures" },
+        { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting?view=tax" },
     ]
 
     const getHeaderConfig = () => {

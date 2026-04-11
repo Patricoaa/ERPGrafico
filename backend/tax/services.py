@@ -124,6 +124,19 @@ class F29CalculationService:
             # Remanente is an asset, so Debit - Credit
             vat_credit_carryforward = total_debit - total_credit
         
+        # Detect Draft Documents (Advisory)
+        draft_invoices = Invoice.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=Invoice.Status.DRAFT
+        )
+        
+        draft_entries = JournalEntry.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=JournalEntry.State.DRAFT
+        )
+
         return {
             'sales_taxed': sales_taxed,
             'sales_exempt': sales_exempt,
@@ -139,6 +152,25 @@ class F29CalculationService:
             'vat_credit': vat_credit,
             'vat_credit_carryforward': vat_credit_carryforward,
             'tax_rate': tax_rate,
+            'drafts_summary': {
+                'invoices': [
+                    {
+                        'id': inv.id, 
+                        'display_id': inv.display_id, 
+                        'total': float(inv.total_amount),
+                        'date': inv.date.isoformat(),
+                        'type': 'sale' if inv.sale_order_id else 'purchase'
+                    } for inv in draft_invoices
+                ],
+                'entries': [
+                    {
+                        'id': entry.id,
+                        'display_id': entry.number,
+                        'description': entry.description,
+                        'date': entry.date.isoformat()
+                    } for entry in draft_entries
+                ]
+            }
         }
 
     @staticmethod
@@ -246,11 +278,14 @@ class F29CalculationService:
             raise ValidationError("No se encontró configuración contable.")
         
         # Validate required accounts
-        if not settings.default_tax_payable_account or not settings.default_tax_receivable_account:
-            raise ValidationError("Faltan cuentas de IVA configuradas.")
+        if not settings.default_tax_payable_account:
+            raise ValidationError("Falta configurar cuenta de IVA Débito Fiscal (Pasivo).")
+        
+        if not settings.default_tax_receivable_account:
+            raise ValidationError("Falta configurar cuenta de IVA Crédito Fiscal (Activo).")
         
         if not settings.vat_payable_account:
-            raise ValidationError("Falta configurar cuenta IVA por Pagar en configuración contable.")
+            raise ValidationError("Falta configurar cuenta de IVA por Pagar (F29) en configuración contable.")
         
         # Create journal entry
         entry_desc = f"Declaración F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
@@ -292,7 +327,7 @@ class F29CalculationService:
         elif declaration.vat_credit_balance > 0:
             # We have credit balance (remanente)
             if not settings.vat_carryforward_account:
-                raise ValidationError("Falta configurar cuenta IVA Remanente en configuración contable.")
+                raise ValidationError("Falta configurar cuenta de IVA Remanente (Remanente del mes) en configuración contable.")
             
             items.append({
                 'account': settings.vat_carryforward_account,
@@ -306,7 +341,7 @@ class F29CalculationService:
         # 1. Update/Increase Asset via Monetary Correction
         if declaration.vat_correction_amount > 0:
             if not settings.correction_income_account:
-                raise ValidationError("Falta configurar cuenta de Ingreso por Corrección Monetaria.")
+                raise ValidationError("Falta configurar cuenta de Ingreso por Corrección Monetaria (Ajuste Art. 31).")
             
             # Debit: Asset (Increase Remanente)
             items.append({
@@ -327,7 +362,7 @@ class F29CalculationService:
         total_remanente_to_use = declaration.vat_credit_carryforward + declaration.vat_correction_amount
         if total_remanente_to_use > 0:
             if not settings.vat_carryforward_account:
-                raise ValidationError("Falta configurar cuenta de IVA Remanente.")
+                raise ValidationError("Falta configurar cuenta de IVA Remanente (Para uso de crédito anterior).")
             items.append({
                 'account': settings.vat_carryforward_account,
                 'debit': Decimal('0'),
@@ -453,7 +488,18 @@ class TaxPeriodService:
     @staticmethod
     def get_or_create_period(year: int, month: int) -> TaxPeriod:
         """Get or create a tax period."""
-        period, _ = TaxPeriod.objects.get_or_create(year=year, month=month)
+        period, created = TaxPeriod.objects.get_or_create(year=year, month=month)
+        
+        # Ensure it is linked to AccountingPeriod if exists
+        from .models import AccountingPeriod
+        try:
+            acc_period = AccountingPeriod.objects.get(year=year, month=month)
+            if not acc_period.tax_period:
+                acc_period.tax_period = period
+                acc_period.save()
+        except AccountingPeriod.DoesNotExist:
+            pass
+            
         return period
 
     @staticmethod
@@ -561,12 +607,26 @@ class TaxPeriodService:
             except F29Declaration.DoesNotExist:
                 pass
         
+        # Detect Draft Invoices for this period
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month + 1, 1)
+            
+        draft_invoices_count = Invoice.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=Invoice.Status.DRAFT
+        ).count()
+
         # Build checklist
         checklist = {
             'has_declaration': declaration is not None,
             'declaration_registered': declaration.is_registered if declaration else False,
             'has_payment': False,
             'period_status': period.status if period else 'NOT_CREATED',
+            'draft_invoices_count': draft_invoices_count,
         }
         
         # Check if taxes are paid (if owed)
@@ -857,24 +917,45 @@ class AccountingPeriodService:
         except AccountingPeriod.DoesNotExist:
             period = None
         
+        # Get tax period status for dependency check
+        from .models import TaxPeriod
+        tax_closed = False
+        try:
+            tax_period = TaxPeriod.objects.get(year=year, month=month)
+            tax_closed = tax_period.status == TaxPeriod.Status.CLOSED
+        except TaxPeriod.DoesNotExist:
+            pass
+
+        # Detect Drafts by date range (captures extra documents correctly)
+        from datetime import date
+        from billing.models import Invoice
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month + 1, 1)
+
+        draft_entries_count = JournalEntry.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=JournalEntry.State.DRAFT
+        ).count()
+        
+        draft_invoices_count = Invoice.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=Invoice.Status.DRAFT
+        ).count()
+
         # Build checklist
         checklist = {
             'period_exists': period is not None,
             'period_status': period.status if period else 'NOT_CREATED',
-            'has_draft_entries': False,
-            'total_entries': 0,
-            'draft_entries': 0,
+            'tax_period_closed': tax_closed,
+            'draft_entries_count': draft_entries_count,
+            'draft_invoices_count': draft_invoices_count,
+            'is_fully_closable': tax_closed and draft_entries_count == 0 and draft_invoices_count == 0
         }
-        
-        if period:
-            draft_entries = period.journal_entries.filter(
-                status=JournalEntry.State.DRAFT
-            ).count()
-            total_entries = period.journal_entries.count()
-            
-            checklist['has_draft_entries'] = draft_entries > 0
-            checklist['total_entries'] = total_entries
-            checklist['draft_entries'] = draft_entries
         
         return checklist
 

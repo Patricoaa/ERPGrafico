@@ -44,34 +44,6 @@ def mark_invoices_as_closed(sender, instance, **kwargs):
         ).update(tax_period_closed=False)
 
 
-@receiver(post_save, sender=TaxPeriod)
-def sync_accounting_period_on_tax_close(sender, instance, **kwargs):
-    """
-    When a tax period is closed, also close the corresponding
-    accounting period if it exists and is not already closed.
-    """
-    if instance.status == TaxPeriod.Status.CLOSED:
-        try:
-            acc_period = AccountingPeriod.objects.get(
-                year=instance.year,
-                month=instance.month
-            )
-            if acc_period.status != AccountingPeriod.Status.CLOSED:
-                acc_period.status = AccountingPeriod.Status.CLOSED
-                acc_period.closed_at = instance.closed_at
-                acc_period.closed_by = instance.closed_by
-                acc_period.tax_period = instance
-                acc_period.save()
-        except AccountingPeriod.DoesNotExist:
-            # Create and close accounting period
-            acc_period = AccountingPeriod.objects.create(
-                year=instance.year,
-                month=instance.month,
-                status=AccountingPeriod.Status.CLOSED,
-                closed_at=instance.closed_at,
-                closed_by=instance.closed_by,
-                tax_period=instance
-            )
 
 
 @receiver(post_save, sender=AccountingPeriod)

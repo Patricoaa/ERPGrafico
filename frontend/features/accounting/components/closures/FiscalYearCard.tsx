@@ -74,7 +74,7 @@ export function FiscalYearCard({
                     <div>
                         <h3 className="font-heading font-extrabold text-2xl uppercase tracking-tighter flex items-center gap-3">
                             Ejercicio {year}
-                            <StatusBadge status={getStatusToken(status)} type="generic" customLabel={getStatusLabel(status)} />
+                            <StatusBadge status={getStatusToken(status)} label={getStatusLabel(status)} />
                         </h3>
                         {isClosed && fiscalYear?.closed_at && (
                             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">

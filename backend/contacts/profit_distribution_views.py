@@ -23,18 +23,18 @@ class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
         """Create a new draft resolution"""
         from decimal import Decimal
         
-        fiscal_year = request.data.get('fiscal_year')
+        fiscal_year_id = request.data.get('fiscal_year_id') or request.data.get('fiscal_year')
         net_result = request.data.get('net_result')
         resolution_date = request.data.get('resolution_date')
         acta_number = request.data.get('acta_number', '')
         notes = request.data.get('notes', '')
         
-        if not all([fiscal_year, net_result, resolution_date]):
-            return Response({"error": "Faltan campos (fiscal_year, net_result, resolution_date)."}, status=status.HTTP_400_BAD_REQUEST)
+        if not all([fiscal_year_id, net_result, resolution_date]):
+            return Response({"error": "Faltan campos (fiscal_year_id, net_result, resolution_date)."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             res = ProfitDistributionService.create_draft_resolution(
-                fiscal_year=int(fiscal_year),
+                fiscal_year_id=int(fiscal_year_id),
                 net_result=Decimal(str(net_result)),
                 resolution_date=resolution_date,
                 acta_number=acta_number,

@@ -29,6 +29,12 @@ import {
     CalendarCheck2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { 
+    Alert, 
+    AlertTitle, 
+    AlertDescription 
+} from "@/components/ui/alert"
+import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 interface ModalProps {
     open: boolean
@@ -147,7 +153,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
         setLoading(true)
         try {
             const payload = {
-                fiscal_year_obj: parseInt(formData.fiscal_year_id),
+                fiscal_year_id: parseInt(formData.fiscal_year_id),
                 net_result: parseFloat(formData.net_result),
                 resolution_date: formData.resolution_date,
                 acta_number: formData.acta_number,

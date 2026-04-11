@@ -138,8 +138,18 @@ export function DataTable<TData, TValue>({
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(visibilityState)
     const [rowSelection, setRowSelection] = React.useState({})
 
+    // Guard for async operations/effects during unmount
+    // Initialized to false to prevent updates during constructor/early render
+    const isMounted = React.useRef(false)
+
+    React.useEffect(() => {
+        isMounted.current = true
+        return () => { isMounted.current = false }
+    }, [])
+
     const prevInitialVisibility = React.useRef(initialColumnVisibility)
     React.useEffect(() => {
+        if (!isMounted.current) return
         if (JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)) {
             setColumnVisibility(visibilityState)
             prevInitialVisibility.current = initialColumnVisibility
@@ -148,11 +158,33 @@ export function DataTable<TData, TValue>({
 
     const prevRowSelection = React.useRef(rowSelection)
     React.useEffect(() => {
+        if (!isMounted.current) return
         if (JSON.stringify(prevRowSelection.current) !== JSON.stringify(rowSelection)) {
             onRowSelectionChange?.(rowSelection)
             prevRowSelection.current = rowSelection
         }
     }, [rowSelection, onRowSelectionChange])
+
+    // Guarded setters: prevent TanStack Table from calling setState
+    // synchronously during the initial render (before React commits / mounts).
+    const guardedSetSorting = React.useCallback<typeof setSorting>(
+        (v) => { if (isMounted.current) setSorting(v) }, []
+    )
+    const guardedSetColumnFilters = React.useCallback<typeof setColumnFilters>(
+        (v) => { if (isMounted.current) setColumnFilters(v) }, []
+    )
+    const guardedSetGlobalFilter = React.useCallback<typeof setGlobalFilter>(
+        (v) => { if (isMounted.current) setGlobalFilter(v) }, []
+    )
+    const guardedSetColumnVisibility = React.useCallback<typeof setColumnVisibility>(
+        (v) => { if (isMounted.current) setColumnVisibility(v) }, []
+    )
+    const guardedSetRowSelection = React.useCallback<typeof setRowSelection>(
+        (v) => { if (isMounted.current) setRowSelection(v) }, []
+    )
+    const guardedSetExpanded = React.useCallback<typeof setExpanded>(
+        (v) => { if (isMounted.current) setExpanded(v) }, []
+    )
 
     const table = useReactTable({
         data,
@@ -165,12 +197,12 @@ export function DataTable<TData, TValue>({
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getExpandedRowModel: getExpandedRowModel(),
         getSubRows,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        onGlobalFilterChange: setGlobalFilter,
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        onExpandedChange: setExpanded,
+        onSortingChange: guardedSetSorting,
+        onColumnFiltersChange: guardedSetColumnFilters,
+        onGlobalFilterChange: guardedSetGlobalFilter,
+        onColumnVisibilityChange: guardedSetColumnVisibility,
+        onRowSelectionChange: guardedSetRowSelection,
+        onExpandedChange: guardedSetExpanded,
         state: {
             sorting,
             columnFilters,
