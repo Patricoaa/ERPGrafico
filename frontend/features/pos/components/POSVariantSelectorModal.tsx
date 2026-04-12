@@ -190,7 +190,7 @@ export function POSVariantSelectorModal({
                                                     </Badge>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 text-[10px]">
+                                                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
                                                             Disponible
                                                         </Badge>
                                                     ) : (

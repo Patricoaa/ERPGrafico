@@ -41,7 +41,7 @@ export function NumpadModal({
         >
             <div className="flex flex-col items-center gap-2 py-4">
                 {(maxValue !== undefined && maxValue !== Infinity) && (
-                    <div className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
+                    <div className="text-xs font-bold text-warning uppercase tracking-wider mb-1">
                         Máximo permitido: {maxValue} unidades
                     </div>
                 )}

@@ -53,8 +53,8 @@ export function Step2_PurchaseDTE({
     const dteOptions = [
         { id: 'BOLETA', label: 'Boleta', code: '39', icon: Receipt },
         { id: 'FACTURA', label: 'Factura', code: '33', icon: FileText },
-        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-amber-600' },
-        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-amber-600' },
+        { id: 'BOLETA_EXENTA', label: 'Boleta Exenta', code: '41', icon: Receipt, color: 'text-warning' },
+        { id: 'FACTURA_EXENTA', label: 'Factura Exenta', code: '34', icon: FileText, color: 'text-warning' },
     ]
 
     const filteredOptions = useMemo(() => {
@@ -162,14 +162,14 @@ export function Step2_PurchaseDTE({
             </div>
 
             {dteData.type === 'BOLETA' && !dteData.isPending && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque "Recibiré el documento luego".</p>
                 </div>
             )}
 
             {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>

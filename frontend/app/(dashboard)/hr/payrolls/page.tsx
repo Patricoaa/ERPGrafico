@@ -182,7 +182,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600 font-medium" />
+                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-success font-medium" />
                 </div>
             ),
         },
@@ -200,7 +200,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-warning text-[11px]" />
                 </div>
             ),
         },
@@ -274,7 +274,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-blue-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -290,7 +290,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Pago Sueldo"
-                                className="h-8 w-8 rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-success hover:text-success hover:bg-success/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -306,7 +306,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Pagar Previred"
-                                className="h-8 w-8 rounded-md text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-warning hover:text-warning hover:bg-warning/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);

@@ -87,7 +87,7 @@ export default function ReconciliationProcessPage({ params }: { params: Promise<
     if (!statement) {
         return (
             <div className="flex-1 p-8 pt-6">
-                <Card className="max-w-md mx-auto mt-12 bg-red-50/50 border-red-100">
+                <Card className="max-w-md mx-auto mt-12 bg-destructive/10/50 border-destructive/10">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
                             <Info className="h-5 w-5" />
@@ -144,7 +144,7 @@ export default function ReconciliationProcessPage({ params }: { params: Promise<
                             <Button
                                 onClick={handleConfirmStatement}
                                 disabled={confirming}
-                                className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                                className="bg-success hover:bg-success shadow-lg shadow-emerald-600/20 px-6 font-bold"
                             >
                                 {confirming ? (
                                     <>

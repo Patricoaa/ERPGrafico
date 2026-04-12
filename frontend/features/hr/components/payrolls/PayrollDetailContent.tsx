@@ -283,8 +283,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 className={cn(
                                     "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     salaroPaid
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                        ? "bg-success/10 text-success border-success/20"
+                                        : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
                                 )}
                                 onClick={() => !salaroPaid && setSalaryDialog(true)}
                                 disabled={salaroPaid}
@@ -298,7 +298,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 className={cn(
                                     "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     previredPaid
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        ? "bg-success/10 text-success border-success/20"
                                         : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
                                 )}
                                 onClick={() => !previredPaid && setPreviredDialog(true)}

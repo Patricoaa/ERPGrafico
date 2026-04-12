@@ -209,7 +209,7 @@ export function OrderActionPanel({
                                             Pagado: ${paymentProgress.paid.toLocaleString('es-CL')}
                                         </span>
                                         {paymentProgress.pending > 0 && (
-                                            <span className="text-amber-600 font-medium">
+                                            <span className="text-warning font-medium">
                                                 Pendiente: ${paymentProgress.pending.toLocaleString('es-CL')}
                                             </span>
                                         )}

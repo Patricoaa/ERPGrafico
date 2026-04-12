@@ -58,23 +58,23 @@ export function ActionConfirmModal({
             case "warning":
                 return {
                     icon: CustomIcon || AlertTriangle,
-                    iconClassName: "text-amber-600 bg-amber-50",
-                    buttonVariant: "default" as const, // We'll use default button but maybe amber styling if needed
-                    titleClassName: "text-amber-700"
+                    iconClassName: "text-warning bg-warning/10",
+                    buttonVariant: "default" as const,
+                    titleClassName: "text-warning"
                 }
             case "info":
                 return {
                     icon: CustomIcon || Info,
-                    iconClassName: "text-primary bg-blue-50",
+                    iconClassName: "text-info bg-info/10",
                     buttonVariant: "default" as const,
-                    titleClassName: "text-primary"
+                    titleClassName: "text-info"
                 }
             case "success":
                 return {
                     icon: CustomIcon || CheckCircle2,
-                    iconClassName: "text-emerald-600 bg-emerald-50",
+                    iconClassName: "text-success bg-success/10",
                     buttonVariant: "default" as const,
-                    titleClassName: "text-emerald-700"
+                    titleClassName: "text-success"
                 }
             default:
                 return {
@@ -120,8 +120,8 @@ export function ActionConfirmModal({
                         disabled={isLoading}
                         className={cn(
                             "flex-1 sm:flex-none min-w-[100px]",
-                            variant === "warning" && "bg-amber-600 hover:bg-amber-700 text-white border-none",
-                            variant === "success" && "bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                            variant === "warning" && "bg-warning hover:bg-warning/90 text-warning-foreground border-none",
+                            variant === "success" && "bg-success hover:bg-success/90 text-success-foreground border-none"
                         )}
                     >
                         {isLoading ? (

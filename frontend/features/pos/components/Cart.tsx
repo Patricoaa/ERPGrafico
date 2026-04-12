@@ -216,7 +216,7 @@ export function Cart({
                                         <FileText className="h-3 w-3 text-primary" />
                                         <span>Documento</span>
                                     </div>
-                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-blue-50 text-primary border-blue-100 uppercase">
+                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-primary/10 text-primary border-primary/10 uppercase">
                                         {getDteLabel(dteType)}
                                     </Badge>
                                 </div>
@@ -225,11 +225,11 @@ export function Cart({
                             {deliveryType && (
                                 <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-4">
                                     <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                        <Truck className="h-3 w-3 text-emerald-500" />
+                                        <Truck className="h-3 w-3 text-success" />
                                         <span>Logística</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-emerald-50 text-emerald-700 border-emerald-100 uppercase">
+                                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-success/10 text-success border-success/10 uppercase">
                                             {getDeliveryLabel(deliveryType)}
                                         </Badge>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
@@ -289,7 +289,7 @@ export function Cart({
                                 className={cn(
                                     "flex justify-between items-center transition-all duration-200 rounded-lg p-1.5 -mx-1.5",
                                     showTotalDiscounts 
-                                        ? "cursor-pointer hover:bg-blue-50/50 group" 
+                                        ? "cursor-pointer hover:bg-primary/10/50 group" 
                                         : "text-muted-foreground"
                                 )}
                                 onClick={() => showTotalDiscounts && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
@@ -302,14 +302,14 @@ export function Cart({
                                         Descuento Global
                                     </span>
                                     {showTotalDiscounts && (
-                                        <Edit className="h-3 w-3 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <Edit className="h-3 w-3 text-primary/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     )}
                                 </div>
                                 <div className={cn(
                                     "font-mono text-sm px-2 py-1 rounded border border-dashed transition-colors",
                                     (totals.global_discount_total || 0) > 0 
-                                        ? "text-primary bg-blue-50/50 border-blue-200" 
-                                        : "text-muted-foreground/40 border-muted-foreground/20 group-hover:border-blue-200 group-hover:text-blue-400"
+                                        ? "text-primary bg-primary/10/50 border-primary/20" 
+                                        : "text-muted-foreground/40 border-muted-foreground/20 group-hover:border-primary/20 group-hover:text-primary/50"
                                 )}>
                                     {(totals.global_discount_total || 0) > 0 
                                         ? `-${formatCurrency(totals.global_discount_total || 0)}` 

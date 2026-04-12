@@ -326,7 +326,7 @@ export function DraftCartsList({
                                                 {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 border-amber-300 gap-0.5 shrink-0 shadow-sm"
+                                                        className="h-4 px-1 text-[9px] bg-warning/10 text-warning border-warning/20 gap-0.5 shrink-0 shadow-sm"
                                                     >
                                                         <Wallet className="h-2.5 w-2.5" />
                                                         Por Pagar
@@ -335,7 +335,7 @@ export function DraftCartsList({
                                                 {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-amber-50 text-amber-600 border-amber-200 gap-0.5 shrink-0"
+                                                        className="h-4 px-1 text-[9px] bg-warning/10 text-warning border-warning/20 gap-0.5 shrink-0"
                                                     >
                                                         <ClipboardCheck className="h-2.5 w-2.5" />
                                                         P{draft.wizard_state.step}
@@ -344,7 +344,7 @@ export function DraftCartsList({
                                                 {draft.wizard_state?.isWaitingApproval && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-blue-50 text-primary border-blue-200 gap-0.5 shrink-0"
+                                                        className="h-4 px-1 text-[9px] bg-primary/10 text-primary border-primary/20 gap-0.5 shrink-0"
                                                     >
                                                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
                                                         Auth
@@ -353,7 +353,7 @@ export function DraftCartsList({
                                                 {draft.wizard_state?.isApproved && (
                                                     <Badge
                                                         variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-emerald-50 text-emerald-600 border-emerald-200 gap-0.5 shrink-0"
+                                                        className="h-4 px-1 text-[9px] bg-success/10 text-success border-success/20 gap-0.5 shrink-0"
                                                     >
                                                         <ClipboardCheck className="h-2.5 w-2.5" />
                                                         OK

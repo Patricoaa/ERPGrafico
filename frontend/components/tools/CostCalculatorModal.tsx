@@ -221,7 +221,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-50 rounded-lg text-primary shadow-sm border border-blue-100 hidden sm:block">
+                            <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/10 hidden sm:block">
                                 <Calculator className="h-6 w-6" />
                             </div>
                             <div className="flex flex-col">
@@ -229,7 +229,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
                                         Calculadora de Costos
                                     </SheetTitle>
-                                    <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
+                                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
                                         <Info className="h-3 w-3" />
                                         Modo Simulación
                                     </Badge>
@@ -286,7 +286,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                             {filteredProducts.map(product => (
                                                 <Card
                                                     key={product.id}
-                                                    className="group cursor-pointer hover:border-blue-500/50 transition-all active:scale-95 relative flex flex-col overflow-hidden shadow-sm"
+                                                    className="group cursor-pointer hover:border-primary/50 transition-all active:scale-95 relative flex flex-col overflow-hidden shadow-sm"
                                                     onClick={() => addItem(product)}
                                                 >
                                                     <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
@@ -376,7 +376,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                 ) : (
                                     <div className="divide-y pb-2">
                                         {selectedItems.map((item, index) => (
-                                            <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-blue-50/30 transition-colors">
+                                            <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/10/30 transition-colors">
                                                 <div className="col-span-6 flex items-center gap-3 min-w-0">
                                                     <div className="w-8 h-8 rounded bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
                                                         {item.product.image ? (
@@ -402,7 +402,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                         step="0.01"
                                                         value={item.quantity}
                                                         onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                        className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-blue-500"
+                                                        className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-primary"
                                                     />
                                                 </div>
                                                 <div className="col-span-2">
@@ -464,7 +464,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     </div>
                                 </div>
 
-                                <div className="bg-primary/5 border border-blue-600/10 rounded-lg p-3 flex items-start gap-3">
+                                <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 flex items-start gap-3">
                                     <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                                     <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
                                         Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.

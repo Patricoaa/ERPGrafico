@@ -167,7 +167,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         >
                             <Inbox className="h-5 w-5" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-[#0a0a0a]">
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}

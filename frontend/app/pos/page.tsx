@@ -365,7 +365,7 @@ function POSPageContent() {
                     {currentSession?.status === 'OPEN' && (
                         <div className="hidden sm:flex items-center gap-2">
                             <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-5 font-bold uppercase transition-colors">Sesión #{currentSession.id}</Badge>
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 px-2 py-0.5 text-[10px] h-5 font-medium uppercase">{user?.first_name} {user?.last_name}</Badge>
+                            <Badge variant="outline" className="border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-5 font-medium uppercase">{user?.first_name} {user?.last_name}</Badge>
                         </div>
                     )}
                 </div>
@@ -411,7 +411,7 @@ function POSPageContent() {
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-amber-500 text-amber-700 bg-amber-100/50 shadow-md border-solid ring-2 ring-amber-500/30 animate-in zoom-in-95 duration-500"
+                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10/50 shadow-md border-solid ring-2 ring-warning/30 animate-in zoom-in-95 duration-500"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
                                             title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
@@ -420,7 +420,7 @@ function POSPageContent() {
                                             {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
                                                 <div className="flex items-center gap-1">
                                                     {d.id}
-                                                    <Wallet className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
+                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse" />
                                                 </div>
                                             ) : (
                                                 (!isWaitingPayment || currentDraftId === d.id) && d.id
@@ -453,7 +453,7 @@ function POSPageContent() {
                                 <DropdownMenuItem
                                     onClick={() => setWithdrawDialogOpen(true)}
                                     disabled={items.some(i => !i.track_inventory)}
-                                    className="font-bold text-amber-600 focus:text-amber-700"
+                                    className="font-bold text-warning focus:text-warning"
                                 >
                                     <ShoppingCart className="mr-2 h-4 w-4" />
                                     Retiro de Socio
@@ -618,13 +618,13 @@ function POSPageContent() {
 
             {/* Partner Withdrawal Confirmation */}
             <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <AlertDialogContent className="max-w-md bg-white border-amber-100 shadow-2xl">
+                <AlertDialogContent className="max-w-md bg-white border-warning/10 shadow-2xl">
                     <AlertDialogHeader>
-                        <div className="mx-auto bg-amber-500 text-white p-4 rounded-full mb-4 shadow-lg shadow-amber-200">
+                        <div className="mx-auto bg-warning text-white p-4 rounded-full mb-4 shadow-lg shadow-amber-200">
                             <ShoppingCart className="h-8 w-8" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-bold text-center text-amber-950">Confirmar Retiro de Socio</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-amber-900/60 font-medium pt-2 text-sm">
+                        <AlertDialogTitle className="text-xl font-bold text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-warning/60 font-medium pt-2 text-sm">
                             Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
                             <br />
                             Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
@@ -633,7 +633,7 @@ function POSPageContent() {
 
                     <div className="space-y-4 my-2">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-amber-900/50 tracking-widest pl-1">Seleccionar Socio</Label>
+                            <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
                             <AdvancedContactSelector
                                 value={selectedPartnerId}
                                 onChange={setSelectedPartnerId}
@@ -648,7 +648,7 @@ function POSPageContent() {
 
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-xl text-sm font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-200 disabled:opacity-50"
+                            className="flex-1 h-12 rounded-xl text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-lg shadow-amber-200 disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >
@@ -656,7 +656,7 @@ function POSPageContent() {
                             Confirmar Retiro
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-12 border-amber-200 text-amber-900 hover:bg-amber-50 rounded-xl text-sm font-bold"
+                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-xl text-sm font-bold"
                             disabled={isWithdrawing}
                         >
                             Cancelar

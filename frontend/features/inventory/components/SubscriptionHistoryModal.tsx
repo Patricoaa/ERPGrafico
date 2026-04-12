@@ -188,24 +188,24 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                 <TabsContent value="historial" className="mt-0 space-y-6">
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <Card className="bg-blue-50/30 border-blue-100 shadow-none">
+                                            <Card className="bg-primary/10/30 border-primary/10 shadow-none">
                                                 <CardContent className="p-4">
                                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Último Precio</p>
-                                                    <DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-blue-900 text-left" />
+                                                    <DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-primary text-left" />
                                                 </CardContent>
                                             </Card>
-                                            <Card className="bg-amber-50/30 border-amber-100 shadow-none">
+                                            <Card className="bg-warning/10/30 border-warning/10 shadow-none">
                                                 <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">OCS Totales</p>
+                                                    <p className="text-[10px] font-bold text-warning uppercase tracking-wider">OCS Totales</p>
                                                     <div className="flex items-baseline gap-2">
-                                                        <p className="text-2xl font-black text-amber-900">{data.orders.length}</p>
-                                                        <span className="text-xs text-amber-600">documentos</span>
+                                                        <p className="text-2xl font-black text-warning">{data.orders.length}</p>
+                                                        <span className="text-xs text-warning">documentos</span>
                                                     </div>
                                                 </CardContent>
                                             </Card>
-                                            <Card className="bg-emerald-50/30 border-emerald-100 shadow-none">
+                                            <Card className="bg-success/10/30 border-success/10 shadow-none">
                                                 <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Estado Actual</p>
+                                                    <p className="text-[10px] font-bold text-success uppercase tracking-wider">Estado Actual</p>
                                                     <Badge variant="success" className="mt-1 font-bold">ACTIVA</Badge>
                                                 </CardContent>
                                             </Card>

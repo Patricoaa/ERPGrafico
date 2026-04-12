@@ -77,7 +77,7 @@ export function WizardHeader({
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
                     onClick={onAnnul}
                     disabled={isAnnuling || order?.status === 'CANCELLED' || order?.is_cancellable === false}
                     title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}

@@ -94,7 +94,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Estado API</span>
-                        <span className="text-green-500 font-bold">Conectado</span>
+                        <span className="text-success font-bold">Conectado</span>
                     </div>
                 </CardContent>
             </IndustrialCard>

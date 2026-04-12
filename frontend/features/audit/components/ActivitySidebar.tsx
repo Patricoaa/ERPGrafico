@@ -96,9 +96,9 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
     const getIconColor = (type: string) => {
         switch (type) {
-            case '+': return 'bg-emerald-100/80 text-emerald-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
-            case '~': return 'bg-blue-100/80 text-primary border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
-            case '-': return 'bg-red-100/80 text-destructive border-red-200 dark:bg-red-900/30 dark:text-destructive dark:border-red-800'
+            case '+': return 'bg-success/10/80 text-success border-success/20 dark:bg-success/30 dark:text-success/50 dark:border-success'
+            case '~': return 'bg-primary/10/80 text-primary border-primary/20 dark:bg-primary/30 dark:text-primary/50 dark:border-primary'
+            case '-': return 'bg-destructive/10/80 text-destructive border-destructive/20 dark:bg-destructive/30 dark:text-destructive dark:border-destructive'
             default: return 'bg-muted text-muted-foreground border-border'
         }
     }
@@ -241,7 +241,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                                             {formatValue(field, oldValue)}
                                                                         </span>
                                                                         <span className="text-muted-foreground font-bold shrink-0">→</span>
-                                                                        <span className="rounded bg-green-500/10 px-2 py-0.5 text-emerald-700 dark:text-green-400 font-medium break-words max-w-full">
+                                                                        <span className="rounded bg-success/10 px-2 py-0.5 text-success dark:text-success/50 font-medium break-words max-w-full">
                                                                             {formatValue(field, newValue)}
                                                                         </span>
                                                                     </div>

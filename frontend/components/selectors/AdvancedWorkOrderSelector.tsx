@@ -93,7 +93,7 @@ export function AdvancedWorkOrderSelector({
                         aria-expanded={open}
                         disabled={disabled}
                         className={cn(
-                            "w-full justify-between h-auto py-2 px-3 bg-background border-dashed hover:border-indigo-400 transition-colors",
+                            "w-full justify-between h-auto py-2 px-3 bg-background border-dashed hover:border-info/50 transition-colors",
                             selectedOrder && "border-primary/20 bg-primary/10/30",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
@@ -116,7 +116,7 @@ export function AdvancedWorkOrderSelector({
                         <div className="flex items-center gap-2">
                             {selectedOrder && (
                                 <div
-                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-red-100 hover:text-destructive transition-colors"
+                                    className="h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
                                     onClick={clearSelection}
                                 >
                                     <X className="h-3 w-3" />

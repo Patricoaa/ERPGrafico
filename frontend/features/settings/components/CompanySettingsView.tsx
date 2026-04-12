@@ -297,7 +297,7 @@ export function CompanySettingsView({
                                                         type="button" 
                                                         variant="outline" 
                                                         size="icon"
-                                                        className="h-9 w-9 text-primary border-blue-200 hover:bg-blue-50 shadow-sm"
+                                                        className="h-9 w-9 text-primary border-primary/20 hover:bg-primary/10 shadow-sm"
                                                         onClick={() => setIsEditContactOpen(true)}
                                                         title="Editar ficha de contacto"
                                                     >

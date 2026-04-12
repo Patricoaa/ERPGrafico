@@ -208,7 +208,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                                     <Badge variant="outline" className={cn(
                                         "text-[9px] uppercase font-bold",
                                         user.is_active
-                                            ? "text-emerald-600 border-emerald-500/30 bg-emerald-50"
+                                            ? "text-success border-success/30 bg-success/10"
                                             : "text-rose-600 border-rose-500/30 bg-rose-50"
                                     )}>
                                         {user.is_active ? "Activo" : "Inactivo"}
@@ -309,7 +309,7 @@ function PasswordChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
+                    <div className="p-2 rounded-lg bg-warning/10 text-warning">
                         <KeyRound className="h-5 w-5" />
                     </div>
                     <div>
@@ -504,7 +504,7 @@ function PersonalTab({
         {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_haberes")} className="text-emerald-600 font-bold" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_haberes")} className="text-success font-bold" />,
         },
         {
             accessorKey: "total_descuentos",
@@ -688,7 +688,7 @@ function PersonalTab({
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
+                                        <div className="p-2 rounded-lg bg-success/10 text-success">
                                             <FileText className="h-5 w-5" />
                                         </div>
                                         <div className="text-left">

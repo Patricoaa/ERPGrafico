@@ -359,7 +359,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             className={cn(
                                                 "cursor-pointer group transition-colors",
                                                 isActive ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
-                                                isSelected && "bg-blue-50/50 hover:bg-blue-50/80"
+                                                isSelected && "bg-primary/10/50 hover:bg-primary/10/80"
                                             )}
                                             onClick={() => handleRowClick(v.id)}
                                         >
@@ -391,16 +391,16 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
-                                                    <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-muted/50 text-muted-foreground")}>
+                                                    <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-muted/50 text-muted-foreground")}>
                                                         {v.current_stock}
                                                     </Badge>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 px-1.5 py-0 text-[10px]">
+                                                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-1.5 py-0 text-[10px]">
                                                             Disp
                                                         </Badge>
                                                     ) : (
-                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200")}>
+                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-rose-50 text-rose-700 border-rose-200")}>
                                                             {v.current_stock}
                                                         </Badge>
                                                     )
@@ -408,7 +408,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                  {v.has_active_bom ? (
-                                                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✓ BOM</span>
+                                                      <span className="text-[10px] text-success font-bold bg-success/10 px-1.5 py-0.5 rounded border border-success/20">✓ BOM</span>
                                                  ) : (
                                                       v.mfg_auto_finalize ? (
                                                           <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">FALTA</span>

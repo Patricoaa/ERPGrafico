@@ -65,8 +65,8 @@ export function TrialBalanceView() {
                 {data && (
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
                         data.is_balanced 
-                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
-                            : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+                            ? 'bg-success/10 text-success border-success/20' 
+                            : 'bg-warning/10 text-warning border-warning/20'
                     }`}>
                         {data.is_balanced ? (
                             <><CheckCircle2 className="w-3.5 h-3.5" /> Partida Doble Cuadrada</>
@@ -90,8 +90,8 @@ export function TrialBalanceView() {
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Débitos</th>
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Créditos</th>
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-primary/5">Saldo Final</th>
-                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-emerald-600">Deudor</th>
-                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-amber-600">Acreedor</th>
+                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-success">Deudor</th>
+                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-warning">Acreedor</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/40">
@@ -103,8 +103,8 @@ export function TrialBalanceView() {
                                         <td className="px-4 py-2.5 text-xs text-right text-muted-foreground group-hover:text-foreground">{formatNum(acc.debit)}</td>
                                         <td className="px-4 py-2.5 text-xs text-right text-muted-foreground group-hover:text-foreground">{formatNum(acc.credit)}</td>
                                         <td className="px-4 py-2.5 text-xs text-right bg-primary/5 font-bold">{formatNum(acc.closing_balance)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-emerald-600">{formatNum(acc.saldo_deudor)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-amber-600">{formatNum(acc.saldo_acreedor)}</td>
+                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-success">{formatNum(acc.saldo_deudor)}</td>
+                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-warning">{formatNum(acc.saldo_acreedor)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -115,8 +115,8 @@ export function TrialBalanceView() {
                                         <td className="px-4 py-4 text-xs text-right border-x border-border/20">{formatCurrency(data.total_debit)}</td>
                                         <td className="px-4 py-4 text-xs text-right border-x border-border/20">{formatCurrency(data.total_credit)}</td>
                                         <td className="px-4 py-4 text-xs text-right bg-primary/10">—</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-emerald-700">{formatCurrency(data.total_saldo_deudor)}</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-amber-700">{formatCurrency(data.total_saldo_acreedor)}</td>
+                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-success">{formatCurrency(data.total_saldo_deudor)}</td>
+                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-warning">{formatCurrency(data.total_saldo_acreedor)}</td>
                                     </tr>
                                 </tfoot>
                             )}

@@ -52,7 +52,7 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-emerald-600" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-success" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
                 {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-rose-500" />}
@@ -211,8 +211,8 @@ export function PayrollCard({
                             <Badge variant="outline" className={cn(
                                 "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border-none ring-1 ring-inset",
                                 isPosted
-                                    ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-                                    : "bg-amber-50 text-amber-700 ring-amber-600/20"
+                                    ? "bg-success/10 text-success ring-success/20"
+                                    : "bg-warning/10 text-warning ring-warning/20"
                             )}>
                                 {payroll.status_display}
                             </Badge>
@@ -268,7 +268,7 @@ export function PayrollCard({
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">
                                 <TableHead className={cn(FORM_STYLES.label, "h-11 pl-8 text-muted-foreground")}>Conceptos de Remuneración</TableHead>
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-emerald-600 text-right")}>Haberes (+)</TableHead>
+                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-success text-right")}>Haberes (+)</TableHead>
                                 <TableHead className={cn(FORM_STYLES.label, "h-11 text-rose-500 text-right pr-8")}>Descuentos (-)</TableHead>
                                 {!isReadOnly && <TableHead className="h-11 w-[80px]"></TableHead>}
                             </TableRow>
@@ -283,7 +283,7 @@ export function PayrollCard({
                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-y">
                                 <TableCell className="py-2 pl-6 text-[11px] font-black text-muted-foreground uppercase tracking-wider">Subtotal Haberes</TableCell>
                                 <TableCell className="py-2 text-right">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-black text-emerald-600" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-black text-success" />
                                 </TableCell>
                                 <TableCell colSpan={isReadOnly ? 1 : 2}></TableCell>
                             </TableRow>
@@ -377,7 +377,7 @@ export function PayrollCard({
                                                 <div className="flex items-center gap-2">
                                                     <span className={cn(
                                                         "text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                                                        p.isAdvance ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                                                        p.isAdvance ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
                                                     )}>
                                                         {p.type}
                                                     </span>
@@ -395,8 +395,8 @@ export function PayrollCard({
                                 </div>
                                 {pendingToPay > 0 && isPosted && (
                                     <div className="pt-3 border-t border/60 flex justify-between items-center">
-                                        <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">Saldo Pendiente de Pago</span>
-                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-black text-amber-700" />
+                                        <span className="text-[10px] font-black uppercase text-warning tracking-wider">Saldo Pendiente de Pago</span>
+                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-black text-warning" />
                                     </div>
                                 )}
                             </div>
@@ -404,13 +404,13 @@ export function PayrollCard({
 
                         {/* STATUS MESSAGE FOR EMPLOYEE */}
                         {isPosted && isSalaryPaid && (
-                            <div className="p-5 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-between transition-all hover:shadow-md">
+                            <div className="p-5 rounded-lg bg-success/10 border border-success/10 flex items-center justify-between transition-all hover:shadow-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-100 rounded-lg">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                    <div className="p-2 bg-success/10 rounded-lg">
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Remuneración Pagada</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-success">Remuneración Pagada</span>
                                     </div>
                                 </div>
                             </div>

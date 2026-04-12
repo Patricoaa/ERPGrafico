@@ -922,7 +922,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                             )}
                                                                             {m.purchase_order_number && (
-                                                                                <Badge variant="outline" className="gap-1 border-blue-200 text-primary bg-blue-50">
+                                                                                <Badge variant="outline" className="gap-1 border-primary/20 text-primary bg-primary/10">
                                                                                     <FileText className="h-3 w-3" />
                                                                                     {m.purchase_order_number}
                                                                                 </Badge>
@@ -1054,13 +1054,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
-                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-emerald-700" : "text-destructive")}>
+                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-success" : "text-destructive")}>
                                                                         {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
                                                                     </p>
                                                                 </div>
                                                                 <Badge
                                                                     variant={m.is_available ? "default" : "destructive"}
-                                                                    className={cn(m.is_available ? "bg-green-500 hover:bg-green-600" : "")}
+                                                                    className={cn(m.is_available ? "bg-success hover:bg-success" : "")}
                                                                 >
                                                                     {m.is_available ? "Disponible" : "Sin Stock"}
                                                                 </Badge>
@@ -1079,7 +1079,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_ASSIGNMENT' && (
                                         <div className="space-y-6">
-                                            <div className="p-4 bg-primary/10 border border-indigo-100 rounded-lg flex gap-3">
+                                            <div className="p-4 bg-primary/10 border border-info/10 rounded-lg flex gap-3">
                                                 <Plus className="h-5 w-5 text-primary shrink-0" />
                                                 <div className="text-sm text-primary">
                                                     <div className="flex items-center gap-2">
@@ -1087,9 +1087,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <TooltipProvider>
                                                             <Tooltip>
                                                                 <TooltipTrigger asChild>
-                                                                    <Info className="h-3.5 w-3.5 text-indigo-400 cursor-help" />
+                                                                    <Info className="h-3.5 w-3.5 text-info/50 cursor-help" />
                                                                 </TooltipTrigger>
-                                                                <TooltipContent className="max-w-xs bg-indigo-900 text-white border-indigo-700">
+                                                                <TooltipContent className="max-w-xs bg-info text-white border-info">
                                                                     <p className="text-xs">
                                                                         Los servicios tercerizados generarán automáticamente Órdenes de Compra en estado Confirmado que deberán procesarse desde el Hub de la OC.
                                                                     </p>
@@ -1139,7 +1139,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     </div>
                                                                 )}
                                                                 {m.purchase_order_number && (
-                                                                    <Badge variant="outline" className="gap-1 border-blue-200 text-primary bg-blue-50">
+                                                                    <Badge variant="outline" className="gap-1 border-primary/20 text-primary bg-primary/10">
                                                                         <FileText className="h-3 w-3" />
                                                                         {m.purchase_order_number}
                                                                     </Badge>
@@ -1335,14 +1335,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             </Label>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {order.checkout_files.map((att: ProductionAttachment) => (
-                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-blue-50/50 rounded border border-blue-100/50 text-xs hover:border-blue-200 transition-colors">
+                                                                    <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/10/50 rounded border border-primary/10/50 text-xs hover:border-primary/20 transition-colors">
                                                                         <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                         <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>{att.original_filename}</div>
                                                                         <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
-                                                                            className="h-6 w-6 hover:bg-blue-100 text-primary"
+                                                                            className="h-6 w-6 hover:bg-primary/10 text-primary"
                                                                             onClick={() => window.open(att.file, '_blank')}
                                                                             title="Descargar"
                                                                         >
@@ -1607,8 +1607,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </tbody>
                         </table>
                     </div>
-                    <div className="bg-blue-50 p-4 rounded-lg flex gap-3 border border-blue-100">
-                        <div className="bg-blue-100 p-2 rounded-full h-fit">
+                    <div className="bg-primary/10 p-4 rounded-lg flex gap-3 border border-primary/10">
+                        <div className="bg-primary/10 p-2 rounded-full h-fit">
                             <FileText className="h-4 w-4 text-primary" />
                         </div>
                         <div className="text-xs text-primary leading-relaxed">

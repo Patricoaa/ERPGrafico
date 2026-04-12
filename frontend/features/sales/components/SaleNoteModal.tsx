@@ -192,7 +192,7 @@ export function SaleNoteModal({
             size="lg"
             title={
                 <span className="flex items-center gap-2">
-                    <FileBadge className="h-6 w-6 text-purple-600" />
+                    <FileBadge className="h-6 w-6 text-primary" />
                     Registrar Nota Crédito/Débito - {orderNumber ? `NV-${orderNumber}` : `Doc #${invoiceId}`}
                 </span>
             }
@@ -277,7 +277,7 @@ export function SaleNoteModal({
                                     </td>
                                 </tr>
                             ) : lines.map((line, idx) => (
-                                <tr key={line.id} className={line.note_quantity > 0 ? "bg-purple-50/30" : ""}>
+                                <tr key={line.id} className={line.note_quantity > 0 ? "bg-primary/10/30" : ""}>
                                     <td className="px-3 py-2 font-medium">{line.product_name || line.description}</td>
                                     <td className="px-3 py-2 text-center text-xs text-muted-foreground">{line.uom_name || '-'}</td>
                                     <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>

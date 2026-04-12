@@ -446,7 +446,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     {line.product_type === 'MANUFACTURABLE' && (
                                                         <>
                                                             {!line.track_inventory && (
-                                                                <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
+                                                                <Badge variant="outline" className="text-[9px] border-primary/20 bg-primary/10 text-primary">
                                                                     {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
                                                                 </Badge>
                                                             )}
@@ -455,7 +455,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                                 <div className="flex flex-col items-center mt-1">
                                                                     <Badge
                                                                         variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
-                                                                        className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-orange-50 text-orange-700 border-orange-200")}
+                                                                        className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-warning/10 text-warning border-warning/20")}
                                                                     >
                                                                         OT: {(line as any).work_order_summary.status_display}
                                                                     </Badge>
@@ -472,7 +472,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     )}
 
                                                     {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
-                                                        <Badge variant="outline" className="text-[9px] border-emerald-200 bg-emerald-50 text-emerald-700">Disponible</Badge>
+                                                        <Badge variant="outline" className="text-[9px] border-success/20 bg-success/10 text-success">Disponible</Badge>
                                                     )}
                                                 </div>
                                             </TableCell>
@@ -491,11 +491,11 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                 {stockStatus && (
                                                     <div className="flex items-center gap-1 text-xs">
                                                         {stockStatus.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                        {stockStatus.type === 'success' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                                                        {stockStatus.type === 'success' && <CheckCircle2 className="h-3 w-3 text-success" />}
                                                         {stockStatus.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
                                                         <span className={
                                                             stockStatus.type === 'error' ? 'text-destructive' :
-                                                                stockStatus.type === 'success' ? 'text-green-600' :
+                                                                stockStatus.type === 'success' ? 'text-success' :
                                                                     'text-yellow-600'
                                                         }>
                                                             {stockStatus.message}

@@ -347,7 +347,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={cn("h-8 w-8 rounded-lg", row.original.active ? "text-destructive" : "text-emerald-600")}
+                        className={cn("h-8 w-8 rounded-lg", row.original.active ? "text-destructive" : "text-success")}
                         onClick={() => handleArchive(row.original)}
                         title={row.original.active ? "Archivar" : "Restaurar"}
                     >
@@ -512,7 +512,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         </p>
 
                         {currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
-                            <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg flex gap-3 text-amber-800">
+                            <div className="bg-warning/10 border border-warning/10 p-3 rounded-lg flex gap-3 text-warning">
                                 <AlertTriangle className="h-5 w-5 shrink-0" />
                                 <div className="text-xs">
                                     <p className="font-bold mb-1">Impacto en Suscripciones</p>
@@ -522,7 +522,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         )}
 
                         {!currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
-                            <p className="text-xs bg-blue-50 text-primary p-2 rounded-md">
+                            <p className="text-xs bg-primary/10 text-primary p-2 rounded-md">
                                 Al restaurar el producto, sus suscripciones volverán a aparecer en el gestor central.
                             </p>
                         )}

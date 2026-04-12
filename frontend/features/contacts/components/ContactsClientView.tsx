@@ -97,7 +97,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <DataCell.Icon icon={UserIcon} className="bg-blue-100 text-blue-600 h-6 w-6" />
+                                            <DataCell.Icon icon={UserIcon} className="bg-primary/10 text-primary h-6 w-6" />
                                         </TooltipTrigger>
                                         <TooltipContent>Cliente por defecto</TooltipContent>
                                     </Tooltip>
@@ -107,7 +107,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <DataCell.Icon icon={Building2} className="bg-purple-100 text-purple-600 h-6 w-6" />
+                                            <DataCell.Icon icon={Building2} className="bg-primary/10 text-primary h-6 w-6" />
                                         </TooltipTrigger>
                                         <TooltipContent>Proveedor por defecto</TooltipContent>
                                     </Tooltip>
@@ -121,8 +121,8 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                                                 icon={Banknote}
                                                 className={
                                                     Number(contact.credit_balance_used || 0) > 0
-                                                        ? "bg-amber-100 text-amber-600 h-6 w-6"
-                                                        : "bg-emerald-100 text-emerald-600 h-6 w-6"
+                                                        ? "bg-warning/10 text-warning h-6 w-6"
+                                                        : "bg-success/10 text-success h-6 w-6"
                                                 }
                                             />
                                         </TooltipTrigger>
@@ -132,7 +132,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                                                     <span>Límite de Crédito: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
                                                 )}
                                                 {Number(contact.credit_balance_used || 0) > 0 && (
-                                                    <span className="font-bold text-amber-600">
+                                                    <span className="font-bold text-warning">
                                                         Deuda Activa: ${Number(contact.credit_balance_used || 0).toLocaleString()}
                                                     </span>
                                                 )}

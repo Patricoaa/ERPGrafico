@@ -64,7 +64,7 @@ export function WizardRightSidebar({
                         <AccordionContent className="pt-2">
                             <div className="space-y-3">
                                 {order?.prepress_archive && (
-                                    <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-3 space-y-2">
+                                    <div className="bg-primary/10/50 border border-primary/20 rounded-lg p-3 space-y-2">
                                         <p className="font-bold text-[10px] uppercase text-primary flex items-center gap-1.5">
                                             <FileText className="h-3 w-3" />
                                             Archivo de Diseño
@@ -72,7 +72,7 @@ export function WizardRightSidebar({
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="w-full bg-white text-primary border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+                                            className="w-full bg-white text-primary border-primary/20 hover:bg-primary/10 hover:text-primary"
                                             onClick={() => window.open(order.prepress_archive, '_blank')}
                                         >
                                             Ver Archivo
@@ -82,7 +82,7 @@ export function WizardRightSidebar({
                                 {techSpecs.length > 0 ? techSpecs.map((spec, i) => (
                                     <div key={i} className={cn(
                                         "rounded-lg border p-3 space-y-1",
-                                        spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "bg-blue-50/50 border-blue-200" : "bg-background"
+                                        spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "bg-primary/10/50 border-primary/20" : "bg-background"
                                     )}>
                                         <p className={cn(
                                             "font-bold text-[10px] uppercase flex items-center gap-1.5",
@@ -93,7 +93,7 @@ export function WizardRightSidebar({
                                         </p>
                                         <p className={cn(
                                             "text-xs whitespace-pre-wrap",
-                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" && "font-medium text-blue-900"
+                                            spec.label === "Diseño Requerido" && spec.value === "SÍ" && "font-medium text-primary"
                                         )}>{spec.value}</p>
                                     </div>
                                 )) : (

@@ -190,7 +190,7 @@ export function Step1_ProductSelection({
                                                     <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
                                                         <div className="flex justify-between">
                                                             <span className="text-muted-foreground">Neto (sin IVA)</span>
-                                                            <span className="font-bold text-emerald-700">
+                                                            <span className="font-bold text-success">
                                                                 {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                             </span>
                                                         </div>
@@ -230,7 +230,7 @@ export function Step1_ProductSelection({
                                         const product = products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString()))
                                         if (product && product.preferred_supplier && selectedSupplierId && product.preferred_supplier.toString() !== selectedSupplierId) {
                                             return (
-                                                <div className="flex items-center gap-1 mt-1 text-[10px] text-amber-600 font-medium">
+                                                <div className="flex items-center gap-1 mt-1 text-[10px] text-warning font-medium">
                                                     <AlertTriangle className="h-3 w-3" />
                                                     Sugerido: {product.preferred_supplier_name}
                                                 </div>

@@ -418,7 +418,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {afps.map((afp) => (
-                            <Card key={afp.id} className="relative overflow-hidden group hover:border-blue-500/50 transition-all rounded-md border-2">
+                            <Card key={afp.id} className="relative overflow-hidden group hover:border-primary/50 transition-all rounded-md border-2">
                                 <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <AFPDialog afp={afp} onSaved={fetchData} />
                                 </div>
