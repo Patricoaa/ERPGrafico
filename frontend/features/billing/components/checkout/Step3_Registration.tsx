@@ -8,17 +8,23 @@ import { Button } from "@/components/ui/button"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { cn } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean
     data: any
     setData: (data: any) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
 export function Step3_Registration({
     isCreditNote,
     data,
-    setData
+    setData,
+    onPeriodValidityChange
 }: Step3_RegistrationProps) {
 
     const { dateString } = useServerDate()
@@ -56,11 +62,17 @@ export function Step3_Registration({
                         checked={formData.is_pending}
                         onCheckedChange={(val) => {
                             const isChecked = !!val;
-                            setData({
-                                ...formData,
-                                is_pending: isChecked,
-                                document_number: isChecked ? '' : formData.document_number
-                            });
+                            if (isChecked) {
+                                setData({
+                                    ...formData,
+                                    is_pending: true,
+                                    document_number: '',
+                                    attachment: null
+                                });
+                                onPeriodValidityChange?.(true);
+                            } else {
+                                setData({ ...formData, is_pending: false });
+                            }
                         }}
                     />
                     <Label htmlFor="is_pending" className="text-xs font-medium cursor-pointer">
@@ -91,13 +103,23 @@ export function Step3_Registration({
                                     <Calendar className="h-3 w-3" />
                                     Fecha Emisión
                                 </Label>
-                                <Input
-                                    id="date"
-                                    type="date"
-                                    className="bg-background"
-                                    value={formData.document_date}
-                                    onChange={(e) => setData({ ...formData, document_date: e.target.value })}
-                                />
+                                <div>
+                                    <PeriodValidationDateInput
+                                        date={formData.document_date ? new Date(formData.document_date + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (d) {
+                                                const year = d.getFullYear()
+                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                const day = String(d.getDate()).padStart(2, '0')
+                                                setData({ ...formData, document_date: `${year}-${month}-${day}` })
+                                            } else {
+                                                setData({ ...formData, document_date: "" })
+                                            }
+                                        }}
+                                        validationType="both"
+                                        onValidityChange={onPeriodValidityChange}
+                                    />
+                                </div>
                             </div>
 
                             {/* Attachment Section inside the card */}

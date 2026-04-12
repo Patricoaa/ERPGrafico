@@ -21,6 +21,7 @@ export const ENDPOINT_MAP: Record<string, (id: number | string) => string> = {
     user: (id) => `/users/${id}/`,
     contact: (id) => `/directory/contacts/${id}/`,
     product: (id) => `/inventory/products/${id}/`,
+    profit_distribution: (id) => `/contacts/profit-distributions/${id}/`,
 }
 
 interface UseTransactionDataOptions {

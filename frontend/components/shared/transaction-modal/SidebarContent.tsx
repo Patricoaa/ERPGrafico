@@ -5,7 +5,7 @@ import { ExternalLink, User, MonitorSmartphone, Package, Calendar, CalendarClock
 import type { TransactionData } from "@/types/transactions"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useRouter } from "next/navigation"
-import { formatPlainDate, translateReceivingStatus, translatePaymentMethod } from "@/lib/utils"
+import { formatPlainDate, translateReceivingStatus, translatePaymentMethod, formatCurrency } from "@/lib/utils"
 import { BannerStatus } from "./BannerStatus"
 import { MetadataItem } from "./MetadataItem"
 import { AttachmentList } from "../AttachmentList"
@@ -169,16 +169,24 @@ export const SidebarContent = React.memo(({ data, currentType, closeModal }: { d
                         </SidebarSection>
                     </>
                 )
-            case 'sale_delivery':
-            case 'purchase_receipt':
-                const logisticsTitle = currentType === 'sale_delivery' ? 'Cliente' : 'Proveedor'
-                const logisticsName = data.customer_name || data.supplier_name || data.contact_name
-                const logisticsContactId = data.customer_id || data.customer || data.supplier_id || data.supplier || data.contact_id
                 return (
                     <>
                         {renderContactSection(logisticsTitle, logisticsName, logisticsContactId)}
                         <SidebarSection title="Logística">
                             <MetadataItem label="Fecha Esperada" value={formatPlainDate(data.expected_date || data.scheduled_date || data.date)} icon={CalendarClock} />
+                        </SidebarSection>
+                    </>
+                )
+            case 'profit_distribution':
+                return (
+                    <>
+                        <SidebarSection title="Información de Resolución">
+                            <MetadataItem label="Año Fiscal" value={data.fiscal_year} icon={CalendarDays} />
+                            <MetadataItem label="Número de Acta" value={data.acta_number || 'Pendiente'} icon={FileText} />
+                            <MetadataItem label="Fecha Resolución" value={formatPlainDate(data.resolution_date)} icon={Calendar} />
+                        </SidebarSection>
+                        <SidebarSection title="Totales">
+                            <MetadataItem label="Resultado Neto" value={formatCurrency(data.net_result)} icon={Wallet} />
                         </SidebarSection>
                     </>
                 )

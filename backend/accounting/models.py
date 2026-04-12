@@ -276,27 +276,21 @@ class JournalEntry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        # Validate period is not closed (only for existing entries being modified)
-        if self.pk and self.period_closed:
-            raise ValidationError(
-                _("No se puede modificar un asiento de un periodo cerrado.")
-            )
+        is_new = self.pk is None
         
-        # Auto-assign accounting period based on date
+        # 1. Determine/Refresh accounting period context
         if self.date and not self.accounting_period_id:
             from tax.models import AccountingPeriod
             try:
-                period, _ = AccountingPeriod.objects.get_or_create(
+                period, _created = AccountingPeriod.objects.get_or_create(
                     year=self.date.year,
                     month=self.date.month
                 )
                 self.accounting_period = period
                 self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
             except Exception:
-                # If period creation fails, continue without it
                 pass
         
-        # Update period_closed flag if period exists
         if self.accounting_period_id:
             from tax.models import AccountingPeriod
             try:
@@ -304,7 +298,32 @@ class JournalEntry(models.Model):
                 self.period_closed = (period.status == AccountingPeriod.Status.CLOSED)
             except AccountingPeriod.DoesNotExist:
                 pass
+
+        # 2. Hard Enforcement of Period Closure
+        # EXCEPTION: System-generated opening/closing entries bypass this to allow fiscal year closure
+        is_closing_entry = getattr(self, '_is_system_closing_entry', False)
         
+        if self.period_closed and not is_closing_entry:
+            if is_new:
+                # Block Creation
+                raise ValidationError(
+                    _("No se puede registrar un asiento contable en un periodo cerrado. Por favor, verifique la fecha o solicite la reapertura del periodo.")
+                )
+            else:
+                # Block Modification (except cancellation)
+                original = JournalEntry.objects.get(pk=self.pk)
+                # If it was already cancelled, block any further change
+                if original.status == JournalEntry.Status.CANCELLED:
+                     raise ValidationError(
+                        _("No se puede modificar un asiento ya anulado en un periodo cerrado.")
+                    )
+                # If attempting to change something other than status to CANCELLED
+                if self.status != JournalEntry.Status.CANCELLED:
+                    raise ValidationError(
+                        _("No se puede modificar un asiento de un periodo cerrado. Solo se permite la anulación.")
+                    )
+
+        # 3. Standard Field Assignments
         if not self.number:
             # Simple auto-numbering
             last_entry = JournalEntry.objects.all().order_by('id').last()
@@ -315,6 +334,7 @@ class JournalEntry(models.Model):
                     self.number = '000001'
             else:
                 self.number = '000001'
+        
         super().save(*args, **kwargs)
         from core.cache import invalidate_report_cache
         invalidate_report_cache('finances')
@@ -971,6 +991,83 @@ class AccountingSettings(models.Model):
 
     def __str__(self):
         return "Configuración Contable Global"
+
+# --- Fiscal Year Closing ---
+
+class FiscalYear(models.Model):
+    """
+    Represents a fiscal year (ejercicio contable).
+    Tracks the annual closing process: closing P&L accounts and
+    transferring the result to equity.
+    """
+    class Status(models.TextChoices):
+        OPEN = 'OPEN', _('Abierto')
+        CLOSING = 'CLOSING', _('En Proceso de Cierre')
+        CLOSED = 'CLOSED', _('Cerrado')
+
+    year = models.IntegerField(_("Año Fiscal"), unique=True)
+    start_date = models.DateField(_("Fecha Inicio"))
+    end_date = models.DateField(_("Fecha Fin"))
+    status = models.CharField(
+        _("Estado"), max_length=20,
+        choices=Status.choices, default=Status.OPEN
+    )
+
+    # Closing metadata
+    closing_entry = models.OneToOneField(
+        'JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='fiscal_year_closing',
+        verbose_name=_("Asiento de Cierre")
+    )
+    opening_entry = models.OneToOneField(
+        'JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='fiscal_year_opening',
+        verbose_name=_("Asiento de Apertura")
+    )
+    net_result = models.DecimalField(
+        _("Resultado Neto"), max_digits=20, decimal_places=0,
+        null=True, blank=True,
+        help_text=_("Utilidad (+) o Pérdida (-) del ejercicio al momento del cierre.")
+    )
+
+    closed_at = models.DateTimeField(_("Cerrado el"), null=True, blank=True)
+    closed_by = models.ForeignKey(
+        'core.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='closed_fiscal_years',
+        verbose_name=_("Cerrado por")
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ['-year']
+        verbose_name = _("Ejercicio Fiscal")
+        verbose_name_plural = _("Ejercicios Fiscales")
+        permissions = [
+            ('can_close_fiscal_year', 'Puede cerrar ejercicio fiscal'),
+            ('can_reopen_fiscal_year', 'Puede reabrir ejercicio fiscal'),
+        ]
+
+    def __str__(self):
+        return f"Ejercicio {self.year} ({self.get_status_display()})"
+
+    @property
+    def is_profit(self):
+        return self.net_result is not None and self.net_result > 0
+
+    @property
+    def is_loss(self):
+        return self.net_result is not None and self.net_result < 0
+
 
 # --- Budgeting Models ---
 

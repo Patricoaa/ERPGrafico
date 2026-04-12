@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Account, JournalEntry, JournalItem, AccountingSettings, Budget, BudgetItem
+from .models import Account, JournalEntry, JournalItem, AccountingSettings, Budget, BudgetItem, FiscalYear
 
 class AccountSerializer(serializers.ModelSerializer):
     account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
@@ -69,3 +69,58 @@ class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
         fields = ['id', 'name', 'start_date', 'end_date', 'description', 'created_at', 'items']
+
+# --- Fiscal Year Closing Serializers ---
+
+class FiscalYearSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    closing_entry_display = serializers.CharField(
+        source='closing_entry.display_id', read_only=True, default=None
+    )
+    opening_entry_display = serializers.CharField(
+        source='opening_entry.display_id', read_only=True, default=None
+    )
+    closed_by_username = serializers.CharField(
+        source='closed_by.username', read_only=True, default=None
+    )
+
+    class Meta:
+        model = FiscalYear
+        fields = [
+            'id', 'year', 'start_date', 'end_date', 'status', 'status_display',
+            'closing_entry', 'closing_entry_display',
+            'opening_entry', 'opening_entry_display',
+            'net_result', 'is_profit', 'is_loss',
+            'closed_at', 'closed_by', 'closed_by_username',
+            'notes', 'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'status', 'closing_entry', 'opening_entry', 'net_result',
+            'closed_at', 'closed_by',
+        ]
+
+class FiscalYearPreviewAccountSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    balance = serializers.FloatField()
+
+class FiscalYearPreviewValidationSerializer(serializers.Serializer):
+    passed = serializers.BooleanField()
+    message = serializers.CharField()
+
+class FiscalYearPreviewSerializer(serializers.Serializer):
+    year = serializers.IntegerField()
+    income_accounts = FiscalYearPreviewAccountSerializer(many=True)
+    expense_accounts = FiscalYearPreviewAccountSerializer(many=True)
+    income_total = serializers.FloatField()
+    expense_total = serializers.FloatField()
+    net_result = serializers.FloatField()
+    is_profit = serializers.BooleanField()
+    is_loss = serializers.BooleanField()
+    validations = serializers.DictField()
+    can_close = serializers.BooleanField()
+    result_account_id = serializers.IntegerField(allow_null=True)
+    result_account_code = serializers.CharField(allow_null=True)
+    result_account_name = serializers.CharField(allow_null=True)
+    is_balanced = serializers.BooleanField(default=True)

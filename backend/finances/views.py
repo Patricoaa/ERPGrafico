@@ -269,6 +269,46 @@ def get_income_statement_data(request):
     return Response(data)
 
 @api_view(['GET'])
+def get_trial_balance_data(request):
+    """
+    Returns the Trial Balance data as JSON.
+    Query Params: start_date, end_date (YYYY-MM-DD)
+    """
+    end_date = request.query_params.get('end_date', timezone.now().date())
+    start_date = request.query_params.get('start_date')  # Optional
+    
+    is_async = request.query_params.get('is_async', 'false').lower() == 'true'
+    if is_async:
+        task = generate_report_task.delay(
+            report_type='trial_balance',
+            end_date=str(end_date) if end_date else None,
+            start_date=str(start_date) if start_date else None
+        )
+        return Response({'task_id': task.id, 'status': 'PENDING'})
+
+    def to_date(d):
+        if not d: return None
+        if isinstance(d, date): return d
+        from datetime import datetime
+        try:
+            return datetime.strptime(d, '%Y-%m-%d').date()
+        except:
+            return None
+
+    end_date_obj = to_date(end_date)
+    start_date_obj = to_date(start_date)
+    
+    from core.cache import cache_report
+    data = cache_report(
+        module='finances',
+        endpoint='trial_balance',
+        params={'start': str(start_date_obj) if start_date_obj else None, 'end': str(end_date_obj) if end_date_obj else None},
+        timeout=90,
+        generator=lambda: FinanceService.get_trial_balance(start_date_obj, end_date_obj),
+    )
+    return Response(data)
+
+@api_view(['GET'])
 def get_cash_flow_data(request):
     """
     Returns the Cash Flow data as JSON.

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { FileText, Receipt, AlertCircle, Loader2, CheckCircle } from "lucide-react"
+import { FileText, Receipt, AlertCircle, Loader2, CheckCircle, ShieldAlert } from "lucide-react"
 import { useFolioValidation } from "@/hooks/useFolioValidation"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
@@ -14,6 +14,9 @@ import { settingsApi } from "@/features/settings/api/settingsApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+
 import { CheckoutDTEData } from "../../types"
 
 interface Step1_DTEProps {
@@ -21,10 +24,22 @@ interface Step1_DTEProps {
     setDteData: (data: CheckoutDTEData) => void
     isPurchase?: boolean
     isDefaultCustomer?: boolean
+    isPeriodClosed?: boolean
+    periodMessage?: string
+    onValidityChange?: (isValid: boolean) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
-export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCustomer = false }: Step1_DTEProps) {
-    const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
+export function Step1_DTE({ 
+    dteData, 
+    setDteData, 
+    isPurchase = false, 
+    isDefaultCustomer = false,
+    isPeriodClosed = false,
+    periodMessage = "",
+    onValidityChange,
+    onPeriodValidityChange
+}: Step1_DTEProps) {
     const { dateString } = useServerDate()
 
     // Fetch billing settings to get allowed DTE types
@@ -40,14 +55,6 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
         return allowed.length > 0 ? allowed : ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
     }, [settings])
 
-    // Validate folio when number changes
-    useEffect(() => {
-        if (dteData.type === 'FACTURA' && dteData.number && !dteData.isPending) {
-            validateFolio(dteData.number, dteData.type)
-        } else {
-            clearValidation()
-        }
-    }, [dteData.number, dteData.type, dteData.isPending, validateFolio, clearValidation])
 
     // Enforce allowed DTE types
     useEffect(() => {
@@ -132,7 +139,16 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                         <Checkbox
                             id="is-pending"
                             checked={dteData.isPending}
-                            onCheckedChange={(checked) => setDteData({ ...dteData, isPending: !!checked })}
+                            onCheckedChange={(checked) => {
+                                const pending = !!checked;
+                                if (pending) {
+                                    setDteData({ ...dteData, isPending: true, number: '', attachment: null });
+                                    onValidityChange?.(true);
+                                    onPeriodValidityChange?.(true);
+                                } else {
+                                    setDteData({ ...dteData, isPending: false });
+                                }
+                            }}
                         />
                         <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
                             {isPurchase ? "Aún no recibo el documento" : "Emitiré la factura luego"}
@@ -142,51 +158,32 @@ export function Step1_DTE({ dteData, setDteData, isPurchase = false, isDefaultCu
                     {!dteData.isPending && (
                         <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
                             <div className="space-y-2">
-                                <Label htmlFor="folio" className="text-xs font-bold uppercase">N° de Folio <span className="text-destructive">*</span></Label>
-                                <div className="relative">
-                                    <Input
-                                        id="folio"
-                                        placeholder="Ej: 45223"
-                                        value={dteData.number}
-                                        onChange={(e) => setDteData({ ...dteData, number: e.target.value })}
-                                        className={cn(
-                                            validationResult && !validationResult.is_unique && "border-destructive pr-10"
-                                        )}
-                                    />
-                                    {isValidating && (
-                                        <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
-                                    )}
-                                    {validationResult && !isValidating && (
-                                        validationResult.is_unique ? (
-                                            <CheckCircle className="absolute right-3 top-2.5 h-4 w-4 text-success" />
-                                        ) : (
-                                            <AlertCircle className="absolute right-3 top-2.5 h-4 w-4 text-destructive" />
-                                        )
-                                    )}
-                                </div>
-                                {validationResult && !validationResult.is_unique && (
-                                    <Alert variant="destructive" className="mt-2 py-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription className="text-xs">
-                                            {validationResult.message}
-                                            {validationResult.existing_invoice && (
-                                                <div className="mt-1 text-[10px] opacity-80">
-                                                    Usado en: {validationResult.existing_invoice.customer_name} ({validationResult.existing_invoice.date})
-                                                </div>
-                                            )}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
-                                <Input
-                                    id="date"
-                                    type="date"
-                                    value={dteData.date}
-                                    onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
+                                <FolioValidationInput
+                                    value={dteData.number}
+                                    onChange={(val) => setDteData({ ...dteData, number: val })}
+                                    dteType={dteData.type}
+                                    isPurchase={isPurchase}
+                                    onValidityChange={onValidityChange}
+                                    disabled={dteData.isPending}
                                 />
                             </div>
+                                <div>
+                                    <PeriodValidationDateInput
+                                        date={dteData.date ? new Date(`${dteData.date}T12:00:00`) : undefined}
+                                        onDateChange={(d) => {
+                                            if (d) {
+                                                const year = d.getFullYear();
+                                                const month = String(d.getMonth() + 1).padStart(2, '0');
+                                                const day = String(d.getDate()).padStart(2, '0');
+                                                setDteData({ ...dteData, date: `${year}-${month}-${day}` });
+                                            } else {
+                                                setDteData({ ...dteData, date: "" });
+                                            }
+                                        }}
+                                        validationType="both"
+                                        onValidityChange={onPeriodValidityChange}
+                                    />
+                                </div>
                             <div className="col-span-2">
                                 <DocumentAttachmentDropzone
                                     file={dteData.attachment}

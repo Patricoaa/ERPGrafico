@@ -138,6 +138,56 @@ export function TransactionContent({
             )
         }
 
+        if (type === 'profit_distribution') {
+            return (
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        <TableRow className="hover:bg-transparent border-none">
+                            <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Socio / Accionista</TableHead>
+                            <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[80px]">Particip.</TableHead>
+                            <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">Monto Bruto</TableHead>
+                            <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px]">Compensación</TableHead>
+                            <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[160px] px-6">Monto Neto</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {(data.lines || []).map((line: any, idx: number) => {
+                            const offset = parseFloat(String(line.provisional_withdrawals_offset || 0));
+                            return (
+                                <TableRow key={line.id || idx} className="hover:bg-muted/5 border-border/40">
+                                    <TableCell className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-[13px] tracking-tight leading-tight">{line.partner_name || line.partner?.name}</span>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <span className="text-[9px] font-mono text-muted-foreground uppercase opacity-60">Destino:</span>
+                                                <span className="text-[9px] font-black text-primary uppercase tracking-wider">
+                                                    {line.destination === 'DIVIDEND' ? 'Dividendo' : 
+                                                     line.destination === 'REINVEST' ? 'Reinversión' : 
+                                                     line.destination === 'RETAINED' ? 'Retenida' : 'Pérdida'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center font-bold text-[13px] font-mono">{parseFloat(String(line.percentage_at_date)).toFixed(2)}%</TableCell>
+                                    <TableCell className="text-right font-semibold text-[13px] text-muted-foreground font-mono">{formatCurrency(line.gross_amount)}</TableCell>
+                                    <TableCell className="text-right font-semibold text-[13px] text-destructive font-mono">
+                                        {offset > 0 ? (
+                                            <span className="bg-destructive/10 px-1.5 py-0.5 rounded-sm">
+                                                -{formatCurrency(offset)}
+                                            </span>
+                                        ) : '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right font-black text-[15px] text-success font-mono tracking-tighter px-6">
+                                        {formatCurrency(line.net_amount)}
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            )
+        }
+
         // Default item list (invoices, orders)
         return (
             <Table>

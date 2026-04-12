@@ -10,7 +10,7 @@ import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar
 import { Checkbox } from "@/components/ui/checkbox"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Wallet, AlertCircle, Building2 } from "lucide-react"
+import { Wallet, AlertCircle, Building2, ShieldAlert } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
@@ -18,6 +18,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface PaymentDialogProps {
     open: boolean
@@ -73,12 +74,15 @@ export function PaymentDialog({
     const [documentReference, setDocumentReference] = useState("")
     const [documentDate, setDocumentDate] = useState("")
 
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
+
     // Sync document date with server date
     useEffect(() => {
         if (dateString && !documentDate) {
             setDocumentDate(dateString)
         }
     }, [dateString])
+
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isDocumentPending, setIsDocumentPending] = useState(false)
 
@@ -109,6 +113,7 @@ export function PaymentDialog({
             if (dateString) setDocumentDate(dateString)
             setDocumentAttachment(null)
             setIsDocumentPending(false)
+            setIsPeriodValid(true)
 
             if (existingInvoice) {
                 setDteType(existingInvoice.dte_type)
@@ -167,7 +172,8 @@ export function PaymentDialog({
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
                             ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
-                            (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment)
+                            (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
+                            ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
                         }
                     >
                         {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
@@ -232,13 +238,24 @@ export function PaymentDialog({
                                 <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
                                     <Calendar className="h-3 w-3" /> Fecha de Emisión
                                 </Label>
-                                <Input
-                                    type="date"
-                                    className="h-9"
-                                    value={documentDate}
-                                    onChange={(e) => setDocumentDate(e.target.value)}
-                                    disabled={isDocumentPending}
-                                />
+                                <div>
+                                    <PeriodValidationDateInput
+                                        date={documentDate ? new Date(documentDate + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (d) {
+                                                const year = d.getFullYear()
+                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                const day = String(d.getDate()).padStart(2, '0')
+                                                setDocumentDate(`${year}-${month}-${day}`)
+                                            } else {
+                                                setDocumentDate("")
+                                            }
+                                        }}
+                                        disabled={isDocumentPending}
+                                        validationType="both"
+                                        onValidityChange={setIsPeriodValid}
+                                    />
+                                </div>
                             </div>
 
                             <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>

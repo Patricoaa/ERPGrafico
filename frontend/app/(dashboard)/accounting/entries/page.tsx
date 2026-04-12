@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import {
     ColumnDef,
 } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared"
 import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -43,6 +43,10 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
+    
+    // Guard for async operations
+    const isMounted = useRef(true)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -54,6 +58,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
         router.push(`${pathname}?${params.toString()}`)
     }
 
+    // Initialize/Cleanup mount guard
+    useEffect(() => {
+        isMounted.current = true
+        return () => { isMounted.current = false }
+    }, [])
+
     // Synchronize external modal trigger
     useEffect(() => {
         if (externalOpen) {
@@ -64,27 +74,48 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
     const handleFormOpenChange = (open: boolean) => {
         setIsFormOpen(open)
         if (!open) {
+            setEditingEntry(null)
             onExternalOpenChange?.(false)
             handleCloseModal()
         }
     }
 
+    const handleEditEntry = (entry: JournalEntry) => {
+        setEditingEntry(entry)
+        setIsFormOpen(true)
+    }
+
+    const handleCreateEntry = () => {
+        setEditingEntry(null)
+        setIsFormOpen(true)
+    }
+
     const fetchEntries = async () => {
-        setLoading(true)
+        // Only set loading if not already loading to avoid jitter
+        if (!loading) {
+            setLoading(true)
+        }
+        
         try {
             const response = await api.get('/accounting/entries/')
-            setEntries(response.data.results || response.data)
+            if (isMounted.current) {
+                setEntries(response.data.results || response.data)
+            }
         } catch (error) {
             console.error("Failed to fetch entries", error)
         } finally {
-            setLoading(false)
+            if (isMounted.current) {
+                setLoading(false)
+            }
         }
     }
 
     const fetchAccounts = async () => {
         try {
             const response = await api.get('/accounting/accounts/?is_leaf=true')
-            setAccounts(response.data.results || response.data)
+            if (isMounted.current) {
+                setAccounts(response.data.results || response.data)
+            }
         } catch (error) {
             console.error("Failed to fetch accounts", error)
             toast.error("Error al cargar las cuentas contables.")
@@ -119,7 +150,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
         }
     }
 
-    const columns: ColumnDef<JournalEntry>[] = [
+    const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
         {
             accessorKey: "number",
             header: ({ column }) => (
@@ -184,12 +215,15 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                         </Button>
                         {entry.state === 'DRAFT' && (
                             <>
-                                <JournalEntryForm
-                                    accounts={accounts}
-                                    initialData={entry as any}
-                                    onSuccess={fetchEntries}
-                                    triggerVariant="circular"
-                                />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
+                                    onClick={() => handleEditEntry(entry)}
+                                    title="Editar"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -214,7 +248,8 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                 )
             },
         },
-    ]
+    ], [accounts])
+
 
     return (
         <div className="space-y-4">
@@ -238,11 +273,23 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={20}
+                    actionButton={
+                        <Button
+                            onClick={handleCreateEntry}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-4 h-9 font-heading text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-primary/20"
+                        >
+                            Nuevo Asiento
+                        </Button>
+                    }
                 />
 
                 <JournalEntryForm 
                     accounts={accounts} 
-                    onSuccess={fetchEntries} 
+                    initialData={editingEntry as any}
+                    onSuccess={() => {
+                        fetchEntries()
+                        handleFormOpenChange(false)
+                    }} 
                     open={isFormOpen}
                     onOpenChange={handleFormOpenChange}
                 />

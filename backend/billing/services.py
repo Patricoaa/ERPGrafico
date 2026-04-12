@@ -8,6 +8,7 @@ from accounting.services import JournalEntryService, AccountingMapper
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
 from decimal import Decimal
+from tax.services import TaxPeriodService
 
 
 class BillingService:
@@ -234,6 +235,23 @@ class BillingService:
                 filter_kwargs={'dte_type': Invoice.DTEType.BOLETA}
             )
 
+        # Tax & Accounting Period Validation (Only for POSTED documents)
+        if status != Invoice.Status.DRAFT:
+            doc_date = date or timezone.now().date()
+            from tax.services import TaxPeriodService, AccountingPeriodService
+            
+            if TaxPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar el documento con fecha {doc_date}. "
+                    f"El periodo tributario correspondiente (F29) ya se encuentra CERRADO."
+                )
+                
+            if AccountingPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar el documento con fecha {doc_date}. "
+                    f"El periodo CONTABLE correspondiente ya se encuentra CERRADO."
+                )
+
         # Validate Uniqueness
         if number:
             BillingService._validate_document_uniqueness(number, dte_type)
@@ -338,6 +356,23 @@ class BillingService:
         """
         if status == Invoice.Status.POSTED and not supplier_invoice_number:
             raise ValidationError("El número de folio es obligatorio para publicar la factura.")
+
+        # Tax & Accounting Period Validation (Only for POSTED documents)
+        if status != Invoice.Status.DRAFT:
+            doc_date = date or timezone.now().date()
+            from tax.services import TaxPeriodService, AccountingPeriodService
+            
+            if TaxPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar la factura con fecha {doc_date}. "
+                    f"El periodo tributario correspondiente (F29) ya se encuentra CERRADO."
+                )
+                
+            if AccountingPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar la factura con fecha {doc_date}. "
+                    f"El periodo CONTABLE correspondiente ya se encuentra CERRADO."
+                )
 
         # 0. Validate Uniqueness
         if supplier_invoice_number:
@@ -534,6 +569,23 @@ class BillingService:
             order.recalculate_totals()
             order.save()
         
+        # Tax & Accounting Period Validation (Only if NOT pending registration)
+        if not is_pending_registration:
+            doc_date = document_date or timezone.now().date()
+            from tax.services import TaxPeriodService, AccountingPeriodService
+            
+            if TaxPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar la venta con fecha {doc_date}. "
+                    f"El periodo tributario correspondiente (F29) ya se encuentra CERRADO."
+                )
+                
+            if AccountingPeriodService.is_period_closed(doc_date):
+                raise ValidationError(
+                    f"No se puede registrar la venta con fecha {doc_date}. "
+                    f"El periodo CONTABLE correspondiente ya se encuentra CERRADO."
+                )
+
         # --- CREDIT VALIDATION ---
         # Determine the amount paid versus the order total
         # If no amount is explicitly provided, we assume the full total is being paid UNLESS payment_method is CREDIT
@@ -849,17 +901,50 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def confirm_invoice(invoice: Invoice, number: str, document_attachment=None):
+    def confirm_invoice(invoice: Invoice, number: str, document_attachment=None, date=None):
         """
         Finalizes a DRAFT or PAID-without-folio invoice, adding folio and separating VAT.
         Works for Sale Orders, Purchase Orders and Service Obligations.
         """
+        from django.utils.dateparse import parse_date
+        from .services import TaxPeriodService, AccountingPeriodService
+        
+        target_date = date
+        if isinstance(target_date, str):
+            target_date = parse_date(target_date)
+        
+        if not target_date:
+            target_date = invoice.date
+
+        # 1. Tax Period Validation
+        if TaxPeriodService.is_period_closed(target_date):
+            raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está Tributariamente CERRADO.")
+
+        # 2. Accounting Period Validation
+        if AccountingPeriodService.is_period_closed(target_date, 'accounting'):
+            raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está CONTABLE CERRADO.")
         # Allow PAID status because a draft can be fully paid before folio is registered
         if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:
             raise ValidationError(f"Solo se pueden confirmar facturas en estado Borrador (actual: {invoice.status}).")
         
         if not number:
             raise ValidationError("El número de folio es obligatorio para confirmar la factura.")
+
+        # Tax & Accounting Period Validation
+        doc_date = date or invoice.date
+        from tax.services import AccountingPeriodService
+        
+        if TaxPeriodService.is_period_closed(doc_date):
+            raise ValidationError(
+                f"No se puede confirmar la factura con fecha {doc_date}. "
+                f"El periodo tributario correspondiente ya se encuentra CERRADO."
+            )
+            
+        if AccountingPeriodService.is_period_closed(doc_date):
+             raise ValidationError(
+                f"No se puede confirmar la factura con fecha {doc_date}. "
+                f"El periodo CONTABLE correspondiente ya se encuentra CERRADO."
+            )
 
         # Validate Uniqueness
         supplier_id = None
@@ -874,6 +959,8 @@ class BillingService:
         )
 
         invoice.number = number
+        if date:
+            invoice.date = date
         if document_attachment:
             invoice.document_attachment = document_attachment
         

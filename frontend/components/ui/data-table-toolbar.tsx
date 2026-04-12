@@ -46,6 +46,7 @@ interface DataTableToolbarProps<TData> {
     customFilters?: React.ReactNode
     isCustomFiltered?: boolean
     customFilterCount?: number
+    leftAction?: React.ReactNode
 }
 
 function translateColumnId(id: string): string {
@@ -109,6 +110,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         customFilters,
         isCustomFiltered,
         customFilterCount,
+        leftAction,
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0 || isCustomFiltered
@@ -130,6 +132,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                 {/* Left Section: Search & Batch Actions (flex-1) */}
                 <div className="flex-1 flex items-center gap-3 min-w-0">
+                    {leftAction}
                     {batchActions}
                     {(filterColumn || globalFilterFields) && !useAdvancedFilter && (
                         <div className="relative w-64 lg:w-72 group shrink-0">
@@ -187,24 +190,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             {showToolbarSort && sortableColumns.length > 0 && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all">
-                                            <ArrowUpDown className="mr-2 h-4 w-4 opacity-50" />
-                                            <span className="font-heading uppercase tracking-wider text-[10px] font-bold">Ordenar</span>
-                                            {currentSortColumn && (
-                                                <>
-                                                    <div className="mx-2 h-4 w-px bg-border inline-block" />
-                                                    <span className="text-primary font-bold font-heading uppercase tracking-wider text-[10px]">
-                                                        {(currentSortColumn.columnDef.meta as { title?: string })?.title ||
-                                                            translateColumnId(currentSortColumn.id)}
-                                                    </span>
-                                                    {currentSort?.desc ? (
-                                                        <ArrowDown className="ml-2 h-3 w-3" />
-                                                    ) : (
-                                                        <ArrowUp className="ml-2 h-3 w-3" />
-                                                    )}
-                                                </>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                                            {currentSortColumn ? (
+                                                currentSort?.desc ? <ArrowDown className="h-4 w-4 text-primary" /> : <ArrowUp className="h-4 w-4 text-primary" />
+                                            ) : (
+                                                <ArrowUpDown className="h-4 w-4 opacity-50" />
                                             )}
-                                            <ChevronDown className="ml-2 h-3 w-3 opacity-30" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl">
@@ -260,19 +251,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             {showToolbarSort && sortableColumns.length > 0 && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all">
-                                            <ArrowUpDown className="mr-2 h-4 w-4 opacity-50" />
-                                            <span className="font-heading uppercase tracking-wider text-[10px] font-bold">Ordenar</span>
-                                            {currentSortColumn && (
-                                                <>
-                                                    <div className="mx-2 h-4 w-px bg-border inline-block" />
-                                                    <span className="text-primary font-bold font-heading uppercase tracking-wider text-[10px]">
-                                                        {(currentSortColumn.columnDef.meta as { title?: string })?.title ||
-                                                            translateColumnId(currentSortColumn.id)}
-                                                    </span>
-                                                </>
+                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                                            {currentSortColumn ? (
+                                                currentSort?.desc ? <ArrowDown className="h-4 w-4 text-primary" /> : <ArrowUp className="h-4 w-4 text-primary" />
+                                            ) : (
+                                                <ArrowUpDown className="h-4 w-4 opacity-50" />
                                             )}
-                                            <ChevronDown className="ml-2 h-3 w-3 opacity-30" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
@@ -306,20 +290,19 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     )}
 
                     {viewOptions && viewOptions.length > 0 && (
-                        <div className="flex items-center bg-muted/20 p-1 rounded-md border border-border/40 h-9">
+                        <div className="flex items-center gap-1 h-9">
                             {viewOptions.map((option) => (
                                 <Button
                                     key={option.value}
-                                    variant={currentView === option.value ? "secondary" : "ghost"}
-                                    size="sm"
+                                    variant="outline"
+                                    size="icon"
                                     className={cn(
-                                        "h-7 px-3 text-[10px] gap-1.5 uppercase font-bold tracking-wider transition-all rounded-sm",
-                                        currentView === option.value ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:bg-transparent"
+                                        "h-9 w-9 rounded-full bg-transparent transition-all border-dashed border-border/60",
+                                        currentView === option.value ? "border-primary text-primary shadow-sm" : "text-muted-foreground opacity-50 hover:bg-muted/50 hover:opacity-100"
                                     )}
                                     onClick={() => onViewChange?.(option.value)}
                                 >
-                                    <option.icon className="h-3.5 w-3.5" />
-                                    <span className="hidden lg:inline">{option.label}</span>
+                                    <option.icon className="h-4 w-4" />
                                 </Button>
                             ))}
                         </div>
@@ -328,9 +311,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     {showColumnToggle && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-9 rounded-md border-dashed border-border/60 gap-2 hover:bg-muted/50 transition-all">
+                                <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
                                     <Settings2 className="h-4 w-4 opacity-50" />
-                                    <span className="hidden lg:inline font-heading uppercase tracking-wider text-[10px] font-bold">Campos</span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl">

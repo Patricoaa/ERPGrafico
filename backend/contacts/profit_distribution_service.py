@@ -5,7 +5,7 @@ Handles resolutions, percentage calculations based on history, and journal entri
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from contacts.models import Contact
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
@@ -22,7 +22,7 @@ class ProfitDistributionService:
     @staticmethod
     @transaction.atomic
     def create_draft_resolution(
-        fiscal_year: int,
+        fiscal_year_id: int,
         net_result: Decimal,
         resolution_date,
         acta_number: str = '',
@@ -34,12 +34,21 @@ class ProfitDistributionService:
         Calculates the exact participation percentage of each partner at `resolution_date`
         and prepares the lines with their corresponding gross amounts.
         """
+        from accounting.models import FiscalYear
+        try:
+            fy_obj = FiscalYear.objects.get(id=fiscal_year_id)
+        except FiscalYear.DoesNotExist:
+            raise ValidationError(f"El año fiscal con ID {fiscal_year_id} no existe.")
+
+        fiscal_year = fy_obj.year
+
         if net_result == 0:
             raise ValidationError("El resultado del ejercicio no puede ser cero.")
 
         settings = ProfitDistributionService._get_settings()
         
         # Check if resolution for this fiscal year already exists
+        # We check both the integer year and the specific object to be safe
         existing = ProfitDistributionResolution.objects.filter(
             fiscal_year=fiscal_year,
             status__in=[
@@ -52,6 +61,7 @@ class ProfitDistributionService:
             raise ValidationError(f"Ya existe una resolución activa para el año fiscal {fiscal_year}.")
 
         resolution = ProfitDistributionResolution.objects.create(
+            fiscal_year_obj=fy_obj,
             fiscal_year=fiscal_year,
             resolution_date=resolution_date,
             net_result=net_result,
@@ -90,39 +100,51 @@ class ProfitDistributionService:
     def _generate_resolution_lines(resolution: ProfitDistributionResolution):
         """
         Helper to generate lines for a resolution.
+        Accumulates all partner allocations first, then applies a rounding
+        adjustment to the largest share so the sum matches net_result exactly.
         """
         partners = Contact.objects.filter(is_partner=True)
         
+        # --- Phase 1: Calculate gross amounts ---
+        lines_data = []
         for partner in partners:
-            # 1. Get exact percentage at resolution date
             pct = PartnerService.get_equity_percentage_at_date(partner, resolution.resolution_date)
-            
             if pct <= 0:
                 continue
 
-            # 2. Calculate Gross Amount
-            gross_amount = (resolution.net_result * (pct / Decimal('100.0'))).quantize(Decimal('0.00'))
+            gross_amount = (abs(resolution.net_result) * (pct / Decimal('100'))).quantize(
+                Decimal('1'), rounding=ROUND_HALF_UP
+            )
+            lines_data.append({'partner': partner, 'pct': pct, 'gross': gross_amount})
 
-            # 3. Handle Losses vs Profits
+        # --- Phase 2: Rounding adjustment ---
+        # Ensure sum(gross_amounts) == abs(net_result) to prevent unbalanced entries
+        if lines_data:
+            total_gross = sum(d['gross'] for d in lines_data)
+            diff = abs(resolution.net_result) - total_gross
+            if diff != 0:
+                # Apply the cent adjustment to the partner with the largest share
+                lines_data.sort(key=lambda x: x['gross'], reverse=True)
+                lines_data[0]['gross'] += diff
+
+        # --- Phase 3: Create DB records ---
+        for item in lines_data:
+            partner = item['partner']
+            pct = item['pct']
+            # Restore sign: negative for losses, positive for profits
+            gross_amount = item['gross'] if resolution.is_profit else -item['gross']
+
+            # Handle provisional withdrawal offsets (only on profits)
             offset_amount = Decimal('0')
             if resolution.is_profit:
-                # Calculate if there are unliquidated provisional withdrawals
                 outstanding_withdrawals = PartnerService.get_provisional_withdrawals_balance(partner)
-                
-                # Offset cannot exceed the gross profit assigned to the partner
                 if outstanding_withdrawals > 0:
                     offset_amount = min(outstanding_withdrawals, gross_amount)
 
-            # Minimum net amount is 0 (can't have negative net if it's a profit)
             net_amount = gross_amount
             if resolution.is_profit:
                 net_amount = max(Decimal('0'), gross_amount - offset_amount)
                 
-            # Default destination: Pay out (if profit), Absorb (if loss)
-            default_dest = ProfitDistributionLine.Destination.DIVIDEND_PAYABLE
-            if resolution.is_loss:
-                default_dest = ProfitDistributionLine.Destination.LOSS_ABSORPTION
-
             ProfitDistributionLine.objects.create(
                 resolution=resolution,
                 partner=partner,
@@ -130,26 +152,42 @@ class ProfitDistributionService:
                 gross_amount=gross_amount,
                 provisional_withdrawals_offset=offset_amount,
                 net_amount=net_amount,
-                destination=default_dest,
             )
 
     @staticmethod
     @transaction.atomic
     def update_draft_line_destinations(resolution: ProfitDistributionResolution, lines_data: list):
         """
-        Updates the destinations (Retain, Reinvest, Pay out) for draft resolution lines.
-        lines_data: [{'line_id': int, 'destination': str}]
+        Updates the destinations for draft resolution lines.
+        lines_data: [{'line_id': int, 'destinations': [{'destination': str, 'amount': float}] }]
         """
+        from .partner_models import ProfitDistributionLineDestination
+
         if resolution.status != ProfitDistributionResolution.Status.DRAFT:
             raise ValidationError("Solo se pueden modificar resoluciones en borrador.")
 
         for item in lines_data:
             line_id = item.get('line_id')
-            dest = item.get('destination')
+            dests_list = item.get('destinations', [])
             try:
                 line = resolution.lines.get(id=line_id)
-                line.destination = dest
-                line.save(update_fields=['destination'])
+                # clear old
+                line.destinations.all().delete()
+                
+                total_assigned = Decimal('0')
+                for d in dests_list:
+                    amount = Decimal(str(d.get('amount', 0)))
+                    dest_type = d.get('destination')
+                    if amount > 0:
+                        ProfitDistributionLineDestination.objects.create(
+                            line=line,
+                            destination=dest_type,
+                            amount=amount
+                        )
+                        total_assigned += amount
+                        
+                if total_assigned > line.net_amount:
+                   raise ValidationError(f"La suma de destinos ({total_assigned}) para {line.partner.name} excede su monto neto ({line.net_amount}).")
             except ProfitDistributionLine.DoesNotExist:
                 continue
 
@@ -177,22 +215,37 @@ class ProfitDistributionService:
             raise ValidationError("La resolución debe estar aprobada para ser ejecutada.")
 
         settings = ProfitDistributionService._get_settings()
-        
-        # We need the current year earnings account to debit (empty it out)
+
+        # 0. Immediate Configuration Check
         if not settings.partner_current_year_earnings_account:
             raise ValidationError("Falta configurar la Cuenta de Utilidades del Ejercicio.")
         if not settings.partner_retained_earnings_account:
             raise ValidationError("Falta configurar la Cuenta de Utilidades Retenidas.")
         
+        # Check destinations to ensure all target accounts are configred before doing any damage
+        from .partner_models import ProfitDistributionLineDestination
+        destinations = ProfitDistributionLineDestination.objects.filter(line__resolution=resolution).values_list('destination', flat=True).distinct()
+        if ProfitDistributionLineDestination.Destination.DIVIDEND_PAYABLE in destinations:
+            if not settings.partner_dividends_payable_account:
+                raise ValidationError("Falta configurar la Cuenta de Dividendos por Pagar.")
+        
+        if ProfitDistributionLineDestination.Destination.REINVEST in destinations:
+            if not settings.partner_capital_social_account:
+                raise ValidationError("Falta configurar la Cuenta de Capital Social.")
+
         entry_desc = f"Distribución de Resultados {resolution.fiscal_year}"
         if resolution.acta_number:
             entry_desc += f" (Acta: {resolution.acta_number})"
 
-        entry = JournalEntry.objects.create(
+        entry = JournalEntry(
             description=entry_desc,
             date=resolution.resolution_date,
             status=JournalEntry.Status.POSTED,
         )
+        # Bypasses closure validation for closed periods as this is a system closing logic
+        entry._is_system_closing_entry = True
+        entry.save()
+        
         resolution.journal_entry = entry
 
         # 1. Close the Current Year Earnings account
@@ -251,11 +304,14 @@ class ProfitDistributionService:
                     created_by=executed_by,
                 )
 
-            # Record final destination of Net Amount
-            if line.net_amount > 0 or line.destination == ProfitDistributionLine.Destination.LOSS_ABSORPTION:
-                abs_net = abs(line.net_amount)
+            # Record final destination of Net Amount by iterating over the specified destinations
+            for dest in line.destinations.all():
+                if dest.amount <= 0:
+                    continue
+
+                abs_net = dest.amount
                 
-                if line.destination == ProfitDistributionLine.Destination.RETAINED:
+                if dest.destination == ProfitDistributionLineDestination.Destination.RETAINED:
                     # Credit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
@@ -277,17 +333,19 @@ class ProfitDistributionService:
                         distribution_resolution=resolution,
                         created_by=executed_by,
                     )
-                    line.partner_transaction = ptx
-                    line.save(update_fields=['partner_transaction'])
+                    dest.partner_transaction = ptx
+                    dest.save(update_fields=['partner_transaction'])
                     
-                elif line.destination == ProfitDistributionLine.Destination.DIVIDEND_PAYABLE:
-                    if not settings.partner_dividends_payable_account:
-                        raise ValidationError("Falta configurar la Cuenta de Dividendos por Pagar.")
+                elif dest.destination == ProfitDistributionLineDestination.Destination.DIVIDEND_PAYABLE:
                     
                     # Credit Dividends Payable (Liability)
+                    div_account = partner.partner_dividends_payable_account or settings.partner_dividends_payable_account
+                    if not div_account:
+                        raise ValidationError(f"No hay cuenta de dividendos configurada para {partner.name} ni global.")
+
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.partner_dividends_payable_account,
+                        account=div_account,
                         label=f"Dividendos por Pagar {partner.name}",
                         debit=0,
                         credit=abs_net,
@@ -304,12 +362,10 @@ class ProfitDistributionService:
                         distribution_resolution=resolution,
                         created_by=executed_by,
                     )
-                    line.partner_transaction = ptx
-                    line.save(update_fields=['partner_transaction'])
+                    dest.partner_transaction = ptx
+                    dest.save(update_fields=['partner_transaction'])
                     
-                elif line.destination == ProfitDistributionLine.Destination.REINVEST:
-                    if not settings.partner_capital_social_account:
-                        raise ValidationError("Falta configurar la Cuenta de Capital Social.")
+                elif dest.destination == ProfitDistributionLineDestination.Destination.REINVEST:
                     if not partner.partner_contribution_account:
                         raise ValidationError(f"El socio {partner.name} no tiene cuenta de capital asignada.")
 
@@ -334,10 +390,10 @@ class ProfitDistributionService:
                         distribution_resolution=resolution,
                         created_by=executed_by,
                     )
-                    line.partner_transaction = ptx
-                    line.save(update_fields=['partner_transaction'])
+                    dest.partner_transaction = ptx
+                    dest.save(update_fields=['partner_transaction'])
 
-                elif line.destination == ProfitDistributionLine.Destination.LOSS_ABSORPTION:
+                elif dest.destination == ProfitDistributionLineDestination.Destination.LOSS_ABSORPTION:
                     # Debit Partner's Specific Earnings Account (Equity)
                     JournalItem.objects.create(
                         entry=entry,
@@ -351,15 +407,15 @@ class ProfitDistributionService:
                     ptx = PartnerTransaction.objects.create(
                         partner=partner,
                         transaction_type=PartnerTransaction.Type.LOSS_ABSORPTION,
-                        amount=-abs_net, # Stored as negative or positive depending on convention, we use absolute amount and type defines direction
+                        amount=-abs_net,
                         date=resolution.resolution_date,
                         description=f"Absorción Pérdida {resolution.fiscal_year}",
                         journal_entry=entry,
                         distribution_resolution=resolution,
                         created_by=executed_by,
                     )
-                    line.partner_transaction = ptx
-                    line.save(update_fields=['partner_transaction'])
+                    dest.partner_transaction = ptx
+                    dest.save(update_fields=['partner_transaction'])
 
         entry.check_balance()
 
@@ -369,7 +425,10 @@ class ProfitDistributionService:
         resolution.save()
         
         # If any reinvestments occurred, we need to recalculate equity stakes
-        has_reinvestments = resolution.lines.filter(destination=ProfitDistributionLine.Destination.REINVEST).exists()
+        has_reinvestments = ProfitDistributionLineDestination.objects.filter(
+            line__resolution=resolution,
+            destination=ProfitDistributionLineDestination.Destination.REINVEST
+        ).exists()
         if has_reinvestments:
             PartnerService._recalculate_and_snapshot_stakes(
                 date=resolution.resolution_date,
@@ -381,27 +440,52 @@ class ProfitDistributionService:
 
     @staticmethod
     @transaction.atomic
-    def execute_mass_payment(resolution: ProfitDistributionResolution, treasury_account_id: int, executed_by) -> ProfitDistributionResolution:
+    def execute_mass_payment(resolution: ProfitDistributionResolution, treasury_account_id: int, payments_data: list, executed_by) -> ProfitDistributionResolution:
         """
-        Executes a mass payment for all lines that have DIVIDEND_PAYABLE destination.
-        Generates a single Treasury Movement and a Journal Entry that credits the Bank and debits Dividends Payable.
+        Executes payments for DIVIDEND_PAYABLE destinations.
+        payments_data: [{'partner_id': int, 'amount': float}]
         """
         if resolution.status != ProfitDistributionResolution.Status.EXECUTED:
-            raise ValidationError("La resolución debe estar ejecutada contablemente para realizar su pago masivo.")
+            raise ValidationError("La resolución debe estar ejecutada contablemente para realizar pagos.")
             
         settings = ProfitDistributionService._get_settings()
+        from .partner_models import ProfitDistributionPayment, ProfitDistributionLineDestination
         
-        # Get lines to pay
-        lines_to_pay = resolution.lines.filter(
-            destination=ProfitDistributionLine.Destination.DIVIDEND_PAYABLE, 
-            net_amount__gt=0,
-            treasury_movement__isnull=True
-        )
-        
-        if not lines_to_pay.exists():
-            raise ValidationError("No hay dividendos pendientes de pago para esta resolución.")
+        # Verify and Aggregate total payment
+        total_payment = Decimal('0')
+        valid_payments = []
+        for p_data in payments_data:
+            partner_id = p_data.get('partner_id')
+            amount = Decimal(str(p_data.get('amount', 0)))
+            if amount <= 0:
+                continue
+                
+            # Find the total dividend payable for this partner
+            destinations = ProfitDistributionLineDestination.objects.filter(
+                line__resolution=resolution,
+                line__partner_id=partner_id,
+                destination=ProfitDistributionLineDestination.Destination.DIVIDEND_PAYABLE
+            )
+            total_payable = sum(d.amount for d in destinations)
             
-        total_payment = sum([line.net_amount for line in lines_to_pay])
+            # Find already paid
+            already_paid = ProfitDistributionPayment.objects.filter(
+                resolution=resolution,
+                partner_id=partner_id
+            ).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0')
+            
+            remaining = total_payable - already_paid
+            if amount > remaining:
+                raise ValidationError(f"El monto a pagar ({amount}) supera el dividendo pendiente ({remaining}).")
+                
+            total_payment += amount
+            valid_payments.append({
+                'partner_id': partner_id,
+                'amount': amount
+            })
+            
+        if total_payment <= 0:
+            raise ValidationError("Debe especificar al menos un monto de pago mayor a 0.")
         
         from treasury.models import TreasuryAccount, TreasuryMovement
         from accounting.models import Account
@@ -413,7 +497,7 @@ class ProfitDistributionService:
             
         # Create Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Pago Masivo de Dividendos - Ejercicio {resolution.fiscal_year} (Acta: {resolution.acta_number})",
+            description=f"Pago Dividendos - Ejercicio {resolution.fiscal_year} (Acta: {resolution.acta_number})",
             date=timezone.now().date(),
             status=JournalEntry.Status.POSTED,
         )
@@ -432,16 +516,23 @@ class ProfitDistributionService:
         )
         
         # 2. Debit Dividends Payable
-        if not settings.partner_dividends_payable_account:
-            raise ValidationError("Falta configurar la Cuenta de Dividendos por Pagar.")
+        # In mass payment, we iterate over the valid_payments and debit each partner's specific account
+        for vp in valid_payments:
+            p_id = vp['partner_id']
+            p_amount = vp['amount']
+            p_obj = Contact.objects.get(id=p_id)
+            p_div_account = p_obj.partner_dividends_payable_account or settings.partner_dividends_payable_account
             
-        JournalItem.objects.create(
-            entry=entry,
-            account=settings.partner_dividends_payable_account,
-            label=f"Cancelación Pasivo Dividendos Ej. {resolution.fiscal_year}",
-            debit=total_payment,
-            credit=0,
-        )
+            if not p_div_account:
+                raise ValidationError(f"Falta configurar la Cuenta de Dividendos para {p_obj.name}.")
+                
+            JournalItem.objects.create(
+                entry=entry,
+                account=p_div_account,
+                label=f"Cancelación Pasivo Dividendos {p_obj.name}",
+                debit=p_amount,
+                credit=0,
+            )
         
         entry.check_balance()
         
@@ -451,20 +542,22 @@ class ProfitDistributionService:
             movement_type=TreasuryMovement.MovementType.OUTFLOW,
             amount=total_payment,
             date=timezone.now().date(),
-            description=f"Pago Masivo Dividendos - Ej. {resolution.fiscal_year}",
+            description=f"Pago Dividendos - Ej. {resolution.fiscal_year}",
             journal_entry=entry,
             is_reconciled=False,
             created_by=executed_by,
         )
         
-        # 4. Mark lines as paid
-        for line in lines_to_pay:
-            line.treasury_movement = movement
-            # We also create a PartnerTransaction to reflect the payment formally in the partner statement
+        # 4. Create ProfitDistributionPayment records and PartnerTransactions
+        for vp in valid_payments:
+            partner_id = vp['partner_id']
+            amount = vp['amount']
+            
+            # Record formal transaction on partner account
             ptx = PartnerTransaction.objects.create(
-                partner=line.partner,
+                partner_id=partner_id,
                 transaction_type=PartnerTransaction.Type.DIVIDEND_PAYMENT,
-                amount=line.net_amount,
+                amount=amount,
                 date=timezone.now().date(),
                 description=f"Pago Efectivo Dividendo Ej. {resolution.fiscal_year}",
                 journal_entry=entry,
@@ -472,8 +565,16 @@ class ProfitDistributionService:
                 distribution_resolution=resolution,
                 created_by=executed_by,
             )
-            line.partner_transaction = ptx # Override with the payment transaction for reference
-            line.save(update_fields=['treasury_movement', 'partner_transaction'])
+            
+            # Bind the payment
+            ProfitDistributionPayment.objects.create(
+                resolution=resolution,
+                partner_id=partner_id,
+                amount=amount,
+                treasury_movement=movement,
+                partner_transaction=ptx,
+                created_by=executed_by
+            )
             
         return resolution
 

@@ -334,14 +334,14 @@ export function Cart({
                                 isTouchPOS ? "h-20 text-2xl" : "h-16 text-xl"
                             )}
                             size="lg"
-                            disabled={loading || items.length === 0}
+                            disabled={loading || saving || items.length === 0}
                             onClick={onConfirmSale}
                         >
                             <ShoppingCart className={cn(
                                 "mr-2",
                                 isTouchPOS ? "h-8 w-8" : "h-6 w-6"
                             )} />
-                            {loading ? "Procesando..." : "Confirmar Venta"}
+                            {loading || saving ? "Procesando..." : "Confirmar Venta"}
                         </Button>
                     )}
                 </div>

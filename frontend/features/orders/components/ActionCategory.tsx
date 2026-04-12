@@ -375,9 +375,15 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.id}
-                    invoiceType={resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')?.dte_type}
+                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
+                    invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
+                    contactId={(order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)}
+                    isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
+                        if (!invoiceId || invoiceId === 'undefined') {
+                            toast.error("Error: No se pudo identificar el borrador de la factura.")
+                            throw new Error("Missing invoice ID")
+                        }
                         await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
                             headers: { 'Content-Type': 'multipart/form-data' }
                         })
